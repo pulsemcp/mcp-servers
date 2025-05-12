@@ -1,0 +1,13 @@
+# Repository structure
+
+- This repository lives at `https://github.com/pulsemcp/mcp-servers` (owner: `pulsemcp`, repo: `mcp-servers`).
+- It is a monorepo, where each subfolder represents a standalone MCP server.
+- The `main` branch is hooked up to CI/CD
+
+# Git-based development workflow
+
+Our SDLC works as follows:
+- We should always start work by branching to a branch like `<github-username>/<feature-description>`
+- Make commits, as many as you need
+- Generally, make sure you introduce test coverage on any change you make
+- Open a Pull Request with a concise title for the change + detailed description of both the motivations behind the change and an overview of how it was implemented
