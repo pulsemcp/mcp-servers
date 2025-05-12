@@ -10,4 +10,5 @@ Our SDLC works as follows:
 - We should always start work by branching to a branch like `<github-username>/<feature-description>`
 - Make commits, as many as you need
 - Generally, make sure you introduce test coverage on any change you make
+- If performing an automated multi-step code change, do not open a PR unless prompted to do so by your user
 - Open a Pull Request with a concise title for the change + detailed description of both the motivations behind the change and an overview of how it was implemented

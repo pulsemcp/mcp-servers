@@ -1,0 +1,1 @@
+We are open to community contributions, but please open an Issue and confirm getting assigned to it before writing code.
