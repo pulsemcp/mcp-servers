@@ -1,3 +1,8 @@
+---
+description: 
+globs: *
+alwaysApply: false
+---
 # Repository structure
 
 - This repository lives at `https://github.com/pulsemcp/mcp-servers` (owner: `pulsemcp`, repo: `mcp-servers`).
