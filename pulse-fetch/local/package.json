@@ -1,6 +1,6 @@
 {
-  "name": "pulse-fetch-local",
-  "version": "1.0.0",
+  "name": "pulse-fetch",
+  "version": "0.0.1",
   "description": "A local implementation of Pulse Fetch using MCP",
   "main": "dist/index.js",
   "type": "module",

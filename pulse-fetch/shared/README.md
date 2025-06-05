@@ -1,6 +1,6 @@
 # Pulse Fetch Shared
 
-This package contains shared code and utilities for both local and remote implementations of the Pulse Fetch server.
+This package contains shared code and utilities for both local and remote implementations of the Pulse Fetch server. It is not a standalone server; just ensures that we have strong design feature parity across the local (stdio) and remote (HTTP) implementations.
 
 ## How It Works
 
