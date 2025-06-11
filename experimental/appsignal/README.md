@@ -1,6 +1,7 @@
 <div align="center">
  <h1><img src="https://github.com/pulsemcp/mcp-servers/blob/main/appsignal/images/appsignal-mcp-logo.png" width="160px"><br/>AppSignal MCP Server</h1>
  <img src="https://img.shields.io/github/license/pulsemcp/mcp-servers?style=flat-square&color=purple"/>
+ <img src="https://github.com/pulsemcp/mcp-servers/actions/workflows/appsignal-ci.yml/badge.svg" alt="CI Status"/>
 </div>
 
 <br/>
@@ -76,6 +77,36 @@ This server is built and tested on macOS with Claude Desktop. It should work wit
 2. `Show me logs from yesterday between 3pm and 4pm UTC`
 3. `Retrieve logs for the incident that happened this morning from 9am to 9:30am`
 4. `Get logs from the last deployment window (2024-01-15T20:00:00Z to 2024-01-15T20:30:00Z)`
+
+# Development
+
+## Testing
+
+This project uses [Vitest](https://vitest.dev/) for unit testing. Tests are automatically run on pull requests and pushes to the main branch.
+
+### Running Tests Locally
+
+```bash
+# Install dependencies
+npm run install-all
+
+# Run tests once
+npm run test:run
+
+# Run tests in watch mode (recommended for development)
+npm test
+
+# Run tests with UI
+npm run test:ui
+```
+
+### Test Structure
+
+Tests are located in the `tests/` directory:
+- `tests/unit/` - Unit tests for individual components
+- `tests/mocks/` - Mock implementations and test data
+
+See `tests/README.md` for more details on the testing approach.
 
 # Setup
 
