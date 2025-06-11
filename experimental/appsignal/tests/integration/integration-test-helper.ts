@@ -1,14 +1,18 @@
 import { TestMCPClient } from '../../../../test-mcp-client/dist/index.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import type { Alert, LogEntry } from '../../shared/src/appsignal-client.js';
+import type { Alert, LogEntry } from '../../shared/src/appsignal-client/appsignal-client.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 /**
- * Helper to create a test client with inline mock definitions
- * This approach uses environment variables to pass mock data
+ * Helper to create a TestMCPClient with inline mock definitions for integration tests.
+ * This creates a real MCP client that connects to a test server via stdio.
+ * Mock data is passed to the server via environment variables.
+ * 
+ * This is different from the functional test mocks which use vitest mocks.
+ * Integration tests use real MCP protocol communication with a mocked backend.
  */
 export async function createMockedClient(mocks: {
   alerts?: Record<string, Alert>;
@@ -28,7 +32,7 @@ export async function createMockedClient(mocks: {
     }),
   };
 
-  const serverPath = path.join(__dirname, '../../local/build/src/index.integration-configurable.js');
+  const serverPath = path.join(__dirname, '../../local/build/src/index.integration.js');
   
   const client = new TestMCPClient({
     serverPath,

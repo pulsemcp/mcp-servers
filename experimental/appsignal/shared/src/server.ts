@@ -1,7 +1,7 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { registerResources } from './resources.js';
 import { createRegisterTools } from './tools.js';
-import { IAppsignalClient, AppsignalClient } from './appsignal-client.js';
+import { IAppsignalClient, AppsignalClient } from './appsignal-client/appsignal-client.js';
 
 export type ClientFactory = () => IAppsignalClient;
 

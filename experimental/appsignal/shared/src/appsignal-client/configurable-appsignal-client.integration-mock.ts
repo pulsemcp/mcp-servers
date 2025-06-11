@@ -1,6 +1,9 @@
-import type { IAppsignalClient, Alert, LogEntry } from '../appsignal-client.js';
-import fs from 'fs';
-import path from 'path';
+/**
+ * Configurable mock implementation of IAppsignalClient for integration tests.
+ * This mock reads configuration from environment variables to provide custom responses.
+ * Used by the integration test server (index.integration.ts) to simulate different scenarios.
+ */
+import type { IAppsignalClient, Alert, LogEntry } from './appsignal-client.js';
 
 interface MockConfig {
   getAlertDetails?: Record<string, Alert | Error>;
@@ -16,9 +19,8 @@ interface MockConfig {
 }
 
 export function createConfigurableAppsignalClient(): IAppsignalClient {
-  // Try to load mock configuration from environment or file
+  // Load mock configuration from environment variable
   const getMockConfig = (): MockConfig => {
-    // Option 1: Environment variable with JSON
     if (process.env.APPSIGNAL_MOCK_CONFIG) {
       try {
         return JSON.parse(process.env.APPSIGNAL_MOCK_CONFIG);
@@ -26,25 +28,6 @@ export function createConfigurableAppsignalClient(): IAppsignalClient {
         console.error('Failed to parse APPSIGNAL_MOCK_CONFIG:', e);
       }
     }
-
-    // Option 2: Mock config file
-    const configPath = process.env.APPSIGNAL_MOCK_CONFIG_PATH;
-    if (configPath && fs.existsSync(configPath)) {
-      try {
-        const content = fs.readFileSync(configPath, 'utf-8');
-        return JSON.parse(content, (key, value) => {
-          // Deserialize errors
-          if (value && typeof value === 'object' && value.__error) {
-            return new Error(value.message);
-          }
-          return value;
-        });
-      } catch (e) {
-        console.error('Failed to load mock config from file:', e);
-      }
-    }
-
-    // Default to empty config
     return {};
   };
 

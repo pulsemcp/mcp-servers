@@ -1,7 +1,7 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 import { setSelectedAppId } from '../state.js';
-import { IAppsignalClient } from '../appsignal-client.js';
+import { IAppsignalClient } from '../appsignal-client/appsignal-client.js';
 
 export function selectAppIdTool(server: McpServer, enableMainTools?: () => void, clientFactory?: () => IAppsignalClient) {
   return server.tool(

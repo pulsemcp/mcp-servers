@@ -1,5 +1,5 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { IAppsignalClient } from '../appsignal-client.js';
+import { IAppsignalClient } from '../appsignal-client/appsignal-client.js';
 
 export function getAppIdsTool(server: McpServer, clientFactory: () => IAppsignalClient) {
   return server.tool(

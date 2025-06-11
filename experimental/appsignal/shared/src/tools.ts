@@ -4,7 +4,7 @@ import { selectAppIdTool } from './tools/select-app-id.js';
 import { getAlertDetailsTool } from './tools/get-alert-details.js';
 import { searchLogsTool } from './tools/search-logs.js';
 import { getLogsInDatetimeRangeTool } from './tools/get-logs-in-datetime-range.js';
-import { IAppsignalClient } from './appsignal-client.js';
+import { IAppsignalClient } from './appsignal-client/appsignal-client.js';
 
 export type ClientFactory = () => IAppsignalClient;
 

@@ -9,9 +9,14 @@ tests/
 ├── functional/          # Functional tests for individual components
 │   └── tools.test.ts   # Tests for MCP tool implementations
 ├── integration/        # Integration tests using TestMCPClient
-│   └── appsignal.integration.test.ts  # Full server integration tests
+│   ├── appsignal.integration.test.ts  # Full server integration tests
+│   └── integration-test-helper.ts     # Helper for creating test clients with mocks
 └── mocks/              # Mock implementations and test data
-    └── appsignal-client.mock.ts
+    └── appsignal-client.functional-mock.ts  # Vitest mocks for functional tests
+
+shared/src/appsignal-client/
+├── appsignal-client.ts    # AppSignal client interface and implementation
+└── configurable-appsignal-client.integration-mock.ts  # Configurable mocks for integration tests
 ```
 
 ## Running Tests
@@ -57,23 +62,45 @@ const mockClient = createMockAppsignalClient();
 const registerTools = createRegisterTools(() => mockClient);
 ```
 
-### Mock Data
-Mock data is centralized in `mocks/appsignal-client.mock.ts`:
-- Used by functional tests via vitest mocking
-- Used by integration tests via a separate mock implementation in `shared/src/mocks/`
+### Mock Organization
+
+#### Functional Tests (`mocks/appsignal-client.functional-mock.ts`)
+- Creates vitest mock implementations with `vi.fn()`
+- Used for testing individual functions/tools in isolation
+- Mocks are injected directly into the code being tested
+
+#### Integration Tests (`integration/integration-test-helper.ts`)
+- Helper that creates a real TestMCPClient instance
+- Configures mock data that gets passed to the test server via environment variables
+- Tests the full MCP protocol stack with mocked external dependencies
 
 ## Integration Testing Architecture
 
 ### Overview
-Integration tests use a real MCP client (`TestMCPClient`) to communicate with a test version of the server that uses mocked external dependencies.
+Integration tests use a real MCP client (`TestMCPClient`) to communicate with a test version of the server that uses configurable mocked external dependencies.
 
 ### Components
 1. **TestMCPClient** - Located at `/test-mcp-client`, provides a programmatic interface to test MCP servers
 2. **Integration build** - Special build of the server (`index.integration.js`) that uses mocked dependencies
-3. **Mocked AppSignal client** - Provides predictable responses for testing
+3. **Configurable mocks** - Each test can define its own mock responses via environment variables
 
 ### How It Works
-1. Build the server with mocked dependencies
-2. TestMCPClient spawns the server process via stdio
-3. Tests interact with the server through the MCP protocol
-4. Server responds with mocked data instead of making real API calls
+1. Each test defines its mock responses using the `createMockedClient` helper
+2. Mock configuration is passed via environment variable to the server
+3. TestMCPClient spawns the server process via stdio
+4. Tests interact with the server through the MCP protocol
+5. Server responds with the configured mock data
+
+### Example
+```typescript
+const client = await createMockedClient({
+  alerts: {
+    'alert-123': { id: 'alert-123', status: 'active', ... }
+  },
+  searchResponses: {
+    'error': [{ level: 'error', message: '...', ... }]
+  }
+});
+
+const result = await client.callTool('get_alert_details', { alertId: 'alert-123' });
+```

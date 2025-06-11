@@ -1,7 +1,7 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 import { getSelectedAppId } from '../state.js';
-import { IAppsignalClient } from '../appsignal-client.js';
+import { IAppsignalClient } from '../appsignal-client/appsignal-client.js';
 
 export function getAlertDetailsTool(server: McpServer, clientFactory: () => IAppsignalClient) {
   return server.tool(
