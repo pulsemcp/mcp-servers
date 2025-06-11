@@ -1,22 +1,19 @@
 #!/usr/bin/env node
-import { Server } from "@modelcontextprotocol/sdk/server/index.js";
+import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { registerResources, registerTools } from "mcp-server-appsignal-shared";
 
 async function main() {
-  // Initialize server
-  const server = new Server(
-    {
-      name: "mcp-server-appsignal",
-      version: "0.1.0",
+  // Initialize MCP server
+  const server = new McpServer({
+    name: "mcp-server-appsignal",
+    version: "0.1.0",
+  }, {
+    capabilities: {
+      resources: {},
+      tools: {},
     },
-    {
-      capabilities: {
-        resources: {},
-        tools: {},
-      },
-    }
-  );
+  });
 
   // Register resources and tools from shared module
   registerResources(server);

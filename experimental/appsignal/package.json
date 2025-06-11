@@ -16,5 +16,8 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/pulsemcp/mcp-servers.git"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0"
   }
 }
