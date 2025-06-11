@@ -60,7 +60,7 @@ describe('AppSignal MCP Tools', () => {
 
     it('should disable main tools when no app ID is provided', () => {
       delete process.env.APPSIGNAL_APP_ID;
-      vi.mocked(getSelectedAppId).mockReturnValue(null);
+      vi.mocked(getSelectedAppId).mockReturnValue(undefined);
 
       registerTools(mockServer);
 
@@ -116,7 +116,7 @@ describe('AppSignal MCP Tools', () => {
     it('should handle select_app_id and enable tools', async () => {
       // Start with tools disabled
       delete process.env.APPSIGNAL_APP_ID;
-      vi.mocked(getSelectedAppId).mockReturnValue(null);
+      vi.mocked(getSelectedAppId).mockReturnValue(undefined);
       
       // Re-register to get disabled state
       mockServer = {
@@ -151,7 +151,7 @@ describe('AppSignal MCP Tools', () => {
 
     it('should return error when no app ID is selected', async () => {
       delete process.env.APPSIGNAL_APP_ID;
-      vi.mocked(getSelectedAppId).mockReturnValue(null);
+      vi.mocked(getSelectedAppId).mockReturnValue(undefined);
 
       const tool = registeredTools.get('get_alert_details');
       const result = await tool.handler({ alertId: 'alert-123' });

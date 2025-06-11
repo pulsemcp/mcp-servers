@@ -26,18 +26,18 @@ export interface IAppsignalClient {
 export class AppsignalClient implements IAppsignalClient {
   constructor(private apiKey: string, private appId: string) {}
 
-  async getAlertDetails(alertId: string): Promise<Alert> {
-    // TODO: Implement actual API call
+  async getAlertDetails(_alertId: string): Promise<Alert> {
+    // TODO: Implement actual API call using this.apiKey and this.appId
     throw new Error('Not implemented');
   }
 
-  async searchLogs(query: string, limit = 100, offset = 0): Promise<LogEntry[]> {
-    // TODO: Implement actual API call
+  async searchLogs(_query: string, _limit = 100, _offset = 0): Promise<LogEntry[]> {
+    // TODO: Implement actual API call using this.apiKey and this.appId
     throw new Error('Not implemented');
   }
 
-  async getLogsInDatetimeRange(startTime: string, endTime: string, limit = 100): Promise<LogEntry[]> {
-    // TODO: Implement actual API call
+  async getLogsInDatetimeRange(_startTime: string, _endTime: string, _limit = 100): Promise<LogEntry[]> {
+    // TODO: Implement actual API call using this.apiKey and this.appId
     throw new Error('Not implemented');
   }
 }

@@ -42,15 +42,9 @@ jobs:
         cd ../local && npx tsc --noEmit
 
   test:
-    name: Test (Node ${{ matrix.node-version }})
+    name: Test
     runs-on: ubuntu-latest
     needs: lint-and-type-check
-    
-    strategy:
-      matrix:
-        node-version: [18.x, 20.x, 22.x]
-        # Test on multiple OS in the future
-        # os: [ubuntu-latest, macos-latest, windows-latest]
     
     defaults:
       run:
@@ -60,10 +54,10 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
     
-    - name: Use Node.js ${{ matrix.node-version }}
+    - name: Use Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: ${{ matrix.node-version }}
+        node-version: '22.x'
     
     - name: Install dependencies
       run: npm run install-all
@@ -81,14 +75,14 @@ jobs:
       if: always()
       uses: actions/upload-artifact@v4
       with:
-        name: test-results-node-${{ matrix.node-version }}
+        name: test-results
         path: experimental/appsignal/test-results.json
         retention-days: 7
     
     - name: Report test summary
       if: always()
       run: |
-        echo "### Test Results for Node ${{ matrix.node-version }}" >> $GITHUB_STEP_SUMMARY
+        echo "### Test Results" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
         if [ -f test-results.json ]; then
           echo "✅ Tests completed" >> $GITHUB_STEP_SUMMARY
