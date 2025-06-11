@@ -1,0 +1,22 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Run Claude Code Dangerously (Automatically)",
+      "type": "shell",
+      "command": "${workspaceFolder}/.vscode/startup.sh",
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "focus": true,
+        "clear": true,
+        "close": false,
+        "showReuseMessage": false,
+        "group": "claude"
+      },
+      "runOptions": {
+        "runOn": "folderOpen"
+      }
+    }
+  ]
+}
