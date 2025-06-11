@@ -31,4 +31,4 @@ Thumbs.db
 
 # MCP configuration - never commit this file as it may contain secrets
 .mcp.json
-mcp-json-templates/.secrets
+mcp-json-profiles/.secrets
