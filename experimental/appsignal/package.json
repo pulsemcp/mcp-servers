@@ -1,0 +1,20 @@
+{
+  "name": "mcp-server-appsignal",
+  "version": "0.1.0",
+  "description": "MCP server for AppSignal application performance monitoring and error tracking",
+  "author": "PulseMCP",
+  "license": "MIT",
+  "workspaces": [
+    "local",
+    "shared"
+  ],
+  "scripts": {
+    "install-all": "npm install && cd local && npm install && cd ../shared && npm install",
+    "build": "cd shared && npm run build && cd ../local && npm run build",
+    "dev": "cd local && npm run dev"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/pulsemcp/mcp-servers.git"
+  }
+}
