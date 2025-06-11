@@ -1,0 +1,23 @@
+{
+  "name": "test-mcp-client",
+  "version": "1.0.0",
+  "description": "Test client for MCP servers - drives integration tests via stdio transport",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx src/index.ts"
+  },
+  "keywords": ["mcp", "test", "client"],
+  "author": "PulseMCP",
+  "license": "MIT",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.1"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.3"
+  }
+}

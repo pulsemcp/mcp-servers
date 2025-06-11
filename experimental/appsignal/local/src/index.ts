@@ -1,26 +1,13 @@
 #!/usr/bin/env node
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import { registerResources, registerTools } from "mcp-server-appsignal-shared";
+import { createMCPServer } from "mcp-server-appsignal-shared";
 
 async function main() {
-  // Initialize MCP server
-  const server = new McpServer({
-    name: "mcp-server-appsignal",
-    version: "0.1.0",
-  }, {
-    capabilities: {
-      resources: {},
-      tools: {},
-    },
-  });
-
-  // Register resources and tools from shared module
-  registerResources(server);
-  registerTools(server);
-
-  // Start server
+  // Start server with default production client
   const transport = new StdioServerTransport();
+  const { server, registerHandlers } = createMCPServer();
+  
+  await registerHandlers(server);
   await server.connect(transport);
   
   console.error("AppSignal MCP server running on stdio");

@@ -1,8 +1,9 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 import { setSelectedAppId } from '../state.js';
+import { IAppsignalClient } from '../appsignal-client.js';
 
-export function selectAppIdTool(server: McpServer, enableMainTools?: () => void) {
+export function selectAppIdTool(server: McpServer, enableMainTools?: () => void, clientFactory?: () => IAppsignalClient) {
   return server.tool(
     "select_app_id",
     { appId: z.string().describe("The AppSignal application ID to select") },

@@ -1,8 +1,9 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 import { getSelectedAppId } from '../state.js';
+import { IAppsignalClient } from '../appsignal-client.js';
 
-export function getAlertDetailsTool(server: McpServer) {
+export function getAlertDetailsTool(server: McpServer, clientFactory: () => IAppsignalClient) {
   return server.tool(
     "get_alert_details",
     { alertId: z.string().describe("The unique identifier of the alert to retrieve") },
@@ -19,15 +20,28 @@ export function getAlertDetailsTool(server: McpServer) {
         };
       }
 
-      // TODO: Implement actual AppSignal API call
-      return {
-        content: [
-          {
-            type: "text",
-            text: `[STUB] Would fetch alert details for alert ID: ${alertId} in app: ${appId}`,
-          },
-        ],
-      };
+      try {
+        const client = clientFactory();
+        const alert = await client.getAlertDetails(alertId);
+        
+        return {
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify(alert, null, 2),
+            },
+          ],
+        };
+      } catch (error) {
+        return {
+          content: [
+            {
+              type: "text",
+              text: `Error fetching alert details: ${error instanceof Error ? error.message : 'Unknown error'}`,
+            },
+          ],
+        };
+      }
     }
   );
 }

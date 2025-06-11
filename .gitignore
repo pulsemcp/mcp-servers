@@ -9,6 +9,16 @@ dist/
 build/
 *.tsbuildinfo
 
+# TypeScript compiled files in source directories
+**/*.js
+**/*.js.map
+**/*.d.ts
+**/*.d.ts.map
+# Exclude build directories from the above patterns
+!**/dist/**
+!**/build/**
+!**/node_modules/**
+
 # Logs
 logs
 *.log

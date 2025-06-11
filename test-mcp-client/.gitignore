@@ -1,0 +1,19 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+
+# TypeScript compiled files in source directories
+src/**/*.js
+src/**/*.js.map
+src/**/*.d.ts
+
+# Environment variables
+.env
+
+# OS
+.DS_Store
+
+# Logs
+*.log

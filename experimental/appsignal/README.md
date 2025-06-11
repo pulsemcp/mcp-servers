@@ -103,7 +103,7 @@ npm run test:ui
 ### Test Structure
 
 Tests are located in the `tests/` directory:
-- `tests/unit/` - Unit tests for individual components
+- `tests/functional/` - Functional tests for individual components
 - `tests/mocks/` - Mock implementations and test data
 
 See `tests/README.md` for more details on the testing approach.

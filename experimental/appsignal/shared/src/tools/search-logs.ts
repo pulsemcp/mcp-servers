@@ -1,8 +1,9 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 import { getSelectedAppId } from '../state.js';
+import { IAppsignalClient } from '../appsignal-client.js';
 
-export function searchLogsTool(server: McpServer) {
+export function searchLogsTool(server: McpServer, clientFactory: () => IAppsignalClient) {
   return server.tool(
     "search_logs",
     {
@@ -23,15 +24,28 @@ export function searchLogsTool(server: McpServer) {
         };
       }
 
-      // TODO: Implement actual AppSignal API call
-      return {
-        content: [
-          {
-            type: "text",
-            text: `[STUB] Would search logs with query: "${query}" (limit: ${limit}, offset: ${offset}) in app: ${appId}`,
-          },
-        ],
-      };
+      try {
+        const client = clientFactory();
+        const logs = await client.searchLogs(query, limit, offset);
+        
+        return {
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify(logs, null, 2),
+            },
+          ],
+        };
+      } catch (error) {
+        return {
+          content: [
+            {
+              type: "text",
+              text: `Error searching logs: ${error instanceof Error ? error.message : 'Unknown error'}`,
+            },
+          ],
+        };
+      }
     }
   );
 }
