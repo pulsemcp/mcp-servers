@@ -25,5 +25,4 @@ npm start
 
 Set the following environment variables:
 - `APPSIGNAL_API_KEY`: Your AppSignal API key (required)
-- `APPSIGNAL_APP_ID`: Your AppSignal application ID (required)
-- `APPSIGNAL_ENVIRONMENT`: The AppSignal environment to query (optional, defaults to "production")
+- `APPSIGNAL_APP_ID`: Your AppSignal application ID (optional)

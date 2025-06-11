@@ -1,41 +1,22 @@
-import { Server } from '@modelcontextprotocol/sdk/server/index.js';
-import { ListResourcesRequestSchema, ReadResourceRequestSchema } from '@modelcontextprotocol/sdk/types.js';
+import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { getSelectedAppId } from './state.js';
 
-export function registerResources(server: Server) {
-  // List available resources
-  server.setRequestHandler(ListResourcesRequestSchema, async () => {
-    return {
-      resources: [
+export function registerResources(server: McpServer) {
+  server.resource(
+    "config",
+    "appsignal://config",
+    async (uri) => ({
+      contents: [
         {
-          uri: "appsignal://config",
-          name: "AppSignal Configuration",
-          description: "Current AppSignal configuration settings",
+          uri: uri.href,
           mimeType: "application/json",
+          text: JSON.stringify({
+            apiKey: process.env.APPSIGNAL_API_KEY ? "***configured***" : "not configured",
+            appId: process.env.APPSIGNAL_APP_ID || "not configured",
+            selectedAppId: getSelectedAppId() || "none",
+          }, null, 2),
         },
       ],
-    };
-  });
-
-  // Handle resource reading
-  server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
-    const { uri } = request.params;
-
-    if (uri === "appsignal://config") {
-      return {
-        contents: [
-          {
-            uri: "appsignal://config",
-            mimeType: "application/json",
-            text: JSON.stringify({
-              apiKey: process.env.APPSIGNAL_API_KEY ? "***configured***" : "not configured",
-              appId: process.env.APPSIGNAL_APP_ID || "not configured",
-              environment: process.env.APPSIGNAL_ENVIRONMENT || "production",
-            }, null, 2),
-          },
-        ],
-      };
-    }
-
-    throw new Error(`Unknown resource: ${uri}`);
-  });
+    })
+  );
 }
