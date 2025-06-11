@@ -4,25 +4,14 @@
   "description": "DESCRIPTION",
   "author": "YOUR_NAME",
   "license": "MIT",
-  "type": "module",
-  "main": "./build/index.js",
-  "files": ["build"],
+  "workspaces": [
+    "local",
+    "shared"
+  ],
   "scripts": {
-    "start": "node build/index.js",
-    "dev": "tsc -w",
-    "build": "tsc",
-    "prepare": "npm run build"
-  },
-  "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.0.4",
-    "@pulsemcp/shared": "file:../pulse-fetch/shared",
-    "dotenv": "^16.4.7",
-    "zod": "^3.24.1",
-    "zod-to-json-schema": "^3.24.1"
-  },
-  "devDependencies": {
-    "@types/node": "^22.10.6",
-    "typescript": "^5.7.3"
+    "install-all": "npm install && cd local && npm install && cd ../shared && npm install",
+    "build": "cd shared && npm run build && cd ../local && npm run build",
+    "dev": "cd local && npm run dev"
   },
   "repository": {
     "type": "git",
