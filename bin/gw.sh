@@ -147,6 +147,11 @@ if [ $? -eq 0 ]; then
   done
   
   # Handle MCP profile activation
+  # Default to base profile if no MCP options provided
+  if [ "$INTERACTIVE_MCP" = false ] && [ -z "$MCP_PROFILE" ]; then
+    MCP_PROFILE="base"
+  fi
+  
   if [ "$INTERACTIVE_MCP" = true ] || [ -n "$MCP_PROFILE" ]; then
     # Define profiles directory relative to main worktree
     PROFILES_DIR="$MAIN_WORKTREE/mcp-json-profiles"
