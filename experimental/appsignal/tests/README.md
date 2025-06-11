@@ -41,4 +41,4 @@ const registerTools = createRegisterTools(() => mockClient);
 ```
 
 ### Mock Data
-Mock data is centralized in `mocks/appsignal-client.mock.ts`:
+Mock data is centralized in `mocks/appsignal-client.mock.ts`:# Testing CI trigger
