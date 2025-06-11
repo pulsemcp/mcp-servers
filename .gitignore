@@ -26,3 +26,9 @@ yarn-error.log*
 # OS specific files
 .DS_Store
 Thumbs.db 
+
+.vscode/tasks.json
+
+# MCP configuration - never commit this file as it may contain secrets
+.mcp.json
+mcp-json-templates/.secrets
