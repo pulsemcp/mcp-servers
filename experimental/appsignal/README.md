@@ -84,8 +84,7 @@ This server is built and tested on macOS with Claude Desktop. It should work wit
 | Environment Variable     | Description                                                                        | Required | Default Value | Example                        |
 | ----------------------- | ---------------------------------------------------------------------------------- | -------- | ------------- | ------------------------------ |
 | `APPSIGNAL_API_KEY`     | Your AppSignal API key. Get one at [appsignal.com](https://appsignal.com/)        | Y        | N/A           | `your-api-key-here`            |
-| `APPSIGNAL_APP_ID`      | Your AppSignal application ID                                                      | Y        | N/A           | `5f3e4d2c1b0a9f8e7d6c5b4a`     |
-| `APPSIGNAL_ENVIRONMENT` | The AppSignal environment to query (production, staging, etc.)                     | N        | `production`  | `staging`                      |
+| `APPSIGNAL_APP_ID`      | Your AppSignal application ID                                                      | N        | N/A           | `5f3e4d2c1b0a9f8e7d6c5b4a`     |
 
 ## Claude Desktop
 
@@ -113,8 +112,7 @@ Modify your `claude_desktop_config.json` file to add the following:
         "mcp-server-appsignal"
       ],
       "env": {
-        "APPSIGNAL_API_KEY": "your-api-key-here",
-        "APPSIGNAL_APP_ID": "your-app-id-here"
+        "APPSIGNAL_API_KEY": "your-api-key-here"
       }
     }
   }

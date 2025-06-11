@@ -29,7 +29,6 @@ export function registerResources(server: Server) {
             text: JSON.stringify({
               apiKey: process.env.APPSIGNAL_API_KEY ? "***configured***" : "not configured",
               appId: process.env.APPSIGNAL_APP_ID || "not configured",
-              environment: process.env.APPSIGNAL_ENVIRONMENT || "production",
             }, null, 2),
           },
         ],

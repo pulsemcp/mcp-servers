@@ -73,12 +73,8 @@ if (!process.env.APPSIGNAL_API_KEY) {
 	throw new Error("APPSIGNAL_API_KEY is required in .env file");
 }
 
-if (!process.env.APPSIGNAL_APP_ID) {
-	throw new Error("APPSIGNAL_APP_ID is required in .env file");
-}
-
 const API_KEY = process.env.APPSIGNAL_API_KEY;
-const APP_ID = process.env.APPSIGNAL_APP_ID;
+const APP_ID = process.env.APPSIGNAL_APP_ID; // Optional
 
 async function test() {
 	const client = new AppSignalApiClient(API_KEY, APP_ID);

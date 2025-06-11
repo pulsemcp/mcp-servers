@@ -32,8 +32,7 @@ experimental/appsignal/
 ## Environment Variables
 
 - `APPSIGNAL_API_KEY`: Required for API authentication
-- `APPSIGNAL_APP_ID`: Required to identify the application
-- `APPSIGNAL_ENVIRONMENT`: Optional, defaults to "production"
+- `APPSIGNAL_APP_ID`: Optional, used to identify the application if provided
 
 ## Development Commands
 

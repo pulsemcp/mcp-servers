@@ -97,12 +97,12 @@ export function registerTools(server: Server) {
     const apiKey = process.env.APPSIGNAL_API_KEY;
     const appId = process.env.APPSIGNAL_APP_ID;
 
-    if (!apiKey || !appId) {
+    if (!apiKey) {
       return {
         content: [
           {
             type: "text",
-            text: "Error: APPSIGNAL_API_KEY and APPSIGNAL_APP_ID environment variables must be configured",
+            text: "Error: APPSIGNAL_API_KEY environment variable must be configured",
           },
         ],
       };
