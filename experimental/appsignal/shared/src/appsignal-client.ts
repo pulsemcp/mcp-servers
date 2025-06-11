@@ -24,7 +24,11 @@ export interface IAppsignalClient {
 
 // Stub implementation for now
 export class AppsignalClient implements IAppsignalClient {
-  constructor(private apiKey: string, private appId: string) {}
+  constructor(private readonly apiKey: string, private readonly appId: string) {
+    // These will be used when implementing actual API calls
+    void this.apiKey;
+    void this.appId;
+  }
 
   async getAlertDetails(_alertId: string): Promise<Alert> {
     // TODO: Implement actual API call using this.apiKey and this.appId
