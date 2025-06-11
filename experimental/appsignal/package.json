@@ -11,10 +11,18 @@
   "scripts": {
     "install-all": "npm install && cd local && npm install && cd ../shared && npm install",
     "build": "cd shared && npm run build && cd ../local && npm run build",
-    "dev": "cd local && npm run dev"
+    "dev": "cd local && npm run dev",
+    "test": "vitest",
+    "test:ui": "vitest --ui",
+    "test:run": "vitest run"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/pulsemcp/mcp-servers.git"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "@vitest/ui": "^3.2.3",
+    "vitest": "^3.2.3"
   }
 }

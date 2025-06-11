@@ -1,25 +1,28 @@
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { ListToolsRequestSchema, CallToolRequestSchema } from '@modelcontextprotocol/sdk/types.js';
 import { z } from 'zod';
+import { IAppsignalClient, AppsignalClient } from './appsignal-client.js';
 
 // Tool schemas
-const GetAlertDetailsSchema = z.object({
+export const GetAlertDetailsSchema = z.object({
   alertId: z.string().describe("The ID of the alert to retrieve"),
 });
 
-const SearchLogsSchema = z.object({
+export const SearchLogsSchema = z.object({
   query: z.string().describe("The search query for logs"),
   limit: z.number().optional().default(100).describe("Maximum number of logs to return"),
   offset: z.number().optional().default(0).describe("Offset for pagination"),
 });
 
-const GetLogsInDatetimeRangeSchema = z.object({
+export const GetLogsInDatetimeRangeSchema = z.object({
   startTime: z.string().describe("Start time in ISO 8601 format (e.g., 2024-01-15T10:00:00Z)"),
   endTime: z.string().describe("End time in ISO 8601 format (e.g., 2024-01-15T11:00:00Z)"),
   limit: z.number().optional().default(100).describe("Maximum number of logs to return"),
 });
 
-export function registerTools(server: Server) {
+// Factory function to create registerTools with dependency injection
+export function createRegisterTools(clientFactory: (apiKey: string, appId: string) => IAppsignalClient) {
+  return function registerTools(server: Server) {
   // List available tools
   server.setRequestHandler(ListToolsRequestSchema, async () => {
     return {
@@ -89,67 +92,118 @@ export function registerTools(server: Server) {
     };
   });
 
-  // Handle tool calls
-  server.setRequestHandler(CallToolRequestSchema, async (request) => {
-    const { name, arguments: args } = request.params;
+    // Handle tool calls
+    server.setRequestHandler(CallToolRequestSchema, async (request) => {
+      const { name, arguments: args } = request.params;
 
-    // Check for required environment variables
-    const apiKey = process.env.APPSIGNAL_API_KEY;
-    const appId = process.env.APPSIGNAL_APP_ID;
+      // Check for required environment variables
+      const apiKey = process.env.APPSIGNAL_API_KEY;
+      const appId = process.env.APPSIGNAL_APP_ID;
 
-    if (!apiKey || !appId) {
-      return {
-        content: [
-          {
-            type: "text",
-            text: "Error: APPSIGNAL_API_KEY and APPSIGNAL_APP_ID environment variables must be configured",
-          },
-        ],
-      };
-    }
+      if (!apiKey || !appId) {
+        return {
+          content: [
+            {
+              type: "text",
+              text: "Error: APPSIGNAL_API_KEY and APPSIGNAL_APP_ID environment variables must be configured",
+            },
+          ],
+        };
+      }
 
-    if (name === "get_alert_details") {
-      const validatedArgs = GetAlertDetailsSchema.parse(args);
-      
-      // TODO: Implement actual AppSignal API call
-      return {
-        content: [
-          {
-            type: "text",
-            text: `[STUB] Would fetch alert details for alert ID: ${validatedArgs.alertId}`,
-          },
-        ],
-      };
-    }
+      // Create client instance
+      const client = clientFactory(apiKey, appId);
 
-    if (name === "search_logs") {
-      const validatedArgs = SearchLogsSchema.parse(args);
-      
-      // TODO: Implement actual AppSignal API call
-      return {
-        content: [
-          {
-            type: "text",
-            text: `[STUB] Would search logs with query: "${validatedArgs.query}" (limit: ${validatedArgs.limit}, offset: ${validatedArgs.offset})`,
-          },
-        ],
-      };
-    }
+      if (name === "get_alert_details") {
+        const validatedArgs = GetAlertDetailsSchema.parse(args);
+        
+        try {
+          const alert = await client.getAlertDetails(validatedArgs.alertId);
+          return {
+            content: [
+              {
+                type: "text",
+                text: JSON.stringify(alert, null, 2),
+              },
+            ],
+          };
+        } catch (error) {
+          return {
+            content: [
+              {
+                type: "text",
+                text: `Error fetching alert details: ${error instanceof Error ? error.message : 'Unknown error'}`,
+              },
+            ],
+            isError: true,
+          };
+        }
+      }
 
-    if (name === "get_logs_in_datetime_range") {
-      const validatedArgs = GetLogsInDatetimeRangeSchema.parse(args);
-      
-      // TODO: Implement actual AppSignal API call
-      return {
-        content: [
-          {
-            type: "text",
-            text: `[STUB] Would fetch logs between ${validatedArgs.startTime} and ${validatedArgs.endTime} (limit: ${validatedArgs.limit})`,
-          },
-        ],
-      };
-    }
+      if (name === "search_logs") {
+        const validatedArgs = SearchLogsSchema.parse(args);
+        
+        try {
+          const logs = await client.searchLogs(
+            validatedArgs.query,
+            validatedArgs.limit,
+            validatedArgs.offset
+          );
+          return {
+            content: [
+              {
+                type: "text",
+                text: JSON.stringify(logs, null, 2),
+              },
+            ],
+          };
+        } catch (error) {
+          return {
+            content: [
+              {
+                type: "text",
+                text: `Error searching logs: ${error instanceof Error ? error.message : 'Unknown error'}`,
+              },
+            ],
+            isError: true,
+          };
+        }
+      }
 
-    throw new Error(`Unknown tool: ${name}`);
-  });
+      if (name === "get_logs_in_datetime_range") {
+        const validatedArgs = GetLogsInDatetimeRangeSchema.parse(args);
+        
+        try {
+          const logs = await client.getLogsInDatetimeRange(
+            validatedArgs.startTime,
+            validatedArgs.endTime,
+            validatedArgs.limit
+          );
+          return {
+            content: [
+              {
+                type: "text",
+                text: JSON.stringify(logs, null, 2),
+              },
+            ],
+          };
+        } catch (error) {
+          return {
+            content: [
+              {
+                type: "text",
+                text: `Error fetching logs in range: ${error instanceof Error ? error.message : 'Unknown error'}`,
+              },
+            ],
+            isError: true,
+          };
+        }
+      }
+
+      throw new Error(`Unknown tool: ${name}`);
+    });
+  };
 }
+
+// Default export for backward compatibility
+export const registerTools = createRegisterTools((apiKey, appId) => new AppsignalClient(apiKey, appId));
