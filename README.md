@@ -13,9 +13,19 @@ You can have confidence that any Pulse-branded MCP server was built with these i
 5) **Reliability**. You should have confidence that you can deploy our servers in a production application serving mass market consumers or business clients.
 6) **Future-proof**. We sit on the bleeding edge of the MCP specification, working to push the ecosystem forward. As such, you can be sure that if you commit to baking our server into your workflow, it will self-improve over time to take advantage of the latest and greatest MCP features. 
 
+## Repository Structure
+
+- **`productionized/`**: Production-ready MCP servers (see [productionized/README.md](./productionized/README.md) for status)
+  - `pulse-fetch/`: Pull internet resources into context
+- **`experimental/`**: MCP servers in active development
+- **`mcp-server-template/`**: Template for creating new MCP servers
+- **`mcp-json-profiles/`**: JSON profiles for MCP configuration
+
 ## Servers available
 
-### Pulse Fetch
+### Production Servers
+
+#### Pulse Fetch
 
 Purpose: Pull a specific resource from the open internet into context.
 
@@ -27,6 +37,10 @@ Highlights:
 - Offers MCP Prompts so end-users don't have to type "use the Pulse fetch server to..."
 - Option to configure Firecrawl API key to reliably work around anti-bot technology
 - Option to configure Oxylabs API key to fallback to when Firecrawl fails
+
+### Experimental Servers
+
+See the [experimental/](./experimental/) directory for servers currently in development.
 
 ## Contributing
 

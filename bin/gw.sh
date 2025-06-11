@@ -120,31 +120,31 @@ git worktree add "$NEW_WORKTREE_PATH" -b "$BRANCH_NAME"
 if [ $? -eq 0 ]; then
   echo "Worktree created successfully!"
   
-  # Copy .env files if they exist
-  echo "Copying environment files..."
+  # Copy all gitignored files from source worktree
+  echo "Copying gitignored files (e.g., .env files)..."
   
-  # Define the files to copy (adjust based on your project structure)
-  FILES_TO_COPY=(
-    ".env"
-    ".env.local"
-    ".vscode/tasks.json"
-  )
+  # Method 1: Use rsync to copy everything, then remove tracked files
+  # This ensures we get all ignored files including those in subdirectories
   
-  # Copy each file if it exists (from current worktree)
-  for FILE in "${FILES_TO_COPY[@]}"; do
-    SOURCE_FILE="$CURRENT_ROOT/$FILE"
-    if [ -f "$SOURCE_FILE" ]; then
-      TARGET_FILE="$NEW_WORKTREE_PATH/$FILE"
-      TARGET_DIR=$(dirname "$TARGET_FILE")
-      
-      # Create target directory if it doesn't exist
-      mkdir -p "$TARGET_DIR"
-      
-      # Copy the file
-      cp "$SOURCE_FILE" "$TARGET_FILE"
-      echo "  ✓ Copied $FILE"
-    fi
+  # First, copy everything from source to destination
+  rsync -a --exclude='.git' "$CURRENT_ROOT/" "$NEW_WORKTREE_PATH/"
+  
+  # Then remove all tracked files from the destination
+  # We do this by getting a list of all tracked files and removing them
+  cd "$NEW_WORKTREE_PATH"
+  git ls-files | while IFS= read -r file; do
+    rm -f "$file"
   done
+  
+  # Clean up empty directories that might have been left
+  find . -type d -empty -delete 2>/dev/null || true
+  
+  # Count how many files were copied
+  COPIED_COUNT=$(find . -type f -not -path './.git/*' | wc -l)
+  echo "  ✓ Copied $COPIED_COUNT gitignored file(s)"
+  
+  # Return to original directory
+  cd "$CURRENT_ROOT"
   
   # Handle MCP profile activation
   # Default to base profile if no MCP options provided
