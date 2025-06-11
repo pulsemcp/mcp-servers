@@ -1,189 +1,163 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { Server } from '@modelcontextprotocol/sdk/server/index.js';
-import { CallToolRequestSchema } from '@modelcontextprotocol/sdk/types.js';
-import { createRegisterTools, GetAlertDetailsSchema, SearchLogsSchema } from '../../shared/src/tools';
-import { createMockAppsignalClient, mockAlert, mockLogEntries } from '../mocks/appsignal-client.mock';
-import type { IAppsignalClient } from '../../shared/src/appsignal-client';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { registerTools } from '../../shared/src/tools';
+import { setSelectedAppId, getSelectedAppId } from '../../shared/src/state';
+
+// Mock the state module
+vi.mock('../../shared/src/state', () => ({
+  setSelectedAppId: vi.fn(),
+  getSelectedAppId: vi.fn(),
+}));
 
 describe('AppSignal MCP Tools', () => {
-  let mockServer: Server;
-  let mockClient: IAppsignalClient;
-  let callToolHandler: any;
+  let mockServer: McpServer;
+  let registeredTools: Map<string, any>;
 
   beforeEach(() => {
     // Reset environment variables
     process.env.APPSIGNAL_API_KEY = 'test-api-key';
     process.env.APPSIGNAL_APP_ID = 'test-app-id';
 
-    // Create mock client
-    mockClient = createMockAppsignalClient();
-
-    // Create mock server
+    // Reset mocks
+    vi.clearAllMocks();
+    
+    // Create a mock server that captures tool registrations
+    registeredTools = new Map();
     mockServer = {
-      setRequestHandler: vi.fn((schema, handler) => {
-        if (schema === CallToolRequestSchema) {
-          callToolHandler = handler;
-        }
+      tool: vi.fn((name, schema, handler) => {
+        const tool = { name, schema, handler, enabled: true };
+        registeredTools.set(name, tool);
+        return {
+          enable: () => { tool.enabled = true; },
+          disable: () => { tool.enabled = false; },
+        };
       }),
     } as any;
-
-    // Register tools with mock client factory
-    const registerTools = createRegisterTools(() => mockClient);
-    registerTools(mockServer);
   });
 
-  describe('Environment Variable Validation', () => {
-    it('should return error when APPSIGNAL_API_KEY is missing', async () => {
+  afterEach(() => {
+    delete process.env.APPSIGNAL_API_KEY;
+    delete process.env.APPSIGNAL_APP_ID;
+  });
+
+  describe('Tool Registration', () => {
+    it('should register all tools when API key is provided', () => {
+      registerTools(mockServer);
+
+      expect(mockServer.tool).toHaveBeenCalledTimes(5);
+      expect(registeredTools.has('get_app_ids')).toBe(true);
+      expect(registeredTools.has('select_app_id')).toBe(true);
+      expect(registeredTools.has('get_alert_details')).toBe(true);
+      expect(registeredTools.has('search_logs')).toBe(true);
+      expect(registeredTools.has('get_logs_in_datetime_range')).toBe(true);
+    });
+
+    it('should throw error when API key is missing', () => {
       delete process.env.APPSIGNAL_API_KEY;
 
-      const result = await callToolHandler({
-        params: {
-          name: 'get_alert_details',
-          arguments: { alertId: 'test-123' },
-        },
-      });
-
-      expect(result.content[0].text).toContain('APPSIGNAL_API_KEY and APPSIGNAL_APP_ID environment variables must be configured');
+      expect(() => registerTools(mockServer)).toThrow('APPSIGNAL_API_KEY environment variable must be configured');
     });
 
-    it('should return error when APPSIGNAL_APP_ID is missing', async () => {
+    it('should disable main tools when no app ID is provided', () => {
       delete process.env.APPSIGNAL_APP_ID;
+      vi.mocked(getSelectedAppId).mockReturnValue(null);
 
-      const result = await callToolHandler({
-        params: {
-          name: 'search_logs',
-          arguments: { query: 'error' },
-        },
-      });
+      registerTools(mockServer);
 
-      expect(result.content[0].text).toContain('APPSIGNAL_API_KEY and APPSIGNAL_APP_ID environment variables must be configured');
+      // Check that main tools are disabled
+      expect(registeredTools.get('get_alert_details').enabled).toBe(false);
+      expect(registeredTools.get('search_logs').enabled).toBe(false);
+      expect(registeredTools.get('get_logs_in_datetime_range').enabled).toBe(false);
+      
+      // But app selection tools should be enabled
+      expect(registeredTools.get('get_app_ids').enabled).toBe(true);
+      expect(registeredTools.get('select_app_id').enabled).toBe(true);
     });
   });
 
-  describe('get_alert_details Tool', () => {
-    it('should successfully fetch alert details', async () => {
-      vi.mocked(mockClient.getAlertDetails).mockResolvedValue(mockAlert);
-
-      const result = await callToolHandler({
-        params: {
-          name: 'get_alert_details',
-          arguments: { alertId: 'alert-123' },
-        },
-      });
-
-      expect(mockClient.getAlertDetails).toHaveBeenCalledWith('alert-123');
-      expect(JSON.parse(result.content[0].text)).toEqual(mockAlert);
-      expect(result.isError).toBeUndefined();
+  describe('Tool Execution', () => {
+    beforeEach(() => {
+      registerTools(mockServer);
     });
 
-    it('should handle errors gracefully', async () => {
-      vi.mocked(mockClient.getAlertDetails).mockRejectedValue(new Error('API rate limit exceeded'));
+    it('should handle get_alert_details with valid app ID', async () => {
+      const tool = registeredTools.get('get_alert_details');
+      const result = await tool.handler({ alertId: 'alert-123' });
 
-      const result = await callToolHandler({
-        params: {
-          name: 'get_alert_details',
-          arguments: { alertId: 'alert-123' },
-        },
-      });
-
-      expect(result.content[0].text).toContain('Error fetching alert details: API rate limit exceeded');
-      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('Would fetch alert details for alert ID: alert-123');
+      expect(result.content[0].text).toContain('app: test-app-id');
     });
 
-    it('should validate alertId parameter', async () => {
-      // Test with invalid arguments
-      await expect(async () => {
-        await callToolHandler({
-          params: {
-            name: 'get_alert_details',
-            arguments: { }, // missing alertId
-          },
-        });
-      }).rejects.toThrow();
+    it('should handle search_logs with parameters', async () => {
+      const tool = registeredTools.get('search_logs');
+      const result = await tool.handler({ 
+        query: 'error level:critical',
+        limit: 50,
+        offset: 10 
+      });
+
+      expect(result.content[0].text).toContain('Would search logs with query: "error level:critical"');
+      expect(result.content[0].text).toContain('limit: 50');
+      expect(result.content[0].text).toContain('offset: 10');
+    });
+
+    it('should handle get_logs_in_datetime_range', async () => {
+      const tool = registeredTools.get('get_logs_in_datetime_range');
+      const result = await tool.handler({
+        start: '2024-01-15T10:00:00Z',
+        end: '2024-01-15T11:00:00Z',
+        limit: 200
+      });
+
+      expect(result.content[0].text).toContain('Would fetch logs between 2024-01-15T10:00:00Z and 2024-01-15T11:00:00Z');
+      expect(result.content[0].text).toContain('limit: 200');
+    });
+
+    it('should handle select_app_id and enable tools', async () => {
+      // Start with tools disabled
+      delete process.env.APPSIGNAL_APP_ID;
+      vi.mocked(getSelectedAppId).mockReturnValue(null);
+      
+      // Re-register to get disabled state
+      mockServer = {
+        tool: vi.fn((name, schema, handler) => {
+          const tool = { name, schema, handler, enabled: true };
+          registeredTools.set(name, tool);
+          return {
+            enable: vi.fn(() => { tool.enabled = true; }),
+            disable: vi.fn(() => { tool.enabled = false; }),
+          };
+        }),
+      } as any;
+      
+      registerTools(mockServer);
+
+      // Verify main tools are disabled
+      expect(registeredTools.get('get_alert_details').enabled).toBe(false);
+
+      // Call select_app_id
+      const selectTool = registeredTools.get('select_app_id');
+      await selectTool.handler({ appId: 'new-app-123' });
+
+      // Verify setSelectedAppId was called
+      expect(setSelectedAppId).toHaveBeenCalledWith('new-app-123');
     });
   });
 
-  describe('search_logs Tool', () => {
-    it('should search logs with default parameters', async () => {
-      vi.mocked(mockClient.searchLogs).mockResolvedValue(mockLogEntries);
-
-      const result = await callToolHandler({
-        params: {
-          name: 'search_logs',
-          arguments: { query: 'error level:critical' },
-        },
-      });
-
-      expect(mockClient.searchLogs).toHaveBeenCalledWith('error level:critical', 100, 0);
-      expect(JSON.parse(result.content[0].text)).toEqual(mockLogEntries);
+  describe('Error Handling', () => {
+    beforeEach(() => {
+      registerTools(mockServer);
     });
 
-    it('should search logs with custom limit and offset', async () => {
-      vi.mocked(mockClient.searchLogs).mockResolvedValue(mockLogEntries);
+    it('should return error when no app ID is selected', async () => {
+      delete process.env.APPSIGNAL_APP_ID;
+      vi.mocked(getSelectedAppId).mockReturnValue(null);
 
-      const result = await callToolHandler({
-        params: {
-          name: 'search_logs',
-          arguments: {
-            query: 'database',
-            limit: 50,
-            offset: 20,
-          },
-        },
-      });
+      const tool = registeredTools.get('get_alert_details');
+      const result = await tool.handler({ alertId: 'alert-123' });
 
-      expect(mockClient.searchLogs).toHaveBeenCalledWith('database', 50, 20);
-    });
-
-    it('should handle search errors', async () => {
-      vi.mocked(mockClient.searchLogs).mockRejectedValue(new Error('Invalid search syntax'));
-
-      const result = await callToolHandler({
-        params: {
-          name: 'search_logs',
-          arguments: { query: 'invalid::query' },
-        },
-      });
-
-      expect(result.content[0].text).toContain('Error searching logs: Invalid search syntax');
-      expect(result.isError).toBe(true);
-    });
-  });
-
-  describe('Tool Schema Validation', () => {
-    it('should validate search logs schema', () => {
-      const validInput = { query: 'test', limit: 10, offset: 5 };
-      const parsed = SearchLogsSchema.parse(validInput);
-      expect(parsed).toEqual(validInput);
-    });
-
-    it('should provide defaults for optional parameters', () => {
-      const input = { query: 'test' };
-      const parsed = SearchLogsSchema.parse(input);
-      expect(parsed).toEqual({
-        query: 'test',
-        limit: 100,
-        offset: 0,
-      });
-    });
-
-    it('should reject invalid schema', () => {
-      expect(() => {
-        SearchLogsSchema.parse({ limit: 10 }); // missing required query
-      }).toThrow();
-    });
-  });
-
-  describe('Unknown Tool Handling', () => {
-    it('should throw error for unknown tool', async () => {
-      await expect(async () => {
-        await callToolHandler({
-          params: {
-            name: 'unknown_tool',
-            arguments: {},
-          },
-        });
-      }).rejects.toThrow('Unknown tool: unknown_tool');
+      expect(result.content[0].text).toContain('Error: No app ID selected');
+      expect(result.content[0].text).toContain('Please use select_app_id tool first');
     });
   });
 });
