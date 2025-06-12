@@ -123,28 +123,57 @@ if [ $? -eq 0 ]; then
   # Copy all gitignored files from source worktree
   echo "Copying gitignored files (e.g., .env files)..."
   
-  # Method 1: Use rsync to copy everything, then remove tracked files
-  # This ensures we get all ignored files including those in subdirectories
-  
-  # First, copy everything from source to destination
-  rsync -a --exclude='.git' "$CURRENT_ROOT/" "$NEW_WORKTREE_PATH/"
-  
-  # Then remove all tracked files from the destination
-  # We do this by getting a list of all tracked files and removing them
-  cd "$NEW_WORKTREE_PATH"
-  git ls-files | while IFS= read -r file; do
-    rm -f "$file"
-  done
-  
-  # Clean up empty directories that might have been left
-  find . -type d -empty -delete 2>/dev/null || true
-  
-  # Count how many files were copied
-  COPIED_COUNT=$(find . -type f -not -path './.git/*' | wc -l)
-  echo "  ✓ Copied $COPIED_COUNT gitignored file(s)"
-  
-  # Return to original directory
+  # Use git to find all ignored files and copy them to the new worktree
   cd "$CURRENT_ROOT"
+  
+  # Get list of all ignored files (excluding .git directory)
+  IGNORED_FILES=$(git status --porcelain --ignored | grep '^!!' | sed 's/^!! //' | grep -v '^\.git/')
+  
+  # Count files for progress
+  COPIED_COUNT=0
+  
+  # Copy each ignored file/directory to the new worktree
+  if [ -n "$IGNORED_FILES" ]; then
+    echo "$IGNORED_FILES" | while IFS= read -r ignored_item; do
+      if [ -e "$ignored_item" ]; then
+        # Create parent directory in destination if needed
+        DEST_DIR=$(dirname "$NEW_WORKTREE_PATH/$ignored_item")
+        mkdir -p "$DEST_DIR"
+        
+        # Copy the file or directory
+        if [ -d "$ignored_item" ]; then
+          cp -r "$ignored_item" "$NEW_WORKTREE_PATH/$ignored_item" 2>/dev/null || true
+        else
+          cp "$ignored_item" "$NEW_WORKTREE_PATH/$ignored_item" 2>/dev/null || true
+        fi
+        
+        ((COPIED_COUNT++))
+      fi
+    done
+  fi
+  
+  # Also check for any untracked files that might be useful (like .env files)
+  # This catches files that are untracked but not explicitly ignored
+  UNTRACKED_ENV_FILES=$(find . -name '.env*' -type f | grep -v '^\.git/' | while read -r f; do
+    # Check if it's actually untracked
+    git ls-files --error-unmatch "$f" >/dev/null 2>&1 || echo "$f"
+  done)
+  
+  if [ -n "$UNTRACKED_ENV_FILES" ]; then
+    echo "$UNTRACKED_ENV_FILES" | while IFS= read -r env_file; do
+      if [ -e "$env_file" ]; then
+        # Create parent directory in destination if needed
+        DEST_DIR=$(dirname "$NEW_WORKTREE_PATH/$env_file")
+        mkdir -p "$DEST_DIR"
+        
+        # Copy the file
+        cp "$env_file" "$NEW_WORKTREE_PATH/$env_file" 2>/dev/null || true
+        ((COPIED_COUNT++))
+      fi
+    done
+  fi
+  
+  echo "  ✓ Copied $COPIED_COUNT gitignored/untracked file(s)"
   
   # Handle MCP profile activation
   # Default to base profile if no MCP options provided
