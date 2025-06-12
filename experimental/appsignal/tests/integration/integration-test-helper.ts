@@ -10,7 +10,7 @@ const __dirname = path.dirname(__filename);
  * Helper to create a TestMCPClient with inline mock definitions for integration tests.
  * This creates a real MCP client that connects to a test server via stdio.
  * Mock data is passed to the server via environment variables.
- * 
+ *
  * This is different from the functional test mocks which use vitest mocks.
  * Integration tests use real MCP protocol communication with a mocked backend.
  */
@@ -26,14 +26,16 @@ export async function createMockedClient(mocks: {
       query,
       response,
     })),
-    getLogsInDatetimeRange: Object.entries(mocks.dateRangeResponses || {}).map(([key, response]) => {
-      const [start, end] = key.split('|');
-      return { start, end, response };
-    }),
+    getLogsInDatetimeRange: Object.entries(mocks.dateRangeResponses || {}).map(
+      ([key, response]) => {
+        const [start, end] = key.split('|');
+        return { start, end, response };
+      }
+    ),
   };
 
   const serverPath = path.join(__dirname, '../../local/build/src/index.integration.js');
-  
+
   const client = new TestMCPClient({
     serverPath,
     env: {
@@ -50,7 +52,7 @@ export async function createMockedClient(mocks: {
 
 /**
  * Example usage in a test:
- * 
+ *
  * const client = await createMockedClient({
  *   alerts: {
  *     'alert-123': {

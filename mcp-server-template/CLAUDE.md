@@ -31,12 +31,14 @@ mcp-server-template/
 ## Implementation Guide
 
 The template provides:
+
 - Basic MCP server setup with stdio transport
 - Placeholder handlers for resources and tools
 - Standard TypeScript configuration
 - Common npm scripts (build, start, dev)
 
 To implement your server:
+
 1. Add your tools in the `ListToolsRequestSchema` handler
 2. Implement tool execution in the `CallToolRequestSchema` handler
 3. Add your resources in the `ListResourcesRequestSchema` handler

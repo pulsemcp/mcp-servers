@@ -11,11 +11,13 @@ Pulse Fetch is an MCP server that pulls specific resources from the internet int
 The server uses a three-layer architecture:
 
 1. **`shared/`**: Core business logic, resources, and tools
+
    - Exports `registerResources()` and `registerTools()` functions
    - Contains all feature implementations
    - Built as a separate package referenced by local/remote
 
 2. **`local/`**: Stdio transport implementation
+
    - Minimal wrapper around shared functionality
    - Uses StdioServerTransport for Claude Desktop integration
    - References shared via: `"pulse-fetch-shared": "file:../shared"`
@@ -27,6 +29,7 @@ The server uses a three-layer architecture:
 ## Development Commands
 
 ### Shared Module
+
 ```bash
 cd shared
 npm install
@@ -34,6 +37,7 @@ npm run build
 ```
 
 ### Local Module
+
 ```bash
 cd local
 npm install
@@ -52,5 +56,6 @@ npm run dev       # Development with auto-reload (builds shared first)
 ## Planned Features
 
 According to the README, future implementations will include:
+
 - Basic scraping tools
 - Web unblocker tools for accessing protected content

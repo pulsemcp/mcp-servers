@@ -1,14 +1,16 @@
-import type { ToolResponse } from "./types.js";
+import type { ToolResponse } from './types.js';
 
 /**
  * Create a standard text response
  */
 export function createTextResponse(text: string): ToolResponse {
   return {
-    content: [{
-      type: "text",
-      text,
-    }],
+    content: [
+      {
+        type: 'text',
+        text,
+      },
+    ],
   };
 }
 

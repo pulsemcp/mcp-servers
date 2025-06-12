@@ -16,6 +16,7 @@ This directory contains experimental MCP servers that are in active development 
 ## Standards
 
 Even experimental servers should follow the repository standards:
+
 - TypeScript with ES2022 target
 - ES modules
 - Use `@modelcontextprotocol/sdk` and `zod`
@@ -25,6 +26,7 @@ Even experimental servers should follow the repository standards:
 ## Testing
 
 Experimental servers are good places to:
+
 - Try new MCP features
 - Test different architectural patterns
 - Prototype integrations

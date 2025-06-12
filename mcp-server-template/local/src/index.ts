@@ -1,14 +1,14 @@
 #!/usr/bin/env node
-import { Server } from "@modelcontextprotocol/sdk/server/index.js";
-import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import { registerResources, registerTools } from "mcp-server-NAME-shared";
+import { Server } from '@modelcontextprotocol/sdk/server/index.js';
+import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
+import { registerResources, registerTools } from 'mcp-server-NAME-shared';
 
 async function main() {
   // Initialize server
   const server = new Server(
     {
-      name: "mcp-server-NAME",
-      version: "0.1.0",
+      name: 'mcp-server-NAME',
+      version: '0.1.0',
     },
     {
       capabilities: {
@@ -25,12 +25,12 @@ async function main() {
   // Start server
   const transport = new StdioServerTransport();
   await server.connect(transport);
-  
-  console.error("NAME MCP server running on stdio");
+
+  console.error('NAME MCP server running on stdio');
 }
 
 // Run the server
 main().catch((error) => {
-  console.error("Fatal error:", error);
+  console.error('Fatal error:', error);
   process.exit(1);
 });

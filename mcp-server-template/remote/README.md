@@ -5,6 +5,7 @@ This directory is reserved for the remote/HTTP implementation of the NAME MCP se
 ## Status
 
 Not yet implemented. The remote implementation will provide:
+
 - HTTP transport for hosted access
 - Authentication mechanisms
 - Rate limiting capabilities

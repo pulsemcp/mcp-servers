@@ -84,6 +84,7 @@ To add additional MCP servers to your setup:
 4. Replace any `{{SECRET_NAME}}` placeholders with actual values
 
 Example extension:
+
 ```json
 {
   "mcpServers": {

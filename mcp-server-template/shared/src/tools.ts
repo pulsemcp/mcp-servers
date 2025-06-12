@@ -4,7 +4,7 @@ import { z } from 'zod';
 
 // Example tool schema
 const ExampleToolSchema = z.object({
-  message: z.string().describe("The message to process"),
+  message: z.string().describe('The message to process'),
 });
 
 export function registerTools(server: Server) {
@@ -13,17 +13,17 @@ export function registerTools(server: Server) {
     return {
       tools: [
         {
-          name: "example_tool",
-          description: "An example tool that processes a message",
+          name: 'example_tool',
+          description: 'An example tool that processes a message',
           inputSchema: {
-            type: "object",
+            type: 'object',
             properties: {
               message: {
-                type: "string",
-                description: "The message to process",
+                type: 'string',
+                description: 'The message to process',
               },
             },
-            required: ["message"],
+            required: ['message'],
           },
         },
       ],
@@ -34,13 +34,13 @@ export function registerTools(server: Server) {
   server.setRequestHandler(CallToolRequestSchema, async (request) => {
     const { name, arguments: args } = request.params;
 
-    if (name === "example_tool") {
+    if (name === 'example_tool') {
       const validatedArgs = ExampleToolSchema.parse(args);
-      
+
       return {
         content: [
           {
-            type: "text",
+            type: 'text',
             text: `Processed message: ${validatedArgs.message}`,
           },
         ],
