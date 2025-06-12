@@ -238,7 +238,9 @@ if [ $? -eq 0 ]; then
               
               # Replace placeholder in .mcp.json
               if [ -n "$key" ] && [ -n "$value" ]; then
-                sed -i.bak "s|{{$key}}|$value|g" "$NEW_WORKTREE_PATH/.mcp.json"
+                # Escape special characters in the value for sed
+                escaped_value=$(printf '%s\n' "$value" | sed 's/[[\.*^$()+?{|]/\\&/g')
+                sed -i.bak "s|{{${key}}}|${escaped_value}|g" "$NEW_WORKTREE_PATH/.mcp.json"
               fi
             done < "$SECRETS_FILE"
             
