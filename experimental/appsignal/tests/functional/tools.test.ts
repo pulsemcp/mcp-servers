@@ -1,7 +1,8 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { registerTools } from '../../shared/src/tools';
+import { registerTools, createRegisterTools } from '../../shared/src/tools';
 import { setSelectedAppId, getSelectedAppId } from '../../shared/src/state';
+import { createMockAppsignalClient } from '../mocks/appsignal-client.functional-mock';
 
 // Mock the state module
 vi.mock('../../shared/src/state', () => ({
@@ -61,6 +62,7 @@ describe('AppSignal MCP Tools', () => {
     it('should disable main tools when no app ID is provided', () => {
       delete process.env.APPSIGNAL_APP_ID;
       vi.mocked(getSelectedAppId).mockReturnValue(undefined);
+      const registerTools = createRegisterTools(() => createMockAppsignalClient());
 
       registerTools(mockServer);
 
@@ -77,6 +79,7 @@ describe('AppSignal MCP Tools', () => {
 
   describe('Tool Execution', () => {
     beforeEach(() => {
+      const registerTools = createRegisterTools(() => createMockAppsignalClient());
       registerTools(mockServer);
     });
 
@@ -84,8 +87,10 @@ describe('AppSignal MCP Tools', () => {
       const tool = registeredTools.get('get_alert_details');
       const result = await tool.handler({ alertId: 'alert-123' });
 
-      expect(result.content[0].text).toContain('Would fetch alert details for alert ID: alert-123');
-      expect(result.content[0].text).toContain('app: test-app-id');
+      const alertData = JSON.parse(result.content[0].text);
+      expect(alertData.id).toBe('alert-123');
+      expect(alertData.status).toBe('active');
+      expect(alertData.affectedServices).toContain('api-service');
     });
 
     it('should handle search_logs with parameters', async () => {
@@ -96,9 +101,10 @@ describe('AppSignal MCP Tools', () => {
         offset: 10 
       });
 
-      expect(result.content[0].text).toContain('Would search logs with query: "error level:critical"');
-      expect(result.content[0].text).toContain('limit: 50');
-      expect(result.content[0].text).toContain('offset: 10');
+      const logs = JSON.parse(result.content[0].text);
+      expect(Array.isArray(logs)).toBe(true);
+      expect(logs[0]).toHaveProperty('message');
+      expect(logs[0].level).toBe('error');
     });
 
     it('should handle get_logs_in_datetime_range', async () => {
@@ -109,8 +115,10 @@ describe('AppSignal MCP Tools', () => {
         limit: 200
       });
 
-      expect(result.content[0].text).toContain('Would fetch logs between 2024-01-15T10:00:00Z and 2024-01-15T11:00:00Z');
-      expect(result.content[0].text).toContain('limit: 200');
+      const logs = JSON.parse(result.content[0].text);
+      expect(Array.isArray(logs)).toBe(true);
+      expect(logs[0]).toHaveProperty('timestamp');
+      expect(logs[0]).toHaveProperty('message');
     });
 
     it('should handle select_app_id and enable tools', async () => {
@@ -130,6 +138,7 @@ describe('AppSignal MCP Tools', () => {
         }),
       } as any;
       
+      const registerTools = createRegisterTools(() => createMockAppsignalClient());
       registerTools(mockServer);
 
       // Verify main tools are disabled
@@ -146,6 +155,7 @@ describe('AppSignal MCP Tools', () => {
 
   describe('Error Handling', () => {
     beforeEach(() => {
+      const registerTools = createRegisterTools(() => createMockAppsignalClient());
       registerTools(mockServer);
     });
 

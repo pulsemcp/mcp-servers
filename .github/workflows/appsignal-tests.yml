@@ -1,0 +1,72 @@
+name: AppSignal MCP Server Tests
+
+on:
+  push:
+    paths:
+      - 'experimental/appsignal/**'
+      - '.github/workflows/appsignal-tests.yml'
+  pull_request:
+    paths:
+      - 'experimental/appsignal/**'
+      - '.github/workflows/appsignal-tests.yml'
+
+jobs:
+  functional-tests:
+    name: Functional Tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: experimental/appsignal
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          
+      - name: Install dependencies
+        run: npm install
+        
+      - name: Build shared module
+        run: cd shared && npm install && npm run build
+        
+      - name: Build local module
+        run: cd local && npm install && npm run build
+        
+      - name: Run functional tests
+        run: npm run test:run
+
+  integration-tests:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: experimental/appsignal
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          
+      - name: Install dependencies
+        run: npm install
+        
+      - name: Install shared dependencies
+        run: cd shared && npm install
+        
+      - name: Install local dependencies
+        run: cd local && npm install
+        
+      - name: Install test-mcp-client dependencies
+        run: cd ../../test-mcp-client && npm install
+        
+      - name: Run integration tests
+        run: npm run test:integration
+        env:
+          APPSIGNAL_API_KEY: test-api-key
+          APPSIGNAL_APP_ID: test-app-id

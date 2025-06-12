@@ -7,7 +7,9 @@
   "scripts": {
     "build": "tsc",
     "start": "node dist/index.js",
+    "start:integration": "node build/src/index.integration.js",
     "dev": "tsx src/index.ts",
+    "dev:integration": "tsx src/index.integration.ts",
     "predev": "cd ../shared && npm run build",
     "prebuild": "cd ../shared && npm run build"
   },

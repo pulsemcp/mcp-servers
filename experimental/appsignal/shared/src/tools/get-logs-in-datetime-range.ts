@@ -1,8 +1,9 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 import { getSelectedAppId } from '../state.js';
+import { IAppsignalClient } from '../appsignal-client/appsignal-client.js';
 
-export function getLogsInDatetimeRangeTool(server: McpServer) {
+export function getLogsInDatetimeRangeTool(server: McpServer, clientFactory: () => IAppsignalClient) {
   return server.tool(
     "get_logs_in_datetime_range",
     {
@@ -23,15 +24,28 @@ export function getLogsInDatetimeRangeTool(server: McpServer) {
         };
       }
 
-      // TODO: Implement actual AppSignal API call
-      return {
-        content: [
-          {
-            type: "text",
-            text: `[STUB] Would fetch logs between ${start} and ${end} (limit: ${limit}) in app: ${appId}`,
-          },
-        ],
-      };
+      try {
+        const client = clientFactory();
+        const logs = await client.getLogsInDatetimeRange(start, end, limit);
+        
+        return {
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify(logs, null, 2),
+            },
+          ],
+        };
+      } catch (error) {
+        return {
+          content: [
+            {
+              type: "text",
+              text: `Error fetching logs: ${error instanceof Error ? error.message : 'Unknown error'}`,
+            },
+          ],
+        };
+      }
     }
   );
 }
