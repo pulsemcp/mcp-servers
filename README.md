@@ -2,6 +2,8 @@
 
 We build reliable servers thoughtfully designed for MCP Client-powered workflows.
 
+<!-- Test: Verify All CI Checks Passed works for non-AppSignal changes -->
+
 ## Design principles
 
 You can have confidence that any Pulse-branded MCP server was built with these ideas in mind:
