@@ -286,4 +286,166 @@ describe('AppSignal MCP Tools', () => {
       });
     });
   });
+
+  describe('get_log_incident Tool', () => {
+    it('should fetch log incident details successfully', async () => {
+      vi.mocked(getSelectedAppId).mockReturnValue('test-app-id');
+
+      registerToolsWithClient(mockClient);
+      const tool = registeredTools.get('get_log_incident');
+      const result = await tool.handler({ incidentId: 'log-123' });
+
+      const response = JSON.parse(result.content[0].text);
+      expect(response).toMatchObject({
+        id: 'log-123',
+        number: 123,
+        summary: 'High Error Rate',
+        severity: 'ERROR',
+        state: 'OPEN',
+        count: 156,
+        lastOccurredAt: '2024-01-15T10:30:00Z',
+        trigger: {
+          query: 'level:error service:api',
+        },
+      });
+    });
+
+    it('should handle errors when fetching log incident', async () => {
+      vi.mocked(getSelectedAppId).mockReturnValue('test-app-id');
+
+      const failingClient = createMockAppsignalClient();
+      failingClient.getLogIncident = vi.fn().mockRejectedValue(new Error('API request failed'));
+
+      registerToolsWithClient(failingClient);
+      const tool = registeredTools.get('get_log_incident');
+      const result = await tool.handler({ incidentId: 'log-456' });
+
+      expect(result.content[0].text).toContain(
+        'Error fetching log incident details: API request failed'
+      );
+    });
+
+    it('should require app ID to be selected', async () => {
+      delete process.env.APPSIGNAL_APP_ID;
+      vi.mocked(getSelectedAppId).mockReturnValue(undefined);
+
+      registerToolsWithClient(mockClient);
+      const tool = registeredTools.get('get_log_incident');
+      const result = await tool.handler({ incidentId: 'log-789' });
+
+      expect(result.content[0].text).toContain('Error: No app ID selected');
+    });
+  });
+
+  describe('search_logs Tool', () => {
+    it('should search logs successfully', async () => {
+      vi.mocked(getSelectedAppId).mockReturnValue('test-app-id');
+
+      registerToolsWithClient(mockClient);
+      const tool = registeredTools.get('search_logs');
+      const result = await tool.handler({
+        query: 'error',
+        limit: 10,
+      });
+
+      const response = JSON.parse(result.content[0].text);
+      expect(response.queryWindow).toBe(3600);
+      expect(response.lines).toHaveLength(1);
+      expect(response.lines[0]).toMatchObject({
+        timestamp: '2024-01-15T10:00:00Z',
+        severity: 'ERROR',
+        message: 'Database connection failed',
+        hostname: 'api-server-01',
+        attributes: expect.arrayContaining([
+          { key: 'service', value: 'api-service' },
+          { key: 'errorCode', value: 'DB_CONNECTION_ERROR' },
+        ]),
+      });
+      expect(response.formattedSummary).toContain('Found 1 log entries');
+    });
+
+    it('should search logs with severity filters', async () => {
+      vi.mocked(getSelectedAppId).mockReturnValue('test-app-id');
+
+      const customClient = createMockAppsignalClient();
+      customClient.searchLogs = vi
+        .fn()
+        .mockImplementation(async (query: string, limit?: number, severities?: string[]) => {
+          const lines = severities?.includes('error')
+            ? [
+                {
+                  id: 'log-filtered-1',
+                  timestamp: '2024-01-15T10:00:00Z',
+                  severity: 'ERROR',
+                  message: 'Filtered error log',
+                  hostname: 'api-server-01',
+                  group: 'api-service',
+                  attributes: [{ key: 'filtered', value: 'true' }],
+                },
+              ]
+            : [];
+
+          return {
+            queryWindow: 3600,
+            lines,
+            formattedSummary: `Found ${lines.length} log entries within 3600s window.`,
+          };
+        });
+
+      registerToolsWithClient(customClient);
+      const tool = registeredTools.get('search_logs');
+      const result = await tool.handler({
+        query: '*',
+        limit: 5,
+        severities: ['error', 'fatal'],
+      });
+
+      const response = JSON.parse(result.content[0].text);
+      expect(response.lines).toHaveLength(1);
+      expect(response.lines[0].message).toBe('Filtered error log');
+      expect(customClient.searchLogs).toHaveBeenCalledWith('*', 5, ['error', 'fatal']);
+    });
+
+    it('should handle search errors gracefully', async () => {
+      vi.mocked(getSelectedAppId).mockReturnValue('test-app-id');
+
+      const failingClient = createMockAppsignalClient();
+      failingClient.searchLogs = vi.fn().mockRejectedValue(new Error('Search timeout'));
+
+      registerToolsWithClient(failingClient);
+      const tool = registeredTools.get('search_logs');
+      const result = await tool.handler({ query: 'timeout' });
+
+      expect(result.content[0].text).toContain('Error searching logs: Search timeout');
+    });
+
+    it('should return empty results for no matches', async () => {
+      vi.mocked(getSelectedAppId).mockReturnValue('test-app-id');
+
+      const customClient = createMockAppsignalClient();
+      customClient.searchLogs = vi.fn().mockResolvedValue({
+        queryWindow: 3600,
+        lines: [],
+        formattedSummary: 'Found 0 log entries within 3600s window.\n\n',
+      });
+
+      registerToolsWithClient(customClient);
+      const tool = registeredTools.get('search_logs');
+      const result = await tool.handler({ query: 'nonexistent' });
+
+      const response = JSON.parse(result.content[0].text);
+      expect(response.lines).toEqual([]);
+    });
+
+    it('should require app ID to be selected', async () => {
+      delete process.env.APPSIGNAL_APP_ID;
+      vi.mocked(getSelectedAppId).mockReturnValue(undefined);
+
+      registerToolsWithClient(mockClient);
+      const tool = registeredTools.get('search_logs');
+      const result = await tool.handler({ query: 'test' });
+
+      expect(result.content[0].text).toContain('Error: No app ID selected');
+    });
+  });
 });

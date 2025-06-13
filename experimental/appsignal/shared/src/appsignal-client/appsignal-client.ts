@@ -45,19 +45,54 @@ export interface ExceptionIncidentSample {
 
 export interface LogIncident {
   id: string;
-  name: string;
-  severity: 'debug' | 'info' | 'warn' | 'error' | 'fatal';
+  number: number;
+  summary?: string;
+  description?: string;
+  severity?: string;
+  state?: string;
   count: number;
-  lastOccurredAt: string;
-  status: 'open' | 'resolved' | 'muted';
-  query?: string;
+  createdAt?: string;
+  lastOccurredAt?: string;
+  updatedAt?: string;
+  digests?: string[];
+  trigger: {
+    id: string;
+    name: string;
+    description?: string;
+    query?: string;
+    severities: string[];
+    sourceIds: string[];
+  };
+  logLine?: {
+    id: string;
+    timestamp: string;
+    message: string;
+    severity: string;
+    hostname: string;
+    group?: string;
+    attributes?: Array<{
+      key: string;
+      value: string;
+    }>;
+  };
 }
 
-export interface LogEntry {
-  timestamp: string;
-  level: 'debug' | 'info' | 'warn' | 'error' | 'fatal';
-  message: string;
-  metadata?: Record<string, unknown>;
+export interface LogSearchResult {
+  queryWindow: number;
+  lines: Array<{
+    id: string;
+    timestamp: string;
+    message: string;
+    severity: string;
+    hostname: string;
+    group?: string;
+    attributes?: Array<{
+      key: string;
+      value: string;
+    }>;
+  }>;
+  // For LLM optimization, we can add a formatted summary
+  formattedSummary?: string;
 }
 
 export interface IAppsignalClient {
@@ -65,7 +100,11 @@ export interface IAppsignalClient {
   getExceptionIncident(incidentId: string): Promise<ExceptionIncident>;
   getExceptionIncidentSample(incidentId: string, offset?: number): Promise<ExceptionIncidentSample>;
   getLogIncident(incidentId: string): Promise<LogIncident>;
-  searchLogs(query: string, limit?: number, offset?: number): Promise<LogEntry[]>;
+  searchLogs(
+    query: string,
+    limit?: number,
+    severities?: Array<'debug' | 'info' | 'warn' | 'error' | 'fatal'>
+  ): Promise<LogSearchResult>;
 }
 
 // Implementation using GraphQL API
@@ -431,13 +470,214 @@ export class AppsignalClient implements IAppsignalClient {
     };
   }
 
-  async getLogIncident(_incidentId: string): Promise<LogIncident> {
-    // TODO: Implement actual API call using this.apiKey and this.appId
-    throw new Error('Not implemented');
+  async getLogIncident(incidentId: string): Promise<LogIncident> {
+    const query = gql`
+      query GetLogIncident($appId: ID!, $incidentId: ID!) {
+        app(id: $appId) {
+          id
+          logIncident(id: $incidentId) {
+            id
+            number
+            summary
+            description
+            severity
+            state
+            count
+            createdAt
+            lastOccurredAt
+            updatedAt
+            digests
+            trigger {
+              id
+              name
+              description
+              query
+              severities
+              sourceIds
+            }
+            logLine {
+              id
+              timestamp
+              message
+              severity
+              hostname
+              group
+              attributes {
+                key
+                value
+              }
+            }
+          }
+        }
+      }
+    `;
+
+    interface GetLogIncidentResponse {
+      app: {
+        id: string;
+        logIncident: {
+          id: string;
+          number: number;
+          summary?: string;
+          description?: string;
+          severity?: 'critical' | 'high' | 'medium' | 'low' | 'debug';
+          state?: 'open' | 'closed';
+          count: number;
+          createdAt?: string;
+          lastOccurredAt?: string;
+          updatedAt?: string;
+          digests?: string[];
+          trigger: {
+            id: string;
+            name: string;
+            description?: string;
+            query?: string;
+            severities: string[];
+            sourceIds: string[];
+          };
+          logLine?: {
+            id: string;
+            timestamp: string;
+            message: string;
+            severity: string;
+            hostname: string;
+            group?: string;
+            attributes?: Array<{
+              key: string;
+              value: string;
+            }>;
+          };
+        };
+      };
+    }
+
+    const data = await this.graphqlClient.request<GetLogIncidentResponse>(query, {
+      appId: this.appId,
+      incidentId,
+    });
+
+    const incident = data.app.logIncident;
+
+    // Return the full incident data
+    return {
+      id: incident.id,
+      number: incident.number,
+      summary: incident.summary,
+      description: incident.description,
+      severity: incident.severity,
+      state: incident.state,
+      count: incident.count,
+      createdAt: incident.createdAt,
+      lastOccurredAt: incident.lastOccurredAt,
+      updatedAt: incident.updatedAt,
+      digests: incident.digests,
+      trigger: incident.trigger,
+      logLine: incident.logLine,
+    };
   }
 
-  async searchLogs(_query: string, _limit = 100, _offset = 0): Promise<LogEntry[]> {
-    // TODO: Implement actual API call using this.apiKey and this.appId
-    throw new Error('Not implemented');
+  async searchLogs(
+    query: string,
+    limit = 100,
+    severities?: Array<'debug' | 'info' | 'warn' | 'error' | 'fatal'>
+  ): Promise<LogSearchResult> {
+    const gqlQuery = gql`
+      query SearchLogs($appId: ID!, $query: String!, $limit: Int!, $severities: [SeverityEnum!]) {
+        app(id: $appId) {
+          id
+          logs {
+            queryWindow
+            lines(query: $query, limit: $limit, order: DESC, severities: $severities) {
+              id
+              timestamp
+              message
+              severity
+              hostname
+              group
+              attributes {
+                key
+                value
+              }
+            }
+          }
+        }
+      }
+    `;
+
+    interface SearchLogsResponse {
+      app: {
+        id: string;
+        logs: {
+          queryWindow: number;
+          lines?: Array<{
+            id: string;
+            timestamp: string;
+            message: string;
+            severity: string;
+            hostname: string;
+            group?: string;
+            attributes?: Array<{
+              key: string;
+              value: string;
+            }>;
+          }>;
+        };
+      };
+    }
+
+    // Map our severity strings to GraphQL enum values
+    const severityEnums = severities?.map((sev) => sev.toUpperCase());
+
+    const data = await this.graphqlClient.request<SearchLogsResponse>(gqlQuery, {
+      appId: this.appId,
+      query,
+      limit,
+      severities: severityEnums,
+    });
+
+    const lines = data.app.logs.lines || [];
+    const queryWindow = data.app.logs.queryWindow;
+
+    // Create a formatted summary for LLM optimization
+    let formattedSummary = `Found ${lines.length} log entries within ${queryWindow}s window.\n\n`;
+
+    if (lines.length > 0) {
+      // Group logs by severity for a concise overview
+      const bySeverity = lines.reduce(
+        (acc, line) => {
+          if (!acc[line.severity]) acc[line.severity] = [];
+          acc[line.severity].push(line);
+          return acc;
+        },
+        {} as Record<string, typeof lines>
+      );
+
+      formattedSummary += 'Summary by severity:\n';
+      for (const [severity, logs] of Object.entries(bySeverity)) {
+        formattedSummary += `- ${severity}: ${logs.length} entries\n`;
+      }
+
+      formattedSummary += '\nRecent log samples:\n';
+      // Include first 5 logs as samples
+      lines.slice(0, 5).forEach((line, i) => {
+        const attrs = line.attributes?.map((a) => `${a.key}=${a.value}`).join(', ');
+        formattedSummary += `${i + 1}. [${line.timestamp}] ${line.severity} - ${line.message}`;
+        if (line.hostname) formattedSummary += ` (host: ${line.hostname})`;
+        if (line.group) formattedSummary += ` (group: ${line.group})`;
+        if (attrs) formattedSummary += ` (${attrs})`;
+        formattedSummary += '\n';
+      });
+
+      if (lines.length > 5) {
+        formattedSummary += `... and ${lines.length - 5} more entries\n`;
+      }
+    }
+
+    // Return full data with formatted summary
+    return {
+      queryWindow,
+      lines,
+      formattedSummary,
+    };
   }
 }

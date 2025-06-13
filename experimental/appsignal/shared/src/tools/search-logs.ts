@@ -14,9 +14,12 @@ export function searchLogsTool(server: McpServer, clientFactory: () => IAppsigna
         .positive()
         .default(50)
         .describe('Maximum number of results to return'),
-      offset: z.number().int().min(0).default(0).describe('Number of results to skip'),
+      severities: z
+        .array(z.enum(['debug', 'info', 'warn', 'error', 'fatal']))
+        .optional()
+        .describe('Filter logs by severity levels'),
     },
-    async ({ query, limit, offset }) => {
+    async ({ query, limit, severities }) => {
       const appId = getSelectedAppId() || process.env.APPSIGNAL_APP_ID;
       if (!appId) {
         return {
@@ -31,7 +34,7 @@ export function searchLogsTool(server: McpServer, clientFactory: () => IAppsigna
 
       try {
         const client = clientFactory();
-        const logs = await client.searchLogs(query, limit, offset);
+        const logs = await client.searchLogs(query, limit, severities);
 
         return {
           content: [
