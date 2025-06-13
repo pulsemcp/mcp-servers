@@ -7,9 +7,9 @@
   "scripts": {
     "build": "../node_modules/typescript/bin/tsc",
     "start": "node build/index.js",
-    "start:integration": "node build/index.integration.js",
+    "start:integration": "node build/index.integration-with-mock.js",
     "dev": "tsx src/index.ts",
-    "dev:integration": "tsx src/index.integration.ts",
+    "dev:integration": "tsx src/index.integration-with-mock.ts",
     "predev": "cd ../shared && npm run build",
     "prebuild": "cd ../shared && npm run build"
   },

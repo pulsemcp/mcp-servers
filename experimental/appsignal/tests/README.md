@@ -9,14 +9,13 @@ tests/
 ├── functional/          # Functional tests for individual components
 │   └── tools.test.ts   # Tests for MCP tool implementations
 ├── integration/        # Integration tests using TestMCPClient
-│   ├── appsignal.integration.test.ts  # Full server integration tests
-│   └── integration-test-helper.ts     # Helper for creating test clients with mocks
+│   └── appsignal.integration.test.ts  # Full server integration tests
 └── mocks/              # Mock implementations and test data
     └── appsignal-client.functional-mock.ts  # Vitest mocks for functional tests
 
 shared/src/appsignal-client/
 ├── appsignal-client.ts    # AppSignal client interface and implementation
-└── configurable-appsignal-client.integration-mock.ts  # Configurable mocks for integration tests
+└── appsignal-client.integration-mock.ts  # Integration test mock implementation
 ```
 
 ## Running Tests
@@ -71,11 +70,12 @@ const registerTools = createRegisterTools(() => mockClient);
 - Used for testing individual functions/tools in isolation
 - Mocks are injected directly into the code being tested
 
-#### Integration Tests (`integration/integration-test-helper.ts`)
+#### Integration Tests (`integration/appsignal.integration.test.ts`)
 
-- Helper that creates a real TestMCPClient instance
-- Configures mock data that gets passed to the test server via environment variables
-- Tests the full MCP protocol stack with mocked external dependencies
+- Uses real TestMCPClient instances to test the full MCP protocol stack
+- Creates mock AppSignal clients with `createIntegrationMockAppsignalClient`
+- Mock data is passed to the test server via environment variables
+- Tests demonstrate that we're mocking the AppSignal API calls, not the MCP client
 
 ## Integration Testing Architecture
 
@@ -86,28 +86,40 @@ Integration tests use a real MCP client (`TestMCPClient`) to communicate with a 
 ### Components
 
 1. **TestMCPClient** - Located at `/test-mcp-client`, provides a programmatic interface to test MCP servers
-2. **Integration build** - Special build of the server (`index.integration.js`) that uses mocked dependencies
+2. **Integration build** - Special build of the server (`index.integration-with-mock.js`) that uses mocked dependencies
 3. **Configurable mocks** - Each test can define its own mock responses via environment variables
 
 ### How It Works
 
-1. Each test defines its mock responses using the `createMockedClient` helper
-2. Mock configuration is passed via environment variable to the server
-3. TestMCPClient spawns the server process via stdio
-4. Tests interact with the server through the MCP protocol
-5. Server responds with the configured mock data
+1. Each test creates a mock AppSignal client using `createIntegrationMockAppsignalClient`
+2. The mock client is passed to `createTestMCPClientWithMock` helper
+3. Mock configuration is passed via environment variable to the server
+4. TestMCPClient spawns the server process via stdio
+5. Tests interact with the server through the MCP protocol
+6. Server responds with the configured mock data
 
 ### Example
 
 ```typescript
-const client = await createMockedClient({
-  alerts: {
-    'alert-123': { id: 'alert-123', status: 'active', ... }
+// Create a mock AppSignal client with custom mock data
+const mockAppSignalClient = createIntegrationMockAppsignalClient({
+  exceptionIncidents: {
+    'payment-failure': {
+      id: 'payment-failure',
+      name: 'PaymentGatewayException',
+      message: 'Connection timeout to payment gateway',
+      count: 42,
+      lastOccurredAt: '2024-01-21T09:00:00Z',
+      status: 'open',
+    },
   },
-  searchResponses: {
-    'error': [{ level: 'error', message: '...', ... }]
-  }
 });
 
-const result = await client.callTool('get_alert_details', { alertId: 'alert-123' });
+// Create TestMCPClient that will use our mocked AppSignal client
+const client = await createTestMCPClientWithMock(mockAppSignalClient);
+
+// Call the MCP tool
+const result = await client.callTool('get_exception_incident', {
+  incidentId: 'payment-failure',
+});
 ```
