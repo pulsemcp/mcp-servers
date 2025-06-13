@@ -78,23 +78,3 @@ jobs:
         env:
           APPSIGNAL_API_KEY: test-api-key
           APPSIGNAL_APP_ID: test-app-id
-
-  # This job runs after all tests pass
-  all-checks-passed:
-    name: All CI Checks Passed
-    runs-on: ubuntu-latest
-    needs: [functional-tests, integration-tests]
-    if: always()
-
-    steps:
-      - name: Check if all jobs passed
-        run: |
-          if [[ "${{ needs.functional-tests.result }}" == "success" && "${{ needs.integration-tests.result }}" == "success" ]]; then
-            echo "✅ All CI checks passed!"
-            exit 0
-          else
-            echo "❌ One or more CI checks failed"
-            echo "Functional Tests: ${{ needs.functional-tests.result }}"
-            echo "Integration Tests: ${{ needs.integration-tests.result }}"
-            exit 1
-          fi
