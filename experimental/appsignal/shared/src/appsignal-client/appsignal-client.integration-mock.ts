@@ -3,14 +3,18 @@ import type {
   ExceptionIncident,
   ExceptionIncidentSample,
   LogIncident,
-  LogEntry,
+  LogSearchResult,
 } from './appsignal-client.js';
 
 interface MockData {
   exceptionIncidents?: ExceptionIncident[];
   exceptionSamples?: Record<string, ExceptionIncidentSample[]>;
   logIncidents?: Record<string, LogIncident>;
-  searchResponses?: Record<string, LogEntry[]>;
+  searchResponses?: Record<string, LogSearchResult['lines']>;
+  errorScenarios?: {
+    logIncident?: Record<string, Error>;
+    searchLogs?: Record<string, Error>;
+  };
 }
 
 /**
@@ -81,6 +85,11 @@ export function createIntegrationMockAppsignalClient(
     },
 
     async getLogIncident(incidentId: string): Promise<LogIncident> {
+      // Check for error scenarios
+      if (mockData.errorScenarios?.logIncident?.[incidentId]) {
+        throw mockData.errorScenarios.logIncident[incidentId];
+      }
+
       if (mockData.logIncidents?.[incidentId]) {
         return mockData.logIncidents[incidentId];
       }
@@ -88,28 +97,90 @@ export function createIntegrationMockAppsignalClient(
       // Default mock response
       return {
         id: incidentId,
-        name: 'Mock Log Incident',
-        severity: 'error',
+        number: 1,
+        summary: 'Mock Log Incident',
+        description: 'Mock description',
+        severity: 'ERROR',
+        state: 'OPEN',
         count: 1,
+        createdAt: new Date().toISOString(),
         lastOccurredAt: new Date().toISOString(),
-        status: 'open',
+        updatedAt: new Date().toISOString(),
+        digests: [],
+        trigger: {
+          id: 'mock-trigger',
+          name: 'Mock Trigger',
+          description: 'Mock trigger description',
+          query: '*',
+          severities: ['ERROR'],
+          sourceIds: [],
+        },
       };
     },
 
-    async searchLogs(query: string, limit = 100, offset = 0): Promise<LogEntry[]> {
-      if (mockData.searchResponses?.[query]) {
-        return mockData.searchResponses[query].slice(offset, offset + limit);
+    async searchLogs(
+      query: string,
+      limit = 100,
+      severities?: Array<'debug' | 'info' | 'warn' | 'error' | 'fatal'>
+    ): Promise<LogSearchResult> {
+      // Check for error scenarios
+      if (mockData.errorScenarios?.searchLogs?.[query]) {
+        throw mockData.errorScenarios.searchLogs[query];
       }
 
-      // Default mock behavior
-      return [
-        {
-          timestamp: new Date().toISOString(),
-          level: 'info',
-          message: `Mock log entry matching query: ${query}`,
-          metadata: { query },
-        },
-      ];
+      let lines: LogSearchResult['lines'] = [];
+
+      if (mockData.searchResponses?.[query]) {
+        lines = mockData.searchResponses[query];
+
+        // Filter by severities if provided
+        if (severities && severities.length > 0) {
+          const severityMap = severities.map((s) => s.toUpperCase());
+          lines = lines.filter((log) => severityMap.includes(log.severity));
+        }
+
+        lines = lines.slice(0, limit);
+      } else {
+        // Default mock behavior
+        lines = [
+          {
+            id: 'mock-log-1',
+            timestamp: new Date().toISOString(),
+            message: `Mock log entry matching query: ${query}`,
+            severity: 'INFO',
+            hostname: 'mock-host',
+            group: 'mock-group',
+            attributes: [
+              { key: 'query', value: query },
+              { key: 'severities', value: severities?.join(',') || 'all' },
+            ],
+          },
+        ];
+      }
+
+      // Create formatted summary
+      let formattedSummary = `Found ${lines.length} log entries within 3600s window.\n\n`;
+      if (lines.length > 0) {
+        const bySeverity = lines.reduce(
+          (acc, line) => {
+            if (!acc[line.severity]) acc[line.severity] = 0;
+            acc[line.severity]++;
+            return acc;
+          },
+          {} as Record<string, number>
+        );
+
+        formattedSummary += 'Summary by severity:\n';
+        for (const [severity, count] of Object.entries(bySeverity)) {
+          formattedSummary += `- ${severity}: ${count} entries\n`;
+        }
+      }
+
+      return {
+        queryWindow: 3600,
+        lines,
+        formattedSummary,
+      };
     },
   };
 

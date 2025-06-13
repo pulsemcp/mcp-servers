@@ -232,22 +232,28 @@ describe('AppSignal MCP Server Integration', () => {
       searchResponses: {
         'level:error service:api': [
           {
+            id: 'log-1',
             timestamp: '2024-01-15T10:00:00Z',
-            level: 'error',
+            severity: 'ERROR',
             message: 'Database connection failed',
-            metadata: {
-              service: 'api-service',
-              errorCode: 'DB_CONNECTION_ERROR',
-            },
+            hostname: 'api-server-01',
+            group: 'api-service',
+            attributes: [
+              { key: 'service', value: 'api-service' },
+              { key: 'errorCode', value: 'DB_CONNECTION_ERROR' },
+            ],
           },
           {
+            id: 'log-2',
             timestamp: '2024-01-15T10:05:00Z',
-            level: 'error',
+            severity: 'ERROR',
             message: 'Payment processing timeout',
-            metadata: {
-              service: 'api-service',
-              errorCode: 'PAYMENT_TIMEOUT',
-            },
+            hostname: 'api-server-02',
+            group: 'api-service',
+            attributes: [
+              { key: 'service', value: 'api-service' },
+              { key: 'errorCode', value: 'PAYMENT_TIMEOUT' },
+            ],
           },
         ],
       },
@@ -264,10 +270,111 @@ describe('AppSignal MCP Server Integration', () => {
 
     // Verify the results
     const response = JSON.parse(result.content[0].text);
-    expect(response).toHaveLength(2);
-    expect(response[0].message).toBe('Database connection failed');
-    expect(response[1].message).toBe('Payment processing timeout');
-    expect(response[0].metadata.errorCode).toBe('DB_CONNECTION_ERROR');
+    expect(response.queryWindow).toBe(3600);
+    expect(response.lines).toHaveLength(2);
+    expect(response.lines[0].message).toBe('Database connection failed');
+    expect(response.lines[1].message).toBe('Payment processing timeout');
+    expect(response.lines[0].attributes).toContainEqual({
+      key: 'errorCode',
+      value: 'DB_CONNECTION_ERROR',
+    });
+    expect(response.formattedSummary).toContain('Found 2 log entries');
+  });
+
+  it('should retrieve log incident details (happy path)', async () => {
+    // Create a mock AppSignal client with custom log incident data
+    const mockAppSignalClient = createIntegrationMockAppsignalClient({
+      logIncidents: {
+        'high-error-rate': {
+          id: 'high-error-rate',
+          number: 456,
+          summary: 'Critical Error Spike',
+          description: 'Multiple critical errors detected',
+          severity: 'FATAL',
+          state: 'OPEN',
+          count: 523,
+          createdAt: '2024-01-21T12:00:00Z',
+          lastOccurredAt: '2024-01-21T14:30:00Z',
+          updatedAt: '2024-01-21T14:30:00Z',
+          digests: ['digest1', 'digest2', 'digest3'],
+          trigger: {
+            id: 'trigger-456',
+            name: 'Critical Error Monitor',
+            description: 'Monitors critical errors',
+            query: 'level:error OR level:fatal',
+            severities: ['ERROR', 'FATAL'],
+            sourceIds: ['source1'],
+          },
+        },
+      },
+    });
+
+    // Create TestMCPClient that will use our mocked AppSignal client
+    client = await createTestMCPClientWithMock(mockAppSignalClient);
+
+    // Call the MCP tool
+    const result = await client.callTool('get_log_incident', {
+      incidentId: 'high-error-rate',
+    });
+
+    // Verify the result
+    const incident = JSON.parse(result.content[0].text);
+    expect(incident.id).toBe('high-error-rate');
+    expect(incident.number).toBe(456);
+    expect(incident.summary).toBe('Critical Error Spike');
+    expect(incident.severity).toBe('FATAL');
+    expect(incident.state).toBe('OPEN');
+    expect(incident.count).toBe(523);
+    expect(incident.trigger.query).toBe('level:error OR level:fatal');
+  });
+
+  it('should handle log incident error case', async () => {
+    // Create a mock AppSignal client that will simulate an error
+    const mockAppSignalClient = createIntegrationMockAppsignalClient({
+      // Configure to throw error for specific incident ID
+      errorScenarios: {
+        logIncident: {
+          'error-incident': new Error('Network timeout while fetching incident'),
+        },
+      },
+    });
+
+    // Create TestMCPClient that will use our mocked AppSignal client
+    client = await createTestMCPClientWithMock(mockAppSignalClient);
+
+    // Call the MCP tool with the error-triggering ID
+    const result = await client.callTool('get_log_incident', {
+      incidentId: 'error-incident',
+    });
+
+    // Verify error handling
+    expect(result.content[0].text).toContain('Error fetching log incident details');
+    expect(result.content[0].text).toContain('Network timeout while fetching incident');
+  });
+
+  it('should search logs with severity filters and handle errors', async () => {
+    // Create a mock AppSignal client that will simulate an error for certain queries
+    const mockAppSignalClient = createIntegrationMockAppsignalClient({
+      errorScenarios: {
+        searchLogs: {
+          'timeout-query': new Error('Search query timed out'),
+        },
+      },
+    });
+
+    // Create TestMCPClient that will use our mocked AppSignal client
+    client = await createTestMCPClientWithMock(mockAppSignalClient);
+
+    // Call the MCP tool with error-triggering query
+    const result = await client.callTool('search_logs', {
+      query: 'timeout-query',
+      limit: 5,
+      severities: ['error', 'fatal'],
+    });
+
+    // Verify error handling
+    expect(result.content[0].text).toContain('Error searching logs');
+    expect(result.content[0].text).toContain('Search query timed out');
   });
 });
 
