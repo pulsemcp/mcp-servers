@@ -3,6 +3,8 @@ export interface AppSignalConfig {
   apiKey: string;
   appId: string;
   environment?: string;
+  // Test: This should trigger AppSignal CI
+  debugMode?: boolean;
 }
 
 // Tool response types
