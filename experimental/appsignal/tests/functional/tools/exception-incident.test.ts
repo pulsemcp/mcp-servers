@@ -1,7 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { createRegisterTools } from '../../../shared/src/tools';
-import { getSelectedAppId } from '../../../shared/src/state';
 import { createMockAppsignalClient } from '../../mocks/appsignal-client.functional-mock';
 import type { IAppsignalClient } from '../../../shared/src/appsignal-client/appsignal-client';
 
