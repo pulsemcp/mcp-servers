@@ -49,4 +49,3 @@ Key types include:
 2. Keep the schema up to date with AppSignal's API changes
 3. Use `Pick<Type, 'field1' | 'field2'>` when you only need specific fields from a type
 4. Prefer type imports (`import type`) to avoid bundling unnecessary code
-

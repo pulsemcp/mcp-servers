@@ -137,4 +137,3 @@ describe('Tool Registration', () => {
     expect(result.content[0].text).toContain('Please use select_app_id tool first');
   });
 });
-

@@ -112,4 +112,3 @@ describe('get_log_incident Tool', () => {
     expect(result.content[0].text).toContain('Error: No app ID selected');
   });
 });
-

@@ -125,4 +125,3 @@ export async function searchLogs(
     formattedSummary,
   };
 }
-

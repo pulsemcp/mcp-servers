@@ -105,4 +105,3 @@ export async function getExceptionIncident(
 
   return found;
 }
-
