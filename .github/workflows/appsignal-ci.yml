@@ -1,12 +1,6 @@
-name: AppSignal MCP CI
+name: AppSignal CI
 
 on:
-  push:
-    branches:
-      - main
-    paths:
-      - 'experimental/appsignal/**'
-      - '.github/workflows/appsignal-ci.yml'
   pull_request:
     paths:
       - 'experimental/appsignal/**'
@@ -52,8 +46,8 @@ jobs:
           cd shared && npx tsc --noEmit
           cd ../local && npx tsc --noEmit
 
-  test:
-    name: Test
+  functional-tests:
+    name: Functional Tests
     runs-on: ubuntu-latest
     needs: lint-and-type-check
 
@@ -68,7 +62,7 @@ jobs:
       - name: Use Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '22.x'
+          node-version: '20.x'
 
       - name: Install dependencies
         run: npm run install-all
@@ -76,7 +70,7 @@ jobs:
       - name: Build project
         run: npm run build
 
-      - name: Run unit tests
+      - name: Run functional tests
         run: npm run test:run -- --reporter=json --reporter=default --outputFile=test-results.json
         env:
           APPSIGNAL_API_KEY: test-api-key
@@ -86,37 +80,63 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: test-results
+          name: functional-test-results
           path: experimental/appsignal/test-results.json
           retention-days: 7
 
-      - name: Report test summary
-        if: always()
-        run: |
-          echo "### Test Results" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          if [ -f test-results.json ]; then
-            echo "✅ Tests completed" >> $GITHUB_STEP_SUMMARY
-          else
-            echo "❌ Tests failed or did not complete" >> $GITHUB_STEP_SUMMARY
-          fi
+  integration-tests:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    needs: lint-and-type-check
+
+    defaults:
+      run:
+        working-directory: experimental/appsignal
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Install shared dependencies
+        run: cd shared && npm install
+
+      - name: Install local dependencies
+        run: cd local && npm install
+
+      - name: Install test-mcp-client dependencies
+        run: cd ../../test-mcp-client && npm install
+
+      - name: Run integration tests
+        run: npm run test:integration
+        env:
+          APPSIGNAL_API_KEY: test-api-key
+          APPSIGNAL_APP_ID: test-app-id
 
   # This job runs after all tests pass
   all-checks-passed:
     name: All CI Checks Passed
     runs-on: ubuntu-latest
-    needs: [lint-and-type-check, test]
+    needs: [lint-and-type-check, functional-tests, integration-tests]
     if: always()
 
     steps:
       - name: Check if all jobs passed
         run: |
-          if [[ "${{ needs.lint-and-type-check.result }}" == "success" && "${{ needs.test.result }}" == "success" ]]; then
+          if [[ "${{ needs.lint-and-type-check.result }}" == "success" && "${{ needs.functional-tests.result }}" == "success" && "${{ needs.integration-tests.result }}" == "success" ]]; then
             echo "✅ All CI checks passed!"
             exit 0
           else
             echo "❌ One or more CI checks failed"
             echo "Lint and Type Check: ${{ needs.lint-and-type-check.result }}"
-            echo "Tests: ${{ needs.test.result }}"
+            echo "Functional Tests: ${{ needs.functional-tests.result }}"
+            echo "Integration Tests: ${{ needs.integration-tests.result }}"
             exit 1
           fi
