@@ -3,6 +3,8 @@ export interface AppSignalConfig {
   apiKey: string;
   appId: string;
   environment?: string;
+  // Test comment for new CI verification
+  debugMode?: boolean;
 }
 
 // Tool response types
