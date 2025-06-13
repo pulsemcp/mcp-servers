@@ -15,8 +15,12 @@ For detailed git workflow information including branch naming conventions and re
 
 ### Pre-PR checklist
 
-1. Run `bundle exec standardrb --fix-unsafely` and commit any fixes
-2. Run tests with `bin/test test/*/*.rb` if changes might impact them
+1. Check for and resolve any merge conflicts:
+   - Pull latest from main with `git pull --rebase origin main`
+   - If conflicts exist, resolve them before proceeding
+   - Continue rebase with `git rebase --continue`
+2. Run `bundle exec standardrb --fix-unsafely` and commit any fixes
+3. Run tests with `bin/test test/*/*.rb` if changes might impact them
 
 ### Post-PR
 

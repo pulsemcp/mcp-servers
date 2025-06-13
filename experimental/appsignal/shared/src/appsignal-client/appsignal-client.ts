@@ -55,6 +55,8 @@ export class AppsignalClient implements IAppsignalClient {
     private readonly apiKey: string,
     private readonly appId: string
   ) {
+    // appId will be used in future API calls
+    void this.appId;
     this.graphqlClient = new GraphQLClient(`https://appsignal.com/graphql?token=${apiKey}`);
   }
 
