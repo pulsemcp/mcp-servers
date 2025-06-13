@@ -7,6 +7,5 @@
       "./shared/tsconfig.json",
       "./tests/tsconfig.json"
     ]
-  },
-  "ignorePatterns": ["vitest.config.ts", "vitest.config.integration.ts", "**/*.js", "dist", "build"]
+  }
 }

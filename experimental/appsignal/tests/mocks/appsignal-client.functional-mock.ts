@@ -5,7 +5,7 @@ import type {
   ExceptionIncidentSample,
   LogIncident,
   LogEntry,
-} from '../../shared/src/appsignal-client';
+} from '../../shared/src/appsignal-client/appsignal-client.js';
 
 /**
  * Creates a vitest mock implementation of IAppsignalClient for functional tests.
@@ -14,6 +14,11 @@ import type {
  */
 export function createMockAppsignalClient(): IAppsignalClient {
   return {
+    getApps: vi.fn().mockImplementation(async () => [
+      { id: 'app-1', name: 'Production App', environment: 'production' },
+      { id: 'app-2', name: 'Staging App', environment: 'staging' },
+      { id: 'app-3', name: 'Development App', environment: 'development' },
+    ]),
     getExceptionIncident: vi.fn().mockImplementation(async (incidentId: string) => ({
       id: incidentId,
       name: 'NullPointerException',
