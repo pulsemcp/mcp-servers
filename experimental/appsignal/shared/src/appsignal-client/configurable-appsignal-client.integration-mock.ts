@@ -12,6 +12,7 @@ import type {
 } from './appsignal-client.js';
 
 interface MockConfig {
+  getApps?: Array<{ id: string; name: string; environment: string }> | Error;
   getExceptionIncident?: Record<string, ExceptionIncident | Error>;
   getExceptionIncidentSamples?: Record<string, ExceptionIncidentSample[] | Error>;
   getLogIncident?: Record<string, LogIncident | Error>;
@@ -35,6 +36,23 @@ export function createConfigurableAppsignalClient(): IAppsignalClient {
   };
 
   return {
+    async getApps(): Promise<Array<{ id: string; name: string; environment: string }>> {
+      const config = getMockConfig();
+
+      if (config.getApps) {
+        if (config.getApps instanceof Error) {
+          throw config.getApps;
+        }
+        return config.getApps;
+      }
+
+      // Default mock response
+      return [
+        { id: 'mock-app-1', name: 'Mock Production App', environment: 'production' },
+        { id: 'mock-app-2', name: 'Mock Staging App', environment: 'staging' },
+      ];
+    },
+
     async getExceptionIncident(incidentId: string): Promise<ExceptionIncident> {
       const config = getMockConfig();
 

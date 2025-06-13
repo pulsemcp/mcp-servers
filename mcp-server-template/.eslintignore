@@ -1,6 +1,0 @@
-vitest.config.ts
-vitest.config.integration.ts
-**/*.js
-dist
-build
-node_modules
