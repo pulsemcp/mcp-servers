@@ -5,7 +5,8 @@
   "main": "build/index.js",
   "type": "module",
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && npm run build:integration",
+    "build:integration": "tsc -p tsconfig.integration.json",
     "start": "node build/index.js",
     "dev": "tsx src/index.ts",
     "predev": "cd ../shared && npm run build",
