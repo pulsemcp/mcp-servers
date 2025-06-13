@@ -9,6 +9,7 @@ interface MockConfig {
   // Define your mock data structure here
   // Example:
   // items?: Record<string, { id: string; name: string }>;
+  [key: string]: unknown;
 }
 
 export async function createMockedClient(mockConfig: MockConfig): Promise<TestMCPClient> {

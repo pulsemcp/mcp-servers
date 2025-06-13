@@ -8,7 +8,7 @@ const ExampleToolSchema = z.object({
   message: z.string().describe('The message to process'),
 });
 
-export function createRegisterTools(clientFactory: ClientFactory) {
+export function createRegisterTools(_clientFactory: ClientFactory) {
   return (server: Server) => {
     // List available tools
     server.setRequestHandler(ListToolsRequestSchema, async () => {
@@ -40,7 +40,7 @@ export function createRegisterTools(clientFactory: ClientFactory) {
         const validatedArgs = ExampleToolSchema.parse(args);
 
         // Get client instance for this request
-        // const client = clientFactory();
+        // const client = _clientFactory();
         // Example: Use the client if needed
         // const result = await client.someMethod(validatedArgs.message);
 

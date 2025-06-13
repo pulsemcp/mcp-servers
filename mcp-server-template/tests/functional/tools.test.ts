@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { createRegisterTools } from '../../shared/src/tools.js';
 import { createMockExampleClient } from '../mocks/example-client.functional-mock.js';
@@ -37,7 +37,7 @@ describe('Tools', () => {
         },
       };
 
-      const response = await server.request(request, {} as any);
+      const response = await server.request(request, {} as never);
 
       expect(response).toMatchObject({
         content: [
@@ -60,7 +60,7 @@ describe('Tools', () => {
         },
       };
 
-      await expect(server.request(request, {} as any)).rejects.toThrow();
+      await expect(server.request(request, {} as never)).rejects.toThrow();
     });
   });
 });

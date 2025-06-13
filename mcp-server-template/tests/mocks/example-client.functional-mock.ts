@@ -1,4 +1,3 @@
-import { vi } from 'vitest';
 import type { IExampleClient } from '../../shared/src/server.js';
 
 export function createMockExampleClient(): IExampleClient {
