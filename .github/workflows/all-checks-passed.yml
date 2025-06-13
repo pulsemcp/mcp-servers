@@ -64,6 +64,7 @@ jobs:
             const startTime = Date.now();
 
             let allChecksPassed = false;
+            let allCompleted = false;
             let statusMessage = '';
 
             while (Date.now() - startTime < maxWaitTime) {
@@ -86,7 +87,7 @@ jobs:
               }
               
               // Check if all expected checks have completed
-              let allCompleted = true;
+              allCompleted = true;
               allChecksPassed = true;
               statusMessage = '## CI Status Summary\n\n';
               
