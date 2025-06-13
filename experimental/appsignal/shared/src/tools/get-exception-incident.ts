@@ -5,16 +5,20 @@ import { IAppsignalClient } from '../appsignal-client/appsignal-client.js';
 
 export function getExceptionIncidentTool(server: McpServer, clientFactory: () => IAppsignalClient) {
   return server.tool(
-    "get_exception_incident",
-    { incidentId: z.string().describe("The unique identifier of the exception incident to retrieve") },
+    'get_exception_incident',
+    {
+      incidentId: z
+        .string()
+        .describe('The unique identifier of the exception incident to retrieve'),
+    },
     async ({ incidentId }) => {
       const appId = getSelectedAppId() || process.env.APPSIGNAL_APP_ID;
       if (!appId) {
         return {
           content: [
             {
-              type: "text",
-              text: "Error: No app ID selected. Please use select_app_id tool first or set APPSIGNAL_APP_ID environment variable.",
+              type: 'text',
+              text: 'Error: No app ID selected. Please use select_app_id tool first or set APPSIGNAL_APP_ID environment variable.',
             },
           ],
         };
@@ -23,11 +27,11 @@ export function getExceptionIncidentTool(server: McpServer, clientFactory: () =>
       try {
         const client = clientFactory();
         const incident = await client.getExceptionIncident(incidentId);
-        
+
         return {
           content: [
             {
-              type: "text",
+              type: 'text',
               text: JSON.stringify(incident, null, 2),
             },
           ],
@@ -36,7 +40,7 @@ export function getExceptionIncidentTool(server: McpServer, clientFactory: () =>
         return {
           content: [
             {
-              type: "text",
+              type: 'text',
               text: `Error fetching exception incident details: ${error instanceof Error ? error.message : 'Unknown error'}`,
             },
           ],
