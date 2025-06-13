@@ -52,6 +52,7 @@ npm run test:all
 ## Test Architecture
 
 ### Dependency Injection
+
 The tests use dependency injection to mock the `AppsignalClient`:
 
 ```typescript
@@ -65,11 +66,13 @@ const registerTools = createRegisterTools(() => mockClient);
 ### Mock Organization
 
 #### Functional Tests (`mocks/appsignal-client.functional-mock.ts`)
+
 - Creates vitest mock implementations with `vi.fn()`
 - Used for testing individual functions/tools in isolation
 - Mocks are injected directly into the code being tested
 
 #### Integration Tests (`integration/integration-test-helper.ts`)
+
 - Helper that creates a real TestMCPClient instance
 - Configures mock data that gets passed to the test server via environment variables
 - Tests the full MCP protocol stack with mocked external dependencies
@@ -77,14 +80,17 @@ const registerTools = createRegisterTools(() => mockClient);
 ## Integration Testing Architecture
 
 ### Overview
+
 Integration tests use a real MCP client (`TestMCPClient`) to communicate with a test version of the server that uses configurable mocked external dependencies.
 
 ### Components
+
 1. **TestMCPClient** - Located at `/test-mcp-client`, provides a programmatic interface to test MCP servers
 2. **Integration build** - Special build of the server (`index.integration.js`) that uses mocked dependencies
 3. **Configurable mocks** - Each test can define its own mock responses via environment variables
 
 ### How It Works
+
 1. Each test defines its mock responses using the `createMockedClient` helper
 2. Mock configuration is passed via environment variable to the server
 3. TestMCPClient spawns the server process via stdio
@@ -92,6 +98,7 @@ Integration tests use a real MCP client (`TestMCPClient`) to communicate with a 
 5. Server responds with the configured mock data
 
 ### Example
+
 ```typescript
 const client = await createMockedClient({
   alerts: {

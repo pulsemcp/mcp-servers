@@ -5,6 +5,7 @@ A test client for driving integration tests against MCP (Model Context Protocol)
 ## Purpose
 
 This package is designed to facilitate integration testing of MCP servers by providing:
+
 - A consistent API for interacting with MCP servers programmatically
 - Transport abstraction to support testing across different connection methods
 - Type-safe interfaces for MCP operations
@@ -29,9 +30,11 @@ npm run build
 ## Transport Support
 
 ### Currently Implemented
+
 - **stdio**: Spawn MCP servers as child processes and communicate via standard input/output
 
 ### Future Transports (Architecture Ready)
+
 - **HTTP/SSE**: For testing servers that expose HTTP endpoints
 - **WebSocket**: For real-time bidirectional communication testing
 - **In-Process**: For testing server logic directly without process boundaries
@@ -48,9 +51,9 @@ const client = new TestMCPClient({
   serverPath: '/path/to/mcp-server/build/index.js',
   serverArgs: [],
   env: {
-    API_KEY: 'test-key'
+    API_KEY: 'test-key',
   },
-  debug: true
+  debug: true,
 });
 
 // Connect to the server
@@ -63,7 +66,7 @@ console.log('Available tools:', tools);
 // Call a tool
 const result = await client.callTool('search_logs', {
   query: 'error',
-  limit: 10
+  limit: 10,
 });
 console.log('Tool result:', result);
 
@@ -83,7 +86,7 @@ describe('MCP Server Integration Tests', () => {
   beforeAll(async () => {
     client = new TestMCPClient({
       serverPath: './dist/server.js',
-      env: { NODE_ENV: 'test' }
+      env: { NODE_ENV: 'test' },
     });
     await client.connect();
   });
@@ -111,13 +114,13 @@ The main client class for interacting with MCP servers.
 ```typescript
 interface TestMCPClientOptions {
   // Stdio transport specific options
-  serverPath: string;        // Path to the MCP server executable
-  serverArgs?: string[];     // Optional arguments to pass to the server
+  serverPath: string; // Path to the MCP server executable
+  serverArgs?: string[]; // Optional arguments to pass to the server
   env?: Record<string, string>; // Environment variables for the server process
-  
+
   // General options
-  debug?: boolean;           // Enable debug logging
-  
+  debug?: boolean; // Enable debug logging
+
   // Future: transport?: 'stdio' | 'http' | 'websocket'
 }
 ```
@@ -125,10 +128,12 @@ interface TestMCPClientOptions {
 #### Methods
 
 ##### Connection Management
+
 - `connect(): Promise<void>` - Establish connection to the MCP server
 - `disconnect(): Promise<void>` - Gracefully disconnect from the server
 
 ##### MCP Operations
+
 - `listTools(): Promise<ListToolsResult>` - List all available tools
 - `callTool<T>(name: string, args?: Record<string, any>): Promise<ToolCallResult<T>>` - Execute a tool
 - `listResources(): Promise<ListResourcesResult>` - List all available resources
@@ -159,6 +164,7 @@ TestMCPClient
 ```
 
 This design allows for:
+
 - Easy addition of new transport mechanisms
 - Consistent API regardless of transport
 - Proper separation of concerns
@@ -186,6 +192,7 @@ To add a new transport in the future:
 3. Modify the client to use the appropriate transport based on options
 
 Example structure for future transports:
+
 ```typescript
 // Future transport interface
 interface MCPTransport {
@@ -198,13 +205,14 @@ interface MCPTransport {
 const client = new TestMCPClient({
   transport: 'http',
   serverUrl: 'http://localhost:3000/mcp',
-  debug: true
+  debug: true,
 });
 ```
 
 ## Limitations & Future Work
 
 ### Current Limitations
+
 - **Single Server**: Can only connect to one MCP server at a time (no support for multiple concurrent connections)
 - **Node.js Only**: Server must be a Node.js executable (uses `node` command to spawn process)
 - **Stdio Transport Only**: Currently only supports stdio transport for server communication
@@ -212,6 +220,7 @@ const client = new TestMCPClient({
 ## Contributing
 
 When contributing to this package:
+
 - Maintain transport abstraction in the design
 - Ensure all changes are backward compatible
 - Add tests for new functionality

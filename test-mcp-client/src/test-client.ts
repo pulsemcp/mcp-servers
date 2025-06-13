@@ -1,10 +1,8 @@
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
-import { 
-  CallToolResultSchema, 
+import {
   ListResourcesResultSchema,
   ListToolsResultSchema,
-  ReadResourceResultSchema 
 } from '@modelcontextprotocol/sdk/types.js';
 import { TestMCPClientOptions, ToolCallResult, ResourceReadResult } from './types.js';
 
@@ -16,12 +14,15 @@ export class TestMCPClient {
 
   constructor(options: TestMCPClientOptions) {
     this.options = options;
-    this.client = new Client({
-      name: 'test-mcp-client',
-      version: '1.0.0'
-    }, {
-      capabilities: {}
-    });
+    this.client = new Client(
+      {
+        name: 'test-mcp-client',
+        version: '1.0.0',
+      },
+      {
+        capabilities: {},
+      }
+    );
   }
 
   async connect(): Promise<void> {
@@ -32,7 +33,7 @@ export class TestMCPClient {
     this.transport = new StdioClientTransport({
       command: process.execPath || 'node',
       args: [this.options.serverPath, ...(this.options.serverArgs || [])],
-      env: this.options.env
+      env: this.options.env,
     });
 
     if (this.options.debug) {
@@ -59,17 +60,20 @@ export class TestMCPClient {
     return await this.client.listTools();
   }
 
-  async callTool<T = any>(name: string, args: Record<string, any> = {}): Promise<ToolCallResult<T>> {
+  async callTool<T = any>(
+    name: string,
+    args: Record<string, any> = {}
+  ): Promise<ToolCallResult<T>> {
     this.ensureConnected();
-    
+
     const result = await this.client.callTool({
       name,
-      arguments: args
+      arguments: args,
     });
 
     return {
       content: result.content as T[],
-      isError: result.isError === true
+      isError: result.isError === true,
     };
   }
 
@@ -80,13 +84,13 @@ export class TestMCPClient {
 
   async readResource<T = any>(uri: string): Promise<ResourceReadResult<T>> {
     this.ensureConnected();
-    
+
     const result = await this.client.readResource({
-      uri
+      uri,
     });
 
     return {
-      contents: result.contents as T[]
+      contents: result.contents as T[],
     };
   }
 

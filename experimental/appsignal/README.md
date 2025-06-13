@@ -43,14 +43,14 @@ This project is NOT officially affiliated with AppSignal.
 
 This server is built and tested on macOS with Claude Desktop. It should work with other MCP clients as well.
 
-| Tool Name                     | Description                                                                                            |
-| ----------------------------- | ------------------------------------------------------------------------------------------------------ |
-| `get_apps`                    | Get a list of all available AppSignal applications.                                                    |
-| `select_app_id`               | Select an AppSignal application ID to use for subsequent operations.                                   |
-| `get_exception_incident`      | Get detailed information about a specific exception incident.                                          |
-| `get_exception_incident_samples` | Get sample occurrences of a specific exception incident.                                            |
-| `get_log_incident`            | Get detailed information about a specific log incident.                                                |
-| `search_logs`                 | Search through application logs with flexible query parameters and filters.                            |
+| Tool Name                        | Description                                                                 |
+| -------------------------------- | --------------------------------------------------------------------------- |
+| `get_apps`                       | Get a list of all available AppSignal applications.                         |
+| `select_app_id`                  | Select an AppSignal application ID to use for subsequent operations.        |
+| `get_exception_incident`         | Get detailed information about a specific exception incident.               |
+| `get_exception_incident_samples` | Get sample occurrences of a specific exception incident.                    |
+| `get_log_incident`               | Get detailed information about a specific log incident.                     |
+| `search_logs`                    | Search through application logs with flexible query parameters and filters. |
 
 # Usage Tips
 
@@ -83,6 +83,7 @@ npm run test:ui
 ### Test Structure
 
 Tests are located in the `tests/` directory:
+
 - `tests/functional/` - Functional tests for individual components
 - `tests/mocks/` - Mock implementations and test data
 
@@ -92,10 +93,10 @@ See `tests/README.md` for more details on the testing approach.
 
 ## Cheatsheet
 
-| Environment Variable     | Description                                                                        | Required | Default Value | Example                        |
-| ----------------------- | ---------------------------------------------------------------------------------- | -------- | ------------- | ------------------------------ |
-| `APPSIGNAL_API_KEY`     | Your AppSignal API key. Get one at [appsignal.com](https://appsignal.com/)        | Y        | N/A           | `your-api-key-here`            |
-| `APPSIGNAL_APP_ID`      | Your AppSignal application ID                                                      | N        | N/A           | `5f3e4d2c1b0a9f8e7d6c5b4a`     |
+| Environment Variable | Description                                                                | Required | Default Value | Example                    |
+| -------------------- | -------------------------------------------------------------------------- | -------- | ------------- | -------------------------- |
+| `APPSIGNAL_API_KEY`  | Your AppSignal API key. Get one at [appsignal.com](https://appsignal.com/) | Y        | N/A           | `your-api-key-here`        |
+| `APPSIGNAL_APP_ID`   | Your AppSignal application ID                                              | N        | N/A           | `5f3e4d2c1b0a9f8e7d6c5b4a` |
 
 ## Claude Desktop
 
@@ -118,10 +119,7 @@ Modify your `claude_desktop_config.json` file to add the following:
   "mcpServers": {
     "appsignal": {
       "command": "npx",
-      "args": [
-        "-y",
-        "mcp-server-appsignal"
-      ],
+      "args": ["-y", "mcp-server-appsignal"],
       "env": {
         "APPSIGNAL_API_KEY": "your-api-key-here"
       }

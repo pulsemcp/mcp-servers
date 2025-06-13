@@ -15,17 +15,20 @@ A comprehensive template for building Model Context Protocol (MCP) servers with 
 ## Quick Start
 
 1. **Clone or copy this template**
+
    ```bash
    cp -r mcp-server-template mcp-server-myserver
    cd mcp-server-myserver
    ```
 
 2. **Replace placeholders**
+
    - In `package.json`: Replace `NAME` with your server name, `DESCRIPTION` with your description
    - In `src/index.ts`: Replace `NAME` with your server name
    - Update this README with your server's specific information
 
 3. **Install dependencies**
+
    ```bash
    npm install
    ```
@@ -68,6 +71,7 @@ This starts the TypeScript compiler in watch mode, automatically rebuilding when
 ### Adding Environment Variables
 
 1. Update `src/env.d.ts`:
+
    ```typescript
    declare namespace NodeJS {
      interface ProcessEnv {
@@ -78,6 +82,7 @@ This starts the TypeScript compiler in watch mode, automatically rebuilding when
    ```
 
 2. Update the validation schema in `src/index.ts`:
+
    ```typescript
    const envSchema = z.object({
      API_KEY: z.string().min(1),
@@ -94,13 +99,14 @@ This starts the TypeScript compiler in watch mode, automatically rebuilding when
 ### Adding New Tools
 
 1. Create a new file in `src/tools/`:
+
    ```typescript
-   import { z } from "zod";
-   import type { ToolResponse } from "@pulsemcp/shared";
-   import { createInputSchema, createTextResponse, createErrorResponse } from "@pulsemcp/shared";
+   import { z } from 'zod';
+   import type { ToolResponse } from '@pulsemcp/shared';
+   import { createInputSchema, createTextResponse, createErrorResponse } from '@pulsemcp/shared';
 
    const MyToolArgsSchema = z.object({
-     param: z.string().describe("Description of parameter"),
+     param: z.string().describe('Description of parameter'),
    });
 
    export interface MyToolArgs {
@@ -108,18 +114,15 @@ This starts the TypeScript compiler in watch mode, automatically rebuilding when
    }
 
    export const myToolTool = {
-     name: "my_tool",
-     description: "What this tool does",
+     name: 'my_tool',
+     description: 'What this tool does',
      inputSchema: createInputSchema(MyToolArgsSchema),
    };
 
-   export async function myTool(
-     args: MyToolArgs,
-     client: ExampleClient
-   ): Promise<ToolResponse> {
+   export async function myTool(args: MyToolArgs, client: ExampleClient): Promise<ToolResponse> {
      try {
        // Implementation
-       return createTextResponse("Success!");
+       return createTextResponse('Success!');
      } catch (error) {
        return createErrorResponse(error);
      }
@@ -127,8 +130,9 @@ This starts the TypeScript compiler in watch mode, automatically rebuilding when
    ```
 
 2. Export from `src/tools/index.ts`:
+
    ```typescript
-   export { myToolTool, myTool, type MyToolArgs } from "./myTool.js";
+   export { myToolTool, myTool, type MyToolArgs } from './myTool.js';
    ```
 
 3. Add to the tools list and handler in `src/index.ts`
@@ -140,7 +144,7 @@ Create specialized clients for different aspects of your business logic:
 ```typescript
 export class DatabaseClient {
   constructor(private connectionString: string) {}
-  
+
   async query(sql: string): Promise<any[]> {
     // Implementation
   }
@@ -152,24 +156,28 @@ export class DatabaseClient {
 This template uses `shared` for common MCP patterns:
 
 ### Response Helpers
+
 - `createTextResponse(text)` - Create a simple text response
 - `createSuccessResponse(message)` - Create a success message
 - `createErrorResponse(error)` - Create an error response
 - `createMultiContentResponse(contents)` - Create multi-part responses
 
 ### Error Utilities
+
 - `getErrorMessage(error)` - Safely extract error messages
 - `createInvalidRequestError(message)` - Create MCP errors
 - `createMethodNotFoundError(method)` - Create method not found errors
 - `createInternalError(error)` - Create internal errors
 
 ### Validation Helpers
+
 - `createInputSchema(zodSchema)` - Convert Zod schemas to JSON Schema
 - `validateEnvironment(schema)` - Validate environment variables
 - `parseResourceUri(uri, prefix)` - Parse resource URIs
 - `buildResourceUri(protocol, type, id)` - Build consistent URIs
 
 ### Logging
+
 - `logServerStart(name, transport)` - Log server startup
 - `logError(context, error)` - Log errors with context
 - `logWarning(context, message)` - Log warnings
@@ -180,6 +188,7 @@ This template uses `shared` for common MCP patterns:
 Add to your Claude Desktop configuration file:
 
 ### macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
+
 ### Windows: `%APPDATA%\Claude\claude_desktop_config.json`
 
 ```json
@@ -210,17 +219,23 @@ Resources are automatically discovered based on the data in your clients.
 The template includes three example tools:
 
 ### `get_value`
+
 Retrieves a value from the data store by key.
+
 - **Input**: `key` (string) - The key to retrieve
 - **Output**: The stored value or an error message
 
 ### `set_value`
+
 Stores a value in the data store.
+
 - **Input**: `key` (string), `value` (string) - The key-value pair to store
 - **Output**: Success confirmation
 
 ### `list_keys`
+
 Lists all available keys in the data store.
+
 - **Input**: None
 - **Output**: Comma-separated list of keys
 
@@ -237,15 +252,18 @@ Lists all available keys in the data store.
 ## Troubleshooting
 
 ### Build Errors
+
 - Ensure all `.js` extensions are included in imports
 - Check that TypeScript version matches the template
 
 ### Runtime Errors
+
 - Verify environment variables are set correctly
 - Check Claude Desktop logs for detailed error messages
 - Ensure the built files exist in the `build/` directory
 
 ### Tool Not Found
+
 - Verify tool is exported from `tools/index.ts`
 - Check tool is added to the tools list in `index.ts`
 - Ensure tool name matches in all locations

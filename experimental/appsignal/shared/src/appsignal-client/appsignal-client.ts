@@ -35,14 +35,20 @@ export interface LogEntry {
 
 export interface IAppsignalClient {
   getExceptionIncident(incidentId: string): Promise<ExceptionIncident>;
-  getExceptionIncidentSamples(incidentId: string, limit?: number): Promise<ExceptionIncidentSample[]>;
+  getExceptionIncidentSamples(
+    incidentId: string,
+    limit?: number
+  ): Promise<ExceptionIncidentSample[]>;
   getLogIncident(incidentId: string): Promise<LogIncident>;
   searchLogs(query: string, limit?: number, offset?: number): Promise<LogEntry[]>;
 }
 
 // Stub implementation for now
 export class AppsignalClient implements IAppsignalClient {
-  constructor(private readonly apiKey: string, private readonly appId: string) {
+  constructor(
+    private readonly apiKey: string,
+    private readonly appId: string
+  ) {
     // These will be used when implementing actual API calls
     void this.apiKey;
     void this.appId;
@@ -53,7 +59,10 @@ export class AppsignalClient implements IAppsignalClient {
     throw new Error('Not implemented');
   }
 
-  async getExceptionIncidentSamples(_incidentId: string, _limit = 10): Promise<ExceptionIncidentSample[]> {
+  async getExceptionIncidentSamples(
+    _incidentId: string,
+    _limit = 10
+  ): Promise<ExceptionIncidentSample[]> {
     // TODO: Implement actual API call using this.apiKey and this.appId
     throw new Error('Not implemented');
   }

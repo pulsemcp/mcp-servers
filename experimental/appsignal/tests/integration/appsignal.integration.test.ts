@@ -53,15 +53,15 @@ describe('AppSignal MCP Server Integration Tests', () => {
             timestamp: '2024-01-21T10:05:00Z',
             level: 'error',
             message: 'Payment failed: Insufficient funds',
-            metadata: { userId: 'user-456', amount: 150.00 },
+            metadata: { userId: 'user-456', amount: 150.0 },
           },
         ],
-        'success': [
+        success: [
           {
             timestamp: '2024-01-21T11:00:00Z',
             level: 'info',
             message: 'Payment successful',
-            metadata: { userId: 'user-789', amount: 50.00 },
+            metadata: { userId: 'user-789', amount: 50.0 },
           },
         ],
       },

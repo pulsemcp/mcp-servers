@@ -9,18 +9,22 @@ export type InputMaybe<T> = Maybe<T>;
 export type Exact<T extends { [key: string]: unknown }> = { [K in keyof T]: T[K] };
 export type MakeOptional<T, K extends keyof T> = Omit<T, K> & { [SubKey in K]?: Maybe<T[SubKey]> };
 export type MakeMaybe<T, K extends keyof T> = Omit<T, K> & { [SubKey in K]: Maybe<T[SubKey]> };
-export type MakeEmpty<T extends { [key: string]: unknown }, K extends keyof T> = { [_ in K]?: never };
-export type Incremental<T> = T | { [P in keyof T]?: P extends ' $fragmentName' | '__typename' ? T[P] : never };
+export type MakeEmpty<T extends { [key: string]: unknown }, K extends keyof T> = {
+  [_ in K]?: never;
+};
+export type Incremental<T> =
+  | T
+  | { [P in keyof T]?: P extends ' $fragmentName' | '__typename' ? T[P] : never };
 /** All built-in and custom scalars, mapped to their actual values */
 export type Scalars = {
-  ID: { input: string; output: string; }
-  String: { input: string; output: string; }
-  Boolean: { input: boolean; output: boolean; }
-  Int: { input: number; output: number; }
-  Float: { input: number; output: number; }
-  DateTime: { input: any; output: any; }
-  JSON: { input: any; output: any; }
-  PreciseDateTime: { input: any; output: any; }
+  ID: { input: string; output: string };
+  String: { input: string; output: string };
+  Boolean: { input: boolean; output: boolean };
+  Int: { input: number; output: number };
+  Float: { input: number; output: number };
+  DateTime: { input: any; output: any };
+  JSON: { input: any; output: any };
+  PreciseDateTime: { input: any; output: any };
 };
 
 export type ActionLink = {
@@ -144,7 +148,7 @@ export enum AlertStateEnum {
   Cooldown = 'COOLDOWN',
   Open = 'OPEN',
   Untracked = 'UNTRACKED',
-  Warmup = 'WARMUP'
+  Warmup = 'WARMUP',
 }
 
 /** Anomaly incident in which a problem or exception was reported */
@@ -194,12 +198,10 @@ export type AnomalyIncident = IncidentInterface & {
   updatedAt?: Maybe<Scalars['DateTime']['output']>;
 };
 
-
 /** Anomaly incident in which a problem or exception was reported */
 export type AnomalyIncidentAlertArgs = {
   id: Scalars['String']['input'];
 };
-
 
 /** Anomaly incident in which a problem or exception was reported */
 export type AnomalyIncidentAlertsArgs = {
@@ -292,7 +294,6 @@ export type App = {
   viewerPinned?: Maybe<Scalars['Boolean']['output']>;
 };
 
-
 /** An AppSignal app */
 export type AppActionLinksArgs = {
   end?: InputMaybe<Scalars['DateTime']['input']>;
@@ -301,7 +302,6 @@ export type AppActionLinksArgs = {
   targetAppId: Scalars['String']['input'];
   timeframe?: InputMaybe<TimeframeEnum>;
 };
-
 
 /** An AppSignal app */
 export type AppAlertsArgs = {
@@ -312,7 +312,6 @@ export type AppAlertsArgs = {
   state?: InputMaybe<AlertStateEnum>;
 };
 
-
 /** An AppSignal app */
 export type AppAnomalyIncidentsArgs = {
   limit?: InputMaybe<Scalars['Int']['input']>;
@@ -321,19 +320,16 @@ export type AppAnomalyIncidentsArgs = {
   state?: InputMaybe<IncidentStateEnum>;
 };
 
-
 /** An AppSignal app */
 export type AppBacktraceArgs = {
   id: Scalars['String']['input'];
   revision: Scalars['String']['input'];
 };
 
-
 /** An AppSignal app */
 export type AppDashboardArgs = {
   id: Scalars['String']['input'];
 };
-
 
 /** An AppSignal app */
 export type AppDeployMarkersArgs = {
@@ -345,12 +341,10 @@ export type AppDeployMarkersArgs = {
   start?: InputMaybe<Scalars['DateTime']['input']>;
 };
 
-
 /** An AppSignal app */
 export type AppEventArgs = {
   digest: Scalars['String']['input'];
 };
-
 
 /** An AppSignal app */
 export type AppEventGroupListArgs = {
@@ -359,7 +353,6 @@ export type AppEventGroupListArgs = {
   start?: InputMaybe<Scalars['DateTime']['input']>;
   timeframe?: InputMaybe<TimeframeEnum>;
 };
-
 
 /** An AppSignal app */
 export type AppExceptionIncidentsArgs = {
@@ -372,12 +365,10 @@ export type AppExceptionIncidentsArgs = {
   state?: InputMaybe<IncidentStateEnum>;
 };
 
-
 /** An AppSignal app */
 export type AppIncidentArgs = {
   incidentNumber: Scalars['Int']['input'];
 };
-
 
 /** An AppSignal app */
 export type AppIncidentsArgs = {
@@ -390,14 +381,12 @@ export type AppIncidentsArgs = {
   state?: InputMaybe<IncidentStateEnum>;
 };
 
-
 /** An AppSignal app */
 export type AppLinksArgs = {
   end?: InputMaybe<Scalars['DateTime']['input']>;
   start?: InputMaybe<Scalars['DateTime']['input']>;
   timeframe?: InputMaybe<TimeframeEnum>;
 };
-
 
 /** An AppSignal app */
 export type AppLogIncidentsArgs = {
@@ -407,18 +396,15 @@ export type AppLogIncidentsArgs = {
   state?: InputMaybe<IncidentStateEnum>;
 };
 
-
 /** An AppSignal app */
 export type AppLogViewArgs = {
   id: Scalars['String']['input'];
 };
 
-
 /** An AppSignal app */
 export type AppMarkerArgs = {
   id: Scalars['String']['input'];
 };
-
 
 /** An AppSignal app */
 export type AppMarkersArgs = {
@@ -428,7 +414,6 @@ export type AppMarkersArgs = {
   start?: InputMaybe<Scalars['DateTime']['input']>;
 };
 
-
 /** An AppSignal app */
 export type AppPaginatedAnomalyIncidentsArgs = {
   limit?: InputMaybe<Scalars['Int']['input']>;
@@ -436,7 +421,6 @@ export type AppPaginatedAnomalyIncidentsArgs = {
   order?: InputMaybe<IncidentOrderEnum>;
   state?: InputMaybe<IncidentStateEnum>;
 };
-
 
 /** An AppSignal app */
 export type AppPaginatedExceptionIncidentsArgs = {
@@ -449,7 +433,6 @@ export type AppPaginatedExceptionIncidentsArgs = {
   state?: InputMaybe<IncidentStateEnum>;
 };
 
-
 /** An AppSignal app */
 export type AppPaginatedLogIncidentsArgs = {
   limit?: InputMaybe<Scalars['Int']['input']>;
@@ -457,7 +440,6 @@ export type AppPaginatedLogIncidentsArgs = {
   order?: InputMaybe<IncidentOrderEnum>;
   state?: InputMaybe<IncidentStateEnum>;
 };
-
 
 /** An AppSignal app */
 export type AppPaginatedPerformanceIncidentsArgs = {
@@ -470,7 +452,6 @@ export type AppPaginatedPerformanceIncidentsArgs = {
   state?: InputMaybe<IncidentStateEnum>;
 };
 
-
 /** An AppSignal app */
 export type AppPerformanceIncidentsArgs = {
   actionName?: InputMaybe<Scalars['String']['input']>;
@@ -482,14 +463,12 @@ export type AppPerformanceIncidentsArgs = {
   state?: InputMaybe<IncidentStateEnum>;
 };
 
-
 /** An AppSignal app */
 export type AppTimeDetectiveErrorDataPointsArgs = {
   end: Scalars['DateTime']['input'];
   namespaces: Array<InputMaybe<Scalars['String']['input']>>;
   start: Scalars['DateTime']['input'];
 };
-
 
 /** An AppSignal app */
 export type AppTimeDetectivePerformanceDataPointsArgs = {
@@ -498,12 +477,10 @@ export type AppTimeDetectivePerformanceDataPointsArgs = {
   start: Scalars['DateTime']['input'];
 };
 
-
 /** An AppSignal app */
 export type AppTriggerArgs = {
   id?: InputMaybe<Scalars['String']['input']>;
 };
-
 
 /** An AppSignal app */
 export type AppUptimeMonitorArgs = {
@@ -633,7 +610,7 @@ export type CheckIn = {
 
 export enum CheckInKindEnum {
   Finish = 'FINISH',
-  Start = 'START'
+  Start = 'START',
 }
 
 export enum CheckInStateEnum {
@@ -642,7 +619,7 @@ export enum CheckInStateEnum {
   Missed = 'MISSED',
   New = 'NEW',
   Started = 'STARTED',
-  Unexpected = 'UNEXPECTED'
+  Unexpected = 'UNEXPECTED',
 }
 
 export type CheckInTrigger = {
@@ -676,11 +653,9 @@ export type CheckInTrigger = {
   waitTimeMinutes: Scalars['Int']['output'];
 };
 
-
 export type CheckInTriggerCheckInArgs = {
   id: Scalars['String']['input'];
 };
-
 
 export type CheckInTriggerCheckInsArgs = {
   limit?: InputMaybe<Scalars['Int']['input']>;
@@ -690,7 +665,7 @@ export type CheckInTriggerCheckInsArgs = {
 
 export enum CheckInTriggerKindEnum {
   Cron = 'CRON',
-  Heartbeat = 'HEARTBEAT'
+  Heartbeat = 'HEARTBEAT',
 }
 
 export type CheckInUpdate = {
@@ -710,7 +685,6 @@ export type CheckIns = {
   /** List of check-in triggers */
   triggers?: Maybe<Array<CheckInTrigger>>;
 };
-
 
 export type CheckInsTriggerArgs = {
   id?: InputMaybe<Scalars['String']['input']>;
@@ -784,7 +758,7 @@ export enum CsvExportStateEnum {
   Completed = 'COMPLETED',
   Failed = 'FAILED',
   Pending = 'PENDING',
-  Processing = 'PROCESSING'
+  Processing = 'PROCESSING',
 }
 
 /** Marker with custom information */
@@ -837,7 +811,6 @@ export type Dashboard = {
   visuals: Array<Visual>;
 };
 
-
 export type DashboardVisualArgs = {
   id: Scalars['String']['input'];
 };
@@ -845,7 +818,7 @@ export type DashboardVisualArgs = {
 export enum DashboardDisplayEnum {
   Area = 'AREA',
   AreaRelative = 'AREA_RELATIVE',
-  Line = 'LINE'
+  Line = 'LINE',
 }
 
 export type DashboardGraph = {
@@ -920,7 +893,7 @@ export enum DashboardSourceEnum {
   /** Automatically created dashboards when certain app metrics are detected. */
   Auto = 'AUTO',
   /** Manually user created dashboards. */
-  User = 'USER'
+  User = 'USER',
 }
 
 export type DataInput = {
@@ -991,7 +964,6 @@ export type Event = {
   title?: Maybe<Scalars['String']['output']>;
 };
 
-
 export type EventTimeseriesArgs = {
   end?: InputMaybe<Scalars['DateTime']['input']>;
   start?: InputMaybe<Scalars['DateTime']['input']>;
@@ -1009,78 +981,77 @@ export type Exception = {
 };
 
 /** Exception incident in which a problem or exception was reported */
-export type ExceptionIncident = IncidentInterface & TransactionIncidentInterface & {
-  __typename?: 'ExceptionIncident';
-  /** All action names where incident occurred, only exception incidents can have more than one action name */
-  actionNames?: Maybe<Array<Scalars['String']['output']>>;
-  /** App in which the incident occurred */
-  app?: Maybe<App>;
-  /** Users assigned to investigate or resolve this incident */
-  assignees?: Maybe<Array<Maybe<User>>>;
-  /** Total count of all recorded requests/jobs for this incident */
-  count: Scalars['Int']['output'];
-  /** Create time of incident */
-  createdAt?: Maybe<Scalars['DateTime']['output']>;
-  /** Incident description, or steps to solve the issue */
-  description?: Maybe<Scalars['String']['output']>;
-  /** All incident digests */
-  digests?: Maybe<Array<Scalars['String']['output']>>;
-  /** Error grouping strategy */
-  errorGroupingStrategy: IncidentErrorGroupingEnum;
-  /** Exception message */
-  exceptionMessage?: Maybe<Scalars['String']['output']>;
-  /** Name of exception, usually the error class */
-  exceptionName?: Maybe<Scalars['String']['output']>;
-  /** First (application) backtrace line */
-  firstBacktraceLine?: Maybe<Scalars['String']['output']>;
-  /** First deploy this error was seen in */
-  firstMarker?: Maybe<DeployMarker>;
-  /** Indicates wether this incidents has any samples in the retention of an account */
-  hasSamplesInRetention: Scalars['Boolean']['output'];
-  /** Incident ID */
-  id: Scalars['String']['output'];
-  /** List of available integration types */
-  integrations?: Maybe<Array<Maybe<Integration>>>;
-  /** Time incident last occurred at */
-  lastOccurredAt?: Maybe<Scalars['DateTime']['output']>;
-  /** Time of last recorded sample */
-  lastSampleOccurredAt?: Maybe<Scalars['DateTime']['output']>;
-  /** Logbook for incident */
-  logbook: Logbook;
-  /** Metadata distributions */
-  metadataDistributions: Array<Maybe<MetadataDistributions>>;
-  /** Namespace the incident occurred in. */
-  namespace?: Maybe<Scalars['String']['output']>;
-  /** Notification frequency for incident */
-  notificationFrequency?: Maybe<IncidentNotificationFrequencyEnum>;
-  /** Notification threshold (nth in hour/day) for incident */
-  notificationThreshold?: Maybe<Scalars['Int']['output']>;
-  /** Incident number */
-  number: Scalars['Int']['output'];
-  /** Total duration of all recorded requests/jobs for this incident and revision/marker */
-  perMarkerCount?: Maybe<Scalars['Int']['output']>;
-  /** Sample for incident, returns first sample that matches the arguments */
-  sample?: Maybe<ExceptionSample>;
-  /** Samples for incident */
-  samples?: Maybe<Array<Maybe<ExceptionSample>>>;
-  /** Severity of incident (critical/high/low/etc.) */
-  severity?: Maybe<IncidentSeverityEnum>;
-  /** Source of exception, can be 'sample' or 'span' */
-  source?: Maybe<IncidentSourceEnum>;
-  /** State of incident (open/closed) */
-  state?: Maybe<IncidentStateEnum>;
-  /** Incident summary */
-  summary?: Maybe<Scalars['String']['output']>;
-  /** Last update time of incident */
-  updatedAt?: Maybe<Scalars['DateTime']['output']>;
-};
-
+export type ExceptionIncident = IncidentInterface &
+  TransactionIncidentInterface & {
+    __typename?: 'ExceptionIncident';
+    /** All action names where incident occurred, only exception incidents can have more than one action name */
+    actionNames?: Maybe<Array<Scalars['String']['output']>>;
+    /** App in which the incident occurred */
+    app?: Maybe<App>;
+    /** Users assigned to investigate or resolve this incident */
+    assignees?: Maybe<Array<Maybe<User>>>;
+    /** Total count of all recorded requests/jobs for this incident */
+    count: Scalars['Int']['output'];
+    /** Create time of incident */
+    createdAt?: Maybe<Scalars['DateTime']['output']>;
+    /** Incident description, or steps to solve the issue */
+    description?: Maybe<Scalars['String']['output']>;
+    /** All incident digests */
+    digests?: Maybe<Array<Scalars['String']['output']>>;
+    /** Error grouping strategy */
+    errorGroupingStrategy: IncidentErrorGroupingEnum;
+    /** Exception message */
+    exceptionMessage?: Maybe<Scalars['String']['output']>;
+    /** Name of exception, usually the error class */
+    exceptionName?: Maybe<Scalars['String']['output']>;
+    /** First (application) backtrace line */
+    firstBacktraceLine?: Maybe<Scalars['String']['output']>;
+    /** First deploy this error was seen in */
+    firstMarker?: Maybe<DeployMarker>;
+    /** Indicates wether this incidents has any samples in the retention of an account */
+    hasSamplesInRetention: Scalars['Boolean']['output'];
+    /** Incident ID */
+    id: Scalars['String']['output'];
+    /** List of available integration types */
+    integrations?: Maybe<Array<Maybe<Integration>>>;
+    /** Time incident last occurred at */
+    lastOccurredAt?: Maybe<Scalars['DateTime']['output']>;
+    /** Time of last recorded sample */
+    lastSampleOccurredAt?: Maybe<Scalars['DateTime']['output']>;
+    /** Logbook for incident */
+    logbook: Logbook;
+    /** Metadata distributions */
+    metadataDistributions: Array<Maybe<MetadataDistributions>>;
+    /** Namespace the incident occurred in. */
+    namespace?: Maybe<Scalars['String']['output']>;
+    /** Notification frequency for incident */
+    notificationFrequency?: Maybe<IncidentNotificationFrequencyEnum>;
+    /** Notification threshold (nth in hour/day) for incident */
+    notificationThreshold?: Maybe<Scalars['Int']['output']>;
+    /** Incident number */
+    number: Scalars['Int']['output'];
+    /** Total duration of all recorded requests/jobs for this incident and revision/marker */
+    perMarkerCount?: Maybe<Scalars['Int']['output']>;
+    /** Sample for incident, returns first sample that matches the arguments */
+    sample?: Maybe<ExceptionSample>;
+    /** Samples for incident */
+    samples?: Maybe<Array<Maybe<ExceptionSample>>>;
+    /** Severity of incident (critical/high/low/etc.) */
+    severity?: Maybe<IncidentSeverityEnum>;
+    /** Source of exception, can be 'sample' or 'span' */
+    source?: Maybe<IncidentSourceEnum>;
+    /** State of incident (open/closed) */
+    state?: Maybe<IncidentStateEnum>;
+    /** Incident summary */
+    summary?: Maybe<Scalars['String']['output']>;
+    /** Last update time of incident */
+    updatedAt?: Maybe<Scalars['DateTime']['output']>;
+  };
 
 /** Exception incident in which a problem or exception was reported */
 export type ExceptionIncidentPerMarkerCountArgs = {
   marker?: InputMaybe<Scalars['String']['input']>;
 };
-
 
 /** Exception incident in which a problem or exception was reported */
 export type ExceptionIncidentSampleArgs = {
@@ -1088,7 +1059,6 @@ export type ExceptionIncidentSampleArgs = {
   timerange?: InputMaybe<Array<InputMaybe<Scalars['DateTime']['input']>>>;
   timestamp?: InputMaybe<Scalars['String']['input']>;
 };
-
 
 /** Exception incident in which a problem or exception was reported */
 export type ExceptionIncidentSamplesArgs = {
@@ -1171,7 +1141,6 @@ export type Export = {
   state: ExportStateEnum;
 };
 
-
 /** A log export */
 export type ExportExportJobsArgs = {
   limit?: InputMaybe<Scalars['Int']['input']>;
@@ -1203,7 +1172,7 @@ export enum ExportJobStateEnum {
   Completed = 'COMPLETED',
   Failed = 'FAILED',
   Requested = 'REQUESTED',
-  Started = 'STARTED'
+  Started = 'STARTED',
 }
 
 /** A log export job update */
@@ -1220,7 +1189,7 @@ export type ExportJobUpdate = {
 export enum ExportStateEnum {
   Failed = 'FAILED',
   Retrying = 'RETRYING',
-  Running = 'RUNNING'
+  Running = 'RUNNING',
 }
 
 /**
@@ -1241,7 +1210,7 @@ export type Field = {
 
 export enum GettingStartedItemStateEnum {
   Completed = 'COMPLETED',
-  Skipped = 'SKIPPED'
+  Skipped = 'SKIPPED',
 }
 
 export type GitHub = IntegrationInterface & {
@@ -1320,7 +1289,7 @@ export enum IncidentErrorGroupingEnum {
   /** Error grouping using the incident type (performance/error) and the namespace/action/error combination. */
   TypeAndAction = 'TYPE_AND_ACTION',
   /** Error grouping using the backtrace line. */
-  TypeAndRelevantBacktraceLine = 'TYPE_AND_RELEVANT_BACKTRACE_LINE'
+  TypeAndRelevantBacktraceLine = 'TYPE_AND_RELEVANT_BACKTRACE_LINE',
 }
 
 /** An AppSignal incident */
@@ -1365,12 +1334,12 @@ export enum IncidentNotificationFrequencyEnum {
   FirstInDeploy = 'FIRST_IN_DEPLOY',
   Never = 'NEVER',
   NthInDay = 'NTH_IN_DAY',
-  NthInHour = 'NTH_IN_HOUR'
+  NthInHour = 'NTH_IN_HOUR',
 }
 
 export enum IncidentOrderEnum {
   Id = 'ID',
-  Last = 'LAST'
+  Last = 'LAST',
 }
 
 export enum IncidentSeverityEnum {
@@ -1379,7 +1348,7 @@ export enum IncidentSeverityEnum {
   Informational = 'INFORMATIONAL',
   Low = 'LOW',
   None = 'NONE',
-  Untriaged = 'UNTRIAGED'
+  Untriaged = 'UNTRIAGED',
 }
 
 /** The source of an incident (what generated this incident) */
@@ -1387,17 +1356,26 @@ export enum IncidentSourceEnum {
   /** This incident was generated by our sampling system */
   Sample = 'SAMPLE',
   /** This incident was extracted from an OpenTelemetry span */
-  Span = 'SPAN'
+  Span = 'SPAN',
 }
 
 export enum IncidentStateEnum {
   Closed = 'CLOSED',
   Open = 'OPEN',
-  Wip = 'WIP'
+  Wip = 'WIP',
 }
 
 /** Integration objects such as GitHub, GitLab, Trello etc. */
-export type Integration = Asana | GitHub | GitLab | Jira | Linear | Phabricator | PivotalTracker | Shortcut | Trello;
+export type Integration =
+  | Asana
+  | GitHub
+  | GitLab
+  | Jira
+  | Linear
+  | Phabricator
+  | PivotalTracker
+  | Shortcut
+  | Trello;
 
 export type IntegrationCreate = ItemInterface & {
   __typename?: 'IntegrationCreate';
@@ -1672,11 +1650,20 @@ export type Logbook = {
 };
 
 /** Logbook item objects. */
-export type LogbookItem = AssigneeChange | IntegrationCreate | ManualAlertStateChange | Note | NotificationFrequencyChange | NotificationThresholdChange | NotifierResult | SeverityChange | StateChange;
+export type LogbookItem =
+  | AssigneeChange
+  | IntegrationCreate
+  | ManualAlertStateChange
+  | Note
+  | NotificationFrequencyChange
+  | NotificationThresholdChange
+  | NotifierResult
+  | SeverityChange
+  | StateChange;
 
 export enum LogbookableTypeEnum {
   Heartbeat = 'HEARTBEAT',
-  Incident = 'INCIDENT'
+  Incident = 'INCIDENT',
 }
 
 export type Logs = {
@@ -1696,7 +1683,6 @@ export type Logs = {
   vercelProjects: Array<Maybe<VercelProject>>;
 };
 
-
 export type LogsLinesArgs = {
   end?: InputMaybe<Scalars['PreciseDateTime']['input']>;
   limit?: InputMaybe<Scalars['Int']['input']>;
@@ -1707,7 +1693,6 @@ export type LogsLinesArgs = {
   start?: InputMaybe<Scalars['PreciseDateTime']['input']>;
 };
 
-
 export type LogsMetricsArgs = {
   end?: InputMaybe<Scalars['PreciseDateTime']['input']>;
   query?: InputMaybe<Scalars['String']['input']>;
@@ -1716,7 +1701,6 @@ export type LogsMetricsArgs = {
   sourceIds?: InputMaybe<Array<Scalars['String']['input']>>;
   start?: InputMaybe<Scalars['PreciseDateTime']['input']>;
 };
-
 
 export type LogsSourceArgs = {
   id?: InputMaybe<Scalars['String']['input']>;
@@ -1772,7 +1756,7 @@ export enum MetricAggregateEnum {
   /** Returns minimum value of group */
   Min = 'MIN',
   /** Sums values of group */
-  Sum = 'SUM'
+  Sum = 'SUM',
 }
 
 /**
@@ -1812,7 +1796,7 @@ export enum MetricFieldEnum {
   /** 90th percentile of measurement */
   P90 = 'P90',
   /** 95th percentile of measurement */
-  P95 = 'P95'
+  P95 = 'P95',
 }
 
 /** Metric key exctracted from timeseries data. */
@@ -1861,7 +1845,7 @@ export type MetricTimeseries = {
 export enum MetricTypeEnum {
   Counter = 'COUNTER',
   Gauge = 'GAUGE',
-  Measurement = 'MEASUREMENT'
+  Measurement = 'MEASUREMENT',
 }
 
 /** Holds different metric fields */
@@ -1875,7 +1859,6 @@ export type Metrics = {
   timeseries?: Maybe<Timeseries>;
 };
 
-
 /** Holds different metric fields */
 export type MetricsKeysArgs = {
   end?: InputMaybe<Scalars['DateTime']['input']>;
@@ -1887,7 +1870,6 @@ export type MetricsKeysArgs = {
   timeframe?: InputMaybe<TimeframeEnum>;
 };
 
-
 /** Holds different metric fields */
 export type MetricsListArgs = {
   end?: InputMaybe<Scalars['DateTime']['input']>;
@@ -1897,7 +1879,6 @@ export type MetricsListArgs = {
   start?: InputMaybe<Scalars['DateTime']['input']>;
   timeframe?: InputMaybe<TimeframeEnum>;
 };
-
 
 /** Holds different metric fields */
 export type MetricsTimeseriesArgs = {
@@ -1979,20 +1960,17 @@ export type Mutation = {
   usedFeature?: Maybe<Viewer>;
 };
 
-
 /** The mutation root of this schema. */
 export type MutationArchiveAlertArgs = {
   appId: Scalars['String']['input'];
   id: Scalars['String']['input'];
 };
 
-
 /** The mutation root of this schema. */
 export type MutationArchiveTriggerArgs = {
   appId: Scalars['String']['input'];
   id: Scalars['String']['input'];
 };
-
 
 /** The mutation root of this schema. */
 export type MutationBulkUpdateIncidentsArgs = {
@@ -2003,14 +1981,12 @@ export type MutationBulkUpdateIncidentsArgs = {
   state?: InputMaybe<IncidentStateEnum>;
 };
 
-
 /** The mutation root of this schema. */
 export type MutationCreateAppArgs = {
   environment: Scalars['String']['input'];
   name: Scalars['String']['input'];
   organizationSlug: Scalars['String']['input'];
 };
-
 
 /** The mutation root of this schema. */
 export type MutationCreateAsanaTaskArgs = {
@@ -2019,7 +1995,6 @@ export type MutationCreateAsanaTaskArgs = {
   incidentNumber: Scalars['Int']['input'];
   title: Scalars['String']['input'];
 };
-
 
 /** The mutation root of this schema. */
 export type MutationCreateCheckInTriggerArgs = {
@@ -2033,14 +2008,12 @@ export type MutationCreateCheckInTriggerArgs = {
   waitTimeMinutes: Scalars['Int']['input'];
 };
 
-
 /** The mutation root of this schema. */
 export type MutationCreateCheckInTriggerNoteArgs = {
   appId: Scalars['String']['input'];
   checkInTriggerId: Scalars['String']['input'];
   content: Scalars['String']['input'];
 };
-
 
 /** The mutation root of this schema. */
 export type MutationCreateCsvExportArgs = {
@@ -2049,13 +2022,11 @@ export type MutationCreateCsvExportArgs = {
   type: Scalars['String']['input'];
 };
 
-
 /** The mutation root of this schema. */
 export type MutationCreateCsvExportUrlArgs = {
   exportId: Scalars['String']['input'];
   organizationSlug: Scalars['String']['input'];
 };
-
 
 /** The mutation root of this schema. */
 export type MutationCreateDashboardArgs = {
@@ -2064,14 +2035,12 @@ export type MutationCreateDashboardArgs = {
   title: Scalars['String']['input'];
 };
 
-
 /** The mutation root of this schema. */
 export type MutationCreateGettingStartedItemArgs = {
   appId: Scalars['String']['input'];
   name: Scalars['String']['input'];
   state: GettingStartedItemStateEnum;
 };
-
 
 /** The mutation root of this schema. */
 export type MutationCreateGithubIssueArgs = {
@@ -2081,7 +2050,6 @@ export type MutationCreateGithubIssueArgs = {
   title: Scalars['String']['input'];
 };
 
-
 /** The mutation root of this schema. */
 export type MutationCreateGitlabIssueArgs = {
   appId: Scalars['String']['input'];
@@ -2090,14 +2058,12 @@ export type MutationCreateGitlabIssueArgs = {
   title: Scalars['String']['input'];
 };
 
-
 /** The mutation root of this schema. */
 export type MutationCreateIncidentNoteArgs = {
   appId: Scalars['String']['input'];
   content: Scalars['String']['input'];
   incidentNumber: Scalars['Int']['input'];
 };
-
 
 /** The mutation root of this schema. */
 export type MutationCreateJiraIssueArgs = {
@@ -2107,7 +2073,6 @@ export type MutationCreateJiraIssueArgs = {
   title: Scalars['String']['input'];
 };
 
-
 /** The mutation root of this schema. */
 export type MutationCreateLinearIssueArgs = {
   appId: Scalars['String']['input'];
@@ -2115,7 +2080,6 @@ export type MutationCreateLinearIssueArgs = {
   incidentNumber: Scalars['Int']['input'];
   title: Scalars['String']['input'];
 };
-
 
 /** The mutation root of this schema. */
 export type MutationCreateLogExportArgs = {
@@ -2127,7 +2091,6 @@ export type MutationCreateLogExportArgs = {
   sourceId: Scalars['String']['input'];
 };
 
-
 /** The mutation root of this schema. */
 export type MutationCreateLogSourceArgs = {
   appId: Scalars['String']['input'];
@@ -2138,7 +2101,6 @@ export type MutationCreateLogSourceArgs = {
   projectId?: InputMaybe<Scalars['String']['input']>;
   type: Scalars['String']['input'];
 };
-
 
 /** The mutation root of this schema. */
 export type MutationCreateLogTriggerArgs = {
@@ -2153,7 +2115,6 @@ export type MutationCreateLogTriggerArgs = {
   sourceIds?: InputMaybe<Array<Scalars['String']['input']>>;
 };
 
-
 /** The mutation root of this schema. */
 export type MutationCreateLogViewArgs = {
   appId: Scalars['String']['input'];
@@ -2165,7 +2126,6 @@ export type MutationCreateLogViewArgs = {
   sourceIds?: InputMaybe<Array<Scalars['String']['input']>>;
 };
 
-
 /** The mutation root of this schema. */
 export type MutationCreateOrUpdateCustomMarkerArgs = {
   appId: Scalars['String']['input'];
@@ -2174,7 +2134,6 @@ export type MutationCreateOrUpdateCustomMarkerArgs = {
   id?: InputMaybe<Scalars['String']['input']>;
   message?: InputMaybe<Scalars['String']['input']>;
 };
-
 
 /** The mutation root of this schema. */
 export type MutationCreatePhabricatorIssueArgs = {
@@ -2185,7 +2144,6 @@ export type MutationCreatePhabricatorIssueArgs = {
   title: Scalars['String']['input'];
 };
 
-
 /** The mutation root of this schema. */
 export type MutationCreatePivotalTrackerStoryArgs = {
   appId: Scalars['String']['input'];
@@ -2193,7 +2151,6 @@ export type MutationCreatePivotalTrackerStoryArgs = {
   incidentNumber: Scalars['Int']['input'];
   title: Scalars['String']['input'];
 };
-
 
 /** The mutation root of this schema. */
 export type MutationCreateSavedVisualArgs = {
@@ -2205,7 +2162,6 @@ export type MutationCreateSavedVisualArgs = {
   valueInput?: InputMaybe<Scalars['String']['input']>;
 };
 
-
 /** The mutation root of this schema. */
 export type MutationCreateShortcutStoryArgs = {
   appId: Scalars['String']['input'];
@@ -2214,13 +2170,11 @@ export type MutationCreateShortcutStoryArgs = {
   title: Scalars['String']['input'];
 };
 
-
 /** The mutation root of this schema. */
 export type MutationCreateStatusPageArgs = {
   organizationSlug: Scalars['String']['input'];
   statusPage: CreateStatusPageInput;
 };
-
 
 /** The mutation root of this schema. */
 export type MutationCreateStatusPageUpdateArgs = {
@@ -2228,7 +2182,6 @@ export type MutationCreateStatusPageUpdateArgs = {
   statusPageId: Scalars['String']['input'];
   statusPageUpdate: StatusPageUpdateInput;
 };
-
 
 /** The mutation root of this schema. */
 export type MutationCreateTrelloCardArgs = {
@@ -2238,7 +2191,6 @@ export type MutationCreateTrelloCardArgs = {
   listId: Scalars['String']['input'];
   title: Scalars['String']['input'];
 };
-
 
 /** The mutation root of this schema. */
 export type MutationCreateTriggerArgs = {
@@ -2260,13 +2212,11 @@ export type MutationCreateTriggerArgs = {
   warmupDuration: Scalars['Int']['input'];
 };
 
-
 /** The mutation root of this schema. */
 export type MutationCreateUptimeMonitorArgs = {
   appId: Scalars['String']['input'];
   uptimeMonitor: UptimeMonitorInput;
 };
-
 
 /** The mutation root of this schema. */
 export type MutationCreateVisualTimeseriesArgs = {
@@ -2275,12 +2225,10 @@ export type MutationCreateVisualTimeseriesArgs = {
   visual: VisualTimeseriesInput;
 };
 
-
 /** The mutation root of this schema. */
 export type MutationDeleteAppArgs = {
   appId: Scalars['String']['input'];
 };
-
 
 /** The mutation root of this schema. */
 export type MutationDeleteCheckInArgs = {
@@ -2288,13 +2236,11 @@ export type MutationDeleteCheckInArgs = {
   id: Scalars['String']['input'];
 };
 
-
 /** The mutation root of this schema. */
 export type MutationDeleteCheckInTriggerArgs = {
   appId: Scalars['String']['input'];
   id: Scalars['String']['input'];
 };
-
 
 /** The mutation root of this schema. */
 export type MutationDeleteCustomMarkerArgs = {
@@ -2302,13 +2248,11 @@ export type MutationDeleteCustomMarkerArgs = {
   id: Scalars['String']['input'];
 };
 
-
 /** The mutation root of this schema. */
 export type MutationDeleteDashboardArgs = {
   appId: Scalars['String']['input'];
   id: Scalars['String']['input'];
 };
-
 
 /** The mutation root of this schema. */
 export type MutationDeleteLogExportArgs = {
@@ -2316,13 +2260,11 @@ export type MutationDeleteLogExportArgs = {
   id: Scalars['String']['input'];
 };
 
-
 /** The mutation root of this schema. */
 export type MutationDeleteLogSourceArgs = {
   appId: Scalars['String']['input'];
   id: Scalars['String']['input'];
 };
-
 
 /** The mutation root of this schema. */
 export type MutationDeleteLogTriggerArgs = {
@@ -2330,13 +2272,11 @@ export type MutationDeleteLogTriggerArgs = {
   id: Scalars['String']['input'];
 };
 
-
 /** The mutation root of this schema. */
 export type MutationDeleteLogViewArgs = {
   appId: Scalars['String']['input'];
   id: Scalars['String']['input'];
 };
-
 
 /** The mutation root of this schema. */
 export type MutationDeleteLogbookNoteArgs = {
@@ -2346,13 +2286,11 @@ export type MutationDeleteLogbookNoteArgs = {
   logbookableType: LogbookableTypeEnum;
 };
 
-
 /** The mutation root of this schema. */
 export type MutationDeleteStatusPageArgs = {
   id: Scalars['String']['input'];
   organizationSlug: Scalars['String']['input'];
 };
-
 
 /** The mutation root of this schema. */
 export type MutationDeleteStatusPageUpdateArgs = {
@@ -2361,13 +2299,11 @@ export type MutationDeleteStatusPageUpdateArgs = {
   statusPageId: Scalars['String']['input'];
 };
 
-
 /** The mutation root of this schema. */
 export type MutationDeleteUptimeMonitorArgs = {
   appId: Scalars['String']['input'];
   id: Scalars['String']['input'];
 };
-
 
 /** The mutation root of this schema. */
 export type MutationDeleteVisualArgs = {
@@ -2375,13 +2311,11 @@ export type MutationDeleteVisualArgs = {
   id: Scalars['String']['input'];
 };
 
-
 /** The mutation root of this schema. */
 export type MutationEndLastAlertArgs = {
   appId: Scalars['String']['input'];
   number: Scalars['Int']['input'];
 };
-
 
 /** The mutation root of this schema. */
 export type MutationImportDashboardArgs = {
@@ -2389,18 +2323,15 @@ export type MutationImportDashboardArgs = {
   json: Scalars['String']['input'];
 };
 
-
 /** The mutation root of this schema. */
 export type MutationMarkTooltipAsSeenArgs = {
   tooltip: Scalars['String']['input'];
 };
 
-
 /** The mutation root of this schema. */
 export type MutationPinAppArgs = {
   appId: Scalars['String']['input'];
 };
-
 
 /** The mutation root of this schema. */
 export type MutationPinLogbookCommentArgs = {
@@ -2410,14 +2341,12 @@ export type MutationPinLogbookCommentArgs = {
   logbookableType: LogbookableTypeEnum;
 };
 
-
 /** The mutation root of this schema. */
 export type MutationRemoveIntegrationArgs = {
   appId: Scalars['String']['input'];
   id: Scalars['String']['input'];
   incidentNumber: Scalars['Int']['input'];
 };
-
 
 /** The mutation root of this schema. */
 export type MutationReorderVisualsArgs = {
@@ -2426,12 +2355,10 @@ export type MutationReorderVisualsArgs = {
   visualIds: Array<InputMaybe<Scalars['String']['input']>>;
 };
 
-
 /** The mutation root of this schema. */
 export type MutationUnpinAppArgs = {
   appId: Scalars['String']['input'];
 };
-
 
 /** The mutation root of this schema. */
 export type MutationUnpinLogbookCommentArgs = {
@@ -2439,7 +2366,6 @@ export type MutationUnpinLogbookCommentArgs = {
   logbookableId: Scalars['String']['input'];
   logbookableType: LogbookableTypeEnum;
 };
-
 
 /** The mutation root of this schema. */
 export type MutationUpdateCheckInTriggerArgs = {
@@ -2453,7 +2379,6 @@ export type MutationUpdateCheckInTriggerArgs = {
   waitTimeMinutes?: InputMaybe<Scalars['Int']['input']>;
 };
 
-
 /** The mutation root of this schema. */
 export type MutationUpdateDashboardArgs = {
   appId: Scalars['String']['input'];
@@ -2461,7 +2386,6 @@ export type MutationUpdateDashboardArgs = {
   id: Scalars['String']['input'];
   title: Scalars['String']['input'];
 };
-
 
 /** The mutation root of this schema. */
 export type MutationUpdateIncidentArgs = {
@@ -2475,7 +2399,6 @@ export type MutationUpdateIncidentArgs = {
   state?: InputMaybe<IncidentStateEnum>;
 };
 
-
 /** The mutation root of this schema. */
 export type MutationUpdateLogExportArgs = {
   appId: Scalars['String']['input'];
@@ -2486,7 +2409,6 @@ export type MutationUpdateLogExportArgs = {
   s3Url?: InputMaybe<Scalars['String']['input']>;
 };
 
-
 /** The mutation root of this schema. */
 export type MutationUpdateLogSourceArgs = {
   appId: Scalars['String']['input'];
@@ -2495,7 +2417,6 @@ export type MutationUpdateLogSourceArgs = {
   name: Scalars['String']['input'];
   parseSeverity?: InputMaybe<Scalars['Boolean']['input']>;
 };
-
 
 /** The mutation root of this schema. */
 export type MutationUpdateLogTriggerArgs = {
@@ -2511,7 +2432,6 @@ export type MutationUpdateLogTriggerArgs = {
   sourceIds?: InputMaybe<Array<Scalars['String']['input']>>;
 };
 
-
 /** The mutation root of this schema. */
 export type MutationUpdateLogViewArgs = {
   appId: Scalars['String']['input'];
@@ -2524,14 +2444,12 @@ export type MutationUpdateLogViewArgs = {
   sourceIds?: InputMaybe<Array<Scalars['String']['input']>>;
 };
 
-
 /** The mutation root of this schema. */
 export type MutationUpdateStatusPageArgs = {
   id: Scalars['String']['input'];
   organizationSlug: Scalars['String']['input'];
   statusPage: UpdateStatusPageInput;
 };
-
 
 /** The mutation root of this schema. */
 export type MutationUpdateStatusPageUpdateArgs = {
@@ -2541,14 +2459,12 @@ export type MutationUpdateStatusPageUpdateArgs = {
   statusPageUpdate: StatusPageUpdateInput;
 };
 
-
 /** The mutation root of this schema. */
 export type MutationUpdateUptimeMonitorArgs = {
   appId: Scalars['String']['input'];
   id: Scalars['String']['input'];
   uptimeMonitor: UptimeMonitorInput;
 };
-
 
 /** The mutation root of this schema. */
 export type MutationUpdateViewerArgs = {
@@ -2560,14 +2476,12 @@ export type MutationUpdateViewerArgs = {
   hideGettingStarted?: InputMaybe<Scalars['Boolean']['input']>;
 };
 
-
 /** The mutation root of this schema. */
 export type MutationUpdateVisualTimeseriesArgs = {
   appId: Scalars['String']['input'];
   visual: VisualTimeseriesInput;
   visualId: Scalars['String']['input'];
 };
-
 
 /** The mutation root of this schema. */
 export type MutationUsedFeatureArgs = {
@@ -2660,7 +2574,7 @@ export type NotifierResult = ItemInterface & {
 
 export enum OrderEnum {
   Asc = 'ASC',
-  Desc = 'DESC'
+  Desc = 'DESC',
 }
 
 /** An AppSignal organization */
@@ -2702,13 +2616,11 @@ export type Organization = {
   users?: Maybe<Array<Maybe<User>>>;
 };
 
-
 /** An AppSignal organization */
 export type OrganizationCsvExportsArgs = {
   limit?: InputMaybe<Scalars['Int']['input']>;
   offset?: InputMaybe<Scalars['Int']['input']>;
 };
-
 
 /** An AppSignal organization */
 export type OrganizationLinksArgs = {
@@ -2716,7 +2628,6 @@ export type OrganizationLinksArgs = {
   start?: InputMaybe<Scalars['DateTime']['input']>;
   timeframe?: InputMaybe<TimeframeEnum>;
 };
-
 
 /** An AppSignal organization */
 export type OrganizationSearchArgs = {
@@ -2727,12 +2638,10 @@ export type OrganizationSearchArgs = {
   timerange?: InputMaybe<Array<InputMaybe<Scalars['DateTime']['input']>>>;
 };
 
-
 /** An AppSignal organization */
 export type OrganizationStatusPageArgs = {
   id?: InputMaybe<Scalars['String']['input']>;
 };
-
 
 /** An AppSignal organization */
 export type OrganizationStatusPageUpdateArgs = {
@@ -2777,96 +2686,92 @@ export type PaginatedPerformanceIncidents = {
 };
 
 /** Performance incident in which a problem or exception was reported */
-export type PerformanceIncident = IncidentInterface & TransactionIncidentInterface & {
-  __typename?: 'PerformanceIncident';
-  /** All action names where incident occurred, only exception incidents can have more than one action name */
-  actionNames?: Maybe<Array<Scalars['String']['output']>>;
-  /** App in which the incident occurred */
-  app?: Maybe<App>;
-  /** Users assigned to investigate or resolve this incident */
-  assignees?: Maybe<Array<Maybe<User>>>;
-  /** Total count of all recorded requests/jobs for this incident */
-  count: Scalars['Int']['output'];
-  /** Create time of incident */
-  createdAt?: Maybe<Scalars['DateTime']['output']>;
-  /** Deploy markers for incident */
-  deployMarkers: Array<Maybe<PerformanceMarker>>;
-  /** Incident description, or steps to solve the issue */
-  description?: Maybe<Scalars['String']['output']>;
-  /** All incident digests */
-  digests?: Maybe<Array<Scalars['String']['output']>>;
-  /** Value to indicate that any of the last 5 deploys had an N+1 query */
-  hasNPlusOne?: Maybe<Scalars['Boolean']['output']>;
-  /** Indicates wether this incidents has any samples in the retention of an account */
-  hasSamplesInRetention: Scalars['Boolean']['output'];
-  /** Incident ID */
-  id: Scalars['String']['output'];
-  /** List of available integration types */
-  integrations?: Maybe<Array<Maybe<Integration>>>;
-  /** Time incident last occurred at */
-  lastOccurredAt?: Maybe<Scalars['DateTime']['output']>;
-  /** Time of last recorded sample */
-  lastSampleOccurredAt?: Maybe<Scalars['DateTime']['output']>;
-  /** Logbook for incident */
-  logbook: Logbook;
-  /** Mean duration of all recorded requests/jobs for this incident */
-  mean: Scalars['Float']['output'];
-  /** Namespace the incident occurred in. */
-  namespace?: Maybe<Scalars['String']['output']>;
-  /** Notification frequency for incident */
-  notificationFrequency?: Maybe<IncidentNotificationFrequencyEnum>;
-  /** Notification threshold (in ms) for incident */
-  notificationThreshold?: Maybe<Scalars['Int']['output']>;
-  /** Incident number */
-  number: Scalars['Int']['output'];
-  /** Total duration of all recorded requests/jobs for this incident and revision/marker */
-  perMarkerCount?: Maybe<Scalars['Int']['output']>;
-  /** Value is true when we encountered a sample with a N+1 query for this incident and given revision/marker */
-  perMarkerHasNPlusOne?: Maybe<Scalars['Boolean']['output']>;
-  /** Mean duration of all recorded requests/jobs for this incident and given revision/marker */
-  perMarkerMean?: Maybe<Scalars['Float']['output']>;
-  /** Total duration of all recorded requests/jobs for this incident and given revision/marker */
-  perMarkerTotalDuration?: Maybe<Scalars['Float']['output']>;
-  /** Sample for incident, returns first sample that matches the arguments */
-  sample?: Maybe<PerformanceSample>;
-  /** Samples for incident */
-  samples?: Maybe<Array<Maybe<PerformanceSample>>>;
-  /** Severity of incident (critical/high/low/etc.) */
-  severity?: Maybe<IncidentSeverityEnum>;
-  /** State of incident (open/closed) */
-  state?: Maybe<IncidentStateEnum>;
-  /** Incident summary */
-  summary?: Maybe<Scalars['String']['output']>;
-  /** Total duration of all recorded requests/jobs for this incident */
-  totalDuration: Scalars['Float']['output'];
-  /** Last update time of incident */
-  updatedAt?: Maybe<Scalars['DateTime']['output']>;
-};
-
+export type PerformanceIncident = IncidentInterface &
+  TransactionIncidentInterface & {
+    __typename?: 'PerformanceIncident';
+    /** All action names where incident occurred, only exception incidents can have more than one action name */
+    actionNames?: Maybe<Array<Scalars['String']['output']>>;
+    /** App in which the incident occurred */
+    app?: Maybe<App>;
+    /** Users assigned to investigate or resolve this incident */
+    assignees?: Maybe<Array<Maybe<User>>>;
+    /** Total count of all recorded requests/jobs for this incident */
+    count: Scalars['Int']['output'];
+    /** Create time of incident */
+    createdAt?: Maybe<Scalars['DateTime']['output']>;
+    /** Deploy markers for incident */
+    deployMarkers: Array<Maybe<PerformanceMarker>>;
+    /** Incident description, or steps to solve the issue */
+    description?: Maybe<Scalars['String']['output']>;
+    /** All incident digests */
+    digests?: Maybe<Array<Scalars['String']['output']>>;
+    /** Value to indicate that any of the last 5 deploys had an N+1 query */
+    hasNPlusOne?: Maybe<Scalars['Boolean']['output']>;
+    /** Indicates wether this incidents has any samples in the retention of an account */
+    hasSamplesInRetention: Scalars['Boolean']['output'];
+    /** Incident ID */
+    id: Scalars['String']['output'];
+    /** List of available integration types */
+    integrations?: Maybe<Array<Maybe<Integration>>>;
+    /** Time incident last occurred at */
+    lastOccurredAt?: Maybe<Scalars['DateTime']['output']>;
+    /** Time of last recorded sample */
+    lastSampleOccurredAt?: Maybe<Scalars['DateTime']['output']>;
+    /** Logbook for incident */
+    logbook: Logbook;
+    /** Mean duration of all recorded requests/jobs for this incident */
+    mean: Scalars['Float']['output'];
+    /** Namespace the incident occurred in. */
+    namespace?: Maybe<Scalars['String']['output']>;
+    /** Notification frequency for incident */
+    notificationFrequency?: Maybe<IncidentNotificationFrequencyEnum>;
+    /** Notification threshold (in ms) for incident */
+    notificationThreshold?: Maybe<Scalars['Int']['output']>;
+    /** Incident number */
+    number: Scalars['Int']['output'];
+    /** Total duration of all recorded requests/jobs for this incident and revision/marker */
+    perMarkerCount?: Maybe<Scalars['Int']['output']>;
+    /** Value is true when we encountered a sample with a N+1 query for this incident and given revision/marker */
+    perMarkerHasNPlusOne?: Maybe<Scalars['Boolean']['output']>;
+    /** Mean duration of all recorded requests/jobs for this incident and given revision/marker */
+    perMarkerMean?: Maybe<Scalars['Float']['output']>;
+    /** Total duration of all recorded requests/jobs for this incident and given revision/marker */
+    perMarkerTotalDuration?: Maybe<Scalars['Float']['output']>;
+    /** Sample for incident, returns first sample that matches the arguments */
+    sample?: Maybe<PerformanceSample>;
+    /** Samples for incident */
+    samples?: Maybe<Array<Maybe<PerformanceSample>>>;
+    /** Severity of incident (critical/high/low/etc.) */
+    severity?: Maybe<IncidentSeverityEnum>;
+    /** State of incident (open/closed) */
+    state?: Maybe<IncidentStateEnum>;
+    /** Incident summary */
+    summary?: Maybe<Scalars['String']['output']>;
+    /** Total duration of all recorded requests/jobs for this incident */
+    totalDuration: Scalars['Float']['output'];
+    /** Last update time of incident */
+    updatedAt?: Maybe<Scalars['DateTime']['output']>;
+  };
 
 /** Performance incident in which a problem or exception was reported */
 export type PerformanceIncidentPerMarkerCountArgs = {
   marker?: InputMaybe<Scalars['String']['input']>;
 };
 
-
 /** Performance incident in which a problem or exception was reported */
 export type PerformanceIncidentPerMarkerHasNPlusOneArgs = {
   marker?: InputMaybe<Scalars['String']['input']>;
 };
-
 
 /** Performance incident in which a problem or exception was reported */
 export type PerformanceIncidentPerMarkerMeanArgs = {
   marker?: InputMaybe<Scalars['String']['input']>;
 };
 
-
 /** Performance incident in which a problem or exception was reported */
 export type PerformanceIncidentPerMarkerTotalDurationArgs = {
   marker?: InputMaybe<Scalars['String']['input']>;
 };
-
 
 /** Performance incident in which a problem or exception was reported */
 export type PerformanceIncidentSampleArgs = {
@@ -2874,7 +2779,6 @@ export type PerformanceIncidentSampleArgs = {
   timerange?: InputMaybe<Array<InputMaybe<Scalars['DateTime']['input']>>>;
   timestamp?: InputMaybe<Scalars['String']['input']>;
 };
-
 
 /** Performance incident in which a problem or exception was reported */
 export type PerformanceIncidentSamplesArgs = {
@@ -3046,12 +2950,10 @@ export type Query = {
   viewer?: Maybe<Viewer>;
 };
 
-
 /** The query root of this schema */
 export type QueryAppArgs = {
   id: Scalars['String']['input'];
 };
-
 
 /** The query root of this schema */
 export type QueryOrganizationArgs = {
@@ -3065,7 +2967,7 @@ export enum ResolutionEnum {
   /** Resolution of: hourly */
   Hourly = 'HOURLY',
   /** Resolution of: minutely */
-  Minutely = 'MINUTELY'
+  Minutely = 'MINUTELY',
 }
 
 export type Result = {
@@ -3139,7 +3041,7 @@ export enum SampleOriginalRequestEnum {
   /** Sample was requested by timerange, but we are returning an alternative */
   Timerange = 'TIMERANGE',
   /** Sample was requested by timestamp, but we are returning an alternative */
-  Timestamp = 'TIMESTAMP'
+  Timestamp = 'TIMESTAMP',
 }
 
 /** Types of sample. */
@@ -3147,7 +3049,7 @@ export enum SampleTypeEnum {
   /** Exception sample */
   Exception = 'EXCEPTION',
   /** Performance sample */
-  Performance = 'PERFORMANCE'
+  Performance = 'PERFORMANCE',
 }
 
 /** Saved visual */
@@ -3212,7 +3114,7 @@ export enum SeverityEnum {
   Notice = 'NOTICE',
   Trace = 'TRACE',
   Unknown = 'UNKNOWN',
-  Warn = 'WARN'
+  Warn = 'WARN',
 }
 
 export type Shortcut = IntegrationInterface & {
@@ -3274,7 +3176,6 @@ export type Source = {
   usageBytesLast24h: Scalars['Int']['output'];
 };
 
-
 /** A log source */
 export type SourceMetricsArgs = {
   end?: InputMaybe<Scalars['PreciseDateTime']['input']>;
@@ -3285,7 +3186,7 @@ export type SourceMetricsArgs = {
 export enum SourceFormatEnum {
   Json = 'JSON',
   Logfmt = 'LOGFMT',
-  Plaintext = 'PLAINTEXT'
+  Plaintext = 'PLAINTEXT',
 }
 
 export type Spans = {
@@ -3296,13 +3197,11 @@ export type Spans = {
   metadataDistributions: Array<Maybe<MetadataDistributions>>;
 };
 
-
 export type SpansMetadataDistributionArgs = {
   incidentDigests: Array<Scalars['String']['input']>;
   limit?: InputMaybe<Scalars['Int']['input']>;
   metadataKey: Scalars['String']['input'];
 };
-
 
 export type SpansMetadataDistributionsArgs = {
   incidentDigests: Array<Scalars['String']['input']>;
@@ -3355,7 +3254,7 @@ export enum StatusPageStateEnum {
   /** down */
   Down = 'DOWN',
   /** up */
-  Up = 'UP'
+  Up = 'UP',
 }
 
 export type StatusPageUpdate = {
@@ -3390,7 +3289,7 @@ export enum StatusPageUpdateStateEnum {
   /** recovering */
   Recovering = 'RECOVERING',
   /** resolved */
-  Resolved = 'RESOLVED'
+  Resolved = 'RESOLVED',
 }
 
 /**
@@ -3420,7 +3319,7 @@ export enum ThresholdAlertSettingComparisonOperationEnum {
   /** Less than or equal */
   LessThanOrEqual = 'LESS_THAN_OR_EQUAL',
   /** Not equal */
-  NotEqual = 'NOT_EQUAL'
+  NotEqual = 'NOT_EQUAL',
 }
 
 /** Settings for the AlertConfiguration to compare against. */
@@ -3479,7 +3378,7 @@ export enum TimeframeEnum {
   /** Timeframe of: 30 */
   R30D = 'R30D',
   /** Timeframe of: 48 */
-  R48H = 'R48H'
+  R48H = 'R48H',
 }
 
 /** Event belonging in a performance sample timeline */
@@ -3563,7 +3462,6 @@ export type TransactionIncidentInterface = {
   /** Total duration of all recorded requests/jobs for this incident and revision/marker */
   perMarkerCount?: Maybe<Scalars['Int']['output']>;
 };
-
 
 /** An AppSignal transaction incident */
 export type TransactionIncidentInterfacePerMarkerCountArgs = {
@@ -3740,7 +3638,7 @@ export enum UptimeMonitorRegionEnum {
   /** Uptime monitor region: north-america */
   NorthAmerica = 'NORTH_AMERICA',
   /** Uptime monitor region: south-america */
-  SouthAmerica = 'SOUTH_AMERICA'
+  SouthAmerica = 'SOUTH_AMERICA',
 }
 
 /** An AppSignal user */
@@ -3863,7 +3761,6 @@ export type Viewer = UserInterface & {
   usedFeatures: Array<Scalars['String']['output']>;
 };
 
-
 /** A logged-in AppSignal user */
 export type ViewerAssignedIncidentsArgs = {
   appId?: InputMaybe<Scalars['String']['input']>;
@@ -3874,7 +3771,6 @@ export type ViewerAssignedIncidentsArgs = {
   severity?: InputMaybe<IncidentSeverityEnum>;
   state?: InputMaybe<Array<IncidentStateEnum>>;
 };
-
 
 /** A logged-in AppSignal user */
 export type ViewerIncidentsArgs = {
@@ -3905,7 +3801,7 @@ export type Visual = VisualTimeseries;
 export enum VisualDisplayEnum {
   Area = 'AREA',
   AreaRelative = 'AREA_RELATIVE',
-  Line = 'LINE'
+  Line = 'LINE',
 }
 
 /** An AppSignal visual, used on dashboards. */
