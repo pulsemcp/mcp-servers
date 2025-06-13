@@ -22,43 +22,14 @@ jobs:
             const owner = context.repo.owner;
             const repo = context.repo.repo;
 
-            // Determine which files changed
-            let changedFiles = [];
-            if (context.eventName === 'pull_request') {
-              const files = await github.rest.pulls.listFiles({
-                owner,
-                repo,
-                pull_number: context.payload.pull_request.number,
-                per_page: 100
-              });
-              changedFiles = files.data.map(f => f.filename);
-            } else {
-              // For push events, we can't easily determine changed files
-              // So we'll just wait for any running checks
-              console.log('Push event - will wait for all running checks');
-            }
+            console.log(`Event: ${context.eventName}`);
+            console.log(`SHA: ${context.sha}`);
 
-            // Determine which checks should run
-            const shouldRunAppSignal = changedFiles.length === 0 || changedFiles.some(f => 
-              f.startsWith('experimental/appsignal/') || 
-              f === '.github/workflows/appsignal-ci.yml'
-            );
+            // Wait a bit for other checks to start
+            console.log('Waiting 30 seconds for other checks to start...');
+            await new Promise(resolve => setTimeout(resolve, 30000));
 
-            const shouldRunLint = changedFiles.length === 0 || changedFiles.some(f => 
-              f.endsWith('.ts') || 
-              f.endsWith('.tsx') || 
-              f.endsWith('.json') || 
-              f.endsWith('.yml') || 
-              f.endsWith('.yaml') ||
-              f === '.eslintrc.json' ||
-              f === '.prettierrc.json'
-            );
-
-            console.log(`Changed files: ${changedFiles.length}`);
-            console.log(`Should run AppSignal: ${shouldRunAppSignal}`);
-            console.log(`Should run Lint: ${shouldRunLint}`);
-
-            // Wait for checks to complete (max 10 minutes)
+            // Configuration
             const maxWaitTime = 10 * 60 * 1000; // 10 minutes
             const checkInterval = 10 * 1000; // 10 seconds
             const startTime = Date.now();
@@ -68,7 +39,7 @@ jobs:
             let statusMessage = '';
 
             while (Date.now() - startTime < maxWaitTime) {
-              // Get current checks
+              // Get all check runs for this commit
               const checkRuns = await github.rest.checks.listForRef({
                 owner,
                 repo,
@@ -76,82 +47,46 @@ jobs:
                 per_page: 100
               });
               
-              // Filter out this workflow and get latest run of each check
+              // Filter to only the checks we care about (exclude this workflow)
+              const relevantChecks = checkRuns.data.check_runs.filter(run => 
+                run.name !== 'All CI Checks Passed' && 
+                run.app.slug === 'github-actions'
+              );
+              
+              // Group by name and get latest run
               const latestRuns = {};
-              for (const run of checkRuns.data.check_runs) {
-                if (run.name !== 'All CI Checks Passed') {
-                  if (!latestRuns[run.name] || new Date(run.started_at) > new Date(latestRuns[run.name].started_at)) {
-                    latestRuns[run.name] = run;
-                  }
+              for (const run of relevantChecks) {
+                if (!latestRuns[run.name] || new Date(run.started_at) > new Date(latestRuns[run.name].started_at)) {
+                  latestRuns[run.name] = run;
                 }
               }
               
-              // Check if all expected checks have completed
+              // Check status
               allCompleted = true;
               allChecksPassed = true;
               statusMessage = '## CI Status Summary\n\n';
               
-              // Check Lint status
-              if (shouldRunLint) {
-                const lintRun = latestRuns['Lint & Type Check'];
-                if (!lintRun) {
-                  statusMessage += '⏳ **Lint & Type Check**: Not started\n';
-                  allCompleted = false;
-                } else if (lintRun.status === 'completed') {
-                  if (lintRun.conclusion === 'success') {
-                    statusMessage += '✅ **Lint & Type Check**: Passed\n';
-                  } else {
-                    statusMessage += `❌ **Lint & Type Check**: ${lintRun.conclusion}\n`;
-                    allChecksPassed = false;
-                  }
-                } else {
-                  statusMessage += '⏳ **Lint & Type Check**: In progress\n';
-                  allCompleted = false;
-                }
-              }
+              const checkNames = Object.keys(latestRuns).sort();
               
-              // Check AppSignal status
-              if (shouldRunAppSignal) {
-                const functionalTests = latestRuns['AppSignal Functional Tests'];
-                const integrationTests = latestRuns['AppSignal Integration Tests'];
-                
-                // Functional tests
-                if (!functionalTests) {
-                  statusMessage += '⏳ **AppSignal Functional Tests**: Not started\n';
-                  allCompleted = false;
-                } else if (functionalTests.status === 'completed') {
-                  if (functionalTests.conclusion === 'success') {
-                    statusMessage += '✅ **AppSignal Functional Tests**: Passed\n';
-                  } else {
-                    statusMessage += `❌ **AppSignal Functional Tests**: ${functionalTests.conclusion}\n`;
-                    allChecksPassed = false;
-                  }
-                } else {
-                  statusMessage += '⏳ **AppSignal Functional Tests**: In progress\n';
-                  allCompleted = false;
-                }
-                
-                // Integration tests
-                if (!integrationTests) {
-                  statusMessage += '⏳ **AppSignal Integration Tests**: Not started\n';
-                  allCompleted = false;
-                } else if (integrationTests.status === 'completed') {
-                  if (integrationTests.conclusion === 'success') {
-                    statusMessage += '✅ **AppSignal Integration Tests**: Passed\n';
-                  } else {
-                    statusMessage += `❌ **AppSignal Integration Tests**: ${integrationTests.conclusion}\n`;
-                    allChecksPassed = false;
-                  }
-                } else {
-                  statusMessage += '⏳ **AppSignal Integration Tests**: In progress\n';
-                  allCompleted = false;
-                }
-              }
-              
-              if (!shouldRunLint && !shouldRunAppSignal) {
-                statusMessage += '✅ No CI checks required for these changes\n';
+              if (checkNames.length === 0) {
+                statusMessage += '✅ No other CI checks are running\n';
                 allCompleted = true;
                 allChecksPassed = true;
+              } else {
+                for (const checkName of checkNames) {
+                  const run = latestRuns[checkName];
+                  if (run.status === 'completed') {
+                    if (run.conclusion === 'success') {
+                      statusMessage += `✅ **${checkName}**: Passed\n`;
+                    } else {
+                      statusMessage += `❌ **${checkName}**: ${run.conclusion}\n`;
+                      allChecksPassed = false;
+                    }
+                  } else {
+                    statusMessage += `⏳ **${checkName}**: ${run.status}\n`;
+                    allCompleted = false;
+                  }
+                }
               }
               
               console.log(statusMessage);
@@ -165,9 +100,9 @@ jobs:
             }
 
             if (!allChecksPassed) {
-              core.setFailed('Not all required CI checks have passed');
+              core.setFailed('Not all CI checks have passed');
             } else if (!allCompleted) {
               core.setFailed('Timeout waiting for checks to complete');
             } else {
-              console.log('\n✅ All required CI checks have passed!');
+              console.log('\n✅ All CI checks have passed!');
             }
