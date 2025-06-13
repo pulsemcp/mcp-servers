@@ -1,3 +1,6 @@
+import { GraphQLClient, gql } from 'graphql-request';
+import type { App } from '../graphql/types.js';
+
 // AppSignal API client interface
 export interface ExceptionIncident {
   id: string;
@@ -34,6 +37,7 @@ export interface LogEntry {
 }
 
 export interface IAppsignalClient {
+  getApps(): Promise<Array<{ id: string; name: string; environment: string }>>;
   getExceptionIncident(incidentId: string): Promise<ExceptionIncident>;
   getExceptionIncidentSamples(
     incidentId: string,
@@ -43,15 +47,52 @@ export interface IAppsignalClient {
   searchLogs(query: string, limit?: number, offset?: number): Promise<LogEntry[]>;
 }
 
-// Stub implementation for now
+// Implementation using GraphQL API
 export class AppsignalClient implements IAppsignalClient {
+  private graphqlClient: GraphQLClient;
+
   constructor(
     private readonly apiKey: string,
     private readonly appId: string
   ) {
-    // These will be used when implementing actual API calls
-    void this.apiKey;
+    // appId will be used in future API calls
     void this.appId;
+    this.graphqlClient = new GraphQLClient(`https://appsignal.com/graphql?token=${apiKey}`);
+  }
+
+  async getApps(): Promise<Array<{ id: string; name: string; environment: string }>> {
+    const query = gql`
+      query GetApps {
+        viewer {
+          organizations {
+            apps {
+              id
+              name
+              environment
+            }
+          }
+        }
+      }
+    `;
+
+    interface GetAppsResponse {
+      viewer: {
+        organizations: Array<{
+          apps: Array<Pick<App, 'id' | 'name' | 'environment'>>;
+        }>;
+      };
+    }
+
+    const data = await this.graphqlClient.request<GetAppsResponse>(query);
+
+    // Flatten all apps from all organizations
+    const allApps = data.viewer.organizations.flatMap((org) => org.apps || []);
+
+    return allApps.map((app) => ({
+      id: app.id,
+      name: app.name,
+      environment: app.environment,
+    }));
   }
 
   async getExceptionIncident(_incidentId: string): Promise<ExceptionIncident> {

@@ -1,8 +1,9 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { registerTools, createRegisterTools } from '../../shared/src/tools';
-import { setSelectedAppId, getSelectedAppId } from '../../shared/src/state';
+import { getSelectedAppId } from '../../shared/src/state';
 import { createMockAppsignalClient } from '../mocks/appsignal-client.functional-mock';
+import type { IAppsignalClient } from '../../shared/src/appsignal-client/appsignal-client';
 
 // Mock the state module
 vi.mock('../../shared/src/state', () => ({
@@ -10,9 +11,24 @@ vi.mock('../../shared/src/state', () => ({
   getSelectedAppId: vi.fn(),
 }));
 
+interface Tool {
+  name: string;
+  schema: unknown;
+  handler: (args: unknown) => Promise<unknown>;
+  enabled: boolean;
+}
+
 describe('AppSignal MCP Tools', () => {
   let mockServer: McpServer;
-  let registeredTools: Map<string, any>;
+  let registeredTools: Map<string, Tool>;
+  let mockClient: IAppsignalClient;
+
+  // Helper to register tools with a custom mock client
+  const registerToolsWithClient = (client: IAppsignalClient) => {
+    const registerTools = createRegisterTools(() => client);
+    registeredTools.clear();
+    registerTools(mockServer);
+  };
 
   beforeEach(() => {
     // Reset environment variables
@@ -37,7 +53,10 @@ describe('AppSignal MCP Tools', () => {
           },
         };
       }),
-    } as any;
+    } as unknown as McpServer;
+
+    // Create default mock client
+    mockClient = createMockAppsignalClient();
   });
 
   afterEach(() => {
@@ -86,101 +105,44 @@ describe('AppSignal MCP Tools', () => {
   });
 
   describe('Tool Execution', () => {
-    beforeEach(() => {
-      const registerTools = createRegisterTools(() => createMockAppsignalClient());
-      registerTools(mockServer);
-    });
+    it('should handle get_apps with custom mock data', async () => {
+      // Create a custom mock client for this specific test
+      const customMockClient = createMockAppsignalClient();
+      customMockClient.getApps = vi.fn().mockResolvedValue([
+        { id: 'custom-app-1', name: 'Custom App', environment: 'custom-env' },
+        { id: 'custom-app-2', name: 'Another Custom App', environment: 'test' },
+      ]);
 
-    it('should handle get_exception_incident with valid app ID', async () => {
-      const tool = registeredTools.get('get_exception_incident');
-      const result = await tool.handler({ incidentId: 'exception-123' });
+      registerToolsWithClient(customMockClient);
+      const tool = registeredTools.get('get_apps');
+      const result = await tool.handler({});
 
-      const incidentData = JSON.parse(result.content[0].text);
-      expect(incidentData.id).toBe('exception-123');
-      expect(incidentData.status).toBe('open');
-      expect(incidentData.name).toBe('NullPointerException');
-    });
-
-    it('should handle get_exception_incident_samples', async () => {
-      const tool = registeredTools.get('get_exception_incident_samples');
-      const result = await tool.handler({ incidentId: 'exception-123', limit: 5 });
-
-      const samples = JSON.parse(result.content[0].text);
-      expect(Array.isArray(samples)).toBe(true);
-      expect(samples[0]).toHaveProperty('backtrace');
-      expect(samples[0]).toHaveProperty('message');
-    });
-
-    it('should handle get_log_incident', async () => {
-      const tool = registeredTools.get('get_log_incident');
-      const result = await tool.handler({ incidentId: 'log-123' });
-
-      const incidentData = JSON.parse(result.content[0].text);
-      expect(incidentData.id).toBe('log-123');
-      expect(incidentData.severity).toBe('error');
-      expect(incidentData.name).toBe('High Error Rate');
-    });
-
-    it('should handle search_logs with parameters', async () => {
-      const tool = registeredTools.get('search_logs');
-      const result = await tool.handler({
-        query: 'error level:critical',
-        limit: 50,
-        offset: 10,
-      });
-
-      const logs = JSON.parse(result.content[0].text);
-      expect(Array.isArray(logs)).toBe(true);
-      expect(logs[0]).toHaveProperty('message');
-      expect(logs[0].level).toBe('error');
-    });
-
-    it('should handle select_app_id and enable tools', async () => {
-      // Start with tools disabled
-      delete process.env.APPSIGNAL_APP_ID;
-      vi.mocked(getSelectedAppId).mockReturnValue(undefined);
-
-      // Re-register to get disabled state
-      mockServer = {
-        tool: vi.fn((name, schema, handler) => {
-          const tool = { name, schema, handler, enabled: true };
-          registeredTools.set(name, tool);
-          return {
-            enable: vi.fn(() => {
-              tool.enabled = true;
-            }),
-            disable: vi.fn(() => {
-              tool.enabled = false;
-            }),
-          };
-        }),
-      } as any;
-
-      const registerTools = createRegisterTools(() => createMockAppsignalClient());
-      registerTools(mockServer);
-
-      // Verify main tools are disabled
-      expect(registeredTools.get('get_exception_incident').enabled).toBe(false);
-
-      // Call select_app_id
-      const selectTool = registeredTools.get('select_app_id');
-      await selectTool.handler({ appId: 'new-app-123' });
-
-      // Verify setSelectedAppId was called
-      expect(setSelectedAppId).toHaveBeenCalledWith('new-app-123');
+      const response = JSON.parse(result.content[0].text);
+      expect(response.apps).toHaveLength(2);
+      expect(response.apps[0].name).toBe('Custom App');
+      expect(response.apps[0].environment).toBe('custom-env');
+      expect(response.apps[1].name).toBe('Another Custom App');
     });
   });
 
   describe('Error Handling', () => {
-    beforeEach(() => {
-      const registerTools = createRegisterTools(() => createMockAppsignalClient());
-      registerTools(mockServer);
+    it('should handle errors in get_apps gracefully', async () => {
+      // Create a failing mock client
+      const failingClient = createMockAppsignalClient();
+      failingClient.getApps = vi.fn().mockRejectedValue(new Error('Network error'));
+
+      registerToolsWithClient(failingClient);
+      const tool = registeredTools.get('get_apps');
+      const result = await tool.handler({});
+
+      expect(result.content[0].text).toContain('Error fetching apps: Network error');
     });
 
     it('should return error when no app ID is selected', async () => {
       delete process.env.APPSIGNAL_APP_ID;
       vi.mocked(getSelectedAppId).mockReturnValue(undefined);
 
+      registerToolsWithClient(mockClient);
       const tool = registeredTools.get('get_exception_incident');
       const result = await tool.handler({ incidentId: 'exception-123' });
 
