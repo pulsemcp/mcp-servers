@@ -3,6 +3,7 @@ import { registerResources } from './resources.js';
 import { createRegisterTools } from './tools.js';
 
 // Example client interface - replace with your actual client
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export interface IExampleClient {
   // Define your client methods here
   // Example: getData(id: string): Promise<unknown>;
