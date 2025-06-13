@@ -27,17 +27,19 @@ export function createMockAppsignalClient(): IAppsignalClient {
       lastOccurredAt: '2024-01-15T10:30:00Z',
       status: 'open',
     })),
-    getExceptionIncidentSamples: vi
+    getExceptionIncidentSample: vi
       .fn()
-      .mockImplementation(async (incidentId: string, _limit = 10) => [
-        {
-          id: `sample-${incidentId}-1`,
-          timestamp: '2024-01-15T10:30:00Z',
-          message: 'Cannot read property "id" of null',
-          backtrace: ['at Object.getUserId (app.js:123:45)', 'at processRequest (app.js:45:12)'],
-          metadata: { userId: null, requestId: 'req-123' },
-        },
-      ]),
+      .mockImplementation(async (incidentId: string, offset = 0) => ({
+        id: `sample-${incidentId}-${offset + 1}`,
+        timestamp: '2024-01-15T10:30:00Z',
+        message: 'Cannot read property "id" of null',
+        backtrace: ['at Object.getUserId (app.js:123:45)', 'at processRequest (app.js:45:12)'],
+        action: 'UserController#show',
+        namespace: 'web',
+        revision: 'abc123',
+        version: '1.0.0',
+        params: { userId: null, requestId: 'req-123' },
+      })),
     getLogIncident: vi.fn().mockImplementation(async (incidentId: string) => ({
       id: incidentId,
       name: 'High Error Rate',
@@ -76,15 +78,17 @@ export const mockExceptionIncident: ExceptionIncident = {
   status: 'open',
 };
 
-export const mockExceptionIncidentSamples: ExceptionIncidentSample[] = [
-  {
-    id: 'sample-1',
-    timestamp: '2024-01-15T10:30:00Z',
-    message: 'Cannot read property "id" of null',
-    backtrace: ['at Object.getUserId (app.js:123:45)', 'at processRequest (app.js:45:12)'],
-    metadata: { userId: null, requestId: 'req-123' },
-  },
-];
+export const mockExceptionIncidentSample: ExceptionIncidentSample = {
+  id: 'sample-1',
+  timestamp: '2024-01-15T10:30:00Z',
+  message: 'Cannot read property "id" of null',
+  backtrace: ['at Object.getUserId (app.js:123:45)', 'at processRequest (app.js:45:12)'],
+  action: 'UserController#show',
+  namespace: 'web',
+  revision: 'abc123',
+  version: '1.0.0',
+  params: { userId: null, requestId: 'req-123' },
+};
 
 export const mockLogIncident: LogIncident = {
   id: 'log-123',

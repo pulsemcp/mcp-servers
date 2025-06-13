@@ -2,7 +2,7 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { getAppsTool } from './tools/get-apps.js';
 import { selectAppIdTool } from './tools/select-app-id.js';
 import { getExceptionIncidentTool } from './tools/get-exception-incident.js';
-import { getExceptionIncidentSamplesTool } from './tools/get-exception-incident-samples.js';
+import { getExceptionIncidentSampleTool } from './tools/get-exception-incident-sample.js';
 import { getLogIncidentTool } from './tools/get-log-incident.js';
 import { searchLogsTool } from './tools/search-logs.js';
 import { IAppsignalClient } from './appsignal-client/appsignal-client.js';
@@ -22,7 +22,7 @@ export function createRegisterTools(clientFactory: ClientFactory) {
     // Store references to main tools
     const mainTools: {
       getExceptionIncident?: any;
-      getExceptionIncidentSamples?: any;
+      getExceptionIncidentSample?: any;
       getLogIncident?: any;
       searchLogs?: any;
     } = {};
@@ -30,7 +30,7 @@ export function createRegisterTools(clientFactory: ClientFactory) {
     // Enable function for selectAppId to call
     const enableMainTools = () => {
       if (mainTools.getExceptionIncident) mainTools.getExceptionIncident.enable();
-      if (mainTools.getExceptionIncidentSamples) mainTools.getExceptionIncidentSamples.enable();
+      if (mainTools.getExceptionIncidentSample) mainTools.getExceptionIncidentSample.enable();
       if (mainTools.getLogIncident) mainTools.getLogIncident.enable();
       if (mainTools.searchLogs) mainTools.searchLogs.enable();
     };
@@ -41,14 +41,14 @@ export function createRegisterTools(clientFactory: ClientFactory) {
 
     // Register main tools
     mainTools.getExceptionIncident = getExceptionIncidentTool(server, clientFactory);
-    mainTools.getExceptionIncidentSamples = getExceptionIncidentSamplesTool(server, clientFactory);
+    mainTools.getExceptionIncidentSample = getExceptionIncidentSampleTool(server, clientFactory);
     mainTools.getLogIncident = getLogIncidentTool(server, clientFactory);
     mainTools.searchLogs = searchLogsTool(server, clientFactory);
 
     // If no app ID is provided via environment, disable the main tools initially
     if (!envAppId) {
       mainTools.getExceptionIncident.disable();
-      mainTools.getExceptionIncidentSamples.disable();
+      mainTools.getExceptionIncidentSample.disable();
       mainTools.getLogIncident.disable();
       mainTools.searchLogs.disable();
     }
