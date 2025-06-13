@@ -3,6 +3,8 @@ export interface AppSignalConfig {
   apiKey: string;
   appId: string;
   environment?: string;
+  // Verify: All CI Checks workflow
+  retryCount?: number;
 }
 
 // Tool response types
