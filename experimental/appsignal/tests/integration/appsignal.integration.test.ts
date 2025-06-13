@@ -12,31 +12,53 @@ describe('AppSignal MCP Server Integration Tests', () => {
     }
   });
 
-  it('should handle inline mocked alert response', async () => {
+  it('should handle inline mocked exception incident response', async () => {
     client = await createMockedClient({
-      alerts: {
+      exceptionIncidents: {
         'payment-failure': {
           id: 'payment-failure',
-          status: 'active',
-          triggers: [
-            {
-              timestamp: '2024-01-21T09:00:00Z',
-              message: 'Payment gateway timeout',
-            },
-          ],
-          affectedServices: ['payment-service', 'checkout-api'],
+          name: 'PaymentGatewayException',
+          message: 'Connection timeout to payment gateway',
+          count: 42,
+          lastOccurredAt: '2024-01-21T09:00:00Z',
+          status: 'open',
         },
       },
     });
 
-    const result = await client.callTool('get_alert_details', {
-      alertId: 'payment-failure',
+    const result = await client.callTool('get_exception_incident', {
+      incidentId: 'payment-failure',
     });
 
-    const alert = JSON.parse(result.content[0].text);
-    expect(alert.id).toBe('payment-failure');
-    expect(alert.status).toBe('active');
-    expect(alert.affectedServices).toContain('payment-service');
+    const incident = JSON.parse(result.content[0].text);
+    expect(incident.id).toBe('payment-failure');
+    expect(incident.status).toBe('open');
+    expect(incident.name).toBe('PaymentGatewayException');
+  });
+
+  it('should handle inline mocked log incident response', async () => {
+    client = await createMockedClient({
+      logIncidents: {
+        'high-error-rate': {
+          id: 'high-error-rate',
+          name: 'High Error Rate in API',
+          severity: 'error',
+          count: 156,
+          lastOccurredAt: '2024-01-21T10:00:00Z',
+          status: 'open',
+          query: 'level:error service:api',
+        },
+      },
+    });
+
+    const result = await client.callTool('get_log_incident', {
+      incidentId: 'high-error-rate',
+    });
+
+    const incident = JSON.parse(result.content[0].text);
+    expect(incident.id).toBe('high-error-rate');
+    expect(incident.severity).toBe('error');
+    expect(incident.count).toBe(156);
   });
 
   it('should handle inline mocked search responses', async () => {
@@ -89,47 +111,56 @@ describe('AppSignal MCP Server Integration Tests', () => {
     expect(logs2[0].message).toContain('Payment successful');
   });
 
-  it('should handle date range queries with inline mocks', async () => {
-    // For date range mocks, we use "start|end" as the key
+  it('should handle exception incident samples', async () => {
     client = await createMockedClient({
-      dateRangeResponses: {
-        '2024-01-21T00:00:00Z|2024-01-21T12:00:00Z': [
+      exceptionIncidentSamples: {
+        'null-pointer-123': [
           {
-            timestamp: '2024-01-21T06:00:00Z',
-            level: 'info',
-            message: 'Morning health check passed',
-            metadata: { service: 'api', status: 'healthy' },
+            id: 'sample-1',
+            timestamp: '2024-01-21T09:00:00Z',
+            message: 'Cannot read property "id" of null',
+            backtrace: [
+              'at getUserData (user-service.js:45:12)',
+              'at processRequest (api.js:123:8)',
+            ],
+            metadata: { userId: null, endpoint: '/api/user' },
           },
           {
-            timestamp: '2024-01-21T09:00:00Z',
-            level: 'warn',
-            message: 'High memory usage detected',
-            metadata: { service: 'worker', memory: '85%' },
+            id: 'sample-2',
+            timestamp: '2024-01-21T09:05:00Z',
+            message: 'Cannot read property "id" of null',
+            backtrace: [
+              'at getUserData (user-service.js:45:12)',
+              'at handleWebhook (webhook.js:67:15)',
+            ],
+            metadata: { source: 'webhook', userId: null },
           },
         ],
       },
     });
 
-    const result = await client.callTool('get_logs_in_datetime_range', {
-      start: '2024-01-21T00:00:00Z',
-      end: '2024-01-21T12:00:00Z',
-      limit: 50,
+    const result = await client.callTool('get_exception_incident_samples', {
+      incidentId: 'null-pointer-123',
+      limit: 10,
     });
 
-    const logs = JSON.parse(result.content[0].text);
-    expect(logs).toHaveLength(2);
-    expect(logs[0].message).toContain('health check');
-    expect(logs[1].level).toBe('warn');
+    const samples = JSON.parse(result.content[0].text);
+    expect(samples).toHaveLength(2);
+    expect(samples[0].message).toContain('Cannot read property');
+    expect(samples[0].backtrace).toHaveLength(2);
+    expect(samples[1].metadata.source).toBe('webhook');
   });
 
   it('should handle mixed inline mocks', async () => {
     client = await createMockedClient({
-      alerts: {
+      exceptionIncidents: {
         'mixed-test': {
           id: 'mixed-test',
+          name: 'TestException',
+          message: 'Test exception message',
+          count: 1,
+          lastOccurredAt: '2024-01-21T12:00:00Z',
           status: 'resolved',
-          triggers: [],
-          affectedServices: [],
         },
       },
       searchResponses: {
@@ -143,12 +174,12 @@ describe('AppSignal MCP Server Integration Tests', () => {
       },
     });
 
-    // Test alert
-    const alertResult = await client.callTool('get_alert_details', {
-      alertId: 'mixed-test',
+    // Test exception incident
+    const incidentResult = await client.callTool('get_exception_incident', {
+      incidentId: 'mixed-test',
     });
-    const alert = JSON.parse(alertResult.content[0].text);
-    expect(alert.status).toBe('resolved');
+    const incident = JSON.parse(incidentResult.content[0].text);
+    expect(incident.status).toBe('resolved');
 
     // Test search
     const searchResult = await client.callTool('search_logs', {

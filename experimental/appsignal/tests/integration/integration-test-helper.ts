@@ -1,7 +1,12 @@
 import { TestMCPClient } from '../../../../test-mcp-client/dist/index.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import type { Alert, LogEntry } from '../../shared/src/appsignal-client/appsignal-client.js';
+import type {
+  ExceptionIncident,
+  ExceptionIncidentSample,
+  LogIncident,
+  LogEntry,
+} from '../../shared/src/appsignal-client/appsignal-client.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -15,23 +20,20 @@ const __dirname = path.dirname(__filename);
  * Integration tests use real MCP protocol communication with a mocked backend.
  */
 export async function createMockedClient(mocks: {
-  alerts?: Record<string, Alert>;
+  exceptionIncidents?: Record<string, ExceptionIncident>;
+  exceptionIncidentSamples?: Record<string, ExceptionIncidentSample[]>;
+  logIncidents?: Record<string, LogIncident>;
   searchResponses?: Record<string, LogEntry[]>;
-  dateRangeResponses?: Record<string, LogEntry[]>;
 }) {
   // Create a simplified mock config that can be passed via env
   const mockConfig: any = {
-    getAlertDetails: mocks.alerts || {},
+    getExceptionIncident: mocks.exceptionIncidents || {},
+    getExceptionIncidentSamples: mocks.exceptionIncidentSamples || {},
+    getLogIncident: mocks.logIncidents || {},
     searchLogs: Object.entries(mocks.searchResponses || {}).map(([query, response]) => ({
       query,
       response,
     })),
-    getLogsInDatetimeRange: Object.entries(mocks.dateRangeResponses || {}).map(
-      ([key, response]) => {
-        const [start, end] = key.split('|');
-        return { start, end, response };
-      }
-    ),
   };
 
   const serverPath = path.join(__dirname, '../../local/build/src/index.integration.js');
@@ -54,12 +56,14 @@ export async function createMockedClient(mocks: {
  * Example usage in a test:
  *
  * const client = await createMockedClient({
- *   alerts: {
- *     'alert-123': {
- *       id: 'alert-123',
- *       status: 'resolved',
- *       triggers: [...],
- *       affectedServices: [...]
+ *   exceptionIncidents: {
+ *     'exception-123': {
+ *       id: 'exception-123',
+ *       name: 'NullPointerException',
+ *       message: 'Cannot read property "id" of null',
+ *       count: 42,
+ *       lastOccurredAt: '2024-01-21T10:00:00Z',
+ *       status: 'open'
  *     }
  *   },
  *   searchResponses: {
