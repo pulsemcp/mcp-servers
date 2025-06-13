@@ -1,2 +1,5 @@
 vitest.config.ts
 vitest.config.integration.ts
+build/
+dist/
+node_modules/

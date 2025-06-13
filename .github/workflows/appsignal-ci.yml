@@ -36,6 +36,9 @@ jobs:
       - name: Build project
         run: npm run build
 
+      - name: Install and build test-mcp-client
+        run: cd ../../test-mcp-client && npm install && npm run build
+
       - name: Run functional tests
         run: npm run test:run -- --reporter=json --reporter=default --outputFile=test-results.json
         env:
@@ -78,6 +81,9 @@ jobs:
 
       - name: Install test-mcp-client dependencies
         run: cd ../../test-mcp-client && npm install
+
+      - name: Build test-mcp-client
+        run: cd ../../test-mcp-client && npm run build
 
       - name: Run integration tests
         run: npm run test:integration

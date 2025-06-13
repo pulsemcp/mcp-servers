@@ -5,3 +5,4 @@ export * from './state.js';
 export { createMCPServer } from './server.js';
 export type { ClientFactory } from './server.js';
 export * from './graphql/types.js';
+export { createIntegrationMockAppsignalClient } from './appsignal-client/appsignal-client.integration-mock.js';
