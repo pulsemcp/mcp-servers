@@ -36,12 +36,11 @@ export function createRegisterTools(clientFactory: ClientFactory) {
     server.setRequestHandler(CallToolRequestSchema, async (request) => {
       const { name, arguments: args } = request.params;
 
-      // Get client instance for this request
-      const client = clientFactory();
-
       if (name === 'example_tool') {
         const validatedArgs = ExampleToolSchema.parse(args);
 
+        // Get client instance for this request
+        // const client = clientFactory();
         // Example: Use the client if needed
         // const result = await client.someMethod(validatedArgs.message);
 

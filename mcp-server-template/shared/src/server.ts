@@ -5,6 +5,7 @@ import { createRegisterTools } from './tools.js';
 // Example client interface - replace with your actual client
 export interface IExampleClient {
   // Define your client methods here
+  // Example: getData(id: string): Promise<unknown>;
 }
 
 // Example client implementation - replace with your actual implementation

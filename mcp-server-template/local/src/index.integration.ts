@@ -4,7 +4,7 @@ import { createMCPServer } from 'mcp-server-NAME-shared';
 
 // Mock client for integration tests
 class MockExampleClient {
-  constructor(private mockData: any) {}
+  constructor(private mockData: unknown) {}
   
   // Implement your mock methods here based on IExampleClient interface
 }
