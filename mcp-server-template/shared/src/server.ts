@@ -12,7 +12,7 @@ export interface IExampleClient {
 // Example client implementation - replace with your actual implementation
 export class ExampleClient implements IExampleClient {
   constructor(private apiKey: string) {}
-  
+
   // Implement your client methods here
 }
 

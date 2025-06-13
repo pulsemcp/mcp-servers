@@ -9,10 +9,12 @@ This is a comprehensive template for creating new MCP servers with TypeScript, t
 ## Using This Template
 
 1. **Copy the entire directory** to your desired location:
+
    - For experimental: `cp -r mcp-server-template experimental/mcp-server-myname`
    - For production: `cp -r mcp-server-template mcp-server-myname`
 
 2. **Replace placeholders** throughout all files:
+
    - `NAME` → your server name
    - `DESCRIPTION` → your server description
    - `YOUR_NAME` → author name
@@ -20,6 +22,7 @@ This is a comprehensive template for creating new MCP servers with TypeScript, t
    - `IExampleClient`/`ExampleClient` → your client interface/class names
 
 3. **Set up CI/CD** (optional):
+
    - Follow the checklist in `CI_SETUP.md`
    - Delete `CI_SETUP.md` after completing setup
 
@@ -62,6 +65,7 @@ mcp-server-template/
 ### Server Factory Pattern
 
 The template uses a factory pattern in `shared/src/server.ts`:
+
 - Enables dependency injection for better testability
 - Supports both production and test configurations
 - Separates server creation from handler registration
@@ -69,6 +73,7 @@ The template uses a factory pattern in `shared/src/server.ts`:
 ### Testing Infrastructure
 
 Full testing setup with Vitest:
+
 - Functional tests for isolated unit testing
 - Integration tests using TestMCPClient
 - Mock patterns for external dependencies

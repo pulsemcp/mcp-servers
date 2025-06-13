@@ -63,7 +63,9 @@ export function createRegisterTools(_clientFactory: ClientFactory) {
 export function registerTools(server: Server) {
   // This maintains compatibility but doesn't use dependency injection
   const factory = () => {
-    throw new Error('No client factory provided - use createRegisterTools for dependency injection');
+    throw new Error(
+      'No client factory provided - use createRegisterTools for dependency injection'
+    );
   };
   const register = createRegisterTools(factory);
   register(server);

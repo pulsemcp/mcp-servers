@@ -20,16 +20,17 @@ DESCRIPTION
    ```bash
    # For experimental servers
    cp -r mcp-server-template experimental/mcp-server-myserver
-   
+
    # For production servers
    cp -r mcp-server-template mcp-server-myserver
-   
+
    cd mcp-server-myserver
    ```
 
 2. **Replace placeholders throughout the codebase**
 
    Search and replace these values:
+
    - `NAME` → your server name (e.g., `weather`, `github`)
    - `DESCRIPTION` → your server description
    - `YOUR_NAME` → your name (for package.json author field)
@@ -155,15 +156,17 @@ npm run format:check
    if (name === 'my_tool') {
      const validatedArgs = MyToolSchema.parse(args);
      const client = clientFactory();
-     
+
      // Use client to perform operations
      const result = await client.doSomething(validatedArgs.param);
-     
+
      return {
-       content: [{
-         type: 'text',
-         text: result,
-       }],
+       content: [
+         {
+           type: 'text',
+           text: result,
+         },
+       ],
      };
    }
    ```
@@ -187,7 +190,7 @@ Update `shared/src/resources.ts` to add new resources following the existing pat
    ```typescript
    export class MyApiClient implements IMyApiClient {
      constructor(private apiKey: string) {}
-     
+
      async fetchData(id: string): Promise<Data> {
        // Implementation
      }
@@ -210,7 +213,7 @@ describe('my_tool', () => {
   it('should process data correctly', async () => {
     const mockClient = createMockClient();
     mockClient.fetchData.mockResolvedValue({ data: 'test' });
-    
+
     // Test your tool with the mock
   });
 });
@@ -224,13 +227,15 @@ Test the full MCP protocol:
 // tests/integration/NAME.integration.test.ts
 it('should handle my_tool via MCP', async () => {
   const client = await createMockedClient({
-    mockData: { /* ... */ }
+    mockData: {
+      /* ... */
+    },
   });
-  
+
   const result = await client.callTool('my_tool', {
-    param: 'test'
+    param: 'test',
   });
-  
+
   expect(result.content[0].text).toBe('expected result');
 });
 ```
@@ -242,6 +247,7 @@ it('should handle my_tool via MCP', async () => {
 Add to your Claude Desktop configuration:
 
 #### macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
+
 #### Windows: `%APPDATA%\Claude\claude_desktop_config.json`
 
 ```json
@@ -265,9 +271,11 @@ Add to your Claude Desktop configuration:
 An example tool that processes a message.
 
 **Input:**
+
 - `message` (string, required): The message to process
 
 **Returns:**
+
 - Processed message text
 
 ## Resources
