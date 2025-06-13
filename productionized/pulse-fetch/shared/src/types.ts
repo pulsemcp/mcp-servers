@@ -1,5 +1,6 @@
 /**
  * Common TypeScript types for MCP servers
+ * Testing unified all checks workflow
  */
 
 /**
