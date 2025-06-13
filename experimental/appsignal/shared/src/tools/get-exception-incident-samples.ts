@@ -3,18 +3,22 @@ import { z } from 'zod';
 import { getSelectedAppId } from '../state.js';
 import { IAppsignalClient } from '../appsignal-client/appsignal-client.js';
 
-export function getLogsInDatetimeRangeTool(
+export function getExceptionIncidentSamplesTool(
   server: McpServer,
   clientFactory: () => IAppsignalClient
 ) {
   return server.tool(
-    'get_logs_in_datetime_range',
+    'get_exception_incident_samples',
     {
-      start: z.string().describe('ISO 8601 datetime for the start of the range'),
-      end: z.string().describe('ISO 8601 datetime for the end of the range'),
-      limit: z.number().int().positive().default(100).describe('Maximum number of logs to return'),
+      incidentId: z.string().describe('The unique identifier of the exception incident'),
+      limit: z
+        .number()
+        .int()
+        .positive()
+        .default(10)
+        .describe('Maximum number of samples to return'),
     },
-    async ({ start, end, limit }) => {
+    async ({ incidentId, limit }) => {
       const appId = getSelectedAppId() || process.env.APPSIGNAL_APP_ID;
       if (!appId) {
         return {
@@ -29,13 +33,13 @@ export function getLogsInDatetimeRangeTool(
 
       try {
         const client = clientFactory();
-        const logs = await client.getLogsInDatetimeRange(start, end, limit);
+        const samples = await client.getExceptionIncidentSamples(incidentId, limit);
 
         return {
           content: [
             {
               type: 'text',
-              text: JSON.stringify(logs, null, 2),
+              text: JSON.stringify(samples, null, 2),
             },
           ],
         };
@@ -44,7 +48,7 @@ export function getLogsInDatetimeRangeTool(
           content: [
             {
               type: 'text',
-              text: `Error fetching logs: ${error instanceof Error ? error.message : 'Unknown error'}`,
+              text: `Error fetching exception incident samples: ${error instanceof Error ? error.message : 'Unknown error'}`,
             },
           ],
         };

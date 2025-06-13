@@ -1,5 +1,11 @@
 import { vi } from 'vitest';
-import type { IAppsignalClient, Alert, LogEntry } from '../../shared/src/appsignal-client';
+import type {
+  IAppsignalClient,
+  ExceptionIncident,
+  ExceptionIncidentSample,
+  LogIncident,
+  LogEntry,
+} from '../../shared/src/appsignal-client';
 
 /**
  * Creates a vitest mock implementation of IAppsignalClient for functional tests.
@@ -8,16 +14,33 @@ import type { IAppsignalClient, Alert, LogEntry } from '../../shared/src/appsign
  */
 export function createMockAppsignalClient(): IAppsignalClient {
   return {
-    getAlertDetails: vi.fn().mockImplementation(async (alertId: string) => ({
-      id: alertId,
-      status: 'active',
-      triggers: [
+    getExceptionIncident: vi.fn().mockImplementation(async (incidentId: string) => ({
+      id: incidentId,
+      name: 'NullPointerException',
+      message: 'Cannot read property "id" of null',
+      count: 42,
+      lastOccurredAt: '2024-01-15T10:30:00Z',
+      status: 'open',
+    })),
+    getExceptionIncidentSamples: vi
+      .fn()
+      .mockImplementation(async (incidentId: string, _limit = 10) => [
         {
+          id: `sample-${incidentId}-1`,
           timestamp: '2024-01-15T10:30:00Z',
-          message: 'High error rate detected',
+          message: 'Cannot read property "id" of null',
+          backtrace: ['at Object.getUserId (app.js:123:45)', 'at processRequest (app.js:45:12)'],
+          metadata: { userId: null, requestId: 'req-123' },
         },
-      ],
-      affectedServices: ['api-service', 'web-service'],
+      ]),
+    getLogIncident: vi.fn().mockImplementation(async (incidentId: string) => ({
+      id: incidentId,
+      name: 'High Error Rate',
+      severity: 'error',
+      count: 156,
+      lastOccurredAt: '2024-01-15T10:30:00Z',
+      status: 'open',
+      query: 'level:error service:api',
     })),
     searchLogs: vi.fn().mockImplementation(async (query: string) => {
       if (query.includes('error')) {
@@ -35,28 +58,37 @@ export function createMockAppsignalClient(): IAppsignalClient {
       }
       return [];
     }),
-    getLogsInDatetimeRange: vi.fn().mockImplementation(async (start: string, end: string) => [
-      {
-        timestamp: start,
-        level: 'info',
-        message: `Logs from ${start} to ${end}`,
-        metadata: { range: { start, end } },
-      },
-    ]),
   };
 }
 
 // Mock data factories
-export const mockAlert: Alert = {
-  id: 'alert-123',
-  status: 'active',
-  triggers: [
-    {
-      timestamp: '2024-01-15T10:30:00Z',
-      message: 'High error rate detected',
-    },
-  ],
-  affectedServices: ['api-service', 'web-service'],
+export const mockExceptionIncident: ExceptionIncident = {
+  id: 'exception-123',
+  name: 'NullPointerException',
+  message: 'Cannot read property "id" of null',
+  count: 42,
+  lastOccurredAt: '2024-01-15T10:30:00Z',
+  status: 'open',
+};
+
+export const mockExceptionIncidentSamples: ExceptionIncidentSample[] = [
+  {
+    id: 'sample-1',
+    timestamp: '2024-01-15T10:30:00Z',
+    message: 'Cannot read property "id" of null',
+    backtrace: ['at Object.getUserId (app.js:123:45)', 'at processRequest (app.js:45:12)'],
+    metadata: { userId: null, requestId: 'req-123' },
+  },
+];
+
+export const mockLogIncident: LogIncident = {
+  id: 'log-123',
+  name: 'High Error Rate',
+  severity: 'error',
+  count: 156,
+  lastOccurredAt: '2024-01-15T10:30:00Z',
+  status: 'open',
+  query: 'level:error service:api',
 };
 
 export const mockLogEntries: LogEntry[] = [

@@ -3,17 +3,20 @@
  * This mock reads configuration from environment variables to provide custom responses.
  * Used by the integration test server (index.integration.ts) to simulate different scenarios.
  */
-import type { IAppsignalClient, Alert, LogEntry } from './appsignal-client.js';
+import type {
+  IAppsignalClient,
+  ExceptionIncident,
+  ExceptionIncidentSample,
+  LogIncident,
+  LogEntry,
+} from './appsignal-client.js';
 
 interface MockConfig {
-  getAlertDetails?: Record<string, Alert | Error>;
+  getExceptionIncident?: Record<string, ExceptionIncident | Error>;
+  getExceptionIncidentSamples?: Record<string, ExceptionIncidentSample[] | Error>;
+  getLogIncident?: Record<string, LogIncident | Error>;
   searchLogs?: Array<{
     query: string;
-    response: LogEntry[] | Error;
-  }>;
-  getLogsInDatetimeRange?: Array<{
-    start: string;
-    end: string;
     response: LogEntry[] | Error;
   }>;
 }
@@ -32,11 +35,11 @@ export function createConfigurableAppsignalClient(): IAppsignalClient {
   };
 
   return {
-    async getAlertDetails(alertId: string): Promise<Alert> {
+    async getExceptionIncident(incidentId: string): Promise<ExceptionIncident> {
       const config = getMockConfig();
 
-      if (config.getAlertDetails?.[alertId]) {
-        const response = config.getAlertDetails[alertId];
+      if (config.getExceptionIncident?.[incidentId]) {
+        const response = config.getExceptionIncident[incidentId];
         if (response instanceof Error) {
           throw response;
         }
@@ -45,15 +48,60 @@ export function createConfigurableAppsignalClient(): IAppsignalClient {
 
       // Default mock response
       return {
-        id: alertId,
-        status: 'active',
-        triggers: [
-          {
-            timestamp: new Date().toISOString(),
-            message: 'Default mock alert trigger',
-          },
-        ],
-        affectedServices: ['mock-service'],
+        id: incidentId,
+        name: 'Mock Exception',
+        message: 'Mock exception message',
+        count: 1,
+        lastOccurredAt: new Date().toISOString(),
+        status: 'open',
+      };
+    },
+
+    async getExceptionIncidentSamples(
+      incidentId: string,
+      limit = 10
+    ): Promise<ExceptionIncidentSample[]> {
+      const config = getMockConfig();
+
+      if (config.getExceptionIncidentSamples?.[incidentId]) {
+        const response = config.getExceptionIncidentSamples[incidentId];
+        if (response instanceof Error) {
+          throw response;
+        }
+        return response.slice(0, limit);
+      }
+
+      // Default mock response
+      return [
+        {
+          id: `sample-${incidentId}-1`,
+          timestamp: new Date().toISOString(),
+          message: 'Mock exception sample',
+          backtrace: ['mock.js:1', 'mock.js:2'],
+          metadata: { incidentId },
+        },
+      ];
+    },
+
+    async getLogIncident(incidentId: string): Promise<LogIncident> {
+      const config = getMockConfig();
+
+      if (config.getLogIncident?.[incidentId]) {
+        const response = config.getLogIncident[incidentId];
+        if (response instanceof Error) {
+          throw response;
+        }
+        return response;
+      }
+
+      // Default mock response
+      return {
+        id: incidentId,
+        name: 'Mock Log Incident',
+        severity: 'error',
+        count: 1,
+        lastOccurredAt: new Date().toISOString(),
+        status: 'open',
       };
     },
 
@@ -80,35 +128,6 @@ export function createConfigurableAppsignalClient(): IAppsignalClient {
       ];
 
       return defaultLogs;
-    },
-
-    async getLogsInDatetimeRange(
-      startTime: string,
-      endTime: string,
-      limit = 100
-    ): Promise<LogEntry[]> {
-      const config = getMockConfig();
-
-      // Find matching mock response
-      const mockResponse = config.getLogsInDatetimeRange?.find(
-        (m) => m.start === startTime && m.end === endTime
-      );
-      if (mockResponse) {
-        if (mockResponse.response instanceof Error) {
-          throw mockResponse.response;
-        }
-        return mockResponse.response.slice(0, limit);
-      }
-
-      // Default mock response
-      return [
-        {
-          timestamp: startTime,
-          level: 'info',
-          message: `Mock logs from ${startTime} to ${endTime}`,
-          metadata: { range: { start: startTime, end: endTime } },
-        },
-      ];
     },
   };
 }

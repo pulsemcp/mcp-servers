@@ -43,40 +43,20 @@ This project is NOT officially affiliated with AppSignal.
 
 This server is built and tested on macOS with Claude Desktop. It should work with other MCP clients as well.
 
-| Tool Name                    | Description                                                                                         |
-| ---------------------------- | --------------------------------------------------------------------------------------------------- |
-| `get_alert_details`          | Get detailed information about a specific alert, including status, triggers, and affected services. |
-| `search_logs`                | Search through application logs with flexible query parameters and filters.                         |
-| `get_logs_in_datetime_range` | Retrieve logs within a specific datetime range for focused incident analysis.                       |
+| Tool Name                        | Description                                                                 |
+| -------------------------------- | --------------------------------------------------------------------------- |
+| `get_apps`                       | Get a list of all available AppSignal applications.                         |
+| `select_app_id`                  | Select an AppSignal application ID to use for subsequent operations.        |
+| `get_exception_incident`         | Get detailed information about a specific exception incident.               |
+| `get_exception_incident_samples` | Get sample occurrences of a specific exception incident.                    |
+| `get_log_incident`               | Get detailed information about a specific log incident.                     |
+| `search_logs`                    | Search through application logs with flexible query parameters and filters. |
 
 # Usage Tips
 
 - All log searches support flexible query syntax - you can search for exact phrases, keywords, or use AppSignal's query language
-- Datetime ranges should be provided in ISO 8601 format (e.g., "2024-01-15T10:00:00Z")
 - Alert IDs can be found in your AppSignal dashboard or through alert notifications
 - Use the tools in combination to investigate issues - get alert details first, then search related logs
-
-# Examples
-
-## Get alert details
-
-1. `Get details for alert ID 12345`
-2. `Show me information about the database connection alert`
-3. `What's the status of alert abc-def-123?`
-
-## Search logs
-
-1. `Search logs for "database connection timeout"`
-2. `Find all error logs from the payment service`
-3. `Search for logs containing "user authentication failed" in the last hour`
-4. `Look for any logs with status code 500`
-
-## Get logs in datetime range
-
-1. `Get all logs between 2024-01-15T10:00:00Z and 2024-01-15T11:00:00Z`
-2. `Show me logs from yesterday between 3pm and 4pm UTC`
-3. `Retrieve logs for the incident that happened this morning from 9am to 9:30am`
-4. `Get logs from the last deployment window (2024-01-15T20:00:00Z to 2024-01-15T20:30:00Z)`
 
 # Development
 

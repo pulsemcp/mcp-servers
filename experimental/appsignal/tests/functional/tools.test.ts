@@ -49,12 +49,13 @@ describe('AppSignal MCP Tools', () => {
     it('should register all tools when API key is provided', () => {
       registerTools(mockServer);
 
-      expect(mockServer.tool).toHaveBeenCalledTimes(5);
-      expect(registeredTools.has('get_app_ids')).toBe(true);
+      expect(mockServer.tool).toHaveBeenCalledTimes(6);
+      expect(registeredTools.has('get_apps')).toBe(true);
       expect(registeredTools.has('select_app_id')).toBe(true);
-      expect(registeredTools.has('get_alert_details')).toBe(true);
+      expect(registeredTools.has('get_exception_incident')).toBe(true);
+      expect(registeredTools.has('get_exception_incident_samples')).toBe(true);
+      expect(registeredTools.has('get_log_incident')).toBe(true);
       expect(registeredTools.has('search_logs')).toBe(true);
-      expect(registeredTools.has('get_logs_in_datetime_range')).toBe(true);
     });
 
     it('should throw error when API key is missing', () => {
@@ -73,12 +74,13 @@ describe('AppSignal MCP Tools', () => {
       registerTools(mockServer);
 
       // Check that main tools are disabled
-      expect(registeredTools.get('get_alert_details').enabled).toBe(false);
+      expect(registeredTools.get('get_exception_incident').enabled).toBe(false);
+      expect(registeredTools.get('get_exception_incident_samples').enabled).toBe(false);
+      expect(registeredTools.get('get_log_incident').enabled).toBe(false);
       expect(registeredTools.get('search_logs').enabled).toBe(false);
-      expect(registeredTools.get('get_logs_in_datetime_range').enabled).toBe(false);
 
       // But app selection tools should be enabled
-      expect(registeredTools.get('get_app_ids').enabled).toBe(true);
+      expect(registeredTools.get('get_apps').enabled).toBe(true);
       expect(registeredTools.get('select_app_id').enabled).toBe(true);
     });
   });
@@ -89,14 +91,34 @@ describe('AppSignal MCP Tools', () => {
       registerTools(mockServer);
     });
 
-    it('should handle get_alert_details with valid app ID', async () => {
-      const tool = registeredTools.get('get_alert_details');
-      const result = await tool.handler({ alertId: 'alert-123' });
+    it('should handle get_exception_incident with valid app ID', async () => {
+      const tool = registeredTools.get('get_exception_incident');
+      const result = await tool.handler({ incidentId: 'exception-123' });
 
-      const alertData = JSON.parse(result.content[0].text);
-      expect(alertData.id).toBe('alert-123');
-      expect(alertData.status).toBe('active');
-      expect(alertData.affectedServices).toContain('api-service');
+      const incidentData = JSON.parse(result.content[0].text);
+      expect(incidentData.id).toBe('exception-123');
+      expect(incidentData.status).toBe('open');
+      expect(incidentData.name).toBe('NullPointerException');
+    });
+
+    it('should handle get_exception_incident_samples', async () => {
+      const tool = registeredTools.get('get_exception_incident_samples');
+      const result = await tool.handler({ incidentId: 'exception-123', limit: 5 });
+
+      const samples = JSON.parse(result.content[0].text);
+      expect(Array.isArray(samples)).toBe(true);
+      expect(samples[0]).toHaveProperty('backtrace');
+      expect(samples[0]).toHaveProperty('message');
+    });
+
+    it('should handle get_log_incident', async () => {
+      const tool = registeredTools.get('get_log_incident');
+      const result = await tool.handler({ incidentId: 'log-123' });
+
+      const incidentData = JSON.parse(result.content[0].text);
+      expect(incidentData.id).toBe('log-123');
+      expect(incidentData.severity).toBe('error');
+      expect(incidentData.name).toBe('High Error Rate');
     });
 
     it('should handle search_logs with parameters', async () => {
@@ -111,20 +133,6 @@ describe('AppSignal MCP Tools', () => {
       expect(Array.isArray(logs)).toBe(true);
       expect(logs[0]).toHaveProperty('message');
       expect(logs[0].level).toBe('error');
-    });
-
-    it('should handle get_logs_in_datetime_range', async () => {
-      const tool = registeredTools.get('get_logs_in_datetime_range');
-      const result = await tool.handler({
-        start: '2024-01-15T10:00:00Z',
-        end: '2024-01-15T11:00:00Z',
-        limit: 200,
-      });
-
-      const logs = JSON.parse(result.content[0].text);
-      expect(Array.isArray(logs)).toBe(true);
-      expect(logs[0]).toHaveProperty('timestamp');
-      expect(logs[0]).toHaveProperty('message');
     });
 
     it('should handle select_app_id and enable tools', async () => {
@@ -152,7 +160,7 @@ describe('AppSignal MCP Tools', () => {
       registerTools(mockServer);
 
       // Verify main tools are disabled
-      expect(registeredTools.get('get_alert_details').enabled).toBe(false);
+      expect(registeredTools.get('get_exception_incident').enabled).toBe(false);
 
       // Call select_app_id
       const selectTool = registeredTools.get('select_app_id');
@@ -173,8 +181,8 @@ describe('AppSignal MCP Tools', () => {
       delete process.env.APPSIGNAL_APP_ID;
       vi.mocked(getSelectedAppId).mockReturnValue(undefined);
 
-      const tool = registeredTools.get('get_alert_details');
-      const result = await tool.handler({ alertId: 'alert-123' });
+      const tool = registeredTools.get('get_exception_incident');
+      const result = await tool.handler({ incidentId: 'exception-123' });
 
       expect(result.content[0].text).toContain('Error: No app ID selected');
       expect(result.content[0].text).toContain('Please use select_app_id tool first');
