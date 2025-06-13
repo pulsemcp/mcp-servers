@@ -21,12 +21,12 @@ export function createIntegrationMockExampleClient(
 
     // Add your mock methods here based on IExampleClient interface
     // Example implementations:
-    
+
     // async getItem(id: string): Promise<{ id: string; name: string; value: string }> {
     //   if (mockData.items?.[id]) {
     //     return mockData.items[id];
     //   }
-    //   
+    //
     //   // Default mock response
     //   return {
     //     id,
@@ -34,12 +34,12 @@ export function createIntegrationMockExampleClient(
     //     value: 'Mock value for ' + id,
     //   };
     // },
-    
+
     // async searchItems(query: string, limit = 10): Promise<Array<{ id: string; name: string }>> {
     //   if (mockData.searchResponses?.[query]) {
     //     return mockData.searchResponses[query].slice(0, limit);
     //   }
-    //   
+    //
     //   // Default mock response
     //   return [
     //     { id: '1', name: `Mock result for: ${query}` },

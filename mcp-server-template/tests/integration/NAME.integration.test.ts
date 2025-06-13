@@ -116,7 +116,7 @@ describe('NAME MCP Server Integration Tests', () => {
  * This demonstrates how we're mocking the external API calls, not the MCP client.
  */
 async function createTestMCPClientWithMock(
-  mockExampleClient: IExampleClient & { mockData?: any }
+  mockExampleClient: IExampleClient & { mockData?: unknown }
 ): Promise<TestMCPClient> {
   // We need to pass the mock to the server somehow.
   // Since we can't inject it directly, we'll use environment variables

@@ -88,18 +88,21 @@ Integration tests use a real MCP client (`TestMCPClient`) to test the full MCP p
 ### How It Works
 
 1. Test creates a mock external client with specific test data:
+
    ```typescript
    const mockExampleClient = createIntegrationMockExampleClient({
-     items: { 'item-123': { id: 'item-123', name: 'Test Item' } }
+     items: { 'item-123': { id: 'item-123', name: 'Test Item' } },
    });
    ```
 
 2. Test creates a TestMCPClient that will use this mock:
+
    ```typescript
    const client = await createTestMCPClientWithMock(mockExampleClient);
    ```
 
 3. The helper function:
+
    - Extracts mock data from the mock client
    - Passes it via environment variable to the server
    - Points to the special integration entry point
@@ -117,9 +120,9 @@ const mockExampleClient = createIntegrationMockExampleClient({
   searchResponses: {
     'user:john': [
       { id: '1', name: 'John Doe', email: 'john@example.com' },
-      { id: '2', name: 'John Smith', email: 'jsmith@example.com' }
-    ]
-  }
+      { id: '2', name: 'John Smith', email: 'jsmith@example.com' },
+    ],
+  },
 });
 
 // Create TestMCPClient that will use our mock
