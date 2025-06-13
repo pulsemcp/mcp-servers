@@ -4,50 +4,111 @@ This file provides guidance to Claude Code (claude.ai/code) when working with th
 
 ## Overview
 
-This is a template directory for creating new MCP servers. It provides the minimal boilerplate needed to start building a new server with TypeScript.
+This is a comprehensive template for creating new MCP servers with TypeScript, testing infrastructure, and CI/CD setup guidance. It follows a monorepo structure with local/shared separation and includes full testing capabilities.
 
 ## Using This Template
 
-1. **Copy the entire directory** to your desired location (root or experimental/)
-2. **Rename the directory** to your server name (e.g., `mcp-server-weather`)
-3. **Update placeholders** throughout the files:
-   - Replace `NAME` with your server name
-   - Replace `DESCRIPTION` with your server description
-   - Update the README.md with actual features
+1. **Copy the entire directory** to your desired location:
+   - For experimental: `cp -r mcp-server-template experimental/mcp-server-myname`
+   - For production: `cp -r mcp-server-template mcp-server-myname`
+
+2. **Replace placeholders** throughout all files:
+   - `NAME` → your server name
+   - `DESCRIPTION` → your server description
+   - `YOUR_NAME` → author name
+   - `YOUR_API_KEY` → actual environment variable names
+   - `IExampleClient`/`ExampleClient` → your client interface/class names
+
+3. **Set up CI/CD** (optional):
+   - Follow the checklist in `CI_SETUP.md`
+   - Delete `CI_SETUP.md` after completing setup
+
+4. **Install and build**:
+   ```bash
+   npm run install-all
+   npm run build
+   npm test
+   ```
 
 ## Template Structure
 
 ```
 mcp-server-template/
-├── src/
-│   └── index.ts      # Main server implementation
-├── dist/             # Built JavaScript output (git-ignored)
-├── package.json      # Dependencies and scripts
-├── tsconfig.json     # TypeScript configuration
-├── README.md         # User documentation template
-└── .gitignore        # Standard git ignores
+├── local/                      # Local server implementation
+│   ├── src/
+│   │   ├── index.ts           # Main entry point
+│   │   └── index.integration.ts # Integration test entry
+│   └── package.json
+├── shared/                     # Shared business logic
+│   ├── src/
+│   │   ├── server.ts          # Server factory with DI
+│   │   ├── tools.ts           # Tool implementations
+│   │   ├── resources.ts       # Resource implementations
+│   │   └── types.ts           # Shared TypeScript types
+│   └── package.json
+├── tests/                      # Test suite
+│   ├── functional/            # Unit/functional tests
+│   ├── integration/           # Full MCP protocol tests
+│   ├── mocks/                 # Mock implementations
+│   └── README.md              # Testing documentation
+├── vitest.config.ts           # Vitest configuration
+├── vitest.config.integration.ts # Integration test config
+├── CI_SETUP.md                # CI/CD setup checklist
+└── package.json               # Root monorepo config
 ```
+
+## Key Features
+
+### Server Factory Pattern
+
+The template uses a factory pattern in `shared/src/server.ts`:
+- Enables dependency injection for better testability
+- Supports both production and test configurations
+- Separates server creation from handler registration
+
+### Testing Infrastructure
+
+Full testing setup with Vitest:
+- Functional tests for isolated unit testing
+- Integration tests using TestMCPClient
+- Mock patterns for external dependencies
+- Separate test configurations for different test types
+
+### Development Scripts
+
+- `npm run dev` - Development mode with auto-reload
+- `npm test` - Run tests in watch mode
+- `npm run test:all` - Run all tests (functional + integration)
+- `npm run lint` - Check code quality
+- `npm run format` - Format code
 
 ## Implementation Guide
 
-The template provides:
+### Adding Tools
 
-- Basic MCP server setup with stdio transport
-- Placeholder handlers for resources and tools
-- Standard TypeScript configuration
-- Common npm scripts (build, start, dev)
+1. Define tool schema in `shared/src/tools.ts`
+2. Add to tools list in `ListToolsRequestSchema` handler
+3. Implement handler logic in `CallToolRequestSchema` handler
+4. Use dependency injection to access external clients
 
-To implement your server:
+### Adding External API Clients
 
-1. Add your tools in the `ListToolsRequestSchema` handler
-2. Implement tool execution in the `CallToolRequestSchema` handler
-3. Add your resources in the `ListResourcesRequestSchema` handler
-4. Implement resource reading in the `ReadResourceRequestSchema` handler
+1. Define interface in `shared/src/server.ts`
+2. Implement concrete class
+3. Update factory to instantiate client
+4. Use via dependency injection in tools
+
+### Writing Tests
+
+- Functional: Test individual functions with mocked dependencies
+- Integration: Test full MCP protocol with mocked external services
 
 ## Best Practices
 
-- Keep all business logic well-organized
-- Use zod for input validation
+- Use dependency injection for all external dependencies
+- Write tests for all new functionality
+- Follow TypeScript strict mode
+- Use Zod for runtime validation
 - Handle errors gracefully
-- Document all resources and tools in README.md
-- Follow the repository's TypeScript conventions
+- Keep business logic in shared module
+- Document all tools and resources

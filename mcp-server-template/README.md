@@ -1,64 +1,86 @@
-# MCP Server Template
+# MCP Server NAME
 
-A comprehensive template for building Model Context Protocol (MCP) servers with TypeScript, following best practices and patterns.
+DESCRIPTION
 
 ## Features
 
-- 🏗️ Modular architecture with clear separation of concerns
-- 🛠️ Example tools demonstrating proper implementation patterns
-- 📦 Example resources with dynamic URI handling
-- 🔧 Environment variable support with validation
-- 🧩 Shared utilities in a `shared` folder
+- 🏗️ Modular monorepo architecture with local/shared separation
+- 🧪 Comprehensive testing setup with Vitest
+- 🔧 Dependency injection for better testability
 - 📝 TypeScript with strict type checking
 - 🚀 Development mode with automatic rebuilds
+- ✅ Pre-configured linting and formatting
 
 ## Quick Start
 
-1. **Clone or copy this template**
+### Using This Template
+
+1. **Copy the template to your desired location**
 
    ```bash
+   # For experimental servers
+   cp -r mcp-server-template experimental/mcp-server-myserver
+   
+   # For production servers
    cp -r mcp-server-template mcp-server-myserver
+   
    cd mcp-server-myserver
    ```
 
-2. **Replace placeholders**
+2. **Replace placeholders throughout the codebase**
 
-   - In `package.json`: Replace `NAME` with your server name, `DESCRIPTION` with your description
-   - In `src/index.ts`: Replace `NAME` with your server name
-   - Update this README with your server's specific information
+   Search and replace these values:
+   - `NAME` → your server name (e.g., `weather`, `github`)
+   - `DESCRIPTION` → your server description
+   - `YOUR_NAME` → your name (for package.json author field)
+   - `YOUR_API_KEY` → your actual environment variable name
+   - `IExampleClient`/`ExampleClient` → your actual client interface/class
 
 3. **Install dependencies**
 
    ```bash
-   npm install
+   npm run install-all
    ```
 
-4. **Build the server**
+4. **Set up CI/CD (optional)**
+
+   Follow the checklist in `CI_SETUP.md` to configure GitHub Actions, then delete the file.
+
+5. **Build and test**
+
    ```bash
    npm run build
+   npm test
    ```
 
 ## Project Structure
 
 ```
 mcp-server-NAME/
-├── src/
-│   ├── index.ts          # Main server entry point
-│   ├── env.d.ts          # TypeScript environment declarations
-│   ├── clients/          # Business logic clients
-│   │   └── exampleClient.ts
-│   └── tools/            # Tool implementations
-│       ├── index.ts      # Tool exports
-│       ├── getValue.ts
-│       ├── setValue.ts
-│       └── listKeys.ts
-├── build/                # Compiled JavaScript (git ignored)
-├── package.json
-├── tsconfig.json
-└── README.md
+├── local/                 # Local server implementation
+│   ├── src/
+│   │   ├── index.ts      # Main entry point
+│   │   └── index.integration.ts  # Integration test entry
+│   ├── build/            # Compiled output
+│   └── package.json
+├── shared/               # Shared business logic
+│   ├── src/
+│   │   ├── server.ts     # Server factory
+│   │   ├── tools.ts      # Tool implementations
+│   │   ├── resources.ts  # Resource implementations
+│   │   └── types.ts      # Shared types
+│   ├── dist/             # Compiled output
+│   └── package.json
+├── tests/                # Test suite
+│   ├── functional/       # Unit tests
+│   ├── integration/      # Integration tests
+│   └── mocks/           # Mock implementations
+├── package.json          # Root package.json
+├── vitest.config.ts      # Test configuration
+└── CI_SETUP.md          # CI setup guide (delete after setup)
 ```
 
-## Development Guide
+## Development
 
 ### Running in Development Mode
 
@@ -66,207 +88,193 @@ mcp-server-NAME/
 npm run dev
 ```
 
-This starts the TypeScript compiler in watch mode, automatically rebuilding when you make changes.
+This watches for changes and automatically rebuilds.
 
-### Adding Environment Variables
+### Testing
 
-1. Update `src/env.d.ts`:
+```bash
+# Run all tests in watch mode
+npm test
 
-   ```typescript
-   declare namespace NodeJS {
-     interface ProcessEnv {
-       API_KEY: string;
-       DATABASE_URL: string;
-     }
-   }
-   ```
+# Run tests once
+npm run test:run
 
-2. Update the validation schema in `src/index.ts`:
+# Run integration tests
+npm run test:integration
 
-   ```typescript
-   const envSchema = z.object({
-     API_KEY: z.string().min(1),
-     DATABASE_URL: z.string().url(),
-   });
-   ```
+# Run all tests (functional + integration)
+npm run test:all
 
-3. Create a `.env` file (git ignored):
-   ```
-   API_KEY=your-api-key
-   DATABASE_URL=postgresql://localhost/mydb
-   ```
-
-### Adding New Tools
-
-1. Create a new file in `src/tools/`:
-
-   ```typescript
-   import { z } from 'zod';
-   import type { ToolResponse } from '@pulsemcp/shared';
-   import { createInputSchema, createTextResponse, createErrorResponse } from '@pulsemcp/shared';
-
-   const MyToolArgsSchema = z.object({
-     param: z.string().describe('Description of parameter'),
-   });
-
-   export interface MyToolArgs {
-     param: string;
-   }
-
-   export const myToolTool = {
-     name: 'my_tool',
-     description: 'What this tool does',
-     inputSchema: createInputSchema(MyToolArgsSchema),
-   };
-
-   export async function myTool(args: MyToolArgs, client: ExampleClient): Promise<ToolResponse> {
-     try {
-       // Implementation
-       return createTextResponse('Success!');
-     } catch (error) {
-       return createErrorResponse(error);
-     }
-   }
-   ```
-
-2. Export from `src/tools/index.ts`:
-
-   ```typescript
-   export { myToolTool, myTool, type MyToolArgs } from './myTool.js';
-   ```
-
-3. Add to the tools list and handler in `src/index.ts`
-
-### Adding New Clients
-
-Create specialized clients for different aspects of your business logic:
-
-```typescript
-export class DatabaseClient {
-  constructor(private connectionString: string) {}
-
-  async query(sql: string): Promise<any[]> {
-    // Implementation
-  }
-}
+# Open test UI
+npm run test:ui
 ```
 
-## Using Shared Utilities
+### Linting and Formatting
 
-This template uses `shared` for common MCP patterns:
+```bash
+# Check for linting issues
+npm run lint
 
-### Response Helpers
+# Auto-fix linting issues
+npm run lint:fix
 
-- `createTextResponse(text)` - Create a simple text response
-- `createSuccessResponse(message)` - Create a success message
-- `createErrorResponse(error)` - Create an error response
-- `createMultiContentResponse(contents)` - Create multi-part responses
+# Format code
+npm run format
 
-### Error Utilities
+# Check formatting
+npm run format:check
+```
 
-- `getErrorMessage(error)` - Safely extract error messages
-- `createInvalidRequestError(message)` - Create MCP errors
-- `createMethodNotFoundError(method)` - Create method not found errors
-- `createInternalError(error)` - Create internal errors
+## Implementation Guide
 
-### Validation Helpers
+### Adding Tools
 
-- `createInputSchema(zodSchema)` - Convert Zod schemas to JSON Schema
-- `validateEnvironment(schema)` - Validate environment variables
-- `parseResourceUri(uri, prefix)` - Parse resource URIs
-- `buildResourceUri(protocol, type, id)` - Build consistent URIs
+1. **Define the tool in `shared/src/tools.ts`**
 
-### Logging
+   ```typescript
+   const MyToolSchema = z.object({
+     param: z.string().describe('Parameter description'),
+   });
+   ```
 
-- `logServerStart(name, transport)` - Log server startup
-- `logError(context, error)` - Log errors with context
-- `logWarning(context, message)` - Log warnings
-- `logDebug(context, message)` - Debug logging (dev mode only)
+2. **Add to the tools list**
 
-## Configuration with Claude Desktop
+   ```typescript
+   tools: [
+     {
+       name: 'my_tool',
+       description: 'What this tool does',
+       inputSchema: {...},
+     },
+   ]
+   ```
 
-Add to your Claude Desktop configuration file:
+3. **Implement the handler**
 
-### macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
+   ```typescript
+   if (name === 'my_tool') {
+     const validatedArgs = MyToolSchema.parse(args);
+     const client = clientFactory();
+     
+     // Use client to perform operations
+     const result = await client.doSomething(validatedArgs.param);
+     
+     return {
+       content: [{
+         type: 'text',
+         text: result,
+       }],
+     };
+   }
+   ```
 
-### Windows: `%APPDATA%\Claude\claude_desktop_config.json`
+### Adding Resources
+
+Update `shared/src/resources.ts` to add new resources following the existing pattern.
+
+### Using External APIs
+
+1. **Define client interface in `shared/src/server.ts`**
+
+   ```typescript
+   export interface IMyApiClient {
+     fetchData(id: string): Promise<Data>;
+   }
+   ```
+
+2. **Implement the client**
+
+   ```typescript
+   export class MyApiClient implements IMyApiClient {
+     constructor(private apiKey: string) {}
+     
+     async fetchData(id: string): Promise<Data> {
+       // Implementation
+     }
+   }
+   ```
+
+3. **Use dependency injection in tools**
+
+   The client factory pattern allows easy mocking for tests.
+
+### Writing Tests
+
+#### Functional Tests
+
+Test individual functions/tools in isolation:
+
+```typescript
+// tests/functional/tools.test.ts
+describe('my_tool', () => {
+  it('should process data correctly', async () => {
+    const mockClient = createMockClient();
+    mockClient.fetchData.mockResolvedValue({ data: 'test' });
+    
+    // Test your tool with the mock
+  });
+});
+```
+
+#### Integration Tests
+
+Test the full MCP protocol:
+
+```typescript
+// tests/integration/NAME.integration.test.ts
+it('should handle my_tool via MCP', async () => {
+  const client = await createMockedClient({
+    mockData: { /* ... */ }
+  });
+  
+  const result = await client.callTool('my_tool', {
+    param: 'test'
+  });
+  
+  expect(result.content[0].text).toBe('expected result');
+});
+```
+
+## Configuration
+
+### Claude Desktop
+
+Add to your Claude Desktop configuration:
+
+#### macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
+#### Windows: `%APPDATA%\Claude\claude_desktop_config.json`
 
 ```json
 {
   "mcpServers": {
     "NAME": {
       "command": "node",
-      "args": ["/absolute/path/to/mcp-server-NAME/build/index.js"],
+      "args": ["/path/to/mcp-server-NAME/local/build/index.js"],
       "env": {
-        "API_KEY": "your-api-key"
+        "YOUR_API_KEY": "your-api-key-here"
       }
     }
   }
 }
 ```
 
-## Example Resources
+## Tools
 
-The template includes example resources that are dynamically generated:
+### example_tool
 
-- `example://data/greeting` - Returns "Hello, World!"
-- `example://data/timestamp` - Returns the server start timestamp
+An example tool that processes a message.
 
-Resources are automatically discovered based on the data in your clients.
+**Input:**
+- `message` (string, required): The message to process
 
-## Example Tools
+**Returns:**
+- Processed message text
 
-The template includes three example tools:
+## Resources
 
-### `get_value`
+### example://resource
 
-Retrieves a value from the data store by key.
-
-- **Input**: `key` (string) - The key to retrieve
-- **Output**: The stored value or an error message
-
-### `set_value`
-
-Stores a value in the data store.
-
-- **Input**: `key` (string), `value` (string) - The key-value pair to store
-- **Output**: Success confirmation
-
-### `list_keys`
-
-Lists all available keys in the data store.
-
-- **Input**: None
-- **Output**: Comma-separated list of keys
-
-## Best Practices
-
-1. **Modular Structure**: Keep tools, clients, and utilities separate
-2. **Error Handling**: Always use try-catch and return appropriate errors
-3. **Type Safety**: Define interfaces for all arguments and use TypeScript strictly
-4. **Validation**: Validate inputs with Zod schemas
-5. **Dependency Injection**: Pass clients to tools rather than importing directly
-6. **Environment Variables**: Validate all required environment variables on startup
-7. **Logging**: Use stderr for logging (stdout is reserved for MCP communication)
-
-## Troubleshooting
-
-### Build Errors
-
-- Ensure all `.js` extensions are included in imports
-- Check that TypeScript version matches the template
-
-### Runtime Errors
-
-- Verify environment variables are set correctly
-- Check Claude Desktop logs for detailed error messages
-- Ensure the built files exist in the `build/` directory
-
-### Tool Not Found
-
-- Verify tool is exported from `tools/index.ts`
-- Check tool is added to the tools list in `index.ts`
-- Ensure tool name matches in all locations
+An example resource that returns static content.
 
 ## License
 
