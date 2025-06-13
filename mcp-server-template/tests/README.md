@@ -9,8 +9,7 @@ tests/
 ├── functional/          # Functional tests for individual components
 │   └── tools.test.ts   # Tests for MCP tool implementations
 ├── integration/        # Integration tests using TestMCPClient
-│   ├── NAME.integration.test.ts  # Full server integration tests
-│   └── integration-test-helper.ts # Helper for creating test clients with mocks
+│   └── NAME.integration.test.ts  # Full server integration tests
 └── mocks/              # Mock implementations and test data
     └── example-client.functional-mock.ts  # Vitest mocks for functional tests
 ```
@@ -69,42 +68,78 @@ const registerTools = createRegisterTools(() => mockClient);
 
 #### Integration Tests (`integration/`)
 
-- Helper that creates a real TestMCPClient instance
-- Configures mock data that gets passed to the test server via environment variables
-- Tests the full MCP protocol stack with mocked external dependencies
+- Creates a real TestMCPClient instance that communicates via stdio
+- Uses an explicit mock implementation of external dependencies
+- Tests the full MCP protocol stack with controlled mock responses
 
 ## Integration Testing Architecture
 
 ### Overview
 
-Integration tests use a real MCP client (`TestMCPClient`) to communicate with a test version of the server that uses configurable mocked external dependencies.
+Integration tests use a real MCP client (`TestMCPClient`) to test the full MCP protocol while mocking only the external API dependencies. This approach clearly demonstrates that we're testing the MCP implementation, not mocking the MCP client itself.
 
 ### Components
 
-1. **TestMCPClient** - Located at `/test-mcp-client`, provides a programmatic interface to test MCP servers
-2. **Integration build** - Special build of the server (`index.integration.js`) that uses mocked dependencies
-3. **Configurable mocks** - Each test can define its own mock responses via environment variables
+1. **TestMCPClient** - Real MCP client that communicates with the server via stdio
+2. **Mock External Client** - Mock implementation of external APIs (e.g., `example-client.integration-mock.ts`)
+3. **Integration Entry Point** - Special server entry (`index.integration-with-mock.ts`) that uses the mock client
+4. **Environment Variables** - Used to pass mock data configuration to the server
 
 ### How It Works
 
-1. Each test defines its mock responses using the `createMockedClient` helper
-2. Mock configuration is passed via environment variable to the server
-3. TestMCPClient spawns the server process via stdio
-4. Tests interact with the server through the MCP protocol
-5. Server responds with the configured mock data
+1. Test creates a mock external client with specific test data:
+   ```typescript
+   const mockExampleClient = createIntegrationMockExampleClient({
+     items: { 'item-123': { id: 'item-123', name: 'Test Item' } }
+   });
+   ```
+
+2. Test creates a TestMCPClient that will use this mock:
+   ```typescript
+   const client = await createTestMCPClientWithMock(mockExampleClient);
+   ```
+
+3. The helper function:
+   - Extracts mock data from the mock client
+   - Passes it via environment variable to the server
+   - Points to the special integration entry point
+   - Creates and connects the TestMCPClient
+
+4. Server uses the mock client factory instead of real external APIs
+
+5. Tests interact with the server through the real MCP protocol
 
 ### Example
 
 ```typescript
-const client = await createMockedClient({
-  // Define your mock data structure here
-  items: {
-    'item-123': { id: 'item-123', name: 'Test Item', ... }
+// Create a mock external client with custom data
+const mockExampleClient = createIntegrationMockExampleClient({
+  searchResponses: {
+    'user:john': [
+      { id: '1', name: 'John Doe', email: 'john@example.com' },
+      { id: '2', name: 'John Smith', email: 'jsmith@example.com' }
+    ]
   }
 });
 
-const result = await client.callTool('get_item', { itemId: 'item-123' });
+// Create TestMCPClient that will use our mock
+const client = await createTestMCPClientWithMock(mockExampleClient);
+
+// Call the MCP tool (real MCP protocol communication)
+const result = await client.callTool('search_users', { query: 'user:john' });
+
+// Verify the results
+const users = JSON.parse(result.content[0].text);
+expect(users).toHaveLength(2);
+expect(users[0].name).toBe('John Doe');
 ```
+
+### Key Benefits
+
+1. **Clear separation of concerns** - We're explicitly mocking only external APIs, not the MCP protocol
+2. **Real protocol testing** - All MCP communication uses the actual protocol implementation
+3. **Flexible test scenarios** - Each test can define exactly what the external API should return
+4. **No vitest dependency in mocks** - Integration mocks are plain TypeScript, making them reusable
 
 ## Writing Tests
 
@@ -117,9 +152,9 @@ const result = await client.callTool('get_item', { itemId: 'item-123' });
 
 ### Integration Tests
 
-1. Define mock data for your test scenario
-2. Create a test client with the mocks
-3. Call tools/resources through the MCP protocol
+1. Create a mock external client with test-specific data
+2. Use the helper to create a TestMCPClient with this mock
+3. Call tools/resources through the real MCP protocol
 4. Assert on the responses
 
 ## Best Practices
