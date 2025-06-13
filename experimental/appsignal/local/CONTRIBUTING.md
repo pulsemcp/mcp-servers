@@ -5,6 +5,7 @@
 ### Prerequisites
 
 1. Build the AppSignal server:
+
 ```bash
 cd experimental/appsignal/local
 npm install
