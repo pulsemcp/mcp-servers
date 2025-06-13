@@ -2,6 +2,8 @@
 
 DESCRIPTION
 
+<!-- Verify: Non-AppSignal change with All CI Checks -->
+
 ## Features
 
 - 🏗️ Modular monorepo architecture with local/shared separation
