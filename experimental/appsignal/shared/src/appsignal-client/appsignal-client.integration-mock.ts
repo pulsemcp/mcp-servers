@@ -7,8 +7,8 @@ import type {
 } from './appsignal-client.js';
 
 interface MockData {
-  exceptionIncidents?: Record<string, ExceptionIncident>;
-  exceptionIncidentSamples?: Record<string, ExceptionIncidentSample[]>;
+  exceptionIncidents?: ExceptionIncident[];
+  exceptionSamples?: Record<string, ExceptionIncidentSample[]>;
   logIncidents?: Record<string, LogIncident>;
   searchResponses?: Record<string, LogEntry[]>;
 }
@@ -33,8 +33,13 @@ export function createIntegrationMockAppsignalClient(
     },
 
     async getExceptionIncident(incidentId: string): Promise<ExceptionIncident> {
-      if (mockData.exceptionIncidents?.[incidentId]) {
-        return mockData.exceptionIncidents[incidentId];
+      // Search through the list of incidents
+      if (mockData.exceptionIncidents) {
+        const incident = mockData.exceptionIncidents.find((inc) => inc.id === incidentId);
+        if (incident) {
+          return incident;
+        }
+        throw new Error(`Exception incident with ID ${incidentId} not found`);
       }
 
       // Default mock response
@@ -48,24 +53,31 @@ export function createIntegrationMockAppsignalClient(
       };
     },
 
-    async getExceptionIncidentSamples(
+    async getExceptionIncidentSample(
       incidentId: string,
-      limit = 10
-    ): Promise<ExceptionIncidentSample[]> {
-      if (mockData.exceptionIncidentSamples?.[incidentId]) {
-        return mockData.exceptionIncidentSamples[incidentId].slice(0, limit);
+      offset = 0
+    ): Promise<ExceptionIncidentSample> {
+      if (mockData.exceptionSamples?.[incidentId]) {
+        const samples = mockData.exceptionSamples[incidentId];
+        if (offset >= samples.length) {
+          throw new Error(
+            `No samples found for exception incident ${incidentId} at offset ${offset}`
+          );
+        }
+        return samples[offset];
       }
 
       // Default mock response
-      return [
-        {
-          id: `sample-${incidentId}-1`,
-          timestamp: new Date().toISOString(),
-          message: 'Mock exception sample',
-          backtrace: ['mock.js:1', 'mock.js:2'],
-          metadata: { incidentId },
-        },
-      ];
+      return {
+        id: `sample-${incidentId}-1`,
+        timestamp: new Date().toISOString(),
+        message: 'Mock exception sample',
+        backtrace: ['mock.js:1', 'mock.js:2'],
+        action: 'MockController#action',
+        namespace: 'mock',
+        revision: 'mock-revision',
+        version: '1.0.0',
+      };
     },
 
     async getLogIncident(incidentId: string): Promise<LogIncident> {

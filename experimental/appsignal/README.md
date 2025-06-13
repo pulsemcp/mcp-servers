@@ -43,14 +43,14 @@ This project is NOT officially affiliated with AppSignal.
 
 This server is built and tested on macOS with Claude Desktop. It should work with other MCP clients as well.
 
-| Tool Name                        | Description                                                                 |
-| -------------------------------- | --------------------------------------------------------------------------- |
-| `get_apps`                       | Get a list of all available AppSignal applications.                         |
-| `select_app_id`                  | Select an AppSignal application ID to use for subsequent operations.        |
-| `get_exception_incident`         | Get detailed information about a specific exception incident.               |
-| `get_exception_incident_samples` | Get sample occurrences of a specific exception incident.                    |
-| `get_log_incident`               | Get detailed information about a specific log incident.                     |
-| `search_logs`                    | Search through application logs with flexible query parameters and filters. |
+| Tool Name                       | Description                                                                 |
+| ------------------------------- | --------------------------------------------------------------------------- |
+| `get_apps`                      | Get a list of all available AppSignal applications.                         |
+| `select_app_id`                 | Select an AppSignal application ID to use for subsequent operations.        |
+| `get_exception_incident`        | Get detailed information about a specific exception incident.               |
+| `get_exception_incident_sample` | Get a sample occurrence of a specific exception incident.                   |
+| `get_log_incident`              | Get detailed information about a specific log incident.                     |
+| `search_logs`                   | Search through application logs with flexible query parameters and filters. |
 
 # Usage Tips
 
