@@ -3,11 +3,11 @@ import { z } from 'zod';
 import { getSelectedAppId } from '../state.js';
 import { IAppsignalClient } from '../appsignal-client/appsignal-client.js';
 
-export function getAlertDetailsTool(server: McpServer, clientFactory: () => IAppsignalClient) {
+export function getExceptionIncidentTool(server: McpServer, clientFactory: () => IAppsignalClient) {
   return server.tool(
-    "get_alert_details",
-    { alertId: z.string().describe("The unique identifier of the alert to retrieve") },
-    async ({ alertId }) => {
+    "get_exception_incident",
+    { incidentId: z.string().describe("The unique identifier of the exception incident to retrieve") },
+    async ({ incidentId }) => {
       const appId = getSelectedAppId() || process.env.APPSIGNAL_APP_ID;
       if (!appId) {
         return {
@@ -22,13 +22,13 @@ export function getAlertDetailsTool(server: McpServer, clientFactory: () => IApp
 
       try {
         const client = clientFactory();
-        const alert = await client.getAlertDetails(alertId);
+        const incident = await client.getExceptionIncident(incidentId);
         
         return {
           content: [
             {
               type: "text",
-              text: JSON.stringify(alert, null, 2),
+              text: JSON.stringify(incident, null, 2),
             },
           ],
         };
@@ -37,7 +37,7 @@ export function getAlertDetailsTool(server: McpServer, clientFactory: () => IApp
           content: [
             {
               type: "text",
-              text: `Error fetching alert details: ${error instanceof Error ? error.message : 'Unknown error'}`,
+              text: `Error fetching exception incident details: ${error instanceof Error ? error.message : 'Unknown error'}`,
             },
           ],
         };

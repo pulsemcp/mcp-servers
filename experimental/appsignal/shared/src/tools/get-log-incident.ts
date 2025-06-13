@@ -3,15 +3,11 @@ import { z } from 'zod';
 import { getSelectedAppId } from '../state.js';
 import { IAppsignalClient } from '../appsignal-client/appsignal-client.js';
 
-export function getLogsInDatetimeRangeTool(server: McpServer, clientFactory: () => IAppsignalClient) {
+export function getLogIncidentTool(server: McpServer, clientFactory: () => IAppsignalClient) {
   return server.tool(
-    "get_logs_in_datetime_range",
-    {
-      start: z.string().describe("ISO 8601 datetime for the start of the range"),
-      end: z.string().describe("ISO 8601 datetime for the end of the range"),
-      limit: z.number().int().positive().default(100).describe("Maximum number of logs to return"),
-    },
-    async ({ start, end, limit }) => {
+    "get_log_incident",
+    { incidentId: z.string().describe("The unique identifier of the log incident to retrieve") },
+    async ({ incidentId }) => {
       const appId = getSelectedAppId() || process.env.APPSIGNAL_APP_ID;
       if (!appId) {
         return {
@@ -26,13 +22,13 @@ export function getLogsInDatetimeRangeTool(server: McpServer, clientFactory: () 
 
       try {
         const client = clientFactory();
-        const logs = await client.getLogsInDatetimeRange(start, end, limit);
+        const incident = await client.getLogIncident(incidentId);
         
         return {
           content: [
             {
               type: "text",
-              text: JSON.stringify(logs, null, 2),
+              text: JSON.stringify(incident, null, 2),
             },
           ],
         };
@@ -41,7 +37,7 @@ export function getLogsInDatetimeRangeTool(server: McpServer, clientFactory: () 
           content: [
             {
               type: "text",
-              text: `Error fetching logs: ${error instanceof Error ? error.message : 'Unknown error'}`,
+              text: `Error fetching log incident details: ${error instanceof Error ? error.message : 'Unknown error'}`,
             },
           ],
         };

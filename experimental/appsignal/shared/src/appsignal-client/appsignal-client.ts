@@ -1,12 +1,29 @@
 // AppSignal API client interface
-export interface Alert {
+export interface ExceptionIncident {
   id: string;
-  status: 'active' | 'resolved' | 'muted';
-  triggers: Array<{
-    timestamp: string;
-    message: string;
-  }>;
-  affectedServices: string[];
+  name: string;
+  message: string;
+  count: number;
+  lastOccurredAt: string;
+  status: 'open' | 'resolved' | 'muted';
+}
+
+export interface ExceptionIncidentSample {
+  id: string;
+  timestamp: string;
+  message: string;
+  backtrace: string[];
+  metadata?: Record<string, unknown>;
+}
+
+export interface LogIncident {
+  id: string;
+  name: string;
+  severity: 'debug' | 'info' | 'warn' | 'error' | 'fatal';
+  count: number;
+  lastOccurredAt: string;
+  status: 'open' | 'resolved' | 'muted';
+  query?: string;
 }
 
 export interface LogEntry {
@@ -17,9 +34,10 @@ export interface LogEntry {
 }
 
 export interface IAppsignalClient {
-  getAlertDetails(alertId: string): Promise<Alert>;
+  getExceptionIncident(incidentId: string): Promise<ExceptionIncident>;
+  getExceptionIncidentSamples(incidentId: string, limit?: number): Promise<ExceptionIncidentSample[]>;
+  getLogIncident(incidentId: string): Promise<LogIncident>;
   searchLogs(query: string, limit?: number, offset?: number): Promise<LogEntry[]>;
-  getLogsInDatetimeRange(startTime: string, endTime: string, limit?: number): Promise<LogEntry[]>;
 }
 
 // Stub implementation for now
@@ -30,17 +48,22 @@ export class AppsignalClient implements IAppsignalClient {
     void this.appId;
   }
 
-  async getAlertDetails(_alertId: string): Promise<Alert> {
+  async getExceptionIncident(_incidentId: string): Promise<ExceptionIncident> {
+    // TODO: Implement actual API call using this.apiKey and this.appId
+    throw new Error('Not implemented');
+  }
+
+  async getExceptionIncidentSamples(_incidentId: string, _limit = 10): Promise<ExceptionIncidentSample[]> {
+    // TODO: Implement actual API call using this.apiKey and this.appId
+    throw new Error('Not implemented');
+  }
+
+  async getLogIncident(_incidentId: string): Promise<LogIncident> {
     // TODO: Implement actual API call using this.apiKey and this.appId
     throw new Error('Not implemented');
   }
 
   async searchLogs(_query: string, _limit = 100, _offset = 0): Promise<LogEntry[]> {
-    // TODO: Implement actual API call using this.apiKey and this.appId
-    throw new Error('Not implemented');
-  }
-
-  async getLogsInDatetimeRange(_startTime: string, _endTime: string, _limit = 100): Promise<LogEntry[]> {
     // TODO: Implement actual API call using this.apiKey and this.appId
     throw new Error('Not implemented');
   }

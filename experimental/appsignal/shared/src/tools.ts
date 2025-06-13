@@ -1,9 +1,10 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { getAppIdsTool } from './tools/get-app-ids.js';
+import { getAppsTool } from './tools/get-apps.js';
 import { selectAppIdTool } from './tools/select-app-id.js';
-import { getAlertDetailsTool } from './tools/get-alert-details.js';
+import { getExceptionIncidentTool } from './tools/get-exception-incident.js';
+import { getExceptionIncidentSamplesTool } from './tools/get-exception-incident-samples.js';
+import { getLogIncidentTool } from './tools/get-log-incident.js';
 import { searchLogsTool } from './tools/search-logs.js';
-import { getLogsInDatetimeRangeTool } from './tools/get-logs-in-datetime-range.js';
 import { IAppsignalClient } from './appsignal-client/appsignal-client.js';
 
 export type ClientFactory = () => IAppsignalClient;
@@ -19,29 +20,32 @@ export function createRegisterTools(clientFactory: ClientFactory) {
     }
 
     // Store references to main tools
-    let mainTools: { getAlertDetails?: any; searchLogs?: any; getLogsInDatetimeRange?: any } = {};
+    let mainTools: { getExceptionIncident?: any; getExceptionIncidentSamples?: any; getLogIncident?: any; searchLogs?: any } = {};
 
     // Enable function for selectAppId to call
     const enableMainTools = () => {
-      if (mainTools.getAlertDetails) mainTools.getAlertDetails.enable();
+      if (mainTools.getExceptionIncident) mainTools.getExceptionIncident.enable();
+      if (mainTools.getExceptionIncidentSamples) mainTools.getExceptionIncidentSamples.enable();
+      if (mainTools.getLogIncident) mainTools.getLogIncident.enable();
       if (mainTools.searchLogs) mainTools.searchLogs.enable();
-      if (mainTools.getLogsInDatetimeRange) mainTools.getLogsInDatetimeRange.enable();
     };
 
     // Register tools that are always available
-    const getAppIds = getAppIdsTool(server, clientFactory);
+    const getApps = getAppsTool(server, clientFactory);
     const selectAppId = selectAppIdTool(server, enableMainTools, clientFactory);
 
     // Register main tools
-    mainTools.getAlertDetails = getAlertDetailsTool(server, clientFactory);
+    mainTools.getExceptionIncident = getExceptionIncidentTool(server, clientFactory);
+    mainTools.getExceptionIncidentSamples = getExceptionIncidentSamplesTool(server, clientFactory);
+    mainTools.getLogIncident = getLogIncidentTool(server, clientFactory);
     mainTools.searchLogs = searchLogsTool(server, clientFactory);
-    mainTools.getLogsInDatetimeRange = getLogsInDatetimeRangeTool(server, clientFactory);
 
     // If no app ID is provided via environment, disable the main tools initially
     if (!envAppId) {
-      mainTools.getAlertDetails.disable();
+      mainTools.getExceptionIncident.disable();
+      mainTools.getExceptionIncidentSamples.disable();
+      mainTools.getLogIncident.disable();
       mainTools.searchLogs.disable();
-      mainTools.getLogsInDatetimeRange.disable();
     }
   };
 }
