@@ -6,6 +6,8 @@ We build reliable servers thoughtfully designed for MCP Client-powered workflows
 
 You can have confidence that any Pulse-branded MCP server was built with these ideas in mind:
 
+<!-- Test comment for CI verification -->
+
 1. **Purpose-built**. LLM-powered MCP clients offer uniquely new user interaction patterns that necessitate a different layer of abstraction than the REST API's from a pre-AI era. We thoughtfully scope drawing lines like building a new server, versus incorporating a new feature in another server. Or deciding where one slew of REST API endpoints might be better packaged as a single Tool call. And more.
 2. **Easy set up**. Many MCP servers die before ever getting a chance to be used. We offer guides and a frustration-free experience to get going with our MCP servers inside your favorite MCP clients.
 3. **Time savings**. By minimizing the number of tool chain steps or conversational turns you need to accomplish a task, our MCP servers will save you (and your agents) time waiting for a task to be completed.
