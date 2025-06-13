@@ -19,8 +19,13 @@ For detailed git workflow information including branch naming conventions and re
    - Pull latest from main with `git pull --rebase origin main`
    - If conflicts exist, resolve them before proceeding
    - Continue rebase with `git rebase --continue`
-2. Run `bundle exec standardrb --fix-unsafely` and commit any fixes
-3. Run tests with `bin/test test/*/*.rb` if changes might impact them
+2. Run linting and formatting:
+   - `npm run lint:fix` - Auto-fix linting issues
+   - `npm run format` - Format code with Prettier
+   - Commit any fixes
+3. Run tests to ensure everything passes:
+   - `npm run test:run` - Run functional tests
+   - `npm run test:integration` - Run integration tests
 
 ### Post-PR
 
