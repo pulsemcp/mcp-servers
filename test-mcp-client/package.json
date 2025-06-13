@@ -7,9 +7,17 @@
   "types": "dist/index.d.ts",
   "scripts": {
     "build": "tsc",
-    "dev": "tsx src/index.ts"
+    "dev": "tsx src/index.ts",
+    "lint": "eslint . --ext .ts,.tsx",
+    "lint:fix": "eslint . --ext .ts,.tsx --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
   },
-  "keywords": ["mcp", "test", "client"],
+  "keywords": [
+    "mcp",
+    "test",
+    "client"
+  ],
   "author": "PulseMCP",
   "license": "MIT",
   "dependencies": {

@@ -1,12 +1,12 @@
 #!/usr/bin/env node
 /**
  * Integration Test Server Entry Point
- * 
+ *
  * This file is used exclusively for integration testing. It's a special version
  * of the MCP server that uses mocked external dependencies instead of real ones.
- * 
+ *
  * Mock configuration is passed via the APPSIGNAL_MOCK_CONFIG environment variable.
- * 
+ *
  * DO NOT use this file for production - use index.ts instead.
  */
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
@@ -15,13 +15,13 @@ import { createConfigurableAppsignalClient } from 'mcp-server-appsignal-shared/d
 
 async function main() {
   const transport = new StdioServerTransport();
-  
+
   // Use configurable mock client
   const clientFactory = () => createConfigurableAppsignalClient();
-  
+
   const { server, registerHandlers } = createMCPServer();
   await registerHandlers(server, clientFactory);
-  
+
   await server.connect(transport);
 }
 

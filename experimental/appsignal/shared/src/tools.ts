@@ -15,11 +15,11 @@ export function createRegisterTools(clientFactory: ClientFactory) {
     const envAppId = process.env.APPSIGNAL_APP_ID;
 
     if (!apiKey) {
-      throw new Error("APPSIGNAL_API_KEY environment variable must be configured");
+      throw new Error('APPSIGNAL_API_KEY environment variable must be configured');
     }
 
     // Store references to main tools
-    let mainTools: { getAlertDetails?: any; searchLogs?: any; getLogsInDatetimeRange?: any } = {};
+    const mainTools: { getAlertDetails?: any; searchLogs?: any; getLogsInDatetimeRange?: any } = {};
 
     // Enable function for selectAppId to call
     const enableMainTools = () => {
@@ -29,8 +29,8 @@ export function createRegisterTools(clientFactory: ClientFactory) {
     };
 
     // Register tools that are always available
-    const getAppIds = getAppIdsTool(server, clientFactory);
-    const selectAppId = selectAppIdTool(server, enableMainTools, clientFactory);
+    getAppIdsTool(server, clientFactory);
+    selectAppIdTool(server, enableMainTools, clientFactory);
 
     // Register main tools
     mainTools.getAlertDetails = getAlertDetailsTool(server, clientFactory);
@@ -52,7 +52,7 @@ export function registerTools(server: McpServer) {
   const defaultFactory = () => {
     throw new Error('AppsignalClient not provided - use createRegisterTools with a client factory');
   };
-  
+
   const register = createRegisterTools(defaultFactory);
   register(server);
 }

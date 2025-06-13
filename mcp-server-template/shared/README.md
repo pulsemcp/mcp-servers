@@ -28,6 +28,7 @@ npm run build
 ## Usage
 
 This module exports:
+
 - `registerResources(server)` - Registers all resources
 - `registerTools(server)` - Registers all tools
 

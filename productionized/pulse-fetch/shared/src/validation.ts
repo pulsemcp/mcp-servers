@@ -1,12 +1,12 @@
-import { z } from "zod";
-import { zodToJsonSchema } from "zod-to-json-schema";
+import { z } from 'zod';
+import { zodToJsonSchema } from 'zod-to-json-schema';
 
 /**
  * Create a JSON schema from a Zod schema with standard options
  */
 export function createInputSchema<T>(schema: z.ZodType<T>): any {
   return zodToJsonSchema(schema, {
-    target: "openApi3",
+    target: 'openApi3',
   });
 }
 
@@ -22,8 +22,8 @@ export function validateEnvironment<T>(
   } catch (error) {
     if (error instanceof z.ZodError) {
       const issues = error.issues
-        .map(issue => `  - ${issue.path.join(".")}: ${issue.message}`)
-        .join("\n");
+        .map((issue) => `  - ${issue.path.join('.')}: ${issue.message}`)
+        .join('\n');
       throw new Error(`Environment validation failed:\n${issues}`);
     }
     throw error;

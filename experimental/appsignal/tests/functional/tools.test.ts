@@ -21,7 +21,7 @@ describe('AppSignal MCP Tools', () => {
 
     // Reset mocks
     vi.clearAllMocks();
-    
+
     // Create a mock server that captures tool registrations
     registeredTools = new Map();
     mockServer = {
@@ -29,8 +29,12 @@ describe('AppSignal MCP Tools', () => {
         const tool = { name, schema, handler, enabled: true };
         registeredTools.set(name, tool);
         return {
-          enable: () => { tool.enabled = true; },
-          disable: () => { tool.enabled = false; },
+          enable: () => {
+            tool.enabled = true;
+          },
+          disable: () => {
+            tool.enabled = false;
+          },
         };
       }),
     } as any;
@@ -56,7 +60,9 @@ describe('AppSignal MCP Tools', () => {
     it('should throw error when API key is missing', () => {
       delete process.env.APPSIGNAL_API_KEY;
 
-      expect(() => registerTools(mockServer)).toThrow('APPSIGNAL_API_KEY environment variable must be configured');
+      expect(() => registerTools(mockServer)).toThrow(
+        'APPSIGNAL_API_KEY environment variable must be configured'
+      );
     });
 
     it('should disable main tools when no app ID is provided', () => {
@@ -70,7 +76,7 @@ describe('AppSignal MCP Tools', () => {
       expect(registeredTools.get('get_alert_details').enabled).toBe(false);
       expect(registeredTools.get('search_logs').enabled).toBe(false);
       expect(registeredTools.get('get_logs_in_datetime_range').enabled).toBe(false);
-      
+
       // But app selection tools should be enabled
       expect(registeredTools.get('get_app_ids').enabled).toBe(true);
       expect(registeredTools.get('select_app_id').enabled).toBe(true);
@@ -95,10 +101,10 @@ describe('AppSignal MCP Tools', () => {
 
     it('should handle search_logs with parameters', async () => {
       const tool = registeredTools.get('search_logs');
-      const result = await tool.handler({ 
+      const result = await tool.handler({
         query: 'error level:critical',
         limit: 50,
-        offset: 10 
+        offset: 10,
       });
 
       const logs = JSON.parse(result.content[0].text);
@@ -112,7 +118,7 @@ describe('AppSignal MCP Tools', () => {
       const result = await tool.handler({
         start: '2024-01-15T10:00:00Z',
         end: '2024-01-15T11:00:00Z',
-        limit: 200
+        limit: 200,
       });
 
       const logs = JSON.parse(result.content[0].text);
@@ -125,19 +131,23 @@ describe('AppSignal MCP Tools', () => {
       // Start with tools disabled
       delete process.env.APPSIGNAL_APP_ID;
       vi.mocked(getSelectedAppId).mockReturnValue(undefined);
-      
+
       // Re-register to get disabled state
       mockServer = {
         tool: vi.fn((name, schema, handler) => {
           const tool = { name, schema, handler, enabled: true };
           registeredTools.set(name, tool);
           return {
-            enable: vi.fn(() => { tool.enabled = true; }),
-            disable: vi.fn(() => { tool.enabled = false; }),
+            enable: vi.fn(() => {
+              tool.enabled = true;
+            }),
+            disable: vi.fn(() => {
+              tool.enabled = false;
+            }),
           };
         }),
       } as any;
-      
+
       const registerTools = createRegisterTools(() => createMockAppsignalClient());
       registerTools(mockServer);
 

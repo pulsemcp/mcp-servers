@@ -34,7 +34,7 @@ export function createConfigurableAppsignalClient(): IAppsignalClient {
   return {
     async getAlertDetails(alertId: string): Promise<Alert> {
       const config = getMockConfig();
-      
+
       if (config.getAlertDetails?.[alertId]) {
         const response = config.getAlertDetails[alertId];
         if (response instanceof Error) {
@@ -59,9 +59,9 @@ export function createConfigurableAppsignalClient(): IAppsignalClient {
 
     async searchLogs(query: string, limit = 100, offset = 0): Promise<LogEntry[]> {
       const config = getMockConfig();
-      
+
       // Find matching mock response
-      const mockResponse = config.searchLogs?.find(m => m.query === query);
+      const mockResponse = config.searchLogs?.find((m) => m.query === query);
       if (mockResponse) {
         if (mockResponse.response instanceof Error) {
           throw mockResponse.response;
@@ -78,16 +78,20 @@ export function createConfigurableAppsignalClient(): IAppsignalClient {
           metadata: { query },
         },
       ];
-      
+
       return defaultLogs;
     },
 
-    async getLogsInDatetimeRange(startTime: string, endTime: string, limit = 100): Promise<LogEntry[]> {
+    async getLogsInDatetimeRange(
+      startTime: string,
+      endTime: string,
+      limit = 100
+    ): Promise<LogEntry[]> {
       const config = getMockConfig();
-      
+
       // Find matching mock response
       const mockResponse = config.getLogsInDatetimeRange?.find(
-        m => m.start === startTime && m.end === endTime
+        (m) => m.start === startTime && m.end === endTime
       );
       if (mockResponse) {
         if (mockResponse.response instanceof Error) {

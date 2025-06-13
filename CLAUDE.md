@@ -20,6 +20,23 @@ This is a monorepo containing Model Context Protocol (MCP) servers built by Puls
 - Always include test coverage for changes
 - PRs should have concise titles and detailed descriptions
 
+### Post-Commit Linting
+
+After making any commit, you'll see a reminder to run linting. **Always run these commands before pushing to avoid CI failures:**
+
+```bash
+npm run lint       # Check for linting issues
+npm run lint:fix   # Auto-fix linting issues
+npm run format     # Format code with Prettier
+```
+
+The repository uses:
+
+- **ESLint** for code quality and style enforcement
+- **Prettier** for consistent code formatting
+- **Husky** for git hooks (pre-commit runs lint-staged automatically)
+- **lint-staged** for running linters on staged files
+
 ## Common Development Commands
 
 Most MCP servers in this repo follow these conventions:
@@ -29,6 +46,27 @@ npm install        # Install dependencies
 npm run build      # Build TypeScript to JavaScript
 npm start          # Run the server
 npm run dev        # Development mode with auto-reload
+npm run lint       # Check for linting issues
+npm run lint:fix   # Auto-fix linting issues
+npm run format     # Format code with Prettier
+```
+
+### Linting at Different Levels
+
+You can run linting at different directory levels:
+
+```bash
+# Root level (entire repo)
+npm run lint
+
+# Specific servers
+npm run lint:pulse-fetch    # Lint pulse-fetch server
+npm run lint:appsignal      # Lint appsignal server
+npm run lint:test-client    # Lint test-mcp-client
+
+# Or navigate to specific directories
+cd experimental/appsignal && npm run lint
+cd productionized/pulse-fetch && npm run lint
 ```
 
 ## Technical Stack

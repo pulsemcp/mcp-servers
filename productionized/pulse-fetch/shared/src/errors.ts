@@ -1,5 +1,5 @@
-import { ErrorCode, McpError } from "@modelcontextprotocol/sdk/types.js";
-import type { ToolResponse } from "./types.js";
+import { ErrorCode, McpError } from '@modelcontextprotocol/sdk/types.js';
+import type { ToolResponse } from './types.js';
 
 /**
  * Safely extract error message from unknown error
@@ -8,10 +8,10 @@ export function getErrorMessage(error: unknown): string {
   if (error instanceof Error) {
     return error.message;
   }
-  if (typeof error === "string") {
+  if (typeof error === 'string') {
     return error;
   }
-  return "Unknown error";
+  return 'Unknown error';
 }
 
 /**
@@ -19,10 +19,12 @@ export function getErrorMessage(error: unknown): string {
  */
 export function createErrorResponse(error: unknown): ToolResponse {
   return {
-    content: [{
-      type: "text",
-      text: `Error: ${getErrorMessage(error)}`,
-    }],
+    content: [
+      {
+        type: 'text',
+        text: `Error: ${getErrorMessage(error)}`,
+      },
+    ],
     isError: true,
   };
 }
@@ -31,10 +33,7 @@ export function createErrorResponse(error: unknown): ToolResponse {
  * Create a not found MCP error
  */
 export function createNotFoundError(resource: string): McpError {
-  return new McpError(
-    ErrorCode.InvalidRequest,
-    `Resource not found: ${resource}`
-  );
+  return new McpError(ErrorCode.InvalidRequest, `Resource not found: ${resource}`);
 }
 
 /**
@@ -48,18 +47,12 @@ export function createInvalidRequestError(message: string): McpError {
  * Create an internal MCP error
  */
 export function createInternalError(error: unknown): McpError {
-  return new McpError(
-    ErrorCode.InternalError,
-    `Internal error: ${getErrorMessage(error)}`
-  );
+  return new McpError(ErrorCode.InternalError, `Internal error: ${getErrorMessage(error)}`);
 }
 
 /**
  * Create a method not found MCP error
  */
 export function createMethodNotFoundError(method: string): McpError {
-  return new McpError(
-    ErrorCode.MethodNotFound,
-    `Unknown method: ${method}`
-  );
+  return new McpError(ErrorCode.MethodNotFound, `Unknown method: ${method}`);
 }

@@ -3,10 +3,14 @@ import { z } from 'zod';
 import { setSelectedAppId } from '../state.js';
 import { IAppsignalClient } from '../appsignal-client/appsignal-client.js';
 
-export function selectAppIdTool(server: McpServer, enableMainTools?: () => void, clientFactory?: () => IAppsignalClient) {
+export function selectAppIdTool(
+  server: McpServer,
+  enableMainTools?: () => void,
+  _clientFactory?: () => IAppsignalClient
+) {
   return server.tool(
-    "select_app_id",
-    { appId: z.string().describe("The AppSignal application ID to select") },
+    'select_app_id',
+    { appId: z.string().describe('The AppSignal application ID to select') },
     async ({ appId }) => {
       // Store the selected app ID
       setSelectedAppId(appId);
@@ -19,7 +23,7 @@ export function selectAppIdTool(server: McpServer, enableMainTools?: () => void,
       return {
         content: [
           {
-            type: "text",
+            type: 'text',
             text: `Successfully selected app ID: ${appId}. All AppSignal tools are now available.`,
           },
         ],

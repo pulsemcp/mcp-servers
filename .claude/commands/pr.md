@@ -9,13 +9,16 @@ For detailed git workflow information including branch naming conventions and re
 ## Quick Reference
 
 ### If on wrong branch
+
 - **On main**: `git reset --soft` to origin/main, stash, create feature branch, pop stash
 - **On unrelated branch**: Same process - reset to origin, stash, checkout main, pull, create new branch
 
 ### Pre-PR checklist
+
 1. Run `bundle exec standardrb --fix-unsafely` and commit any fixes
 2. Run tests with `bin/test test/*/*.rb` if changes might impact them
 
 ### Post-PR
+
 - **Regular repo**: Checkout main and pull latest (while showing PR URL)
 - **Git worktree**: Leave as-is (user will delete when PR is merged)

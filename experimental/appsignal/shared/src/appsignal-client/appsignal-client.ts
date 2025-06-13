@@ -24,7 +24,10 @@ export interface IAppsignalClient {
 
 // Stub implementation for now
 export class AppsignalClient implements IAppsignalClient {
-  constructor(private readonly apiKey: string, private readonly appId: string) {
+  constructor(
+    private readonly apiKey: string,
+    private readonly appId: string
+  ) {
     // These will be used when implementing actual API calls
     void this.apiKey;
     void this.appId;
@@ -40,7 +43,11 @@ export class AppsignalClient implements IAppsignalClient {
     throw new Error('Not implemented');
   }
 
-  async getLogsInDatetimeRange(_startTime: string, _endTime: string, _limit = 100): Promise<LogEntry[]> {
+  async getLogsInDatetimeRange(
+    _startTime: string,
+    _endTime: string,
+    _limit = 100
+  ): Promise<LogEntry[]> {
     // TODO: Implement actual API call using this.apiKey and this.appId
     throw new Error('Not implemented');
   }
