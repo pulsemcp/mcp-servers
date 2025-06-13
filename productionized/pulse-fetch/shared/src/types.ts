@@ -11,6 +11,7 @@ export interface ToolResponse {
     text: string;
   }>;
   isError?: boolean;
+  // Test: This should NOT trigger AppSignal CI
 }
 
 /**
