@@ -36,7 +36,7 @@ export async function createMockedClient(mocks: {
     })),
   };
 
-  const serverPath = path.join(__dirname, '../../local/build/src/index.integration.js');
+  const serverPath = path.join(__dirname, '../../local/build/index.integration.js');
 
   const client = new TestMCPClient({
     serverPath,

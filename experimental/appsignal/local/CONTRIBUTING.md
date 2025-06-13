@@ -17,7 +17,7 @@ npm run build
 From the `experimental/appsignal/local` directory, run:
 
 ```bash
-npx @modelcontextprotocol/inspector node dist/index.js
+npx @modelcontextprotocol/inspector node build/index.js
 ```
 
 ### Environment Variables
