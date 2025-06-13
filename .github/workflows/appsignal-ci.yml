@@ -1,6 +1,12 @@
 name: AppSignal CI
 
 on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'experimental/appsignal/**'
+      - '.github/workflows/appsignal-ci.yml'
   pull_request:
     paths:
       - 'experimental/appsignal/**'
