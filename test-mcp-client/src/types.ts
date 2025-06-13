@@ -3,6 +3,7 @@ export interface TestMCPClientOptions {
   serverArgs?: string[];
   env?: Record<string, string>;
   debug?: boolean;
+  // Final test: Non-AppSignal with All CI Checks
 }
 
 export interface ToolCallResult<T = any> {
