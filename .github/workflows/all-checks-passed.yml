@@ -1,8 +1,6 @@
 name: All CI Checks Passed
 
 on:
-  pull_request:
-    types: [opened, synchronize, reopened]
   workflow_run:
     workflows: ['AppSignal CI', 'Lint and Format Check']
     types: [completed]
@@ -11,14 +9,13 @@ permissions:
   contents: read
   pull-requests: read
   checks: read
+  actions: read
 
 jobs:
   all-checks-passed:
     name: All CI Checks Passed
     runs-on: ubuntu-latest
-    if: |
-      github.event_name == 'pull_request' || 
-      (github.event_name == 'workflow_run' && github.event.workflow_run.event == 'pull_request')
+    if: github.event.workflow_run.event == 'pull_request'
 
     steps:
       - name: Check all CI workflows
@@ -28,33 +25,19 @@ jobs:
             const owner = context.repo.owner;
             const repo = context.repo.repo;
 
-            // Get PR number
-            let pr_number;
-            if (context.eventName === 'pull_request') {
-              pr_number = context.payload.pull_request.number;
-            } else {
-              // For workflow_run events, get PR from the workflow run
-              const runs = await github.rest.actions.listWorkflowRuns({
-                owner,
-                repo,
-                workflow_id: context.payload.workflow_run.workflow_id,
-                per_page: 1
-              });
-              if (runs.data.workflow_runs.length > 0 && runs.data.workflow_runs[0].pull_requests.length > 0) {
-                pr_number = runs.data.workflow_runs[0].pull_requests[0].number;
-              } else {
-                console.log('No PR associated with this workflow run');
-                return;
-              }
+            // Get PR number from the workflow run
+            const workflowRun = context.payload.workflow_run;
+            if (!workflowRun.pull_requests || workflowRun.pull_requests.length === 0) {
+              console.log('No PR associated with this workflow run');
+              return;
             }
 
-            // Get PR details to check which files changed
-            const pr = await github.rest.pulls.get({
-              owner,
-              repo,
-              pull_number: pr_number
-            });
+            const pr_number = workflowRun.pull_requests[0].number;
+            const pr_head_sha = workflowRun.head_sha;
 
+            console.log(`Checking CI status for PR #${pr_number} (SHA: ${pr_head_sha})`);
+
+            // Get PR files to determine which checks should run
             const files = await github.rest.pulls.listFiles({
               owner,
               repo,
@@ -62,7 +45,6 @@ jobs:
               per_page: 100
             });
 
-            // Determine which workflows should run based on changed files
             const changedFiles = files.data.map(f => f.filename);
 
             const shouldRunAppSignal = changedFiles.some(f => 
@@ -80,15 +62,18 @@ jobs:
               f === '.prettierrc.json'
             );
 
-            // Get all workflow runs for this PR
+            // Wait a bit for all check runs to be registered
+            await new Promise(resolve => setTimeout(resolve, 5000));
+
+            // Get all check runs for this commit
             const checkRuns = await github.rest.checks.listForRef({
               owner,
               repo,
-              ref: pr.data.head.sha,
+              ref: pr_head_sha,
               per_page: 100
             });
 
-            // Filter to only the latest run of each workflow
+            // Filter to only the latest run of each check
             const latestRuns = {};
             for (const run of checkRuns.data.check_runs) {
               if (run.app.slug === 'github-actions' && run.name !== 'All CI Checks Passed') {
@@ -102,51 +87,32 @@ jobs:
             let allPassed = true;
             let statusMessage = '## CI Status Summary\n\n';
 
-            if (shouldRunLint) {
-              const lintRun = latestRuns['Lint & Type Check'];
-              if (!lintRun) {
-                statusMessage += '❌ **Lint & Type Check**: Not run yet\n';
-                allPassed = false;
-              } else if (lintRun.conclusion === 'success') {
-                statusMessage += '✅ **Lint & Type Check**: Passed\n';
-              } else if (lintRun.status === 'in_progress') {
-                statusMessage += '⏳ **Lint & Type Check**: In progress\n';
-                allPassed = false;
+            // Helper function to check a specific test
+            const checkTest = (name, run) => {
+              if (!run) {
+                statusMessage += `❌ **${name}**: Not found\n`;
+                return false;
+              } else if (run.conclusion === 'success') {
+                statusMessage += `✅ **${name}**: Passed\n`;
+                return true;
+              } else if (run.status === 'in_progress' || run.status === 'queued') {
+                statusMessage += `⏳ **${name}**: In progress\n`;
+                return false;
               } else {
-                statusMessage += `❌ **Lint & Type Check**: ${lintRun.conclusion}\n`;
-                allPassed = false;
+                statusMessage += `❌ **${name}**: ${run.conclusion || 'Failed'}\n`;
+                return false;
               }
+            };
+
+            if (shouldRunLint) {
+              const lintPassed = checkTest('Lint & Type Check', latestRuns['Lint & Type Check']);
+              if (!lintPassed) allPassed = false;
             }
 
             if (shouldRunAppSignal) {
-              const functionalTests = latestRuns['AppSignal Functional Tests'];
-              const integrationTests = latestRuns['AppSignal Integration Tests'];
-              
-              if (!functionalTests) {
-                statusMessage += '❌ **AppSignal Functional Tests**: Not run yet\n';
-                allPassed = false;
-              } else if (functionalTests.conclusion === 'success') {
-                statusMessage += '✅ **AppSignal Functional Tests**: Passed\n';
-              } else if (functionalTests.status === 'in_progress') {
-                statusMessage += '⏳ **AppSignal Functional Tests**: In progress\n';
-                allPassed = false;
-              } else {
-                statusMessage += `❌ **AppSignal Functional Tests**: ${functionalTests.conclusion}\n`;
-                allPassed = false;
-              }
-              
-              if (!integrationTests) {
-                statusMessage += '❌ **AppSignal Integration Tests**: Not run yet\n';
-                allPassed = false;
-              } else if (integrationTests.conclusion === 'success') {
-                statusMessage += '✅ **AppSignal Integration Tests**: Passed\n';
-              } else if (integrationTests.status === 'in_progress') {
-                statusMessage += '⏳ **AppSignal Integration Tests**: In progress\n';
-                allPassed = false;
-              } else {
-                statusMessage += `❌ **AppSignal Integration Tests**: ${integrationTests.conclusion}\n`;
-                allPassed = false;
-              }
+              const functionalPassed = checkTest('AppSignal Functional Tests', latestRuns['AppSignal Functional Tests']);
+              const integrationPassed = checkTest('AppSignal Integration Tests', latestRuns['AppSignal Integration Tests']);
+              if (!functionalPassed || !integrationPassed) allPassed = false;
             }
 
             if (!shouldRunLint && !shouldRunAppSignal) {
@@ -157,4 +123,6 @@ jobs:
 
             if (!allPassed) {
               core.setFailed('Not all required CI checks have passed');
+            } else {
+              console.log('\n✅ All required CI checks have passed!');
             }
