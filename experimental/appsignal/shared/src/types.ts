@@ -3,6 +3,8 @@ export interface AppSignalConfig {
   apiKey: string;
   appId: string;
   environment?: string;
+  // Test: Proper All CI Checks implementation
+  maxRetries?: number;
 }
 
 // Tool response types
