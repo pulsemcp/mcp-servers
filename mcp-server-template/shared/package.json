@@ -5,7 +5,11 @@
   "main": "dist/index.js",
   "type": "module",
   "scripts": {
-    "build": "tsc"
+    "build": "tsc",
+    "lint": "eslint . --ext .ts,.tsx",
+    "lint:fix": "eslint . --ext .ts,.tsx --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.4",
