@@ -38,3 +38,4 @@ export async function getApps(
     environment: app.environment,
   }));
 }
+

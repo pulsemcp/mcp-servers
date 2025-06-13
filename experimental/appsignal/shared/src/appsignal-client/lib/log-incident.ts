@@ -144,3 +144,4 @@ export async function getLogIncident(
     logLine: incident.logLine,
   };
 }
+

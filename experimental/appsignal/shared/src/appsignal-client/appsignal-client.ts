@@ -1,7 +1,10 @@
 import { GraphQLClient } from 'graphql-request';
 import { getApps } from './lib/get-apps.js';
 import { getExceptionIncident, type ExceptionIncident } from './lib/exception-incident.js';
-import { getExceptionIncidentSample, type ExceptionIncidentSample } from './lib/exception-incident-sample.js';
+import {
+  getExceptionIncidentSample,
+  type ExceptionIncidentSample,
+} from './lib/exception-incident-sample.js';
 import { getLogIncident, type LogIncident } from './lib/log-incident.js';
 import { searchLogs, type LogSearchResult } from './lib/search-logs.js';
 

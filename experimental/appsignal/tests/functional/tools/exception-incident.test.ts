@@ -118,10 +118,7 @@ describe('Exception Incident Tools', () => {
         id: 'sample-1',
         timestamp: '2023-12-01T10:00:00Z',
         message: 'Cannot read property x of null',
-        backtrace: [
-          '/app/src/index.js:42 in processData',
-          '/app/src/main.js:10 in handleRequest',
-        ],
+        backtrace: ['/app/src/index.js:42 in processData', '/app/src/main.js:10 in handleRequest'],
         action: 'UserController#create',
         namespace: 'web',
         revision: 'abc123',
@@ -197,3 +194,4 @@ describe('Exception Incident Tools', () => {
     });
   });
 });
+

@@ -106,12 +106,7 @@ export async function getExceptionIncidentSample(
   offset = 0
 ): Promise<ExceptionIncidentSample> {
   const query = gql`
-    query GetExceptionIncidentSamples(
-      $appId: ID!
-      $incidentId: ID!
-      $limit: Int!
-      $offset: Int!
-    ) {
+    query GetExceptionIncidentSamples($appId: ID!, $incidentId: ID!, $limit: Int!, $offset: Int!) {
       app(id: $appId) {
         exceptionIncident(id: $incidentId) {
           samples(limit: $limit, offset: $offset) {
@@ -257,3 +252,4 @@ export async function getExceptionIncidentSample(
     firstMarker,
   };
 }
+
