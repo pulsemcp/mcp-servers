@@ -4,16 +4,26 @@ import type {
   ExceptionIncidentSample,
   LogIncident,
   LogSearchResult,
+  AnomalyIncident,
+  IncidentListResult,
 } from './appsignal-client.js';
 
 interface MockData {
   exceptionIncidents?: ExceptionIncident[];
   exceptionSamples?: Record<string, ExceptionIncidentSample[]>;
   logIncidents?: Record<string, LogIncident>;
+  anomalyIncidents?: Record<string, AnomalyIncident>;
   searchResponses?: Record<string, LogSearchResult['lines']>;
+  logIncidentLists?: IncidentListResult<LogIncident>;
+  exceptionIncidentLists?: IncidentListResult<ExceptionIncident>;
+  anomalyIncidentLists?: IncidentListResult<AnomalyIncident>;
   errorScenarios?: {
     logIncident?: Record<string, Error>;
+    anomalyIncident?: Record<string, Error>;
     searchLogs?: Record<string, Error>;
+    logIncidents?: Error;
+    exceptionIncidents?: Error;
+    anomalyIncidents?: Error;
   };
 }
 
@@ -176,6 +186,137 @@ export function createIntegrationMockAppsignalClient(
         queryWindow: 3600,
         lines,
         formattedSummary,
+      };
+    },
+
+    async getAnomalyIncident(incidentId: string): Promise<AnomalyIncident> {
+      // Check for error scenarios
+      if (mockData.errorScenarios?.anomalyIncident?.[incidentId]) {
+        throw mockData.errorScenarios.anomalyIncident[incidentId];
+      }
+
+      if (mockData.anomalyIncidents?.[incidentId]) {
+        return mockData.anomalyIncidents[incidentId];
+      }
+
+      // Default mock response
+      return {
+        id: incidentId,
+        number: 1,
+        summary: 'Mock Anomaly',
+        description: 'Mock anomaly description',
+        state: 'open',
+        count: 1,
+        createdAt: new Date().toISOString(),
+        lastOccurredAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        digests: [],
+        alertState: 'OPEN',
+        trigger: {
+          id: 'mock-trigger',
+          name: 'Mock Trigger',
+          description: 'Mock trigger description',
+        },
+      };
+    },
+
+    async getLogIncidents(
+      states: Array<'OPEN' | 'CLOSED' | 'WIP'> = ['OPEN'],
+      limit = 50,
+      offset = 0
+    ): Promise<IncidentListResult<LogIncident>> {
+      // Check for error scenarios
+      if (mockData.errorScenarios?.logIncidents) {
+        throw mockData.errorScenarios.logIncidents;
+      }
+
+      if (mockData.logIncidentLists) {
+        return mockData.logIncidentLists;
+      }
+
+      // Default mock response
+      return {
+        incidents: [
+          {
+            id: 'mock-log-incident-1',
+            number: 1,
+            summary: 'Mock Log Incident',
+            state: 'open',
+            count: 10,
+            lastOccurredAt: new Date().toISOString(),
+            trigger: {
+              id: 'mock-trigger',
+              name: 'Mock Trigger',
+              query: 'mock query',
+              severities: ['ERROR'],
+              sourceIds: ['source-1'],
+            },
+          },
+        ],
+        total: 1,
+        hasMore: false,
+      };
+    },
+
+    async getExceptionIncidents(
+      states: Array<'OPEN' | 'CLOSED' | 'WIP'> = ['OPEN'],
+      limit = 50,
+      offset = 0
+    ): Promise<IncidentListResult<ExceptionIncident>> {
+      // Check for error scenarios
+      if (mockData.errorScenarios?.exceptionIncidents) {
+        throw mockData.errorScenarios.exceptionIncidents;
+      }
+
+      if (mockData.exceptionIncidentLists) {
+        return mockData.exceptionIncidentLists;
+      }
+
+      // Default mock response
+      return {
+        incidents: [
+          {
+            id: 'mock-exception-1',
+            name: 'MockException',
+            message: 'Mock exception message',
+            count: 5,
+            lastOccurredAt: new Date().toISOString(),
+            status: 'open',
+          },
+        ],
+        total: 1,
+        hasMore: false,
+      };
+    },
+
+    async getAnomalyIncidents(
+      states: Array<'OPEN' | 'CLOSED' | 'WIP'> = ['OPEN'],
+      limit = 50,
+      offset = 0
+    ): Promise<IncidentListResult<AnomalyIncident>> {
+      // Check for error scenarios
+      if (mockData.errorScenarios?.anomalyIncidents) {
+        throw mockData.errorScenarios.anomalyIncidents;
+      }
+
+      if (mockData.anomalyIncidentLists) {
+        return mockData.anomalyIncidentLists;
+      }
+
+      // Default mock response
+      return {
+        incidents: [
+          {
+            id: 'mock-anomaly-1',
+            number: 1,
+            summary: 'Mock Anomaly',
+            state: 'open',
+            count: 3,
+            lastOccurredAt: new Date().toISOString(),
+          },
+        ],
+        total: 1,
+        hasMore: false,
       };
     },
   };

@@ -5,6 +5,8 @@ import type {
   ExceptionIncidentSample,
   LogIncident,
   LogSearchResult,
+  AnomalyIncident,
+  IncidentListResult,
 } from '../../shared/src/appsignal-client/appsignal-client.js';
 
 /**
@@ -101,6 +103,70 @@ export function createMockAppsignalClient(): IAppsignalClient {
         }`,
       };
     }),
+    getAnomalyIncident: vi.fn().mockImplementation(async (incidentId: string) => ({
+      id: incidentId,
+      number: 45,
+      summary: 'High CPU usage detected',
+      description: 'CPU usage exceeded 90% threshold',
+      state: 'open',
+      count: 12,
+      createdAt: '2024-01-15T08:00:00Z',
+      lastOccurredAt: '2024-01-15T10:00:00Z',
+      updatedAt: '2024-01-15T10:00:00Z',
+      digests: ['digest1', 'digest2'],
+      alertState: 'OPEN',
+      trigger: {
+        id: 'trigger-123',
+        name: 'CPU Monitor',
+        description: 'Monitors CPU usage',
+      },
+      tags: [
+        { key: 'environment', value: 'production' },
+        { key: 'severity', value: 'high' },
+      ],
+    })),
+    getLogIncidents: vi.fn().mockImplementation(async () => ({
+      incidents: [
+        {
+          id: 'log-1',
+          number: 101,
+          summary: 'Database connection errors',
+          state: 'open',
+          count: 25,
+          lastOccurredAt: '2024-01-15T10:00:00Z',
+        },
+      ],
+      total: 1,
+      hasMore: false,
+    })),
+    getExceptionIncidents: vi.fn().mockImplementation(async () => ({
+      incidents: [
+        {
+          id: 'exc-1',
+          name: 'NullPointerException',
+          message: 'Cannot read property x of null',
+          count: 42,
+          lastOccurredAt: '2024-01-15T10:00:00Z',
+          status: 'open',
+        },
+      ],
+      total: 1,
+      hasMore: false,
+    })),
+    getAnomalyIncidents: vi.fn().mockImplementation(async () => ({
+      incidents: [
+        {
+          id: 'anomaly-1',
+          number: 1,
+          summary: 'Memory spike',
+          state: 'open',
+          count: 5,
+          lastOccurredAt: '2024-01-15T10:00:00Z',
+        },
+      ],
+      total: 1,
+      hasMore: false,
+    })),
   };
 }
 
@@ -190,4 +256,82 @@ export const mockLogSearchResult: LogSearchResult = {
   ],
   formattedSummary:
     'Found 2 log entries within 3600s window.\n\nSummary by severity:\n- ERROR: 1 entries\n- WARN: 1 entries\n\nRecent log samples:\n1. [2024-01-15T10:00:00Z] ERROR - Database connection failed (host: api-server-01) (group: api-service) (service=api-service, errorCode=DB_CONNECTION_ERROR)\n2. [2024-01-15T10:05:00Z] WARN - High memory usage detected (host: web-server-01) (group: web-service) (service=web-service, memoryUsage=0.85)\n',
+};
+
+export const mockAnomalyIncident: AnomalyIncident = {
+  id: 'anomaly-123',
+  number: 45,
+  summary: 'High CPU usage detected',
+  description: 'CPU usage exceeded 90% threshold',
+  state: 'open',
+  count: 12,
+  createdAt: '2024-01-15T08:00:00Z',
+  lastOccurredAt: '2024-01-15T10:00:00Z',
+  updatedAt: '2024-01-15T10:00:00Z',
+  digests: ['digest1', 'digest2'],
+  alertState: 'OPEN',
+  trigger: {
+    id: 'trigger-123',
+    name: 'CPU Monitor',
+    description: 'Monitors CPU usage',
+  },
+  tags: [
+    { key: 'environment', value: 'production' },
+    { key: 'severity', value: 'high' },
+  ],
+};
+
+export const mockLogIncidentList: IncidentListResult<LogIncident> = {
+  incidents: [
+    {
+      id: 'log-1',
+      number: 101,
+      summary: 'Database connection errors',
+      description: 'Multiple failed DB connections',
+      severity: 'error',
+      state: 'open',
+      count: 25,
+      createdAt: '2024-01-15T08:00:00Z',
+      lastOccurredAt: '2024-01-15T10:00:00Z',
+      trigger: {
+        id: 'trigger-1',
+        name: 'DB Error Monitor',
+        query: 'level:error source:database',
+        severities: ['error', 'fatal'],
+        sourceIds: ['app-server-1'],
+      },
+    },
+  ],
+  total: 1,
+  hasMore: false,
+};
+
+export const mockExceptionIncidentList: IncidentListResult<ExceptionIncident> = {
+  incidents: [
+    {
+      id: 'exc-1',
+      name: 'NullPointerException',
+      message: 'Cannot read property x of null',
+      count: 42,
+      lastOccurredAt: '2024-01-15T10:00:00Z',
+      status: 'open',
+    },
+  ],
+  total: 1,
+  hasMore: false,
+};
+
+export const mockAnomalyIncidentList: IncidentListResult<AnomalyIncident> = {
+  incidents: [
+    {
+      id: 'anomaly-1',
+      number: 1,
+      summary: 'Memory spike',
+      state: 'open',
+      count: 5,
+      lastOccurredAt: '2024-01-15T10:00:00Z',
+    },
+  ],
+  total: 1,
+  hasMore: false,
 };
