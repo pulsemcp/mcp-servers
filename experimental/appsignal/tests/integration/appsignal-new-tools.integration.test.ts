@@ -70,7 +70,7 @@ describe('AppSignal MCP Server New Tools Integration', () => {
       const mockAppSignalClient = createIntegrationMockAppsignalClient({
         errorScenarios: {
           anomalyIncident: {
-            'network-error': new Error('Connection reset by peer'),
+            'network-error': 'Connection reset by peer',
           },
         },
       });
@@ -237,9 +237,9 @@ describe('AppSignal MCP Server New Tools Integration', () => {
       // Create a mock AppSignal client that simulates errors
       const mockAppSignalClient = createIntegrationMockAppsignalClient({
         errorScenarios: {
-          logIncidents: new Error('API rate limit exceeded'),
-          exceptionIncidents: new Error('Authentication failed'),
-          anomalyIncidents: new Error('Service unavailable'),
+          logIncidents: 'API rate limit exceeded',
+          exceptionIncidents: 'Authentication failed',
+          anomalyIncidents: 'Service unavailable',
         },
       });
 

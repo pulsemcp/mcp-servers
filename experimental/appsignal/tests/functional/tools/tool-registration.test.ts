@@ -55,13 +55,17 @@ describe('Tool Registration', () => {
   it('should register all tools when API key is provided', () => {
     registerTools(mockServer);
 
-    expect(mockServer.tool).toHaveBeenCalledTimes(6);
+    expect(mockServer.tool).toHaveBeenCalledTimes(10);
     expect(registeredTools.has('get_apps')).toBe(true);
     expect(registeredTools.has('select_app_id')).toBe(true);
     expect(registeredTools.has('get_exception_incident')).toBe(true);
     expect(registeredTools.has('get_exception_incident_sample')).toBe(true);
     expect(registeredTools.has('get_log_incident')).toBe(true);
     expect(registeredTools.has('search_logs')).toBe(true);
+    expect(registeredTools.has('get_anomaly_incident')).toBe(true);
+    expect(registeredTools.has('get_log_incidents')).toBe(true);
+    expect(registeredTools.has('get_exception_incidents')).toBe(true);
+    expect(registeredTools.has('get_anomaly_incidents')).toBe(true);
   });
 
   it('should throw error when API key is missing', () => {
@@ -84,6 +88,10 @@ describe('Tool Registration', () => {
     expect(registeredTools.get('get_exception_incident_sample').enabled).toBe(false);
     expect(registeredTools.get('get_log_incident').enabled).toBe(false);
     expect(registeredTools.get('search_logs').enabled).toBe(false);
+    expect(registeredTools.get('get_anomaly_incident').enabled).toBe(false);
+    expect(registeredTools.get('get_log_incidents').enabled).toBe(false);
+    expect(registeredTools.get('get_exception_incidents').enabled).toBe(false);
+    expect(registeredTools.get('get_anomaly_incidents').enabled).toBe(false);
 
     // But app selection tools should be enabled
     expect(registeredTools.get('get_apps').enabled).toBe(true);

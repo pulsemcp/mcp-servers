@@ -15,10 +15,7 @@ export function getAnomalyIncidentsTool(server: McpServer, clientFactory: () => 
         .number()
         .optional()
         .describe('Maximum number of incidents to return. Defaults to 50'),
-      offset: z
-        .number()
-        .optional()
-        .describe('Number of incidents to skip. Defaults to 0'),
+      offset: z.number().optional().describe('Number of incidents to skip. Defaults to 0'),
     },
     async ({ states, limit, offset }) => {
       const appId = getSelectedAppId() || process.env.APPSIGNAL_APP_ID;

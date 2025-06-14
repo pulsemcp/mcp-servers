@@ -1,6 +1,6 @@
 import { gql } from 'graphql-request';
 import type { GraphQLClient } from 'graphql-request';
-import type { AnomalyIncident, IncidentListResult } from '../../types.js';
+import type { AnomalyIncidentData, IncidentListResult } from '../../types.js';
 
 interface GetAnomalyIncidentsResponse {
   app: {
@@ -38,7 +38,7 @@ export async function getAnomalyIncidents(
   states: Array<'OPEN' | 'CLOSED' | 'WIP'> = ['OPEN'],
   limit = 50,
   offset = 0
-): Promise<IncidentListResult<AnomalyIncident>> {
+): Promise<IncidentListResult<AnomalyIncidentData>> {
   const query = gql`
     query GetAnomalyIncidents($appId: ID!, $state: IncidentStateEnum, $limit: Int!, $offset: Int!) {
       app(id: $appId) {
@@ -71,8 +71,8 @@ export async function getAnomalyIncidents(
     }
   `;
 
-  const allIncidents: AnomalyIncident[] = [];
-  
+  const allIncidents: AnomalyIncidentData[] = [];
+
   // Query for each state individually (GraphQL API doesn't support multiple states in one query)
   for (const state of states) {
     const data = await graphqlClient.request<GetAnomalyIncidentsResponse>(query, {
@@ -83,7 +83,7 @@ export async function getAnomalyIncidents(
     });
 
     const incidents = data.app?.paginatedAnomalyIncidents?.incidents || [];
-    
+
     for (const incident of incidents) {
       allIncidents.push({
         id: incident.id,

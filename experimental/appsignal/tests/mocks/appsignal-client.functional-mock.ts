@@ -5,7 +5,7 @@ import type {
   ExceptionIncidentSample,
   LogIncident,
   LogSearchResult,
-  AnomalyIncident,
+  AnomalyIncidentData,
   IncidentListResult,
 } from '../../shared/src/appsignal-client/appsignal-client.js';
 
@@ -258,7 +258,7 @@ export const mockLogSearchResult: LogSearchResult = {
     'Found 2 log entries within 3600s window.\n\nSummary by severity:\n- ERROR: 1 entries\n- WARN: 1 entries\n\nRecent log samples:\n1. [2024-01-15T10:00:00Z] ERROR - Database connection failed (host: api-server-01) (group: api-service) (service=api-service, errorCode=DB_CONNECTION_ERROR)\n2. [2024-01-15T10:05:00Z] WARN - High memory usage detected (host: web-server-01) (group: web-service) (service=web-service, memoryUsage=0.85)\n',
 };
 
-export const mockAnomalyIncident: AnomalyIncident = {
+export const mockAnomalyIncident: AnomalyIncidentData = {
   id: 'anomaly-123',
   number: 45,
   summary: 'High CPU usage detected',
@@ -321,7 +321,7 @@ export const mockExceptionIncidentList: IncidentListResult<ExceptionIncident> = 
   hasMore: false,
 };
 
-export const mockAnomalyIncidentList: IncidentListResult<AnomalyIncident> = {
+export const mockAnomalyIncidentList: IncidentListResult<AnomalyIncidentData> = {
   incidents: [
     {
       id: 'anomaly-1',

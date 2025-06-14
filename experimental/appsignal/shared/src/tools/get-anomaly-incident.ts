@@ -7,9 +7,7 @@ export function getAnomalyIncidentTool(server: McpServer, clientFactory: () => I
   return server.tool(
     'get_anomaly_incident',
     {
-      incidentId: z
-        .string()
-        .describe('The unique identifier of the anomaly incident to retrieve'),
+      incidentId: z.string().describe('The unique identifier of the anomaly incident to retrieve'),
     },
     async ({ incidentId }) => {
       const appId = getSelectedAppId() || process.env.APPSIGNAL_APP_ID;

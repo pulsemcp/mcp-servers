@@ -28,7 +28,7 @@ export interface LogSearchResult {
 }
 
 // Incident types
-export interface AnomalyIncident {
+export interface AnomalyIncidentData {
   id: string;
   number: number;
   summary?: string;

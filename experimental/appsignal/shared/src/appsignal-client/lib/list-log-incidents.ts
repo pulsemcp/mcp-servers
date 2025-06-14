@@ -71,7 +71,7 @@ export async function getLogIncidents(
   `;
 
   const allIncidents: LogIncident[] = [];
-  
+
   // Query for each state individually (GraphQL API doesn't support multiple states in one query)
   for (const state of states) {
     const data = await graphqlClient.request<GetLogIncidentsResponse>(query, {
@@ -82,7 +82,7 @@ export async function getLogIncidents(
     });
 
     const incidents = data.app?.paginatedLogIncidents?.incidents || [];
-    
+
     for (const incident of incidents) {
       allIncidents.push({
         id: incident.id,

@@ -11,7 +11,7 @@ import { getAnomalyIncident } from './lib/anomaly-incident.js';
 import { getLogIncidents } from './lib/list-log-incidents.js';
 import { getExceptionIncidents } from './lib/list-exception-incidents.js';
 import { getAnomalyIncidents } from './lib/list-anomaly-incidents.js';
-import type { AnomalyIncident, IncidentListResult } from '../types.js';
+import type { AnomalyIncidentData, IncidentListResult } from '../types.js';
 
 // Re-export interfaces for backward compatibility
 export type {
@@ -19,7 +19,7 @@ export type {
   ExceptionIncidentSample,
   LogIncident,
   LogSearchResult,
-  AnomalyIncident,
+  AnomalyIncidentData,
   IncidentListResult,
 };
 
@@ -28,7 +28,7 @@ export interface IAppsignalClient {
   getExceptionIncident(incidentId: string): Promise<ExceptionIncident>;
   getExceptionIncidentSample(incidentId: string, offset?: number): Promise<ExceptionIncidentSample>;
   getLogIncident(incidentId: string): Promise<LogIncident>;
-  getAnomalyIncident(incidentId: string): Promise<AnomalyIncident>;
+  getAnomalyIncident(incidentId: string): Promise<AnomalyIncidentData>;
   searchLogs(
     query: string,
     limit?: number,
@@ -48,7 +48,7 @@ export interface IAppsignalClient {
     states?: Array<'OPEN' | 'CLOSED' | 'WIP'>,
     limit?: number,
     offset?: number
-  ): Promise<IncidentListResult<AnomalyIncident>>;
+  ): Promise<IncidentListResult<AnomalyIncidentData>>;
 }
 
 // Implementation using GraphQL API
@@ -89,7 +89,7 @@ export class AppsignalClient implements IAppsignalClient {
     return searchLogs(this.graphqlClient, this.appId, query, limit, severities);
   }
 
-  async getAnomalyIncident(incidentId: string): Promise<AnomalyIncident> {
+  async getAnomalyIncident(incidentId: string): Promise<AnomalyIncidentData> {
     return getAnomalyIncident(this.graphqlClient, this.appId, incidentId);
   }
 
@@ -113,7 +113,7 @@ export class AppsignalClient implements IAppsignalClient {
     states: Array<'OPEN' | 'CLOSED' | 'WIP'> = ['OPEN'],
     limit = 50,
     offset = 0
-  ): Promise<IncidentListResult<AnomalyIncident>> {
+  ): Promise<IncidentListResult<AnomalyIncidentData>> {
     return getAnomalyIncidents(this.graphqlClient, this.appId, states, limit, offset);
   }
 }

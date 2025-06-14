@@ -4,7 +4,7 @@ import type {
   ExceptionIncidentSample,
   LogIncident,
   LogSearchResult,
-  AnomalyIncident,
+  AnomalyIncidentData,
   IncidentListResult,
 } from './appsignal-client.js';
 
@@ -12,18 +12,18 @@ interface MockData {
   exceptionIncidents?: ExceptionIncident[];
   exceptionSamples?: Record<string, ExceptionIncidentSample[]>;
   logIncidents?: Record<string, LogIncident>;
-  anomalyIncidents?: Record<string, AnomalyIncident>;
+  anomalyIncidents?: Record<string, AnomalyIncidentData>;
   searchResponses?: Record<string, LogSearchResult['lines']>;
   logIncidentLists?: IncidentListResult<LogIncident>;
   exceptionIncidentLists?: IncidentListResult<ExceptionIncident>;
-  anomalyIncidentLists?: IncidentListResult<AnomalyIncident>;
+  anomalyIncidentLists?: IncidentListResult<AnomalyIncidentData>;
   errorScenarios?: {
-    logIncident?: Record<string, Error>;
-    anomalyIncident?: Record<string, Error>;
-    searchLogs?: Record<string, Error>;
-    logIncidents?: Error;
-    exceptionIncidents?: Error;
-    anomalyIncidents?: Error;
+    logIncident?: Record<string, Error | string>;
+    anomalyIncident?: Record<string, Error | string>;
+    searchLogs?: Record<string, Error | string>;
+    logIncidents?: Error | string;
+    exceptionIncidents?: Error | string;
+    anomalyIncidents?: Error | string;
   };
 }
 
@@ -189,10 +189,11 @@ export function createIntegrationMockAppsignalClient(
       };
     },
 
-    async getAnomalyIncident(incidentId: string): Promise<AnomalyIncident> {
+    async getAnomalyIncident(incidentId: string): Promise<AnomalyIncidentData> {
       // Check for error scenarios
       if (mockData.errorScenarios?.anomalyIncident?.[incidentId]) {
-        throw mockData.errorScenarios.anomalyIncident[incidentId];
+        const error = mockData.errorScenarios.anomalyIncident[incidentId];
+        throw typeof error === 'string' ? new Error(error) : error;
       }
 
       if (mockData.anomalyIncidents?.[incidentId]) {
@@ -221,13 +222,14 @@ export function createIntegrationMockAppsignalClient(
     },
 
     async getLogIncidents(
-      states: Array<'OPEN' | 'CLOSED' | 'WIP'> = ['OPEN'],
-      limit = 50,
-      offset = 0
+      _states: Array<'OPEN' | 'CLOSED' | 'WIP'> = ['OPEN'],
+      _limit = 50,
+      _offset = 0
     ): Promise<IncidentListResult<LogIncident>> {
       // Check for error scenarios
       if (mockData.errorScenarios?.logIncidents) {
-        throw mockData.errorScenarios.logIncidents;
+        const error = mockData.errorScenarios.logIncidents;
+        throw typeof error === 'string' ? new Error(error) : error;
       }
 
       if (mockData.logIncidentLists) {
@@ -259,13 +261,14 @@ export function createIntegrationMockAppsignalClient(
     },
 
     async getExceptionIncidents(
-      states: Array<'OPEN' | 'CLOSED' | 'WIP'> = ['OPEN'],
-      limit = 50,
-      offset = 0
+      _states: Array<'OPEN' | 'CLOSED' | 'WIP'> = ['OPEN'],
+      _limit = 50,
+      _offset = 0
     ): Promise<IncidentListResult<ExceptionIncident>> {
       // Check for error scenarios
       if (mockData.errorScenarios?.exceptionIncidents) {
-        throw mockData.errorScenarios.exceptionIncidents;
+        const error = mockData.errorScenarios.exceptionIncidents;
+        throw typeof error === 'string' ? new Error(error) : error;
       }
 
       if (mockData.exceptionIncidentLists) {
@@ -290,13 +293,14 @@ export function createIntegrationMockAppsignalClient(
     },
 
     async getAnomalyIncidents(
-      states: Array<'OPEN' | 'CLOSED' | 'WIP'> = ['OPEN'],
-      limit = 50,
-      offset = 0
-    ): Promise<IncidentListResult<AnomalyIncident>> {
+      _states: Array<'OPEN' | 'CLOSED' | 'WIP'> = ['OPEN'],
+      _limit = 50,
+      _offset = 0
+    ): Promise<IncidentListResult<AnomalyIncidentData>> {
       // Check for error scenarios
       if (mockData.errorScenarios?.anomalyIncidents) {
-        throw mockData.errorScenarios.anomalyIncidents;
+        const error = mockData.errorScenarios.anomalyIncidents;
+        throw typeof error === 'string' ? new Error(error) : error;
       }
 
       if (mockData.anomalyIncidentLists) {

@@ -1,6 +1,6 @@
 import { gql } from 'graphql-request';
 import type { GraphQLClient } from 'graphql-request';
-import type { AnomalyIncident } from '../../types.js';
+import type { AnomalyIncidentData } from '../../types.js';
 
 interface GetAnomalyIncidentResponse {
   app: {
@@ -33,7 +33,7 @@ export async function getAnomalyIncident(
   graphqlClient: GraphQLClient,
   appId: string,
   incidentId: string
-): Promise<AnomalyIncident> {
+): Promise<AnomalyIncidentData> {
   const query = gql`
     query GetAnomalyIncident($appId: ID!, $incidentId: ID!) {
       app(id: $appId) {

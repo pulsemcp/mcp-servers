@@ -3,7 +3,10 @@ import { z } from 'zod';
 import { getSelectedAppId } from '../state.js';
 import { IAppsignalClient } from '../appsignal-client/appsignal-client.js';
 
-export function getExceptionIncidentsTool(server: McpServer, clientFactory: () => IAppsignalClient) {
+export function getExceptionIncidentsTool(
+  server: McpServer,
+  clientFactory: () => IAppsignalClient
+) {
   return server.tool(
     'get_exception_incidents',
     {
@@ -15,10 +18,7 @@ export function getExceptionIncidentsTool(server: McpServer, clientFactory: () =
         .number()
         .optional()
         .describe('Maximum number of incidents to return. Defaults to 50'),
-      offset: z
-        .number()
-        .optional()
-        .describe('Number of incidents to skip. Defaults to 0'),
+      offset: z.number().optional().describe('Number of incidents to skip. Defaults to 0'),
     },
     async ({ states, limit, offset }) => {
       const appId = getSelectedAppId() || process.env.APPSIGNAL_APP_ID;
