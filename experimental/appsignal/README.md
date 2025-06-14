@@ -102,6 +102,7 @@ Manual tests are end-to-end system tests that verify the complete integration wi
 - **Should be run when modifying AppsignalClient code** or any code that interacts with the external API
 
 The manual test suite follows this workflow:
+
 1. Lists all available apps using your API key
 2. Automatically selects the first app
 3. Searches for logs in that app
@@ -118,11 +119,12 @@ cp .env.example .env
 # Run manual tests
 npm run test:manual
 
-# Run manual tests in watch mode  
+# Run manual tests in watch mode
 npm run test:manual:watch
 ```
 
 **Test Outcomes:**
+
 - **SUCCESS** ✅ - All critical tests passed, full happy path completed
 - **WARNING** ⚠️ - Core functionality works but some features couldn't be fully validated (e.g., no data available or API limitations)
 - **FAILURE** ❌ - Verifiable breakage in the integration

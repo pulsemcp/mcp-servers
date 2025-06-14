@@ -3,6 +3,7 @@
 Our goal is to take the current state of our git diff (ALL The files), commit the files (with a reasonable commit message), push them (to a branch), open a PR, and surface the link to the PR back to me so I can click it.
 
 Follow this checklist when executing this:
+
 - [ ] Assess whether we are in a good state to commit to a feature branch
 - [ ] Analyze the diff to come up with a good commit message
 - [ ] Commit the changes

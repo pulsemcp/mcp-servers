@@ -26,11 +26,11 @@ export function createMCPServer() {
       clientFactory ||
       (() => {
         const apiKey = process.env.APPSIGNAL_API_KEY;
-        
+
         if (!apiKey) {
           throw new Error('APPSIGNAL_API_KEY environment variable must be configured');
         }
-        
+
         // Use selected app ID from state, fallback to env var
         const appId = getSelectedAppId() || process.env.APPSIGNAL_APP_ID || '';
 

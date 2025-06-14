@@ -80,9 +80,9 @@ export async function searchLogs(
   });
 
   // Find the app with the matching ID
-  let targetApp: typeof data.viewer.organizations[0]['apps'][0] | null = null;
+  let targetApp: (typeof data.viewer.organizations)[0]['apps'][0] | null = null;
   for (const org of data.viewer.organizations) {
-    targetApp = org.apps.find(app => app.id === appId) || null;
+    targetApp = org.apps.find((app) => app.id === appId) || null;
     if (targetApp) break;
   }
 

@@ -89,11 +89,13 @@ MCP servers may include up to three types of tests:
 3. **Manual Tests** - Tests that hit real external APIs (not run in CI)
 
 Manual tests are particularly important when:
+
 - Modifying code that interacts with external APIs
 - Debugging issues that only appear with real API responses
 - Verifying that API integrations work correctly
 
 To run manual tests (when available):
+
 ```bash
 # Set required environment variables (check specific server docs for exact names)
 export API_KEY="your-real-api-key"

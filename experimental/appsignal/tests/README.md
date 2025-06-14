@@ -63,7 +63,8 @@ npm run test:manual
 npm run test:manual:watch
 ```
 
-**Important:** 
+**Important:**
+
 - Manual tests require a valid APPSIGNAL_API_KEY and hit the real production API
 - Tests automatically discover and use your AppSignal apps - no manual ID configuration needed
 - These are end-to-end system tests that chain together real API calls
