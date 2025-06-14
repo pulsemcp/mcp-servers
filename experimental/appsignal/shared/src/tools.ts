@@ -1,4 +1,4 @@
-import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { McpServer, RegisteredTool } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { getAppsTool } from './tools/get-apps.js';
 import { selectAppIdTool } from './tools/select-app-id.js';
 import { getExceptionIncidentTool } from './tools/get-exception-incident.js';
@@ -21,10 +21,10 @@ export function createRegisterTools(clientFactory: ClientFactory) {
 
     // Store references to main tools
     const mainTools: {
-      getExceptionIncident?: any;
-      getExceptionIncidentSample?: any;
-      getLogIncident?: any;
-      searchLogs?: any;
+      getExceptionIncident?: RegisteredTool;
+      getExceptionIncidentSample?: RegisteredTool;
+      getLogIncident?: RegisteredTool;
+      searchLogs?: RegisteredTool;
     } = {};
 
     // Enable function for selectAppId to call

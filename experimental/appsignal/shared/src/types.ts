@@ -10,7 +10,7 @@ export interface AlertDetails {
   id: string;
   name: string;
   status: string;
-  triggers?: any[];
+  triggers?: unknown[];
   affectedServices?: string[];
 }
 
@@ -18,7 +18,7 @@ export interface LogEntry {
   timestamp: string;
   level: string;
   message: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 export interface LogSearchResult {
