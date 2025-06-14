@@ -22,8 +22,13 @@ jobs:
             const owner = context.repo.owner;
             const repo = context.repo.repo;
 
+            // For pull requests, use the head SHA, not the merge commit SHA
+            const sha = context.eventName === 'pull_request' 
+              ? context.payload.pull_request.head.sha 
+              : context.sha;
+
             console.log(`Event: ${context.eventName}`);
-            console.log(`SHA: ${context.sha}`);
+            console.log(`SHA: ${sha}`);
 
             // Wait a bit for other checks to start
             console.log('Waiting 30 seconds for other checks to start...');
@@ -43,7 +48,7 @@ jobs:
               const checkRuns = await github.rest.checks.listForRef({
                 owner,
                 repo,
-                ref: context.sha,
+                ref: sha,
                 per_page: 100
               });
               
@@ -103,7 +108,7 @@ jobs:
             const finalCheckRuns = await github.rest.checks.listForRef({
               owner,
               repo,
-              ref: context.sha,
+              ref: sha,
               per_page: 100
             });
 
