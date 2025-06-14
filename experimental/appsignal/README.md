@@ -43,20 +43,29 @@ This project is NOT officially affiliated with AppSignal.
 
 This server is built and tested on macOS with Claude Desktop. It should work with other MCP clients as well.
 
-| Tool Name                       | Description                                                                 |
-| ------------------------------- | --------------------------------------------------------------------------- |
-| `get_apps`                      | Get a list of all available AppSignal applications.                         |
-| `select_app_id`                 | Select an AppSignal application ID to use for subsequent operations.        |
-| `get_exception_incident`        | Get detailed information about a specific exception incident.               |
-| `get_exception_incident_sample` | Get a sample occurrence of a specific exception incident.                   |
-| `get_log_incident`              | Get detailed information about a specific log incident.                     |
-| `search_logs`                   | Search through application logs with flexible query parameters and filters. |
+| Tool Name                       | Description                                                                       |
+| ------------------------------- | --------------------------------------------------------------------------------- |
+| `get_apps`                      | Get a list of all available AppSignal applications.                               |
+| `select_app_id`                 | Select an AppSignal application ID to use for subsequent operations.              |
+| `get_exception_incident`        | Get detailed information about a specific exception incident.                     |
+| `get_exception_incident_sample` | Get a sample occurrence of a specific exception incident.                         |
+| `get_log_incident`              | Get detailed information about a specific log incident.                           |
+| `get_anomaly_incident`          | Get detailed information about a specific anomaly incident.                       |
+| `search_logs`                   | Search through application logs with flexible query parameters and filters.       |
+| `get_log_incidents`             | Get a list of log incidents with optional state filter (OPEN, CLOSED, WIP).       |
+| `get_exception_incidents`       | Get a list of exception incidents with optional state filter (OPEN, CLOSED, WIP). |
+| `get_anomaly_incidents`         | Get a list of anomaly incidents with optional state filter (OPEN, CLOSED, WIP).   |
 
 # Usage Tips
 
 - All log searches support flexible query syntax - you can search for exact phrases, keywords, or use AppSignal's query language
 - Alert IDs can be found in your AppSignal dashboard or through alert notifications
 - Use the tools in combination to investigate issues - get alert details first, then search related logs
+- The list tools (`get_log_incidents`, `get_exception_incidents`, `get_anomaly_incidents`) support filtering by state:
+  - OPEN: Active incidents requiring attention
+  - CLOSED: Resolved incidents
+  - WIP: Work-in-progress incidents being investigated
+- By default, list tools return only OPEN incidents if no state filter is provided
 
 # Development
 

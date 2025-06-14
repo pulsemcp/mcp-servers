@@ -5,9 +5,19 @@ import { getExceptionIncidentTool } from './tools/get-exception-incident.js';
 import { getExceptionIncidentSampleTool } from './tools/get-exception-incident-sample.js';
 import { getLogIncidentTool } from './tools/get-log-incident.js';
 import { searchLogsTool } from './tools/search-logs.js';
+import { getAnomalyIncidentTool } from './tools/get-anomaly-incident.js';
+import { getLogIncidentsTool } from './tools/get-log-incidents.js';
+import { getExceptionIncidentsTool } from './tools/get-exception-incidents.js';
+import { getAnomalyIncidentsTool } from './tools/get-anomaly-incidents.js';
 import { IAppsignalClient } from './appsignal-client/appsignal-client.js';
 
 export type ClientFactory = () => IAppsignalClient;
+
+// Type for MCP tool registration result
+interface McpToolHandle {
+  enable: () => void;
+  disable: () => void;
+}
 
 export function createRegisterTools(clientFactory: ClientFactory) {
   return function registerTools(server: McpServer) {
@@ -21,10 +31,14 @@ export function createRegisterTools(clientFactory: ClientFactory) {
 
     // Store references to main tools
     const mainTools: {
-      getExceptionIncident?: any;
-      getExceptionIncidentSample?: any;
-      getLogIncident?: any;
-      searchLogs?: any;
+      getExceptionIncident?: McpToolHandle;
+      getExceptionIncidentSample?: McpToolHandle;
+      getLogIncident?: McpToolHandle;
+      searchLogs?: McpToolHandle;
+      getAnomalyIncident?: McpToolHandle;
+      getLogIncidents?: McpToolHandle;
+      getExceptionIncidents?: McpToolHandle;
+      getAnomalyIncidents?: McpToolHandle;
     } = {};
 
     // Enable function for selectAppId to call
@@ -33,6 +47,10 @@ export function createRegisterTools(clientFactory: ClientFactory) {
       if (mainTools.getExceptionIncidentSample) mainTools.getExceptionIncidentSample.enable();
       if (mainTools.getLogIncident) mainTools.getLogIncident.enable();
       if (mainTools.searchLogs) mainTools.searchLogs.enable();
+      if (mainTools.getAnomalyIncident) mainTools.getAnomalyIncident.enable();
+      if (mainTools.getLogIncidents) mainTools.getLogIncidents.enable();
+      if (mainTools.getExceptionIncidents) mainTools.getExceptionIncidents.enable();
+      if (mainTools.getAnomalyIncidents) mainTools.getAnomalyIncidents.enable();
     };
 
     // Register tools that are always available
@@ -44,6 +62,10 @@ export function createRegisterTools(clientFactory: ClientFactory) {
     mainTools.getExceptionIncidentSample = getExceptionIncidentSampleTool(server, clientFactory);
     mainTools.getLogIncident = getLogIncidentTool(server, clientFactory);
     mainTools.searchLogs = searchLogsTool(server, clientFactory);
+    mainTools.getAnomalyIncident = getAnomalyIncidentTool(server, clientFactory);
+    mainTools.getLogIncidents = getLogIncidentsTool(server, clientFactory);
+    mainTools.getExceptionIncidents = getExceptionIncidentsTool(server, clientFactory);
+    mainTools.getAnomalyIncidents = getAnomalyIncidentsTool(server, clientFactory);
 
     // If no app ID is provided via environment, disable the main tools initially
     if (!envAppId) {
@@ -51,6 +73,10 @@ export function createRegisterTools(clientFactory: ClientFactory) {
       mainTools.getExceptionIncidentSample.disable();
       mainTools.getLogIncident.disable();
       mainTools.searchLogs.disable();
+      mainTools.getAnomalyIncident.disable();
+      mainTools.getLogIncidents.disable();
+      mainTools.getExceptionIncidents.disable();
+      mainTools.getAnomalyIncidents.disable();
     }
   };
 }
