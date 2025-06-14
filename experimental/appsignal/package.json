@@ -20,6 +20,8 @@
     "test:integration": "npm run build:test && vitest run -c vitest.config.integration.ts && npm run clean",
     "test:integration:watch": "vitest -c vitest.config.integration.ts",
     "test:all": "npm run test:run && npm run test:integration",
+    "test:manual": "npm run build:test && vitest run -c vitest.config.manual.ts",
+    "test:manual:watch": "vitest -c vitest.config.manual.ts",
     "lint": "eslint . --ext .ts,.tsx",
     "lint:fix": "eslint . --ext .ts,.tsx --fix",
     "format": "prettier --write .",
@@ -35,6 +37,7 @@
     "@graphql-codegen/typescript": "^4.1.6",
     "@types/node": "^24.0.0",
     "@vitest/ui": "^3.2.3",
+    "dotenv": "^16.5.0",
     "dotenv-cli": "^8.0.0",
     "graphql": "^16.11.0",
     "vitest": "^3.2.3"

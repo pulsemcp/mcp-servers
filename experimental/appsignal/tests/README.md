@@ -10,6 +10,8 @@ tests/
 │   └── tools.test.ts   # Tests for MCP tool implementations
 ├── integration/        # Integration tests using TestMCPClient
 │   └── appsignal.integration.test.ts  # Full server integration tests
+├── manual/             # Manual tests that hit real AppSignal API
+│   └── appsignal.manual.test.ts  # Tests with real API calls
 └── mocks/              # Mock implementations and test data
     └── appsignal-client.functional-mock.ts  # Vitest mocks for functional tests
 
@@ -48,6 +50,25 @@ npm run test:integration:watch
 npm run test:all
 ```
 
+### Manual Tests
+
+```bash
+# Set environment variables
+export APPSIGNAL_API_KEY="your-real-api-key"
+
+# Run manual tests (hits real AppSignal API)
+npm run test:manual
+
+# Run manual tests in watch mode
+npm run test:manual:watch
+```
+
+**Important:** 
+- Manual tests require a valid APPSIGNAL_API_KEY and hit the real production API
+- Tests automatically discover and use your AppSignal apps - no manual ID configuration needed
+- These are end-to-end system tests that chain together real API calls
+- These tests are not run in CI
+
 ## Test Architecture
 
 ### Dependency Injection
@@ -76,6 +97,17 @@ const registerTools = createRegisterTools(() => mockClient);
 - Creates mock AppSignal clients with `createIntegrationMockAppsignalClient`
 - Mock data is passed to the test server via environment variables
 - Tests demonstrate that we're mocking the AppSignal API calls, not the MCP client
+
+#### Manual Tests (`manual/appsignal.manual.test.ts`)
+
+- Uses real TestMCPClient instances with the actual server implementation
+- **No mocking** - hits the real AppSignal production API
+- Requires valid APPSIGNAL_API_KEY environment variable
+- End-to-end system tests that chain together realistic workflows:
+  - Get apps → Select app → Search logs → Test error handling
+- Tests automatically adapt to available data in your AppSignal account
+- Provides detailed console output showing actual API interactions
+- Should be run when modifying AppsignalClient or API interaction code
 
 ## Integration Testing Architecture
 
