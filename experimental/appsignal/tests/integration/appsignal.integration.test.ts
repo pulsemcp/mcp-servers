@@ -238,10 +238,6 @@ describe('AppSignal MCP Server Integration', () => {
             message: 'Database connection failed',
             hostname: 'api-server-01',
             group: 'api-service',
-            attributes: [
-              { key: 'service', value: 'api-service' },
-              { key: 'errorCode', value: 'DB_CONNECTION_ERROR' },
-            ],
           },
           {
             id: 'log-2',
@@ -250,10 +246,6 @@ describe('AppSignal MCP Server Integration', () => {
             message: 'Payment processing timeout',
             hostname: 'api-server-02',
             group: 'api-service',
-            attributes: [
-              { key: 'service', value: 'api-service' },
-              { key: 'errorCode', value: 'PAYMENT_TIMEOUT' },
-            ],
           },
         ],
       },
@@ -274,10 +266,6 @@ describe('AppSignal MCP Server Integration', () => {
     expect(response.lines).toHaveLength(2);
     expect(response.lines[0].message).toBe('Database connection failed');
     expect(response.lines[1].message).toBe('Payment processing timeout');
-    expect(response.lines[0].attributes).toContainEqual({
-      key: 'errorCode',
-      value: 'DB_CONNECTION_ERROR',
-    });
     expect(response.formattedSummary).toContain('Found 2 log entries');
   });
 

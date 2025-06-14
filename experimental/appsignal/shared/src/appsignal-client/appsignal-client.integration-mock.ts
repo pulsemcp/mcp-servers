@@ -150,10 +150,6 @@ export function createIntegrationMockAppsignalClient(
             severity: 'INFO',
             hostname: 'mock-host',
             group: 'mock-group',
-            attributes: [
-              { key: 'query', value: query },
-              { key: 'severities', value: severities?.join(',') || 'all' },
-            ],
           },
         ];
       }

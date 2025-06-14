@@ -10,33 +10,30 @@ export interface LogSearchResult {
     severity: string;
     hostname: string;
     group?: string;
-    attributes?: Array<{
-      key: string;
-      value: string;
-    }>;
   }>;
   // For LLM optimization, we can add a formatted summary
   formattedSummary?: string;
 }
 
 interface SearchLogsResponse {
-  app: {
-    id: string;
-    logs: {
-      queryWindow: number;
-      lines?: Array<{
+  viewer: {
+    organizations: Array<{
+      apps: Array<{
         id: string;
-        timestamp: string;
-        message: string;
-        severity: string;
-        hostname: string;
-        group?: string;
-        attributes?: Array<{
-          key: string;
-          value: string;
-        }>;
+        logs: {
+          queryWindow: number;
+          lines?: Array<{
+            id: string;
+            timestamp: string;
+            message: string;
+            severity: string;
+            hostname: string;
+            group?: string;
+            // attributes removed from query due to API issues
+          }>;
+        };
       }>;
-    };
+    }>;
   };
 }
 
@@ -47,22 +44,25 @@ export async function searchLogs(
   limit = 100,
   severities?: Array<'debug' | 'info' | 'warn' | 'error' | 'fatal'>
 ): Promise<LogSearchResult> {
+  // NOTE: AppSignal GraphQL API limitation - we have to query all apps and filter
+  // This can cause 500 errors with large datasets. Future improvement would be
+  // to find a more targeted query approach if AppSignal adds support for it.
   const gqlQuery = gql`
-    query SearchLogs($appId: ID!, $query: String!, $limit: Int!, $severities: [SeverityEnum!]) {
-      app(id: $appId) {
-        id
-        logs {
-          queryWindow
-          lines(query: $query, limit: $limit, order: DESC, severities: $severities) {
+    query SearchLogs($query: String!, $limit: Int!, $severities: [SeverityEnum!]) {
+      viewer {
+        organizations {
+          apps {
             id
-            timestamp
-            message
-            severity
-            hostname
-            group
-            attributes {
-              key
-              value
+            logs {
+              queryWindow
+              lines(query: $query, limit: $limit, severities: $severities) {
+                id
+                timestamp
+                message
+                severity
+                hostname
+                group
+              }
             }
           }
         }
@@ -74,14 +74,24 @@ export async function searchLogs(
   const severityEnums = severities?.map((sev) => sev.toUpperCase());
 
   const data = await graphqlClient.request<SearchLogsResponse>(gqlQuery, {
-    appId,
     query,
     limit,
     severities: severityEnums,
   });
 
-  const lines = data.app.logs.lines || [];
-  const queryWindow = data.app.logs.queryWindow;
+  // Find the app with the matching ID
+  let targetApp: (typeof data.viewer.organizations)[0]['apps'][0] | null = null;
+  for (const org of data.viewer.organizations) {
+    targetApp = org.apps.find((app) => app.id === appId) || null;
+    if (targetApp) break;
+  }
+
+  if (!targetApp) {
+    throw new Error(`App with ID ${appId} not found`);
+  }
+
+  const lines = targetApp.logs.lines || [];
+  const queryWindow = targetApp.logs.queryWindow;
 
   // Create a formatted summary for LLM optimization
   let formattedSummary = `Found ${lines.length} log entries within ${queryWindow}s window.\n\n`;
@@ -105,11 +115,10 @@ export async function searchLogs(
     formattedSummary += '\nRecent log samples:\n';
     // Include first 5 logs as samples
     lines.slice(0, 5).forEach((line, i) => {
-      const attrs = line.attributes?.map((a) => `${a.key}=${a.value}`).join(', ');
+      // Note: attributes removed from query due to API 500 error
       formattedSummary += `${i + 1}. [${line.timestamp}] ${line.severity} - ${line.message}`;
       if (line.hostname) formattedSummary += ` (host: ${line.hostname})`;
       if (line.group) formattedSummary += ` (group: ${line.group})`;
-      if (attrs) formattedSummary += ` (${attrs})`;
       formattedSummary += '\n';
     });
 

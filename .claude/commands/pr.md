@@ -2,6 +2,18 @@
 
 Our goal is to take the current state of our git diff (ALL The files), commit the files (with a reasonable commit message), push them (to a branch), open a PR, and surface the link to the PR back to me so I can click it.
 
+Follow this checklist when executing this:
+
+- [ ] Assess whether we are in a good state to commit to a feature branch
+- [ ] Analyze the diff to come up with a good commit message
+- [ ] Commit the changes
+- [ ] Run pre-commit checklist (see below)
+- [ ] Push it
+- [ ] Open a PR
+- [ ] Wait for the PR to successfully pass CI
+- [ ] If it fails CI, investigate the failure, fix it. Repeat until CI is passing
+- [ ] Surface the PR link back to the user
+
 ## Workflow Details
 
 For detailed git workflow information including branch naming conventions and recovery procedures, see [docs/GIT_WORKFLOW.md](../../docs/GIT_WORKFLOW.md).
@@ -18,7 +30,6 @@ For detailed git workflow information including branch naming conventions and re
 1. Check for and resolve any merge conflicts:
    - Pull latest from main with `git pull --rebase origin main`
    - If conflicts exist, resolve them before proceeding
-   - Continue rebase with `git rebase --continue`
 2. Run linting and formatting:
    - `npm run lint:fix` - Auto-fix linting issues
    - `npm run format` - Format code with Prettier
@@ -38,8 +49,3 @@ After creating the PR, monitor CI status and fix any failures:
    - Commit and push the fixes
    - Continue monitoring until all checks pass
 3. Only proceed to Post-PR steps after all CI checks are green
-
-### Post-PR
-
-- **Regular repo**: Checkout main and pull latest (while showing PR URL)
-- **Git worktree**: Leave as-is (user will delete when PR is merged)

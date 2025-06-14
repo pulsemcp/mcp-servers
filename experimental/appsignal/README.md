@@ -85,9 +85,51 @@ npm run test:ui
 Tests are located in the `tests/` directory:
 
 - `tests/functional/` - Functional tests for individual components
+- `tests/integration/` - Integration tests with mocked AppSignal API
+- `tests/manual/` - Manual tests that hit the real AppSignal API (not run in CI)
 - `tests/mocks/` - Mock implementations and test data
 
 See `tests/README.md` for more details on the testing approach.
+
+### Manual Testing
+
+Manual tests are end-to-end system tests that verify the complete integration with the real AppSignal API. These tests:
+
+- **Require real API credentials** (APPSIGNAL_API_KEY environment variable)
+- **Hit the actual AppSignal production API** - not mocked
+- **Chain together real API calls** in a realistic workflow
+- **Are not run in CI** to avoid API rate limits and dependency on external services
+- **Should be run when modifying AppsignalClient code** or any code that interacts with the external API
+
+The manual test suite follows this workflow:
+
+1. Lists all available apps using your API key
+2. Automatically selects the first app
+3. Searches for logs in that app
+4. Tests various search patterns and error scenarios
+5. Provides detailed console output showing the actual API responses
+
+To run manual tests:
+
+```bash
+# Copy .env.example to .env and add your API key
+cp .env.example .env
+# Edit .env to add your real API key
+
+# Run manual tests
+npm run test:manual
+
+# Run manual tests in watch mode
+npm run test:manual:watch
+```
+
+**Test Outcomes:**
+
+- **SUCCESS** ✅ - All critical tests passed, full happy path completed
+- **WARNING** ⚠️ - Core functionality works but some features couldn't be fully validated (e.g., no data available or API limitations)
+- **FAILURE** ❌ - Verifiable breakage in the integration
+
+The tests automatically adapt to your AppSignal data and API limitations.
 
 # Setup
 
