@@ -28,6 +28,13 @@ interface Tool {
   enabled: boolean;
 }
 
+interface ToolResult {
+  content: Array<{
+    type: string;
+    text: string;
+  }>;
+}
+
 describe('Performance Incident Tools', () => {
   let mockServer: McpServer;
   let registeredTools: Map<string, Tool>;
@@ -91,7 +98,7 @@ describe('Performance Incident Tools', () => {
       const result = await tool?.handler({});
 
       // Parse the result
-      const response = JSON.parse((result as any).content[0].text);
+      const response = JSON.parse((result as ToolResult).content[0].text);
 
       // Verify the response structure
       expect(response).toHaveProperty('incidents');
@@ -162,7 +169,7 @@ describe('Performance Incident Tools', () => {
 
       const tool = registeredTools.get('get_performance_incidents');
       const result = await tool?.handler({ states: ['closed'] });
-      const response = JSON.parse((result as any).content[0].text);
+      const response = JSON.parse((result as ToolResult).content[0].text);
 
       expect(response.incidents).toHaveLength(1);
       expect(response.incidents[0].state).toBe('closed');
@@ -180,7 +187,7 @@ describe('Performance Incident Tools', () => {
       const tool = registeredTools.get('get_performance_incidents');
       const result = await tool?.handler({});
 
-      expect((result as any).content[0].text).toContain(
+      expect((result as ToolResult).content[0].text).toContain(
         'Error fetching performance incidents: API Error'
       );
     });
@@ -193,7 +200,7 @@ describe('Performance Incident Tools', () => {
       const tool = registeredTools.get('get_performance_incidents');
       const result = await tool?.handler({});
 
-      expect((result as any).content[0].text).toContain('Error: No app ID configured');
+      expect((result as ToolResult).content[0].text).toContain('Error: No app ID configured');
     });
   });
 
@@ -232,7 +239,7 @@ describe('Performance Incident Tools', () => {
 
       const tool = registeredTools.get('get_performance_incident');
       const result = await tool?.handler({ incidentId: 'perf-123' });
-      const response = JSON.parse((result as any).content[0].text);
+      const response = JSON.parse((result as ToolResult).content[0].text);
 
       expect(response).toEqual(mockIncident);
     });
@@ -250,7 +257,7 @@ describe('Performance Incident Tools', () => {
       const tool = registeredTools.get('get_performance_incident');
       const result = await tool?.handler({ incidentId: 'xyz' });
 
-      expect((result as any).content[0].text).toContain(
+      expect((result as ToolResult).content[0].text).toContain(
         'Error fetching performance incident: Performance incident xyz not found'
       );
     });
@@ -289,7 +296,7 @@ describe('Performance Incident Tools', () => {
 
       const tool = registeredTools.get('get_performance_incident_sample');
       const result = await tool?.handler({ incidentId: 'perf-123' });
-      const response = JSON.parse((result as any).content[0].text);
+      const response = JSON.parse((result as ToolResult).content[0].text);
 
       expect(response).toEqual(mockSample);
     });
@@ -347,7 +354,7 @@ describe('Performance Incident Tools', () => {
 
       const tool = registeredTools.get('get_performance_incident_sample_timeline');
       const result = await tool?.handler({ incidentId: 'perf-123' });
-      const response = JSON.parse((result as any).content[0].text);
+      const response = JSON.parse((result as ToolResult).content[0].text);
 
       expect(response).toEqual(mockTimeline);
       expect(response.timeline).toHaveLength(2);

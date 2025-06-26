@@ -103,7 +103,8 @@ export async function getExceptionIncidentSample(
   });
 
   // Find the app and incident
-  let samples: any[] = [];
+  let samples: GetExceptionIncidentSamplesResponse['viewer']['organizations'][0]['apps'][0]['exceptionIncidents'][0]['samples'] =
+    [];
   for (const org of data.viewer.organizations) {
     const app = org.apps.find((a) => a.id === appId);
     if (app) {
