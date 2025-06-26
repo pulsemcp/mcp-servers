@@ -71,7 +71,7 @@ describe('Tool Registration', () => {
   it('should register all tools when API key is provided', () => {
     registerTools(mockServer);
 
-    expect(mockServer.tool).toHaveBeenCalledTimes(11);
+    expect(mockServer.tool).toHaveBeenCalledTimes(15);
     expect(registeredTools.has('get_apps')).toBe(true);
     expect(registeredTools.has('select_app_id')).toBe(true);
     expect(registeredTools.has('change_app_id')).toBe(true);
@@ -83,6 +83,10 @@ describe('Tool Registration', () => {
     expect(registeredTools.has('get_log_incidents')).toBe(true);
     expect(registeredTools.has('get_exception_incidents')).toBe(true);
     expect(registeredTools.has('get_anomaly_incidents')).toBe(true);
+    expect(registeredTools.has('get_performance_incidents')).toBe(true);
+    expect(registeredTools.has('get_performance_incident')).toBe(true);
+    expect(registeredTools.has('get_performance_incident_sample')).toBe(true);
+    expect(registeredTools.has('get_performance_incident_sample_timeline')).toBe(true);
   });
 
   it('should throw error when API key is missing', () => {
