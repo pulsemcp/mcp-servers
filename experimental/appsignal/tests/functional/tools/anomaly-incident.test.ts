@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { createRegisterTools } from '../../../shared/src/tools';
+import { getSelectedAppId, getEffectiveAppId, isAppIdLocked } from '../../../shared/src/state';
 import { createMockAppsignalClient } from '../../mocks/appsignal-client.functional-mock';
 import type { IAppsignalClient } from '../../../shared/src/appsignal-client/appsignal-client';
 
@@ -8,6 +9,9 @@ import type { IAppsignalClient } from '../../../shared/src/appsignal-client/apps
 vi.mock('../../../shared/src/state', () => ({
   setSelectedAppId: vi.fn(),
   getSelectedAppId: vi.fn(),
+  clearSelectedAppId: vi.fn(),
+  getEffectiveAppId: vi.fn(),
+  isAppIdLocked: vi.fn(),
 }));
 
 interface Tool {
@@ -36,6 +40,10 @@ describe('Anomaly Incident Tools', () => {
 
     // Reset mocks
     vi.clearAllMocks();
+    
+    // Default mock implementations
+    vi.mocked(isAppIdLocked).mockReturnValue(true);
+    vi.mocked(getEffectiveAppId).mockReturnValue('test-app-id');
 
     // Create a mock server that captures tool registrations
     registeredTools = new Map();

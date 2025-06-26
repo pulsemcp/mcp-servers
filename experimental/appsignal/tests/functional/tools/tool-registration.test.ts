@@ -1,13 +1,16 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { registerTools, createRegisterTools } from '../../../shared/src/tools';
-import { getSelectedAppId } from '../../../shared/src/state';
+import { getSelectedAppId, getEffectiveAppId, isAppIdLocked } from '../../../shared/src/state';
 import { createMockAppsignalClient } from '../../mocks/appsignal-client.functional-mock';
 
 // Mock the state module
 vi.mock('../../../shared/src/state', () => ({
   setSelectedAppId: vi.fn(),
   getSelectedAppId: vi.fn(),
+  clearSelectedAppId: vi.fn(),
+  getEffectiveAppId: vi.fn(),
+  isAppIdLocked: vi.fn(),
 }));
 
 interface Tool {
@@ -24,10 +27,14 @@ describe('Tool Registration', () => {
   beforeEach(() => {
     // Reset environment variables
     process.env.APPSIGNAL_API_KEY = 'test-api-key';
-    process.env.APPSIGNAL_APP_ID = 'test-app-id';
+    delete process.env.APPSIGNAL_APP_ID;
 
     // Reset mocks
     vi.clearAllMocks();
+    
+    // Default mock implementations
+    vi.mocked(isAppIdLocked).mockReturnValue(false);
+    vi.mocked(getEffectiveAppId).mockReturnValue(undefined);
 
     // Create a mock server that captures tool registrations
     registeredTools = new Map();
@@ -85,8 +92,8 @@ describe('Tool Registration', () => {
   });
 
   it('should disable main tools when no app ID is provided', () => {
-    delete process.env.APPSIGNAL_APP_ID;
     vi.mocked(getSelectedAppId).mockReturnValue(undefined);
+    vi.mocked(getEffectiveAppId).mockReturnValue(undefined);
     const registerTools = createRegisterTools(() => createMockAppsignalClient());
 
     registerTools(mockServer);
@@ -149,7 +156,25 @@ describe('Tool Registration', () => {
     const tool = registeredTools.get('get_exception_incident');
     const result = await tool.handler({ incidentId: 'exception-123' });
 
-    expect(result.content[0].text).toContain('Error: No app ID selected');
+    expect(result.content[0].text).toContain('Error: No app ID configured');
     expect(result.content[0].text).toContain('Please use select_app_id tool first');
+  });
+
+  it('should NOT register app selection tools when app ID is locked via env var', () => {
+    process.env.APPSIGNAL_APP_ID = 'test-app-id';
+    vi.mocked(isAppIdLocked).mockReturnValue(true);
+    vi.mocked(getEffectiveAppId).mockReturnValue('test-app-id');
+    const registerTools = createRegisterTools(() => createMockAppsignalClient());
+
+    registerTools(mockServer);
+
+    // Check that app selection tools are NOT registered
+    expect(registeredTools.has('get_apps')).toBe(false);
+    expect(registeredTools.has('select_app_id')).toBe(false);
+    expect(registeredTools.has('change_app_id')).toBe(false);
+
+    // Check that main tools are enabled
+    expect(registeredTools.get('get_exception_incident').enabled).toBe(true);
+    expect(registeredTools.get('search_logs').enabled).toBe(true);
   });
 });
