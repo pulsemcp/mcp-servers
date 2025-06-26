@@ -45,14 +45,14 @@ export class TestMCPClient {
     }
 
     await this.client.connect(this.transport);
-    
+
     // Set up notification handler for list changed notifications
     this.client.setNotificationHandler(ToolListChangedNotificationSchema, (notification) => {
       if (this.listChangedHandler) {
         this.listChangedHandler(notification);
       }
     });
-    
+
     this.connected = true;
   }
 

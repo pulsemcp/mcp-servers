@@ -27,14 +27,14 @@ describe('Dynamic Tool Naming Integration Tests', () => {
 
     // List tools to see the initial state
     const tools = await client.listTools();
-    
+
     // Should have select_app_id tool
-    const selectTool = tools.tools.find(t => t.name === 'select_app_id');
+    const selectTool = tools.tools.find((t) => t.name === 'select_app_id');
     expect(selectTool).toBeDefined();
     expect(selectTool?.name).toBe('select_app_id');
-    
+
     // Should NOT have change_app_id tool
-    const changeTool = tools.tools.find(t => t.name === 'change_app_id');
+    const changeTool = tools.tools.find((t) => t.name === 'change_app_id');
     expect(changeTool).toBeUndefined();
   });
 
@@ -47,14 +47,14 @@ describe('Dynamic Tool Naming Integration Tests', () => {
 
     // List tools to see the initial state
     const tools = await client.listTools();
-    
+
     // Should have change_app_id tool
-    const changeTool = tools.tools.find(t => t.name === 'change_app_id');
+    const changeTool = tools.tools.find((t) => t.name === 'change_app_id');
     expect(changeTool).toBeDefined();
     expect(changeTool?.name).toBe('change_app_id');
-    
+
     // Should NOT have select_app_id tool
-    const selectTool = tools.tools.find(t => t.name === 'select_app_id');
+    const selectTool = tools.tools.find((t) => t.name === 'select_app_id');
     expect(selectTool).toBeUndefined();
   });
 
@@ -73,7 +73,7 @@ describe('Dynamic Tool Naming Integration Tests', () => {
 
     // List tools before selecting app
     const toolsBefore = await client.listTools();
-    const selectToolBefore = toolsBefore.tools.find(t => t.name === 'select_app_id');
+    const selectToolBefore = toolsBefore.tools.find((t) => t.name === 'select_app_id');
     expect(selectToolBefore).toBeDefined();
 
     // Select an app
@@ -82,21 +82,21 @@ describe('Dynamic Tool Naming Integration Tests', () => {
     });
 
     // Wait a bit for the notification to be processed
-    await new Promise(resolve => setTimeout(resolve, 100));
+    await new Promise((resolve) => setTimeout(resolve, 100));
 
     // Check that we received a notification
     expect(notificationReceived).toBe(true);
 
     // List tools after selecting app
     const toolsAfter = await client.listTools();
-    
+
     // Should now have change_app_id tool
-    const changeToolAfter = toolsAfter.tools.find(t => t.name === 'change_app_id');
+    const changeToolAfter = toolsAfter.tools.find((t) => t.name === 'change_app_id');
     expect(changeToolAfter).toBeDefined();
     expect(changeToolAfter?.name).toBe('change_app_id');
-    
+
     // Should NOT have select_app_id tool anymore
-    const selectToolAfter = toolsAfter.tools.find(t => t.name === 'select_app_id');
+    const selectToolAfter = toolsAfter.tools.find((t) => t.name === 'select_app_id');
     expect(selectToolAfter).toBeUndefined();
   });
 
@@ -120,7 +120,7 @@ describe('Dynamic Tool Naming Integration Tests', () => {
 
     // List tools before selecting app - main tools should be disabled
     const toolsBefore = await client.listTools();
-    const mainToolsBefore = toolsBefore.tools.filter(t => 
+    const mainToolsBefore = toolsBefore.tools.filter((t) =>
       ['get_exception_incident', 'search_logs', 'get_log_incident'].includes(t.name)
     );
     expect(mainToolsBefore.length).toBe(0); // Main tools should be disabled
@@ -131,11 +131,11 @@ describe('Dynamic Tool Naming Integration Tests', () => {
     });
 
     // Wait a bit for tools to be enabled
-    await new Promise(resolve => setTimeout(resolve, 100));
+    await new Promise((resolve) => setTimeout(resolve, 100));
 
     // List tools after selecting app - main tools should be enabled
     const toolsAfter = await client.listTools();
-    const mainToolsAfter = toolsAfter.tools.filter(t => 
+    const mainToolsAfter = toolsAfter.tools.filter((t) =>
       ['get_exception_incident', 'search_logs', 'get_log_incident'].includes(t.name)
     );
     expect(mainToolsAfter.length).toBeGreaterThan(0); // Main tools should now be enabled
