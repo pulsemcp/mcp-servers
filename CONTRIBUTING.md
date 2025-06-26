@@ -6,6 +6,18 @@ We are open to community contributions, but please open an Issue and confirm get
 
 ## Development Setup
 
+### Prerequisites
+
+This project requires Node.js v24.2.0. We recommend using [nvm](https://github.com/nvm-sh/nvm) to manage Node versions:
+
+```bash
+# Install the correct Node version
+nvm install
+
+# Use the correct Node version
+nvm use
+```
+
 ### Installing Dependencies
 
 ```bash

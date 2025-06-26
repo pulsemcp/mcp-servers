@@ -4,28 +4,33 @@ import type { ExceptionIncident } from './exception-incident.js';
 import type { IncidentListResult } from '../../types.js';
 
 interface GetExceptionIncidentsResponse {
-  app: {
-    paginatedExceptionIncidents: {
-      incidents: Array<{
+  viewer: {
+    organizations: Array<{
+      apps: Array<{
         id: string;
-        exceptionName: string;
-        exceptionMessage: string;
-        count: number;
-        lastOccurredAt: string;
-        state: string;
-        updatedAt: string;
-        number: string;
-        namespace: string;
-        lastSampleOccurredAt: string;
-        hasSamplesInRetention: boolean;
-        firstBacktraceLine: string;
-        digests: string[];
-        description: string;
-        createdAt: string;
-        actionNames: string[];
+        paginatedExceptionIncidents: {
+          rows: Array<{
+            id: string;
+            exceptionName: string;
+            exceptionMessage: string;
+            count: number;
+            lastOccurredAt: string;
+            state: string;
+            updatedAt: string;
+            number: string;
+            namespace: string;
+            lastSampleOccurredAt: string;
+            hasSamplesInRetention: boolean;
+            firstBacktraceLine: string;
+            digests: string[];
+            description: string;
+            createdAt: string;
+            actionNames: string[];
+          }>;
+          total: number;
+        };
       }>;
-      total: number;
-    };
+    }>;
   };
 }
 
@@ -37,32 +42,37 @@ export async function getExceptionIncidents(
   offset = 0
 ): Promise<IncidentListResult<ExceptionIncident>> {
   const query = gql`
-    query GetExceptionIncidents(
-      $appId: ID!
-      $state: IncidentStateEnum
-      $limit: Int!
-      $offset: Int!
-    ) {
-      app(id: $appId) {
-        paginatedExceptionIncidents(state: $state, limit: $limit, offset: $offset, order: LAST) {
-          total
-          incidents {
+    query GetExceptionIncidents($state: IncidentStateEnum, $limit: Int!, $offset: Int!) {
+      viewer {
+        organizations {
+          apps {
             id
-            exceptionName
-            exceptionMessage
-            count
-            lastOccurredAt
-            state
-            updatedAt
-            number
-            namespace
-            lastSampleOccurredAt
-            hasSamplesInRetention
-            firstBacktraceLine
-            digests
-            description
-            createdAt
-            actionNames
+            paginatedExceptionIncidents(
+              state: $state
+              limit: $limit
+              offset: $offset
+              order: LAST
+            ) {
+              total
+              rows {
+                id
+                exceptionName
+                exceptionMessage
+                count
+                lastOccurredAt
+                state
+                updatedAt
+                number
+                namespace
+                lastSampleOccurredAt
+                hasSamplesInRetention
+                firstBacktraceLine
+                digests
+                description
+                createdAt
+                actionNames
+              }
+            }
           }
         }
       }
@@ -74,13 +84,28 @@ export async function getExceptionIncidents(
   // Query for each state individually (GraphQL API doesn't support multiple states in one query)
   for (const state of states) {
     const data = await graphqlClient.request<GetExceptionIncidentsResponse>(query, {
-      appId,
       state,
       limit,
       offset,
     });
 
-    const incidents = data.app?.paginatedExceptionIncidents?.incidents || [];
+    // Find the app with matching ID
+    let targetApp: {
+      paginatedExceptionIncidents: GetExceptionIncidentsResponse['viewer']['organizations'][0]['apps'][0]['paginatedExceptionIncidents'];
+    } | null = null;
+    for (const org of data.viewer.organizations) {
+      const app = org.apps.find((a) => a.id === appId);
+      if (app) {
+        targetApp = app;
+        break;
+      }
+    }
+
+    if (!targetApp) {
+      throw new Error(`App with ID ${appId} not found`);
+    }
+
+    const incidents = targetApp.paginatedExceptionIncidents?.rows || [];
 
     for (const incident of incidents) {
       allIncidents.push({

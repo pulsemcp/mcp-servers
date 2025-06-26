@@ -4,31 +4,35 @@ import type { LogIncident } from './log-incident.js';
 import type { IncidentListResult } from '../../types.js';
 
 interface GetLogIncidentsResponse {
-  app: {
-    paginatedLogIncidents: {
-      incidents: Array<{
+  viewer: {
+    organizations: Array<{
+      apps: Array<{
         id: string;
-        number: number;
-        summary?: string;
-        description?: string;
-        severity?: string;
-        state?: string;
-        count: number;
-        createdAt?: string;
-        lastOccurredAt?: string;
-        updatedAt?: string;
-        digests?: string[];
-        trigger: {
-          id: string;
-          name: string;
-          description?: string;
-          query?: string;
-          severities: string[];
-          sourceIds: string[];
+        paginatedLogIncidents: {
+          rows: Array<{
+            id: string;
+            number: number;
+            description?: string;
+            severity?: string;
+            state?: string;
+            count: number;
+            createdAt?: string;
+            lastOccurredAt?: string;
+            updatedAt?: string;
+            digests?: string[];
+            trigger: {
+              id: string;
+              name: string;
+              description?: string;
+              query?: string;
+              severities: string[];
+              sourceIds: string[];
+            };
+          }>;
+          total: number;
         };
       }>;
-      total: number;
-    };
+    }>;
   };
 }
 
@@ -40,29 +44,33 @@ export async function getLogIncidents(
   offset = 0
 ): Promise<IncidentListResult<LogIncident>> {
   const query = gql`
-    query GetLogIncidents($appId: ID!, $state: IncidentStateEnum, $limit: Int!, $offset: Int!) {
-      app(id: $appId) {
-        paginatedLogIncidents(state: $state, limit: $limit, offset: $offset, order: LAST) {
-          total
-          incidents {
+    query GetLogIncidents($state: IncidentStateEnum, $limit: Int!, $offset: Int!) {
+      viewer {
+        organizations {
+          apps {
             id
-            number
-            summary
-            description
-            severity
-            state
-            count
-            createdAt
-            lastOccurredAt
-            updatedAt
-            digests
-            trigger {
-              id
-              name
-              description
-              query
-              severities
-              sourceIds
+            paginatedLogIncidents(state: $state, limit: $limit, offset: $offset, order: LAST) {
+              total
+              rows {
+                id
+                number
+                description
+                severity
+                state
+                count
+                createdAt
+                lastOccurredAt
+                updatedAt
+                digests
+                trigger {
+                  id
+                  name
+                  description
+                  query
+                  severities
+                  sourceIds
+                }
+              }
             }
           }
         }
@@ -75,19 +83,34 @@ export async function getLogIncidents(
   // Query for each state individually (GraphQL API doesn't support multiple states in one query)
   for (const state of states) {
     const data = await graphqlClient.request<GetLogIncidentsResponse>(query, {
-      appId,
       state,
       limit,
       offset,
     });
 
-    const incidents = data.app?.paginatedLogIncidents?.incidents || [];
+    // Find the app with matching ID
+    let targetApp: {
+      paginatedLogIncidents: GetLogIncidentsResponse['viewer']['organizations'][0]['apps'][0]['paginatedLogIncidents'];
+    } | null = null;
+    for (const org of data.viewer.organizations) {
+      const app = org.apps.find((a) => a.id === appId);
+      if (app) {
+        targetApp = app;
+        break;
+      }
+    }
+
+    if (!targetApp) {
+      throw new Error(`App with ID ${appId} not found`);
+    }
+
+    const incidents = targetApp.paginatedLogIncidents?.rows || [];
 
     for (const incident of incidents) {
       allIncidents.push({
         id: incident.id,
         number: incident.number,
-        summary: incident.summary,
+        summary: undefined,
         description: incident.description,
         severity: incident.severity,
         state: incident.state,

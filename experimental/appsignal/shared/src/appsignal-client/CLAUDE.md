@@ -16,6 +16,9 @@ The manual tests verify that our GraphQL queries and API interactions work corre
 ## Running Manual Tests
 
 ```bash
+# Ensure you're using the correct Node version
+nvm use
+
 # From the experimental/appsignal directory
 cd ../..  # Go to appsignal root
 
@@ -40,9 +43,11 @@ When modifying any of these files, manual tests are mandatory:
 
 ## Known API Limitations
 
-- **No direct app queries** - Must use `viewer.organizations.apps` structure
+- **No direct app queries** - Must use `viewer.organizations.apps` structure, not `app(id:)`
 - **Attributes field causes 500 errors** - This field has been removed from all queries
 - **No incident listing endpoint** - Can only fetch incidents by ID
+- **Paginated responses use "rows" not "incidents"** - Fields like `paginatedExceptionIncidents` return data in a `rows` array, not `incidents`
+- **Summary field causes 500 errors** - The `summary` field on anomaly and log incidents causes server errors and must be omitted
 
 ## Pre-Merge Checklist
 
