@@ -157,7 +157,6 @@ describe('Dynamic Tool Naming Integration Tests', () => {
     expect(incident.id).toBe('test-incident');
   });
 
-
   it('should show combined appId and isLocked in resources', async () => {
     // Create a mock AppSignal client
     const mockAppSignalClient = createIntegrationMockAppsignalClient({});
