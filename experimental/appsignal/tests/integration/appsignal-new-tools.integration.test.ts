@@ -2,6 +2,7 @@ import { describe, it, expect, afterEach } from 'vitest';
 import { TestMCPClient } from '../../../../test-mcp-client/dist/index.js';
 import { createIntegrationMockAppsignalClient } from '../../shared/src/appsignal-client/appsignal-client.integration-mock.js';
 import type { IAppsignalClient } from '../../shared/src/appsignal-client/appsignal-client.js';
+import type { MockData } from '../../shared/src/appsignal-client/appsignal-client.integration-mock.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -269,7 +270,7 @@ describe('AppSignal MCP Server New Tools Integration', () => {
  * This demonstrates how we're mocking the AppSignal API calls, not the MCP client.
  */
 async function createTestMCPClientWithMock(
-  mockAppSignalClient: IAppsignalClient & { mockData?: any }
+  mockAppSignalClient: IAppsignalClient & { mockData?: MockData }
 ): Promise<TestMCPClient> {
   // We need to pass the mock to the server somehow.
   // Since we can't inject it directly, we'll use environment variables
