@@ -15,8 +15,8 @@ You can have confidence that any Pulse-branded MCP server was built with these i
 
 ## Repository Structure
 
-- **`productionized/`**: Production-ready MCP servers (see [productionized/README.md](./productionized/README.md))
-- **`experimental/`**: MCP servers in active development (see [experimental/README.md](./experimental/README.md))
+- **`productionized/`**: PulseMCP-branded servers we maintain indefinitely (see [productionized/README.md](./productionized/README.md))
+- **`experimental/`**: High-quality servers that may be discontinued if official providers offer better alternatives (see [experimental/README.md](./experimental/README.md))
 - **`mcp-server-template/`**: Template for creating new MCP servers
 - **`mcp-json-profiles/`**: JSON profiles for MCP configuration
 
