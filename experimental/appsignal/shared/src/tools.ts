@@ -1,4 +1,4 @@
-import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { McpServer, RegisteredTool } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { getAppsTool } from './tools/get-apps.js';
 import { selectAppIdTool } from './tools/select-app-id.js';
 import { getExceptionIncidentTool } from './tools/get-exception-incident.js';
@@ -13,12 +13,6 @@ import { IAppsignalClient } from './appsignal-client/appsignal-client.js';
 
 export type ClientFactory = () => IAppsignalClient;
 
-// Type for MCP tool registration result
-interface McpToolHandle {
-  enable: () => void;
-  disable: () => void;
-}
-
 export function createRegisterTools(clientFactory: ClientFactory) {
   return function registerTools(server: McpServer) {
     // Check for required environment variables
@@ -31,14 +25,14 @@ export function createRegisterTools(clientFactory: ClientFactory) {
 
     // Store references to main tools
     const mainTools: {
-      getExceptionIncident?: McpToolHandle;
-      getExceptionIncidentSample?: McpToolHandle;
-      getLogIncident?: McpToolHandle;
-      searchLogs?: McpToolHandle;
-      getAnomalyIncident?: McpToolHandle;
-      getLogIncidents?: McpToolHandle;
-      getExceptionIncidents?: McpToolHandle;
-      getAnomalyIncidents?: McpToolHandle;
+      getExceptionIncident?: RegisteredTool;
+      getExceptionIncidentSample?: RegisteredTool;
+      getLogIncident?: RegisteredTool;
+      searchLogs?: RegisteredTool;
+      getAnomalyIncident?: RegisteredTool;
+      getLogIncidents?: RegisteredTool;
+      getExceptionIncidents?: RegisteredTool;
+      getAnomalyIncidents?: RegisteredTool;
     } = {};
 
     // Enable function for selectAppId to call

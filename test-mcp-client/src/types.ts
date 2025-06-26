@@ -5,11 +5,11 @@ export interface TestMCPClientOptions {
   debug?: boolean;
 }
 
-export interface ToolCallResult<T = any> {
+export interface ToolCallResult<T = unknown> {
   content: T[];
   isError?: boolean;
 }
 
-export interface ResourceReadResult<T = any> {
+export interface ResourceReadResult<T = unknown> {
   contents: T[];
 }

@@ -4,7 +4,7 @@ import { zodToJsonSchema } from 'zod-to-json-schema';
 /**
  * Create a JSON schema from a Zod schema with standard options
  */
-export function createInputSchema<T>(schema: z.ZodType<T>): any {
+export function createInputSchema<T>(schema: z.ZodType<T>): unknown {
   return zodToJsonSchema(schema, {
     target: 'openApi3',
   });

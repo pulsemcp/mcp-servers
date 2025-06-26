@@ -12,4 +12,4 @@ end tell
 EOF
 
 # Run Claude Code
-exec /Users/admin/.claude/local/claude --dangerously-skip-permissions
+exec claude --dangerously-skip-permissions

@@ -60,9 +60,9 @@ export class TestMCPClient {
     return await this.client.listTools();
   }
 
-  async callTool<T = any>(
+  async callTool<T = unknown>(
     name: string,
-    args: Record<string, any> = {}
+    args: Record<string, unknown> = {}
   ): Promise<ToolCallResult<T>> {
     this.ensureConnected();
 
@@ -82,7 +82,7 @@ export class TestMCPClient {
     return await this.client.listResources();
   }
 
-  async readResource<T = any>(uri: string): Promise<ResourceReadResult<T>> {
+  async readResource<T = unknown>(uri: string): Promise<ResourceReadResult<T>> {
     this.ensureConnected();
 
     const result = await this.client.readResource({
