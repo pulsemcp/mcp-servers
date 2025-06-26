@@ -40,12 +40,21 @@ mcp-server-template/
 ├── local/                      # Local server implementation
 │   ├── src/
 │   │   ├── index.ts           # Main entry point
-│   │   └── index.integration.ts # Integration test entry
+│   │   └── index.integration-with-mock.ts # Integration test entry
 │   └── package.json
 ├── shared/                     # Shared business logic
 │   ├── src/
 │   │   ├── server.ts          # Server factory with DI
-│   │   ├── tools.ts           # Tool implementations
+│   │   ├── tools.ts           # Tool registration
+│   │   ├── tools/             # Individual tool implementations
+│   │   │   └── example-tool.ts
+│   │   ├── example-client/    # External API client (NOT MCP client!)
+│   │   │   ├── CLAUDE.md      # Client documentation
+│   │   │   ├── example-client.ts
+│   │   │   ├── example-client.integration-mock.ts
+│   │   │   └── lib/           # Modular API methods
+│   │   │       ├── get-item.ts
+│   │   │       └── search-items.ts
 │   │   ├── resources.ts       # Resource implementations
 │   │   └── types.ts           # Shared TypeScript types
 │   └── package.json
@@ -76,8 +85,18 @@ Full testing setup with Vitest:
 
 - Functional tests for isolated unit testing
 - Integration tests using TestMCPClient
+- Manual tests for real API validation
 - Mock patterns for external dependencies
 - Separate test configurations for different test types
+
+#### Integration Mock Entry Point
+
+The template includes `index.integration-with-mock.ts` which:
+
+- Allows integration tests to inject mock data via environment variables
+- Uses the real MCP server with mocked external dependencies
+- Demonstrates clear separation between MCP protocol and external API mocking
+- Enables testing various scenarios without hitting real APIs
 
 ### Development Scripts
 
@@ -91,17 +110,47 @@ Full testing setup with Vitest:
 
 ### Adding Tools
 
-1. Define tool schema in `shared/src/tools.ts`
-2. Add to tools list in `ListToolsRequestSchema` handler
-3. Implement handler logic in `CallToolRequestSchema` handler
-4. Use dependency injection to access external clients
+The template uses a modular tool pattern where each tool is defined in its own file:
+
+1. Create a new file in `shared/src/tools/` (e.g., `my-tool.ts`)
+2. Define the tool using the factory pattern:
+   ```typescript
+   export function myTool(server: Server, clientFactory: () => IClient) {
+     return {
+       name: 'my_tool',
+       description: 'Tool description',
+       inputSchema: {
+         /* JSON Schema */
+       },
+       handler: async (args: unknown) => {
+         /* implementation */
+       },
+     };
+   }
+   ```
+3. Add the tool to the tools array in `shared/src/tools.ts`
+4. Use Zod for input validation within the handler
+5. Access external APIs via the injected client factory
 
 ### Adding External API Clients
 
-1. Define interface in `shared/src/server.ts`
-2. Implement concrete class
-3. Update factory to instantiate client
-4. Use via dependency injection in tools
+The template uses a modular client pattern with a lib subdirectory for external API clients (e.g., REST APIs, GraphQL, databases - NOT MCP clients):
+
+1. Define the interface in `shared/src/server.ts`
+2. Create client directory structure:
+   ```
+   shared/src/your-client/
+   ├── CLAUDE.md                    # Client-specific documentation
+   ├── your-client.ts               # Interface exports
+   ├── your-client.integration-mock.ts  # Integration test mock
+   └── lib/                         # Individual API methods
+       ├── method-one.ts
+       └── method-two.ts
+   ```
+3. Implement each API method in its own file under `lib/`
+4. Create the concrete client class that delegates to lib methods
+5. Update the factory in server.ts to instantiate the client
+6. Use via dependency injection in tools
 
 ### Writing Tests
 

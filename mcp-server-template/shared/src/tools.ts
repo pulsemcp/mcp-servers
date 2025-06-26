@@ -1,34 +1,35 @@
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { ListToolsRequestSchema, CallToolRequestSchema } from '@modelcontextprotocol/sdk/types.js';
-import { z } from 'zod';
 import { ClientFactory } from './server.js';
+import { exampleTool } from './tools/example-tool.js';
 
-// Example tool schema
-const ExampleToolSchema = z.object({
-  message: z.string().describe('The message to process'),
-});
-
-export function createRegisterTools(_clientFactory: ClientFactory) {
+/**
+ * Creates a function to register all tools with the server.
+ * This pattern uses individual tool files for better modularity and testability.
+ *
+ * Each tool is defined in its own file under the `tools/` directory and follows
+ * a factory pattern that accepts the server and clientFactory as parameters.
+ *
+ * @param clientFactory - Factory function that creates client instances
+ * @returns Function that registers all tools with a server
+ */
+export function createRegisterTools(clientFactory: ClientFactory) {
   return (server: Server) => {
+    // Create tool instances
+    const tools = [
+      exampleTool(server, clientFactory),
+      // Add more tools here as you create them:
+      // anotherTool(server, clientFactory),
+    ];
+
     // List available tools
     server.setRequestHandler(ListToolsRequestSchema, async () => {
       return {
-        tools: [
-          {
-            name: 'example_tool',
-            description: 'An example tool that processes a message',
-            inputSchema: {
-              type: 'object',
-              properties: {
-                message: {
-                  type: 'string',
-                  description: 'The message to process',
-                },
-              },
-              required: ['message'],
-            },
-          },
-        ],
+        tools: tools.map((tool) => ({
+          name: tool.name,
+          description: tool.description,
+          inputSchema: tool.inputSchema,
+        })),
       };
     });
 
@@ -36,25 +37,12 @@ export function createRegisterTools(_clientFactory: ClientFactory) {
     server.setRequestHandler(CallToolRequestSchema, async (request) => {
       const { name, arguments: args } = request.params;
 
-      if (name === 'example_tool') {
-        const validatedArgs = ExampleToolSchema.parse(args);
-
-        // Get client instance for this request
-        // const client = _clientFactory();
-        // Example: Use the client if needed
-        // const result = await client.someMethod(validatedArgs.message);
-
-        return {
-          content: [
-            {
-              type: 'text',
-              text: `Processed message: ${validatedArgs.message}`,
-            },
-          ],
-        };
+      const tool = tools.find((t) => t.name === name);
+      if (!tool) {
+        throw new Error(`Unknown tool: ${name}`);
       }
 
-      throw new Error(`Unknown tool: ${name}`);
+      return await tool.handler(args);
     });
   };
 }

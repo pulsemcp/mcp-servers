@@ -9,7 +9,9 @@
  */
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { createMCPServer } from 'mcp-server-NAME-shared';
-import { createIntegrationMockExampleClient } from 'mcp-server-NAME-shared/dist/example-client/example-client.integration-mock.js';
+// Import the mock client factory from the shared module
+// Note: This import path assumes the shared module is built and the integration mock is exported
+import { createIntegrationMockExampleClient } from '../../shared/src/example-client/example-client.integration-mock.js';
 
 async function main() {
   const transport = new StdioServerTransport();

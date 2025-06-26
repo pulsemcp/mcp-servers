@@ -177,6 +177,8 @@ Update `shared/src/resources.ts` to add new resources following the existing pat
 
 ### Using External APIs
 
+**Note**: This section is about clients for external APIs (REST, GraphQL, databases, etc.), NOT MCP clients.
+
 1. **Define client interface in `shared/src/server.ts`**
 
    ```typescript

@@ -19,6 +19,7 @@
     "test:run": "vitest run",
     "test:integration": "npm run build:test && vitest run -c vitest.config.integration.ts && npm run clean",
     "test:integration:watch": "vitest -c vitest.config.integration.ts",
+    "test:manual": "vitest run -c vitest.config.manual.ts",
     "test:all": "npm run test:run && npm run test:integration",
     "lint": "eslint . --ext .ts,.tsx",
     "lint:fix": "eslint . --ext .ts,.tsx --fix",
@@ -32,6 +33,7 @@
   "devDependencies": {
     "@types/node": "^24.0.0",
     "@vitest/ui": "^3.2.3",
+    "dotenv": "^16.4.5",
     "vitest": "^3.2.3"
   }
 }

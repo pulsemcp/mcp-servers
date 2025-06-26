@@ -2,18 +2,35 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { registerResources } from './resources.js';
 import { createRegisterTools } from './tools.js';
 
-// Example client interface - replace with your actual client
-// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+// Example external API client interface - replace with your actual external API client
+// This is for external services (REST APIs, databases, etc.) - NOT for MCP clients!
 export interface IExampleClient {
-  // Define your client methods here
-  // Example: getData(id: string): Promise<unknown>;
+  // Define your external API client methods here
+  getItem(itemId: string): Promise<{ id: string; name: string; value: string }>;
+  searchItems(
+    query: string,
+    options?: { limit?: number; offset?: number; sortBy?: 'name' | 'created' | 'updated' }
+  ): Promise<Array<{ id: string; name: string; score: number }>>;
 }
 
-// Example client implementation - replace with your actual implementation
+// Example external API client implementation - replace with your actual implementation
 export class ExampleClient implements IExampleClient {
   constructor(private apiKey: string) {}
 
-  // Implement your client methods here
+  async getItem(itemId: string): Promise<{ id: string; name: string; value: string }> {
+    // Import from lib/ for better organization
+    const { getItem } = await import('./example-client/lib/get-item.js');
+    return getItem(this.apiKey, itemId);
+  }
+
+  async searchItems(
+    query: string,
+    options?: { limit?: number; offset?: number; sortBy?: 'name' | 'created' | 'updated' }
+  ): Promise<Array<{ id: string; name: string; score: number }>> {
+    // Import from lib/ for better organization
+    const { searchItems } = await import('./example-client/lib/search-items.js');
+    return searchItems(this.apiKey, query, options);
+  }
 }
 
 export type ClientFactory = () => IExampleClient;
