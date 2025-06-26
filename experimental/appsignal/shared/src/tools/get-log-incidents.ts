@@ -80,7 +80,12 @@ Use cases:
 
       try {
         const client = clientFactory();
-        const result = await client.getLogIncidents(states, limit, offset);
+        // Handle undefined parameters properly to trigger default values
+        const actualStates = states ?? ['OPEN'];
+        const actualLimit = limit ?? 50;
+        const actualOffset = offset ?? 0;
+        
+        const result = await client.getLogIncidents(actualStates, actualLimit, actualOffset);
 
         return {
           content: [

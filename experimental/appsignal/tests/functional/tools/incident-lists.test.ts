@@ -241,7 +241,7 @@ describe('Incident List Tools', () => {
       const tool = registeredTools.get('get_exception_incidents');
       const result = await tool.handler({ limit: 20, offset: 100 });
 
-      expect(mockClient.getExceptionIncidents).toHaveBeenCalledWith(undefined, 20, 100);
+      expect(mockClient.getExceptionIncidents).toHaveBeenCalledWith(['OPEN'], 20, 100);
       const response = JSON.parse(result.content[0].text);
       expect(response.hasMore).toBe(true);
       expect(response.total).toBe(200);
@@ -258,6 +258,90 @@ describe('Incident List Tools', () => {
 
       expect(result.content[0].text).toContain(
         'Error fetching exception incidents: API rate limit exceeded'
+      );
+    });
+  });
+
+  describe('get_anomaly_incidents', () => {
+    it('should fetch anomaly incidents list successfully', async () => {
+      const mockResult = {
+        incidents: [
+          {
+            id: 'anomaly-1',
+            number: 201,
+            description: 'High CPU usage spike',
+            state: 'open',
+            count: 8,
+            createdAt: '2023-12-01T11:00:00Z',
+            lastOccurredAt: '2023-12-01T11:30:00Z',
+            trigger: {
+              id: 'cpu-trigger',
+              name: 'CPU Usage Monitor',
+              description: 'Monitors high CPU usage',
+            },
+            tags: [
+              { key: 'server', value: 'web-server-01' },
+              { key: 'severity', value: 'critical' },
+            ],
+          },
+        ],
+        total: 1,
+        hasMore: false,
+      };
+
+      mockClient.getAnomalyIncidents = vi.fn().mockResolvedValue(mockResult);
+
+      registerToolsWithClient(mockClient);
+      const tool = registeredTools.get('get_anomaly_incidents');
+      const result = await tool.handler({ states: ['OPEN'], limit: 50, offset: 0 });
+
+      expect(mockClient.getAnomalyIncidents).toHaveBeenCalledWith(['OPEN'], 50, 0);
+      const response = JSON.parse(result.content[0].text);
+      expect(response).toEqual(mockResult);
+    });
+
+    it('should use default parameters when none provided', async () => {
+      const mockResult = {
+        incidents: [
+          {
+            id: 'anomaly-2',
+            number: 202,
+            description: 'Memory usage anomaly',
+            state: 'open',
+            count: 3,
+            createdAt: '2023-12-01T12:00:00Z',
+            lastOccurredAt: '2023-12-01T12:15:00Z',
+          },
+        ],
+        total: 1,
+        hasMore: false,
+      };
+
+      mockClient.getAnomalyIncidents = vi.fn().mockResolvedValue(mockResult);
+
+      registerToolsWithClient(mockClient);
+      const tool = registeredTools.get('get_anomaly_incidents');
+      
+      // Call with empty parameters object - should use defaults
+      const result = await tool.handler({});
+
+      // Should be called with default values: states=['OPEN'], limit=50, offset=0
+      expect(mockClient.getAnomalyIncidents).toHaveBeenCalledWith(['OPEN'], 50, 0);
+      const response = JSON.parse(result.content[0].text);
+      expect(response).toEqual(mockResult);
+    });
+
+    it('should handle API errors', async () => {
+      mockClient.getAnomalyIncidents = vi
+        .fn()
+        .mockRejectedValue(new Error('Service temporarily unavailable'));
+
+      registerToolsWithClient(mockClient);
+      const tool = registeredTools.get('get_anomaly_incidents');
+      const result = await tool.handler({ states: ['OPEN'] });
+
+      expect(result.content[0].text).toContain(
+        'Error fetching anomaly incidents: Service temporarily unavailable'
       );
     });
   });
