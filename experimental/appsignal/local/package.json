@@ -12,6 +12,7 @@
     "dev:integration": "tsx src/index.integration-with-mock.ts",
     "predev": "cd ../shared && npm run build",
     "prebuild": "cd ../shared && npm run build",
+    "prepublishOnly": "node ../scripts/prepare-npm-readme.js",
     "stage-publish": "npm version"
   },
   "dependencies": {

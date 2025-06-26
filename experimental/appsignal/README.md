@@ -1,12 +1,4 @@
-<div align="center">
- <h1><img src="https://github.com/pulsemcp/mcp-servers/blob/main/appsignal/images/appsignal-mcp-logo.png" width="160px"><br/>AppSignal MCP Server</h1>
- <img src="https://img.shields.io/github/license/pulsemcp/mcp-servers?style=flat-square&color=purple"/>
- <img src="https://github.com/pulsemcp/mcp-servers/actions/workflows/appsignal-ci.yml/badge.svg" alt="CI Status"/>
-</div>
-
-<br/>
-
-<br/>
+# AppSignal MCP Server
 
 Haven't heard about MCP yet? The easiest way to keep up-to-date is to read our [weekly newsletter at PulseMCP](https://www.pulsemcp.com/).
 
