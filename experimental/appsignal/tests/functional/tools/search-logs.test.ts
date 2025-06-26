@@ -145,7 +145,7 @@ describe('search_logs Tool', () => {
     const response = JSON.parse(result.content[0].text);
     expect(response.lines).toHaveLength(1);
     expect(response.lines[0].message).toBe('Filtered error log');
-    expect(customClient.searchLogs).toHaveBeenCalledWith('*', 5, ['error', 'fatal']);
+    expect(customClient.searchLogs).toHaveBeenCalledWith('*', 5, ['error', 'fatal'], undefined, undefined);
   });
 
   it('should handle search errors gracefully', async () => {
@@ -190,5 +190,78 @@ describe('search_logs Tool', () => {
     const result = await tool.handler({ query: 'test' });
 
     expect(result.content[0].text).toContain('Error: No app ID configured');
+  });
+
+  it('should search logs with start and end time parameters', async () => {
+    vi.mocked(getSelectedAppId).mockReturnValue('test-app-id');
+
+    const customClient = createMockAppsignalClient();
+    customClient.searchLogs = vi
+      .fn()
+      .mockImplementation(async (query: string, limit?: number, severities?: string[], start?: string, end?: string) => {
+        // Verify the parameters are passed correctly
+        expect(start).toBe('2024-01-15T00:00:00Z');
+        expect(end).toBe('2024-01-15T23:59:59Z');
+        
+        return {
+          queryWindow: 86400, // 24 hours
+          lines: [
+            {
+              id: 'log-time-filtered-1',
+              timestamp: '2024-01-15T12:00:00Z',
+              severity: 'INFO',
+              message: 'Log within time range',
+              hostname: 'api-server-01',
+              group: 'api-service',
+              attributes: [{ key: 'timeFiltered', value: 'true' }],
+            },
+          ],
+          formattedSummary: 'Found 1 log entries within 86400s window.',
+        };
+      });
+
+    registerToolsWithClient(customClient);
+    const tool = registeredTools.get('search_logs');
+    const result = await tool.handler({
+      query: 'time range test',
+      limit: 10,
+      start: '2024-01-15T00:00:00Z',
+      end: '2024-01-15T23:59:59Z',
+    });
+
+    const response = JSON.parse(result.content[0].text);
+    expect(response.lines).toHaveLength(1);
+    expect(response.lines[0].message).toBe('Log within time range');
+    expect(customClient.searchLogs).toHaveBeenCalledWith('time range test', 10, undefined, '2024-01-15T00:00:00Z', '2024-01-15T23:59:59Z');
+  });
+
+  it('should search logs with only start time parameter', async () => {
+    vi.mocked(getSelectedAppId).mockReturnValue('test-app-id');
+
+    const customClient = createMockAppsignalClient();
+    customClient.searchLogs = vi
+      .fn()
+      .mockImplementation(async (query: string, limit?: number, severities?: string[], start?: string, end?: string) => {
+        expect(start).toBe('2024-01-15T00:00:00Z');
+        expect(end).toBeUndefined();
+        
+        return {
+          queryWindow: 3600,
+          lines: [],
+          formattedSummary: 'Found 0 log entries within 3600s window.',
+        };
+      });
+
+    registerToolsWithClient(customClient);
+    const tool = registeredTools.get('search_logs');
+    const result = await tool.handler({
+      query: 'start only test',
+      limit: 50,
+      start: '2024-01-15T00:00:00Z',
+    });
+
+    const response = JSON.parse(result.content[0].text);
+    expect(response.lines).toEqual([]);
+    expect(customClient.searchLogs).toHaveBeenCalledWith('start only test', 50, undefined, '2024-01-15T00:00:00Z', undefined);
   });
 });

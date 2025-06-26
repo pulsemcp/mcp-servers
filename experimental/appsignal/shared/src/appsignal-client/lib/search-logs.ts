@@ -42,20 +42,22 @@ export async function searchLogs(
   appId: string,
   query: string,
   limit = 100,
-  severities?: Array<'debug' | 'info' | 'warn' | 'error' | 'fatal'>
+  severities?: Array<'debug' | 'info' | 'warn' | 'error' | 'fatal'>,
+  start?: string,
+  end?: string
 ): Promise<LogSearchResult> {
   // NOTE: AppSignal GraphQL API limitation - we have to query all apps and filter
   // This can cause 500 errors with large datasets. Future improvement would be
   // to find a more targeted query approach if AppSignal adds support for it.
   const gqlQuery = gql`
-    query SearchLogs($query: String!, $limit: Int!, $severities: [SeverityEnum!]) {
+    query SearchLogs($query: String!, $limit: Int!, $severities: [SeverityEnum!], $start: String, $end: String) {
       viewer {
         organizations {
           apps {
             id
             logs {
               queryWindow
-              lines(query: $query, limit: $limit, severities: $severities) {
+              lines(query: $query, limit: $limit, severities: $severities, start: $start, end: $end) {
                 id
                 timestamp
                 message
@@ -77,6 +79,8 @@ export async function searchLogs(
     query,
     limit,
     severities: severityEnums,
+    start,
+    end,
   });
 
   // Find the app with the matching ID
