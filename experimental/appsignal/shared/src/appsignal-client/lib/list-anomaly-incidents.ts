@@ -11,7 +11,7 @@ interface GetAnomalyIncidentsResponse {
           rows: Array<{
             id: string;
             number: number;
-                description?: string;
+            description?: string;
             state?: string;
             count: number;
             createdAt?: string;
@@ -90,7 +90,9 @@ export async function getAnomalyIncidents(
     });
 
     // Find the app with matching ID
-    let targetApp: { paginatedAnomalyIncidents: any } | null = null;
+    let targetApp: {
+      paginatedAnomalyIncidents: { rows?: typeof incidents; total?: number };
+    } | null = null;
     for (const org of data.viewer.organizations) {
       const app = org.apps.find((a) => a.id === appId);
       if (app) {

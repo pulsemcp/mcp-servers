@@ -42,16 +42,17 @@ export async function getExceptionIncidents(
   offset = 0
 ): Promise<IncidentListResult<ExceptionIncident>> {
   const query = gql`
-    query GetExceptionIncidents(
-      $state: IncidentStateEnum
-      $limit: Int!
-      $offset: Int!
-    ) {
+    query GetExceptionIncidents($state: IncidentStateEnum, $limit: Int!, $offset: Int!) {
       viewer {
         organizations {
           apps {
             id
-            paginatedExceptionIncidents(state: $state, limit: $limit, offset: $offset, order: LAST) {
+            paginatedExceptionIncidents(
+              state: $state
+              limit: $limit
+              offset: $offset
+              order: LAST
+            ) {
               total
               rows {
                 id
@@ -89,7 +90,9 @@ export async function getExceptionIncidents(
     });
 
     // Find the app with matching ID
-    let targetApp: { paginatedExceptionIncidents: any } | null = null;
+    let targetApp: {
+      paginatedExceptionIncidents: { rows?: typeof incidents; total?: number };
+    } | null = null;
     for (const org of data.viewer.organizations) {
       const app = org.apps.find((a) => a.id === appId);
       if (app) {

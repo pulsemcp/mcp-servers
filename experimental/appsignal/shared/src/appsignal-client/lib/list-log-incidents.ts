@@ -12,7 +12,7 @@ interface GetLogIncidentsResponse {
           rows: Array<{
             id: string;
             number: number;
-                description?: string;
+            description?: string;
             severity?: string;
             state?: string;
             count: number;
@@ -89,7 +89,8 @@ export async function getLogIncidents(
     });
 
     // Find the app with matching ID
-    let targetApp: { paginatedLogIncidents: any } | null = null;
+    let targetApp: { paginatedLogIncidents: { rows?: typeof incidents; total?: number } } | null =
+      null;
     for (const org of data.viewer.organizations) {
       const app = org.apps.find((a) => a.id === appId);
       if (app) {
