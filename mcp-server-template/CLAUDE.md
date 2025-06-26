@@ -45,7 +45,9 @@ mcp-server-template/
 ├── shared/                     # Shared business logic
 │   ├── src/
 │   │   ├── server.ts          # Server factory with DI
-│   │   ├── tools.ts           # Tool implementations
+│   │   ├── tools.ts           # Tool registration
+│   │   ├── tools/             # Individual tool implementations
+│   │   │   └── example-tool.ts
 │   │   ├── resources.ts       # Resource implementations
 │   │   └── types.ts           # Shared TypeScript types
 │   └── package.json
@@ -91,10 +93,23 @@ Full testing setup with Vitest:
 
 ### Adding Tools
 
-1. Define tool schema in `shared/src/tools.ts`
-2. Add to tools list in `ListToolsRequestSchema` handler
-3. Implement handler logic in `CallToolRequestSchema` handler
-4. Use dependency injection to access external clients
+The template uses a modular tool pattern where each tool is defined in its own file:
+
+1. Create a new file in `shared/src/tools/` (e.g., `my-tool.ts`)
+2. Define the tool using the factory pattern:
+   ```typescript
+   export function myTool(server: Server, clientFactory: () => IClient) {
+     return {
+       name: 'my_tool',
+       description: 'Tool description',
+       inputSchema: { /* JSON Schema */ },
+       handler: async (args: unknown) => { /* implementation */ }
+     };
+   }
+   ```
+3. Add the tool to the tools array in `shared/src/tools.ts`
+4. Use Zod for input validation within the handler
+5. Access external APIs via the injected client factory
 
 ### Adding External API Clients
 
