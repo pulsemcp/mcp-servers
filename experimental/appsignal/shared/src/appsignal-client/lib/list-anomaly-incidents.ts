@@ -91,7 +91,7 @@ export async function getAnomalyIncidents(
 
     // Find the app with matching ID
     let targetApp: {
-      paginatedAnomalyIncidents: { rows?: typeof incidents; total?: number };
+      paginatedAnomalyIncidents: GetAnomalyIncidentsResponse['viewer']['organizations'][0]['apps'][0]['paginatedAnomalyIncidents'];
     } | null = null;
     for (const org of data.viewer.organizations) {
       const app = org.apps.find((a) => a.id === appId);

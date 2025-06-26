@@ -91,7 +91,7 @@ export async function getExceptionIncidents(
 
     // Find the app with matching ID
     let targetApp: {
-      paginatedExceptionIncidents: { rows?: typeof incidents; total?: number };
+      paginatedExceptionIncidents: GetExceptionIncidentsResponse['viewer']['organizations'][0]['apps'][0]['paginatedExceptionIncidents'];
     } | null = null;
     for (const org of data.viewer.organizations) {
       const app = org.apps.find((a) => a.id === appId);
