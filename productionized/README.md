@@ -1,9 +1,5 @@
 # Productionized MCP Servers
 
-This directory contains MCP servers that have reached production quality and are ready for deployment.
+This directory contains PulseMCP-branded servers that we intend to maintain indefinitely as our own offerings.
 
-## Status Overview
-
-| Name        | Description                          | Local Status | Remote Status | Version | Notes                                       |
-| ----------- | ------------------------------------ | ------------ | ------------- | ------- | ------------------------------------------- |
-| pulse-fetch | Pull internet resources into context | In Progress  | Not Started   | -       | Supports Firecrawl and Oxylabs integrations |
+For details on all productionized servers, see the [Productionized Servers section](../README.md#productionized-servers) in the main README.

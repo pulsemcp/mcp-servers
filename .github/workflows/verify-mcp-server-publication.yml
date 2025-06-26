@@ -6,6 +6,7 @@ on:
       - 'experimental/*/local/package.json'
       - 'productionized/*/local/package.json'
       - '*/local/package.json'
+      - 'README.md'
 
 jobs:
   verify-publications:
@@ -94,6 +95,37 @@ jobs:
             fi
             
             echo "✅ CHANGELOG.md contains entry for version $CURRENT_VERSION"
+            
+            # Check if README.md was updated with the new version
+            echo "Checking if README.md was updated..."
+            
+            # Determine if this is experimental or productionized
+            if [[ "$SERVER_DIR" == experimental/* ]]; then
+              TABLE_SECTION="Experimental Servers"
+            elif [[ "$SERVER_DIR" == productionized/* ]]; then
+              TABLE_SECTION="Productionized Servers"
+            else
+              echo "⚠️  WARNING: Could not determine server type (experimental/productionized)"
+              continue
+            fi
+            
+            # Check if the server appears in README.md with the current version
+            if grep -q "| $SERVER_NAME .*| $CURRENT_VERSION |" README.md; then
+              echo "✅ README.md contains entry for $SERVER_NAME with version $CURRENT_VERSION"
+            else
+              # Check if it's marked as "Not Yet Published"
+              if grep -q "| $SERVER_NAME .*| Not Yet Published |" README.md; then
+                echo "❌ ERROR: README.md still shows 'Not Yet Published' for $SERVER_NAME"
+                echo "   Please update README.md to show version $CURRENT_VERSION"
+                VERIFICATION_FAILED=true
+                continue
+              else
+                echo "❌ ERROR: README.md does not contain correct version for $SERVER_NAME"
+                echo "   Expected to find version $CURRENT_VERSION in the $TABLE_SECTION table"
+                VERIFICATION_FAILED=true
+                continue
+              fi
+            fi
             
             # Check for git tag
             EXPECTED_TAG="${PACKAGE_NAME}@${CURRENT_VERSION}"
