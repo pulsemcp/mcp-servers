@@ -40,7 +40,7 @@ mcp-server-template/
 ├── local/                      # Local server implementation
 │   ├── src/
 │   │   ├── index.ts           # Main entry point
-│   │   └── index.integration.ts # Integration test entry
+│   │   └── index.integration-with-mock.ts # Integration test entry
 │   └── package.json
 ├── shared/                     # Shared business logic
 │   ├── src/
@@ -85,8 +85,17 @@ Full testing setup with Vitest:
 
 - Functional tests for isolated unit testing
 - Integration tests using TestMCPClient
+- Manual tests for real API validation
 - Mock patterns for external dependencies
 - Separate test configurations for different test types
+
+#### Integration Mock Entry Point
+
+The template includes `index.integration-with-mock.ts` which:
+- Allows integration tests to inject mock data via environment variables
+- Uses the real MCP server with mocked external dependencies
+- Demonstrates clear separation between MCP protocol and external API mocking
+- Enables testing various scenarios without hitting real APIs
 
 ### Development Scripts
 
