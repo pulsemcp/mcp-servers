@@ -2,6 +2,8 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+Also review [CONTRIBUTING.md](./CONTRIBUTING.md) for context.
+
 ## Repository Overview
 
 This is a monorepo containing Model Context Protocol (MCP) servers built by PulseMCP. Each subfolder represents a standalone MCP server with its own functionality.
@@ -19,6 +21,15 @@ This is a monorepo containing Model Context Protocol (MCP) servers built by Puls
 - Main branch has CI/CD
 - Always include test coverage for changes
 - PRs should have concise titles and detailed descriptions
+
+### IMPORTANT: Git Branch Management
+
+**DO NOT** create new git branches or worktrees unless explicitly asked by the user. Always:
+
+- Stay on the current branch you're working on
+- Make all changes directly on the existing branch
+- Only switch branches or create new ones when specifically instructed
+- Avoid using `git checkout -b`, `git switch -c`, or `git worktree add` without explicit permission
 
 ### Post-Commit Linting
 

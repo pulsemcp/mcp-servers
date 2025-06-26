@@ -20,14 +20,18 @@ nvm use
 
 ### Installing Dependencies
 
+**Important**: Always install root dependencies first to set up git hooks and linting tools:
+
 ```bash
-# Install root dependencies (includes linting tools)
+# Step 1: Install root dependencies (REQUIRED - includes linting tools and git hooks)
 npm install
 
-# Install dependencies for specific servers
+# Step 2: Install dependencies for specific servers
 cd experimental/appsignal && npm run install-all
 cd productionized/pulse-fetch && npm install
 ```
+
+**Note**: If you see errors like `.husky/_/husky.sh: No such file or directory` when committing, it means you haven't run `npm install` in the root directory. This step is essential for setting up git hooks.
 
 ### Code Quality
 
