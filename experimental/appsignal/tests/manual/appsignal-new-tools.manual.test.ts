@@ -340,7 +340,7 @@ describe('AppSignal New Incident Tools - Manual Test', () => {
           logIncidentId = logData.incidents[0].id;
         }
       }
-    } catch (error) {
+    } catch {
       console.log('   ⚠️  Could not get incident IDs for testing');
     }
     

@@ -48,8 +48,8 @@ describe('Production App Bug Fixes - Manual Test', () => {
     const appsResult = await client.callTool('get_apps', {});
     const appsData = JSON.parse(appsResult.content[0].text);
     
-    const productionApp = appsData.apps.find((app: any) => app.id === PRODUCTION_APP_ID);
-    const developmentApp = appsData.apps.find((app: any) => app.id === DEVELOPMENT_APP_ID);
+    const productionApp = appsData.apps.find((app: { id: string; name: string; environment: string }) => app.id === PRODUCTION_APP_ID);
+    const developmentApp = appsData.apps.find((app: { id: string; name: string; environment: string }) => app.id === DEVELOPMENT_APP_ID);
     
     expect(productionApp).toBeDefined();
     expect(developmentApp).toBeDefined();
