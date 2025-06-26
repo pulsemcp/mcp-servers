@@ -54,7 +54,7 @@ describe('AppSignal MCP Server New Tools Integration', () => {
 
       // Call the MCP tool
       const result = await client.callTool('get_anomaly_incident', {
-        incidentId: 'cpu-spike',
+        incidentNumber: 'cpu-spike',
       });
 
       // Verify the result
@@ -81,7 +81,7 @@ describe('AppSignal MCP Server New Tools Integration', () => {
 
       // Call the MCP tool with the error-triggering ID
       const result = await client.callTool('get_anomaly_incident', {
-        incidentId: 'network-error',
+        incidentNumber: 'network-error',
       });
 
       // Verify error handling

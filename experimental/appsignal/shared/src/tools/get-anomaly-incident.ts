@@ -29,9 +29,9 @@ Use cases:
 - Understanding the scope and impact of detected anomalies
 - Tracking the resolution status of performance issues`,
     {
-      incidentId: z.string().describe('The unique identifier of the anomaly incident to retrieve'),
+      incidentNumber: z.string().describe('The unique number of the anomaly incident to retrieve'),
     },
-    async ({ incidentId }) => {
+    async ({ incidentNumber }) => {
       const appId = getEffectiveAppId();
       if (!appId) {
         return {
@@ -46,7 +46,7 @@ Use cases:
 
       try {
         const client = clientFactory();
-        const incident = await client.getAnomalyIncident(incidentId);
+        const incident = await client.getAnomalyIncident(incidentNumber);
 
         return {
           content: [

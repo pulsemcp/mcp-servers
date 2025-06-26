@@ -61,9 +61,11 @@ Use cases:
 - Checking if N+1 queries occurred in this specific sample
 - Understanding queue wait times vs actual processing time`,
     {
-      incidentId: z.string().describe('The ID of the performance incident to get a sample for'),
+      incidentNumber: z
+        .string()
+        .describe('The number of the performance incident to get a sample for'),
     },
-    async ({ incidentId }) => {
+    async ({ incidentNumber }) => {
       const appId = getEffectiveAppId();
       if (!appId) {
         return {
@@ -78,7 +80,7 @@ Use cases:
 
       try {
         const client = clientFactory();
-        const sample = await client.getPerformanceIncidentSample(incidentId);
+        const sample = await client.getPerformanceIncidentSample(incidentNumber);
 
         return {
           content: [

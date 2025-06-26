@@ -47,7 +47,7 @@ Use cases:
 - Investigating user-specific error conditions
 - Tracking error occurrences across different app versions`,
     {
-      incidentId: z.string().describe('The unique identifier of the exception incident'),
+      incidentNumber: z.string().describe('The unique number of the exception incident'),
       offset: z
         .number()
         .int()
@@ -55,7 +55,7 @@ Use cases:
         .default(0)
         .describe('Sample index to retrieve (0 for most recent, 1 for second most recent, etc.)'),
     },
-    async ({ incidentId, offset }) => {
+    async ({ incidentNumber, offset }) => {
       const appId = getEffectiveAppId();
       if (!appId) {
         return {
@@ -70,7 +70,7 @@ Use cases:
 
       try {
         const client = clientFactory();
-        const sample = await client.getExceptionIncidentSample(incidentId, offset);
+        const sample = await client.getExceptionIncidentSample(incidentNumber, offset);
 
         return {
           content: [

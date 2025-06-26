@@ -308,7 +308,7 @@ describe('AppSignal MCP Server - System Test', () => {
       const testIncidentId = `test-${Date.now()}-${Math.random().toString(36).substring(7)}`;
 
       const exceptionResult = await client.callTool('get_exception_incident', {
-        incidentId: testIncidentId,
+        incidentNumber: testIncidentId,
       });
 
       if (exceptionResult.content[0].text.includes('Error')) {
@@ -331,7 +331,7 @@ describe('AppSignal MCP Server - System Test', () => {
       const testIncidentId = `test-${Date.now()}-${Math.random().toString(36).substring(7)}`;
 
       const sampleResult = await client.callTool('get_exception_incident_sample', {
-        incidentId: testIncidentId,
+        incidentNumber: testIncidentId,
         offset: 0,
       });
 
@@ -351,7 +351,7 @@ describe('AppSignal MCP Server - System Test', () => {
       const testIncidentId = `test-${Date.now()}-${Math.random().toString(36).substring(7)}`;
 
       const logIncidentResult = await client.callTool('get_log_incident', {
-        incidentId: testIncidentId,
+        incidentNumber: testIncidentId,
       });
 
       if (logIncidentResult.content[0].text.includes('Error')) {

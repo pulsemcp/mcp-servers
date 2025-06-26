@@ -349,7 +349,7 @@ describe('AppSignal New Incident Tools - Manual Test', () => {
       try {
         console.log(`\n   Testing get_anomaly_incident with ID: ${anomalyIncidentId}`);
         const anomalyResult = await client.callTool('get_anomaly_incident', {
-          incidentId: anomalyIncidentId,
+          incidentNumber: anomalyIncidentId,
         });
 
         if (!anomalyResult.content[0].text.includes('Error')) {
@@ -375,7 +375,7 @@ describe('AppSignal New Incident Tools - Manual Test', () => {
       try {
         console.log(`\n   Testing get_exception_incident with ID: ${exceptionIncidentId}`);
         const exceptionResult = await client.callTool('get_exception_incident', {
-          incidentId: exceptionIncidentId,
+          incidentNumber: exceptionIncidentId,
         });
 
         if (!exceptionResult.content[0].text.includes('Error')) {
@@ -400,7 +400,7 @@ describe('AppSignal New Incident Tools - Manual Test', () => {
       try {
         console.log(`\n   Testing get_log_incident with ID: ${logIncidentId}`);
         const logResult = await client.callTool('get_log_incident', {
-          incidentId: logIncidentId,
+          incidentNumber: logIncidentId,
         });
 
         if (!logResult.content[0].text.includes('Error')) {

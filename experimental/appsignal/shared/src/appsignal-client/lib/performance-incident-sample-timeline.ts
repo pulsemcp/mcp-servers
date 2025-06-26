@@ -33,6 +33,7 @@ interface GetPerformanceIncidentSampleTimelineResponse {
         id: string;
         performanceIncidents: Array<{
           id: string;
+          number: string;
           sample: {
             id: string;
             timeline: TimelineEvent[];
@@ -46,7 +47,7 @@ interface GetPerformanceIncidentSampleTimelineResponse {
 export async function getPerformanceIncidentSampleTimeline(
   graphqlClient: GraphQLClient,
   appId: string,
-  incidentId: string
+  incidentNumber: string
 ): Promise<PerformanceIncidentSampleTimeline> {
   const query = gql`
     query GetPerformanceIncidentSampleTimeline {
@@ -56,6 +57,7 @@ export async function getPerformanceIncidentSampleTimeline(
             id
             performanceIncidents {
               id
+              number
               sample {
                 id
                 timeline {
@@ -94,7 +96,7 @@ export async function getPerformanceIncidentSampleTimeline(
   for (const org of data.viewer.organizations) {
     const app = org.apps.find((a) => a.id === appId);
     if (app) {
-      const incident = app.performanceIncidents.find((i) => i.id === incidentId);
+      const incident = app.performanceIncidents.find((i) => i.number === incidentNumber);
       if (incident && incident.sample) {
         sampleId = incident.sample.id;
         timeline = incident.sample.timeline || [];
@@ -104,7 +106,7 @@ export async function getPerformanceIncidentSampleTimeline(
   }
 
   if (!sampleId) {
-    throw new Error(`No sample found for performance incident ${incidentId}`);
+    throw new Error(`No sample found for performance incident with number ${incidentNumber}`);
   }
 
   return {

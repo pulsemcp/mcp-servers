@@ -40,11 +40,11 @@ Use cases:
 - Tracking which users are affected by specific errors
 - Monitoring the resolution status of known issues`,
     {
-      incidentId: z
+      incidentNumber: z
         .string()
-        .describe('The unique identifier of the exception incident to retrieve'),
+        .describe('The unique number of the exception incident to retrieve'),
     },
-    async ({ incidentId }) => {
+    async ({ incidentNumber }) => {
       const appId = getEffectiveAppId();
       if (!appId) {
         return {
@@ -59,7 +59,7 @@ Use cases:
 
       try {
         const client = clientFactory();
-        const incident = await client.getExceptionIncident(incidentId);
+        const incident = await client.getExceptionIncident(incidentNumber);
 
         return {
           content: [

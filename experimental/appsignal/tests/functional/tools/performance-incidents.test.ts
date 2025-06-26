@@ -234,7 +234,7 @@ describe('Performance Incident Tools', () => {
       registerToolsWithClient(customMockClient);
 
       const tool = registeredTools.get('get_performance_incident');
-      const result = await tool?.handler({ incidentId: 'perf-123' });
+      const result = await tool?.handler({ incidentNumber: 'perf-123' });
       const response = JSON.parse((result as ToolResult).content[0].text);
 
       expect(response).toEqual(mockIncident);
@@ -251,7 +251,7 @@ describe('Performance Incident Tools', () => {
       registerToolsWithClient(customMockClient);
 
       const tool = registeredTools.get('get_performance_incident');
-      const result = await tool?.handler({ incidentId: 'xyz' });
+      const result = await tool?.handler({ incidentNumber: 'xyz' });
 
       expect((result as ToolResult).content[0].text).toContain(
         'Error fetching performance incident: Performance incident xyz not found'
@@ -291,7 +291,7 @@ describe('Performance Incident Tools', () => {
       registerToolsWithClient(customMockClient);
 
       const tool = registeredTools.get('get_performance_incident_sample');
-      const result = await tool?.handler({ incidentId: 'perf-123' });
+      const result = await tool?.handler({ incidentNumber: 'perf-123' });
       const response = JSON.parse((result as ToolResult).content[0].text);
 
       expect(response).toEqual(mockSample);
@@ -349,7 +349,7 @@ describe('Performance Incident Tools', () => {
       registerToolsWithClient(customMockClient);
 
       const tool = registeredTools.get('get_performance_incident_sample_timeline');
-      const result = await tool?.handler({ incidentId: 'perf-123' });
+      const result = await tool?.handler({ incidentNumber: 'perf-123' });
       const response = JSON.parse((result as ToolResult).content[0].text);
 
       expect(response).toEqual(mockTimeline);

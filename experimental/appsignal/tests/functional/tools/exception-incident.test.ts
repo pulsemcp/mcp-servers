@@ -95,7 +95,7 @@ describe('Exception Incident Tools', () => {
 
       registerToolsWithClient(mockClient);
       const tool = registeredTools.get('get_exception_incident');
-      const result = await tool.handler({ incidentId: 'exception-123' });
+      const result = await tool.handler({ incidentNumber: 'exception-123' });
 
       expect(mockClient.getExceptionIncident).toHaveBeenCalledWith('exception-123');
       const response = JSON.parse(result.content[0].text);
@@ -109,7 +109,7 @@ describe('Exception Incident Tools', () => {
 
       registerToolsWithClient(mockClient);
       const tool = registeredTools.get('get_exception_incident');
-      const result = await tool.handler({ incidentId: 'exception-999' });
+      const result = await tool.handler({ incidentNumber: 'exception-999' });
 
       expect(result.content[0].text).toContain(
         'Error fetching exception incident details: Exception incident with ID exception-999 not found'
@@ -121,7 +121,7 @@ describe('Exception Incident Tools', () => {
 
       registerToolsWithClient(mockClient);
       const tool = registeredTools.get('get_exception_incident');
-      const result = await tool.handler({ incidentId: 'exception-123' });
+      const result = await tool.handler({ incidentNumber: 'exception-123' });
 
       expect(result.content[0].text).toContain(
         'Error fetching exception incident details: Network timeout'
@@ -149,7 +149,7 @@ describe('Exception Incident Tools', () => {
 
       registerToolsWithClient(mockClient);
       const tool = registeredTools.get('get_exception_incident_sample');
-      const result = await tool.handler({ incidentId: 'exception-123', offset: 0 });
+      const result = await tool.handler({ incidentNumber: 'exception-123', offset: 0 });
 
       expect(mockClient.getExceptionIncidentSample).toHaveBeenCalledWith('exception-123', 0);
       const response = JSON.parse(result.content[0].text);
@@ -171,7 +171,7 @@ describe('Exception Incident Tools', () => {
 
       registerToolsWithClient(mockClient);
       const tool = registeredTools.get('get_exception_incident_sample');
-      const result = await tool.handler({ incidentId: 'exception-123', offset: 2 });
+      const result = await tool.handler({ incidentNumber: 'exception-123', offset: 2 });
 
       expect(mockClient.getExceptionIncidentSample).toHaveBeenCalledWith('exception-123', 2);
       const response = JSON.parse(result.content[0].text);
@@ -187,7 +187,7 @@ describe('Exception Incident Tools', () => {
 
       registerToolsWithClient(mockClient);
       const tool = registeredTools.get('get_exception_incident_sample');
-      const result = await tool.handler({ incidentId: 'exception-123', offset: 10 });
+      const result = await tool.handler({ incidentNumber: 'exception-123', offset: 10 });
 
       expect(result.content[0].text).toContain(
         'Error fetching exception incident sample: No samples found for exception incident exception-123 at offset 10'
@@ -201,7 +201,7 @@ describe('Exception Incident Tools', () => {
 
       registerToolsWithClient(mockClient);
       const tool = registeredTools.get('get_exception_incident_sample');
-      const result = await tool.handler({ incidentId: 'exception-123', offset: 0 });
+      const result = await tool.handler({ incidentNumber: 'exception-123', offset: 0 });
 
       expect(result.content[0].text).toContain(
         'Error fetching exception incident sample: GraphQL request failed'

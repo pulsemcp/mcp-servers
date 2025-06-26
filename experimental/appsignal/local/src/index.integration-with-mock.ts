@@ -8,8 +8,8 @@
  * Mock data is passed via the APPSIGNAL_MOCK_DATA environment variable.
  */
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
-import { createMCPServer } from 'mcp-server-appsignal-shared';
-import { createIntegrationMockAppsignalClient } from 'mcp-server-appsignal-shared/dist/appsignal-client/appsignal-client.integration-mock.js';
+import { createMCPServer } from 'appsignal-mcp-server-shared';
+import { createIntegrationMockAppsignalClient } from 'appsignal-mcp-server-shared/dist/appsignal-client/appsignal-client.integration-mock.js';
 
 async function main() {
   const transport = new StdioServerTransport();

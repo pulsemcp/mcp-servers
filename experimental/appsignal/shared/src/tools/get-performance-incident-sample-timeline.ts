@@ -94,11 +94,11 @@ Use cases:
 - Finding unexpected database queries or external API calls
 - Analyzing memory allocation patterns`,
     {
-      incidentId: z
+      incidentNumber: z
         .string()
-        .describe('The ID of the performance incident to get the sample timeline for'),
+        .describe('The number of the performance incident to get the sample timeline for'),
     },
-    async ({ incidentId }) => {
+    async ({ incidentNumber }) => {
       const appId = getEffectiveAppId();
       if (!appId) {
         return {
@@ -113,7 +113,7 @@ Use cases:
 
       try {
         const client = clientFactory();
-        const timeline = await client.getPerformanceIncidentSampleTimeline(incidentId);
+        const timeline = await client.getPerformanceIncidentSampleTimeline(incidentNumber);
 
         return {
           content: [

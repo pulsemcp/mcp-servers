@@ -9,7 +9,7 @@ export type ClientFactory = () => IAppsignalClient;
 export function createMCPServer() {
   const server = new McpServer(
     {
-      name: 'mcp-server-appsignal',
+      name: 'appsignal-mcp-server',
       version: '0.1.0',
     },
     {

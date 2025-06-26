@@ -40,8 +40,8 @@ Use cases:
 - Tracking down intermittent issues captured in logs
 - Analyzing the impact of log incidents on different services
 - Monitoring the resolution status of identified log patterns`,
-    { incidentId: z.string().describe('The unique identifier of the log incident to retrieve') },
-    async ({ incidentId }) => {
+    { incidentNumber: z.string().describe('The unique number of the log incident to retrieve') },
+    async ({ incidentNumber }) => {
       const appId = getEffectiveAppId();
       if (!appId) {
         return {
@@ -56,7 +56,7 @@ Use cases:
 
       try {
         const client = clientFactory();
-        const incident = await client.getLogIncident(incidentId);
+        const incident = await client.getLogIncident(incidentNumber);
 
         return {
           content: [

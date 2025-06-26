@@ -106,42 +106,42 @@ describe('Production App Bug Fixes - Manual Test', () => {
 
     // Test anomaly incident
     if (anomalyData.incidents.length > 0) {
-      const incidentId = anomalyData.incidents[0].id;
-      console.log(`\n   Testing get_anomaly_incident with ID: ${incidentId}`);
+      const incidentNumber = anomalyData.incidents[0].id;
+      console.log(`\n   Testing get_anomaly_incident with ID: ${incidentNumber}`);
 
       const singleAnomalyResult = await client.callTool('get_anomaly_incident', {
-        incidentId: incidentId,
+        incidentNumber: incidentNumber,
       });
 
       expect(singleAnomalyResult.content[0].text).not.toContain('400');
       expect(singleAnomalyResult.content[0].text).not.toContain('Error');
 
       const singleAnomaly = JSON.parse(singleAnomalyResult.content[0].text);
-      expect(singleAnomaly.id).toBe(incidentId);
+      expect(singleAnomaly.id).toBe(incidentNumber);
       console.log('   ✅ Successfully retrieved anomaly incident without 400 error!');
     }
 
     // Test exception incident
     if (exceptionData.incidents.length > 0) {
-      const incidentId = exceptionData.incidents[0].id;
-      console.log(`\n   Testing get_exception_incident with ID: ${incidentId}`);
+      const incidentNumber = exceptionData.incidents[0].id;
+      console.log(`\n   Testing get_exception_incident with ID: ${incidentNumber}`);
 
       const singleExceptionResult = await client.callTool('get_exception_incident', {
-        incidentId: incidentId,
+        incidentNumber: incidentNumber,
       });
 
       expect(singleExceptionResult.content[0].text).not.toContain('400');
       expect(singleExceptionResult.content[0].text).not.toContain('Error');
 
       const singleException = JSON.parse(singleExceptionResult.content[0].text);
-      expect(singleException.id).toBe(incidentId);
+      expect(singleException.id).toBe(incidentNumber);
       console.log('   ✅ Successfully retrieved exception incident without 400 error!');
 
       // Test exception incident sample
-      console.log(`\n   Testing get_exception_incident_sample with ID: ${incidentId}`);
+      console.log(`\n   Testing get_exception_incident_sample with ID: ${incidentNumber}`);
 
       const sampleResult = await client.callTool('get_exception_incident_sample', {
-        incidentId: incidentId,
+        incidentNumber: incidentNumber,
         offset: 0,
       });
 
@@ -161,11 +161,11 @@ describe('Production App Bug Fixes - Manual Test', () => {
 
     // Test log incident
     if (logData.incidents.length > 0) {
-      const incidentId = logData.incidents[0].id;
-      console.log(`\n   Testing get_log_incident with ID: ${incidentId}`);
+      const incidentNumber = logData.incidents[0].id;
+      console.log(`\n   Testing get_log_incident with ID: ${incidentNumber}`);
 
       const singleLogResult = await client.callTool('get_log_incident', {
-        incidentId: incidentId,
+        incidentNumber: incidentNumber,
       });
 
       expect(singleLogResult.content[0].text).not.toContain('400');
@@ -174,7 +174,7 @@ describe('Production App Bug Fixes - Manual Test', () => {
       expect(singleLogResult.content[0].text).not.toContain('Error:');
 
       const singleLog = JSON.parse(singleLogResult.content[0].text);
-      expect(singleLog.id).toBe(incidentId);
+      expect(singleLog.id).toBe(incidentNumber);
       console.log('   ✅ Successfully retrieved log incident without 400 error!');
     }
 
@@ -263,7 +263,7 @@ describe('Production App Bug Fixes - Manual Test', () => {
       console.log(`\n🔍 Testing get_performance_incident for ID: ${firstIncident.id}`);
 
       const detailResult = await client.callTool('get_performance_incident', {
-        incidentId: firstIncident.id,
+        incidentNumber: firstIncident.id,
       });
 
       expect(detailResult.content[0].text).not.toContain('Error');

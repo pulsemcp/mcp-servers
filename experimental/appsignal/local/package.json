@@ -18,7 +18,7 @@
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.4",
     "dotenv": "^16.5.0",
-    "mcp-server-appsignal-shared": "file:../shared",
+    "appsignal-mcp-server-shared": "file:../shared",
     "zod": "^3.24.1"
   },
   "devDependencies": {

@@ -153,6 +153,6 @@ const client = await createTestMCPClientWithMock(mockAppSignalClient);
 
 // Call the MCP tool
 const result = await client.callTool('get_exception_incident', {
-  incidentId: 'payment-failure',
+  incidentNumber: 'payment-failure',
 });
 ```

@@ -151,7 +151,7 @@ describe('Dynamic Tool Naming Integration Tests', () => {
 
     // Test that we can now use one of the main tools
     const result = await client.callTool('get_exception_incident', {
-      incidentId: 'test-incident',
+      incidentNumber: 'test-incident',
     });
     const incident = JSON.parse(result.content[0].text);
     expect(incident.id).toBe('test-incident');

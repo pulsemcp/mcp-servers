@@ -256,9 +256,9 @@ describe('AppSignal Performance Tools - Manual Test', () => {
     }
   });
 
-  async function testPerformanceIncidentDetail(incidentId: string) {
+  async function testPerformanceIncidentDetail(incidentNumber: string) {
     try {
-      const result = await client.callTool('get_performance_incident', { incidentId });
+      const result = await client.callTool('get_performance_incident', { incidentNumber });
       const incident = JSON.parse(result.content[0].text);
 
       console.log('Performance incident details:');
@@ -273,9 +273,9 @@ describe('AppSignal Performance Tools - Manual Test', () => {
 
       // Try to get sample if available
       if (incident.hasSamplesInRetention) {
-        await testPerformanceIncidentSample(incidentId);
+        await testPerformanceIncidentSample(incidentNumber);
       } else {
-        outcome.warnings.push(`Incident ${incidentId} has no samples in retention`);
+        outcome.warnings.push(`Incident ${incidentNumber} has no samples in retention`);
         console.log('⚠️  No samples available for this incident');
       }
     } catch (error) {
@@ -284,11 +284,11 @@ describe('AppSignal Performance Tools - Manual Test', () => {
     }
   }
 
-  async function testPerformanceIncidentSample(incidentId: string) {
+  async function testPerformanceIncidentSample(incidentNumber: string) {
     try {
-      console.log(`\n🔍 Getting sample for incident ${incidentId}...`);
+      console.log(`\n🔍 Getting sample for incident ${incidentNumber}...`);
 
-      const result = await client.callTool('get_performance_incident_sample', { incidentId });
+      const result = await client.callTool('get_performance_incident_sample', { incidentNumber });
       const sample = JSON.parse(result.content[0].text);
 
       console.log('Performance sample details:');
@@ -315,19 +315,19 @@ describe('AppSignal Performance Tools - Manual Test', () => {
       }
 
       // Get timeline for this sample
-      await testPerformanceIncidentTimeline(incidentId);
+      await testPerformanceIncidentTimeline(incidentNumber);
     } catch (error) {
       outcome.errors.push(`Failed to get performance sample: ${error}`);
       console.error('❌ Error getting sample:', error);
     }
   }
 
-  async function testPerformanceIncidentTimeline(incidentId: string) {
+  async function testPerformanceIncidentTimeline(incidentNumber: string) {
     try {
-      console.log(`\n🔍 Getting timeline for incident ${incidentId}...`);
+      console.log(`\n🔍 Getting timeline for incident ${incidentNumber}...`);
 
       const result = await client.callTool('get_performance_incident_sample_timeline', {
-        incidentId,
+        incidentNumber,
       });
       const timeline = JSON.parse(result.content[0].text);
 
@@ -392,7 +392,7 @@ describe('AppSignal Performance Tools - Manual Test', () => {
       // Test non-existent incident
       console.log('Testing non-existent incident...');
       const result = await client.callTool('get_performance_incident', {
-        incidentId: 'non-existent-id-12345',
+        incidentNumber: 'non-existent-id-12345',
       });
 
       expect(result.content[0].text).toContain('Error');
@@ -401,7 +401,7 @@ describe('AppSignal Performance Tools - Manual Test', () => {
       // Test non-existent sample
       console.log('Testing non-existent sample...');
       const sampleResult = await client.callTool('get_performance_incident_sample', {
-        incidentId: 'non-existent-id-12345',
+        incidentNumber: 'non-existent-id-12345',
       });
 
       expect(sampleResult.content[0].text).toContain('Error');
