@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Resolved TypeScript 'any' type warnings in test files for better type safety
 - Handled exception incident sample API limitation to prevent errors when API doesn't support sample data
+- Fixed performance incidents API returning no results by switching to paginatedPerformanceIncidents query with proper state filtering
 
 ## [0.1.3] - 2025-06-26
 
