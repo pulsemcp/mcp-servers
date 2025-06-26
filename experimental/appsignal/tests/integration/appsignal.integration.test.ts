@@ -1,8 +1,14 @@
 import { describe, it, expect, afterEach } from 'vitest';
-import { createMockedClient } from './integration-test-helper.js';
 import { TestMCPClient } from '../../../../test-mcp-client/dist/index.js';
+import { createIntegrationMockAppsignalClient } from '../../shared/src/appsignal-client/appsignal-client.integration-mock.js';
+import type { IAppsignalClient } from '../../shared/src/appsignal-client/appsignal-client.js';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
-describe('AppSignal MCP Server Integration Tests', () => {
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+describe('AppSignal MCP Server Integration', () => {
   let client: TestMCPClient | null = null;
 
   afterEach(async () => {
@@ -12,10 +18,11 @@ describe('AppSignal MCP Server Integration Tests', () => {
     }
   });
 
-  it('should handle inline mocked exception incident response', async () => {
-    client = await createMockedClient({
-      exceptionIncidents: {
-        'payment-failure': {
+  it('should retrieve exception details (happy path)', async () => {
+    // Create a mock AppSignal client with custom mock data
+    const mockAppSignalClient = createIntegrationMockAppsignalClient({
+      exceptionIncidents: [
+        {
           id: 'payment-failure',
           name: 'PaymentGatewayException',
           message: 'Connection timeout to payment gateway',
@@ -23,169 +30,364 @@ describe('AppSignal MCP Server Integration Tests', () => {
           lastOccurredAt: '2024-01-21T09:00:00Z',
           status: 'open',
         },
-      },
+        {
+          id: 'auth-error',
+          name: 'AuthenticationException',
+          message: 'Invalid credentials',
+          count: 15,
+          lastOccurredAt: '2024-01-21T08:30:00Z',
+          status: 'open',
+        },
+      ],
     });
 
+    // Create TestMCPClient that will use our mocked AppSignal client
+    client = await createTestMCPClientWithMock(mockAppSignalClient);
+
+    // Call the MCP tool
     const result = await client.callTool('get_exception_incident', {
       incidentId: 'payment-failure',
     });
 
+    // Verify the result
     const incident = JSON.parse(result.content[0].text);
     expect(incident.id).toBe('payment-failure');
     expect(incident.status).toBe('open');
     expect(incident.name).toBe('PaymentGatewayException');
+    expect(incident.message).toBe('Connection timeout to payment gateway');
+    expect(incident.count).toBe(42);
   });
 
-  it('should handle inline mocked log incident response', async () => {
-    client = await createMockedClient({
-      logIncidents: {
-        'high-error-rate': {
-          id: 'high-error-rate',
-          name: 'High Error Rate in API',
-          severity: 'error',
-          count: 156,
-          lastOccurredAt: '2024-01-21T10:00:00Z',
+  it('should handle non-existent incident with error', async () => {
+    // Create a mock AppSignal client with specific incidents
+    const mockAppSignalClient = createIntegrationMockAppsignalClient({
+      exceptionIncidents: [
+        {
+          id: 'existing-incident',
+          name: 'ExistingException',
+          message: 'This exists',
+          count: 1,
+          lastOccurredAt: '2024-01-21T09:00:00Z',
           status: 'open',
-          query: 'level:error service:api',
         },
-      },
+      ],
     });
 
-    const result = await client.callTool('get_log_incident', {
-      incidentId: 'high-error-rate',
+    // Create TestMCPClient that will use our mocked AppSignal client
+    client = await createTestMCPClientWithMock(mockAppSignalClient);
+
+    // Call the MCP tool with non-existent ID
+    const result = await client.callTool('get_exception_incident', {
+      incidentId: 'non-existent-incident',
     });
 
-    const incident = JSON.parse(result.content[0].text);
-    expect(incident.id).toBe('high-error-rate');
-    expect(incident.severity).toBe('error');
-    expect(incident.count).toBe(156);
+    // Should return an error message
+    expect(result.content[0].text).toContain('Error fetching exception incident details');
+    expect(result.content[0].text).toContain('not found');
   });
 
-  it('should handle inline mocked search responses', async () => {
-    client = await createMockedClient({
-      searchResponses: {
-        'payment failed': [
-          {
-            timestamp: '2024-01-21T10:00:00Z',
-            level: 'error',
-            message: 'Payment failed: Invalid card',
-            metadata: { userId: 'user-123', amount: 99.99 },
-          },
-          {
-            timestamp: '2024-01-21T10:05:00Z',
-            level: 'error',
-            message: 'Payment failed: Insufficient funds',
-            metadata: { userId: 'user-456', amount: 150.0 },
-          },
-        ],
-        success: [
-          {
-            timestamp: '2024-01-21T11:00:00Z',
-            level: 'info',
-            message: 'Payment successful',
-            metadata: { userId: 'user-789', amount: 50.0 },
-          },
-        ],
-      },
-    });
-
-    // Test first search
-    const result1 = await client.callTool('search_logs', {
-      query: 'payment failed',
-      limit: 10,
-    });
-
-    const logs1 = JSON.parse(result1.content[0].text);
-    expect(logs1).toHaveLength(2);
-    expect(logs1[0].message).toContain('Invalid card');
-    expect(logs1[1].message).toContain('Insufficient funds');
-
-    // Test second search
-    const result2 = await client.callTool('search_logs', {
-      query: 'success',
-      limit: 10,
-    });
-
-    const logs2 = JSON.parse(result2.content[0].text);
-    expect(logs2).toHaveLength(1);
-    expect(logs2[0].message).toContain('Payment successful');
-  });
-
-  it('should handle exception incident samples', async () => {
-    client = await createMockedClient({
-      exceptionIncidentSamples: {
-        'null-pointer-123': [
+  it('should retrieve exception incident sample (happy path)', async () => {
+    // Create a mock AppSignal client with sample data
+    const mockAppSignalClient = createIntegrationMockAppsignalClient({
+      exceptionSamples: {
+        'payment-failure': [
           {
             id: 'sample-1',
             timestamp: '2024-01-21T09:00:00Z',
-            message: 'Cannot read property "id" of null',
+            message: 'Connection timeout to payment gateway',
             backtrace: [
-              'at getUserData (user-service.js:45:12)',
-              'at processRequest (api.js:123:8)',
+              '/app/src/payment/gateway.js:42 in processPayment',
+              '/app/src/controllers/checkout.js:15 in handleCheckout',
             ],
-            metadata: { userId: null, endpoint: '/api/user' },
+            action: 'CheckoutController#process',
+            namespace: 'web',
+            revision: 'abc123',
+            version: '1.2.3',
           },
           {
             id: 'sample-2',
             timestamp: '2024-01-21T09:05:00Z',
-            message: 'Cannot read property "id" of null',
+            message: 'Connection timeout to payment gateway',
             backtrace: [
-              'at getUserData (user-service.js:45:12)',
-              'at handleWebhook (webhook.js:67:15)',
+              '/app/src/payment/gateway.js:42 in processPayment',
+              '/app/src/controllers/checkout.js:15 in handleCheckout',
             ],
-            metadata: { source: 'webhook', userId: null },
+            action: 'CheckoutController#process',
+            namespace: 'web',
+            revision: 'abc124',
+            version: '1.2.3',
           },
         ],
       },
     });
 
-    const result = await client.callTool('get_exception_incident_samples', {
-      incidentId: 'null-pointer-123',
+    // Create TestMCPClient that will use our mocked AppSignal client
+    client = await createTestMCPClientWithMock(mockAppSignalClient);
+
+    // Call the MCP tool - get first sample
+    const result = await client.callTool('get_exception_incident_sample', {
+      incidentId: 'payment-failure',
+      offset: 0,
+    });
+
+    // Verify the result
+    const sample = JSON.parse(result.content[0].text);
+    expect(sample.id).toBe('sample-1');
+    expect(sample.timestamp).toBe('2024-01-21T09:00:00Z');
+    expect(sample.message).toBe('Connection timeout to payment gateway');
+    expect(sample.backtrace).toHaveLength(2);
+    expect(sample.action).toBe('CheckoutController#process');
+  });
+
+  it('should retrieve exception incident sample with offset', async () => {
+    // Create a mock AppSignal client with multiple samples
+    const mockAppSignalClient = createIntegrationMockAppsignalClient({
+      exceptionSamples: {
+        'payment-failure': [
+          {
+            id: 'sample-1',
+            timestamp: '2024-01-21T09:00:00Z',
+            message: 'First sample',
+            backtrace: [],
+            action: 'DefaultController#index',
+            namespace: 'web',
+            revision: '000000',
+            version: '1.0.0',
+          },
+          {
+            id: 'sample-2',
+            timestamp: '2024-01-21T09:05:00Z',
+            message: 'Second sample',
+            backtrace: [],
+            action: 'DefaultController#index',
+            namespace: 'web',
+            revision: '000000',
+            version: '1.0.0',
+          },
+          {
+            id: 'sample-3',
+            timestamp: '2024-01-21T09:10:00Z',
+            message: 'Third sample',
+            backtrace: [],
+            action: 'DefaultController#index',
+            namespace: 'web',
+            revision: '000000',
+            version: '1.0.0',
+          },
+        ],
+      },
+    });
+
+    // Create TestMCPClient that will use our mocked AppSignal client
+    client = await createTestMCPClientWithMock(mockAppSignalClient);
+
+    // Call the MCP tool - get third sample (offset 2)
+    const result = await client.callTool('get_exception_incident_sample', {
+      incidentId: 'payment-failure',
+      offset: 2,
+    });
+
+    // Verify the result
+    const sample = JSON.parse(result.content[0].text);
+    expect(sample.id).toBe('sample-3');
+    expect(sample.message).toBe('Third sample');
+  });
+
+  it('should handle no samples found at offset', async () => {
+    // Create a mock AppSignal client with only one sample
+    const mockAppSignalClient = createIntegrationMockAppsignalClient({
+      exceptionSamples: {
+        'payment-failure': [
+          {
+            id: 'sample-1',
+            timestamp: '2024-01-21T09:00:00Z',
+            message: 'Only sample',
+            backtrace: [],
+            action: 'DefaultController#index',
+            namespace: 'web',
+            revision: '000000',
+            version: '1.0.0',
+          },
+        ],
+      },
+    });
+
+    // Create TestMCPClient that will use our mocked AppSignal client
+    client = await createTestMCPClientWithMock(mockAppSignalClient);
+
+    // Call the MCP tool - try to get sample at offset 5
+    const result = await client.callTool('get_exception_incident_sample', {
+      incidentId: 'payment-failure',
+      offset: 5,
+    });
+
+    // Should return an error message
+    expect(result.content[0].text).toContain('Error fetching exception incident sample');
+    expect(result.content[0].text).toContain('No samples found');
+  });
+
+  it('should search logs with custom mock data', async () => {
+    // Create a mock AppSignal client with specific log search responses
+    const mockAppSignalClient = createIntegrationMockAppsignalClient({
+      searchResponses: {
+        'level:error service:api': [
+          {
+            id: 'log-1',
+            timestamp: '2024-01-15T10:00:00Z',
+            severity: 'ERROR',
+            message: 'Database connection failed',
+            hostname: 'api-server-01',
+            group: 'api-service',
+          },
+          {
+            id: 'log-2',
+            timestamp: '2024-01-15T10:05:00Z',
+            severity: 'ERROR',
+            message: 'Payment processing timeout',
+            hostname: 'api-server-02',
+            group: 'api-service',
+          },
+        ],
+      },
+    });
+
+    // Create TestMCPClient that will use our mocked AppSignal client
+    client = await createTestMCPClientWithMock(mockAppSignalClient);
+
+    // Call the MCP tool
+    const result = await client.callTool('search_logs', {
+      query: 'level:error service:api',
       limit: 10,
     });
 
-    const samples = JSON.parse(result.content[0].text);
-    expect(samples).toHaveLength(2);
-    expect(samples[0].message).toContain('Cannot read property');
-    expect(samples[0].backtrace).toHaveLength(2);
-    expect(samples[1].metadata.source).toBe('webhook');
+    // Verify the results
+    const response = JSON.parse(result.content[0].text);
+    expect(response.queryWindow).toBe(3600);
+    expect(response.lines).toHaveLength(2);
+    expect(response.lines[0].message).toBe('Database connection failed');
+    expect(response.lines[1].message).toBe('Payment processing timeout');
+    expect(response.formattedSummary).toContain('Found 2 log entries');
   });
 
-  it('should handle mixed inline mocks', async () => {
-    client = await createMockedClient({
-      exceptionIncidents: {
-        'mixed-test': {
-          id: 'mixed-test',
-          name: 'TestException',
-          message: 'Test exception message',
-          count: 1,
-          lastOccurredAt: '2024-01-21T12:00:00Z',
-          status: 'resolved',
+  it('should retrieve log incident details (happy path)', async () => {
+    // Create a mock AppSignal client with custom log incident data
+    const mockAppSignalClient = createIntegrationMockAppsignalClient({
+      logIncidents: {
+        'high-error-rate': {
+          id: 'high-error-rate',
+          number: 456,
+          summary: 'Critical Error Spike',
+          description: 'Multiple critical errors detected',
+          severity: 'FATAL',
+          state: 'OPEN',
+          count: 523,
+          createdAt: '2024-01-21T12:00:00Z',
+          lastOccurredAt: '2024-01-21T14:30:00Z',
+          updatedAt: '2024-01-21T14:30:00Z',
+          digests: ['digest1', 'digest2', 'digest3'],
+          trigger: {
+            id: 'trigger-456',
+            name: 'Critical Error Monitor',
+            description: 'Monitors critical errors',
+            query: 'level:error OR level:fatal',
+            severities: ['ERROR', 'FATAL'],
+            sourceIds: ['source1'],
+          },
         },
       },
-      searchResponses: {
-        'test query': [
-          {
-            timestamp: new Date().toISOString(),
-            level: 'debug',
-            message: 'Test log entry',
-          },
-        ],
+    });
+
+    // Create TestMCPClient that will use our mocked AppSignal client
+    client = await createTestMCPClientWithMock(mockAppSignalClient);
+
+    // Call the MCP tool
+    const result = await client.callTool('get_log_incident', {
+      incidentId: 'high-error-rate',
+    });
+
+    // Verify the result
+    const incident = JSON.parse(result.content[0].text);
+    expect(incident.id).toBe('high-error-rate');
+    expect(incident.number).toBe(456);
+    expect(incident.summary).toBe('Critical Error Spike');
+    expect(incident.severity).toBe('FATAL');
+    expect(incident.state).toBe('OPEN');
+    expect(incident.count).toBe(523);
+    expect(incident.trigger.query).toBe('level:error OR level:fatal');
+  });
+
+  it('should handle log incident error case', async () => {
+    // Create a mock AppSignal client that will simulate an error
+    const mockAppSignalClient = createIntegrationMockAppsignalClient({
+      // Configure to throw error for specific incident ID
+      errorScenarios: {
+        logIncident: {
+          'error-incident': new Error('Network timeout while fetching incident'),
+        },
       },
     });
 
-    // Test exception incident
-    const incidentResult = await client.callTool('get_exception_incident', {
-      incidentId: 'mixed-test',
-    });
-    const incident = JSON.parse(incidentResult.content[0].text);
-    expect(incident.status).toBe('resolved');
+    // Create TestMCPClient that will use our mocked AppSignal client
+    client = await createTestMCPClientWithMock(mockAppSignalClient);
 
-    // Test search
-    const searchResult = await client.callTool('search_logs', {
-      query: 'test query',
+    // Call the MCP tool with the error-triggering ID
+    const result = await client.callTool('get_log_incident', {
+      incidentId: 'error-incident',
     });
-    const logs = JSON.parse(searchResult.content[0].text);
-    expect(logs[0].level).toBe('debug');
+
+    // Verify error handling - the tool should return an error message
+    expect(result.content[0].text).toContain('Error fetching log incident details');
+  });
+
+  it('should search logs with severity filters and handle errors', async () => {
+    // Create a mock AppSignal client that will simulate an error for certain queries
+    const mockAppSignalClient = createIntegrationMockAppsignalClient({
+      errorScenarios: {
+        searchLogs: {
+          'timeout-query': new Error('Search query timed out'),
+        },
+      },
+    });
+
+    // Create TestMCPClient that will use our mocked AppSignal client
+    client = await createTestMCPClientWithMock(mockAppSignalClient);
+
+    // Call the MCP tool with error-triggering query
+    const result = await client.callTool('search_logs', {
+      query: 'timeout-query',
+      limit: 5,
+      severities: ['error', 'fatal'],
+    });
+
+    // Verify error handling - the tool should return an error message
+    expect(result.content[0].text).toContain('Error searching logs');
   });
 });
+
+/**
+ * Helper function to create a TestMCPClient with a mocked AppSignal client.
+ * This demonstrates how we're mocking the AppSignal API calls, not the MCP client.
+ */
+async function createTestMCPClientWithMock(
+  mockAppSignalClient: IAppsignalClient & { mockData?: unknown }
+): Promise<TestMCPClient> {
+  // We need to pass the mock to the server somehow.
+  // Since we can't inject it directly, we'll use environment variables
+  // to tell the server to use our mock data.
+  const mockData = mockAppSignalClient.mockData || {};
+
+  const serverPath = path.join(__dirname, '../../local/build/index.integration-with-mock.js');
+
+  const client = new TestMCPClient({
+    serverPath,
+    env: {
+      APPSIGNAL_API_KEY: 'test-api-key',
+      APPSIGNAL_APP_ID: 'test-app-id',
+      APPSIGNAL_MOCK_DATA: JSON.stringify(mockData),
+    },
+    debug: false,
+  });
+
+  await client.connect();
+  return client;
+}

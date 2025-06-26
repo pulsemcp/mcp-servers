@@ -49,6 +49,8 @@ npm run dev        # Development mode with auto-reload
 npm run lint       # Check for linting issues
 npm run lint:fix   # Auto-fix linting issues
 npm run format     # Format code with Prettier
+npm test           # Run tests (functional and/or integration)
+npm run test:manual # Run manual tests (if available - hits real APIs)
 ```
 
 ### Linting at Different Levels
@@ -76,6 +78,32 @@ cd productionized/pulse-fetch && npm run lint
 - **Core Dependencies**: `@modelcontextprotocol/sdk`, `zod`
 - **Build Tool**: TypeScript compiler (tsc)
 - **Dev Tool**: tsx for development mode
+- **Testing**: Vitest for unit, integration, and manual tests
+
+## Testing Strategy
+
+MCP servers may include up to three types of tests:
+
+1. **Functional Tests** - Unit tests with all dependencies mocked
+2. **Integration Tests** - Tests using TestMCPClient with mocked external APIs
+3. **Manual Tests** - Tests that hit real external APIs (not run in CI)
+
+Manual tests are particularly important when:
+
+- Modifying code that interacts with external APIs
+- Debugging issues that only appear with real API responses
+- Verifying that API integrations work correctly
+
+To run manual tests (when available):
+
+```bash
+# Set required environment variables (check specific server docs for exact names)
+export API_KEY="your-real-api-key"
+# Additional env vars may be optional or required depending on the server
+
+# Run manual tests
+npm run test:manual
+```
 
 ## Creating New Servers
 

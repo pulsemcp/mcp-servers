@@ -1,79 +1,63 @@
-// AppSignal API client interface
-export interface ExceptionIncident {
-  id: string;
-  name: string;
-  message: string;
-  count: number;
-  lastOccurredAt: string;
-  status: 'open' | 'resolved' | 'muted';
-}
+import { GraphQLClient } from 'graphql-request';
+import { getApps } from './lib/get-apps.js';
+import { getExceptionIncident, type ExceptionIncident } from './lib/exception-incident.js';
+import {
+  getExceptionIncidentSample,
+  type ExceptionIncidentSample,
+} from './lib/exception-incident-sample.js';
+import { getLogIncident, type LogIncident } from './lib/log-incident.js';
+import { searchLogs, type LogSearchResult } from './lib/search-logs.js';
 
-export interface ExceptionIncidentSample {
-  id: string;
-  timestamp: string;
-  message: string;
-  backtrace: string[];
-  metadata?: Record<string, unknown>;
-}
-
-export interface LogIncident {
-  id: string;
-  name: string;
-  severity: 'debug' | 'info' | 'warn' | 'error' | 'fatal';
-  count: number;
-  lastOccurredAt: string;
-  status: 'open' | 'resolved' | 'muted';
-  query?: string;
-}
-
-export interface LogEntry {
-  timestamp: string;
-  level: 'debug' | 'info' | 'warn' | 'error' | 'fatal';
-  message: string;
-  metadata?: Record<string, unknown>;
-}
+// Re-export interfaces for backward compatibility
+export type { ExceptionIncident, ExceptionIncidentSample, LogIncident, LogSearchResult };
 
 export interface IAppsignalClient {
+  getApps(): Promise<Array<{ id: string; name: string; environment: string }>>;
   getExceptionIncident(incidentId: string): Promise<ExceptionIncident>;
-  getExceptionIncidentSamples(
-    incidentId: string,
-    limit?: number
-  ): Promise<ExceptionIncidentSample[]>;
+  getExceptionIncidentSample(incidentId: string, offset?: number): Promise<ExceptionIncidentSample>;
   getLogIncident(incidentId: string): Promise<LogIncident>;
-  searchLogs(query: string, limit?: number, offset?: number): Promise<LogEntry[]>;
+  searchLogs(
+    query: string,
+    limit?: number,
+    severities?: Array<'debug' | 'info' | 'warn' | 'error' | 'fatal'>
+  ): Promise<LogSearchResult>;
 }
 
-// Stub implementation for now
+// Implementation using GraphQL API
 export class AppsignalClient implements IAppsignalClient {
+  private graphqlClient: GraphQLClient;
+
   constructor(
-    private readonly apiKey: string,
+    apiKey: string,
     private readonly appId: string
   ) {
-    // These will be used when implementing actual API calls
-    void this.apiKey;
-    void this.appId;
+    this.graphqlClient = new GraphQLClient(`https://appsignal.com/graphql?token=${apiKey}`);
   }
 
-  async getExceptionIncident(_incidentId: string): Promise<ExceptionIncident> {
-    // TODO: Implement actual API call using this.apiKey and this.appId
-    throw new Error('Not implemented');
+  async getApps(): Promise<Array<{ id: string; name: string; environment: string }>> {
+    return getApps(this.graphqlClient);
   }
 
-  async getExceptionIncidentSamples(
-    _incidentId: string,
-    _limit = 10
-  ): Promise<ExceptionIncidentSample[]> {
-    // TODO: Implement actual API call using this.apiKey and this.appId
-    throw new Error('Not implemented');
+  async getExceptionIncident(incidentId: string): Promise<ExceptionIncident> {
+    return getExceptionIncident(this.graphqlClient, this.appId, incidentId);
   }
 
-  async getLogIncident(_incidentId: string): Promise<LogIncident> {
-    // TODO: Implement actual API call using this.apiKey and this.appId
-    throw new Error('Not implemented');
+  async getExceptionIncidentSample(
+    incidentId: string,
+    offset = 0
+  ): Promise<ExceptionIncidentSample> {
+    return getExceptionIncidentSample(this.graphqlClient, this.appId, incidentId, offset);
   }
 
-  async searchLogs(_query: string, _limit = 100, _offset = 0): Promise<LogEntry[]> {
-    // TODO: Implement actual API call using this.apiKey and this.appId
-    throw new Error('Not implemented');
+  async getLogIncident(incidentId: string): Promise<LogIncident> {
+    return getLogIncident(this.graphqlClient, this.appId, incidentId);
+  }
+
+  async searchLogs(
+    query: string,
+    limit = 100,
+    severities?: Array<'debug' | 'info' | 'warn' | 'error' | 'fatal'>
+  ): Promise<LogSearchResult> {
+    return searchLogs(this.graphqlClient, this.appId, query, limit, severities);
   }
 }

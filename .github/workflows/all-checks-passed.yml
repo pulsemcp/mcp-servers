@@ -1,0 +1,130 @@
+name: All CI Checks
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  all-checks-passed:
+    name: All CI Checks Passed
+    runs-on: ubuntu-latest
+    permissions:
+      checks: read
+      pull-requests: read
+
+    steps:
+      - name: Wait for other checks and verify status
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+
+            // For pull requests, use the head SHA, not the merge commit SHA
+            const sha = context.eventName === 'pull_request' 
+              ? context.payload.pull_request.head.sha 
+              : context.sha;
+
+            console.log(`Event: ${context.eventName}`);
+            console.log(`SHA: ${sha}`);
+
+            // Wait a bit for other checks to start
+            console.log('Waiting 30 seconds for other checks to start...');
+            await new Promise(resolve => setTimeout(resolve, 30000));
+
+            // Configuration
+            const maxWaitTime = 10 * 60 * 1000; // 10 minutes
+            const checkInterval = 10 * 1000; // 10 seconds
+            const startTime = Date.now();
+
+            let allChecksPassed = false;
+            let allCompleted = false;
+            let statusMessage = '';
+
+            while (Date.now() - startTime < maxWaitTime) {
+              // Get all check runs for this commit
+              const checkRuns = await github.rest.checks.listForRef({
+                owner,
+                repo,
+                ref: sha,
+                per_page: 100
+              });
+              
+              // Filter to only the checks we care about (exclude this workflow)
+              const relevantChecks = checkRuns.data.check_runs.filter(run => 
+                run.name !== 'All CI Checks Passed' && 
+                run.app.slug === 'github-actions'
+              );
+              
+              // Group by name and get latest run
+              const latestRuns = {};
+              for (const run of relevantChecks) {
+                if (!latestRuns[run.name] || new Date(run.started_at) > new Date(latestRuns[run.name].started_at)) {
+                  latestRuns[run.name] = run;
+                }
+              }
+              
+              // Check status
+              allCompleted = true;
+              allChecksPassed = true;
+              statusMessage = '## CI Status Summary\n\n';
+              
+              const checkNames = Object.keys(latestRuns).sort();
+              
+              if (checkNames.length === 0) {
+                statusMessage += '⏳ Waiting for CI checks to start...\n';
+                allCompleted = false;
+                allChecksPassed = false;
+              } else {
+                for (const checkName of checkNames) {
+                  const run = latestRuns[checkName];
+                  if (run.status === 'completed') {
+                    if (run.conclusion === 'success') {
+                      statusMessage += `✅ **${checkName}**: Passed\n`;
+                    } else {
+                      statusMessage += `❌ **${checkName}**: ${run.conclusion}\n`;
+                      allChecksPassed = false;
+                    }
+                  } else {
+                    statusMessage += `⏳ **${checkName}**: ${run.status}\n`;
+                    allCompleted = false;
+                  }
+                }
+              }
+              
+              console.log(statusMessage);
+              
+              if (allCompleted) {
+                break;
+              }
+              
+              console.log(`Waiting for checks to complete... (${Math.round((Date.now() - startTime) / 1000)}s elapsed)`);
+              await new Promise(resolve => setTimeout(resolve, checkInterval));
+            }
+
+            // Get final count of checks
+            const finalCheckRuns = await github.rest.checks.listForRef({
+              owner,
+              repo,
+              ref: sha,
+              per_page: 100
+            });
+
+            const finalOtherChecks = finalCheckRuns.data.check_runs.filter(run => 
+              run.name !== 'All CI Checks Passed' && 
+              run.app.slug === 'github-actions'
+            );
+
+            if (finalOtherChecks.length === 0) {
+              // No other checks ran at all - this might be OK due to path filters
+              console.log('⚠️  No other CI checks ran for this commit');
+              console.log('This may be expected if no files matched workflow path filters');
+            } else if (!allChecksPassed) {
+              core.setFailed('Not all CI checks have passed');
+            } else if (!allCompleted) {
+              core.setFailed('Timeout waiting for checks to complete');
+            } else {
+              console.log('\n✅ All CI checks have passed!');
+            }

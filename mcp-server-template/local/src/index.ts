@@ -1,26 +1,13 @@
 #!/usr/bin/env node
-import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
-import { registerResources, registerTools } from 'mcp-server-NAME-shared';
+import { createMCPServer } from 'mcp-server-NAME-shared';
 
 async function main() {
-  // Initialize server
-  const server = new Server(
-    {
-      name: 'mcp-server-NAME',
-      version: '0.1.0',
-    },
-    {
-      capabilities: {
-        resources: {},
-        tools: {},
-      },
-    }
-  );
+  // Create server using factory
+  const { server, registerHandlers } = createMCPServer();
 
-  // Register resources and tools from shared module
-  registerResources(server);
-  registerTools(server);
+  // Register all handlers (resources and tools)
+  await registerHandlers(server);
 
   // Start server
   const transport = new StdioServerTransport();

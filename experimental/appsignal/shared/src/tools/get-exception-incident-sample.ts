@@ -3,22 +3,22 @@ import { z } from 'zod';
 import { getSelectedAppId } from '../state.js';
 import { IAppsignalClient } from '../appsignal-client/appsignal-client.js';
 
-export function getExceptionIncidentSamplesTool(
+export function getExceptionIncidentSampleTool(
   server: McpServer,
   clientFactory: () => IAppsignalClient
 ) {
   return server.tool(
-    'get_exception_incident_samples',
+    'get_exception_incident_sample',
     {
       incidentId: z.string().describe('The unique identifier of the exception incident'),
-      limit: z
+      offset: z
         .number()
         .int()
-        .positive()
-        .default(10)
-        .describe('Maximum number of samples to return'),
+        .min(0)
+        .default(0)
+        .describe('Offset to retrieve a specific sample (0 for first sample, 1 for second, etc.)'),
     },
-    async ({ incidentId, limit }) => {
+    async ({ incidentId, offset }) => {
       const appId = getSelectedAppId() || process.env.APPSIGNAL_APP_ID;
       if (!appId) {
         return {
@@ -33,13 +33,13 @@ export function getExceptionIncidentSamplesTool(
 
       try {
         const client = clientFactory();
-        const samples = await client.getExceptionIncidentSamples(incidentId, limit);
+        const sample = await client.getExceptionIncidentSample(incidentId, offset);
 
         return {
           content: [
             {
               type: 'text',
-              text: JSON.stringify(samples, null, 2),
+              text: JSON.stringify(sample, null, 2),
             },
           ],
         };
@@ -48,7 +48,7 @@ export function getExceptionIncidentSamplesTool(
           content: [
             {
               type: 'text',
-              text: `Error fetching exception incident samples: ${error instanceof Error ? error.message : 'Unknown error'}`,
+              text: `Error fetching exception incident sample: ${error instanceof Error ? error.message : 'Unknown error'}`,
             },
           ],
         };
