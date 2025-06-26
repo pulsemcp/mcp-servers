@@ -159,15 +159,7 @@ jobs:
                 # Extract the changelog section for this version
                 CHANGELOG_ENTRY=$(awk "/## \[$PACKAGE_VERSION\]/{flag=1; next} /## \[/{flag=0} flag" "$CHANGELOG_FILE")
                 
-                RELEASE_NOTES=$(cat <<EOF
-# $PACKAGE_NAME v$PACKAGE_VERSION
-
-$CHANGELOG_ENTRY
-
----
-Published to npm: https://www.npmjs.com/package/$PACKAGE_NAME
-EOF
-)
+                RELEASE_NOTES="# $PACKAGE_NAME v$PACKAGE_VERSION"$'\n\n'"$CHANGELOG_ENTRY"$'\n\n'"---"$'\n'"Published to npm: https://www.npmjs.com/package/$PACKAGE_NAME"
               else
                 RELEASE_NOTES="# $PACKAGE_NAME v$PACKAGE_VERSION
 
