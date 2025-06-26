@@ -95,7 +95,8 @@ describe('AppSignal Performance Tools - Manual Test', () => {
       console.log('\n🔍 Fetching available apps...');
 
       const appsResult = await client.callTool('get_apps', {});
-      const apps = JSON.parse(appsResult.content[0].text);
+      const response = JSON.parse(appsResult.content[0].text);
+      const apps = response.apps;
 
       console.log(`Found ${apps.length} apps`);
 
@@ -115,7 +116,7 @@ describe('AppSignal Performance Tools - Manual Test', () => {
       console.log(`\n🎯 Selecting app: ${firstApp.name} (${firstApp.id})`);
 
       const selectResult = await client.callTool('select_app_id', { appId: firstApp.id });
-      expect(selectResult.content[0].text).toContain('Selected app');
+      expect(selectResult.content[0].text).toContain('Successfully selected app');
 
       selectedAppId = firstApp.id;
       outcome.details.appSelected = true;
