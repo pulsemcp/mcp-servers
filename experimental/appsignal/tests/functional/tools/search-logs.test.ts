@@ -330,6 +330,6 @@ describe('search_logs Tool', () => {
     const response = JSON.parse(result.content[0].text);
     expect(response.lines).toHaveLength(1);
     // The empty array should be passed through, not converted to undefined
-    expect(customClient.searchLogs).toHaveBeenCalledWith('test', 10, []);
+    expect(customClient.searchLogs).toHaveBeenCalledWith('test', 10, [], undefined, undefined);
   });
 });
