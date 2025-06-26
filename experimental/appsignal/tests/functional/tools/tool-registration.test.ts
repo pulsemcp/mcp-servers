@@ -31,7 +31,7 @@ describe('Tool Registration', () => {
 
     // Reset mocks
     vi.clearAllMocks();
-    
+
     // Default mock implementations
     vi.mocked(isAppIdLocked).mockReturnValue(false);
     vi.mocked(getEffectiveAppId).mockReturnValue(undefined);

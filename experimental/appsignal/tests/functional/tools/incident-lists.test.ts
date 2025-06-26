@@ -40,7 +40,7 @@ describe('Incident List Tools', () => {
 
     // Reset mocks
     vi.clearAllMocks();
-    
+
     // Default mock implementations
     vi.mocked(isAppIdLocked).mockReturnValue(true);
     vi.mocked(getEffectiveAppId).mockReturnValue('test-app-id');
