@@ -27,6 +27,7 @@ export function toolNameTool(server: Server, clientFactory: () => IYourClient) {
 2. Define the input schema using Zod for validation
 3. Implement the factory function following the pattern above
 4. Add the tool to the tools array in `../tools.ts`
+5. **Follow the [Tool Descriptions Guide](./TOOL_DESCRIPTIONS_GUIDE.md)** for writing comprehensive, user-friendly tool descriptions
 
 ## Example
 

@@ -6,18 +6,71 @@ import { IAppsignalClient } from '../appsignal-client/appsignal-client.js';
 export function searchLogsTool(server: McpServer, clientFactory: () => IAppsignalClient) {
   return server.tool(
     'search_logs',
+    `Search through application logs in AppSignal with powerful filtering capabilities. This tool allows you to query logs by content, filter by severity levels, and retrieve recent log entries matching your criteria. It's essential for troubleshooting specific issues, analyzing application behavior, and investigating error conditions.
+
+Example response:
+{
+  "logs": [
     {
-      query: z.string().describe('The search query to filter logs'),
+      "timestamp": "2024-01-15T16:45:32.123Z",
+      "severity": "error",
+      "message": "Failed to process payment: Gateway timeout",
+      "source": "app.payment.processor",
+      "metadata": {
+        "order_id": "ORD-12345",
+        "amount": 99.99,
+        "gateway": "stripe",
+        "error_code": "timeout_error"
+      },
+      "hostname": "api-server-01",
+      "trace_id": "abc123def456"
+    },
+    {
+      "timestamp": "2024-01-15T16:44:28.456Z",
+      "severity": "warn",
+      "message": "Retry attempt 2/3 for payment processing",
+      "source": "app.payment.processor",
+      "metadata": {
+        "order_id": "ORD-12345",
+        "retry_delay": 5000
+      },
+      "hostname": "api-server-01",
+      "trace_id": "abc123def456"
+    }
+  ],
+  "totalCount": 127,
+  "hasMore": true
+}
+
+Severity levels:
+- debug: Detailed information for debugging
+- info: General informational messages
+- warn: Warning messages indicating potential issues
+- error: Error messages for failures that don't stop the app
+- fatal: Critical errors that cause application crashes
+
+Use cases:
+- Searching for specific error messages or patterns
+- Investigating issues for particular users or transactions
+- Analyzing log patterns around specific time periods
+- Debugging by following trace IDs across services
+- Filtering logs by severity to focus on critical issues`,
+    {
+      query: z
+        .string()
+        .describe(
+          'Search query to filter logs (e.g., "payment failed", "user_id:123", "error_code:timeout")'
+        ),
       limit: z
         .number()
         .int()
         .positive()
         .default(50)
-        .describe('Maximum number of results to return'),
+        .describe('Maximum number of log entries to return (default: 50, max: 1000)'),
       severities: z
         .array(z.enum(['debug', 'info', 'warn', 'error', 'fatal']))
         .optional()
-        .describe('Filter logs by severity levels'),
+        .describe('Filter by severity levels. If not specified, returns logs of all severities'),
     },
     async ({ query, limit, severities }) => {
       const appId = getSelectedAppId() || process.env.APPSIGNAL_APP_ID;
