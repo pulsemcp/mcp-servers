@@ -38,9 +38,20 @@ For detailed git workflow information including branch naming conventions and re
    - `npm run test:run` - Run functional tests
    - `npm run test:integration` - Run integration tests
 
-### CI Monitoring
+### Post-PR open checklist
 
-After creating the PR, monitor CI status and fix any failures:
+#### Merge conflicts
+
+Immediately check if there are any merge conflicts. Resolve them by:
+
+- [ ] Analyze the commit(s) that introduced the merge conflicts so you understand their intent
+- [ ] Initiate a git rebase on `main`
+- [ ] Go file-by-file as conflicts occur, assessing what the right merging is that still accomplishes the intent of both your PR and the conflicting commits
+- [ ] Push changes that resolve the merge conflict
+
+#### CI Monitoring
+
+After creating the PR with no merge conflicts, monitor CI status and fix any failures:
 
 1. Check CI status with `gh pr checks <PR_NUMBER> --repo <OWNER>/<REPO>`
 2. If any checks fail:
