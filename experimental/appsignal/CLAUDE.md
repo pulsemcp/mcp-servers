@@ -21,6 +21,7 @@ experimental/appsignal/
 ## Next Steps
 
 1. Implement actual AppSignal API calls in `shared/src/tools.ts`:
+
    - Use fetch or axios to make HTTP requests to AppSignal API
    - Handle authentication using the API key
    - Parse and format responses appropriately
