@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2025-06-26
+
+### Fixed
+
+- Resolved TypeScript 'any' type warnings in test files for better type safety
+- Handled exception incident sample API limitation to prevent errors when API doesn't support sample data
+
 ## [0.1.3] - 2025-06-26
 
 ### Added
