@@ -1,4 +1,4 @@
-name: AppSignal CI
+name: AppSignal MCP Server CI
 
 on:
   push:
@@ -14,7 +14,7 @@ on:
 
 jobs:
   functional-tests:
-    name: AppSignal Functional Tests
+    name: AppSignal MCP Server Functional Tests
     runs-on: ubuntu-latest
 
     defaults:
@@ -54,7 +54,7 @@ jobs:
           retention-days: 7
 
   integration-tests:
-    name: AppSignal Integration Tests
+    name: AppSignal MCP Server Integration Tests
     runs-on: ubuntu-latest
 
     defaults:
