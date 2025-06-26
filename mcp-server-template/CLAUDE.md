@@ -48,7 +48,7 @@ mcp-server-template/
 │   │   ├── tools.ts           # Tool registration
 │   │   ├── tools/             # Individual tool implementations
 │   │   │   └── example-tool.ts
-│   │   ├── example-client/    # External API client
+│   │   ├── example-client/    # External API client (NOT MCP client!)
 │   │   │   ├── CLAUDE.md      # Client documentation
 │   │   │   ├── example-client.ts
 │   │   │   ├── example-client.integration-mock.ts
@@ -134,7 +134,7 @@ The template uses a modular tool pattern where each tool is defined in its own f
 
 ### Adding External API Clients
 
-The template uses a modular client pattern with a lib subdirectory:
+The template uses a modular client pattern with a lib subdirectory for external API clients (e.g., REST APIs, GraphQL, databases - NOT MCP clients):
 
 1. Define the interface in `shared/src/server.ts`
 2. Create client directory structure:

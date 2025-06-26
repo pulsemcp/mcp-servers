@@ -9,8 +9,9 @@ interface MockData {
 
 /**
  * Creates a mock implementation of IExampleClient for integration tests.
- * This is similar to the functional test mock but doesn't rely on vitest.
- * Instead, it uses provided mock data to simulate different scenarios.
+ * This mocks the EXTERNAL API client (e.g., REST APIs, databases), NOT the MCP client.
+ * The MCP client (TestMCPClient) is real and tests the actual MCP protocol.
+ * This mock is only for external dependencies, keeping MCP testing authentic.
  */
 export function createIntegrationMockExampleClient(
   mockData: MockData = {}

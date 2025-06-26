@@ -2,9 +2,10 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { registerResources } from './resources.js';
 import { createRegisterTools } from './tools.js';
 
-// Example client interface - replace with your actual client
+// Example external API client interface - replace with your actual external API client
+// This is for external services (REST APIs, databases, etc.) - NOT for MCP clients!
 export interface IExampleClient {
-  // Define your client methods here
+  // Define your external API client methods here
   getItem(itemId: string): Promise<{ id: string; name: string; value: string }>;
   searchItems(
     query: string,
@@ -12,7 +13,7 @@ export interface IExampleClient {
   ): Promise<Array<{ id: string; name: string; score: number }>>;
 }
 
-// Example client implementation - replace with your actual implementation
+// Example external API client implementation - replace with your actual implementation
 export class ExampleClient implements IExampleClient {
   constructor(private apiKey: string) {}
 

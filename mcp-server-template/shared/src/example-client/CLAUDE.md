@@ -1,6 +1,8 @@
-# Example Client
+# Example External API Client
 
-This directory contains the client implementation for interacting with external APIs.
+This directory contains the client implementation for interacting with external APIs (NOT MCP clients).
+
+**Important**: This is an external API client for services like REST APIs, GraphQL endpoints, databases, etc. It is NOT related to MCP clients or the MCP protocol.
 
 ## Structure
 
