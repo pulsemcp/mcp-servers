@@ -38,24 +38,33 @@ describe('Dynamic Tool Naming Integration Tests', () => {
     expect(changeTool).toBeUndefined();
   });
 
-  it('should start with change_app_id when app is already configured', async () => {
+  it('should NOT show get_apps or any app selection tools when app ID is locked via env var', async () => {
     // Create a mock AppSignal client
     const mockAppSignalClient = createIntegrationMockAppsignalClient({});
 
-    // Create TestMCPClient WITH APPSIGNAL_APP_ID
+    // Create TestMCPClient WITH APPSIGNAL_APP_ID (locked mode)
     client = await createTestMCPClientWithMock(mockAppSignalClient, true);
 
     // List tools to see the initial state
     const tools = await client.listTools();
 
-    // Should have change_app_id tool
+    // Should NOT have get_apps tool
+    const getAppsTool = tools.tools.find((t) => t.name === 'get_apps');
+    expect(getAppsTool).toBeUndefined();
+
+    // Should NOT have change_app_id tool in locked mode
     const changeTool = tools.tools.find((t) => t.name === 'change_app_id');
-    expect(changeTool).toBeDefined();
-    expect(changeTool?.name).toBe('change_app_id');
+    expect(changeTool).toBeUndefined();
 
     // Should NOT have select_app_id tool
     const selectTool = tools.tools.find((t) => t.name === 'select_app_id');
     expect(selectTool).toBeUndefined();
+
+    // Main tools should be available
+    const mainTools = tools.tools.filter((t) =>
+      ['get_exception_incident', 'search_logs', 'get_log_incident'].includes(t.name)
+    );
+    expect(mainTools.length).toBeGreaterThan(0);
   });
 
   it('should dynamically change from select_app_id to change_app_id after selecting an app', async () => {
@@ -148,34 +157,6 @@ describe('Dynamic Tool Naming Integration Tests', () => {
     expect(incident.id).toBe('test-incident');
   });
 
-  it('should NOT show get_apps or app selection tools when app ID is locked via env var', async () => {
-    // Create a mock AppSignal client
-    const mockAppSignalClient = createIntegrationMockAppsignalClient({});
-
-    // Create TestMCPClient WITH APPSIGNAL_APP_ID (locked mode)
-    client = await createTestMCPClientWithMock(mockAppSignalClient, true);
-
-    // List tools
-    const tools = await client.listTools();
-
-    // Should NOT have get_apps tool
-    const getAppsTool = tools.tools.find((t) => t.name === 'get_apps');
-    expect(getAppsTool).toBeUndefined();
-
-    // Should NOT have select_app_id tool
-    const selectTool = tools.tools.find((t) => t.name === 'select_app_id');
-    expect(selectTool).toBeUndefined();
-
-    // Should NOT have change_app_id tool
-    const changeTool = tools.tools.find((t) => t.name === 'change_app_id');
-    expect(changeTool).toBeUndefined();
-
-    // Main tools should be available
-    const mainTools = tools.tools.filter((t) =>
-      ['get_exception_incident', 'search_logs', 'get_log_incident'].includes(t.name)
-    );
-    expect(mainTools.length).toBeGreaterThan(0);
-  });
 
   it('should show combined appId and isLocked in resources', async () => {
     // Create a mock AppSignal client
