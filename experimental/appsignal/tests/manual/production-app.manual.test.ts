@@ -188,7 +188,7 @@ describe('Production App Bug Fixes - Manual Test', () => {
       const devAnomalyData = JSON.parse(devAnomalyResult.content[0].text);
       console.log(`   ✓ Development app anomaly incidents: ${devAnomalyData.total} (expected 0)`);
       expect(devAnomalyData.total).toBe(0);
-    } catch (error: any) {
+    } catch (error) {
       if (error.message && error.message.includes('select_app_id disabled')) {
         console.log('   ℹ️  Cannot switch apps - select_app_id tool is disabled (locked mode)');
         console.log('      This is expected behavior when the server is in locked mode');

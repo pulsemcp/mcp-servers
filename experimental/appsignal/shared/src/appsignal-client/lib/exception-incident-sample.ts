@@ -1,4 +1,3 @@
-import { gql } from 'graphql-request';
 import type { GraphQLClient } from 'graphql-request';
 
 export interface ExceptionIncidentSample {
@@ -34,10 +33,10 @@ export interface ExceptionIncidentSample {
 }
 
 export async function getExceptionIncidentSample(
-  graphqlClient: GraphQLClient,
-  appId: string,
+  _graphqlClient: GraphQLClient,
+  _appId: string,
   incidentId: string,
-  offset = 0
+  _offset = 0
 ): Promise<ExceptionIncidentSample> {
   // Note: The AppSignal GraphQL API has limitations with querying samples
   // The API returns 500 errors when trying to query samples on exception incidents

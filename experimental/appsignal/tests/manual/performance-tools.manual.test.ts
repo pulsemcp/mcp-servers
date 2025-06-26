@@ -123,7 +123,7 @@ describe('AppSignal Performance Tools - Manual Test', () => {
 
       // Log all apps for reference
       console.log('\nAvailable apps:');
-      apps.forEach((app: any) => {
+      apps.forEach((app) => {
         console.log(`  - ${app.name} (${app.id}) - ${app.environment || 'no env'}`);
       });
     } catch (error) {
@@ -168,7 +168,7 @@ describe('AppSignal Performance Tools - Manual Test', () => {
 
       // Log first few incidents
       console.log('\nFirst few performance incidents:');
-      response.incidents.slice(0, 3).forEach((incident: any) => {
+      response.incidents.slice(0, 3).forEach((incident) => {
         console.log(`  - ${incident.actionNames.join(', ')} (${incident.id})`);
         console.log(
           `    State: ${incident.state}, Mean: ${incident.mean}ms, Count: ${incident.count}`
@@ -289,7 +289,7 @@ describe('AppSignal Performance Tools - Manual Test', () => {
 
       // Group events by level for better visualization
       const eventsByLevel: Record<number, any[]> = {};
-      timeline.timeline.forEach((event: any) => {
+      timeline.timeline.forEach((event) => {
         if (!eventsByLevel[event.level]) {
           eventsByLevel[event.level] = [];
         }
@@ -303,7 +303,7 @@ describe('AppSignal Performance Tools - Manual Test', () => {
         .forEach((level) => {
           const events = eventsByLevel[Number(level)];
           const indent = '  '.repeat(Number(level));
-          events.forEach((event: any) => {
+          events.forEach((event) => {
             console.log(`${indent}└─ ${event.name} (${event.duration}ms)`);
             if (event.count > 1) {
               console.log(`${indent}   ⚠️  Called ${event.count} times (possible N+1)`);
@@ -318,12 +318,12 @@ describe('AppSignal Performance Tools - Manual Test', () => {
       outcome.details.performanceTimelineWorks = true;
 
       // Look for performance issues
-      const slowQueries = timeline.timeline.filter((e: any) => e.duration > 100);
+      const slowQueries = timeline.timeline.filter((e) => e.duration > 100);
       if (slowQueries.length > 0) {
         console.log(`\n⚠️  Found ${slowQueries.length} slow operations (>100ms)`);
       }
 
-      const nPlusOneQueries = timeline.timeline.filter((e: any) => e.count > 5);
+      const nPlusOneQueries = timeline.timeline.filter((e) => e.count > 5);
       if (nPlusOneQueries.length > 0) {
         console.log(`⚠️  Found ${nPlusOneQueries.length} potential N+1 queries`);
       }
