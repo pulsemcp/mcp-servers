@@ -11,11 +11,13 @@ Pulse Fetch is an MCP server that pulls specific resources from the internet int
 The server uses a three-layer architecture:
 
 1. **`shared/`**: Core business logic, resources, and tools
+
    - Exports `registerResources()` and `registerTools()` functions
    - Contains all feature implementations
    - Built as a separate package referenced by local/remote
 
 2. **`local/`**: Stdio transport implementation
+
    - Minimal wrapper around shared functionality
    - Uses StdioServerTransport for Claude Desktop integration
    - References shared via: `"pulse-fetch-shared": "file:../shared"`
