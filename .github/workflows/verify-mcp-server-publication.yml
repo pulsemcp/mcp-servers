@@ -1,0 +1,161 @@
+name: Verify MCP Server Publication Staged
+
+on:
+  pull_request:
+    paths:
+      - 'experimental/*/local/package.json'
+      - 'productionized/*/local/package.json'
+      - '*/local/package.json'
+
+jobs:
+  verify-publications:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Need full history to check for version changes
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Get changed files
+        id: changed-files
+        uses: tj-actions/changed-files@v41
+        with:
+          files: |
+            **/local/package.json
+
+      - name: Verify each changed MCP server
+        if: steps.changed-files.outputs.any_changed == 'true'
+        run: |
+          set -e
+
+          echo "Changed package.json files: ${{ steps.changed-files.outputs.all_changed_files }}"
+
+          # Track if any verification fails
+          VERIFICATION_FAILED=false
+
+          for file in ${{ steps.changed-files.outputs.all_changed_files }}; do
+            echo "Checking $file"
+            
+            # Get the server directory (parent of local/)
+            SERVER_DIR=$(dirname $(dirname "$file"))
+            SERVER_NAME=$(basename "$SERVER_DIR")
+            LOCAL_DIR="$SERVER_DIR/local"
+            
+            echo "Server: $SERVER_NAME"
+            echo "Server directory: $SERVER_DIR"
+            echo "Local directory: $LOCAL_DIR"
+            
+            # Get current version from package.json
+            CURRENT_VERSION=$(node -e "console.log(require('./$LOCAL_DIR/package.json').version)")
+            PACKAGE_NAME=$(node -e "console.log(require('./$LOCAL_DIR/package.json').name)")
+            
+            echo "Package: $PACKAGE_NAME@$CURRENT_VERSION"
+            
+            # Get base branch version
+            git show origin/${{ github.base_ref }}:$file > base-package.json 2>/dev/null || echo '{"version": "0.0.0"}' > base-package.json
+            BASE_VERSION=$(node -e "console.log(require('./base-package.json').version)")
+            
+            echo "Base version: $BASE_VERSION"
+            echo "Current version: $CURRENT_VERSION"
+            
+            # Check if version was bumped
+            if [ "$CURRENT_VERSION" == "$BASE_VERSION" ]; then
+              echo "❌ ERROR: Version was not bumped in $file"
+              echo "   Base version: $BASE_VERSION"
+              echo "   Current version: $CURRENT_VERSION"
+              VERIFICATION_FAILED=true
+              continue
+            fi
+            
+            echo "✅ Version was bumped from $BASE_VERSION to $CURRENT_VERSION"
+            
+            # Check for CHANGELOG.md
+            CHANGELOG_FILE="$SERVER_DIR/CHANGELOG.md"
+            if [ ! -f "$CHANGELOG_FILE" ]; then
+              echo "❌ ERROR: No CHANGELOG.md found at $CHANGELOG_FILE"
+              VERIFICATION_FAILED=true
+              continue
+            fi
+            
+            echo "✅ CHANGELOG.md exists"
+            
+            # Check if CHANGELOG contains the new version
+            if ! grep -q "## \[$CURRENT_VERSION\]" "$CHANGELOG_FILE"; then
+              echo "❌ ERROR: CHANGELOG.md does not contain entry for version $CURRENT_VERSION"
+              echo "   Expected to find: ## [$CURRENT_VERSION]"
+              VERIFICATION_FAILED=true
+              continue
+            fi
+            
+            echo "✅ CHANGELOG.md contains entry for version $CURRENT_VERSION"
+            
+            # Check for git tag
+            EXPECTED_TAG="${PACKAGE_NAME}@${CURRENT_VERSION}"
+            if git tag | grep -q "^${EXPECTED_TAG}$"; then
+              echo "✅ Git tag exists: $EXPECTED_TAG"
+            else
+              echo "⚠️  WARNING: Git tag not found: $EXPECTED_TAG"
+              echo "   Make sure to create and push the tag:"
+              echo "   git tag $EXPECTED_TAG"
+              echo "   git push origin $EXPECTED_TAG"
+            fi
+            
+            # Run tests for this server
+            echo "Running tests for $SERVER_NAME..."
+            cd "$SERVER_DIR"
+            
+            # Install dependencies
+            npm install
+            
+            # Run build
+            if npm run build; then
+              echo "✅ Build succeeded"
+            else
+              echo "❌ ERROR: Build failed"
+              VERIFICATION_FAILED=true
+            fi
+            
+            # Run tests (if they exist)
+            if npm test 2>/dev/null; then
+              echo "✅ Tests passed"
+            else
+              echo "⚠️  WARNING: Tests failed or no tests found"
+            fi
+            
+            cd - > /dev/null
+            
+            echo "---"
+          done
+
+          # Clean up
+          rm -f base-package.json
+
+          if [ "$VERIFICATION_FAILED" = true ]; then
+            echo "❌ Verification failed for one or more servers"
+            exit 1
+          else
+            echo "✅ All servers passed verification"
+          fi
+
+      - name: Summary
+        if: always()
+        run: |
+          echo "## MCP Server Publication Verification Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [ "${{ steps.changed-files.outputs.any_changed }}" == "true" ]; then
+            echo "### Checked Servers:" >> $GITHUB_STEP_SUMMARY
+            for file in ${{ steps.changed-files.outputs.all_changed_files }}; do
+              SERVER_DIR=$(dirname $(dirname "$file"))
+              SERVER_NAME=$(basename "$SERVER_DIR")
+              echo "- $SERVER_NAME" >> $GITHUB_STEP_SUMMARY
+            done
+          else
+            echo "No MCP server package.json files were modified." >> $GITHUB_STEP_SUMMARY
+          fi
