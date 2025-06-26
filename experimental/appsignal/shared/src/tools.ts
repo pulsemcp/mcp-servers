@@ -18,7 +18,6 @@ export function createRegisterTools(clientFactory: ClientFactory) {
   return function registerTools(server: McpServer) {
     // Check for required environment variables
     const apiKey = process.env.APPSIGNAL_API_KEY;
-    const envAppId = process.env.APPSIGNAL_APP_ID;
 
     if (!apiKey) {
       throw new Error('APPSIGNAL_API_KEY environment variable must be configured');
@@ -60,15 +59,12 @@ export function createRegisterTools(clientFactory: ClientFactory) {
       }
     };
 
-    // Store reference to get_apps tool
-    let getAppsTool_: RegisteredTool | undefined;
-
     // Check if app ID is locked (configured via env var)
     const locked = isAppIdLocked();
 
     // Register tools that are always available (unless locked)
     if (!locked) {
-      getAppsTool_ = getAppsTool(server, clientFactory);
+      getAppsTool(server, clientFactory);
 
       // Register both select and change tools, but only enable the appropriate one
       selectAppTool = selectAppIdTool(server, 'select_app_id', enableMainTools, clientFactory);
