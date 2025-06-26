@@ -95,10 +95,6 @@ describe('AppSignal MCP Server Integration', () => {
             id: 'sample-1',
             timestamp: '2024-01-21T09:00:00Z',
             message: 'Connection timeout to payment gateway',
-            backtrace: [
-              '/app/src/payment/gateway.js:42 in processPayment',
-              '/app/src/controllers/checkout.js:15 in handleCheckout',
-            ],
             action: 'CheckoutController#process',
             namespace: 'web',
             revision: 'abc123',
@@ -108,10 +104,6 @@ describe('AppSignal MCP Server Integration', () => {
             id: 'sample-2',
             timestamp: '2024-01-21T09:05:00Z',
             message: 'Connection timeout to payment gateway',
-            backtrace: [
-              '/app/src/payment/gateway.js:42 in processPayment',
-              '/app/src/controllers/checkout.js:15 in handleCheckout',
-            ],
             action: 'CheckoutController#process',
             namespace: 'web',
             revision: 'abc124',
@@ -135,7 +127,6 @@ describe('AppSignal MCP Server Integration', () => {
     expect(sample.id).toBe('sample-1');
     expect(sample.timestamp).toBe('2024-01-21T09:00:00Z');
     expect(sample.message).toBe('Connection timeout to payment gateway');
-    expect(sample.backtrace).toHaveLength(2);
     expect(sample.action).toBe('CheckoutController#process');
   });
 
@@ -148,7 +139,6 @@ describe('AppSignal MCP Server Integration', () => {
             id: 'sample-1',
             timestamp: '2024-01-21T09:00:00Z',
             message: 'First sample',
-            backtrace: [],
             action: 'DefaultController#index',
             namespace: 'web',
             revision: '000000',
@@ -158,7 +148,6 @@ describe('AppSignal MCP Server Integration', () => {
             id: 'sample-2',
             timestamp: '2024-01-21T09:05:00Z',
             message: 'Second sample',
-            backtrace: [],
             action: 'DefaultController#index',
             namespace: 'web',
             revision: '000000',
@@ -168,7 +157,6 @@ describe('AppSignal MCP Server Integration', () => {
             id: 'sample-3',
             timestamp: '2024-01-21T09:10:00Z',
             message: 'Third sample',
-            backtrace: [],
             action: 'DefaultController#index',
             namespace: 'web',
             revision: '000000',
@@ -202,7 +190,6 @@ describe('AppSignal MCP Server Integration', () => {
             id: 'sample-1',
             timestamp: '2024-01-21T09:00:00Z',
             message: 'Only sample',
-            backtrace: [],
             action: 'DefaultController#index',
             namespace: 'web',
             revision: '000000',

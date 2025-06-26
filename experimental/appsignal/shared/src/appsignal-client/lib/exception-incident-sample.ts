@@ -5,7 +5,6 @@ export interface ExceptionIncidentSample {
   id: string;
   timestamp: string;
   message: string;
-  backtrace: string[];
   action: string;
   namespace: string;
   revision: string;
@@ -138,7 +137,6 @@ export async function getExceptionIncidentSample(
     id: sample.id,
     timestamp: sample.time,
     message,
-    backtrace: [], // Backtrace not available without exception field
     action: sample.action || 'unknown',
     namespace: sample.namespace || 'unknown',
     revision: sample.revision || 'unknown',

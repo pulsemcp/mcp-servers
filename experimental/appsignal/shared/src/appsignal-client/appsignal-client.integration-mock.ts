@@ -92,7 +92,6 @@ export function createIntegrationMockAppsignalClient(
         id: `sample-${incidentId}-1`,
         timestamp: new Date().toISOString(),
         message: 'Mock exception sample',
-        backtrace: ['mock.js:1', 'mock.js:2'],
         action: 'MockController#action',
         namespace: 'mock',
         revision: 'mock-revision',
