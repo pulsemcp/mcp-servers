@@ -10,6 +10,7 @@ import { getLogIncidentsTool } from './tools/get-log-incidents.js';
 import { getExceptionIncidentsTool } from './tools/get-exception-incidents.js';
 import { getAnomalyIncidentsTool } from './tools/get-anomaly-incidents.js';
 import { IAppsignalClient } from './appsignal-client/appsignal-client.js';
+import { getSelectedAppId } from './state.js';
 
 export type ClientFactory = () => IAppsignalClient;
 
@@ -35,6 +36,10 @@ export function createRegisterTools(clientFactory: ClientFactory) {
       getAnomalyIncidents?: RegisteredTool;
     } = {};
 
+    // Store references to app selection tools
+    let selectAppTool: RegisteredTool | undefined;
+    let changeAppTool: RegisteredTool | undefined;
+
     // Enable function for selectAppId to call
     const enableMainTools = () => {
       if (mainTools.getExceptionIncident) mainTools.getExceptionIncident.enable();
@@ -45,11 +50,22 @@ export function createRegisterTools(clientFactory: ClientFactory) {
       if (mainTools.getLogIncidents) mainTools.getLogIncidents.enable();
       if (mainTools.getExceptionIncidents) mainTools.getExceptionIncidents.enable();
       if (mainTools.getAnomalyIncidents) mainTools.getAnomalyIncidents.enable();
+      
+      // Switch from select_app_id to change_app_id
+      if (selectAppTool) {
+        selectAppTool.disable();
+      }
+      if (changeAppTool) {
+        changeAppTool.enable();
+      }
     };
 
     // Register tools that are always available
     getAppsTool(server, clientFactory);
-    selectAppIdTool(server, enableMainTools, clientFactory);
+    
+    // Register both select and change tools, but only enable the appropriate one
+    selectAppTool = selectAppIdTool(server, 'select_app_id', enableMainTools, clientFactory);
+    changeAppTool = selectAppIdTool(server, 'change_app_id', enableMainTools, clientFactory);
 
     // Register main tools
     mainTools.getExceptionIncident = getExceptionIncidentTool(server, clientFactory);
@@ -61,8 +77,11 @@ export function createRegisterTools(clientFactory: ClientFactory) {
     mainTools.getExceptionIncidents = getExceptionIncidentsTool(server, clientFactory);
     mainTools.getAnomalyIncidents = getAnomalyIncidentsTool(server, clientFactory);
 
-    // If no app ID is provided via environment, disable the main tools initially
-    if (!envAppId) {
+    // Configure initial state based on whether an app ID is already set
+    const hasAppId = envAppId || getSelectedAppId();
+    if (!hasAppId) {
+      // No app ID set - show select_app_id, hide change_app_id and main tools
+      changeAppTool.disable();
       mainTools.getExceptionIncident.disable();
       mainTools.getExceptionIncidentSample.disable();
       mainTools.getLogIncident.disable();
@@ -71,6 +90,9 @@ export function createRegisterTools(clientFactory: ClientFactory) {
       mainTools.getLogIncidents.disable();
       mainTools.getExceptionIncidents.disable();
       mainTools.getAnomalyIncidents.disable();
+    } else {
+      // App ID already set - show change_app_id, hide select_app_id
+      selectAppTool.disable();
     }
   };
 }
