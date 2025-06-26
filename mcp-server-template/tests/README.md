@@ -10,6 +10,8 @@ tests/
 │   └── tools.test.ts   # Tests for MCP tool implementations
 ├── integration/        # Integration tests using TestMCPClient
 │   └── NAME.integration.test.ts  # Full server integration tests
+├── manual/             # Manual tests that hit real external APIs
+│   └── NAME.manual.test.ts  # Tests with real API calls
 └── mocks/              # Mock implementations and test data
     └── example-client.functional-mock.ts  # Vitest mocks for functional tests
 ```
@@ -43,6 +45,15 @@ npm run test:integration:watch
 # Run all tests (functional + integration)
 npm run test:all
 ```
+
+### Manual Tests
+
+```bash
+# Run manual tests (requires real API credentials in .env)
+npm run test:manual
+```
+
+**Important**: Manual tests require real API credentials and are NOT run in CI.
 
 ## Test Architecture
 
@@ -160,6 +171,59 @@ expect(users[0].name).toBe('John Doe');
 3. Call tools/resources through the real MCP protocol
 4. Assert on the responses
 
+## Manual Testing
+
+### Overview
+
+Manual tests are designed to test the MCP server against real external APIs. These tests:
+
+- Are NOT run during CI/CD
+- Require actual API credentials (via .env file)
+- Use longer timeouts to accommodate real API latency
+- Report detailed outcomes (SUCCESS/WARNING/FAILURE)
+- Help validate API integrations and edge cases
+
+### Setup
+
+1. Create a `.env` file in the server root:
+   ```bash
+   YOUR_API_KEY=your-actual-api-key
+   OTHER_ENV_VAR=value
+   ```
+
+2. Run manual tests:
+   ```bash
+   npm run test:manual
+   ```
+
+### Test Outcomes
+
+Manual tests report detailed outcomes:
+
+- **✅ SUCCESS**: Test passed, API responded as expected
+- **⚠️ WARNING**: Test passed but with unexpected behavior worth investigating
+- **❌ FAILURE**: Test failed, API error or unexpected response
+
+### Example Output
+
+```
+✅ example_tool - real API call: SUCCESS
+   Details: Message processed successfully
+
+⚠️ example_tool - rate limit handling: WARNING
+   Details: 2 requests failed for non-rate-limit reasons
+```
+
+### When to Run Manual Tests
+
+Run manual tests when:
+
+- Developing new API integrations
+- Debugging issues that only occur with real APIs
+- Verifying rate limiting and error handling
+- Testing API response changes
+- Before major releases
+
 ## Best Practices
 
 1. Keep functional tests focused on single units
@@ -167,3 +231,5 @@ expect(users[0].name).toBe('John Doe');
 3. Mock external dependencies consistently
 4. Test error cases and edge conditions
 5. Use descriptive test names that explain the scenario
+6. Run manual tests periodically to catch API changes
+7. Document expected outcomes in manual tests
