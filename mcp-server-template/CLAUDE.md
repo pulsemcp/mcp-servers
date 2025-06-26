@@ -48,6 +48,13 @@ mcp-server-template/
 │   │   ├── tools.ts           # Tool registration
 │   │   ├── tools/             # Individual tool implementations
 │   │   │   └── example-tool.ts
+│   │   ├── example-client/    # External API client
+│   │   │   ├── CLAUDE.md      # Client documentation
+│   │   │   ├── example-client.ts
+│   │   │   ├── example-client.integration-mock.ts
+│   │   │   └── lib/           # Modular API methods
+│   │   │       ├── get-item.ts
+│   │   │       └── search-items.ts
 │   │   ├── resources.ts       # Resource implementations
 │   │   └── types.ts           # Shared TypeScript types
 │   └── package.json
@@ -113,10 +120,23 @@ The template uses a modular tool pattern where each tool is defined in its own f
 
 ### Adding External API Clients
 
-1. Define interface in `shared/src/server.ts`
-2. Implement concrete class
-3. Update factory to instantiate client
-4. Use via dependency injection in tools
+The template uses a modular client pattern with a lib subdirectory:
+
+1. Define the interface in `shared/src/server.ts`
+2. Create client directory structure:
+   ```
+   shared/src/your-client/
+   ├── CLAUDE.md                    # Client-specific documentation
+   ├── your-client.ts               # Interface exports
+   ├── your-client.integration-mock.ts  # Integration test mock
+   └── lib/                         # Individual API methods
+       ├── method-one.ts
+       └── method-two.ts
+   ```
+3. Implement each API method in its own file under `lib/`
+4. Create the concrete client class that delegates to lib methods
+5. Update the factory in server.ts to instantiate the client
+6. Use via dependency injection in tools
 
 ### Writing Tests
 
