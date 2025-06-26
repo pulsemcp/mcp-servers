@@ -1,10 +1,6 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { registerTools, createRegisterTools } from '../../../shared/src/tools';
-import { getSelectedAppId, getEffectiveAppId, isAppIdLocked } from '../../../shared/src/state';
-import { createMockAppsignalClient } from '../../mocks/appsignal-client.functional-mock';
+import { vi } from 'vitest';
 
-// Mock the state module
+// Mock the state module - must be before any imports that use it
 vi.mock('../../../shared/src/state', () => ({
   setSelectedAppId: vi.fn(),
   getSelectedAppId: vi.fn(),
@@ -12,6 +8,12 @@ vi.mock('../../../shared/src/state', () => ({
   getEffectiveAppId: vi.fn(),
   isAppIdLocked: vi.fn(),
 }));
+
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { registerTools, createRegisterTools } from '../../../shared/src/tools';
+import { getSelectedAppId, getEffectiveAppId, isAppIdLocked } from '../../../shared/src/state';
+import { createMockAppsignalClient } from '../../mocks/appsignal-client.functional-mock';
 
 interface Tool {
   name: string;
@@ -156,7 +158,7 @@ describe('Tool Registration', () => {
     const tool = registeredTools.get('get_exception_incident');
     const result = await tool.handler({ incidentId: 'exception-123' });
 
-    expect(result.content[0].text).toContain('Error: No app ID configured');
+    expect(result.content[0].text).toContain('Error: No app ID selected');
     expect(result.content[0].text).toContain('Please use select_app_id tool first');
   });
 
