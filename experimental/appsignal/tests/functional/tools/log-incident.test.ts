@@ -127,6 +127,6 @@ describe('get_log_incident Tool', () => {
     const tool = registeredTools.get('get_log_incident');
     const result = await tool.handler({ incidentId: 'log-789' });
 
-    expect(result.content[0].text).toContain('Error: No app ID selected');
+    expect(result.content[0].text).toContain('Error: No app ID configured');
   });
 });
