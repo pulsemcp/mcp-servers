@@ -61,43 +61,19 @@ interface GetExceptionIncidentSamplesResponse {
           samples: Array<{
             id: string;
             time: string;
-            createdAt: string;
             action: string;
-            customData: Record<string, unknown> | null;
-            duration: number | null;
             namespace: string;
-            originalId: string;
-            originallyRequested: boolean;
-            queueDuration: number | null;
-            params: Record<string, unknown> | null;
             revision: string;
-            sessionData: Record<string, unknown> | null;
             version: string;
-            overview: Array<{ key: string; value: string }>;
-            firstMarker: {
-              user: string;
-              shortRevision: string;
-              revision: string;
-              namespace: string;
-              liveForInWords: string;
-              liveFor: number;
-              gitCompareUrl: string | null;
-              id: string;
-              exceptionRate: number;
-              exceptionCount: number;
-              createdAt: string;
-            } | null;
             exception: {
               message: string;
               name: string;
-              backtrace: Backtrace[];
+              backtrace: Array<{
+                line: number;
+                method: string;
+                path: string;
+              }>;
             };
-            errorCauses: Array<{
-              message: string;
-              name: string;
-              firstLine: Backtrace;
-            }>;
-            environment: Array<{ key: string; value: string }>;
           }>;
         }>;
       }>;
@@ -111,91 +87,35 @@ export async function getExceptionIncidentSample(
   incidentId: string,
   offset = 0
 ): Promise<ExceptionIncidentSample> {
+  // The samples field expects start/end dates, not just a limit
+  // We'll query for samples from the last 30 days
+  const endDate = new Date();
+  const startDate = new Date();
+  startDate.setDate(startDate.getDate() - 30);
+  
   const query = gql`
-    query GetExceptionIncidentSamples($limit: Int!, $offset: Int!) {
+    query GetExceptionIncidentSamples($limit: Int!, $offset: Int!, $start: DateTime!, $end: DateTime!) {
       viewer {
         organizations {
           apps {
             id
-            exceptionIncidents(state: OPEN, limit: 50) {
+            exceptionIncidents(limit: $limit, offset: $offset, order: LAST, state: OPEN) {
               id
-              samples(limit: $limit, offset: $offset) {
-                action
-                createdAt
-                customData
-                duration
+              samples(start: $start, end: $end, limit: 10) {
                 id
-                namespace
-                originalId
-                originallyRequested
-                queueDuration
-                params
-                revision
-                sessionData
                 time
+                action
+                namespace
+                revision
                 version
-                overview {
-                  key
-                  value
-                }
-                firstMarker {
-                  user
-                  shortRevision
-                  revision
-                  namespace
-                  liveForInWords
-                  liveFor
-                  gitCompareUrl
-                  id
-                  exceptionRate
-                  exceptionCount
-                  createdAt
-                }
                 exception {
                   message
                   name
                   backtrace {
-                    column
-                    code {
-                      line
-                      source
-                    }
-                    error {
-                      class
-                      message
-                    }
                     line
                     method
-                    original
-                    path
-                    type
-                    url
-                  }
-                }
-                errorCauses {
-                  message
-                  name
-                  firstLine {
-                    column
-                    code {
-                      line
-                      source
-                    }
-                    line
-                    error {
-                      class
-                      message
-                    }
-                    method
-                    original
-                    type
-                    url
                     path
                   }
-                }
-                environment {
-                  key
-                  value
                 }
               }
             }
@@ -205,55 +125,86 @@ export async function getExceptionIncidentSample(
     }
   `;
 
-  const data = await graphqlClient.request<GetExceptionIncidentSamplesResponse>(query, {
-    limit: 1, // Only get one sample at a time
-    offset,
-  });
+  // Search through incidents to find the one with matching ID
+  const incidentLimit = 50;
+  let incidentOffset = 0;
+  let targetSamples: GetExceptionIncidentSamplesResponse['viewer']['organizations'][0]['apps'][0]['exceptionIncidents'][0]['samples'] | null = null;
 
-  // Find the app and incident
-  let samples: GetExceptionIncidentSamplesResponse['viewer']['organizations'][0]['apps'][0]['exceptionIncidents'][0]['samples'] =
-    [];
-  for (const org of data.viewer.organizations) {
-    const app = org.apps.find((a) => a.id === appId);
-    if (app) {
-      const incident = app.exceptionIncidents.find((i) => i.id === incidentId);
-      if (incident && incident.samples) {
-        samples = incident.samples;
+  while (!targetSamples) {
+    const data = await graphqlClient.request<GetExceptionIncidentSamplesResponse>(query, {
+      limit: incidentLimit,
+      offset: incidentOffset,
+      start: startDate.toISOString(),
+      end: endDate.toISOString(),
+    });
+
+    // Find the app and incident
+    for (const org of data.viewer.organizations) {
+      const app = org.apps.find((a) => a.id === appId);
+      if (app) {
+        const incident = app.exceptionIncidents.find((i) => i.id === incidentId);
+        if (incident && incident.samples) {
+          targetSamples = incident.samples;
+          break;
+        }
+      }
+    }
+
+    // If we didn't find the incident and got fewer results than the limit, we've searched all
+    if (!targetSamples) {
+      let totalIncidents = 0;
+      for (const org of data.viewer.organizations) {
+        const app = org.apps.find((a) => a.id === appId);
+        if (app) {
+          totalIncidents = app.exceptionIncidents.length;
+          break;
+        }
+      }
+      
+      if (totalIncidents < incidentLimit) {
+        // Try searching in CLOSED incidents as well
+        const closedData = await graphqlClient.request<GetExceptionIncidentSamplesResponse>(
+          query.replace('state: OPEN', 'state: CLOSED'),
+          {
+            limit: 50,
+            offset: 0,
+            start: startDate.toISOString(),
+            end: endDate.toISOString(),
+          }
+        );
+        
+        for (const org of closedData.viewer.organizations) {
+          const app = org.apps.find((a) => a.id === appId);
+          if (app) {
+            const incident = app.exceptionIncidents.find((i) => i.id === incidentId);
+            if (incident && incident.samples) {
+              targetSamples = incident.samples;
+              break;
+            }
+          }
+        }
+        
         break;
       }
+      
+      incidentOffset += incidentLimit;
     }
   }
 
-  if (samples.length === 0) {
-    throw new Error(`No samples found for exception incident ${incidentId} at offset ${offset}`);
+  if (!targetSamples || targetSamples.length === 0) {
+    throw new Error(`No samples found for exception incident ${incidentId}`);
   }
 
-  const sample = samples[0];
+  if (offset >= targetSamples.length) {
+    throw new Error(`No sample found at offset ${offset} for exception incident ${incidentId} (only ${targetSamples.length} samples available)`);
+  }
+
+  const sample = targetSamples[offset];
 
   // Transform backtrace to simple string array
   const backtrace = sample.exception.backtrace
     .map((bt) => `${bt.path}:${bt.line} in ${bt.method}`)
     .filter(Boolean);
-
-  // Simplify error causes
-  const errorCauses = sample.errorCauses?.map((cause) => ({
-    name: cause.name,
-    message: cause.message,
-    firstLine: `${cause.firstLine.path}:${cause.firstLine.line} in ${cause.firstLine.method}`,
-  }));
-
-  // Simplify firstMarker if present
-  const firstMarker = sample.firstMarker
-    ? {
-        revision: sample.firstMarker.revision,
-        shortRevision: sample.firstMarker.shortRevision,
-        liveFor: sample.firstMarker.liveFor,
-        liveForInWords: sample.firstMarker.liveForInWords,
-        exceptionRate: sample.firstMarker.exceptionRate,
-        exceptionCount: sample.firstMarker.exceptionCount,
-        createdAt: sample.firstMarker.createdAt,
-      }
-    : undefined;
 
   return {
     id: sample.id,
@@ -264,14 +215,5 @@ export async function getExceptionIncidentSample(
     namespace: sample.namespace,
     revision: sample.revision,
     version: sample.version,
-    duration: sample.duration || undefined,
-    queueDuration: sample.queueDuration || undefined,
-    params: sample.params || undefined,
-    customData: sample.customData || undefined,
-    sessionData: sample.sessionData || undefined,
-    overview: sample.overview,
-    environment: sample.environment,
-    errorCauses,
-    firstMarker,
   };
 }
