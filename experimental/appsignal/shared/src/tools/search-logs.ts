@@ -76,11 +76,15 @@ Use cases:
       start: z
         .string()
         .optional()
-        .describe('Start time for the search window in ISO 8601 format (e.g., "2024-01-15T00:00:00Z")'),
+        .describe(
+          'Start time for the search window in ISO 8601 format (e.g., "2024-01-15T00:00:00Z")'
+        ),
       end: z
         .string()
         .optional()
-        .describe('End time for the search window in ISO 8601 format (e.g., "2024-01-15T23:59:59Z")'),
+        .describe(
+          'End time for the search window in ISO 8601 format (e.g., "2024-01-15T23:59:59Z")'
+        ),
     },
     async ({ query, limit, severities, start, end }) => {
       const appId = getEffectiveAppId();
@@ -89,8 +93,7 @@ Use cases:
           content: [
             {
               type: 'text',
-              text:
-                'Error: No app ID configured. Please use select_app_id tool first or set APPSIGNAL_APP_ID environment variable.',
+              text: 'Error: No app ID configured. Please use select_app_id tool first or set APPSIGNAL_APP_ID environment variable.',
             },
           ],
         };
