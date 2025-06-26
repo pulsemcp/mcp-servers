@@ -81,7 +81,7 @@ Use cases:
         const actualStates = states ?? ['OPEN'];
         const actualLimit = limit ?? 50;
         const actualOffset = offset ?? 0;
-        
+
         const result = await client.getAnomalyIncidents(actualStates, actualLimit, actualOffset);
 
         return {

@@ -321,7 +321,7 @@ describe('Incident List Tools', () => {
 
       registerToolsWithClient(mockClient);
       const tool = registeredTools.get('get_anomaly_incidents');
-      
+
       // Call with empty parameters object - should use defaults
       const result = await tool.handler({});
 
