@@ -52,51 +52,57 @@ interface Backtrace {
 }
 
 interface GetExceptionIncidentSamplesResponse {
-  app: {
-    exceptionIncident: {
-      samples: Array<{
+  viewer: {
+    organizations: Array<{
+      apps: Array<{
         id: string;
-        time: string;
-        createdAt: string;
-        action: string;
-        customData: Record<string, unknown> | null;
-        duration: number | null;
-        namespace: string;
-        originalId: string;
-        originallyRequested: boolean;
-        queueDuration: number | null;
-        params: Record<string, unknown> | null;
-        revision: string;
-        sessionData: Record<string, unknown> | null;
-        version: string;
-        overview: Array<{ key: string; value: string }>;
-        firstMarker: {
-          user: string;
-          shortRevision: string;
-          revision: string;
-          namespace: string;
-          liveForInWords: string;
-          liveFor: number;
-          gitCompareUrl: string | null;
+        exceptionIncidents: Array<{
           id: string;
-          exceptionRate: number;
-          exceptionCount: number;
-          createdAt: string;
-        } | null;
-        exception: {
-          message: string;
-          name: string;
-          backtrace: Backtrace[];
-        };
-        errorCauses: Array<{
-          message: string;
-          name: string;
-          firstLine: Backtrace;
+          samples: Array<{
+            id: string;
+            time: string;
+            createdAt: string;
+            action: string;
+            customData: Record<string, unknown> | null;
+            duration: number | null;
+            namespace: string;
+            originalId: string;
+            originallyRequested: boolean;
+            queueDuration: number | null;
+            params: Record<string, unknown> | null;
+            revision: string;
+            sessionData: Record<string, unknown> | null;
+            version: string;
+            overview: Array<{ key: string; value: string }>;
+            firstMarker: {
+              user: string;
+              shortRevision: string;
+              revision: string;
+              namespace: string;
+              liveForInWords: string;
+              liveFor: number;
+              gitCompareUrl: string | null;
+              id: string;
+              exceptionRate: number;
+              exceptionCount: number;
+              createdAt: string;
+            } | null;
+            exception: {
+              message: string;
+              name: string;
+              backtrace: Backtrace[];
+            };
+            errorCauses: Array<{
+              message: string;
+              name: string;
+              firstLine: Backtrace;
+            }>;
+            environment: Array<{ key: string; value: string }>;
+          }>;
         }>;
-        environment: Array<{ key: string; value: string }>;
       }>;
-    } | null;
-  } | null;
+    }>;
+  };
 }
 
 export async function getExceptionIncidentSample(
@@ -106,86 +112,92 @@ export async function getExceptionIncidentSample(
   offset = 0
 ): Promise<ExceptionIncidentSample> {
   const query = gql`
-    query GetExceptionIncidentSamples($appId: ID!, $incidentId: ID!, $limit: Int!, $offset: Int!) {
-      app(id: $appId) {
-        exceptionIncident(id: $incidentId) {
-          samples(limit: $limit, offset: $offset) {
-            action
-            createdAt
-            customData
-            duration
+    query GetExceptionIncidentSamples($limit: Int!, $offset: Int!) {
+      viewer {
+        organizations {
+          apps {
             id
-            namespace
-            originalId
-            originallyRequested
-            queueDuration
-            params
-            revision
-            sessionData
-            time
-            version
-            overview {
-              key
-              value
-            }
-            firstMarker {
-              user
-              shortRevision
-              revision
-              namespace
-              liveForInWords
-              liveFor
-              gitCompareUrl
+            exceptionIncidents(state: OPEN, limit: 50) {
               id
-              exceptionRate
-              exceptionCount
-              createdAt
-            }
-            exception {
-              message
-              name
-              backtrace {
-                column
-                code {
-                  line
-                  source
+              samples(limit: $limit, offset: $offset) {
+                action
+                createdAt
+                customData
+                duration
+                id
+                namespace
+                originalId
+                originallyRequested
+                queueDuration
+                params
+                revision
+                sessionData
+                time
+                version
+                overview {
+                  key
+                  value
                 }
-                error {
-                  class
+                firstMarker {
+                  user
+                  shortRevision
+                  revision
+                  namespace
+                  liveForInWords
+                  liveFor
+                  gitCompareUrl
+                  id
+                  exceptionRate
+                  exceptionCount
+                  createdAt
+                }
+                exception {
                   message
+                  name
+                  backtrace {
+                    column
+                    code {
+                      line
+                      source
+                    }
+                    error {
+                      class
+                      message
+                    }
+                    line
+                    method
+                    original
+                    path
+                    type
+                    url
+                  }
                 }
-                line
-                method
-                original
-                path
-                type
-                url
-              }
-            }
-            errorCauses {
-              message
-              name
-              firstLine {
-                column
-                code {
-                  line
-                  source
-                }
-                line
-                error {
-                  class
+                errorCauses {
                   message
+                  name
+                  firstLine {
+                    column
+                    code {
+                      line
+                      source
+                    }
+                    line
+                    error {
+                      class
+                      message
+                    }
+                    method
+                    original
+                    type
+                    url
+                    path
+                  }
                 }
-                method
-                original
-                type
-                url
-                path
+                environment {
+                  key
+                  value
+                }
               }
-            }
-            environment {
-              key
-              value
             }
           }
         }
@@ -194,13 +206,24 @@ export async function getExceptionIncidentSample(
   `;
 
   const data = await graphqlClient.request<GetExceptionIncidentSamplesResponse>(query, {
-    appId,
-    incidentId,
     limit: 1, // Only get one sample at a time
     offset,
   });
 
-  const samples = data.app?.exceptionIncident?.samples || [];
+  // Find the app and incident
+  let samples: GetExceptionIncidentSamplesResponse['viewer']['organizations'][0]['apps'][0]['exceptionIncidents'][0]['samples'] =
+    [];
+  for (const org of data.viewer.organizations) {
+    const app = org.apps.find((a) => a.id === appId);
+    if (app) {
+      const incident = app.exceptionIncidents.find((i) => i.id === incidentId);
+      if (incident && incident.samples) {
+        samples = incident.samples;
+        break;
+      }
+    }
+  }
+
   if (samples.length === 0) {
     throw new Error(`No samples found for exception incident ${incidentId} at offset ${offset}`);
   }
