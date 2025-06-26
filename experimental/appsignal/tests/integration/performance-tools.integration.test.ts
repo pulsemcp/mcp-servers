@@ -38,7 +38,7 @@ describe('AppSignal MCP Server Performance Tools Integration', () => {
       expect(response).toHaveProperty('hasMore');
       expect(response.incidents).toHaveLength(1);
       expect(response.incidents[0].id).toBe('perf-123');
-      expect(response.incidents[0].state).toBe('open');
+      expect(response.incidents[0].state).toBe('OPEN');
       expect(response.incidents[0].hasNPlusOne).toBe(true);
     });
 
@@ -49,7 +49,7 @@ describe('AppSignal MCP Server Performance Tools Integration', () => {
           {
             id: 'perf-open',
             number: '1',
-            state: 'open',
+            state: 'OPEN',
             severity: 'high',
             actionNames: ['Controller#action1'],
             namespace: 'web',
@@ -69,7 +69,7 @@ describe('AppSignal MCP Server Performance Tools Integration', () => {
           {
             id: 'perf-closed',
             number: '2',
-            state: 'closed',
+            state: 'CLOSED',
             severity: 'low',
             actionNames: ['Controller#action2'],
             namespace: 'web',
@@ -89,7 +89,7 @@ describe('AppSignal MCP Server Performance Tools Integration', () => {
           {
             id: 'perf-wip',
             number: '3',
-            state: 'wip',
+            state: 'WIP',
             severity: 'medium',
             actionNames: ['Controller#action3'],
             namespace: 'web',
@@ -114,12 +114,12 @@ describe('AppSignal MCP Server Performance Tools Integration', () => {
 
       // Test filtering by 'closed' state
       const result = await client.callTool('get_performance_incidents', {
-        states: ['closed'],
+        states: ['CLOSED'],
       });
 
       const response = JSON.parse(result.content[0].text);
       expect(response.incidents).toHaveLength(1);
-      expect(response.incidents[0].state).toBe('closed');
+      expect(response.incidents[0].state).toBe('CLOSED');
       expect(response.incidents[0].id).toBe('perf-closed');
     });
 
@@ -151,7 +151,7 @@ describe('AppSignal MCP Server Performance Tools Integration', () => {
       const incident = JSON.parse(result.content[0].text);
       expect(incident.id).toBe('perf-123');
       expect(incident.number).toBe('42');
-      expect(incident.state).toBe('open');
+      expect(incident.state).toBe('OPEN');
       expect(incident.severity).toBe('high');
       expect(incident.hasNPlusOne).toBe(true);
       expect(incident.mean).toBe(1234.5);

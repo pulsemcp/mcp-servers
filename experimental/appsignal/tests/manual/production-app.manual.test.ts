@@ -204,4 +204,75 @@ describe('Production App Bug Fixes - Manual Test', () => {
     console.log('   - Production app returns results (not development app)');
     console.log('   - Singular incident queries work without 400 errors');
   });
+
+  it('should return performance incidents for production app', async () => {
+    console.log('\n🧪 Testing Performance Incidents for Production App...\n');
+
+    // Select production app
+    console.log('🎯 Selecting production app...');
+    await client.callTool('select_app_id', { appId: PRODUCTION_APP_ID });
+    console.log(`   ✓ Selected app ID: ${PRODUCTION_APP_ID}`);
+
+    // Test 1: Get performance incidents (default - OPEN state)
+    console.log('\n📊 Testing get_performance_incidents with default parameters...');
+    const openResult = await client.callTool('get_performance_incidents', {});
+    const openData = JSON.parse(openResult.content[0].text);
+
+    console.log(
+      `   ✓ OPEN performance incidents: ${openData.total} total, ${openData.incidents.length} returned`
+    );
+
+    // The production app should have performance incidents
+    expect(openData.incidents.length).toBeGreaterThan(0);
+    console.log('   ✅ Successfully found OPEN performance incidents!');
+
+    // Test 2: Test with empty states array
+    console.log('\n📊 Testing get_performance_incidents with empty states array...');
+    const emptyStatesResult = await client.callTool('get_performance_incidents', {
+      states: [],
+    });
+    const emptyStatesData = JSON.parse(emptyStatesResult.content[0].text);
+
+    console.log(`   ✓ Empty states returned: ${emptyStatesData.total} total`);
+    expect(emptyStatesData.total).toBe(openData.total);
+    console.log('   ✅ Empty states correctly defaults to OPEN!');
+
+    // Test 3: Test with all states
+    console.log('\n📊 Testing get_performance_incidents with all states...');
+    const allStatesResult = await client.callTool('get_performance_incidents', {
+      states: ['OPEN', 'CLOSED', 'WIP'],
+    });
+    const allStatesData = JSON.parse(allStatesResult.content[0].text);
+
+    console.log(
+      `   ✓ All states returned: ${allStatesData.total} total, ${allStatesData.incidents.length} returned`
+    );
+    expect(allStatesData.total).toBeGreaterThanOrEqual(openData.total);
+    console.log('   ✅ Multi-state query works correctly!');
+
+    // Test 4: Verify state values are uppercase
+    console.log('\n📊 Verifying state values are uppercase...');
+    allStatesData.incidents.forEach((incident: { state: string }) => {
+      expect(['OPEN', 'CLOSED', 'WIP']).toContain(incident.state);
+    });
+    console.log('   ✅ All states are properly uppercase!');
+
+    // Test 5: Get details for first incident
+    if (openData.incidents.length > 0) {
+      const firstIncident = openData.incidents[0];
+      console.log(`\n🔍 Testing get_performance_incident for ID: ${firstIncident.id}`);
+
+      const detailResult = await client.callTool('get_performance_incident', {
+        incidentId: firstIncident.id,
+      });
+
+      expect(detailResult.content[0].text).not.toContain('Error');
+      const detail = JSON.parse(detailResult.content[0].text);
+      expect(detail.id).toBe(firstIncident.id);
+      expect(detail.state).toBe(firstIncident.state);
+      console.log('   ✅ Successfully retrieved performance incident details!');
+    }
+
+    console.log('\n✅ All performance incident tests passed for production app!');
+  });
 });

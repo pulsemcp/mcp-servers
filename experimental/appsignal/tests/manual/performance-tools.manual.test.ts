@@ -143,6 +143,7 @@ describe('AppSignal Performance Tools - Manual Test', () => {
     try {
       console.log('\n🔍 Fetching performance incidents...');
 
+      // Test 1: Default call (should return OPEN incidents)
       const result = await client.callTool('get_performance_incidents', {});
       const response = JSON.parse(result.content[0].text);
 
@@ -155,14 +156,47 @@ describe('AppSignal Performance Tools - Manual Test', () => {
       expect(response).toHaveProperty('hasMore');
       expect(Array.isArray(response.incidents)).toBe(true);
 
+      // Test 2: Verify states are uppercase in response
+      if (response.incidents.length > 0) {
+        response.incidents.forEach((incident: { state: string }) => {
+          expect(['OPEN', 'CLOSED', 'WIP']).toContain(incident.state);
+        });
+        console.log('✓ All incident states are properly uppercase');
+      }
+
+      // Test 3: Empty states array should default to OPEN
+      console.log('\n🔍 Testing empty states array handling...');
+      const emptyStatesResult = await client.callTool('get_performance_incidents', {
+        states: [],
+      });
+      const emptyStatesResponse = JSON.parse(emptyStatesResult.content[0].text);
+      console.log(`Empty states array returned ${emptyStatesResponse.incidents.length} incidents`);
+
+      // Should return same as default (OPEN only)
+      expect(emptyStatesResponse.total).toBe(response.total);
+
       if (response.incidents.length === 0) {
-        outcome.warnings.push(
-          'No performance incidents found - need performance data in AppSignal'
-        );
-        console.log(
-          '⚠️  No performance incidents found. This may be expected if the app has no performance issues.'
-        );
-        return;
+        // Test 4: If no OPEN incidents, try ALL states to ensure API is working
+        console.log('\n🔍 No OPEN incidents found, trying all states...');
+        const allStatesResult = await client.callTool('get_performance_incidents', {
+          states: ['OPEN', 'CLOSED', 'WIP'],
+        });
+        const allStatesResponse = JSON.parse(allStatesResult.content[0].text);
+        console.log(`All states returned ${allStatesResponse.incidents.length} incidents`);
+
+        if (allStatesResponse.incidents.length === 0) {
+          outcome.warnings.push(
+            'No performance incidents found in any state - need performance data in AppSignal'
+          );
+          console.log(
+            '⚠️  No performance incidents found. This may be expected if the app has no performance issues.'
+          );
+          return;
+        } else {
+          console.log('✓ Found incidents in non-OPEN states');
+          response.incidents = allStatesResponse.incidents;
+          response.total = allStatesResponse.total;
+        }
       }
 
       outcome.details.performanceIncidentsFound = true;
@@ -197,7 +231,7 @@ describe('AppSignal Performance Tools - Manual Test', () => {
       // Test filtering by state
       console.log('\n🔍 Testing state filtering...');
       const closedResult = await client.callTool('get_performance_incidents', {
-        states: ['closed'],
+        states: ['CLOSED'],
       });
       const closedResponse = JSON.parse(closedResult.content[0].text);
       console.log(`Found ${closedResponse.incidents.length} closed incidents`);

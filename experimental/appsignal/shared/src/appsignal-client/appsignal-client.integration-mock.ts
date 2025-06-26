@@ -248,7 +248,7 @@ export function createIntegrationMockAppsignalClient(
             id: 'mock-log-incident-1',
             number: 1,
             summary: 'Mock Log Incident',
-            state: 'open',
+            state: 'OPEN',
             count: 10,
             lastOccurredAt: new Date().toISOString(),
             trigger: {
@@ -343,7 +343,7 @@ export function createIntegrationMockAppsignalClient(
       // Use mock data if provided
       if (mockData.performanceIncidents) {
         const filteredIncidents = mockData.performanceIncidents.filter(
-          (inc) => !states || states.length === 0 || states.includes(inc.state)
+          (inc) => !states || states.length === 0 || (states as string[]).includes(inc.state)
         );
         return {
           incidents: filteredIncidents,
@@ -358,7 +358,7 @@ export function createIntegrationMockAppsignalClient(
           {
             id: 'perf-123',
             number: '42',
-            state: 'open',
+            state: 'OPEN',
             severity: 'high',
             actionNames: ['UsersController#show'],
             namespace: 'web',
@@ -386,7 +386,7 @@ export function createIntegrationMockAppsignalClient(
         return {
           id: 'perf-123',
           number: '42',
-          state: 'open',
+          state: 'OPEN',
           severity: 'high',
           actionNames: ['UsersController#show'],
           namespace: 'web',

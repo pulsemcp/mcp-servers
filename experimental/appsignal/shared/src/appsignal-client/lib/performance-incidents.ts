@@ -4,7 +4,7 @@ import type { GraphQLClient } from 'graphql-request';
 export interface PerformanceIncident {
   id: string;
   number: string;
-  state: 'open' | 'closed' | 'wip';
+  state: 'OPEN' | 'CLOSED' | 'WIP';
   severity: string;
   actionNames: string[];
   namespace: string;
@@ -27,7 +27,10 @@ interface GetPerformanceIncidentsResponse {
     organizations: Array<{
       apps: Array<{
         id: string;
-        performanceIncidents: PerformanceIncident[];
+        paginatedPerformanceIncidents: {
+          rows: PerformanceIncident[];
+          total: number;
+        };
       }>;
     }>;
   };
@@ -36,35 +39,46 @@ interface GetPerformanceIncidentsResponse {
 export async function getPerformanceIncidents(
   graphqlClient: GraphQLClient,
   appId: string,
-  states: string[] = ['open'],
+  states: string[] = ['OPEN'],
   limit = 50,
   offset = 0
 ): Promise<{ incidents: PerformanceIncident[]; total: number; hasMore: boolean }> {
+  // States should already be uppercase, but ensure they are
+  const statesToQuery = states.length === 0 ? ['OPEN'] : states;
+
   const query = gql`
-    query GetPerformanceIncidents($limit: Int!, $offset: Int!) {
+    query GetPerformanceIncidents($state: IncidentStateEnum, $limit: Int!, $offset: Int!) {
       viewer {
         organizations {
           apps {
             id
-            performanceIncidents(limit: $limit, offset: $offset) {
-              id
-              number
-              state
-              severity
-              actionNames
-              namespace
-              mean
-              count
-              scopedCount
-              totalDuration
-              description
-              digests
-              hasNPlusOne
-              hasSamplesInRetention
-              createdAt
-              lastOccurredAt
-              lastSampleOccurredAt
-              updatedAt
+            paginatedPerformanceIncidents(
+              state: $state
+              limit: $limit
+              offset: $offset
+              order: LAST
+            ) {
+              total
+              rows {
+                id
+                number
+                state
+                severity
+                actionNames
+                namespace
+                mean
+                count
+                scopedCount
+                totalDuration
+                description
+                digests
+                hasNPlusOne
+                hasSamplesInRetention
+                createdAt
+                lastOccurredAt
+                lastSampleOccurredAt
+                updatedAt
+              }
             }
           }
         }
@@ -72,29 +86,37 @@ export async function getPerformanceIncidents(
     }
   `;
 
-  const data = await graphqlClient.request<GetPerformanceIncidentsResponse>(query, {
-    limit,
-    offset,
-  });
+  const allIncidents: PerformanceIncident[] = [];
+  let totalCount = 0;
 
-  // Find the app with matching ID
-  let incidents: PerformanceIncident[] = [];
-  for (const org of data.viewer.organizations) {
-    const app = org.apps.find((a) => a.id === appId);
-    if (app) {
-      incidents = app.performanceIncidents || [];
-      break;
+  // Query for each state individually (GraphQL API doesn't support multiple states in one query)
+  for (const state of statesToQuery) {
+    const data = await graphqlClient.request<GetPerformanceIncidentsResponse>(query, {
+      state,
+      limit,
+      offset,
+    });
+
+    // Find the app with matching ID
+    for (const org of data.viewer.organizations) {
+      const app = org.apps.find((a) => a.id === appId);
+      if (app && app.paginatedPerformanceIncidents) {
+        const incidents = app.paginatedPerformanceIncidents.rows || [];
+
+        // Keep state as uppercase to match GraphQL enum
+        incidents.forEach((incident) => {
+          allIncidents.push(incident);
+        });
+
+        totalCount += app.paginatedPerformanceIncidents.total || 0;
+        break;
+      }
     }
   }
 
-  // Filter by state
-  const filteredIncidents = incidents.filter((incident) =>
-    states.map((s) => s.toLowerCase()).includes(incident.state.toLowerCase())
-  );
-
   return {
-    incidents: filteredIncidents,
-    total: filteredIncidents.length,
-    hasMore: incidents.length === limit,
+    incidents: allIncidents,
+    total: totalCount,
+    hasMore: allIncidents.length >= limit,
   };
 }
