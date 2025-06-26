@@ -1,6 +1,16 @@
 name: Lint and Format Check
 
 on:
+  push:
+    branches: [ main ]
+    paths:
+      - '**/*.ts'
+      - '**/*.tsx'
+      - '**/*.json'
+      - '**/*.yml'
+      - '**/*.yaml'
+      - '.eslintrc.json'
+      - '.prettierrc.json'
   pull_request:
     paths:
       - '**/*.ts'
