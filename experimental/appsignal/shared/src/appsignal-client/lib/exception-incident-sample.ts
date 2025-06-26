@@ -59,45 +59,45 @@ interface GetExceptionIncidentSamplesResponse {
         exceptionIncidents: Array<{
           id: string;
           samples: Array<{
-        id: string;
-        time: string;
-        createdAt: string;
-        action: string;
-        customData: Record<string, unknown> | null;
-        duration: number | null;
-        namespace: string;
-        originalId: string;
-        originallyRequested: boolean;
-        queueDuration: number | null;
-        params: Record<string, unknown> | null;
-        revision: string;
-        sessionData: Record<string, unknown> | null;
-        version: string;
-        overview: Array<{ key: string; value: string }>;
-        firstMarker: {
-          user: string;
-          shortRevision: string;
-          revision: string;
-          namespace: string;
-          liveForInWords: string;
-          liveFor: number;
-          gitCompareUrl: string | null;
-          id: string;
-          exceptionRate: number;
-          exceptionCount: number;
-          createdAt: string;
-        } | null;
-        exception: {
-          message: string;
-          name: string;
-          backtrace: Backtrace[];
-        };
-        errorCauses: Array<{
-          message: string;
-          name: string;
-          firstLine: Backtrace;
-        }>;
-        environment: Array<{ key: string; value: string }>;
+            id: string;
+            time: string;
+            createdAt: string;
+            action: string;
+            customData: Record<string, unknown> | null;
+            duration: number | null;
+            namespace: string;
+            originalId: string;
+            originallyRequested: boolean;
+            queueDuration: number | null;
+            params: Record<string, unknown> | null;
+            revision: string;
+            sessionData: Record<string, unknown> | null;
+            version: string;
+            overview: Array<{ key: string; value: string }>;
+            firstMarker: {
+              user: string;
+              shortRevision: string;
+              revision: string;
+              namespace: string;
+              liveForInWords: string;
+              liveFor: number;
+              gitCompareUrl: string | null;
+              id: string;
+              exceptionRate: number;
+              exceptionCount: number;
+              createdAt: string;
+            } | null;
+            exception: {
+              message: string;
+              name: string;
+              backtrace: Backtrace[];
+            };
+            errorCauses: Array<{
+              message: string;
+              name: string;
+              firstLine: Backtrace;
+            }>;
+            environment: Array<{ key: string; value: string }>;
           }>;
         }>;
       }>;
@@ -120,83 +120,83 @@ export async function getExceptionIncidentSample(
             exceptionIncidents(state: OPEN, limit: 50) {
               id
               samples(limit: $limit, offset: $offset) {
-            action
-            createdAt
-            customData
-            duration
-            id
-            namespace
-            originalId
-            originallyRequested
-            queueDuration
-            params
-            revision
-            sessionData
-            time
-            version
-            overview {
-              key
-              value
-            }
-            firstMarker {
-              user
-              shortRevision
-              revision
-              namespace
-              liveForInWords
-              liveFor
-              gitCompareUrl
-              id
-              exceptionRate
-              exceptionCount
-              createdAt
-            }
-            exception {
-              message
-              name
-              backtrace {
-                column
-                code {
-                  line
-                  source
+                action
+                createdAt
+                customData
+                duration
+                id
+                namespace
+                originalId
+                originallyRequested
+                queueDuration
+                params
+                revision
+                sessionData
+                time
+                version
+                overview {
+                  key
+                  value
                 }
-                error {
-                  class
+                firstMarker {
+                  user
+                  shortRevision
+                  revision
+                  namespace
+                  liveForInWords
+                  liveFor
+                  gitCompareUrl
+                  id
+                  exceptionRate
+                  exceptionCount
+                  createdAt
+                }
+                exception {
                   message
+                  name
+                  backtrace {
+                    column
+                    code {
+                      line
+                      source
+                    }
+                    error {
+                      class
+                      message
+                    }
+                    line
+                    method
+                    original
+                    path
+                    type
+                    url
+                  }
                 }
-                line
-                method
-                original
-                path
-                type
-                url
-              }
-            }
-            errorCauses {
-              message
-              name
-              firstLine {
-                column
-                code {
-                  line
-                  source
-                }
-                line
-                error {
-                  class
+                errorCauses {
                   message
+                  name
+                  firstLine {
+                    column
+                    code {
+                      line
+                      source
+                    }
+                    line
+                    error {
+                      class
+                      message
+                    }
+                    method
+                    original
+                    type
+                    url
+                    path
+                  }
                 }
-                method
-                original
-                type
-                url
-                path
-              }
-            }
-            environment {
-              key
-              value
-            }
+                environment {
+                  key
+                  value
+                }
               }
             }
           }
@@ -211,7 +211,8 @@ export async function getExceptionIncidentSample(
   });
 
   // Find the app and incident
-  let samples: GetExceptionIncidentSamplesResponse['viewer']['organizations'][0]['apps'][0]['exceptionIncidents'][0]['samples'] = [];
+  let samples: GetExceptionIncidentSamplesResponse['viewer']['organizations'][0]['apps'][0]['exceptionIncidents'][0]['samples'] =
+    [];
   for (const org of data.viewer.organizations) {
     const app = org.apps.find((a) => a.id === appId);
     if (app) {

@@ -103,7 +103,8 @@ export async function getLogIncident(
     });
 
     // Find the app with matching ID
-    let incidents: GetLogIncidentResponse['viewer']['organizations'][0]['apps'][0]['logIncidents'] = [];
+    let incidents: GetLogIncidentResponse['viewer']['organizations'][0]['apps'][0]['logIncidents'] =
+      [];
     for (const org of data.viewer.organizations) {
       const app = org.apps.find((a) => a.id === appId);
       if (app) {

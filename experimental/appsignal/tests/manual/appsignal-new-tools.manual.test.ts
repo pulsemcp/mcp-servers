@@ -297,12 +297,12 @@ describe('AppSignal New Incident Tools - Manual Test', () => {
 
     // Step 7: Test individual incident tools with real IDs
     console.log('\n🔍 Step 7: Testing singular incident tools...');
-    
+
     // Get real incident IDs from previous queries
     let anomalyIncidentId: string | null = null;
     let exceptionIncidentId: string | null = null;
     let logIncidentId: string | null = null;
-    
+
     // Extract IDs from previous successful queries
     try {
       // Get anomaly incident ID
@@ -316,7 +316,7 @@ describe('AppSignal New Incident Tools - Manual Test', () => {
           anomalyIncidentId = anomalyData.incidents[0].id;
         }
       }
-      
+
       // Get exception incident ID
       const exceptionListResult = await client.callTool('get_exception_incidents', {
         states: ['OPEN'],
@@ -328,7 +328,7 @@ describe('AppSignal New Incident Tools - Manual Test', () => {
           exceptionIncidentId = exceptionData.incidents[0].id;
         }
       }
-      
+
       // Get log incident ID
       const logListResult = await client.callTool('get_log_incidents', {
         states: ['OPEN'],
@@ -343,7 +343,7 @@ describe('AppSignal New Incident Tools - Manual Test', () => {
     } catch {
       console.log('   ⚠️  Could not get incident IDs for testing');
     }
-    
+
     // Test anomaly incident
     if (anomalyIncidentId) {
       try {
@@ -351,7 +351,7 @@ describe('AppSignal New Incident Tools - Manual Test', () => {
         const anomalyResult = await client.callTool('get_anomaly_incident', {
           incidentId: anomalyIncidentId,
         });
-        
+
         if (!anomalyResult.content[0].text.includes('Error')) {
           const anomalyIncident = JSON.parse(anomalyResult.content[0].text);
           console.log('   ✓ Anomaly incident retrieved successfully');
@@ -369,7 +369,7 @@ describe('AppSignal New Incident Tools - Manual Test', () => {
     } else {
       console.log('\n   ⚠️  No anomaly incident ID available for testing');
     }
-    
+
     // Test exception incident
     if (exceptionIncidentId) {
       try {
@@ -377,7 +377,7 @@ describe('AppSignal New Incident Tools - Manual Test', () => {
         const exceptionResult = await client.callTool('get_exception_incident', {
           incidentId: exceptionIncidentId,
         });
-        
+
         if (!exceptionResult.content[0].text.includes('Error')) {
           const exceptionIncident = JSON.parse(exceptionResult.content[0].text);
           console.log('   ✓ Exception incident retrieved successfully');
@@ -394,7 +394,7 @@ describe('AppSignal New Incident Tools - Manual Test', () => {
     } else {
       console.log('\n   ⚠️  No exception incident ID available for testing');
     }
-    
+
     // Test log incident
     if (logIncidentId) {
       try {
@@ -402,7 +402,7 @@ describe('AppSignal New Incident Tools - Manual Test', () => {
         const logResult = await client.callTool('get_log_incident', {
           incidentId: logIncidentId,
         });
-        
+
         if (!logResult.content[0].text.includes('Error')) {
           const logIncident = JSON.parse(logResult.content[0].text);
           console.log('   ✓ Log incident retrieved successfully');

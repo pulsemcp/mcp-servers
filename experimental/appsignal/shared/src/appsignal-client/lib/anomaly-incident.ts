@@ -84,7 +84,8 @@ export async function getAnomalyIncident(
     });
 
     // Find the app with matching ID
-    let incidents: GetAnomalyIncidentResponse['viewer']['organizations'][0]['apps'][0]['anomalyIncidents'] = [];
+    let incidents: GetAnomalyIncidentResponse['viewer']['organizations'][0]['apps'][0]['anomalyIncidents'] =
+      [];
     for (const org of data.viewer.organizations) {
       const app = org.apps.find((a) => a.id === appId);
       if (app) {

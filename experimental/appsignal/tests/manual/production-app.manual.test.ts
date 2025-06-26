@@ -47,14 +47,20 @@ describe('Production App Bug Fixes - Manual Test', () => {
     console.log('📱 Step 1: Getting list of apps...');
     const appsResult = await client.callTool('get_apps', {});
     const appsData = JSON.parse(appsResult.content[0].text);
-    
-    const productionApp = appsData.apps.find((app: { id: string; name: string; environment: string }) => app.id === PRODUCTION_APP_ID);
-    const developmentApp = appsData.apps.find((app: { id: string; name: string; environment: string }) => app.id === DEVELOPMENT_APP_ID);
-    
+
+    const productionApp = appsData.apps.find(
+      (app: { id: string; name: string; environment: string }) => app.id === PRODUCTION_APP_ID
+    );
+    const developmentApp = appsData.apps.find(
+      (app: { id: string; name: string; environment: string }) => app.id === DEVELOPMENT_APP_ID
+    );
+
     expect(productionApp).toBeDefined();
     expect(developmentApp).toBeDefined();
     console.log(`   ✓ Found production app: ${productionApp.name} (${productionApp.environment})`);
-    console.log(`   ✓ Found development app: ${developmentApp.name} (${developmentApp.environment})`);
+    console.log(
+      `   ✓ Found development app: ${developmentApp.name} (${developmentApp.environment})`
+    );
 
     // Step 2: Select production app
     console.log('\n🎯 Step 2: Selecting production app...');
@@ -63,14 +69,16 @@ describe('Production App Bug Fixes - Manual Test', () => {
 
     // Step 3: Test list queries return results
     console.log('\n📋 Step 3: Testing list queries with production app...');
-    
+
     // Test anomaly incidents
     const anomalyResult = await client.callTool('get_anomaly_incidents', {
       states: ['OPEN'],
       limit: 10,
     });
     const anomalyData = JSON.parse(anomalyResult.content[0].text);
-    console.log(`   ✓ Anomaly incidents: ${anomalyData.total} total, ${anomalyData.incidents.length} returned`);
+    console.log(
+      `   ✓ Anomaly incidents: ${anomalyData.total} total, ${anomalyData.incidents.length} returned`
+    );
     expect(anomalyData.incidents.length).toBeGreaterThan(0);
 
     // Test exception incidents
@@ -79,7 +87,9 @@ describe('Production App Bug Fixes - Manual Test', () => {
       limit: 10,
     });
     const exceptionData = JSON.parse(exceptionResult.content[0].text);
-    console.log(`   ✓ Exception incidents: ${exceptionData.total} total, ${exceptionData.incidents.length} returned`);
+    console.log(
+      `   ✓ Exception incidents: ${exceptionData.total} total, ${exceptionData.incidents.length} returned`
+    );
     expect(exceptionData.incidents.length).toBeGreaterThan(0);
 
     // Test log incidents
@@ -93,19 +103,19 @@ describe('Production App Bug Fixes - Manual Test', () => {
 
     // Step 4: Test singular incident queries (Bug 2 fix)
     console.log('\n🔍 Step 4: Testing singular incident queries (400 error fix)...');
-    
+
     // Test anomaly incident
     if (anomalyData.incidents.length > 0) {
       const incidentId = anomalyData.incidents[0].id;
       console.log(`\n   Testing get_anomaly_incident with ID: ${incidentId}`);
-      
+
       const singleAnomalyResult = await client.callTool('get_anomaly_incident', {
         incidentId: incidentId,
       });
-      
+
       expect(singleAnomalyResult.content[0].text).not.toContain('400');
       expect(singleAnomalyResult.content[0].text).not.toContain('Error');
-      
+
       const singleAnomaly = JSON.parse(singleAnomalyResult.content[0].text);
       expect(singleAnomaly.id).toBe(incidentId);
       console.log('   ✅ Successfully retrieved anomaly incident without 400 error!');
@@ -115,14 +125,14 @@ describe('Production App Bug Fixes - Manual Test', () => {
     if (exceptionData.incidents.length > 0) {
       const incidentId = exceptionData.incidents[0].id;
       console.log(`\n   Testing get_exception_incident with ID: ${incidentId}`);
-      
+
       const singleExceptionResult = await client.callTool('get_exception_incident', {
         incidentId: incidentId,
       });
-      
+
       expect(singleExceptionResult.content[0].text).not.toContain('400');
       expect(singleExceptionResult.content[0].text).not.toContain('Error');
-      
+
       const singleException = JSON.parse(singleExceptionResult.content[0].text);
       expect(singleException.id).toBe(incidentId);
       console.log('   ✅ Successfully retrieved exception incident without 400 error!');
@@ -132,14 +142,14 @@ describe('Production App Bug Fixes - Manual Test', () => {
     if (logData.incidents.length > 0) {
       const incidentId = logData.incidents[0].id;
       console.log(`\n   Testing get_log_incident with ID: ${incidentId}`);
-      
+
       const singleLogResult = await client.callTool('get_log_incident', {
         incidentId: incidentId,
       });
-      
+
       expect(singleLogResult.content[0].text).not.toContain('400');
       expect(singleLogResult.content[0].text).not.toContain('Error');
-      
+
       const singleLog = JSON.parse(singleLogResult.content[0].text);
       expect(singleLog.id).toBe(incidentId);
       console.log('   ✅ Successfully retrieved log incident without 400 error!');
@@ -148,7 +158,7 @@ describe('Production App Bug Fixes - Manual Test', () => {
     // Step 5: Verify development app returns empty results (for comparison)
     console.log('\n🔄 Step 5: Verifying development app has no incidents...');
     await client.callTool('select_app_id', { appId: DEVELOPMENT_APP_ID });
-    
+
     const devAnomalyResult = await client.callTool('get_anomaly_incidents', {
       states: ['OPEN'],
       limit: 10,
