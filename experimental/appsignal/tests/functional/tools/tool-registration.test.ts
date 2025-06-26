@@ -55,7 +55,7 @@ describe('Tool Registration', () => {
   it('should register all tools when API key is provided', () => {
     registerTools(mockServer);
 
-    expect(mockServer.tool).toHaveBeenCalledTimes(11); // Now registering both select_app_id and change_app_id
+    expect(mockServer.tool).toHaveBeenCalledTimes(11);
     expect(registeredTools.has('get_apps')).toBe(true);
     expect(registeredTools.has('select_app_id')).toBe(true);
     expect(registeredTools.has('change_app_id')).toBe(true);
