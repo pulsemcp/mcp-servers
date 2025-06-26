@@ -21,56 +21,36 @@ export interface LogIncident {
     severities: string[];
     sourceIds: string[];
   };
-  logLine?: {
-    id: string;
-    timestamp: string;
-    message: string;
-    severity: string;
-    hostname: string;
-    group?: string;
-    attributes?: Array<{
-      key: string;
-      value: string;
-    }>;
-  };
 }
 
 interface GetLogIncidentResponse {
-  app: {
-    id: string;
-    logIncident: {
-      id: string;
-      number: number;
-      summary?: string;
-      description?: string;
-      severity?: 'critical' | 'high' | 'medium' | 'low' | 'debug';
-      state?: 'open' | 'closed';
-      count: number;
-      createdAt?: string;
-      lastOccurredAt?: string;
-      updatedAt?: string;
-      digests?: string[];
-      trigger: {
+  viewer: {
+    organizations: Array<{
+      apps: Array<{
         id: string;
-        name: string;
-        description?: string;
-        query?: string;
-        severities: string[];
-        sourceIds: string[];
-      };
-      logLine?: {
-        id: string;
-        timestamp: string;
-        message: string;
-        severity: string;
-        hostname: string;
-        group?: string;
-        attributes?: Array<{
-          key: string;
-          value: string;
+        logIncidents: Array<{
+          id: string;
+          number: number;
+          summary?: string;
+          description?: string;
+          severity?: 'critical' | 'high' | 'medium' | 'low' | 'debug' | 'UNTRIAGED';
+          state?: 'open' | 'closed' | 'OPEN' | 'CLOSED';
+          count: number;
+          createdAt?: string;
+          lastOccurredAt?: string;
+          updatedAt?: string;
+          digests?: string[];
+          trigger: {
+            id: string;
+            name: string;
+            description?: string;
+            query?: string;
+            severities: string[];
+            sourceIds: string[];
+          };
         }>;
-      };
-    };
+      }>;
+    }>;
   };
 }
 
@@ -80,39 +60,30 @@ export async function getLogIncident(
   incidentId: string
 ): Promise<LogIncident> {
   const query = gql`
-    query GetLogIncident($appId: ID!, $incidentId: ID!) {
-      app(id: $appId) {
-        id
-        logIncident(id: $incidentId) {
-          id
-          number
-          summary
-          description
-          severity
-          state
-          count
-          createdAt
-          lastOccurredAt
-          updatedAt
-          digests
-          trigger {
+    query GetLogIncident($limit: Int!, $offset: Int!) {
+      viewer {
+        organizations {
+          apps {
             id
-            name
-            description
-            query
-            severities
-            sourceIds
-          }
-          logLine {
-            id
-            timestamp
-            message
-            severity
-            hostname
-            group
-            attributes {
-              key
-              value
+            logIncidents(limit: $limit, offset: $offset, order: LAST, state: OPEN) {
+              id
+              number
+              description
+              severity
+              state
+              count
+              createdAt
+              lastOccurredAt
+              updatedAt
+              digests
+              trigger {
+                id
+                name
+                description
+                query
+                severities
+                sourceIds
+              }
             }
           }
         }
@@ -120,27 +91,58 @@ export async function getLogIncident(
     }
   `;
 
-  const data = await graphqlClient.request<GetLogIncidentResponse>(query, {
-    appId,
-    incidentId,
-  });
+  // Search through incidents to find the one with matching ID
+  const limit = 50;
+  let offset = 0;
+  let found: LogIncident | null = null;
 
-  const incident = data.app.logIncident;
+  while (!found) {
+    const data = await graphqlClient.request<GetLogIncidentResponse>(query, {
+      limit,
+      offset,
+    });
 
-  // Return the full incident data
-  return {
-    id: incident.id,
-    number: incident.number,
-    summary: incident.summary,
-    description: incident.description,
-    severity: incident.severity,
-    state: incident.state,
-    count: incident.count,
-    createdAt: incident.createdAt,
-    lastOccurredAt: incident.lastOccurredAt,
-    updatedAt: incident.updatedAt,
-    digests: incident.digests,
-    trigger: incident.trigger,
-    logLine: incident.logLine,
-  };
+    // Find the app with matching ID
+    let incidents: GetLogIncidentResponse['viewer']['organizations'][0]['apps'][0]['logIncidents'] = [];
+    for (const org of data.viewer.organizations) {
+      const app = org.apps.find((a) => a.id === appId);
+      if (app) {
+        incidents = app.logIncidents || [];
+        break;
+      }
+    }
+
+    // Check if we found the incident
+    const incident = incidents.find((inc) => inc.id === incidentId);
+    if (incident) {
+      found = {
+        id: incident.id,
+        number: incident.number,
+        summary: undefined, // summary field causes 500 errors
+        description: incident.description,
+        severity: incident.severity,
+        state: incident.state?.toLowerCase() as 'open' | 'closed' | undefined,
+        count: incident.count,
+        createdAt: incident.createdAt,
+        lastOccurredAt: incident.lastOccurredAt,
+        updatedAt: incident.updatedAt,
+        digests: incident.digests,
+        trigger: incident.trigger,
+      };
+      break;
+    }
+
+    // If we got fewer incidents than the limit, we've reached the end
+    if (incidents.length < limit) {
+      break;
+    }
+
+    offset += limit;
+  }
+
+  if (!found) {
+    throw new Error(`Log incident ${incidentId} not found for app ${appId}`);
+  }
+
+  return found;
 }

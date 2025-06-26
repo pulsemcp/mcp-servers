@@ -52,9 +52,13 @@ interface Backtrace {
 }
 
 interface GetExceptionIncidentSamplesResponse {
-  app: {
-    exceptionIncident: {
-      samples: Array<{
+  viewer: {
+    organizations: Array<{
+      apps: Array<{
+        id: string;
+        exceptionIncidents: Array<{
+          id: string;
+          samples: Array<{
         id: string;
         time: string;
         createdAt: string;
@@ -94,9 +98,11 @@ interface GetExceptionIncidentSamplesResponse {
           firstLine: Backtrace;
         }>;
         environment: Array<{ key: string; value: string }>;
+          }>;
+        }>;
       }>;
-    } | null;
-  } | null;
+    }>;
+  };
 }
 
 export async function getExceptionIncidentSample(
@@ -106,10 +112,14 @@ export async function getExceptionIncidentSample(
   offset = 0
 ): Promise<ExceptionIncidentSample> {
   const query = gql`
-    query GetExceptionIncidentSamples($appId: ID!, $incidentId: ID!, $limit: Int!, $offset: Int!) {
-      app(id: $appId) {
-        exceptionIncident(id: $incidentId) {
-          samples(limit: $limit, offset: $offset) {
+    query GetExceptionIncidentSamples($limit: Int!, $offset: Int!) {
+      viewer {
+        organizations {
+          apps {
+            id
+            exceptionIncidents(state: OPEN, limit: 50) {
+              id
+              samples(limit: $limit, offset: $offset) {
             action
             createdAt
             customData
@@ -187,6 +197,8 @@ export async function getExceptionIncidentSample(
               key
               value
             }
+              }
+            }
           }
         }
       }
@@ -194,13 +206,23 @@ export async function getExceptionIncidentSample(
   `;
 
   const data = await graphqlClient.request<GetExceptionIncidentSamplesResponse>(query, {
-    appId,
-    incidentId,
     limit: 1, // Only get one sample at a time
     offset,
   });
 
-  const samples = data.app?.exceptionIncident?.samples || [];
+  // Find the app and incident
+  let samples: GetExceptionIncidentSamplesResponse['viewer']['organizations'][0]['apps'][0]['exceptionIncidents'][0]['samples'] = [];
+  for (const org of data.viewer.organizations) {
+    const app = org.apps.find((a) => a.id === appId);
+    if (app) {
+      const incident = app.exceptionIncidents.find((i) => i.id === incidentId);
+      if (incident && incident.samples) {
+        samples = incident.samples;
+        break;
+      }
+    }
+  }
+
   if (samples.length === 0) {
     throw new Error(`No samples found for exception incident ${incidentId} at offset ${offset}`);
   }

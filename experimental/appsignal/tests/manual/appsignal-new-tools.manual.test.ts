@@ -295,24 +295,129 @@ describe('AppSignal New Incident Tools - Manual Test', () => {
       console.log('   ⚠️  Could not test pagination:', error);
     }
 
-    // Step 7: Test individual anomaly incident (error handling)
+    // Step 7: Test individual incident tools with real IDs
+    console.log('\n🔍 Step 7: Testing singular incident tools...');
+    
+    // Get real incident IDs from previous queries
+    let anomalyIncidentId: string | null = null;
+    let exceptionIncidentId: string | null = null;
+    let logIncidentId: string | null = null;
+    
+    // Extract IDs from previous successful queries
     try {
-      console.log('\n🔍 Step 7: Testing get_anomaly_incident...');
-      const testIncidentId = `test-anomaly-${Date.now()}`;
-
-      const anomalyResult = await client.callTool('get_anomaly_incident', {
-        incidentId: testIncidentId,
+      // Get anomaly incident ID
+      const anomalyListResult = await client.callTool('get_anomaly_incidents', {
+        states: ['OPEN'],
+        limit: 1,
       });
-
-      if (anomalyResult.content[0].text.includes('Error')) {
-        console.log('   ✓ Anomaly incident endpoint works (returned expected error)');
-        outcome.details.anomalyIncidentWorks = true;
-      } else {
-        console.log('   ⚠️  Unexpectedly found an anomaly incident with generated ID');
+      if (!anomalyListResult.content[0].text.includes('Error')) {
+        const anomalyData = JSON.parse(anomalyListResult.content[0].text);
+        if (anomalyData.incidents?.length > 0) {
+          anomalyIncidentId = anomalyData.incidents[0].id;
+        }
+      }
+      
+      // Get exception incident ID
+      const exceptionListResult = await client.callTool('get_exception_incidents', {
+        states: ['OPEN'],
+        limit: 1,
+      });
+      if (!exceptionListResult.content[0].text.includes('Error')) {
+        const exceptionData = JSON.parse(exceptionListResult.content[0].text);
+        if (exceptionData.incidents?.length > 0) {
+          exceptionIncidentId = exceptionData.incidents[0].id;
+        }
+      }
+      
+      // Get log incident ID
+      const logListResult = await client.callTool('get_log_incidents', {
+        states: ['OPEN'],
+        limit: 1,
+      });
+      if (!logListResult.content[0].text.includes('Error')) {
+        const logData = JSON.parse(logListResult.content[0].text);
+        if (logData.incidents?.length > 0) {
+          logIncidentId = logData.incidents[0].id;
+        }
       }
     } catch (error) {
-      outcome.errors.push(`Anomaly incident test failed: ${error}`);
-      console.error('   ❌ Error:', error);
+      console.log('   ⚠️  Could not get incident IDs for testing');
+    }
+    
+    // Test anomaly incident
+    if (anomalyIncidentId) {
+      try {
+        console.log(`\n   Testing get_anomaly_incident with ID: ${anomalyIncidentId}`);
+        const anomalyResult = await client.callTool('get_anomaly_incident', {
+          incidentId: anomalyIncidentId,
+        });
+        
+        if (!anomalyResult.content[0].text.includes('Error')) {
+          const anomalyIncident = JSON.parse(anomalyResult.content[0].text);
+          console.log('   ✓ Anomaly incident retrieved successfully');
+          console.log(`     ID: ${anomalyIncident.id}`);
+          console.log(`     Number: ${anomalyIncident.number}`);
+          outcome.details.anomalyIncidentWorks = true;
+        } else {
+          outcome.errors.push('Anomaly incident query returned error');
+          console.error('   ❌ Error:', anomalyResult.content[0].text);
+        }
+      } catch (error) {
+        outcome.errors.push(`Anomaly incident test failed: ${error}`);
+        console.error('   ❌ Error:', error);
+      }
+    } else {
+      console.log('\n   ⚠️  No anomaly incident ID available for testing');
+    }
+    
+    // Test exception incident
+    if (exceptionIncidentId) {
+      try {
+        console.log(`\n   Testing get_exception_incident with ID: ${exceptionIncidentId}`);
+        const exceptionResult = await client.callTool('get_exception_incident', {
+          incidentId: exceptionIncidentId,
+        });
+        
+        if (!exceptionResult.content[0].text.includes('Error')) {
+          const exceptionIncident = JSON.parse(exceptionResult.content[0].text);
+          console.log('   ✓ Exception incident retrieved successfully');
+          console.log(`     ID: ${exceptionIncident.id}`);
+          console.log(`     Name: ${exceptionIncident.name}`);
+        } else {
+          outcome.errors.push('Exception incident query returned error');
+          console.error('   ❌ Error:', exceptionResult.content[0].text);
+        }
+      } catch (error) {
+        outcome.errors.push(`Exception incident test failed: ${error}`);
+        console.error('   ❌ Error:', error);
+      }
+    } else {
+      console.log('\n   ⚠️  No exception incident ID available for testing');
+    }
+    
+    // Test log incident
+    if (logIncidentId) {
+      try {
+        console.log(`\n   Testing get_log_incident with ID: ${logIncidentId}`);
+        const logResult = await client.callTool('get_log_incident', {
+          incidentId: logIncidentId,
+        });
+        
+        if (!logResult.content[0].text.includes('Error')) {
+          const logIncident = JSON.parse(logResult.content[0].text);
+          console.log('   ✓ Log incident retrieved successfully');
+          console.log(`     ID: ${logIncident.id}`);
+          console.log(`     Number: ${logIncident.number}`);
+        } else {
+          outcome.errors.push('Log incident query returned error');
+          console.error('   ❌ Error:', logResult.content[0].text);
+        }
+      } catch (error) {
+        outcome.errors.push(`Log incident test failed: ${error}`);
+        console.error('   ❌ Error:', error);
+      }
+    } else {
+      console.log('\n   ⚠️  No log incident ID available for testing');
     }
 
     // Summary
