@@ -85,10 +85,6 @@ export function createMockAppsignalClient(): IAppsignalClient {
               severity: 'ERROR',
               hostname: 'api-server-01',
               group: 'api-service',
-              attributes: [
-                { key: 'service', value: 'api-service' },
-                { key: 'errorCode', value: 'DB_CONNECTION_ERROR' },
-              ],
             },
           ]
         : [];
@@ -98,7 +94,7 @@ export function createMockAppsignalClient(): IAppsignalClient {
         lines,
         formattedSummary: `Found ${lines.length} log entries within 3600s window.\n\n${
           lines.length > 0
-            ? 'Summary by severity:\n- ERROR: 1 entries\n\nRecent log samples:\n1. [2024-01-15T10:00:00Z] ERROR - Database connection failed (host: api-server-01) (group: api-service) (service=api-service, errorCode=DB_CONNECTION_ERROR)\n'
+            ? 'Summary by severity:\n- ERROR: 1 entries\n\nRecent log samples:\n1. [2024-01-15T10:00:00Z] ERROR - Database connection failed (host: api-server-01) (group: api-service)\n'
             : ''
         }`,
       };
@@ -167,6 +163,106 @@ export function createMockAppsignalClient(): IAppsignalClient {
       total: 1,
       hasMore: false,
     })),
+    getPerformanceIncidents: vi.fn().mockImplementation(async () => ({
+      incidents: [
+        {
+          id: 'perf-123',
+          number: '42',
+          state: 'open',
+          severity: 'high',
+          actionNames: ['UsersController#show'],
+          namespace: 'web',
+          mean: 1234.5,
+          count: 100,
+          scopedCount: 90,
+          totalDuration: 123450,
+          description: 'Slow database query',
+          digests: ['abc123'],
+          hasNPlusOne: true,
+          hasSamplesInRetention: true,
+          createdAt: '2024-01-01T00:00:00Z',
+          lastOccurredAt: '2024-01-15T00:00:00Z',
+          lastSampleOccurredAt: '2024-01-15T00:00:00Z',
+          updatedAt: '2024-01-15T00:00:00Z',
+        },
+      ],
+      total: 1,
+      hasMore: false,
+    })),
+    getPerformanceIncident: vi.fn().mockImplementation(async (incidentId: string) => {
+      if (incidentId === 'perf-123') {
+        return {
+          id: 'perf-123',
+          number: '42',
+          state: 'open',
+          severity: 'high',
+          actionNames: ['UsersController#show'],
+          namespace: 'web',
+          mean: 1234.5,
+          count: 100,
+          scopedCount: 90,
+          totalDuration: 123450,
+          description: 'Slow database query',
+          digests: ['abc123'],
+          hasNPlusOne: true,
+          hasSamplesInRetention: true,
+          createdAt: '2024-01-01T00:00:00Z',
+          lastOccurredAt: '2024-01-15T00:00:00Z',
+          lastSampleOccurredAt: '2024-01-15T00:00:00Z',
+          updatedAt: '2024-01-15T00:00:00Z',
+        };
+      }
+      throw new Error(`Performance incident ${incidentId} not found`);
+    }),
+    getPerformanceIncidentSample: vi.fn().mockImplementation(async (incidentId: string) => {
+      if (incidentId === 'perf-123') {
+        return {
+          id: 'sample-789',
+          time: '2024-01-15T00:00:00Z',
+          action: 'UsersController#show',
+          duration: 1523.4,
+          queueDuration: 45.2,
+          namespace: 'web',
+          revision: 'abc123',
+          version: '1.0.0',
+          originalId: 'req-123',
+          originallyRequested: true,
+          hasNPlusOne: true,
+          timelineTruncatedEvents: 0,
+          createdAt: '2024-01-15T00:00:00Z',
+          customData: { user_id: '123' },
+          params: { id: '42' },
+          sessionData: { ip: '127.0.0.1' },
+        };
+      }
+      throw new Error(`No sample found for performance incident ${incidentId}`);
+    }),
+    getPerformanceIncidentSampleTimeline: vi.fn().mockImplementation(async (incidentId: string) => {
+      if (incidentId === 'perf-123') {
+        return {
+          sampleId: 'sample-789',
+          timeline: [
+            {
+              name: 'process_action.action_controller',
+              action: 'UsersController#show',
+              digest: 'abc123',
+              group: 'action_controller',
+              level: 0,
+              duration: 1523.4,
+              childDuration: 1450.2,
+              allocationCount: 15000,
+              childAllocationCount: 14500,
+              count: 1,
+              time: 0,
+              end: 1523.4,
+              wrapping: false,
+              payload: { name: 'UsersController#show' },
+            },
+          ],
+        };
+      }
+      throw new Error(`No sample found for performance incident ${incidentId}`);
+    }),
   };
 }
 
@@ -212,18 +308,6 @@ export const mockLogIncident: LogIncident = {
     severities: ['ERROR', 'FATAL'],
     sourceIds: ['source1', 'source2'],
   },
-  logLine: {
-    id: 'log-line-123',
-    timestamp: '2024-01-15T10:30:00Z',
-    message: 'Database connection failed',
-    severity: 'ERROR',
-    hostname: 'api-server-01',
-    group: 'api-service',
-    attributes: [
-      { key: 'service', value: 'api' },
-      { key: 'error_code', value: 'DB_ERROR' },
-    ],
-  },
 };
 
 export const mockLogSearchResult: LogSearchResult = {
@@ -236,10 +320,6 @@ export const mockLogSearchResult: LogSearchResult = {
       severity: 'ERROR',
       hostname: 'api-server-01',
       group: 'api-service',
-      attributes: [
-        { key: 'service', value: 'api-service' },
-        { key: 'errorCode', value: 'DB_CONNECTION_ERROR' },
-      ],
     },
     {
       id: 'log-2',
@@ -248,14 +328,10 @@ export const mockLogSearchResult: LogSearchResult = {
       severity: 'WARN',
       hostname: 'web-server-01',
       group: 'web-service',
-      attributes: [
-        { key: 'service', value: 'web-service' },
-        { key: 'memoryUsage', value: '0.85' },
-      ],
     },
   ],
   formattedSummary:
-    'Found 2 log entries within 3600s window.\n\nSummary by severity:\n- ERROR: 1 entries\n- WARN: 1 entries\n\nRecent log samples:\n1. [2024-01-15T10:00:00Z] ERROR - Database connection failed (host: api-server-01) (group: api-service) (service=api-service, errorCode=DB_CONNECTION_ERROR)\n2. [2024-01-15T10:05:00Z] WARN - High memory usage detected (host: web-server-01) (group: web-service) (service=web-service, memoryUsage=0.85)\n',
+    'Found 2 log entries within 3600s window.\n\nSummary by severity:\n- ERROR: 1 entries\n- WARN: 1 entries\n\nRecent log samples:\n1. [2024-01-15T10:00:00Z] ERROR - Database connection failed (host: api-server-01) (group: api-service)\n2. [2024-01-15T10:05:00Z] WARN - High memory usage detected (host: web-server-01) (group: web-service)\n',
 };
 
 export const mockAnomalyIncident: AnomalyIncidentData = {

@@ -11,6 +11,10 @@ import { getExceptionIncidentsTool } from './tools/get-exception-incidents.js';
 import { getAnomalyIncidentsTool } from './tools/get-anomaly-incidents.js';
 import { IAppsignalClient } from './appsignal-client/appsignal-client.js';
 import { getEffectiveAppId, isAppIdLocked } from './state.js';
+import { getPerformanceIncidentsTool } from './tools/get-performance-incidents.js';
+import { getPerformanceIncidentTool } from './tools/get-performance-incident.js';
+import { getPerformanceIncidentSampleTool } from './tools/get-performance-incident-sample.js';
+import { getPerformanceIncidentSampleTimelineTool } from './tools/get-performance-incident-sample-timeline.js';
 
 export type ClientFactory = () => IAppsignalClient;
 
@@ -33,6 +37,10 @@ export function createRegisterTools(clientFactory: ClientFactory) {
       getLogIncidents?: RegisteredTool;
       getExceptionIncidents?: RegisteredTool;
       getAnomalyIncidents?: RegisteredTool;
+      getPerformanceIncidents?: RegisteredTool;
+      getPerformanceIncident?: RegisteredTool;
+      getPerformanceIncidentSample?: RegisteredTool;
+      getPerformanceIncidentSampleTimeline?: RegisteredTool;
     } = {};
 
     // Store references to app selection tools
@@ -49,6 +57,11 @@ export function createRegisterTools(clientFactory: ClientFactory) {
       if (mainTools.getLogIncidents) mainTools.getLogIncidents.enable();
       if (mainTools.getExceptionIncidents) mainTools.getExceptionIncidents.enable();
       if (mainTools.getAnomalyIncidents) mainTools.getAnomalyIncidents.enable();
+      if (mainTools.getPerformanceIncidents) mainTools.getPerformanceIncidents.enable();
+      if (mainTools.getPerformanceIncident) mainTools.getPerformanceIncident.enable();
+      if (mainTools.getPerformanceIncidentSample) mainTools.getPerformanceIncidentSample.enable();
+      if (mainTools.getPerformanceIncidentSampleTimeline)
+        mainTools.getPerformanceIncidentSampleTimeline.enable();
 
       // Switch from select_app_id to change_app_id
       if (selectAppTool) {
@@ -80,6 +93,16 @@ export function createRegisterTools(clientFactory: ClientFactory) {
     mainTools.getLogIncidents = getLogIncidentsTool(server, clientFactory);
     mainTools.getExceptionIncidents = getExceptionIncidentsTool(server, clientFactory);
     mainTools.getAnomalyIncidents = getAnomalyIncidentsTool(server, clientFactory);
+    mainTools.getPerformanceIncidents = getPerformanceIncidentsTool(server, clientFactory);
+    mainTools.getPerformanceIncident = getPerformanceIncidentTool(server, clientFactory);
+    mainTools.getPerformanceIncidentSample = getPerformanceIncidentSampleTool(
+      server,
+      clientFactory
+    );
+    mainTools.getPerformanceIncidentSampleTimeline = getPerformanceIncidentSampleTimelineTool(
+      server,
+      clientFactory
+    );
 
     // Configure initial state based on whether an app ID is already set
     const hasAppId = getEffectiveAppId();
@@ -97,6 +120,10 @@ export function createRegisterTools(clientFactory: ClientFactory) {
       mainTools.getLogIncidents.disable();
       mainTools.getExceptionIncidents.disable();
       mainTools.getAnomalyIncidents.disable();
+      mainTools.getPerformanceIncidents.disable();
+      mainTools.getPerformanceIncident.disable();
+      mainTools.getPerformanceIncidentSample.disable();
+      mainTools.getPerformanceIncidentSampleTimeline.disable();
     } else {
       // App ID already set - show change_app_id, hide select_app_id
       if (selectAppTool) selectAppTool.disable();

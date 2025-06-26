@@ -12,6 +12,17 @@ import { getLogIncidents } from './lib/list-log-incidents.js';
 import { getExceptionIncidents } from './lib/list-exception-incidents.js';
 import { getAnomalyIncidents } from './lib/list-anomaly-incidents.js';
 import type { AnomalyIncidentData, IncidentListResult } from '../types.js';
+import { getPerformanceIncidents, type PerformanceIncident } from './lib/performance-incidents.js';
+import { getPerformanceIncident } from './lib/performance-incident.js';
+import {
+  getPerformanceIncidentSample,
+  type PerformanceIncidentSample,
+} from './lib/performance-incident-sample.js';
+import {
+  getPerformanceIncidentSampleTimeline,
+  type PerformanceIncidentSampleTimeline,
+  type TimelineEvent,
+} from './lib/performance-incident-sample-timeline.js';
 
 // Re-export interfaces for backward compatibility
 export type {
@@ -21,6 +32,10 @@ export type {
   LogSearchResult,
   AnomalyIncidentData,
   IncidentListResult,
+  PerformanceIncident,
+  PerformanceIncidentSample,
+  PerformanceIncidentSampleTimeline,
+  TimelineEvent,
 };
 
 export interface IAppsignalClient {
@@ -49,6 +64,16 @@ export interface IAppsignalClient {
     limit?: number,
     offset?: number
   ): Promise<IncidentListResult<AnomalyIncidentData>>;
+  getPerformanceIncidents(
+    states?: Array<'open' | 'closed' | 'wip'>,
+    limit?: number,
+    offset?: number
+  ): Promise<IncidentListResult<PerformanceIncident>>;
+  getPerformanceIncident(incidentId: string): Promise<PerformanceIncident>;
+  getPerformanceIncidentSample(incidentId: string): Promise<PerformanceIncidentSample>;
+  getPerformanceIncidentSampleTimeline(
+    incidentId: string
+  ): Promise<PerformanceIncidentSampleTimeline>;
 }
 
 // Implementation using GraphQL API
@@ -115,5 +140,27 @@ export class AppsignalClient implements IAppsignalClient {
     offset = 0
   ): Promise<IncidentListResult<AnomalyIncidentData>> {
     return getAnomalyIncidents(this.graphqlClient, this.appId, states, limit, offset);
+  }
+
+  async getPerformanceIncidents(
+    states: Array<'open' | 'closed' | 'wip'> = ['open'],
+    limit = 50,
+    offset = 0
+  ): Promise<IncidentListResult<PerformanceIncident>> {
+    return getPerformanceIncidents(this.graphqlClient, this.appId, states, limit, offset);
+  }
+
+  async getPerformanceIncident(incidentId: string): Promise<PerformanceIncident> {
+    return getPerformanceIncident(this.graphqlClient, this.appId, incidentId);
+  }
+
+  async getPerformanceIncidentSample(incidentId: string): Promise<PerformanceIncidentSample> {
+    return getPerformanceIncidentSample(this.graphqlClient, this.appId, incidentId);
+  }
+
+  async getPerformanceIncidentSampleTimeline(
+    incidentId: string
+  ): Promise<PerformanceIncidentSampleTimeline> {
+    return getPerformanceIncidentSampleTimeline(this.graphqlClient, this.appId, incidentId);
   }
 }
