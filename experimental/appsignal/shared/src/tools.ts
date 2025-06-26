@@ -10,7 +10,7 @@ import { getLogIncidentsTool } from './tools/get-log-incidents.js';
 import { getExceptionIncidentsTool } from './tools/get-exception-incidents.js';
 import { getAnomalyIncidentsTool } from './tools/get-anomaly-incidents.js';
 import { IAppsignalClient } from './appsignal-client/appsignal-client.js';
-import { getSelectedAppId } from './state.js';
+import { getEffectiveAppId, isAppIdLocked } from './state.js';
 
 export type ClientFactory = () => IAppsignalClient;
 
@@ -37,10 +37,8 @@ export function createRegisterTools(clientFactory: ClientFactory) {
     } = {};
 
     // Store references to app selection tools
-    // eslint-disable-next-line prefer-const
-    let selectAppTool: RegisteredTool;
-    // eslint-disable-next-line prefer-const
-    let changeAppTool: RegisteredTool;
+    let selectAppTool: RegisteredTool | undefined;
+    let changeAppTool: RegisteredTool | undefined;
 
     // Enable function for selectAppId to call
     const enableMainTools = () => {
@@ -62,12 +60,20 @@ export function createRegisterTools(clientFactory: ClientFactory) {
       }
     };
 
-    // Register tools that are always available
-    getAppsTool(server, clientFactory);
+    // Store reference to get_apps tool
+    let getAppsTool_: RegisteredTool | undefined;
 
-    // Register both select and change tools, but only enable the appropriate one
-    selectAppTool = selectAppIdTool(server, 'select_app_id', enableMainTools, clientFactory);
-    changeAppTool = selectAppIdTool(server, 'change_app_id', enableMainTools, clientFactory);
+    // Check if app ID is locked (configured via env var)
+    const locked = isAppIdLocked();
+
+    // Register tools that are always available (unless locked)
+    if (!locked) {
+      getAppsTool_ = getAppsTool(server, clientFactory);
+
+      // Register both select and change tools, but only enable the appropriate one
+      selectAppTool = selectAppIdTool(server, 'select_app_id', enableMainTools, clientFactory);
+      changeAppTool = selectAppIdTool(server, 'change_app_id', enableMainTools, clientFactory);
+    }
 
     // Register main tools
     mainTools.getExceptionIncident = getExceptionIncidentTool(server, clientFactory);
@@ -80,10 +86,13 @@ export function createRegisterTools(clientFactory: ClientFactory) {
     mainTools.getAnomalyIncidents = getAnomalyIncidentsTool(server, clientFactory);
 
     // Configure initial state based on whether an app ID is already set
-    const hasAppId = envAppId || getSelectedAppId();
-    if (!hasAppId) {
+    const hasAppId = getEffectiveAppId();
+    if (locked) {
+      // App ID is locked via env var - all main tools are enabled, no app selection tools
+      // Main tools are enabled by default
+    } else if (!hasAppId) {
       // No app ID set - show select_app_id, hide change_app_id and main tools
-      changeAppTool.disable();
+      if (changeAppTool) changeAppTool.disable();
       mainTools.getExceptionIncident.disable();
       mainTools.getExceptionIncidentSample.disable();
       mainTools.getLogIncident.disable();
@@ -94,7 +103,7 @@ export function createRegisterTools(clientFactory: ClientFactory) {
       mainTools.getAnomalyIncidents.disable();
     } else {
       // App ID already set - show change_app_id, hide select_app_id
-      selectAppTool.disable();
+      if (selectAppTool) selectAppTool.disable();
     }
   };
 }

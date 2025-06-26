@@ -1,6 +1,6 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
-import { getSelectedAppId } from '../state.js';
+import { getEffectiveAppId } from '../state.js';
 import { IAppsignalClient } from '../appsignal-client/appsignal-client.js';
 
 export function getExceptionIncidentSampleTool(
@@ -64,7 +64,7 @@ Use cases:
         .describe('Sample index to retrieve (0 for most recent, 1 for second most recent, etc.)'),
     },
     async ({ incidentId, offset }) => {
-      const appId = getSelectedAppId() || process.env.APPSIGNAL_APP_ID;
+      const appId = getEffectiveAppId();
       if (!appId) {
         return {
           content: [

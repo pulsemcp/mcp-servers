@@ -1,6 +1,6 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
-import { getSelectedAppId } from '../state.js';
+import { getEffectiveAppId } from '../state.js';
 import { IAppsignalClient } from '../appsignal-client/appsignal-client.js';
 
 export function getExceptionIncidentTool(server: McpServer, clientFactory: () => IAppsignalClient) {
@@ -45,7 +45,7 @@ Use cases:
         .describe('The unique identifier of the exception incident to retrieve'),
     },
     async ({ incidentId }) => {
-      const appId = getSelectedAppId() || process.env.APPSIGNAL_APP_ID;
+      const appId = getEffectiveAppId();
       if (!appId) {
         return {
           content: [
