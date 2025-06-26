@@ -181,10 +181,6 @@ describe('AppSignal Performance Tools - Manual Test', () => {
             hasNPlusOne: boolean;
             hasSamplesInRetention: boolean;
           }) => {
-            count: number;
-            hasNPlusOne: boolean;
-            hasSamplesInRetention: boolean;
-          }) => {
             console.log(`  - ${incident.actionNames.join(', ')} (${incident.id})`);
             console.log(
               `    State: ${incident.state}, Mean: ${incident.mean}ms, Count: ${incident.count}`
