@@ -142,6 +142,11 @@ The tests automatically adapt to your AppSignal data and API limitations.
 
 # Setup
 
+## Prerequisites
+
+- Node.js v24.2.0 (use `nvm use` if you have nvm installed)
+- An [AppSignal API key](https://appsignal.com/users/sign_up)
+
 ## Cheatsheet
 
 | Environment Variable | Description                                                                | Required | Default Value | Example                    |
