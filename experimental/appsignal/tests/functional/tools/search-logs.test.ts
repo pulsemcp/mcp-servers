@@ -1,15 +1,20 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { createRegisterTools } from '../../../shared/src/tools';
-import { getSelectedAppId } from '../../../shared/src/state';
-import { createMockAppsignalClient } from '../../mocks/appsignal-client.functional-mock';
-import type { IAppsignalClient } from '../../../shared/src/appsignal-client/appsignal-client';
+import { vi } from 'vitest';
 
-// Mock the state module
+// Mock the state module - must be before any imports that use it
 vi.mock('../../../shared/src/state', () => ({
   setSelectedAppId: vi.fn(),
   getSelectedAppId: vi.fn(),
+  clearSelectedAppId: vi.fn(),
+  getEffectiveAppId: vi.fn(),
+  isAppIdLocked: vi.fn(),
 }));
+
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { createRegisterTools } from '../../../shared/src/tools';
+import { getSelectedAppId, getEffectiveAppId, isAppIdLocked } from '../../../shared/src/state';
+import { createMockAppsignalClient } from '../../mocks/appsignal-client.functional-mock';
+import type { IAppsignalClient } from '../../../shared/src/appsignal-client/appsignal-client';
 
 interface Tool {
   name: string;
@@ -37,6 +42,10 @@ describe('search_logs Tool', () => {
 
     // Reset mocks
     vi.clearAllMocks();
+
+    // Default mock implementations
+    vi.mocked(isAppIdLocked).mockReturnValue(true);
+    vi.mocked(getEffectiveAppId).mockReturnValue('test-app-id');
 
     // Create a mock server that captures tool registrations
     registeredTools = new Map();
@@ -173,11 +182,13 @@ describe('search_logs Tool', () => {
   it('should require app ID to be selected', async () => {
     delete process.env.APPSIGNAL_APP_ID;
     vi.mocked(getSelectedAppId).mockReturnValue(undefined);
+    vi.mocked(getEffectiveAppId).mockReturnValue(undefined);
+    vi.mocked(isAppIdLocked).mockReturnValue(false);
 
     registerToolsWithClient(mockClient);
     const tool = registeredTools.get('search_logs');
     const result = await tool.handler({ query: 'test' });
 
-    expect(result.content[0].text).toContain('Error: No app ID selected');
+    expect(result.content[0].text).toContain('Error: No app ID configured');
   });
 });
