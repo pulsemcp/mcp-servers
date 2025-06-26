@@ -88,6 +88,7 @@ When you open a PR, the "Verify MCP Server Publication Staged" GitHub Action wil
 - Ensure the git tag exists and matches the package version
 - Run tests for the modified server
 - Verify the build succeeds
+- Check that the main README.md has been updated with the new version number
 
 ### 5. Automatic Publishing
 
@@ -137,6 +138,7 @@ Before creating a PR:
 - [ ] Build succeeds (`npm run build`)
 - [ ] No sensitive information in code
 - [ ] Git tag created and pushed
+- [ ] Main README.md updated - change server's "Local Status" from "Not Yet Published" to the version number
 
 ## Troubleshooting
 
@@ -160,6 +162,19 @@ The PR verification will fail if:
 
 Ensure your git tag matches the pattern: `<package-name>@<version>`
 Example: `appsignal-mcp-server@0.1.1`
+
+### README.md Not Updated
+
+The PR verification will fail if the main README.md hasn't been updated with the new version:
+
+- For servers showing "Not Yet Published", update to the actual version number
+- The server must appear in the correct table (Experimental or Productionized)
+- The version in README.md must match the version in package.json
+
+The automated check looks for entries like:
+```
+| server-name | Description | 0.1.0 | ... |
+```
 
 ## Adding a New Server to the Publication Process
 
