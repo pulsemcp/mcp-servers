@@ -5,7 +5,6 @@ export interface ExceptionIncidentSample {
   id: string;
   timestamp: string;
   message: string;
-  backtrace: string[];
   action: string;
   namespace: string;
   revision: string;
@@ -33,24 +32,6 @@ export interface ExceptionIncidentSample {
   };
 }
 
-interface Backtrace {
-  column: number | null;
-  code: {
-    line: number;
-    source: string;
-  } | null;
-  error: {
-    class: string;
-    message: string;
-  } | null;
-  line: number;
-  method: string;
-  original: string;
-  path: string;
-  type: string;
-  url: string | null;
-}
-
 interface GetExceptionIncidentSamplesResponse {
   viewer: {
     organizations: Array<{
@@ -61,43 +42,16 @@ interface GetExceptionIncidentSamplesResponse {
           samples: Array<{
             id: string;
             time: string;
-            createdAt: string;
             action: string;
-            customData: Record<string, unknown> | null;
-            duration: number | null;
             namespace: string;
-            originalId: string;
-            originallyRequested: boolean;
-            queueDuration: number | null;
-            params: Record<string, unknown> | null;
             revision: string;
-            sessionData: Record<string, unknown> | null;
             version: string;
-            overview: Array<{ key: string; value: string }>;
-            firstMarker: {
-              user: string;
-              shortRevision: string;
-              revision: string;
-              namespace: string;
-              liveForInWords: string;
-              liveFor: number;
-              gitCompareUrl: string | null;
-              id: string;
-              exceptionRate: number;
-              exceptionCount: number;
-              createdAt: string;
-            } | null;
-            exception: {
-              message: string;
-              name: string;
-              backtrace: Backtrace[];
-            };
-            errorCauses: Array<{
-              message: string;
-              name: string;
-              firstLine: Backtrace;
-            }>;
-            environment: Array<{ key: string; value: string }>;
+            duration: number | null;
+            queueDuration: number | null;
+            createdAt: string;
+            params: Record<string, unknown> | null;
+            customData: Record<string, unknown> | null;
+            sessionData: Record<string, unknown> | null;
           }>;
         }>;
       }>;
@@ -111,92 +65,29 @@ export async function getExceptionIncidentSample(
   incidentId: string,
   offset = 0
 ): Promise<ExceptionIncidentSample> {
+  // Note: The 'exception' field causes 500 errors in the AppSignal API
+  // We can retrieve most sample data but not the actual exception details
   const query = gql`
-    query GetExceptionIncidentSamples($limit: Int!, $offset: Int!) {
+    query GetExceptionIncidentSamples($limit: Int!) {
       viewer {
         organizations {
           apps {
             id
-            exceptionIncidents(state: OPEN, limit: 50) {
+            exceptionIncidents {
               id
-              samples(limit: $limit, offset: $offset) {
-                action
-                createdAt
-                customData
-                duration
+              samples(limit: $limit) {
                 id
-                namespace
-                originalId
-                originallyRequested
-                queueDuration
-                params
-                revision
-                sessionData
                 time
+                action
+                namespace
+                revision
                 version
-                overview {
-                  key
-                  value
-                }
-                firstMarker {
-                  user
-                  shortRevision
-                  revision
-                  namespace
-                  liveForInWords
-                  liveFor
-                  gitCompareUrl
-                  id
-                  exceptionRate
-                  exceptionCount
-                  createdAt
-                }
-                exception {
-                  message
-                  name
-                  backtrace {
-                    column
-                    code {
-                      line
-                      source
-                    }
-                    error {
-                      class
-                      message
-                    }
-                    line
-                    method
-                    original
-                    path
-                    type
-                    url
-                  }
-                }
-                errorCauses {
-                  message
-                  name
-                  firstLine {
-                    column
-                    code {
-                      line
-                      source
-                    }
-                    line
-                    error {
-                      class
-                      message
-                    }
-                    method
-                    original
-                    type
-                    url
-                    path
-                  }
-                }
-                environment {
-                  key
-                  value
-                }
+                duration
+                queueDuration
+                createdAt
+                params
+                customData
+                sessionData
               }
             }
           }
@@ -205,14 +96,14 @@ export async function getExceptionIncidentSample(
     }
   `;
 
+  // Note: AppSignal API doesn't support filtering incidents by ID or state in this query
+  // We have to fetch all incidents and find the one we need
   const data = await graphqlClient.request<GetExceptionIncidentSamplesResponse>(query, {
-    limit: 1, // Only get one sample at a time
-    offset,
+    limit: offset + 1, // Fetch enough samples to include the one at the offset
   });
 
   // Find the app and incident
-  let samples: GetExceptionIncidentSamplesResponse['viewer']['organizations'][0]['apps'][0]['exceptionIncidents'][0]['samples'] =
-    [];
+  let samples: any[] = [];
   for (const org of data.viewer.organizations) {
     const app = org.apps.find((a) => a.id === appId);
     if (app) {
@@ -225,53 +116,35 @@ export async function getExceptionIncidentSample(
   }
 
   if (samples.length === 0) {
-    throw new Error(`No samples found for exception incident ${incidentId} at offset ${offset}`);
+    throw new Error(`No samples found for exception incident ${incidentId}`);
   }
 
-  const sample = samples[0];
+  if (offset >= samples.length) {
+    throw new Error(
+      `No sample found at offset ${offset} for exception incident ${incidentId} (only ${samples.length} samples available)`
+    );
+  }
 
-  // Transform backtrace to simple string array
-  const backtrace = sample.exception.backtrace
-    .map((bt) => `${bt.path}:${bt.line} in ${bt.method}`)
-    .filter(Boolean);
+  const sample = samples[offset];
 
-  // Simplify error causes
-  const errorCauses = sample.errorCauses?.map((cause) => ({
-    name: cause.name,
-    message: cause.message,
-    firstLine: `${cause.firstLine.path}:${cause.firstLine.line} in ${cause.firstLine.method}`,
-  }));
-
-  // Simplify firstMarker if present
-  const firstMarker = sample.firstMarker
-    ? {
-        revision: sample.firstMarker.revision,
-        shortRevision: sample.firstMarker.shortRevision,
-        liveFor: sample.firstMarker.liveFor,
-        liveForInWords: sample.firstMarker.liveForInWords,
-        exceptionRate: sample.firstMarker.exceptionRate,
-        exceptionCount: sample.firstMarker.exceptionCount,
-        createdAt: sample.firstMarker.createdAt,
-      }
-    : undefined;
+  // Note: Exception details (message, backtrace) are not available due to API limitation
+  // The 'exception' field causes 500 errors when included in the query
+  const message =
+    'Exception details not available due to AppSignal API limitation. ' +
+    'The exception field cannot be queried without causing server errors.';
 
   return {
     id: sample.id,
     timestamp: sample.time,
-    message: sample.exception.message,
-    backtrace,
-    action: sample.action,
-    namespace: sample.namespace,
-    revision: sample.revision,
-    version: sample.version,
+    message,
+    action: sample.action || 'unknown',
+    namespace: sample.namespace || 'unknown',
+    revision: sample.revision || 'unknown',
+    version: sample.version || 'unknown',
     duration: sample.duration || undefined,
     queueDuration: sample.queueDuration || undefined,
     params: sample.params || undefined,
     customData: sample.customData || undefined,
     sessionData: sample.sessionData || undefined,
-    overview: sample.overview,
-    environment: sample.environment,
-    errorCauses,
-    firstMarker,
   };
 }
