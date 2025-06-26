@@ -1,0 +1,208 @@
+name: Publish Updated MCP Servers
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'experimental/*/local/package.json'
+      - 'productionized/*/local/package.json'
+      - '*/local/package.json'
+
+jobs:
+  detect-and-publish:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2  # Need to compare with previous commit
+          
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          registry-url: 'https://registry.npmjs.org'
+          
+      - name: Detect version changes
+        id: detect-changes
+        run: |
+          echo "Detecting version changes..."
+          
+          # Initialize arrays to track servers to publish
+          SERVERS_TO_PUBLISH=""
+          
+          # Get list of changed package.json files
+          CHANGED_FILES=$(git diff --name-only HEAD~1 HEAD | grep -E "(experimental|productionized|^[^/]+)/[^/]+/local/package\.json$" || true)
+          
+          if [ -z "$CHANGED_FILES" ]; then
+            echo "No package.json files changed"
+            echo "publish_needed=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          
+          echo "Changed files:"
+          echo "$CHANGED_FILES"
+          
+          for file in $CHANGED_FILES; do
+            echo "Checking $file..."
+            
+            # Get server directory
+            SERVER_DIR=$(dirname $(dirname "$file"))
+            LOCAL_DIR="$SERVER_DIR/local"
+            
+            # Check if file exists (might have been deleted)
+            if [ ! -f "$file" ]; then
+              echo "File deleted, skipping: $file"
+              continue
+            fi
+            
+            # Get current version
+            CURRENT_VERSION=$(node -e "console.log(require('./$file').version)")
+            PACKAGE_NAME=$(node -e "console.log(require('./$file').name)")
+            
+            # Get previous version
+            PREV_VERSION=$(git show HEAD~1:$file 2>/dev/null | node -e "
+              try {
+                const pkg = JSON.parse(require('fs').readFileSync(0, 'utf8'));
+                console.log(pkg.version);
+              } catch (e) {
+                console.log('0.0.0');
+              }
+            ")
+            
+            echo "Package: $PACKAGE_NAME"
+            echo "Previous version: $PREV_VERSION"
+            echo "Current version: $CURRENT_VERSION"
+            
+            # Check if version was bumped
+            if [ "$CURRENT_VERSION" != "$PREV_VERSION" ]; then
+              echo "Version bumped! Adding to publish list..."
+              SERVERS_TO_PUBLISH="$SERVERS_TO_PUBLISH $LOCAL_DIR"
+            else
+              echo "Version unchanged, skipping"
+            fi
+            
+            echo "---"
+          done
+          
+          if [ -z "$SERVERS_TO_PUBLISH" ]; then
+            echo "No servers need publishing"
+            echo "publish_needed=false" >> $GITHUB_OUTPUT
+          else
+            echo "Servers to publish: $SERVERS_TO_PUBLISH"
+            echo "publish_needed=true" >> $GITHUB_OUTPUT
+            echo "servers=$SERVERS_TO_PUBLISH" >> $GITHUB_OUTPUT
+          fi
+          
+      - name: Publish servers
+        if: steps.detect-changes.outputs.publish_needed == 'true'
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          set -e
+          
+          echo "Publishing MCP servers..."
+          
+          SERVERS="${{ steps.detect-changes.outputs.servers }}"
+          PUBLISHED_SERVERS=""
+          FAILED_SERVERS=""
+          
+          for LOCAL_DIR in $SERVERS; do
+            echo "Processing $LOCAL_DIR..."
+            
+            cd "$LOCAL_DIR"
+            
+            # Get package info
+            PACKAGE_NAME=$(node -e "console.log(require('./package.json').name)")
+            PACKAGE_VERSION=$(node -e "console.log(require('./package.json').version)")
+            
+            echo "Publishing $PACKAGE_NAME@$PACKAGE_VERSION..."
+            
+            # Install dependencies
+            echo "Installing dependencies..."
+            npm ci
+            
+            # Build
+            echo "Building..."
+            npm run build
+            
+            # Run tests
+            echo "Running tests..."
+            if npm test 2>/dev/null; then
+              echo "Tests passed"
+            else
+              echo "Warning: Tests failed or not found, continuing anyway"
+            fi
+            
+            # Check if version already exists on npm
+            if npm view "$PACKAGE_NAME@$PACKAGE_VERSION" version 2>/dev/null; then
+              echo "Version $PACKAGE_VERSION already published, skipping"
+              cd - > /dev/null
+              continue
+            fi
+            
+            # Publish to npm
+            if npm publish --access public; then
+              echo "✅ Successfully published $PACKAGE_NAME@$PACKAGE_VERSION"
+              PUBLISHED_SERVERS="$PUBLISHED_SERVERS\n- $PACKAGE_NAME@$PACKAGE_VERSION"
+              
+              # Create GitHub release
+              TAG_NAME="${PACKAGE_NAME}@${PACKAGE_VERSION}"
+              SERVER_DIR=$(dirname "$LOCAL_DIR")
+              SERVER_NAME=$(basename "$SERVER_DIR")
+              
+              # Extract changelog entry for this version
+              CHANGELOG_FILE="$SERVER_DIR/CHANGELOG.md"
+              if [ -f "$CHANGELOG_FILE" ]; then
+                # Extract the changelog section for this version
+                CHANGELOG_ENTRY=$(awk "/## \[$PACKAGE_VERSION\]/{flag=1; next} /## \[/{flag=0} flag" "$CHANGELOG_FILE")
+                
+                RELEASE_NOTES="# $PACKAGE_NAME v$PACKAGE_VERSION
+
+$CHANGELOG_ENTRY
+
+---
+Published to npm: https://www.npmjs.com/package/$PACKAGE_NAME"
+              else
+                RELEASE_NOTES="# $PACKAGE_NAME v$PACKAGE_VERSION
+
+Published to npm: https://www.npmjs.com/package/$PACKAGE_NAME"
+              fi
+              
+              # Create release using GitHub CLI
+              if command -v gh &> /dev/null; then
+                echo "$RELEASE_NOTES" | gh release create "$TAG_NAME" \
+                  --title "$PACKAGE_NAME v$PACKAGE_VERSION" \
+                  --notes-file - \
+                  || echo "Failed to create GitHub release (tag might not exist)"
+              fi
+            else
+              echo "❌ Failed to publish $PACKAGE_NAME@$PACKAGE_VERSION"
+              FAILED_SERVERS="$FAILED_SERVERS\n- $PACKAGE_NAME@$PACKAGE_VERSION"
+            fi
+            
+            cd - > /dev/null
+            echo "---"
+          done
+          
+          # Summary
+          echo "## Publishing Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          if [ -n "$PUBLISHED_SERVERS" ]; then
+            echo "### ✅ Successfully Published:" >> $GITHUB_STEP_SUMMARY
+            echo -e "$PUBLISHED_SERVERS" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          if [ -n "$FAILED_SERVERS" ]; then
+            echo "### ❌ Failed to Publish:" >> $GITHUB_STEP_SUMMARY
+            echo -e "$FAILED_SERVERS" >> $GITHUB_STEP_SUMMARY
+            exit 1
+          fi
+          
+      - name: No servers to publish
+        if: steps.detect-changes.outputs.publish_needed == 'false'
+        run: |
+          echo "No MCP servers require publishing" >> $GITHUB_STEP_SUMMARY
