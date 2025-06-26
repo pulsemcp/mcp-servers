@@ -9,7 +9,7 @@ on:
       - 'productionized/*/local/package.json'
       - '*/local/package.json'
   workflow_run:
-    workflows: ["CI Build & Test Checks"]
+    workflows: ['CI Build & Test Checks']
     types:
       - completed
 
