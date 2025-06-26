@@ -139,36 +139,21 @@ describe('Production App Bug Fixes - Manual Test', () => {
 
       // Test exception incident sample
       console.log(`\n   Testing get_exception_incident_sample with ID: ${incidentId}`);
-      
+
       const sampleResult = await client.callTool('get_exception_incident_sample', {
         incidentId: incidentId,
         offset: 0,
       });
 
-      // The AppSignal API currently returns 500 errors when querying samples
-      // This appears to be a limitation of their GraphQL API
-      // For now, we'll just verify that we get a proper error message
-      expect(sampleResult.content[0].text).toContain('Error fetching exception incident sample');
-      
-      // The error should be a 500 error (not 400), indicating a server-side issue
-      if (sampleResult.content[0].text.includes('GraphQL Error')) {
-        expect(sampleResult.content[0].text).toContain('Code: 500');
-        console.log('   ⚠️  Exception incident sample endpoint returns 500 error (API limitation)');
-        console.log('      This appears to be a limitation of the AppSignal GraphQL API');
-        console.log('      Samples may need to be viewed directly in the AppSignal dashboard');
-      } else {
-        // If we get here, the API might have been fixed
-        const sample = JSON.parse(sampleResult.content[0].text);
-        expect(sample.id).toBeDefined();
-        expect(sample.timestamp).toBeDefined();
-        expect(sample.message).toBeDefined();
-        expect(sample.backtrace).toBeDefined();
-        expect(Array.isArray(sample.backtrace)).toBe(true);
-        console.log('   ✅ Successfully retrieved exception incident sample!');
-        console.log(`     Sample ID: ${sample.id}`);
-        console.log(`     Message: ${sample.message}`);
-        console.log(`     Backtrace lines: ${sample.backtrace.length}`);
-      }
+      // The AppSignal API has a known limitation with querying samples
+      // We expect to get our custom error message
+      expect(sampleResult.content[0].text).toContain('AppSignal API limitation');
+      expect(sampleResult.content[0].text).toContain(
+        'GraphQL API returns server errors when querying samples'
+      );
+      console.log('   ⚠️  Exception incident sample endpoint has known API limitation');
+      console.log('      AppSignal GraphQL API returns 500 errors when querying samples');
+      console.log('      Samples must be viewed directly in the AppSignal dashboard');
     }
 
     // Test log incident
@@ -192,7 +177,7 @@ describe('Production App Bug Fixes - Manual Test', () => {
 
     // Step 5: Verify development app returns empty results (for comparison)
     console.log('\n🔄 Step 5: Verifying development app has no incidents...');
-    
+
     try {
       await client.callTool('select_app_id', { appId: DEVELOPMENT_APP_ID });
 
