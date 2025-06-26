@@ -11,6 +11,11 @@ export function getPerformanceIncidentSampleTool(
     'get_performance_incident_sample',
     `Retrieve a sample transaction for a specific performance incident from AppSignal. Samples provide detailed timing information about a specific slow request or operation, helping you understand exactly where time is being spent.
 
+💡 Recommended follow-up: After retrieving the sample, use the search_logs tool with:
+- Time range around the sample's timestamp (±30 seconds for performance issues)
+- Query terms from the action/namespace/params to find related log entries
+- Look for errors, warnings, or debug logs that might explain the performance issue
+
 Example response:
 {
   "id": "sample-789",
