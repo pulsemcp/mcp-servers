@@ -50,14 +50,26 @@ export async function searchLogs(
   // This can cause 500 errors with large datasets. Future improvement would be
   // to find a more targeted query approach if AppSignal adds support for it.
   const gqlQuery = gql`
-    query SearchLogs($query: String!, $limit: Int!, $severities: [SeverityEnum!], $start: String, $end: String) {
+    query SearchLogs(
+      $query: String!
+      $limit: Int!
+      $severities: [SeverityEnum!]
+      $start: String
+      $end: String
+    ) {
       viewer {
         organizations {
           apps {
             id
             logs {
               queryWindow
-              lines(query: $query, limit: $limit, severities: $severities, start: $start, end: $end) {
+              lines(
+                query: $query
+                limit: $limit
+                severities: $severities
+                start: $start
+                end: $end
+              ) {
                 id
                 timestamp
                 message
