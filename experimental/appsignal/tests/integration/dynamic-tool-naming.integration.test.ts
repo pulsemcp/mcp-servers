@@ -183,14 +183,14 @@ describe('Dynamic Tool Naming Integration Tests', () => {
 
     // Test with locked mode (env var set)
     client = await createTestMCPClientWithMock(mockAppSignalClient, true);
-    
+
     const resources = await client.listResources();
     const configResource = resources.resources.find((r) => r.uri === 'appsignal://config');
     expect(configResource).toBeDefined();
 
     const configData = await client.readResource('appsignal://config');
     const config = JSON.parse(configData.contents[0].text);
-    
+
     expect(config.appId).toBe('test-app-id'); // From env var
     expect(config.isLocked).toBe(true);
     expect(config.selectedAppId).toBeUndefined(); // Should not exist anymore
@@ -200,20 +200,20 @@ describe('Dynamic Tool Naming Integration Tests', () => {
 
     // Test without locked mode (no env var)
     client = await createTestMCPClientWithMock(mockAppSignalClient, false);
-    
+
     const configData2 = await client.readResource('appsignal://config');
     const config2 = JSON.parse(configData2.contents[0].text);
-    
+
     expect(config2.appId).toBe('not configured');
     expect(config2.isLocked).toBe(false);
     expect(config2.selectedAppId).toBeUndefined(); // Should not exist anymore
 
     // Select an app
     await client.callTool('select_app_id', { appId: 'selected-app-123' });
-    
+
     const configData3 = await client.readResource('appsignal://config');
     const config3 = JSON.parse(configData3.contents[0].text);
-    
+
     expect(config3.appId).toBe('selected-app-123');
     expect(config3.isLocked).toBe(false);
     expect(config3.selectedAppId).toBeUndefined(); // Should not exist anymore
