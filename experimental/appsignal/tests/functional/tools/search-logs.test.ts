@@ -298,4 +298,38 @@ describe('search_logs Tool', () => {
       undefined
     );
   });
+
+  it('should handle empty severities array properly', async () => {
+    vi.mocked(getSelectedAppId).mockReturnValue('test-app-id');
+
+    const customClient = createMockAppsignalClient();
+    customClient.searchLogs = vi.fn().mockResolvedValue({
+      queryWindow: 3600,
+      lines: [
+        {
+          id: 'log-all-1',
+          timestamp: '2024-01-15T10:00:00Z',
+          severity: 'INFO',
+          message: 'All severity levels included',
+          hostname: 'api-server-01',
+          group: 'api-service',
+          attributes: [{ key: 'test', value: 'empty-severities' }],
+        },
+      ],
+      formattedSummary: 'Found 1 log entries within 3600s window.',
+    });
+
+    registerToolsWithClient(customClient);
+    const tool = registeredTools.get('search_logs');
+    const result = await tool.handler({
+      query: 'test',
+      limit: 10,
+      severities: [], // Empty array
+    });
+
+    const response = JSON.parse(result.content[0].text);
+    expect(response.lines).toHaveLength(1);
+    // The empty array should be passed through, not converted to undefined
+    expect(customClient.searchLogs).toHaveBeenCalledWith('test', 10, [], undefined, undefined);
+  });
 });

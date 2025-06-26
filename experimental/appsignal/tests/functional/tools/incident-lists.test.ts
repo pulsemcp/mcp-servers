@@ -162,6 +162,32 @@ describe('Incident List Tools', () => {
       expect(response.incidents[0].state).toBe('open');
     });
 
+    it('should handle empty states array by defaulting to OPEN', async () => {
+      const mockResult = {
+        incidents: [
+          {
+            id: 'log-empty',
+            number: 301,
+            description: 'Empty states test for logs',
+            state: 'open',
+            count: 2,
+          },
+        ],
+        total: 1,
+        hasMore: false,
+      };
+
+      mockClient.getLogIncidents = vi.fn().mockResolvedValue(mockResult);
+
+      registerToolsWithClient(mockClient);
+      const tool = registeredTools.get('get_log_incidents');
+      const result = await tool.handler({ states: [], limit: 50, offset: 0 });
+
+      expect(mockClient.getLogIncidents).toHaveBeenCalledWith([], 50, 0);
+      const response = JSON.parse(result.content[0].text);
+      expect(response.incidents).toHaveLength(1);
+    });
+
     it('should handle API errors', async () => {
       mockClient.getLogIncidents = vi.fn().mockRejectedValue(new Error('GraphQL request failed'));
 
@@ -234,6 +260,33 @@ describe('Incident List Tools', () => {
       const result = await tool.handler({ states: ['WIP'], limit: 10, offset: 0 });
 
       expect(mockClient.getExceptionIncidents).toHaveBeenCalledWith(['WIP'], 10, 0);
+      const response = JSON.parse(result.content[0].text);
+      expect(response.incidents).toHaveLength(1);
+    });
+
+    it('should handle empty states array by defaulting to OPEN', async () => {
+      const mockResult = {
+        incidents: [
+          {
+            id: 'exc-4',
+            name: 'EmptyStatesError',
+            message: 'This should be returned',
+            count: 10,
+            lastOccurredAt: '2023-12-01T11:00:00Z',
+            status: 'open' as const,
+          },
+        ],
+        total: 1,
+        hasMore: false,
+      };
+
+      mockClient.getExceptionIncidents = vi.fn().mockResolvedValue(mockResult);
+
+      registerToolsWithClient(mockClient);
+      const tool = registeredTools.get('get_exception_incidents');
+      const result = await tool.handler({ states: [], limit: 50, offset: 0 });
+
+      expect(mockClient.getExceptionIncidents).toHaveBeenCalledWith([], 50, 0);
       const response = JSON.parse(result.content[0].text);
       expect(response.incidents).toHaveLength(1);
     });
@@ -377,6 +430,32 @@ describe('Incident List Tools', () => {
       mockClient.getAnomalyIncidents.mock.calls.forEach((call) => {
         expect(call).toEqual([['OPEN'], 50, 0]);
       });
+    });
+
+    it('should handle empty states array by defaulting to OPEN', async () => {
+      const mockResult = {
+        incidents: [
+          {
+            id: 'anomaly-empty',
+            number: 204,
+            description: 'Empty states test',
+            state: 'open',
+            count: 1,
+          },
+        ],
+        total: 1,
+        hasMore: false,
+      };
+
+      mockClient.getAnomalyIncidents = vi.fn().mockResolvedValue(mockResult);
+
+      registerToolsWithClient(mockClient);
+      const tool = registeredTools.get('get_anomaly_incidents');
+      const result = await tool.handler({ states: [], limit: 50, offset: 0 });
+
+      expect(mockClient.getAnomalyIncidents).toHaveBeenCalledWith([], 50, 0);
+      const response = JSON.parse(result.content[0].text);
+      expect(response.incidents).toHaveLength(1);
     });
 
     it('should handle API errors', async () => {

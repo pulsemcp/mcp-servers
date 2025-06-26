@@ -43,6 +43,8 @@ export async function getAnomalyIncidents(
   limit = 50,
   offset = 0
 ): Promise<IncidentListResult<AnomalyIncidentData>> {
+  // Handle empty states array - default to querying OPEN incidents
+  const statesToQuery = states.length === 0 ? ['OPEN'] : states;
   const query = gql`
     query GetAnomalyIncidents($state: IncidentStateEnum, $limit: Int!, $offset: Int!) {
       viewer {
@@ -82,7 +84,7 @@ export async function getAnomalyIncidents(
   const allIncidents: AnomalyIncidentData[] = [];
 
   // Query for each state individually (GraphQL API doesn't support multiple states in one query)
-  for (const state of states) {
+  for (const state of statesToQuery) {
     const data = await graphqlClient.request<GetAnomalyIncidentsResponse>(query, {
       state,
       limit,
