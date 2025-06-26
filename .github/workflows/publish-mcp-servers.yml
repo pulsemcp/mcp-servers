@@ -8,10 +8,15 @@ on:
       - 'experimental/*/local/package.json'
       - 'productionized/*/local/package.json'
       - '*/local/package.json'
+  workflow_run:
+    workflows: ["CI Build & Test Checks"]
+    types:
+      - completed
 
 jobs:
   detect-and-publish:
     runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'push' || (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success') }}
 
     steps:
       - name: Checkout code

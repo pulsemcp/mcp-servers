@@ -1,4 +1,7 @@
-name: All CI Checks
+name: CI Build & Test Checks
+
+# This workflow waits for all MCP Server CI checks and the lint check to pass.
+# All MCP Server CI workflows should include "MCP Server" in their name.
 
 on:
   push:
@@ -7,8 +10,8 @@ on:
   pull_request:
 
 jobs:
-  all-checks-passed:
-    name: All CI Checks Passed
+  ci-build-test-checks:
+    name: CI Build & Test Checks Passed
     runs-on: ubuntu-latest
     permissions:
       checks: read
@@ -54,8 +57,9 @@ jobs:
               
               // Filter to only the checks we care about (exclude this workflow)
               const relevantChecks = checkRuns.data.check_runs.filter(run => 
-                run.name !== 'All CI Checks Passed' && 
-                run.app.slug === 'github-actions'
+                run.name !== 'CI Build & Test Checks Passed' && 
+                run.app.slug === 'github-actions' &&
+                (run.name.includes('MCP Server') || run.name === 'Lint & Type Check')
               );
               
               // Group by name and get latest run
@@ -113,8 +117,9 @@ jobs:
             });
 
             const finalOtherChecks = finalCheckRuns.data.check_runs.filter(run => 
-              run.name !== 'All CI Checks Passed' && 
-              run.app.slug === 'github-actions'
+              run.name !== 'CI Build & Test Checks Passed' && 
+              run.app.slug === 'github-actions' &&
+              (run.name.includes('MCP Server') || run.name === 'Lint & Type Check')
             );
 
             if (finalOtherChecks.length === 0) {
@@ -126,5 +131,5 @@ jobs:
             } else if (!allCompleted) {
               core.setFailed('Timeout waiting for checks to complete');
             } else {
-              console.log('\n✅ All CI checks have passed!');
+              console.log('\n✅ All build and test checks have passed!');
             }
