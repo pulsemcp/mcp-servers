@@ -3,6 +3,7 @@ import { TestMCPClient } from '../../../../test-mcp-client/dist/index.js';
 import { createIntegrationMockAppsignalClient } from '../../shared/src/appsignal-client/appsignal-client.integration-mock.js';
 import type { IAppsignalClient } from '../../shared/src/appsignal-client/appsignal-client.js';
 import type { MockData } from '../../shared/src/appsignal-client/appsignal-client.integration-mock.js';
+import type { TimelineEvent } from '../../shared/src/appsignal-client/lib/performance-incident-sample-timeline.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -297,7 +298,7 @@ describe('AppSignal MCP Server Performance Tools Integration', () => {
       expect(timeline.timeline).toHaveLength(3);
 
       // Check for N+1 pattern
-      const userLoadQuery = timeline.timeline.find((t: any) => t.action === 'User Load');
+      const userLoadQuery = timeline.timeline.find((t: TimelineEvent) => t.action === 'User Load');
       expect(userLoadQuery.count).toBe(25); // High count indicates N+1
       expect(userLoadQuery.payload.body).toContain('SELECT * FROM users WHERE id = ?');
     });
