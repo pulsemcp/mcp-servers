@@ -305,15 +305,17 @@ describe('search_logs Tool', () => {
     const customClient = createMockAppsignalClient();
     customClient.searchLogs = vi.fn().mockResolvedValue({
       queryWindow: 3600,
-      lines: [{
-        id: 'log-all-1',
-        timestamp: '2024-01-15T10:00:00Z',
-        severity: 'INFO',
-        message: 'All severity levels included',
-        hostname: 'api-server-01',
-        group: 'api-service',
-        attributes: [{ key: 'test', value: 'empty-severities' }],
-      }],
+      lines: [
+        {
+          id: 'log-all-1',
+          timestamp: '2024-01-15T10:00:00Z',
+          severity: 'INFO',
+          message: 'All severity levels included',
+          hostname: 'api-server-01',
+          group: 'api-service',
+          attributes: [{ key: 'test', value: 'empty-severities' }],
+        },
+      ],
       formattedSummary: 'Found 1 log entries within 3600s window.',
     });
 
