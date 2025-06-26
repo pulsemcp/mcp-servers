@@ -259,8 +259,8 @@ if [ $? -eq 0 ]; then
     fi
   fi
   
-  echo "Opening in VS Code Insider..."
-  code-insiders "$NEW_WORKTREE_PATH" --new-window
+  echo "Opening in VS Code..."
+  code "$NEW_WORKTREE_PATH" --new-window
   
   # If we stashed changes, apply them back on main
   if [ "$STASHED" = true ]; then

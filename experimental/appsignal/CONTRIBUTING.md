@@ -57,6 +57,9 @@ This will generate:
 ### Running Inspector
 
 ```
+cd experimental/appsignal
+npm install
+npm run build
 npx @modelcontextprotocol/inspector node path/to/mcp-server-appsignal/build/index.js
 ```
 
