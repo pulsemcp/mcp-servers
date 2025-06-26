@@ -44,10 +44,8 @@ export async function getPerformanceIncidents(
   offset = 0
 ): Promise<{ incidents: PerformanceIncident[]; total: number; hasMore: boolean }> {
   // States should already be uppercase, but ensure they are
-  const statesToQuery = states.length === 0 
-    ? ['OPEN'] 
-    : states;
-    
+  const statesToQuery = states.length === 0 ? ['OPEN'] : states;
+
   const query = gql`
     query GetPerformanceIncidents($state: IncidentStateEnum, $limit: Int!, $offset: Int!) {
       viewer {
@@ -104,12 +102,12 @@ export async function getPerformanceIncidents(
       const app = org.apps.find((a) => a.id === appId);
       if (app && app.paginatedPerformanceIncidents) {
         const incidents = app.paginatedPerformanceIncidents.rows || [];
-        
+
         // Keep state as uppercase to match GraphQL enum
-        incidents.forEach(incident => {
+        incidents.forEach((incident) => {
           allIncidents.push(incident);
         });
-        
+
         totalCount += app.paginatedPerformanceIncidents.total || 0;
         break;
       }

@@ -167,11 +167,11 @@ describe('AppSignal Performance Tools - Manual Test', () => {
       // Test 3: Empty states array should default to OPEN
       console.log('\n🔍 Testing empty states array handling...');
       const emptyStatesResult = await client.callTool('get_performance_incidents', {
-        states: []
+        states: [],
       });
       const emptyStatesResponse = JSON.parse(emptyStatesResult.content[0].text);
       console.log(`Empty states array returned ${emptyStatesResponse.incidents.length} incidents`);
-      
+
       // Should return same as default (OPEN only)
       expect(emptyStatesResponse.total).toBe(response.total);
 
@@ -179,7 +179,7 @@ describe('AppSignal Performance Tools - Manual Test', () => {
         // Test 4: If no OPEN incidents, try ALL states to ensure API is working
         console.log('\n🔍 No OPEN incidents found, trying all states...');
         const allStatesResult = await client.callTool('get_performance_incidents', {
-          states: ['OPEN', 'CLOSED', 'WIP']
+          states: ['OPEN', 'CLOSED', 'WIP'],
         });
         const allStatesResponse = JSON.parse(allStatesResult.content[0].text);
         console.log(`All states returned ${allStatesResponse.incidents.length} incidents`);

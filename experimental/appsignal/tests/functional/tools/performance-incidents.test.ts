@@ -155,12 +155,8 @@ describe('Performance Incident Tools', () => {
       const customMockClient = {
         ...mockClient,
         getPerformanceIncidents: vi.fn(async (states = ['OPEN']) => ({
-          incidents: mockPerformanceIncidents.filter((inc) =>
-            states.includes(inc.state)
-          ),
-          total: mockPerformanceIncidents.filter((inc) =>
-            states.includes(inc.state)
-          ).length,
+          incidents: mockPerformanceIncidents.filter((inc) => states.includes(inc.state)),
+          total: mockPerformanceIncidents.filter((inc) => states.includes(inc.state)).length,
           hasMore: false,
         })),
       } as unknown as IAppsignalClient;
