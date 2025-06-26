@@ -3,6 +3,7 @@ import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js'
 import {
   ListResourcesResultSchema,
   ListToolsResultSchema,
+  ToolListChangedNotificationSchema,
 } from '@modelcontextprotocol/sdk/types.js';
 import { TestMCPClientOptions, ToolCallResult, ResourceReadResult } from './types.js';
 
@@ -11,6 +12,7 @@ export class TestMCPClient {
   private transport?: StdioClientTransport;
   private options: TestMCPClientOptions;
   private connected: boolean = false;
+  private listChangedHandler?: (notification: unknown) => void;
 
   constructor(options: TestMCPClientOptions) {
     this.options = options;
@@ -43,6 +45,14 @@ export class TestMCPClient {
     }
 
     await this.client.connect(this.transport);
+
+    // Set up notification handler for list changed notifications
+    this.client.setNotificationHandler(ToolListChangedNotificationSchema, (notification) => {
+      if (this.listChangedHandler) {
+        this.listChangedHandler(notification);
+      }
+    });
+
     this.connected = true;
   }
 
@@ -53,6 +63,7 @@ export class TestMCPClient {
 
     await this.client.close();
     this.connected = false;
+    this.listChangedHandler = undefined;
   }
 
   async listTools(): Promise<typeof ListToolsResultSchema._type> {
@@ -92,6 +103,10 @@ export class TestMCPClient {
     return {
       contents: result.contents as T[],
     };
+  }
+
+  setListChangedHandler(handler: (notification: unknown) => void): void {
+    this.listChangedHandler = handler;
   }
 
   private ensureConnected(): void {
