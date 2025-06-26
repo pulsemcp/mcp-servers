@@ -32,7 +32,9 @@ export interface IAppsignalClient {
   searchLogs(
     query: string,
     limit?: number,
-    severities?: Array<'debug' | 'info' | 'warn' | 'error' | 'fatal'>
+    severities?: Array<'debug' | 'info' | 'warn' | 'error' | 'fatal'>,
+    start?: string,
+    end?: string
   ): Promise<LogSearchResult>;
   getLogIncidents(
     states?: Array<'OPEN' | 'CLOSED' | 'WIP'>,
@@ -84,9 +86,11 @@ export class AppsignalClient implements IAppsignalClient {
   async searchLogs(
     query: string,
     limit = 100,
-    severities?: Array<'debug' | 'info' | 'warn' | 'error' | 'fatal'>
+    severities?: Array<'debug' | 'info' | 'warn' | 'error' | 'fatal'>,
+    start?: string,
+    end?: string
   ): Promise<LogSearchResult> {
-    return searchLogs(this.graphqlClient, this.appId, query, limit, severities);
+    return searchLogs(this.graphqlClient, this.appId, query, limit, severities, start, end);
   }
 
   async getAnomalyIncident(incidentId: string): Promise<AnomalyIncidentData> {
