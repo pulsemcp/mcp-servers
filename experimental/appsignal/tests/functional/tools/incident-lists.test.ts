@@ -146,7 +146,7 @@ describe('Incident List Tools', () => {
       const tool = registeredTools.get('get_log_incidents');
       const result = await tool.handler({});
 
-      expect(mockClient.getLogIncidents).toHaveBeenCalledWith(undefined, undefined, undefined);
+      expect(mockClient.getLogIncidents).toHaveBeenCalledWith(['OPEN'], 50, 0);
       const response = JSON.parse(result.content[0].text);
       expect(response.incidents).toHaveLength(1);
       expect(response.incidents[0].state).toBe('open');
