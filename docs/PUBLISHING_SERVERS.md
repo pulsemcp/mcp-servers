@@ -166,7 +166,6 @@ Example: `appsignal-mcp-server@0.1.1`
 When adding a new MCP server:
 
 1. Ensure `package.json` has:
-
    - Correct name following `<name>-mcp-server` convention
    - `stage-publish` script: `"stage-publish": "npm version"`
    - Proper version number (usually start at `0.1.0`)

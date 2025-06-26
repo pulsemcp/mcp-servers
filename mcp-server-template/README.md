@@ -30,7 +30,6 @@ DESCRIPTION
 2. **Replace placeholders throughout the codebase**
 
    Search and replace these values:
-
    - `NAME` → your server name (e.g., `weather`, `github`)
    - `DESCRIPTION` → your server description
    - `YOUR_NAME` → your name (for package.json author field)
