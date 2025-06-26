@@ -32,7 +32,14 @@ describe('Tool Registration', () => {
     // Create a mock server that captures tool registrations
     registeredTools = new Map();
     mockServer = {
-      tool: vi.fn((name, schema, handler) => {
+      tool: vi.fn((...args) => {
+        // Handle both 3 and 4 parameter versions
+        let name, schema, handler;
+        if (args.length === 3) {
+          [name, schema, handler] = args;
+        } else if (args.length === 4) {
+          [name, , schema, handler] = args; // Skip description
+        }
         const tool = { name, schema, handler, enabled: true };
         registeredTools.set(name, tool);
         return {

@@ -131,6 +131,7 @@ The template uses a modular tool pattern where each tool is defined in its own f
 3. Add the tool to the tools array in `shared/src/tools.ts`
 4. Use Zod for input validation within the handler
 5. Access external APIs via the injected client factory
+6. **IMPORTANT**: Follow the comprehensive [Tool Descriptions Guide](shared/src/tools/TOOL_DESCRIPTIONS_GUIDE.md) to write user-friendly tool descriptions that include examples, use cases, and detailed parameter explanations
 
 ### Adding External API Clients
 
