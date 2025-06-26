@@ -52,19 +52,22 @@ export function createIntegrationMockAppsignalClient(
       ];
     },
 
-    async getExceptionIncident(incidentId: string): Promise<ExceptionIncident> {
+    async getExceptionIncident(incidentNumber: string): Promise<ExceptionIncident> {
       // Search through the list of incidents
       if (mockData.exceptionIncidents) {
-        const incident = mockData.exceptionIncidents.find((inc) => inc.id === incidentId);
+        // For testing purposes, we'll try to match either id or a mock number
+        const incident = mockData.exceptionIncidents.find(
+          (inc) => inc.id === incidentNumber || inc.id === `exception-${incidentNumber}`
+        );
         if (incident) {
           return incident;
         }
-        throw new Error(`Exception incident with ID ${incidentId} not found`);
+        throw new Error(`Exception incident with number ${incidentNumber} not found`);
       }
 
       // Default mock response
       return {
-        id: incidentId,
+        id: `exception-${incidentNumber}`,
         name: 'Mock Exception',
         message: 'Mock exception message',
         count: 1,
@@ -74,14 +77,18 @@ export function createIntegrationMockAppsignalClient(
     },
 
     async getExceptionIncidentSample(
-      incidentId: string,
+      incidentNumber: string,
       offset = 0
     ): Promise<ExceptionIncidentSample> {
-      if (mockData.exceptionSamples?.[incidentId]) {
-        const samples = mockData.exceptionSamples[incidentId];
+      // Try both the number directly and with exception- prefix for backward compatibility
+      const key = mockData.exceptionSamples?.[incidentNumber]
+        ? incidentNumber
+        : `exception-${incidentNumber}`;
+      if (mockData.exceptionSamples?.[key]) {
+        const samples = mockData.exceptionSamples[key];
         if (offset >= samples.length) {
           throw new Error(
-            `No samples found for exception incident ${incidentId} at offset ${offset}`
+            `No samples found for exception incident ${incidentNumber} at offset ${offset}`
           );
         }
         return samples[offset];
@@ -89,7 +96,7 @@ export function createIntegrationMockAppsignalClient(
 
       // Default mock response
       return {
-        id: `sample-${incidentId}-1`,
+        id: `sample-${incidentNumber}-1`,
         timestamp: new Date().toISOString(),
         message: 'Mock exception sample',
         action: 'MockController#action',
@@ -99,19 +106,23 @@ export function createIntegrationMockAppsignalClient(
       };
     },
 
-    async getLogIncident(incidentId: string): Promise<LogIncident> {
+    async getLogIncident(incidentNumber: string): Promise<LogIncident> {
       // Check for error scenarios
-      if (mockData.errorScenarios?.logIncident?.[incidentId]) {
-        throw mockData.errorScenarios.logIncident[incidentId];
+      if (mockData.errorScenarios?.logIncident?.[incidentNumber]) {
+        throw mockData.errorScenarios.logIncident[incidentNumber];
       }
 
-      if (mockData.logIncidents?.[incidentId]) {
-        return mockData.logIncidents[incidentId];
+      // Try both the number directly and with log- prefix for backward compatibility
+      const key = mockData.logIncidents?.[incidentNumber]
+        ? incidentNumber
+        : `log-${incidentNumber}`;
+      if (mockData.logIncidents?.[key]) {
+        return mockData.logIncidents[key];
       }
 
       // Default mock response
       return {
-        id: incidentId,
+        id: `log-${incidentNumber}`,
         number: 1,
         summary: 'Mock Log Incident',
         description: 'Mock description',
@@ -194,20 +205,24 @@ export function createIntegrationMockAppsignalClient(
       };
     },
 
-    async getAnomalyIncident(incidentId: string): Promise<AnomalyIncidentData> {
+    async getAnomalyIncident(incidentNumber: string): Promise<AnomalyIncidentData> {
       // Check for error scenarios
-      if (mockData.errorScenarios?.anomalyIncident?.[incidentId]) {
-        const error = mockData.errorScenarios.anomalyIncident[incidentId];
+      if (mockData.errorScenarios?.anomalyIncident?.[incidentNumber]) {
+        const error = mockData.errorScenarios.anomalyIncident[incidentNumber];
         throw typeof error === 'string' ? new Error(error) : error;
       }
 
-      if (mockData.anomalyIncidents?.[incidentId]) {
-        return mockData.anomalyIncidents[incidentId];
+      // Try both the number directly and with anomaly- prefix for backward compatibility
+      const key = mockData.anomalyIncidents?.[incidentNumber]
+        ? incidentNumber
+        : `anomaly-${incidentNumber}`;
+      if (mockData.anomalyIncidents?.[key]) {
+        return mockData.anomalyIncidents[key];
       }
 
       // Default mock response
       return {
-        id: incidentId,
+        id: `anomaly-${incidentNumber}`,
         number: 1,
         summary: 'Mock Anomaly',
         description: 'Mock anomaly description',
@@ -381,8 +396,16 @@ export function createIntegrationMockAppsignalClient(
       };
     },
 
-    async getPerformanceIncident(incidentId: string): Promise<PerformanceIncident> {
-      if (incidentId === 'perf-123') {
+    async getPerformanceIncident(incidentNumber: string): Promise<PerformanceIncident> {
+      // Check mock data first
+      if (mockData.performanceIncidents) {
+        const incident = mockData.performanceIncidents.find((inc) => inc.number === incidentNumber);
+        if (incident) {
+          return incident;
+        }
+      }
+      // Legacy check for backward compatibility
+      if (incidentNumber === '42' || incidentNumber === 'perf-123') {
         return {
           id: 'perf-123',
           number: '42',
@@ -404,11 +427,12 @@ export function createIntegrationMockAppsignalClient(
           updatedAt: '2024-01-15T00:00:00Z',
         };
       }
-      throw new Error(`Performance incident ${incidentId} not found`);
+      throw new Error(`Performance incident with number ${incidentNumber} not found`);
     },
 
-    async getPerformanceIncidentSample(incidentId: string): Promise<PerformanceIncidentSample> {
-      if (incidentId === 'perf-123') {
+    async getPerformanceIncidentSample(incidentNumber: string): Promise<PerformanceIncidentSample> {
+      // Legacy check for backward compatibility
+      if (incidentNumber === '42' || incidentNumber === 'perf-123') {
         return {
           id: 'sample-789',
           time: '2024-01-15T00:00:00Z',
@@ -428,18 +452,23 @@ export function createIntegrationMockAppsignalClient(
           sessionData: { ip: '127.0.0.1' },
         };
       }
-      throw new Error(`No sample found for performance incident ${incidentId}`);
+      throw new Error(`No sample found for performance incident with number ${incidentNumber}`);
     },
 
     async getPerformanceIncidentSampleTimeline(
-      incidentId: string
+      incidentNumber: string
     ): Promise<PerformanceIncidentSampleTimeline> {
       // Check for mock data
-      if (mockData.performanceTimelineData && mockData.performanceTimelineData[incidentId]) {
-        return mockData.performanceTimelineData[incidentId];
+      // Try both the number directly and with perf- prefix for backward compatibility
+      const key = mockData.performanceTimelineData?.[incidentNumber]
+        ? incidentNumber
+        : `perf-${incidentNumber}`;
+      if (mockData.performanceTimelineData?.[key]) {
+        return mockData.performanceTimelineData[key];
       }
 
-      if (incidentId === 'perf-123') {
+      // Legacy check for backward compatibility
+      if (incidentNumber === '42' || incidentNumber === 'perf-123') {
         return {
           sampleId: 'sample-789',
           timeline: [
@@ -462,7 +491,7 @@ export function createIntegrationMockAppsignalClient(
           ],
         };
       }
-      throw new Error(`No sample found for performance incident ${incidentId}`);
+      throw new Error(`No sample found for performance incident with number ${incidentNumber}`);
     },
   };
 

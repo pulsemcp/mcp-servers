@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.1] - 2025-06-26
+
+### Changed
+
+- **BREAKING**: All incident-related tools now accept `incidentNumber` instead of `incidentId` parameter
+- Updated API client to match incidents by their dashboard number (e.g., "79") instead of MongoDB ObjectIDs
+- Fixed incorrect package naming from `mcp-server-appsignal` to `appsignal-mcp-server` throughout the codebase
+
+### Fixed
+
+- Improved ergonomics by allowing users to use incident numbers from AppSignal dashboard URLs
+
 ## [0.2.0] - 2025-06-26
 
 ### Fixed

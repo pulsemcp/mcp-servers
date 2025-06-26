@@ -60,7 +60,7 @@ This will generate:
 cd experimental/appsignal
 npm install
 npm run build
-npx @modelcontextprotocol/inspector node path/to/mcp-server-appsignal/build/index.js
+npx @modelcontextprotocol/inspector node path/to/appsignal-mcp-server/build/index.js
 ```
 
 ### Claude

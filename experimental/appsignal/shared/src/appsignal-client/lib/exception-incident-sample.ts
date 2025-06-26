@@ -39,6 +39,7 @@ interface GetExceptionIncidentSamplesResponse {
         id: string;
         exceptionIncidents: Array<{
           id: string;
+          number: string;
           samples: Array<{
             id: string;
             time: string;
@@ -62,7 +63,7 @@ interface GetExceptionIncidentSamplesResponse {
 export async function getExceptionIncidentSample(
   graphqlClient: GraphQLClient,
   appId: string,
-  incidentId: string,
+  incidentNumber: string,
   offset = 0
 ): Promise<ExceptionIncidentSample> {
   // Note: The 'exception' field causes 500 errors in the AppSignal API
@@ -75,6 +76,7 @@ export async function getExceptionIncidentSample(
             id
             exceptionIncidents {
               id
+              number
               samples(limit: $limit) {
                 id
                 time
@@ -108,7 +110,7 @@ export async function getExceptionIncidentSample(
   for (const org of data.viewer.organizations) {
     const app = org.apps.find((a) => a.id === appId);
     if (app) {
-      const incident = app.exceptionIncidents.find((i) => i.id === incidentId);
+      const incident = app.exceptionIncidents.find((i) => i.number === incidentNumber);
       if (incident && incident.samples) {
         samples = incident.samples;
         break;
@@ -117,12 +119,12 @@ export async function getExceptionIncidentSample(
   }
 
   if (samples.length === 0) {
-    throw new Error(`No samples found for exception incident ${incidentId}`);
+    throw new Error(`No samples found for exception incident with number ${incidentNumber}`);
   }
 
   if (offset >= samples.length) {
     throw new Error(
-      `No sample found at offset ${offset} for exception incident ${incidentId} (only ${samples.length} samples available)`
+      `No sample found at offset ${offset} for exception incident with number ${incidentNumber} (only ${samples.length} samples available)`
     );
   }
 

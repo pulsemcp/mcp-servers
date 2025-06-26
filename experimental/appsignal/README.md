@@ -167,7 +167,7 @@ Modify your `claude_desktop_config.json` file to add the following:
   "mcpServers": {
     "appsignal": {
       "command": "npx",
-      "args": ["-y", "mcp-server-appsignal"],
+      "args": ["-y", "appsignal-mcp-server"],
       "env": {
         "APPSIGNAL_API_KEY": "your-api-key-here"
       }

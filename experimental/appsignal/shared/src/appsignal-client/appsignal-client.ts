@@ -40,10 +40,13 @@ export type {
 
 export interface IAppsignalClient {
   getApps(): Promise<Array<{ id: string; name: string; environment: string }>>;
-  getExceptionIncident(incidentId: string): Promise<ExceptionIncident>;
-  getExceptionIncidentSample(incidentId: string, offset?: number): Promise<ExceptionIncidentSample>;
-  getLogIncident(incidentId: string): Promise<LogIncident>;
-  getAnomalyIncident(incidentId: string): Promise<AnomalyIncidentData>;
+  getExceptionIncident(incidentNumber: string): Promise<ExceptionIncident>;
+  getExceptionIncidentSample(
+    incidentNumber: string,
+    offset?: number
+  ): Promise<ExceptionIncidentSample>;
+  getLogIncident(incidentNumber: string): Promise<LogIncident>;
+  getAnomalyIncident(incidentNumber: string): Promise<AnomalyIncidentData>;
   searchLogs(
     query: string,
     limit?: number,
@@ -71,10 +74,10 @@ export interface IAppsignalClient {
     limit?: number,
     offset?: number
   ): Promise<IncidentListResult<PerformanceIncident>>;
-  getPerformanceIncident(incidentId: string): Promise<PerformanceIncident>;
-  getPerformanceIncidentSample(incidentId: string): Promise<PerformanceIncidentSample>;
+  getPerformanceIncident(incidentNumber: string): Promise<PerformanceIncident>;
+  getPerformanceIncidentSample(incidentNumber: string): Promise<PerformanceIncidentSample>;
   getPerformanceIncidentSampleTimeline(
-    incidentId: string
+    incidentNumber: string
   ): Promise<PerformanceIncidentSampleTimeline>;
 }
 
@@ -93,19 +96,19 @@ export class AppsignalClient implements IAppsignalClient {
     return getApps(this.graphqlClient);
   }
 
-  async getExceptionIncident(incidentId: string): Promise<ExceptionIncident> {
-    return getExceptionIncident(this.graphqlClient, this.appId, incidentId);
+  async getExceptionIncident(incidentNumber: string): Promise<ExceptionIncident> {
+    return getExceptionIncident(this.graphqlClient, this.appId, incidentNumber);
   }
 
   async getExceptionIncidentSample(
-    incidentId: string,
+    incidentNumber: string,
     offset = 0
   ): Promise<ExceptionIncidentSample> {
-    return getExceptionIncidentSample(this.graphqlClient, this.appId, incidentId, offset);
+    return getExceptionIncidentSample(this.graphqlClient, this.appId, incidentNumber, offset);
   }
 
-  async getLogIncident(incidentId: string): Promise<LogIncident> {
-    return getLogIncident(this.graphqlClient, this.appId, incidentId);
+  async getLogIncident(incidentNumber: string): Promise<LogIncident> {
+    return getLogIncident(this.graphqlClient, this.appId, incidentNumber);
   }
 
   async searchLogs(
@@ -118,8 +121,8 @@ export class AppsignalClient implements IAppsignalClient {
     return searchLogs(this.graphqlClient, this.appId, query, limit, severities, start, end);
   }
 
-  async getAnomalyIncident(incidentId: string): Promise<AnomalyIncidentData> {
-    return getAnomalyIncident(this.graphqlClient, this.appId, incidentId);
+  async getAnomalyIncident(incidentNumber: string): Promise<AnomalyIncidentData> {
+    return getAnomalyIncident(this.graphqlClient, this.appId, incidentNumber);
   }
 
   async getLogIncidents(
@@ -154,17 +157,17 @@ export class AppsignalClient implements IAppsignalClient {
     return getPerformanceIncidents(this.graphqlClient, this.appId, states, limit, offset);
   }
 
-  async getPerformanceIncident(incidentId: string): Promise<PerformanceIncident> {
-    return getPerformanceIncident(this.graphqlClient, this.appId, incidentId);
+  async getPerformanceIncident(incidentNumber: string): Promise<PerformanceIncident> {
+    return getPerformanceIncident(this.graphqlClient, this.appId, incidentNumber);
   }
 
-  async getPerformanceIncidentSample(incidentId: string): Promise<PerformanceIncidentSample> {
-    return getPerformanceIncidentSample(this.graphqlClient, this.appId, incidentId);
+  async getPerformanceIncidentSample(incidentNumber: string): Promise<PerformanceIncidentSample> {
+    return getPerformanceIncidentSample(this.graphqlClient, this.appId, incidentNumber);
   }
 
   async getPerformanceIncidentSampleTimeline(
-    incidentId: string
+    incidentNumber: string
   ): Promise<PerformanceIncidentSampleTimeline> {
-    return getPerformanceIncidentSampleTimeline(this.graphqlClient, this.appId, incidentId);
+    return getPerformanceIncidentSampleTimeline(this.graphqlClient, this.appId, incidentNumber);
   }
 }

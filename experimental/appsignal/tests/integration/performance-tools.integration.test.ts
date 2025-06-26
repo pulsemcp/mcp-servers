@@ -145,7 +145,7 @@ describe('AppSignal MCP Server Performance Tools Integration', () => {
       client = await createTestMCPClientWithMock(mockAppSignalClient);
 
       const result = await client.callTool('get_performance_incident', {
-        incidentId: 'perf-123',
+        incidentNumber: 'perf-123',
       });
 
       const incident = JSON.parse(result.content[0].text);
@@ -163,7 +163,7 @@ describe('AppSignal MCP Server Performance Tools Integration', () => {
       client = await createTestMCPClientWithMock(mockAppSignalClient);
 
       const result = await client.callTool('get_performance_incident', {
-        incidentId: 'non-existent',
+        incidentNumber: 'non-existent',
       });
 
       expect(result.content[0].text).toContain('Error fetching performance incident');
@@ -177,7 +177,7 @@ describe('AppSignal MCP Server Performance Tools Integration', () => {
       client = await createTestMCPClientWithMock(mockAppSignalClient);
 
       const result = await client.callTool('get_performance_incident_sample', {
-        incidentId: 'perf-123',
+        incidentNumber: 'perf-123',
       });
 
       const sample = JSON.parse(result.content[0].text);
@@ -195,7 +195,7 @@ describe('AppSignal MCP Server Performance Tools Integration', () => {
       client = await createTestMCPClientWithMock(mockAppSignalClient);
 
       const result = await client.callTool('get_performance_incident_sample', {
-        incidentId: 'non-existent',
+        incidentNumber: 'non-existent',
       });
 
       expect(result.content[0].text).toContain('Error fetching performance incident sample');
@@ -209,7 +209,7 @@ describe('AppSignal MCP Server Performance Tools Integration', () => {
       client = await createTestMCPClientWithMock(mockAppSignalClient);
 
       const result = await client.callTool('get_performance_incident_sample_timeline', {
-        incidentId: 'perf-123',
+        incidentNumber: 'perf-123',
       });
 
       const timeline = JSON.parse(result.content[0].text);
@@ -291,7 +291,7 @@ describe('AppSignal MCP Server Performance Tools Integration', () => {
       client = await createTestMCPClientWithMock(mockAppSignalClient);
 
       const result = await client.callTool('get_performance_incident_sample_timeline', {
-        incidentId: 'perf-nplusone',
+        incidentNumber: 'perf-nplusone',
       });
 
       const timeline = JSON.parse(result.content[0].text);
@@ -308,7 +308,7 @@ describe('AppSignal MCP Server Performance Tools Integration', () => {
       client = await createTestMCPClientWithMock(mockAppSignalClient);
 
       const result = await client.callTool('get_performance_incident_sample_timeline', {
-        incidentId: 'non-existent',
+        incidentNumber: 'non-existent',
       });
 
       expect(result.content[0].text).toContain(

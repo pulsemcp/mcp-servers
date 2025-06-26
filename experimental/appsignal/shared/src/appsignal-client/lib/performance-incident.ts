@@ -16,7 +16,7 @@ interface GetPerformanceIncidentResponse {
 export async function getPerformanceIncident(
   graphqlClient: GraphQLClient,
   appId: string,
-  incidentId: string
+  incidentNumber: string
 ): Promise<PerformanceIncident> {
   const query = gql`
     query GetPerformanceIncident($limit: Int!, $offset: Int!) {
@@ -72,7 +72,7 @@ export async function getPerformanceIncident(
     }
 
     // Check if we found the incident
-    const incident = incidents.find((inc) => inc.id === incidentId);
+    const incident = incidents.find((inc) => inc.number === incidentNumber);
     if (incident) {
       found = incident;
       break;
@@ -87,7 +87,7 @@ export async function getPerformanceIncident(
   }
 
   if (!found) {
-    throw new Error(`Performance incident with ID ${incidentId} not found`);
+    throw new Error(`Performance incident with number ${incidentNumber} not found`);
   }
 
   return found;

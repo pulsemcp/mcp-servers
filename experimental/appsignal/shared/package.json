@@ -1,5 +1,5 @@
 {
-  "name": "mcp-server-appsignal-shared",
+  "name": "appsignal-mcp-server-shared",
   "version": "0.1.0",
   "description": "Shared code for AppSignal MCP server implementations",
   "main": "dist/index.js",

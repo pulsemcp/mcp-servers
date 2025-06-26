@@ -37,7 +37,7 @@ interface GetAnomalyIncidentResponse {
 export async function getAnomalyIncident(
   graphqlClient: GraphQLClient,
   appId: string,
-  incidentId: string
+  incidentNumber: string
 ): Promise<AnomalyIncidentData> {
   const query = gql`
     query GetAnomalyIncident($limit: Int!, $offset: Int!) {
@@ -95,7 +95,7 @@ export async function getAnomalyIncident(
     }
 
     // Check if we found the incident
-    const incident = incidents.find((inc) => inc.id === incidentId);
+    const incident = incidents.find((inc) => inc.number.toString() === incidentNumber);
     if (incident) {
       found = {
         id: incident.id,
@@ -124,7 +124,7 @@ export async function getAnomalyIncident(
   }
 
   if (!found) {
-    throw new Error(`Anomaly incident ${incidentId} not found for app ${appId}`);
+    throw new Error(`Anomaly incident with number ${incidentNumber} not found`);
   }
 
   return found;

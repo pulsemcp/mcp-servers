@@ -46,7 +46,7 @@ describe('AppSignal MCP Server Integration', () => {
 
     // Call the MCP tool
     const result = await client.callTool('get_exception_incident', {
-      incidentId: 'payment-failure',
+      incidentNumber: 'payment-failure',
     });
 
     // Verify the result
@@ -78,7 +78,7 @@ describe('AppSignal MCP Server Integration', () => {
 
     // Call the MCP tool with non-existent ID
     const result = await client.callTool('get_exception_incident', {
-      incidentId: 'non-existent-incident',
+      incidentNumber: 'non-existent-incident',
     });
 
     // Should return an error message
@@ -118,7 +118,7 @@ describe('AppSignal MCP Server Integration', () => {
 
     // Call the MCP tool - get first sample
     const result = await client.callTool('get_exception_incident_sample', {
-      incidentId: 'payment-failure',
+      incidentNumber: 'payment-failure',
       offset: 0,
     });
 
@@ -171,7 +171,7 @@ describe('AppSignal MCP Server Integration', () => {
 
     // Call the MCP tool - get third sample (offset 2)
     const result = await client.callTool('get_exception_incident_sample', {
-      incidentId: 'payment-failure',
+      incidentNumber: 'payment-failure',
       offset: 2,
     });
 
@@ -204,7 +204,7 @@ describe('AppSignal MCP Server Integration', () => {
 
     // Call the MCP tool - try to get sample at offset 5
     const result = await client.callTool('get_exception_incident_sample', {
-      incidentId: 'payment-failure',
+      incidentNumber: 'payment-failure',
       offset: 5,
     });
 
@@ -289,7 +289,7 @@ describe('AppSignal MCP Server Integration', () => {
 
     // Call the MCP tool
     const result = await client.callTool('get_log_incident', {
-      incidentId: 'high-error-rate',
+      incidentNumber: 'high-error-rate',
     });
 
     // Verify the result
@@ -319,7 +319,7 @@ describe('AppSignal MCP Server Integration', () => {
 
     // Call the MCP tool with the error-triggering ID
     const result = await client.callTool('get_log_incident', {
-      incidentId: 'error-incident',
+      incidentNumber: 'error-incident',
     });
 
     // Verify error handling - the tool should return an error message

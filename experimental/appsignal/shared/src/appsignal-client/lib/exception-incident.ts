@@ -41,7 +41,7 @@ interface GetExceptionIncidentResponse {
 export async function getExceptionIncident(
   graphqlClient: GraphQLClient,
   appId: string,
-  incidentId: string
+  incidentNumber: string
 ): Promise<ExceptionIncident> {
   const query = gql`
     query GetExceptionIncident($limit: Int!, $offset: Int!) {
@@ -96,7 +96,7 @@ export async function getExceptionIncident(
     }
 
     // Check if we found the incident
-    const incident = incidents.find((inc) => inc.id === incidentId);
+    const incident = incidents.find((inc) => inc.number === incidentNumber);
     if (incident) {
       found = {
         id: incident.id,
@@ -118,7 +118,7 @@ export async function getExceptionIncident(
   }
 
   if (!found) {
-    throw new Error(`Exception incident with ID ${incidentId} not found`);
+    throw new Error(`Exception incident with number ${incidentNumber} not found`);
   }
 
   return found;

@@ -48,9 +48,9 @@ Use cases:
 - Checking if an incident has N+1 query problems
 - Determining if samples are available for deeper analysis`,
     {
-      incidentId: z.string().describe('The ID of the performance incident to retrieve'),
+      incidentNumber: z.string().describe('The number of the performance incident to retrieve'),
     },
-    async ({ incidentId }) => {
+    async ({ incidentNumber }) => {
       const appId = getEffectiveAppId();
       if (!appId) {
         return {
@@ -65,7 +65,7 @@ Use cases:
 
       try {
         const client = clientFactory();
-        const incident = await client.getPerformanceIncident(incidentId);
+        const incident = await client.getPerformanceIncident(incidentNumber);
 
         return {
           content: [

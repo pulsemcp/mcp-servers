@@ -85,7 +85,7 @@ describe('get_log_incident Tool', () => {
 
     registerToolsWithClient(mockClient);
     const tool = registeredTools.get('get_log_incident');
-    const result = await tool.handler({ incidentId: 'log-123' });
+    const result = await tool.handler({ incidentNumber: 'log-123' });
 
     const response = JSON.parse(result.content[0].text);
     expect(response).toMatchObject({
@@ -110,7 +110,7 @@ describe('get_log_incident Tool', () => {
 
     registerToolsWithClient(failingClient);
     const tool = registeredTools.get('get_log_incident');
-    const result = await tool.handler({ incidentId: 'log-456' });
+    const result = await tool.handler({ incidentNumber: 'log-456' });
 
     expect(result.content[0].text).toContain(
       'Error fetching log incident details: API request failed'
@@ -125,7 +125,7 @@ describe('get_log_incident Tool', () => {
 
     registerToolsWithClient(mockClient);
     const tool = registeredTools.get('get_log_incident');
-    const result = await tool.handler({ incidentId: 'log-789' });
+    const result = await tool.handler({ incidentNumber: 'log-789' });
 
     expect(result.content[0].text).toContain('Error: No app ID configured');
   });

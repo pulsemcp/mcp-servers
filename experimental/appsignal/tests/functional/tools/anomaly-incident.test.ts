@@ -109,7 +109,7 @@ describe('Anomaly Incident Tools', () => {
 
       registerToolsWithClient(mockClient);
       const tool = registeredTools.get('get_anomaly_incident');
-      const result = await tool.handler({ incidentId: 'anomaly-123' });
+      const result = await tool.handler({ incidentNumber: 'anomaly-123' });
 
       expect(mockClient.getAnomalyIncident).toHaveBeenCalledWith('anomaly-123');
       const response = JSON.parse(result.content[0].text);
@@ -123,7 +123,7 @@ describe('Anomaly Incident Tools', () => {
 
       registerToolsWithClient(mockClient);
       const tool = registeredTools.get('get_anomaly_incident');
-      const result = await tool.handler({ incidentId: 'anomaly-999' });
+      const result = await tool.handler({ incidentNumber: 'anomaly-999' });
 
       expect(result.content[0].text).toContain(
         'Error fetching anomaly incident details: Anomaly incident with ID anomaly-999 not found'
@@ -135,7 +135,7 @@ describe('Anomaly Incident Tools', () => {
 
       registerToolsWithClient(mockClient);
       const tool = registeredTools.get('get_anomaly_incident');
-      const result = await tool.handler({ incidentId: 'anomaly-123' });
+      const result = await tool.handler({ incidentNumber: 'anomaly-123' });
 
       expect(result.content[0].text).toContain(
         'Error fetching anomaly incident details: Network timeout'

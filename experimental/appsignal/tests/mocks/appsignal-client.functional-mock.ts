@@ -21,8 +21,8 @@ export function createMockAppsignalClient(): IAppsignalClient {
       { id: 'app-2', name: 'Staging App', environment: 'staging' },
       { id: 'app-3', name: 'Development App', environment: 'development' },
     ]),
-    getExceptionIncident: vi.fn().mockImplementation(async (incidentId: string) => ({
-      id: incidentId,
+    getExceptionIncident: vi.fn().mockImplementation(async (incidentNumber: string) => ({
+      id: incidentNumber,
       name: 'NullPointerException',
       message: 'Cannot read property "id" of null',
       count: 42,
@@ -31,8 +31,8 @@ export function createMockAppsignalClient(): IAppsignalClient {
     })),
     getExceptionIncidentSample: vi
       .fn()
-      .mockImplementation(async (incidentId: string, offset = 0) => ({
-        id: `sample-${incidentId}-${offset + 1}`,
+      .mockImplementation(async (incidentNumber: string, offset = 0) => ({
+        id: `sample-${incidentNumber}-${offset + 1}`,
         timestamp: '2024-01-15T10:30:00Z',
         message: 'Cannot read property "id" of null',
         action: 'UserController#show',
@@ -41,8 +41,8 @@ export function createMockAppsignalClient(): IAppsignalClient {
         version: '1.0.0',
         params: { userId: null, requestId: 'req-123' },
       })),
-    getLogIncident: vi.fn().mockImplementation(async (incidentId: string) => ({
-      id: incidentId,
+    getLogIncident: vi.fn().mockImplementation(async (incidentNumber: string) => ({
+      id: incidentNumber,
       number: 123,
       summary: 'High Error Rate',
       description: 'Error rate exceeded threshold',
@@ -98,8 +98,8 @@ export function createMockAppsignalClient(): IAppsignalClient {
         }`,
       };
     }),
-    getAnomalyIncident: vi.fn().mockImplementation(async (incidentId: string) => ({
-      id: incidentId,
+    getAnomalyIncident: vi.fn().mockImplementation(async (incidentNumber: string) => ({
+      id: incidentNumber,
       number: 45,
       summary: 'High CPU usage detected',
       description: 'CPU usage exceeded 90% threshold',
@@ -188,8 +188,8 @@ export function createMockAppsignalClient(): IAppsignalClient {
       total: 1,
       hasMore: false,
     })),
-    getPerformanceIncident: vi.fn().mockImplementation(async (incidentId: string) => {
-      if (incidentId === 'perf-123') {
+    getPerformanceIncident: vi.fn().mockImplementation(async (incidentNumber: string) => {
+      if (incidentNumber === 'perf-123') {
         return {
           id: 'perf-123',
           number: '42',
@@ -211,10 +211,10 @@ export function createMockAppsignalClient(): IAppsignalClient {
           updatedAt: '2024-01-15T00:00:00Z',
         };
       }
-      throw new Error(`Performance incident ${incidentId} not found`);
+      throw new Error(`Performance incident ${incidentNumber} not found`);
     }),
-    getPerformanceIncidentSample: vi.fn().mockImplementation(async (incidentId: string) => {
-      if (incidentId === 'perf-123') {
+    getPerformanceIncidentSample: vi.fn().mockImplementation(async (incidentNumber: string) => {
+      if (incidentNumber === 'perf-123') {
         return {
           id: 'sample-789',
           time: '2024-01-15T00:00:00Z',
@@ -234,34 +234,36 @@ export function createMockAppsignalClient(): IAppsignalClient {
           sessionData: { ip: '127.0.0.1' },
         };
       }
-      throw new Error(`No sample found for performance incident ${incidentId}`);
+      throw new Error(`No sample found for performance incident ${incidentNumber}`);
     }),
-    getPerformanceIncidentSampleTimeline: vi.fn().mockImplementation(async (incidentId: string) => {
-      if (incidentId === 'perf-123') {
-        return {
-          sampleId: 'sample-789',
-          timeline: [
-            {
-              name: 'process_action.action_controller',
-              action: 'UsersController#show',
-              digest: 'abc123',
-              group: 'action_controller',
-              level: 0,
-              duration: 1523.4,
-              childDuration: 1450.2,
-              allocationCount: 15000,
-              childAllocationCount: 14500,
-              count: 1,
-              time: 0,
-              end: 1523.4,
-              wrapping: false,
-              payload: { name: 'UsersController#show' },
-            },
-          ],
-        };
-      }
-      throw new Error(`No sample found for performance incident ${incidentId}`);
-    }),
+    getPerformanceIncidentSampleTimeline: vi
+      .fn()
+      .mockImplementation(async (incidentNumber: string) => {
+        if (incidentNumber === 'perf-123') {
+          return {
+            sampleId: 'sample-789',
+            timeline: [
+              {
+                name: 'process_action.action_controller',
+                action: 'UsersController#show',
+                digest: 'abc123',
+                group: 'action_controller',
+                level: 0,
+                duration: 1523.4,
+                childDuration: 1450.2,
+                allocationCount: 15000,
+                childAllocationCount: 14500,
+                count: 1,
+                time: 0,
+                end: 1523.4,
+                wrapping: false,
+                payload: { name: 'UsersController#show' },
+              },
+            ],
+          };
+        }
+        throw new Error(`No sample found for performance incident ${incidentNumber}`);
+      }),
   };
 }
 
