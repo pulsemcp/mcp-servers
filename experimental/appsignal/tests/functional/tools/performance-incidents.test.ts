@@ -112,7 +112,7 @@ describe('Performance Incident Tools', () => {
         {
           id: 'perf-1',
           number: '1',
-          state: 'open',
+          state: 'OPEN',
           severity: 'high',
           actionNames: ['Controller#action1'],
           namespace: 'web',
@@ -132,7 +132,7 @@ describe('Performance Incident Tools', () => {
         {
           id: 'perf-2',
           number: '2',
-          state: 'closed',
+          state: 'CLOSED',
           severity: 'low',
           actionNames: ['Controller#action2'],
           namespace: 'web',
@@ -154,12 +154,12 @@ describe('Performance Incident Tools', () => {
       // Create a custom mock client that returns specific incidents
       const customMockClient = {
         ...mockClient,
-        getPerformanceIncidents: vi.fn(async (states = ['open']) => ({
+        getPerformanceIncidents: vi.fn(async (states = ['OPEN']) => ({
           incidents: mockPerformanceIncidents.filter((inc) =>
-            states.map((s) => s.toLowerCase()).includes(inc.state.toLowerCase())
+            states.includes(inc.state)
           ),
           total: mockPerformanceIncidents.filter((inc) =>
-            states.map((s) => s.toLowerCase()).includes(inc.state.toLowerCase())
+            states.includes(inc.state)
           ).length,
           hasMore: false,
         })),
@@ -168,11 +168,11 @@ describe('Performance Incident Tools', () => {
       registerToolsWithClient(customMockClient);
 
       const tool = registeredTools.get('get_performance_incidents');
-      const result = await tool?.handler({ states: ['closed'] });
+      const result = await tool?.handler({ states: ['CLOSED'] });
       const response = JSON.parse((result as ToolResult).content[0].text);
 
       expect(response.incidents).toHaveLength(1);
-      expect(response.incidents[0].state).toBe('closed');
+      expect(response.incidents[0].state).toBe('CLOSED');
       expect(response.total).toBe(1);
     });
 

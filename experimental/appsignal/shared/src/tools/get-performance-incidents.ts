@@ -17,7 +17,7 @@ Example response:
     {
       "id": "perf-123",
       "number": "42",
-      "state": "open",
+      "state": "OPEN",
       "severity": "high",
       "actionNames": ["UsersController#show", "UsersController#index"],
       "namespace": "web",
@@ -37,7 +37,7 @@ Example response:
     {
       "id": "perf-456",
       "number": "43",
-      "state": "wip",
+      "state": "WIP",
       "severity": "medium",
       "actionNames": ["ProductsController#index"],
       "namespace": "web",
@@ -60,9 +60,9 @@ Example response:
 }
 
 State meanings:
-- open: Active performance issues requiring attention
-- wip: Performance issues being investigated or optimized
-- closed: Resolved performance issues
+- OPEN: Active performance issues requiring attention
+- WIP: Performance issues being investigated or optimized
+- CLOSED: Resolved performance issues
 
 Use cases:
 - Getting an overview of all performance bottlenecks
@@ -72,10 +72,10 @@ Use cases:
 - Identifying N+1 queries and slow database operations`,
     {
       states: z
-        .array(z.enum(['open', 'closed', 'wip']))
+        .array(z.enum(['OPEN', 'CLOSED', 'WIP']))
         .optional()
         .describe(
-          'Filter incidents by state(s). open = active issues, wip = being investigated, closed = resolved. Defaults to ["open"] if not provided'
+          'Filter incidents by state(s). OPEN = active issues, WIP = being investigated, CLOSED = resolved. Defaults to ["OPEN"] if not provided'
         ),
       limit: z
         .number()
@@ -104,7 +104,7 @@ Use cases:
       try {
         const client = clientFactory();
         // Handle undefined parameters properly to trigger default values
-        const actualStates = states ?? ['open'];
+        const actualStates = states ?? ['OPEN'];
         const actualLimit = limit ?? 50;
         const actualOffset = offset ?? 0;
 

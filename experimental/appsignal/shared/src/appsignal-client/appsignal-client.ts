@@ -67,7 +67,7 @@ export interface IAppsignalClient {
     offset?: number
   ): Promise<IncidentListResult<AnomalyIncidentData>>;
   getPerformanceIncidents(
-    states?: Array<'open' | 'closed' | 'wip'>,
+    states?: Array<string>,
     limit?: number,
     offset?: number
   ): Promise<IncidentListResult<PerformanceIncident>>;
@@ -147,7 +147,7 @@ export class AppsignalClient implements IAppsignalClient {
   }
 
   async getPerformanceIncidents(
-    states: Array<'open' | 'closed' | 'wip'> = ['open'],
+    states: Array<string> = ['OPEN'],
     limit = 50,
     offset = 0
   ): Promise<IncidentListResult<PerformanceIncident>> {
