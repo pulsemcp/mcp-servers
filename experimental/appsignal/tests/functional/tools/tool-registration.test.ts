@@ -158,7 +158,7 @@ describe('Tool Registration', () => {
     const tool = registeredTools.get('get_exception_incident');
     const result = await tool.handler({ incidentId: 'exception-123' });
 
-    expect(result.content[0].text).toContain('Error: No app ID selected');
+    expect(result.content[0].text).toContain('Error: No app ID configured');
     expect(result.content[0].text).toContain('Please use select_app_id tool first');
   });
 
