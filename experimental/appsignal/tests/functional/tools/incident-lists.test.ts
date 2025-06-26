@@ -331,6 +331,44 @@ describe('Incident List Tools', () => {
       expect(response).toEqual(mockResult);
     });
 
+    it('should handle all parameter scenarios equivalently', async () => {
+      const mockResult = {
+        incidents: [
+          {
+            id: 'anomaly-equiv',
+            number: 203,
+            description: 'Equivalent test incident',
+            state: 'open',
+            count: 1,
+          },
+        ],
+        total: 1,
+        hasMore: false,
+      };
+
+      mockClient.getAnomalyIncidents = vi.fn().mockResolvedValue(mockResult);
+      registerToolsWithClient(mockClient);
+      const tool = registeredTools.get('get_anomaly_incidents');
+
+      // Test 1: Empty object {}
+      await tool.handler({});
+      expect(mockClient.getAnomalyIncidents).toHaveBeenLastCalledWith(['OPEN'], 50, 0);
+
+      // Test 2: Undefined argument
+      await tool.handler(undefined);
+      expect(mockClient.getAnomalyIncidents).toHaveBeenLastCalledWith(['OPEN'], 50, 0);
+
+      // Test 3: Null argument (should also work)
+      await tool.handler(null);
+      expect(mockClient.getAnomalyIncidents).toHaveBeenLastCalledWith(['OPEN'], 50, 0);
+
+      // All calls should have used the same default parameters
+      expect(mockClient.getAnomalyIncidents).toHaveBeenCalledTimes(3);
+      mockClient.getAnomalyIncidents.mock.calls.forEach((call) => {
+        expect(call).toEqual([['OPEN'], 50, 0]);
+      });
+    });
+
     it('should handle API errors', async () => {
       mockClient.getAnomalyIncidents = vi
         .fn()

@@ -65,7 +65,9 @@ Use cases:
         .optional()
         .describe('Number of incidents to skip for pagination. Defaults to 0'),
     },
-    async ({ states, limit, offset }) => {
+    async (args) => {
+      // Handle all parameter scenarios: {}, undefined, or missing entirely
+      const { states, limit, offset } = args || {};
       const appId = getSelectedAppId() || process.env.APPSIGNAL_APP_ID;
       if (!appId) {
         return {
