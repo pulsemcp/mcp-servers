@@ -43,6 +43,8 @@ export async function getLogIncidents(
   limit = 50,
   offset = 0
 ): Promise<IncidentListResult<LogIncident>> {
+  // Handle empty states array - default to querying OPEN incidents
+  const statesToQuery = states.length === 0 ? ['OPEN'] : states;
   const query = gql`
     query GetLogIncidents($state: IncidentStateEnum, $limit: Int!, $offset: Int!) {
       viewer {
@@ -81,7 +83,7 @@ export async function getLogIncidents(
   const allIncidents: LogIncident[] = [];
 
   // Query for each state individually (GraphQL API doesn't support multiple states in one query)
-  for (const state of states) {
+  for (const state of statesToQuery) {
     const data = await graphqlClient.request<GetLogIncidentsResponse>(query, {
       state,
       limit,

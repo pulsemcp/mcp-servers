@@ -1,12 +1,14 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
-import { getSelectedAppId } from '../state.js';
+import { getEffectiveAppId } from '../state.js';
 import { IAppsignalClient } from '../appsignal-client/appsignal-client.js';
 
 export function searchLogsTool(server: McpServer, clientFactory: () => IAppsignalClient) {
   return server.tool(
     'search_logs',
     `Search through application logs in AppSignal with powerful filtering capabilities. This tool allows you to query logs by content, filter by severity levels, and retrieve recent log entries matching your criteria. It's essential for troubleshooting specific issues, analyzing application behavior, and investigating error conditions.
+
+Note that it can be very helpful to use start/end parameters around the time of an incident to pull together all the context on it. Generally, you probably want 10 seconds leading up to the incident through 3 seconds after it; and then expand from there if that's not enough context.
 
 Example response:
 {
@@ -71,15 +73,27 @@ Use cases:
         .array(z.enum(['debug', 'info', 'warn', 'error', 'fatal']))
         .optional()
         .describe('Filter by severity levels. If not specified, returns logs of all severities'),
+      start: z
+        .string()
+        .optional()
+        .describe(
+          'Start time for the search window in ISO 8601 format (e.g., "2024-01-15T00:00:00Z")'
+        ),
+      end: z
+        .string()
+        .optional()
+        .describe(
+          'End time for the search window in ISO 8601 format (e.g., "2024-01-15T23:59:59Z")'
+        ),
     },
-    async ({ query, limit, severities }) => {
-      const appId = getSelectedAppId() || process.env.APPSIGNAL_APP_ID;
+    async ({ query, limit, severities, start, end }) => {
+      const appId = getEffectiveAppId();
       if (!appId) {
         return {
           content: [
             {
               type: 'text',
-              text: 'Error: No app ID selected. Please use select_app_id tool first or set APPSIGNAL_APP_ID environment variable.',
+              text: 'Error: No app ID configured. Please use select_app_id tool first or set APPSIGNAL_APP_ID environment variable.',
             },
           ],
         };
@@ -87,7 +101,7 @@ Use cases:
 
       try {
         const client = clientFactory();
-        const logs = await client.searchLogs(query, limit, severities);
+        const logs = await client.searchLogs(query, limit, severities, start, end);
 
         return {
           content: [

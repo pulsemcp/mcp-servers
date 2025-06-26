@@ -1,6 +1,6 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
-import { getSelectedAppId } from '../state.js';
+import { getEffectiveAppId } from '../state.js';
 import { IAppsignalClient } from '../appsignal-client/appsignal-client.js';
 
 export function getLogIncidentsTool(server: McpServer, clientFactory: () => IAppsignalClient) {
@@ -65,14 +65,16 @@ Use cases:
         .optional()
         .describe('Number of incidents to skip for pagination. Defaults to 0'),
     },
-    async ({ states, limit, offset }) => {
-      const appId = getSelectedAppId() || process.env.APPSIGNAL_APP_ID;
+    async (args) => {
+      // Handle all parameter scenarios: {}, undefined, or missing entirely
+      const { states, limit, offset } = args || {};
+      const appId = getEffectiveAppId();
       if (!appId) {
         return {
           content: [
             {
               type: 'text',
-              text: 'Error: No app ID selected. Please use select_app_id tool first or set APPSIGNAL_APP_ID environment variable.',
+              text: 'Error: No app ID configured. Please use select_app_id tool first or set APPSIGNAL_APP_ID environment variable.',
             },
           ],
         };
@@ -80,7 +82,12 @@ Use cases:
 
       try {
         const client = clientFactory();
-        const result = await client.getLogIncidents(states, limit, offset);
+        // Handle undefined parameters properly to trigger default values
+        const actualStates = states ?? ['OPEN'];
+        const actualLimit = limit ?? 50;
+        const actualOffset = offset ?? 0;
+
+        const result = await client.getLogIncidents(actualStates, actualLimit, actualOffset);
 
         return {
           content: [

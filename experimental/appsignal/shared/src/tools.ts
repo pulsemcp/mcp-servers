@@ -10,7 +10,11 @@ import { getLogIncidentsTool } from './tools/get-log-incidents.js';
 import { getExceptionIncidentsTool } from './tools/get-exception-incidents.js';
 import { getAnomalyIncidentsTool } from './tools/get-anomaly-incidents.js';
 import { IAppsignalClient } from './appsignal-client/appsignal-client.js';
-import { getSelectedAppId } from './state.js';
+import { getEffectiveAppId, isAppIdLocked } from './state.js';
+import { getPerformanceIncidentsTool } from './tools/get-performance-incidents.js';
+import { getPerformanceIncidentTool } from './tools/get-performance-incident.js';
+import { getPerformanceIncidentSampleTool } from './tools/get-performance-incident-sample.js';
+import { getPerformanceIncidentSampleTimelineTool } from './tools/get-performance-incident-sample-timeline.js';
 
 export type ClientFactory = () => IAppsignalClient;
 
@@ -18,7 +22,6 @@ export function createRegisterTools(clientFactory: ClientFactory) {
   return function registerTools(server: McpServer) {
     // Check for required environment variables
     const apiKey = process.env.APPSIGNAL_API_KEY;
-    const envAppId = process.env.APPSIGNAL_APP_ID;
 
     if (!apiKey) {
       throw new Error('APPSIGNAL_API_KEY environment variable must be configured');
@@ -34,13 +37,15 @@ export function createRegisterTools(clientFactory: ClientFactory) {
       getLogIncidents?: RegisteredTool;
       getExceptionIncidents?: RegisteredTool;
       getAnomalyIncidents?: RegisteredTool;
+      getPerformanceIncidents?: RegisteredTool;
+      getPerformanceIncident?: RegisteredTool;
+      getPerformanceIncidentSample?: RegisteredTool;
+      getPerformanceIncidentSampleTimeline?: RegisteredTool;
     } = {};
 
     // Store references to app selection tools
-    // eslint-disable-next-line prefer-const
-    let selectAppTool: RegisteredTool;
-    // eslint-disable-next-line prefer-const
-    let changeAppTool: RegisteredTool;
+    let selectAppTool: RegisteredTool | undefined;
+    let changeAppTool: RegisteredTool | undefined;
 
     // Enable function for selectAppId to call
     const enableMainTools = () => {
@@ -52,6 +57,11 @@ export function createRegisterTools(clientFactory: ClientFactory) {
       if (mainTools.getLogIncidents) mainTools.getLogIncidents.enable();
       if (mainTools.getExceptionIncidents) mainTools.getExceptionIncidents.enable();
       if (mainTools.getAnomalyIncidents) mainTools.getAnomalyIncidents.enable();
+      if (mainTools.getPerformanceIncidents) mainTools.getPerformanceIncidents.enable();
+      if (mainTools.getPerformanceIncident) mainTools.getPerformanceIncident.enable();
+      if (mainTools.getPerformanceIncidentSample) mainTools.getPerformanceIncidentSample.enable();
+      if (mainTools.getPerformanceIncidentSampleTimeline)
+        mainTools.getPerformanceIncidentSampleTimeline.enable();
 
       // Switch from select_app_id to change_app_id
       if (selectAppTool) {
@@ -62,12 +72,17 @@ export function createRegisterTools(clientFactory: ClientFactory) {
       }
     };
 
-    // Register tools that are always available
-    getAppsTool(server, clientFactory);
+    // Check if app ID is locked (configured via env var)
+    const locked = isAppIdLocked();
 
-    // Register both select and change tools, but only enable the appropriate one
-    selectAppTool = selectAppIdTool(server, 'select_app_id', enableMainTools, clientFactory);
-    changeAppTool = selectAppIdTool(server, 'change_app_id', enableMainTools, clientFactory);
+    // Register tools that are always available (unless locked)
+    if (!locked) {
+      getAppsTool(server, clientFactory);
+
+      // Register both select and change tools, but only enable the appropriate one
+      selectAppTool = selectAppIdTool(server, 'select_app_id', enableMainTools, clientFactory);
+      changeAppTool = selectAppIdTool(server, 'change_app_id', enableMainTools, clientFactory);
+    }
 
     // Register main tools
     mainTools.getExceptionIncident = getExceptionIncidentTool(server, clientFactory);
@@ -78,12 +93,25 @@ export function createRegisterTools(clientFactory: ClientFactory) {
     mainTools.getLogIncidents = getLogIncidentsTool(server, clientFactory);
     mainTools.getExceptionIncidents = getExceptionIncidentsTool(server, clientFactory);
     mainTools.getAnomalyIncidents = getAnomalyIncidentsTool(server, clientFactory);
+    mainTools.getPerformanceIncidents = getPerformanceIncidentsTool(server, clientFactory);
+    mainTools.getPerformanceIncident = getPerformanceIncidentTool(server, clientFactory);
+    mainTools.getPerformanceIncidentSample = getPerformanceIncidentSampleTool(
+      server,
+      clientFactory
+    );
+    mainTools.getPerformanceIncidentSampleTimeline = getPerformanceIncidentSampleTimelineTool(
+      server,
+      clientFactory
+    );
 
     // Configure initial state based on whether an app ID is already set
-    const hasAppId = envAppId || getSelectedAppId();
-    if (!hasAppId) {
+    const hasAppId = getEffectiveAppId();
+    if (locked) {
+      // App ID is locked via env var - all main tools are enabled, no app selection tools
+      // Main tools are enabled by default
+    } else if (!hasAppId) {
       // No app ID set - show select_app_id, hide change_app_id and main tools
-      changeAppTool.disable();
+      if (changeAppTool) changeAppTool.disable();
       mainTools.getExceptionIncident.disable();
       mainTools.getExceptionIncidentSample.disable();
       mainTools.getLogIncident.disable();
@@ -92,9 +120,13 @@ export function createRegisterTools(clientFactory: ClientFactory) {
       mainTools.getLogIncidents.disable();
       mainTools.getExceptionIncidents.disable();
       mainTools.getAnomalyIncidents.disable();
+      mainTools.getPerformanceIncidents.disable();
+      mainTools.getPerformanceIncident.disable();
+      mainTools.getPerformanceIncidentSample.disable();
+      mainTools.getPerformanceIncidentSampleTimeline.disable();
     } else {
       // App ID already set - show change_app_id, hide select_app_id
-      selectAppTool.disable();
+      if (selectAppTool) selectAppTool.disable();
     }
   };
 }

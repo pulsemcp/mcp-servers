@@ -16,9 +16,9 @@
     "@typescript-eslint/parser": "^8.19.0",
     "eslint": "^8.57.0",
     "eslint-config-prettier": "^9.1.0",
-    "prettier": "^3.4.2",
     "husky": "^8.0.3",
-    "lint-staged": "^15.2.0"
+    "lint-staged": "^15.2.0",
+    "prettier": "^3.4.2"
   },
   "lint-staged": {
     "*.{ts,tsx}": [

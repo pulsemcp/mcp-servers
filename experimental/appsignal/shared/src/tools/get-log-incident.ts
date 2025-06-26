@@ -1,6 +1,6 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
-import { getSelectedAppId } from '../state.js';
+import { getEffectiveAppId } from '../state.js';
 import { IAppsignalClient } from '../appsignal-client/appsignal-client.js';
 
 export function getLogIncidentTool(server: McpServer, clientFactory: () => IAppsignalClient) {
@@ -42,13 +42,13 @@ Use cases:
 - Monitoring the resolution status of identified log patterns`,
     { incidentId: z.string().describe('The unique identifier of the log incident to retrieve') },
     async ({ incidentId }) => {
-      const appId = getSelectedAppId() || process.env.APPSIGNAL_APP_ID;
+      const appId = getEffectiveAppId();
       if (!appId) {
         return {
           content: [
             {
               type: 'text',
-              text: 'Error: No app ID selected. Please use select_app_id tool first or set APPSIGNAL_APP_ID environment variable.',
+              text: 'Error: No app ID configured. Please use select_app_id tool first or set APPSIGNAL_APP_ID environment variable.',
             },
           ],
         };

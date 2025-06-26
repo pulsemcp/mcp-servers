@@ -1,14 +1,20 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { createRegisterTools } from '../../../shared/src/tools';
-import { createMockAppsignalClient } from '../../mocks/appsignal-client.functional-mock';
-import type { IAppsignalClient } from '../../../shared/src/appsignal-client/appsignal-client';
+import { vi } from 'vitest';
 
-// Mock the state module
+// Mock the state module - must be before any imports that use it
 vi.mock('../../../shared/src/state', () => ({
   setSelectedAppId: vi.fn(),
   getSelectedAppId: vi.fn(),
+  clearSelectedAppId: vi.fn(),
+  getEffectiveAppId: vi.fn(),
+  isAppIdLocked: vi.fn(),
 }));
+
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { createRegisterTools } from '../../../shared/src/tools';
+import { getEffectiveAppId, isAppIdLocked } from '../../../shared/src/state';
+import { createMockAppsignalClient } from '../../mocks/appsignal-client.functional-mock';
+import type { IAppsignalClient } from '../../../shared/src/appsignal-client/appsignal-client';
 
 interface Tool {
   name: string;
@@ -36,6 +42,10 @@ describe('Incident List Tools', () => {
 
     // Reset mocks
     vi.clearAllMocks();
+
+    // Default mock implementations
+    vi.mocked(isAppIdLocked).mockReturnValue(true);
+    vi.mocked(getEffectiveAppId).mockReturnValue('test-app-id');
 
     // Create a mock server that captures tool registrations
     registeredTools = new Map();
@@ -146,10 +156,36 @@ describe('Incident List Tools', () => {
       const tool = registeredTools.get('get_log_incidents');
       const result = await tool.handler({});
 
-      expect(mockClient.getLogIncidents).toHaveBeenCalledWith(undefined, undefined, undefined);
+      expect(mockClient.getLogIncidents).toHaveBeenCalledWith(['OPEN'], 50, 0);
       const response = JSON.parse(result.content[0].text);
       expect(response.incidents).toHaveLength(1);
       expect(response.incidents[0].state).toBe('open');
+    });
+
+    it('should handle empty states array by defaulting to OPEN', async () => {
+      const mockResult = {
+        incidents: [
+          {
+            id: 'log-empty',
+            number: 301,
+            description: 'Empty states test for logs',
+            state: 'open',
+            count: 2,
+          },
+        ],
+        total: 1,
+        hasMore: false,
+      };
+
+      mockClient.getLogIncidents = vi.fn().mockResolvedValue(mockResult);
+
+      registerToolsWithClient(mockClient);
+      const tool = registeredTools.get('get_log_incidents');
+      const result = await tool.handler({ states: [], limit: 50, offset: 0 });
+
+      expect(mockClient.getLogIncidents).toHaveBeenCalledWith([], 50, 0);
+      const response = JSON.parse(result.content[0].text);
+      expect(response.incidents).toHaveLength(1);
     });
 
     it('should handle API errors', async () => {
@@ -228,6 +264,33 @@ describe('Incident List Tools', () => {
       expect(response.incidents).toHaveLength(1);
     });
 
+    it('should handle empty states array by defaulting to OPEN', async () => {
+      const mockResult = {
+        incidents: [
+          {
+            id: 'exc-4',
+            name: 'EmptyStatesError',
+            message: 'This should be returned',
+            count: 10,
+            lastOccurredAt: '2023-12-01T11:00:00Z',
+            status: 'open' as const,
+          },
+        ],
+        total: 1,
+        hasMore: false,
+      };
+
+      mockClient.getExceptionIncidents = vi.fn().mockResolvedValue(mockResult);
+
+      registerToolsWithClient(mockClient);
+      const tool = registeredTools.get('get_exception_incidents');
+      const result = await tool.handler({ states: [], limit: 50, offset: 0 });
+
+      expect(mockClient.getExceptionIncidents).toHaveBeenCalledWith([], 50, 0);
+      const response = JSON.parse(result.content[0].text);
+      expect(response.incidents).toHaveLength(1);
+    });
+
     it('should handle pagination', async () => {
       const mockResult = {
         incidents: [],
@@ -241,7 +304,7 @@ describe('Incident List Tools', () => {
       const tool = registeredTools.get('get_exception_incidents');
       const result = await tool.handler({ limit: 20, offset: 100 });
 
-      expect(mockClient.getExceptionIncidents).toHaveBeenCalledWith(undefined, 20, 100);
+      expect(mockClient.getExceptionIncidents).toHaveBeenCalledWith(['OPEN'], 20, 100);
       const response = JSON.parse(result.content[0].text);
       expect(response.hasMore).toBe(true);
       expect(response.total).toBe(200);
@@ -258,6 +321,154 @@ describe('Incident List Tools', () => {
 
       expect(result.content[0].text).toContain(
         'Error fetching exception incidents: API rate limit exceeded'
+      );
+    });
+  });
+
+  describe('get_anomaly_incidents', () => {
+    it('should fetch anomaly incidents list successfully', async () => {
+      const mockResult = {
+        incidents: [
+          {
+            id: 'anomaly-1',
+            number: 201,
+            description: 'High CPU usage spike',
+            state: 'open',
+            count: 8,
+            createdAt: '2023-12-01T11:00:00Z',
+            lastOccurredAt: '2023-12-01T11:30:00Z',
+            trigger: {
+              id: 'cpu-trigger',
+              name: 'CPU Usage Monitor',
+              description: 'Monitors high CPU usage',
+            },
+            tags: [
+              { key: 'server', value: 'web-server-01' },
+              { key: 'severity', value: 'critical' },
+            ],
+          },
+        ],
+        total: 1,
+        hasMore: false,
+      };
+
+      mockClient.getAnomalyIncidents = vi.fn().mockResolvedValue(mockResult);
+
+      registerToolsWithClient(mockClient);
+      const tool = registeredTools.get('get_anomaly_incidents');
+      const result = await tool.handler({ states: ['OPEN'], limit: 50, offset: 0 });
+
+      expect(mockClient.getAnomalyIncidents).toHaveBeenCalledWith(['OPEN'], 50, 0);
+      const response = JSON.parse(result.content[0].text);
+      expect(response).toEqual(mockResult);
+    });
+
+    it('should use default parameters when none provided', async () => {
+      const mockResult = {
+        incidents: [
+          {
+            id: 'anomaly-2',
+            number: 202,
+            description: 'Memory usage anomaly',
+            state: 'open',
+            count: 3,
+            createdAt: '2023-12-01T12:00:00Z',
+            lastOccurredAt: '2023-12-01T12:15:00Z',
+          },
+        ],
+        total: 1,
+        hasMore: false,
+      };
+
+      mockClient.getAnomalyIncidents = vi.fn().mockResolvedValue(mockResult);
+
+      registerToolsWithClient(mockClient);
+      const tool = registeredTools.get('get_anomaly_incidents');
+
+      // Call with empty parameters object - should use defaults
+      const result = await tool.handler({});
+
+      // Should be called with default values: states=['OPEN'], limit=50, offset=0
+      expect(mockClient.getAnomalyIncidents).toHaveBeenCalledWith(['OPEN'], 50, 0);
+      const response = JSON.parse(result.content[0].text);
+      expect(response).toEqual(mockResult);
+    });
+
+    it('should handle all parameter scenarios equivalently', async () => {
+      const mockResult = {
+        incidents: [
+          {
+            id: 'anomaly-equiv',
+            number: 203,
+            description: 'Equivalent test incident',
+            state: 'open',
+            count: 1,
+          },
+        ],
+        total: 1,
+        hasMore: false,
+      };
+
+      mockClient.getAnomalyIncidents = vi.fn().mockResolvedValue(mockResult);
+      registerToolsWithClient(mockClient);
+      const tool = registeredTools.get('get_anomaly_incidents');
+
+      // Test 1: Empty object {}
+      await tool.handler({});
+      expect(mockClient.getAnomalyIncidents).toHaveBeenLastCalledWith(['OPEN'], 50, 0);
+
+      // Test 2: Undefined argument
+      await tool.handler(undefined);
+      expect(mockClient.getAnomalyIncidents).toHaveBeenLastCalledWith(['OPEN'], 50, 0);
+
+      // Test 3: Null argument (should also work)
+      await tool.handler(null);
+      expect(mockClient.getAnomalyIncidents).toHaveBeenLastCalledWith(['OPEN'], 50, 0);
+
+      // All calls should have used the same default parameters
+      expect(mockClient.getAnomalyIncidents).toHaveBeenCalledTimes(3);
+      mockClient.getAnomalyIncidents.mock.calls.forEach((call) => {
+        expect(call).toEqual([['OPEN'], 50, 0]);
+      });
+    });
+
+    it('should handle empty states array by defaulting to OPEN', async () => {
+      const mockResult = {
+        incidents: [
+          {
+            id: 'anomaly-empty',
+            number: 204,
+            description: 'Empty states test',
+            state: 'open',
+            count: 1,
+          },
+        ],
+        total: 1,
+        hasMore: false,
+      };
+
+      mockClient.getAnomalyIncidents = vi.fn().mockResolvedValue(mockResult);
+
+      registerToolsWithClient(mockClient);
+      const tool = registeredTools.get('get_anomaly_incidents');
+      const result = await tool.handler({ states: [], limit: 50, offset: 0 });
+
+      expect(mockClient.getAnomalyIncidents).toHaveBeenCalledWith([], 50, 0);
+      const response = JSON.parse(result.content[0].text);
+      expect(response.incidents).toHaveLength(1);
+    });
+
+    it('should handle API errors', async () => {
+      mockClient.getAnomalyIncidents = vi
+        .fn()
+        .mockRejectedValue(new Error('Service temporarily unavailable'));
+
+      registerToolsWithClient(mockClient);
+      const tool = registeredTools.get('get_anomaly_incidents');
+      const result = await tool.handler({ states: ['OPEN'] });
+
+      expect(result.content[0].text).toContain(
+        'Error fetching anomaly incidents: Service temporarily unavailable'
       );
     });
   });
