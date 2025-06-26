@@ -12,7 +12,7 @@ export function getExceptionIncidentSampleTool(
     `Retrieve sample data for a specific occurrence of an exception incident. While exception incidents group similar errors together, this tool provides context of a single occurrence, including request parameters, session data, and environment details. Note: Due to API limitations, the actual exception message and backtrace are not available.
 
 💡 Recommended follow-up: After retrieving the sample, use the search_logs tool with:
-- Time range around the sample's timestamp (±1-2 minutes)
+- Time range around the sample's timestamp (-10 seconds through +3 seconds)
 - Query terms from the action/namespace/params to find related log entries
 - This can help reconstruct what happened since backtrace data is unavailable
 
