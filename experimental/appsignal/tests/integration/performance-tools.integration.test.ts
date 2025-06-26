@@ -38,7 +38,7 @@ describe('AppSignal MCP Server Performance Tools Integration', () => {
       expect(response).toHaveProperty('hasMore');
       expect(response.incidents).toHaveLength(1);
       expect(response.incidents[0].id).toBe('perf-123');
-      expect(response.incidents[0].state).toBe('open');
+      expect(response.incidents[0].state).toBe('OPEN');
       expect(response.incidents[0].hasNPlusOne).toBe(true);
     });
 
