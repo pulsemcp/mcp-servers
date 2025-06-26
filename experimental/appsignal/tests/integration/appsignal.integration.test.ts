@@ -369,7 +369,7 @@ describe('AppSignal MCP Server Integration', () => {
  * This demonstrates how we're mocking the AppSignal API calls, not the MCP client.
  */
 async function createTestMCPClientWithMock(
-  mockAppSignalClient: IAppsignalClient & { mockData?: any }
+  mockAppSignalClient: IAppsignalClient & { mockData?: unknown }
 ): Promise<TestMCPClient> {
   // We need to pass the mock to the server somehow.
   // Since we can't inject it directly, we'll use environment variables

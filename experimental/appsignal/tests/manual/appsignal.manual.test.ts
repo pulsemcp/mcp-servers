@@ -6,6 +6,21 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+interface AppSignalApp {
+  id: string;
+  name: string;
+  environment?: string;
+}
+
+interface AppSignalLog {
+  id: string;
+  timestamp: string;
+  message: string;
+  severity: string;
+  hostname: string;
+  group: string;
+}
+
 interface TestOutcome {
   status: 'SUCCESS' | 'WARNING' | 'FAILURE';
   details: {
@@ -136,7 +151,7 @@ describe('AppSignal MCP Server - System Test', () => {
       console.log(`   ✓ Found ${apps.length} app(s)`);
 
       // Validate app structure
-      apps.forEach((app: any) => {
+      apps.forEach((app: AppSignalApp) => {
         expect(app).toHaveProperty('id');
         expect(app).toHaveProperty('name');
         expect(typeof app.id).toBe('string');
@@ -148,17 +163,17 @@ describe('AppSignal MCP Server - System Test', () => {
 
       // First try: pulsemcp production (most likely to have data)
       let selectedApp = apps.find(
-        (app: any) => app.name === 'pulsemcp' && app.environment === 'production'
+        (app: AppSignalApp) => app.name === 'pulsemcp' && app.environment === 'production'
       );
 
       // Second try: any pulsemcp app
       if (!selectedApp) {
-        selectedApp = apps.find((app: any) => app.name === 'pulsemcp');
+        selectedApp = apps.find((app: AppSignalApp) => app.name === 'pulsemcp');
       }
 
       // Third try: any production app
       if (!selectedApp) {
-        selectedApp = apps.find((app: any) => app.environment === 'production');
+        selectedApp = apps.find((app: AppSignalApp) => app.environment === 'production');
       }
 
       // Final fallback: first available app
@@ -261,7 +276,7 @@ describe('AppSignal MCP Server - System Test', () => {
 
         // Verify that if results exist, they match the severity filter
         if (errorResponse.lines.length > 0) {
-          errorResponse.lines.forEach((log: any) => {
+          errorResponse.lines.forEach((log: AppSignalLog) => {
             const normalizedSeverity = log.severity.toUpperCase();
             expect(['ERROR', 'FATAL']).toContain(normalizedSeverity);
           });
