@@ -19,6 +19,7 @@ example-client/
 ### Interface-First Design
 
 The client is defined as an interface (`IExampleClient`) in `server.ts`, enabling:
+
 - Easy mocking for tests
 - Clear contract for implementations
 - Dependency injection via factory pattern
@@ -26,6 +27,7 @@ The client is defined as an interface (`IExampleClient`) in `server.ts`, enablin
 ### Modular API Methods
 
 Each API method is implemented in its own file under `lib/`:
+
 - Better organization for complex clients
 - Easier to test individual methods
 - Clear separation of concerns
@@ -34,6 +36,7 @@ Each API method is implemented in its own file under `lib/`:
 ### Client Implementation
 
 The concrete client class:
+
 1. Implements the interface
 2. Stores credentials/configuration
 3. Delegates to lib/ methods via dynamic imports

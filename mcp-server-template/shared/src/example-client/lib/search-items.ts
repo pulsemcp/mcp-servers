@@ -1,7 +1,7 @@
 /**
  * Example API method for searching items.
  * Demonstrates a more complex API method with query parameters.
- * 
+ *
  * @param apiKey - The API key for authentication
  * @param query - The search query
  * @param options - Additional search options
@@ -27,7 +27,7 @@ export async function searchItems(
   // Example implementation - replace with actual API call
   const response = await fetch(`https://api.example.com/items/search?${params}`, {
     headers: {
-      'Authorization': `Bearer ${apiKey}`,
+      Authorization: `Bearer ${apiKey}`,
       'Content-Type': 'application/json',
     },
   });

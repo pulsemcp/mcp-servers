@@ -11,10 +11,12 @@ export function toolNameTool(server: Server, clientFactory: () => IYourClient) {
   return {
     name: 'tool_name',
     description: 'Tool description',
-    inputSchema: { /* JSON Schema */ },
+    inputSchema: {
+      /* JSON Schema */
+    },
     handler: async (args: unknown) => {
       // Tool implementation
-    }
+    },
   };
 }
 ```

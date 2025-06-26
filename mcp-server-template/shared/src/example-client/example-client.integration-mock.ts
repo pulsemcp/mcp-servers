@@ -44,9 +44,7 @@ export function createIntegrationMockExampleClient(
       }
 
       // Default mock response
-      return [
-        { id: '1', name: `Mock result for: ${query}`, score: 1.0 },
-      ];
+      return [{ id: '1', name: `Mock result for: ${query}`, score: 1.0 }];
     },
   };
 

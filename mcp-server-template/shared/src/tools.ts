@@ -6,10 +6,10 @@ import { exampleTool } from './tools/example-tool.js';
 /**
  * Creates a function to register all tools with the server.
  * This pattern uses individual tool files for better modularity and testability.
- * 
+ *
  * Each tool is defined in its own file under the `tools/` directory and follows
  * a factory pattern that accepts the server and clientFactory as parameters.
- * 
+ *
  * @param clientFactory - Factory function that creates client instances
  * @returns Function that registers all tools with a server
  */
@@ -25,7 +25,7 @@ export function createRegisterTools(clientFactory: ClientFactory) {
     // List available tools
     server.setRequestHandler(ListToolsRequestSchema, async () => {
       return {
-        tools: tools.map(tool => ({
+        tools: tools.map((tool) => ({
           name: tool.name,
           description: tool.description,
           inputSchema: tool.inputSchema,
@@ -37,7 +37,7 @@ export function createRegisterTools(clientFactory: ClientFactory) {
     server.setRequestHandler(CallToolRequestSchema, async (request) => {
       const { name, arguments: args } = request.params;
 
-      const tool = tools.find(t => t.name === name);
+      const tool = tools.find((t) => t.name === name);
       if (!tool) {
         throw new Error(`Unknown tool: ${name}`);
       }

@@ -92,6 +92,7 @@ Full testing setup with Vitest:
 #### Integration Mock Entry Point
 
 The template includes `index.integration-with-mock.ts` which:
+
 - Allows integration tests to inject mock data via environment variables
 - Uses the real MCP server with mocked external dependencies
 - Demonstrates clear separation between MCP protocol and external API mocking
@@ -118,8 +119,12 @@ The template uses a modular tool pattern where each tool is defined in its own f
      return {
        name: 'my_tool',
        description: 'Tool description',
-       inputSchema: { /* JSON Schema */ },
-       handler: async (args: unknown) => { /* implementation */ }
+       inputSchema: {
+         /* JSON Schema */
+       },
+       handler: async (args: unknown) => {
+         /* implementation */
+       },
      };
    }
    ```

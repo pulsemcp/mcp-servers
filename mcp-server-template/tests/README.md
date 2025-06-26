@@ -186,6 +186,7 @@ Manual tests are designed to test the MCP server against real external APIs. The
 ### Setup
 
 1. Create a `.env` file in the server root:
+
    ```bash
    YOUR_API_KEY=your-actual-api-key
    OTHER_ENV_VAR=value
