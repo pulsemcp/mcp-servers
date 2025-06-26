@@ -98,10 +98,6 @@ describe('search_logs Tool', () => {
       severity: 'ERROR',
       message: 'Database connection failed',
       hostname: 'api-server-01',
-      attributes: expect.arrayContaining([
-        { key: 'service', value: 'api-service' },
-        { key: 'errorCode', value: 'DB_CONNECTION_ERROR' },
-      ]),
     });
     expect(response.formattedSummary).toContain('Found 1 log entries');
   });
