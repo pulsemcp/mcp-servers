@@ -10,16 +10,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.1.1] - 2025-06-26
 
 ### Added
+
 - Added npm publication configuration
 - Added repository metadata to package.json
 - Set up automated publishing workflow
 
 ### Fixed
+
 - Fixed package naming to use `appsignal-mcp-server`
 
 ## [0.1.0] - 2025-06-26
 
 ### Added
+
 - Initial release of AppSignal MCP server
 - Support for searching logs
 - Support for listing and viewing exception incidents

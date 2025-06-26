@@ -12,39 +12,39 @@ on:
 jobs:
   detect-and-publish:
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 2  # Need to compare with previous commit
-          
+          fetch-depth: 2 # Need to compare with previous commit
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
           registry-url: 'https://registry.npmjs.org'
-          
+
       - name: Detect version changes
         id: detect-changes
         run: |
           echo "Detecting version changes..."
-          
+
           # Initialize arrays to track servers to publish
           SERVERS_TO_PUBLISH=""
-          
+
           # Get list of changed package.json files
           CHANGED_FILES=$(git diff --name-only HEAD~1 HEAD | grep -E "(experimental|productionized|^[^/]+)/[^/]+/local/package\.json$" || true)
-          
+
           if [ -z "$CHANGED_FILES" ]; then
             echo "No package.json files changed"
             echo "publish_needed=false" >> $GITHUB_OUTPUT
             exit 0
           fi
-          
+
           echo "Changed files:"
           echo "$CHANGED_FILES"
-          
+
           for file in $CHANGED_FILES; do
             echo "Checking $file..."
             
@@ -86,7 +86,7 @@ jobs:
             
             echo "---"
           done
-          
+
           if [ -z "$SERVERS_TO_PUBLISH" ]; then
             echo "No servers need publishing"
             echo "publish_needed=false" >> $GITHUB_OUTPUT
@@ -95,20 +95,20 @@ jobs:
             echo "publish_needed=true" >> $GITHUB_OUTPUT
             echo "servers=$SERVERS_TO_PUBLISH" >> $GITHUB_OUTPUT
           fi
-          
+
       - name: Publish servers
         if: steps.detect-changes.outputs.publish_needed == 'true'
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
           set -e
-          
+
           echo "Publishing MCP servers..."
-          
+
           SERVERS="${{ steps.detect-changes.outputs.servers }}"
           PUBLISHED_SERVERS=""
           FAILED_SERVERS=""
-          
+
           for LOCAL_DIR in $SERVERS; do
             echo "Processing $LOCAL_DIR..."
             
@@ -161,9 +161,7 @@ jobs:
                 
                 RELEASE_NOTES="# $PACKAGE_NAME v$PACKAGE_VERSION"$'\n\n'"$CHANGELOG_ENTRY"$'\n\n'"---"$'\n'"Published to npm: https://www.npmjs.com/package/$PACKAGE_NAME"
               else
-                RELEASE_NOTES="# $PACKAGE_NAME v$PACKAGE_VERSION
-
-Published to npm: https://www.npmjs.com/package/$PACKAGE_NAME"
+                RELEASE_NOTES="# $PACKAGE_NAME v$PACKAGE_VERSION"$'\n\n'"Published to npm: https://www.npmjs.com/package/$PACKAGE_NAME"
               fi
               
               # Create release using GitHub CLI
@@ -181,22 +179,22 @@ Published to npm: https://www.npmjs.com/package/$PACKAGE_NAME"
             cd - > /dev/null
             echo "---"
           done
-          
+
           # Summary
           echo "## Publishing Summary" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          
+
           if [ -n "$PUBLISHED_SERVERS" ]; then
             echo "### ✅ Successfully Published:" >> $GITHUB_STEP_SUMMARY
             echo -e "$PUBLISHED_SERVERS" >> $GITHUB_STEP_SUMMARY
           fi
-          
+
           if [ -n "$FAILED_SERVERS" ]; then
             echo "### ❌ Failed to Publish:" >> $GITHUB_STEP_SUMMARY
             echo -e "$FAILED_SERVERS" >> $GITHUB_STEP_SUMMARY
             exit 1
           fi
-          
+
       - name: No servers to publish
         if: steps.detect-changes.outputs.publish_needed == 'false'
         run: |

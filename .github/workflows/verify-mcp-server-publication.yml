@@ -10,35 +10,35 @@ on:
 jobs:
   verify-publications:
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Need full history to check for version changes
-          
+          fetch-depth: 0 # Need full history to check for version changes
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          
+
       - name: Get changed files
         id: changed-files
         uses: tj-actions/changed-files@v41
         with:
           files: |
             **/local/package.json
-            
+
       - name: Verify each changed MCP server
         if: steps.changed-files.outputs.any_changed == 'true'
         run: |
           set -e
-          
+
           echo "Changed package.json files: ${{ steps.changed-files.outputs.all_changed_files }}"
-          
+
           # Track if any verification fails
           VERIFICATION_FAILED=false
-          
+
           for file in ${{ steps.changed-files.outputs.all_changed_files }}; do
             echo "Checking $file"
             
@@ -132,23 +132,23 @@ jobs:
             
             echo "---"
           done
-          
+
           # Clean up
           rm -f base-package.json
-          
+
           if [ "$VERIFICATION_FAILED" = true ]; then
             echo "❌ Verification failed for one or more servers"
             exit 1
           else
             echo "✅ All servers passed verification"
           fi
-          
+
       - name: Summary
         if: always()
         run: |
           echo "## MCP Server Publication Verification Summary" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          
+
           if [ "${{ steps.changed-files.outputs.any_changed }}" == "true" ]; then
             echo "### Checked Servers:" >> $GITHUB_STEP_SUMMARY
             for file in ${{ steps.changed-files.outputs.all_changed_files }}; do

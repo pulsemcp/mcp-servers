@@ -25,7 +25,13 @@
     "tsx": "^4.19.4",
     "typescript": "^5.7.3"
   },
-  "keywords": ["mcp", "modelcontextprotocol", "appsignal", "monitoring", "apm"],
+  "keywords": [
+    "mcp",
+    "modelcontextprotocol",
+    "appsignal",
+    "monitoring",
+    "apm"
+  ],
   "author": "PulseMCP",
   "license": "MIT",
   "publishConfig": {

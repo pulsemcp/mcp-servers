@@ -27,6 +27,7 @@ npm run stage-publish major  # For breaking changes (0.1.0 -> 1.0.0)
 ```
 
 This will:
+
 - Update the version in `package.json`
 - Create a git commit with the version bump
 - Create a git tag (e.g., `appsignal-mcp-server@0.1.1`)
@@ -42,14 +43,17 @@ After staging the publication, update the server's CHANGELOG.md file:
 5. Follow the [Keep a Changelog](https://keepachangelog.com) format
 
 Example:
+
 ```markdown
 ## [0.1.1] - 2024-01-15
 
 ### Fixed
+
 - Fixed authentication error handling
 - Improved error messages
 
 ### Added
+
 - Added retry logic for API calls
 ```
 
@@ -139,6 +143,7 @@ Before creating a PR:
 ### Version Already Exists
 
 If npm publish fails because the version already exists:
+
 1. Check npm to see what versions are published
 2. Bump to a higher version
 3. Update CHANGELOG.md accordingly
@@ -146,6 +151,7 @@ If npm publish fails because the version already exists:
 ### Missing Changelog Entry
 
 The PR verification will fail if:
+
 - CHANGELOG.md doesn't exist
 - The new version isn't listed in CHANGELOG.md
 - The changelog entry doesn't follow the expected format
