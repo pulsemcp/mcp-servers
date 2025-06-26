@@ -17,7 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Removed broken image link from main README
-- Updated .gitignore to allow scripts/*.js files for CI
+- Updated .gitignore to allow scripts/\*.js files for CI
 
 ## [0.1.2] - 2025-06-26
 
