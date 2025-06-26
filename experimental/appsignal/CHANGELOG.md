@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.3] - 2025-06-26
+
+### Added
+
+- Added `prepare-npm-readme.js` script to automatically combine READMEs during npm publish
+- Script merges main README with local configuration section for comprehensive npm documentation
+
+### Changed
+
+- Removed broken image link from main README
+- Updated .gitignore to allow scripts/*.js files for CI
+
 ## [0.1.2] - 2025-06-26
 
 ### Fixed
