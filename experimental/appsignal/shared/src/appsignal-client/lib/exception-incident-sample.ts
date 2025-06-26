@@ -1,3 +1,4 @@
+import { gql } from 'graphql-request';
 import type { GraphQLClient } from 'graphql-request';
 
 export interface ExceptionIncidentSample {
@@ -32,20 +33,120 @@ export interface ExceptionIncidentSample {
   };
 }
 
-export async function getExceptionIncidentSample(
-  _graphqlClient: GraphQLClient,
-  _appId: string,
-  incidentId: string,
-  _offset = 0
-): Promise<ExceptionIncidentSample> {
-  // Note: The AppSignal GraphQL API has limitations with querying samples
-  // The API returns 500 errors when trying to query samples on exception incidents
-  // This appears to be a server-side limitation
+interface GetExceptionIncidentSamplesResponse {
+  viewer: {
+    organizations: Array<{
+      apps: Array<{
+        id: string;
+        exceptionIncidents: Array<{
+          id: string;
+          samples: Array<{
+            id: string;
+            time: string;
+            action: string;
+            namespace: string;
+            revision: string;
+            version: string;
+            duration: number | null;
+            queueDuration: number | null;
+            createdAt: string;
+            params: Record<string, unknown> | null;
+            customData: Record<string, unknown> | null;
+            sessionData: Record<string, unknown> | null;
+          }>;
+        }>;
+      }>;
+    }>;
+  };
+}
 
-  // For now, return a meaningful error message explaining the limitation
-  throw new Error(
-    `Unable to fetch exception incident samples: AppSignal API limitation. ` +
-      `The GraphQL API returns server errors when querying samples. ` +
-      `Please use the AppSignal dashboard to view exception samples for incident ${incidentId}.`
-  );
+export async function getExceptionIncidentSample(
+  graphqlClient: GraphQLClient,
+  appId: string,
+  incidentId: string,
+  offset = 0
+): Promise<ExceptionIncidentSample> {
+  // Note: The 'exception' field causes 500 errors in the AppSignal API
+  // We can retrieve most sample data but not the actual exception details
+  const query = gql`
+    query GetExceptionIncidentSamples($limit: Int!) {
+      viewer {
+        organizations {
+          apps {
+            id
+            exceptionIncidents {
+              id
+              samples(limit: $limit) {
+                id
+                time
+                action
+                namespace
+                revision
+                version
+                duration
+                queueDuration
+                createdAt
+                params
+                customData
+                sessionData
+              }
+            }
+          }
+        }
+      }
+    }
+  `;
+
+  // Note: AppSignal API doesn't support filtering incidents by ID or state in this query
+  // We have to fetch all incidents and find the one we need
+  const data = await graphqlClient.request<GetExceptionIncidentSamplesResponse>(query, {
+    limit: offset + 1, // Fetch enough samples to include the one at the offset
+  });
+
+  // Find the app and incident
+  let samples: any[] = [];
+  for (const org of data.viewer.organizations) {
+    const app = org.apps.find((a) => a.id === appId);
+    if (app) {
+      const incident = app.exceptionIncidents.find((i) => i.id === incidentId);
+      if (incident && incident.samples) {
+        samples = incident.samples;
+        break;
+      }
+    }
+  }
+
+  if (samples.length === 0) {
+    throw new Error(`No samples found for exception incident ${incidentId}`);
+  }
+
+  if (offset >= samples.length) {
+    throw new Error(
+      `No sample found at offset ${offset} for exception incident ${incidentId} (only ${samples.length} samples available)`
+    );
+  }
+
+  const sample = samples[offset];
+
+  // Note: Exception details (message, backtrace) are not available due to API limitation
+  // The 'exception' field causes 500 errors when included in the query
+  const message =
+    'Exception details not available due to AppSignal API limitation. ' +
+    'The exception field cannot be queried without causing server errors.';
+
+  return {
+    id: sample.id,
+    timestamp: sample.time,
+    message,
+    backtrace: [], // Backtrace not available without exception field
+    action: sample.action || 'unknown',
+    namespace: sample.namespace || 'unknown',
+    revision: sample.revision || 'unknown',
+    version: sample.version || 'unknown',
+    duration: sample.duration || undefined,
+    queueDuration: sample.queueDuration || undefined,
+    params: sample.params || undefined,
+    customData: sample.customData || undefined,
+    sessionData: sample.sessionData || undefined,
+  };
 }
