@@ -15,33 +15,28 @@ You can have confidence that any Pulse-branded MCP server was built with these i
 
 ## Repository Structure
 
-- **`productionized/`**: Production-ready MCP servers (see [productionized/README.md](./productionized/README.md) for status)
-  - `pulse-fetch/`: Pull internet resources into context
-- **`experimental/`**: MCP servers in active development
+- **`productionized/`**: Production-ready MCP servers (see [productionized/README.md](./productionized/README.md))
+- **`experimental/`**: MCP servers in active development (see [experimental/README.md](./experimental/README.md))
 - **`mcp-server-template/`**: Template for creating new MCP servers
 - **`mcp-json-profiles/`**: JSON profiles for MCP configuration
 
-## Servers available
+## Servers Available
 
-### Production Servers
+### Productionized Servers
 
-#### Pulse Fetch
+These are PulseMCP-branded servers that we intend to maintain indefinitely as our own offerings.
 
-Purpose: Pull a specific resource from the open internet into context.
-
-Target audience: Agent-building frameworks (e.g. `fast-agent`, `Mastra`, `PydanticAI`, `Agno`, `OpenAI Agents SDK`) and other MCP clients that do not come with built-in "fetch" capabilities.
-
-Highlights:
-
-- Strips out HTML noise from results so as to minimize token usage during MCP Tool calls
-- Optionally saves each result as an MCP Resource so results are effectively cached
-- Offers MCP Prompts so end-users don't have to type "use the Pulse fetch server to..."
-- Option to configure Firecrawl API key to reliably work around anti-bot technology
-- Option to configure Oxylabs API key to fallback to when Firecrawl fails
+| Name        | Description                          | Local Status      | Remote Status | Target Audience                                                                                        | Notes                                                                               |
+| ----------- | ------------------------------------ | ----------------- | ------------- | ------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------- |
+| pulse-fetch | Pull internet resources into context | Not Yet Published | Not Started   | Agent-building frameworks (e.g. fast-agent, Mastra, PydanticAI) and MCP clients without built-in fetch | Supports Firecrawl and Oxylabs integrations; HTML noise stripping; Resource caching |
 
 ### Experimental Servers
 
-See the [experimental/](./experimental/) directory for servers currently in development.
+These are high-quality servers that we may discontinue if the official provider creates and maintains a better MCP server.
+
+| Name      | Description                                                     | Local Status | Remote Status | Target Audience                                       | Notes                                                                |
+| --------- | --------------------------------------------------------------- | ------------ | ------------- | ----------------------------------------------------- | -------------------------------------------------------------------- |
+| appsignal | AppSignal application performance monitoring and error tracking | 0.2.1        | Not Started   | Developers using AppSignal for application monitoring | Requires AppSignal API key; NOT officially affiliated with AppSignal |
 
 ## Contributing
 

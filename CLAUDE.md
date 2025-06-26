@@ -41,6 +41,12 @@ npm run lint:fix   # Auto-fix linting issues
 npm run format     # Format code with Prettier
 ```
 
+**IMPORTANT: NEVER use `git commit --no-verify` to bypass pre-commit hooks.** If pre-commit hooks fail:
+
+1. Fix the underlying issue (install dependencies, run lint:fix, etc.)
+2. Only commit after all checks pass
+3. If dependencies are broken, fix them first before committing
+
 The repository uses:
 
 - **ESLint** for code quality and style enforcement
