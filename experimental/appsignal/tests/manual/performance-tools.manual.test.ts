@@ -158,7 +158,7 @@ describe('AppSignal Performance Tools - Manual Test', () => {
 
       // Test 2: Verify states are uppercase in response
       if (response.incidents.length > 0) {
-        response.incidents.forEach((incident: any) => {
+        response.incidents.forEach((incident: { state: string }) => {
           expect(['OPEN', 'CLOSED', 'WIP']).toContain(incident.state);
         });
         console.log('✓ All incident states are properly uppercase');

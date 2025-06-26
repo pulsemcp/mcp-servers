@@ -248,7 +248,7 @@ describe('Production App Bug Fixes - Manual Test', () => {
 
     // Test 4: Verify state values are uppercase
     console.log('\n📊 Verifying state values are uppercase...');
-    allStatesData.incidents.forEach((incident: any) => {
+    allStatesData.incidents.forEach((incident: { state: string }) => {
       expect(['OPEN', 'CLOSED', 'WIP']).toContain(incident.state);
     });
     console.log('   ✅ All states are properly uppercase!');
