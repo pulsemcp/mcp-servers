@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.11] - 2025-06-27
+
+### Fixed
+
+- Fixed npm publish TypeScript build errors by reordering prepare-publish.js steps
+- Build shared directory first before building local to ensure imports resolve correctly
+
 ## [0.1.10] - 2025-06-27
 
 ### Fixed
