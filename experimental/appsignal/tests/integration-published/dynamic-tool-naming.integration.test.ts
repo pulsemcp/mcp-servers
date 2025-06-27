@@ -209,7 +209,10 @@ async function createTestMCPClientWithMock(
 ): Promise<TestMCPClient> {
   const mockData = mockAppSignalClient.mockData || {};
 
-  const serverPath = path.join(__dirname, '../../published-build/build/index.integration-with-mock.js');
+  const serverPath = path.join(
+    __dirname,
+    '../../published-build/build/index.integration-with-mock.js'
+  );
 
   const env: Record<string, string> = {
     APPSIGNAL_API_KEY: 'test-api-key',
@@ -229,4 +232,3 @@ async function createTestMCPClientWithMock(
   await client.connect();
   return client;
 }
-

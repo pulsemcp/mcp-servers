@@ -2,7 +2,6 @@
 
 > **Note**: This package is part of the [MCP Servers](https://github.com/pulsemcp/mcp-servers) monorepo. For the latest updates and full source code, visit the [AppSignal MCP Server directory](https://github.com/pulsemcp/mcp-servers/tree/main/experimental/appsignal).
 
-
 Haven't heard about MCP yet? The easiest way to keep up-to-date is to read our [weekly newsletter at PulseMCP](https://www.pulsemcp.com/).
 
 ---
@@ -162,7 +161,6 @@ Set the following environment variables:
 - `APPSIGNAL_API_KEY`: Your AppSignal API key (required)
 - `APPSIGNAL_APP_ID`: Your AppSignal application ID (optional)
 
-
 ### Manual Setup
 
 You're going to need Node working on your machine so you can run `npx` commands in your terminal. If you don't have Node, you can install it from [nodejs.org](https://nodejs.org/en/download).
@@ -188,7 +186,6 @@ Modify your `claude_desktop_config.json` file to add the following:
 ```
 
 Restart Claude Desktop and you should be ready to go!
-
 
 ### Manual Setup
 

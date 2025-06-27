@@ -331,7 +331,10 @@ async function createTestMCPClientWithMock(
   // to tell the server to use our mock data.
   const mockData = mockAppSignalClient.mockData || {};
 
-  const serverPath = path.join(__dirname, '../../published-build/build/index.integration-with-mock.js');
+  const serverPath = path.join(
+    __dirname,
+    '../../published-build/build/index.integration-with-mock.js'
+  );
 
   const client = new TestMCPClient({
     serverPath,
@@ -346,4 +349,3 @@ async function createTestMCPClientWithMock(
   await client.connect();
   return client;
 }
-

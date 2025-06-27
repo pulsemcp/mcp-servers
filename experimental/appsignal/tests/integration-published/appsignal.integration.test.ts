@@ -381,4 +381,3 @@ async function createTestMCPClientWithMock(
   await client.connect();
   return client;
 }
-
