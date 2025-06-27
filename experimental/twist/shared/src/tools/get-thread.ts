@@ -1,6 +1,6 @@
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { z } from 'zod';
-import type { ClientFactory } from '../server.js';
+import type { ClientFactory, Message } from '../server.js';
 
 /**
  * Tool for getting a thread with all its messages

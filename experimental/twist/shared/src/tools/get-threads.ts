@@ -1,6 +1,6 @@
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { z } from 'zod';
-import type { ClientFactory } from '../server.js';
+import type { ClientFactory, Thread } from '../server.js';
 
 /**
  * Tool for listing threads in a channel
