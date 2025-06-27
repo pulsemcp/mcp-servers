@@ -38,7 +38,7 @@ export type ClientFactory = () => IExampleClient;
 export function createMCPServer() {
   const server = new McpServer(
     {
-      name: 'mcp-server-NAME',
+      name: 'NAME-mcp-server',
       version: '0.1.0',
     },
     {
