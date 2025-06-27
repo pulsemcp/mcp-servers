@@ -1,9 +1,12 @@
 {
   "name": "appsignal-mcp-server",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "description": "Local implementation of AppSignal MCP server",
   "main": "build/index.js",
   "type": "module",
+  "bin": {
+    "appsignal-mcp-server": "./build/index.js"
+  },
   "scripts": {
     "build": "../node_modules/typescript/bin/tsc",
     "start": "node build/index.js",

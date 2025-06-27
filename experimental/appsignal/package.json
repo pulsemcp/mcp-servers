@@ -9,9 +9,6 @@
     "shared"
   ],
   "type": "module",
-  "bin": {
-    "appsignal-mcp-server": "./local/build/index.js"
-  },
   "scripts": {
     "install-all": "npm install && cd local && npm install && cd ../shared && npm install",
     "build": "cd shared && npm run build && cd ../local && npm run build",
