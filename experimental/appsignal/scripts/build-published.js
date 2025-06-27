@@ -22,11 +22,17 @@ async function buildPublished() {
   const excludeArgs = '--exclude=node_modules --exclude=build --exclude=shared --exclude=.git';
   execSync(`rsync -av ${excludeArgs} ${localDir}/ ${publishedBuildDir}/`, { stdio: 'inherit' });
 
-  // Build the shared package
+  // Build the shared package and create symlink to match relative import path
   const sharedDir = join(projectRoot, 'shared');
-  const sharedDestDir = join(publishedBuildDir, 'node_modules', 'appsignal-mcp-server-shared');
+  const sharedLinkPath = join(publishedBuildDir, 'shared');
   console.log('Building shared package...');
   execSync('npm run build', { cwd: sharedDir, stdio: 'inherit' });
+  
+  // Create symlink for relative import path
+  execSync(`ln -sf ${sharedDir}/dist ${sharedLinkPath}`, { stdio: 'inherit' });
+  
+  // Also copy to node_modules for package resolution
+  const sharedDestDir = join(publishedBuildDir, 'node_modules', 'appsignal-mcp-server-shared');
   execSync(`mkdir -p ${dirname(sharedDestDir)}`, { stdio: 'inherit' });
   execSync(`cp -r ${sharedDir}/dist ${sharedDestDir}`, { stdio: 'inherit' });
   execSync(`cp ${sharedDir}/package.json ${sharedDestDir}/`, { stdio: 'inherit' });
