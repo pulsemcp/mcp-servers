@@ -1,6 +1,6 @@
 # Push working state to a PR
 
-Our goal is to take the current state of our git diff (ALL The files), commit the files (with a reasonable commit message), push them (to a branch), open a PR, and surface the link to the PR back to me so I can click it.
+Our goal is to take the current state of our git diff (ALL The files), commit the files (with a reasonable commit message), push them (to a branch), open a PR, verify the PR passed CI checks (don't skip this!), and surface the link to the PR back to me so I can click it to review.
 
 Follow this checklist when executing this:
 

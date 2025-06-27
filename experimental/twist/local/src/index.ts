@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
-import { createMCPServer } from 'mcp-server-twist-shared';
+import { createMCPServer } from 'twist-mcp-server-shared';
 
 async function main() {
   // Create server using factory
