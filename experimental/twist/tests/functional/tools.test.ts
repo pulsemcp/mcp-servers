@@ -120,7 +120,8 @@ describe('Twist Tools', () => {
             creator: 'user_123',
             posted_ts: now - 7200, // 2 hours ago
             last_updated_ts: now - 3600, // 1 hour ago
-            archived: true,
+            archived: false,
+            closed: true,
           },
           {
             id: 'th_003',
@@ -140,7 +141,8 @@ describe('Twist Tools', () => {
             creator: 'user_123',
             posted_ts: now - 14400, // 4 hours ago
             last_updated_ts: now - 7200, // 2 hours ago
-            archived: true,
+            archived: false,
+            closed: true,
           },
           {
             id: 'th_005',
