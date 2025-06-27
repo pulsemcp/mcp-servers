@@ -8,7 +8,7 @@ const __dirname = dirname(__filename);
 async function setupDev() {
   const linkPath = join(__dirname, 'shared');
   const targetPath = join(__dirname, '../shared/dist');
-  
+
   try {
     await symlink(targetPath, linkPath, 'dir');
     console.log('Created symlink for development');

@@ -34,11 +34,11 @@ async function buildPublished() {
     console.log('Creating workspace symlink for tests...');
     const nodeModulesDir = join(publishedBuildDir, 'node_modules');
     await mkdir(nodeModulesDir, { recursive: true });
-    
+
     // Create symlink for NAME-mcp-server-shared (replace NAME with actual name)
     const sharedPackageLink = join(nodeModulesDir, 'NAME-mcp-server-shared');
     const sharedPackageTarget = join(publishedBuildDir, '../shared');
-    
+
     try {
       await rm(sharedPackageLink, { recursive: true, force: true });
       execSync(`ln -s ${sharedPackageTarget} ${sharedPackageLink}`);
@@ -49,7 +49,6 @@ async function buildPublished() {
 
     console.log('Published package simulation complete');
     console.log(`Published build available at: ${publishedBuildDir}`);
-
   } catch (error) {
     console.error('Error building published package:', error.message);
     process.exit(1);
