@@ -145,7 +145,7 @@ Use cases:
             }
 
             // Increase the API limit to account for filtering and pagination
-            // Since we filter client-side, we need to fetch more than the final limit
+            // Since we filter client-side, we need to fetch more than the final limi
             // to ensure we have enough results after filtering
             const fetchLimit = Math.min(100, Math.max(threads_limit + threads_offset + 50, threads_limit * 3));
 
@@ -195,7 +195,7 @@ Use cases:
               // Calculate pagination info with proper total counts
               // Since offset is applied before filtering, we need separate counts for display
               const statusText = include_closed_threads ? 'threads' : 'open threads';
-              
+
               // Count all threads that would pass the filter (for total count display)
               let allFilteredThreads = sortedThreads.filter((thread) => !thread.archived);
               if (!include_closed_threads) {
@@ -205,14 +205,14 @@ Use cases:
                 });
               }
               const totalFilteredCount = allFilteredThreads.length;
-              
+
               const showingCount = paginatedThreads.length;
-              
+
               // Calculate pagination range more accurately
               const startIndex = threads_offset + 1;
               const endIndex = threads_offset + showingCount;
               const hasMoreResults = threads.length >= fetchLimit; // Might have more data beyond what we fetched
-              
+
               const paginationInfo = threads_offset > 0 || showingCount < totalFilteredCount || hasMoreResults
                 ? ` (showing ${showingCount > 0 ? startIndex : 0}-${endIndex}${hasMoreResults ? '+' : ` of ${totalFilteredCount}`})`
                 : '';

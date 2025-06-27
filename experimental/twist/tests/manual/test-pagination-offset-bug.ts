@@ -12,12 +12,12 @@ config({ path: path.resolve(__dirname, '../../.env') });
 
 /**
  * Manual Test Suite to Expose and Verify Pagination Offset Bug Fix
- * 
+ *
  * This test demonstrates the bug where:
  * 1. get_channel without date filter only returns recent threads
  * 2. get_channel with date filter returns many more threads
  * 3. Offset pagination was applied AFTER filtering, causing incorrect behavior
- * 
+ *
  * These tests verify the fix works correctly.
  */
 describe('Pagination Offset Bug Fix Tests', () => {
@@ -106,13 +106,13 @@ describe('Pagination Offset Bug Fix Tests', () => {
       threads_limit: 100,
       include_closed_threads: false,
     });
-    
+
     // Extract thread count from response
     const defaultThreadsMatch = defaultResult.content[0].text.match(/(\d+\+?) threads?\)/);
     const defaultThreadCount = defaultThreadsMatch ? defaultThreadsMatch[1] : '0';
-    
+
     console.log(`Found ${defaultThreadCount} open threads with default behavior (should now include historical)`);
-    
+
     // Should now find threads without needing explicit date filter
     expect(defaultResult.content[0].text).toContain('open threads');
     expect(defaultResult.content[0].text).not.toContain('No threads found');
@@ -131,7 +131,7 @@ describe('Pagination Offset Bug Fix Tests', () => {
     console.log('🔧 === VERIFYING BUG FIX: Offset Pagination ===\n');
 
     const sixtyDaysAgo = Math.floor(Date.now() / 1000) - (60 * 24 * 60 * 60);
-    
+
     // Get first 5 threads with offset 0
     const page1Result = await client.callTool('get_channel', {
       channel_id: testChannelId,
@@ -166,10 +166,10 @@ describe('Pagination Offset Bug Fix Tests', () => {
 
     // FIXED: Should have no overlap between pages
     if (page1Threads && page2Threads) {
-      const overlap = page1Threads.some(thread1 => 
+      const overlap = page1Threads.some(thread1 =>
         page2Threads.some(thread2 => thread1 === thread2)
       );
-      
+
       expect(overlap).toBe(false);
       console.log('\n✅ FIXED: No thread overlap detected between pages');
     }
@@ -210,7 +210,7 @@ describe('Pagination Offset Bug Fix Tests', () => {
 
     // FIXED: Offset should be applied consistently regardless of filtering
     console.log('✅ FIXED: Offset behavior is now consistent between filtered and unfiltered results');
-    
+
     // Both should have valid responses
     expect(mixedPage1.content[0].text).toContain('threads');
     expect(openOnlyPage1.content[0].text).toContain('threads');
@@ -233,13 +233,13 @@ describe('Pagination Offset Bug Fix Tests', () => {
       channel_id: testChannelId,
       include_threads: true,
       threads_limit: 5,
-      threads_offset: 1000, // Very large offset
+      threads_offset: 1000, // Very large offse
       include_closed_threads: false,
     });
 
     console.log('Large offset result:', result.content[0].text);
-    
-    // FIXED: Should have a meaningful message about no results at this offset
+
+    // FIXED: Should have a meaningful message about no results at this offse
     expect(result.content[0].text).toMatch(/No.*threads found.*offset|Try a smaller offset/);
   });
 });
