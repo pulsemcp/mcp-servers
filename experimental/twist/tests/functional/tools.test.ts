@@ -7,6 +7,7 @@ import { getThreadsTool } from '../../shared/src/tools/get-threads.js';
 import { getThreadTool } from '../../shared/src/tools/get-thread.js';
 import { createThreadTool } from '../../shared/src/tools/create-thread.js';
 import { addMessageToThreadTool } from '../../shared/src/tools/add-message-to-thread.js';
+import { closeThreadTool } from '../../shared/src/tools/close-thread.js';
 
 describe('Twist Tools', () => {
   let mockClient: ReturnType<typeof createFunctionalMockTwistClient>;
@@ -181,6 +182,54 @@ describe('Twist Tools', () => {
 
       expect(result.isError).toBe(true);
       expect(result.content[0].text).toContain('Error adding message: Network error');
+    });
+  });
+
+  describe('close_thread', () => {
+    it('should close thread with default message', async () => {
+      const tool = closeThreadTool(mockServer, () => mockClient);
+
+      const result = await tool.handler({
+        thread_id: 'th_001',
+      });
+
+      expect(mockClient.closeThread).toHaveBeenCalledWith('th_001', undefined);
+      expect(result.content[0]).toMatchObject({
+        type: 'text',
+        text: expect.stringContaining('Successfully closed thread:'),
+      });
+      expect(result.content[0].text).toContain('Thread ID: th_001');
+      expect(result.content[0].text).toContain('Closing message: "Thread closed"');
+    });
+
+    it('should close thread with custom message', async () => {
+      const tool = closeThreadTool(mockServer, () => mockClient);
+
+      const result = await tool.handler({
+        thread_id: 'th_001',
+        message: 'Issue resolved - closing thread',
+      });
+
+      expect(mockClient.closeThread).toHaveBeenCalledWith('th_001', 'Issue resolved - closing thread');
+      expect(result.content[0].text).toContain('Closing message: "Issue resolved - closing thread"');
+    });
+
+    it('should validate required thread_id parameter', async () => {
+      const tool = closeThreadTool(mockServer, () => mockClient);
+
+      await expect(tool.handler({})).rejects.toThrow();
+    });
+
+    it('should handle API errors gracefully', async () => {
+      mockClient.closeThread = vi.fn().mockRejectedValue(new Error('Permission denied'));
+      const tool = closeThreadTool(mockServer, () => mockClient);
+
+      const result = await tool.handler({
+        thread_id: 'th_001',
+      });
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('Error closing thread: Permission denied');
     });
   });
 });

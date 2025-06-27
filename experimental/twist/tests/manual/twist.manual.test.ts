@@ -75,7 +75,7 @@ describe('Twist Manual Tests', () => {
     // Server is initialized if we can list tools
     const result = await client.listTools();
     expect(result.tools).toBeDefined();
-    expect(result.tools.length).toBe(6);
+    expect(result.tools.length).toBe(7);
   });
 
   describe('Real API Integration', () => {
@@ -207,6 +207,46 @@ describe('Twist Manual Tests', () => {
       expect(result.content[0].text).toContain('Messages (');
       // Should have at least 2 messages (initial + added)
       expect(result.content[0].text).toMatch(/Messages \((\d+) total\)/);
+    });
+
+    it('should close the test thread', async () => {
+      if (!bearerToken || !workspaceId || !createdThreadId) {
+        console.log('Skipping test - no credentials or thread ID');
+        return;
+      }
+
+      console.log(`\n🔒 Closing thread ${createdThreadId}...`);
+
+      const result = await client.callTool('close_thread', {
+        thread_id: createdThreadId,
+        message: 'Test completed - closing thread',
+      });
+      console.log('Response:', result.content[0].text);
+
+      expect(result.content[0].type).toBe('text');
+      expect(result.content[0].text).toContain('Successfully closed thread:');
+      expect(result.content[0].text).toContain(`Thread ID: ${createdThreadId}`);
+      expect(result.content[0].text).toContain('Closing message: "Test completed - closing thread"');
+      console.log(`✅ Thread closed successfully`);
+    });
+
+    it('should verify thread is closed by checking messages', async () => {
+      if (!bearerToken || !workspaceId || !createdThreadId) {
+        console.log('Skipping test - no credentials or thread ID');
+        return;
+      }
+
+      console.log(`\n🔍 Verifying thread ${createdThreadId} is closed...`);
+
+      const result = await client.callTool('get_thread', {
+        thread_id: createdThreadId,
+      });
+      console.log('Response:', result.content[0].text);
+
+      expect(result.content[0].type).toBe('text');
+      // Should now have at least 3 messages (initial + added + closing)
+      expect(result.content[0].text).toContain('Test completed - closing thread');
+      console.log('✅ Closing message confirmed in thread');
     });
   });
 
