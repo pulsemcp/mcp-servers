@@ -1,6 +1,6 @@
 {
-  "name": "mcp-server-twist",
-  "version": "0.1.0",
+  "name": "twist-mcp-server",
+  "version": "0.1.1",
   "description": "Local implementation of Twist MCP Server",
   "main": "build/index.js",
   "type": "module",
@@ -14,12 +14,13 @@
     "lint": "eslint . --ext .ts,.tsx",
     "lint:fix": "eslint . --ext .ts,.tsx --fix",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "stage-publish": "npm version"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.4",
     "zod": "^3.24.1",
-    "mcp-server-twist-shared": "file:../shared"
+    "twist-mcp-server-shared": "file:../shared"
   },
   "devDependencies": {
     "@types/node": "^22.10.6",

@@ -1,6 +1,6 @@
 {
-  "name": "mcp-server-twist",
-  "version": "0.1.0",
+  "name": "twist-mcp-server",
+  "version": "0.1.1",
   "description": "Twist team messaging and collaboration platform integration",
   "author": "PulseMCP",
   "license": "MIT",

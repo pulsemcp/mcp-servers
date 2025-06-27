@@ -19,18 +19,18 @@ You can have confidence that any Pulse-branded MCP server was built with these n
 
 These are PulseMCP-branded servers that we intend to maintain indefinitely as our own offerings.
 
-| Name        | Description                          | Local Status      | Remote Status | Target Audience                                                                                        | Notes                                                                               |
-| ----------- | ------------------------------------ | ----------------- | ------------- | ------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------- |
-| pulse-fetch | Pull internet resources into context | Not Yet Published | Not Started   | Agent-building frameworks (e.g. fast-agent, Mastra, PydanticAI) and MCP clients without built-in fetch | Supports Firecrawl and Oxylabs integrations; HTML noise stripping; Resource caching |
+| Name                                         | Description                          | Local Status      | Remote Status | Target Audience                                                                                        | Notes                                                                               |
+| -------------------------------------------- | ------------------------------------ | ----------------- | ------------- | ------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------- |
+| [pulse-fetch](./productionized/pulse-fetch/) | Pull internet resources into context | Not Yet Published | Not Started   | Agent-building frameworks (e.g. fast-agent, Mastra, PydanticAI) and MCP clients without built-in fetch | Supports Firecrawl and Oxylabs integrations; HTML noise stripping; Resource caching |
 
 ### Experimental Servers
 
 These are high-quality servers that we may discontinue if the official provider creates and maintains a better MCP server.
 
-| Name      | Description                                                     | Local Status      | Remote Status | Target Audience                                       | Notes                                                                |
-| --------- | --------------------------------------------------------------- | ----------------- | ------------- | ----------------------------------------------------- | -------------------------------------------------------------------- |
-| appsignal | AppSignal application performance monitoring and error tracking | 0.2.1             | Not Started   | Developers using AppSignal for application monitoring | Requires AppSignal API key; NOT officially affiliated with AppSignal |
-| twist     | Twist team messaging and collaboration platform integration     | Not Yet Published | Not Started   | Teams using Twist for asynchronous communication      | Requires Twist API bearer token and workspace ID                     |
+| Name                                   | Description                                                     | Local Status | Remote Status | Target Audience                                       | Notes                                                                |
+| -------------------------------------- | --------------------------------------------------------------- | ------------ | ------------- | ----------------------------------------------------- | -------------------------------------------------------------------- |
+| [appsignal](./experimental/appsignal/) | AppSignal application performance monitoring and error tracking | 0.2.1        | Not Started   | Developers using AppSignal for application monitoring | Requires AppSignal API key; NOT officially affiliated with AppSignal |
+| [twist](./experimental/twist/)         | Twist team messaging and collaboration platform integration     | 0.1.1        | Not Started   | Teams using Twist for asynchronous communication      | Requires Twist API bearer token and workspace ID                     |
 
 ## Contributing
 

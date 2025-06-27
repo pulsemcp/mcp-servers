@@ -1,5 +1,5 @@
 {
-  "name": "mcp-server-NAME-shared",
+  "name": "NAME-mcp-server-shared",
   "version": "0.1.0",
   "description": "Shared code for NAME MCP server implementations",
   "main": "dist/index.js",

@@ -1,6 +1,6 @@
 {
-  "name": "mcp-server-twist-shared",
-  "version": "0.1.0",
+  "name": "twist-mcp-server-shared",
+  "version": "0.1.1",
   "description": "Shared code for Twist MCP Server implementations",
   "main": "dist/index.js",
   "type": "module",

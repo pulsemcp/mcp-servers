@@ -1,5 +1,5 @@
 {
-  "name": "mcp-server-NAME",
+  "name": "NAME-mcp-server",
   "version": "0.1.0",
   "description": "Local implementation of NAME MCP server",
   "main": "build/index.js",
@@ -14,12 +14,13 @@
     "lint": "eslint . --ext .ts,.tsx",
     "lint:fix": "eslint . --ext .ts,.tsx --fix",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "stage-publish": "npm version"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.4",
     "zod": "^3.24.1",
-    "mcp-server-NAME-shared": "file:../shared"
+    "NAME-mcp-server-shared": "file:../shared"
   },
   "devDependencies": {
     "@types/node": "^22.10.6",

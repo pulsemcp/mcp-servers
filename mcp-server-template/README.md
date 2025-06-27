@@ -19,12 +19,12 @@ DESCRIPTION
 
    ```bash
    # For experimental servers
-   cp -r mcp-server-template experimental/mcp-server-myserver
+   cp -r mcp-server-template experimental/myserver
 
    # For production servers
-   cp -r mcp-server-template mcp-server-myserver
+   cp -r mcp-server-template myserver
 
-   cd mcp-server-myserver
+   cd myserver
    ```
 
 2. **Replace placeholders throughout the codebase**
@@ -56,7 +56,7 @@ DESCRIPTION
 ## Project Structure
 
 ```
-mcp-server-NAME/
+NAME-mcp-server/
 ├── local/                 # Local server implementation
 │   ├── src/
 │   │   ├── index.ts      # Main entry point
@@ -256,7 +256,7 @@ Add to your Claude Desktop configuration:
   "mcpServers": {
     "NAME": {
       "command": "node",
-      "args": ["/path/to/mcp-server-NAME/local/build/index.js"],
+      "args": ["/path/to/NAME-mcp-server/local/build/index.js"],
       "env": {
         "YOUR_API_KEY": "your-api-key-here"
       }
