@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.2] - 2025-06-27
+
+### Added
+
+- Rich message content display in `get_thread` tool:
+  - Action buttons with types (open_url, prefill_message, send_reply)
+  - File attachments with metadata (size, type, dimensions)
+  - Emoji reactions with user counts
+  - System messages with detailed information
+- Comprehensive type definitions for ActionButton, Attachment, SystemMessage, and enhanced Message interface
+- Test coverage for all new message metadata fields
+
+### Changed
+
+- Enhanced `get_thread` tool output to display all available message metadata
+- Updated Message interface to include optional fields for actions, attachments, reactions, and system_message
+
+## [0.1.1+pagination] - 2025-06-27
+
 ### Added
 
 - Pagination support for `get_threads` tool with `limit` and `offset` parameters
