@@ -1,6 +1,6 @@
 {
   "name": "twist-mcp-server",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Local implementation of Twist MCP Server",
   "main": "build/index.js",
   "type": "module",
