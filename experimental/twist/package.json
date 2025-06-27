@@ -15,7 +15,6 @@
     "clean": "find . -name '*.js' -not -path './node_modules/*' -not -path './*/node_modules/*' -not -path './local/build/*' -not -path './shared/dist/*' -not -path './*/dist/*' -not -path './*/build/*' -delete && find . -name '*.js.map' -not -path './node_modules/*' -not -path './*/node_modules/*' -not -path './local/build/*' -not -path './shared/dist/*' -not -path './*/dist/*' -not -path './*/build/*' -delete",
     "dev": "cd local && npm run dev",
     "test": "vitest",
-    "test:ui": "vitest --ui",
     "test:run": "vitest run",
     "test:integration": "npm run build:test && vitest run -c vitest.config.integration.ts && npm run clean",
     "test:integration:watch": "vitest -c vitest.config.integration.ts",
@@ -32,7 +31,6 @@
   },
   "devDependencies": {
     "@types/node": "^24.0.0",
-    "@vitest/ui": "^3.2.3",
     "dotenv": "^16.4.5",
     "vitest": "^3.2.3"
   }

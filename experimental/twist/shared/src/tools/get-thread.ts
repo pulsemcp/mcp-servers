@@ -7,18 +7,51 @@ import type { ClientFactory } from '../server.js';
  */
 export function getThreadTool(server: Server, clientFactory: ClientFactory) {
   const GetThreadSchema = z.object({
-    thread_id: z.string().describe('The ID of the thread to retrieve'),
+    thread_id: z
+      .string()
+      .describe(
+        'The unique identifier of the thread (e.g., "789012"). Use get_threads to find thread IDs'
+      ),
   });
 
   return {
     name: 'get_thread',
-    description: 'Get detailed information about a specific thread including all its messages.',
+    description: `Retrieve a complete thread conversation including all messages. This tool fetches the full context of a discussion, showing the thread metadata and every message posted in chronological order. Essential for understanding the complete conversation history.
+
+Example response:
+Thread: "Bug Report: Login Issues"
+ID: 789013
+Channel ID: 123457
+Created: 6/27/2025, 9:00:00 AM
+Status: Active
+
+Messages (3 total):
+
+[6/27/2025, 9:00:00 AM] sarah.chen:
+I'm experiencing login issues with the mobile app. After entering credentials, the app hangs on the loading screen. This started happening after the latest update.
+
+---
+[6/27/2025, 9:30:00 AM] mike.developer:
+Thanks for reporting this. I can reproduce the issue. It seems related to the new authentication flow. Working on a fix now.
+
+---
+[6/27/2025, 10:15:00 AM] mike.developer:
+Fix has been deployed. Please try logging in again and let me know if the issue persists.
+
+Use cases:
+- Reading full conversation history before responding
+- Understanding context before adding a new message
+- Archiving or documenting important discussions
+- Reviewing decision-making processes in threads
+- Catching up on missed conversations
+- Analyzing communication patterns in threads`,
     inputSchema: {
       type: 'object',
       properties: {
         thread_id: {
           type: 'string',
-          description: 'The ID of the thread to retrieve',
+          description:
+            'The unique identifier of the thread (e.g., "789012"). Use get_threads to find thread IDs',
         },
       },
       required: ['thread_id'],

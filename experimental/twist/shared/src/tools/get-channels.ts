@@ -11,8 +11,23 @@ export function getChannelsTool(server: Server, clientFactory: ClientFactory) {
 
   return {
     name: 'get_channels',
-    description:
-      'Get a list of all channels in the Twist workspace. Returns channel names, IDs, and other metadata.',
+    description: `List all channels in your Twist workspace. Channels are the primary way to organize conversations in Twist, similar to channels in Slack or rooms in other chat applications. This tool retrieves all channels you have access to in the configured workspace.
+
+Example response:
+Found 5 active channels:
+
+- #general (ID: 123456) - General team discussions
+- #engineering (ID: 123457) - Engineering team updates
+- #product (ID: 123458) - Product development discussions
+- #support (ID: 123459)
+- #random (ID: 123460) - Off-topic conversations
+
+Use cases:
+- Discovering available channels when first setting up Twist integration
+- Finding channel IDs needed for other operations like creating threads
+- Auditing channel structure and organization
+- Getting an overview of team communication structure
+- Identifying channels for specific projects or teams`,
     inputSchema: {
       type: 'object',
       properties: {},
