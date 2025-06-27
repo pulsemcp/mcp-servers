@@ -32,9 +32,8 @@ jobs:
 
       - name: Install dependencies
         run: |
-          # Remove lockfile to force fresh install with Linux binaries
-          rm -f package-lock.json
-          npm install
+          # Try npm ci first, fall back to npm install if platform binaries are missing
+          npm ci || npm install
           npm run install-all
 
       - name: Build project
@@ -76,9 +75,8 @@ jobs:
 
       - name: Install dependencies
         run: |
-          # Remove lockfile to force fresh install with Linux binaries
-          rm -f package-lock.json
-          npm install
+          # Try npm ci first, fall back to npm install if platform binaries are missing
+          npm ci || npm install
 
       - name: Install shared dependencies
         run: cd shared && npm install
