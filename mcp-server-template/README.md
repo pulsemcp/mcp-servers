@@ -80,6 +80,25 @@ NAME-mcp-server/
 └── CI_SETUP.md          # CI setup guide (delete after setup)
 ```
 
+## Configuration
+
+### Environment Variables
+
+The server validates required environment variables at startup. If any required variables are missing, it will exit with a helpful error message.
+
+Update the `validateEnvironment()` function in `local/src/index.ts` with your server's requirements:
+
+```typescript
+const required = [
+  { name: 'YOUR_API_KEY', description: 'API key for authentication' },
+  { name: 'YOUR_ENDPOINT', description: 'API endpoint URL' }
+];
+
+const optional = [
+  { name: 'YOUR_TIMEOUT', description: 'Request timeout in milliseconds' }
+];
+```
+
 ## Development
 
 ### Running in Development Mode
