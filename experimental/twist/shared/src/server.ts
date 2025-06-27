@@ -38,7 +38,8 @@ export interface Thread {
   channel_id: string;
   workspace_id: string;
   creator?: string;
-  created_ts?: number;
+  creator_name?: string;
+  posted_ts?: number;
   last_updated_ts?: number;
   archived?: boolean;
   closed?: boolean;
@@ -58,17 +59,19 @@ export interface ActionButton {
 
 export interface Attachment {
   attachment_id: string;
-  title: string;
+  title?: string;
   url: string;
   url_type: string;
-  file_name: string;
-  file_size: number;
-  underlying_type: string;
-  upload_state: string;
+  file_name?: string;
+  file_size?: number;
+  underlying_type?: string;
+  upload_state?: string;
   image?: string;
   image_width?: number;
   image_height?: number;
   duration?: string;
+  description?: string;
+  site_name?: string;
 }
 
 export interface SystemMessage {
@@ -94,7 +97,8 @@ export interface Message {
   thread_id: string;
   content: string;
   creator?: string;
-  created_ts?: number;
+  creator_name?: string;
+  posted_ts?: number;
   actions?: ActionButton[];
   attachments?: Attachment[];
   reactions?: Record<string, number[]>;

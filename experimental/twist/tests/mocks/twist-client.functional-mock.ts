@@ -43,7 +43,7 @@ export function createFunctionalMockTwistClient(): ITwistClient {
         channel_id: 'ch_123',
         workspace_id: '228287',
         creator: 'user_123',
-        created_ts: 1234567890,
+        posted_ts: 1234567890,
         last_updated_ts: 1234567890,
         archived: false,
       },
@@ -57,7 +57,7 @@ export function createFunctionalMockTwistClient(): ITwistClient {
           channel_id: 'ch_123',
           workspace_id: '228287',
           creator: 'user_123',
-          created_ts: 1234567890,
+          posted_ts: 1234567890,
           last_updated_ts: 1234567890,
           archived: false,
           messages: [
@@ -66,7 +66,8 @@ export function createFunctionalMockTwistClient(): ITwistClient {
               thread_id: threadId,
               content: 'Test message',
               creator: 'user_123',
-              created_ts: 1234567890,
+              creator_name: 'Test User',
+              posted_ts: 1234567890,
             },
           ],
         }) as ThreadWithMessages
@@ -80,7 +81,7 @@ export function createFunctionalMockTwistClient(): ITwistClient {
           channel_id: channelId,
           workspace_id: '228287',
           creator: 'user_123',
-          created_ts: Date.now() / 1000,
+          posted_ts: Date.now() / 1000,
           last_updated_ts: Date.now() / 1000,
           archived: false,
         }) as Thread
@@ -93,7 +94,8 @@ export function createFunctionalMockTwistClient(): ITwistClient {
           thread_id: threadId,
           content,
           creator: 'user_123',
-          created_ts: Date.now() / 1000,
+          creator_name: 'Test User',
+          posted_ts: Date.now() / 1000,
         }) as Message
     ),
 
@@ -104,7 +106,8 @@ export function createFunctionalMockTwistClient(): ITwistClient {
           thread_id: threadId,
           content: message || 'Thread closed',
           creator: 'user_123',
-          created_ts: Date.now() / 1000,
+          creator_name: 'Test User',
+          posted_ts: Date.now() / 1000,
         }) as Message
     ),
   };
