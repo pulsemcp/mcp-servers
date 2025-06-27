@@ -84,16 +84,258 @@ describe('Twist Tools', () => {
 
       await tool.handler({ channel_id: 'ch_123', threads_limit: 10 });
 
-      expect(mockClient.getThreads).toHaveBeenCalledWith('ch_123', {
-        limit: 10,
-        newerThanTs: undefined,
-      });
+      // After the fix, the API call uses an increased limit and applies default date filter
+      const call = mockClient.getThreads.mock.calls[0];
+      expect(call[0]).toBe('ch_123');
+      expect(call[1].limit).toBeGreaterThanOrEqual(10); // Increased limit due to filtering
+      expect(call[1].newerThanTs).toBeDefined(); // Default 90-day filter applied
     });
 
     it('should validate input parameters', async () => {
       const tool = getChannelTool(mockServer, () => mockClient);
 
       await expect(tool.handler({})).rejects.toThrow();
+    });
+
+    describe('pagination offset edge cases', () => {
+      beforeEach(() => {
+        // Mock a scenario with mixed open and closed threads
+        const now = Math.floor(Date.now() / 1000);
+        const mockThreads = [
+          {
+            id: 'th_001',
+            title: 'Open Thread 1',
+            channel_id: 'ch_123',
+            workspace_id: '228287',
+            creator: 'user_123',
+            posted_ts: now - 3600, // 1 hour ago
+            last_updated_ts: now - 1800, // 30 mins ago
+            archived: false,
+          },
+          {
+            id: 'th_002',
+            title: 'Closed Thread 1',
+            channel_id: 'ch_123',
+            workspace_id: '228287',
+            creator: 'user_123',
+            posted_ts: now - 7200, // 2 hours ago
+            last_updated_ts: now - 3600, // 1 hour ago
+            archived: false,
+            closed: true,
+          },
+          {
+            id: 'th_003',
+            title: 'Open Thread 2',
+            channel_id: 'ch_123',
+            workspace_id: '228287',
+            creator: 'user_123',
+            posted_ts: now - 10800, // 3 hours ago
+            last_updated_ts: now - 5400, // 1.5 hours ago
+            archived: false,
+          },
+          {
+            id: 'th_004',
+            title: 'Closed Thread 2',
+            channel_id: 'ch_123',
+            workspace_id: '228287',
+            creator: 'user_123',
+            posted_ts: now - 14400, // 4 hours ago
+            last_updated_ts: now - 7200, // 2 hours ago
+            archived: false,
+            closed: true,
+          },
+          {
+            id: 'th_005',
+            title: 'Open Thread 3',
+            channel_id: 'ch_123',
+            workspace_id: '228287',
+            creator: 'user_123',
+            posted_ts: now - 18000, // 5 hours ago
+            last_updated_ts: now - 9000, // 2.5 hours ago
+            archived: false,
+          },
+        ];
+        mockClient.getThreads = vi.fn().mockResolvedValue(mockThreads);
+      });
+
+      it('should apply offset correctly when including closed threads', async () => {
+        const tool = getChannelTool(mockServer, () => mockClient);
+
+        // Get first 2 threads including closed ones
+        const page1Result = await tool.handler({
+          channel_id: 'ch_123',
+          threads_limit: 2,
+          threads_offset: 0,
+          include_closed_threads: true,
+        });
+
+        // Get next 2 threads with offset 2
+        const page2Result = await tool.handler({
+          channel_id: 'ch_123',
+          threads_limit: 2,
+          threads_offset: 2,
+          include_closed_threads: true,
+        });
+
+        // Should show different threads in each page
+        expect(page1Result.content[0].text).toContain('th_001');
+        expect(page1Result.content[0].text).toContain('th_002');
+        expect(page2Result.content[0].text).toContain('th_003');
+        expect(page2Result.content[0].text).toContain('th_004');
+
+        // Should not overlap
+        expect(page2Result.content[0].text).not.toContain('th_001');
+        expect(page2Result.content[0].text).not.toContain('th_002');
+      });
+
+      it('should apply offset correctly before filtering closed threads', async () => {
+        const tool = getChannelTool(mockServer, () => mockClient);
+
+        // FIXED: Offset is now applied BEFORE filtering
+        // This means offset=1 skips the first thread overall, then applies filtering
+
+        // Get first thread after offset 0, with closed threads filtered out
+        const page1Result = await tool.handler({
+          channel_id: 'ch_123',
+          threads_limit: 1,
+          threads_offset: 0,
+          include_closed_threads: false,
+        });
+
+        // Get thread after offset 1, with closed threads filtered out
+        const page2Result = await tool.handler({
+          channel_id: 'ch_123',
+          threads_limit: 1,
+          threads_offset: 1,
+          include_closed_threads: false,
+        });
+
+        // FIXED: Now offset=0 gives us th_001 (first thread, which is open)
+        expect(page1Result.content[0].text).toContain('th_001'); // First thread (open)
+
+        // FIXED: Now offset=1 skips th_001, gets th_002 (closed, filtered out),
+        // so we get th_003 (first open thread after offset)
+        expect(page2Result.content[0].text).toContain('th_003'); // First open thread after offset=1
+      });
+
+      it('should show consistent pagination behavior with and without filtering', async () => {
+        const tool = getChannelTool(mockServer, () => mockClient);
+
+        // Get all threads (including closed) with small pages
+        const allPage1 = await tool.handler({
+          channel_id: 'ch_123',
+          threads_limit: 2,
+          threads_offset: 0,
+          include_closed_threads: true,
+        });
+
+        const allPage2 = await tool.handler({
+          channel_id: 'ch_123',
+          threads_limit: 2,
+          threads_offset: 2,
+          include_closed_threads: true,
+        });
+
+        // Get only open threads with same pagination
+        const openPage1 = await tool.handler({
+          channel_id: 'ch_123',
+          threads_limit: 2,
+          threads_offset: 0,
+          include_closed_threads: false,
+        });
+
+        const openPage2 = await tool.handler({
+          channel_id: 'ch_123',
+          threads_limit: 2,
+          threads_offset: 2,
+          include_closed_threads: false,
+        });
+
+        // FIXED: The offset behavior is now consistent regardless of filtering
+        // Offset is applied before filtering, so same offset = same starting point
+
+        // All threads: th_001, th_002 on page 1; th_003, th_004 on page 2
+        expect(allPage1.content[0].text).toContain('th_001');
+        expect(allPage1.content[0].text).toContain('th_002');
+        expect(allPage2.content[0].text).toContain('th_003');
+        expect(allPage2.content[0].text).toContain('th_004');
+
+        // Open threads only: th_001 on page 1 (th_002 filtered out); th_003, th_005 on page 2 (th_004 filtered out)
+        expect(openPage1.content[0].text).toContain('th_001');
+        expect(openPage1.content[0].text).not.toContain('th_002'); // Filtered out (closed)
+        expect(openPage2.content[0].text).toContain('th_003');
+        expect(openPage2.content[0].text).toContain('th_005');
+        expect(openPage2.content[0].text).not.toContain('th_004'); // Filtered out (closed)
+
+        // FIXED: offset=2 now consistently skips 2 total threads regardless of filtering
+      });
+
+      it('should handle edge case where offset exceeds available threads', async () => {
+        const tool = getChannelTool(mockServer, () => mockClient);
+
+        // Try to get threads with offset beyond what's available
+        const result = await tool.handler({
+          channel_id: 'ch_123',
+          threads_limit: 5,
+          threads_offset: 10, // More than the 5 threads we have
+          include_closed_threads: true,
+        });
+
+        expect(result.content[0].text).toContain('No threads found');
+      });
+
+      it('should handle edge case where all threads are filtered out by date', async () => {
+        const tool = getChannelTool(mockServer, () => mockClient);
+
+        // Mock getThreads to return empty for future timestamp
+        mockClient.getThreads = vi.fn().mockResolvedValue([]);
+
+        const result = await tool.handler({
+          channel_id: 'ch_123',
+          threads_newer_than_ts: 9999999999, // Far future timestamp
+        });
+
+        expect(result.content[0].text).toContain('No threads found');
+      });
+
+      it('should validate that parameters are correctly passed to client with bug fixes', async () => {
+        const tool = getChannelTool(mockServer, () => mockClient);
+
+        await tool.handler({
+          channel_id: 'ch_123',
+          threads_limit: 5,
+          threads_offset: 10,
+          threads_newer_than_ts: 1234567890,
+        });
+
+        // FIXED: Now uses an increased fetch limit to account for client-side pagination
+        // The offset is still handled client-side since the API doesn't support it
+        expect(mockClient.getThreads).toHaveBeenCalledWith('ch_123', {
+          limit: 65, // FIXED: Now increased (5 + 10 + 50) to account for filtering and offset
+          newerThanTs: 1234567890, // This is passed correctly
+          // Note: offset is still handled client-side since the Twist API doesn't support server-side offset
+        });
+      });
+
+      it('should apply default date filter when none provided', async () => {
+        const tool = getChannelTool(mockServer, () => mockClient);
+
+        await tool.handler({
+          channel_id: 'ch_123',
+          threads_limit: 5,
+          threads_offset: 10,
+          // No threads_newer_than_ts provided
+        });
+
+        // FIXED: Now applies a default 90-day date filter when none is provided
+        const calls = mockClient.getThreads.mock.calls;
+        const lastCall = calls[calls.length - 1];
+
+        expect(lastCall[0]).toBe('ch_123');
+        expect(lastCall[1].limit).toBe(65); // Increased limit
+        expect(lastCall[1].newerThanTs).toBeDefined(); // Default date filter applied
+        expect(lastCall[1].newerThanTs).toBeGreaterThan(0); // Should be a valid timestamp
+      });
     });
   });
 
