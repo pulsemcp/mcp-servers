@@ -266,21 +266,35 @@ This template uses a workspace structure with `local` and `shared` directories. 
 
 #### Development Setup
 
-During development, the `local` package references the `shared` package via a symlink:
+During development, the `local` package imports from the `shared` package using relative paths:
 
-- `npm run dev` or `npm run build` automatically creates a symlink from `local/shared` to `shared/dist`
-- This allows TypeScript to resolve imports like `import { createMCPServer } from '../shared/index.js'`
-- The symlink is created by `setup-dev.js` script
+- Imports use `import { createMCPServer } from '../shared/index.js'`
+- The `prebuild` and `predev` scripts automatically build the shared module and create a symlink
+- `setup-dev.js` creates a symlink from `local/shared` to `../shared/dist` for TypeScript resolution
+- This allows the same import paths to work in both development and published packages
 
 #### Publishing Process
 
-When publishing to npm, workspace file dependencies don't work. We solve this by:
+When publishing to npm, we need to ensure the shared code is included without workspace dependencies:
 
 1. The `prepublishOnly` script runs automatically before `npm publish`
-2. It builds the project and then runs `prepare-publish.js`
-3. This script copies the built `shared/dist` files into `local/shared`
+2. It runs `tsc` directly (not `npm run build`) to avoid triggering `prebuild`
+3. Then it runs `prepare-publish.js` which:
+   - Installs and builds the shared directory
+   - Copies the built `shared/dist` files into `local/shared`
 4. The package is published with all necessary files included
 5. No bundler or extra dependencies needed!
+
+#### Script Execution Flow
+
+**During Development:**
+
+- `npm run build` → triggers `prebuild` → builds shared & creates symlink → builds local
+- `npm run dev` → triggers `predev` → builds shared & creates symlink → runs dev server
+
+**During Publishing:**
+
+- `npm publish` → triggers `prepublishOnly` → runs `tsc` directly (no prebuild) → runs `prepare-publish.js` → publishes
 
 ### Important Files
 
