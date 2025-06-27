@@ -84,10 +84,11 @@ describe('Twist Tools', () => {
 
       await tool.handler({ channel_id: 'ch_123', threads_limit: 10 });
 
-      expect(mockClient.getThreads).toHaveBeenCalledWith('ch_123', {
-        limit: 10,
-        newerThanTs: undefined,
-      });
+      // After the fix, the API call uses an increased limit and applies default date filter
+      const call = mockClient.getThreads.mock.calls[0];
+      expect(call[0]).toBe('ch_123');
+      expect(call[1].limit).toBeGreaterThanOrEqual(10); // Increased limit due to filtering
+      expect(call[1].newerThanTs).toBeDefined(); // Default 90-day filter applied
     });
 
     it('should validate input parameters', async () => {
@@ -99,6 +100,7 @@ describe('Twist Tools', () => {
     describe('pagination offset edge cases', () => {
       beforeEach(() => {
         // Mock a scenario with mixed open and closed threads
+        const now = Math.floor(Date.now() / 1000);
         const mockThreads = [
           {
             id: 'th_001',
@@ -106,8 +108,8 @@ describe('Twist Tools', () => {
             channel_id: 'ch_123',
             workspace_id: '228287',
             creator: 'user_123',
-            posted_ts: 1234567890,
-            last_updated_ts: 1234567895,
+            posted_ts: now - 3600, // 1 hour ago
+            last_updated_ts: now - 1800, // 30 mins ago
             archived: false,
           },
           {
@@ -116,8 +118,8 @@ describe('Twist Tools', () => {
             channel_id: 'ch_123',
             workspace_id: '228287',
             creator: 'user_123',
-            posted_ts: 1234567891,
-            last_updated_ts: 1234567894,
+            posted_ts: now - 7200, // 2 hours ago
+            last_updated_ts: now - 3600, // 1 hour ago
             archived: true,
           },
           {
@@ -126,8 +128,8 @@ describe('Twist Tools', () => {
             channel_id: 'ch_123',
             workspace_id: '228287',
             creator: 'user_123',
-            posted_ts: 1234567892,
-            last_updated_ts: 1234567893,
+            posted_ts: now - 10800, // 3 hours ago
+            last_updated_ts: now - 5400, // 1.5 hours ago
             archived: false,
           },
           {
@@ -136,8 +138,8 @@ describe('Twist Tools', () => {
             channel_id: 'ch_123',
             workspace_id: '228287',
             creator: 'user_123',
-            posted_ts: 1234567893,
-            last_updated_ts: 1234567892,
+            posted_ts: now - 14400, // 4 hours ago
+            last_updated_ts: now - 7200, // 2 hours ago
             archived: true,
           },
           {
@@ -146,8 +148,8 @@ describe('Twist Tools', () => {
             channel_id: 'ch_123',
             workspace_id: '228287',
             creator: 'user_123',
-            posted_ts: 1234567894,
-            last_updated_ts: 1234567891,
+            posted_ts: now - 18000, // 5 hours ago
+            last_updated_ts: now - 9000, // 2.5 hours ago
             archived: false,
           },
         ];
