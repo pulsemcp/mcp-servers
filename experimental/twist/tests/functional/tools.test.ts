@@ -71,7 +71,11 @@ describe('Twist Tools', () => {
     });
 
     it('should handle empty thread list', async () => {
-      mockClient.getThreads = vi.fn().mockResolvedValue([]);
+      mockClient.getRobustThreads = vi.fn().mockResolvedValue({
+        threads: [],
+        totalCount: 0,
+        hasMore: false,
+      });
       const tool = getChannelTool(mockServer, () => mockClient);
 
       const result = await tool.handler({ channel_id: 'ch_123' });
@@ -84,11 +88,12 @@ describe('Twist Tools', () => {
 
       await tool.handler({ channel_id: 'ch_123', threads_limit: 10 });
 
-      // After the fix, the API call uses an increased limit and applies default date filter
-      const call = mockClient.getThreads.mock.calls[0];
-      expect(call[0]).toBe('ch_123');
-      expect(call[1].limit).toBeGreaterThanOrEqual(10); // Increased limit due to filtering
-      expect(call[1].newerThanTs).toBeDefined(); // Default 90-day filter applied
+      expect(mockClient.getRobustThreads).toHaveBeenCalledWith('ch_123', {
+        limit: 10,
+        offset: 0,
+        includeClosedThreads: false,
+        newerThanTs: undefined,
+      });
     });
 
     it('should validate input parameters', async () => {

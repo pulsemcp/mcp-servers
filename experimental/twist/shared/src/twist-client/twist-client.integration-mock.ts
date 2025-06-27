@@ -195,6 +195,54 @@ export function createIntegrationMockTwistClient(
 
       return closeMessage;
     },
+
+    async getRobustThreads(
+      channelId: string,
+      options?: {
+        limit?: number;
+        offset?: number;
+        includeClosedThreads?: boolean;
+        newerThanTs?: number;
+      }
+    ): Promise<{
+      threads: Array<Thread>;
+      totalCount: number;
+      hasMore: boolean;
+    }> {
+      // Use the existing getThreads mock and apply filtering/pagination
+      const allThreads = await client.getThreads(channelId, {
+        limit: 500, // Get all threads
+        newerThanTs: options?.newerThanTs,
+      });
+
+      // Filter out archived threads
+      let filteredThreads = allThreads.filter((thread) => !thread.archived);
+
+      // Filter closed threads if requested
+      if (!options?.includeClosedThreads) {
+        filteredThreads = filteredThreads.filter((thread) => {
+          const threadWithClosed = thread as Thread & { closed?: boolean };
+          return !threadWithClosed.closed;
+        });
+      }
+
+      // Sort by last update time (most recent first)
+      filteredThreads.sort((a, b) => (b.last_updated_ts || 0) - (a.last_updated_ts || 0));
+
+      const totalCount = filteredThreads.length;
+      const offset = options?.offset || 0;
+      const limit = options?.limit || totalCount;
+
+      // Apply pagination
+      const paginatedThreads = filteredThreads.slice(offset, offset + limit);
+      const hasMore = offset + limit < totalCount;
+
+      return {
+        threads: paginatedThreads,
+        totalCount,
+        hasMore,
+      };
+    },
   };
 
   return client;
