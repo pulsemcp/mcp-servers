@@ -15,7 +15,7 @@
     "dev:integration": "tsx src/index.integration-with-mock.ts",
     "predev": "cd ../shared && npm run build && cd ../local && node setup-dev.js",
     "prebuild": "cd ../shared && npm run build && cd ../local && node setup-dev.js",
-    "prepublishOnly": "../node_modules/typescript/bin/tsc && node prepare-publish.js && node ../scripts/prepare-npm-readme.js",
+    "prepublishOnly": "tsc && node prepare-publish.js && node ../scripts/prepare-npm-readme.js",
     "stage-publish": "npm version"
   },
   "dependencies": {
