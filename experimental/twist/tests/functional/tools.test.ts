@@ -70,7 +70,7 @@ describe('Twist Tools', () => {
 
       expect(result.content[0]).toMatchObject({
         type: 'text',
-        text: expect.stringContaining('Found 1 active threads:'),
+        text: expect.stringContaining('Found 1 open threads:'),
       });
       expect(result.content[0].text).toContain('"Test Thread" (ID: th_001)');
     });
@@ -89,7 +89,10 @@ describe('Twist Tools', () => {
 
       await tool.handler({ channel_id: 'ch_123', limit: 10 });
 
-      expect(mockClient.getThreads).toHaveBeenCalledWith('ch_123', { limit: 10 });
+      expect(mockClient.getThreads).toHaveBeenCalledWith('ch_123', {
+        limit: 10,
+        newerThanTs: undefined,
+      });
     });
   });
 

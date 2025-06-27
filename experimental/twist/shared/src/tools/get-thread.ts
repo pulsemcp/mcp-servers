@@ -1,6 +1,6 @@
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { z } from 'zod';
-import type { ClientFactory } from '../server.js';
+import type { ClientFactory, Message } from '../server.js';
 
 /**
  * Tool for getting a thread with all its messages
@@ -11,6 +11,18 @@ export function getThreadTool(server: Server, clientFactory: ClientFactory) {
       .string()
       .describe(
         'The unique identifier of the thread (e.g., "789012"). Use get_threads to find thread IDs'
+      ),
+    message_limit: z
+      .number()
+      .optional()
+      .default(10)
+      .describe('Maximum number of recent messages to return (default: 10, max: 100)'),
+    message_offset: z
+      .number()
+      .optional()
+      .default(0)
+      .describe(
+        'Number of messages to skip from the end for pagination (e.g., offset: 10 to get older messages)'
       ),
   });
 
@@ -53,11 +65,22 @@ Use cases:
           description:
             'The unique identifier of the thread (e.g., "789012"). Use get_threads to find thread IDs',
         },
+        message_limit: {
+          type: 'number',
+          description: 'Maximum number of recent messages to return (default: 10, max: 100)',
+          default: 10,
+        },
+        message_offset: {
+          type: 'number',
+          description:
+            'Number of messages to skip from the end for pagination (e.g., offset: 10 to get older messages)',
+          default: 0,
+        },
       },
       required: ['thread_id'],
     },
     handler: async (args: unknown) => {
-      const { thread_id } = GetThreadSchema.parse(args);
+      const { thread_id, message_limit, message_offset } = GetThreadSchema.parse(args);
       const client = clientFactory();
 
       try {
@@ -78,15 +101,36 @@ Messages (${thread.messages?.length || 0} total):
             (a, b) => (a.created_ts || 0) - (b.created_ts || 0)
           );
 
-          const messageList = sortedMessages
+          // Apply offset and limit for pagination
+          // Note: offset is from the end, so we reverse, slice, then reverse back
+          const totalMessages = sortedMessages.length;
+          const startIndex = Math.max(0, totalMessages - message_offset - message_limit);
+          const endIndex = totalMessages - message_offset;
+          const paginatedMessages = sortedMessages.slice(startIndex, endIndex);
+
+          const messageList = paginatedMessages
             .map((msg) => {
               const timestamp = msg.created_ts
                 ? new Date(msg.created_ts * 1000).toLocaleString()
                 : 'Unknown time';
-              return `\n[${timestamp}] ${msg.creator || 'Unknown'}:\n${msg.content}`;
+              // Check if this is a system message
+              const msgWithSystem = msg as Message & { system_message?: { type: string } };
+              const systemInfo = msgWithSystem.system_message
+                ? ` [${msgWithSystem.system_message.type}]`
+                : '';
+              return `\n[${timestamp}] ${msg.creator || 'Unknown'}${systemInfo}:\n${msg.content}`;
             })
             .join('\n---');
 
+          const paginationInfo =
+            totalMessages > paginatedMessages.length
+              ? ` (showing ${paginatedMessages.length} of ${totalMessages} messages)`
+              : '';
+
+          response = response.replace(
+            `Messages (${thread.messages?.length || 0} total):`,
+            `Messages (${thread.messages?.length || 0} total)${paginationInfo}:`
+          );
           response += messageList;
         } else {
           response += '\nNo messages in this thread yet.';

@@ -42,6 +42,29 @@ describe('Twist MCP Server Integration Tests', () => {
             created_ts: Date.now() / 1000,
             last_updated_ts: Date.now() / 1000,
             archived: false,
+            closed: false,
+          },
+          {
+            id: 'th_002',
+            title: 'Closed Discussion',
+            channel_id: 'ch_123',
+            workspace_id: '228287',
+            creator: 'user_123',
+            created_ts: Date.now() / 1000 - 3600,
+            last_updated_ts: Date.now() / 1000 - 3600,
+            archived: false,
+            closed: true,
+          },
+          {
+            id: 'th_003',
+            title: 'Another Open Thread',
+            channel_id: 'ch_123',
+            workspace_id: '228287',
+            creator: 'user_123',
+            created_ts: Date.now() / 1000 - 7200,
+            last_updated_ts: Date.now() / 1000 - 7200,
+            archived: false,
+            closed: false,
           },
         ],
       },
@@ -55,6 +78,7 @@ describe('Twist MCP Server Integration Tests', () => {
           created_ts: Date.now() / 1000,
           last_updated_ts: Date.now() / 1000,
           archived: false,
+          closed: false,
           messages: [
             {
               id: 'msg_001',
@@ -64,6 +88,44 @@ describe('Twist MCP Server Integration Tests', () => {
               created_ts: Date.now() / 1000,
             },
           ],
+        },
+        th_002: {
+          id: 'th_002',
+          title: 'Closed Discussion',
+          channel_id: 'ch_123',
+          workspace_id: '228287',
+          creator: 'user_123',
+          created_ts: Date.now() / 1000 - 3600,
+          last_updated_ts: Date.now() / 1000 - 3600,
+          archived: false,
+          closed: true,
+          messages: [
+            {
+              id: 'msg_002',
+              thread_id: 'th_002',
+              content: 'This discussion is now closed',
+              creator: 'user_123',
+              created_ts: Date.now() / 1000 - 3600,
+            },
+          ],
+        },
+        th_003: {
+          id: 'th_003',
+          title: 'Another Open Thread',
+          channel_id: 'ch_123',
+          workspace_id: '228287',
+          creator: 'user_123',
+          created_ts: Date.now() / 1000 - 7200,
+          last_updated_ts: Date.now() / 1000 - 7200,
+          archived: false,
+          closed: false,
+          messages: Array.from({ length: 15 }, (_, i) => ({
+            id: `msg_00${3 + i}`,
+            thread_id: 'th_003',
+            content: `Message ${i + 1}`,
+            creator: 'user_123',
+            created_ts: Date.now() / 1000 - 7200 + i * 60,
+          })),
         },
       },
     };
@@ -167,7 +229,7 @@ describe('Twist MCP Server Integration Tests', () => {
   });
 
   describe('get_threads Tool', () => {
-    it('should list threads in a channel', async () => {
+    it('should list only open threads by default', async () => {
       if (!client) throw new Error('Client not initialized');
 
       const result = await client.callTool('get_threads', {
@@ -175,24 +237,115 @@ describe('Twist MCP Server Integration Tests', () => {
       });
 
       expect(result.content[0].type).toBe('text');
-      expect(result.content[0].text).toContain('Found 1 active threads:');
-      expect(result.content[0].text).toContain('(ID: th_001)');
+      expect(result.content[0].text).toContain('Found 2 open threads:');
+      expect(result.content[0].text).toContain('Welcome Thread');
+      expect(result.content[0].text).toContain('Another Open Thread');
+      expect(result.content[0].text).not.toContain('Closed Discussion');
     });
 
-    it('should handle empty channel', async () => {
+    it('should include closed threads when requested', async () => {
       if (!client) throw new Error('Client not initialized');
 
       const result = await client.callTool('get_threads', {
-        channel_id: 'ch_456',
+        channel_id: 'ch_123',
+        include_closed: true,
       });
 
-      // The mock returns a default thread for any channel
-      expect(result.content[0].text).toContain('Found 1 active threads:');
+      expect(result.content[0].type).toBe('text');
+      expect(result.content[0].text).toContain('Found 3 threads:');
+      expect(result.content[0].text).toContain('Welcome Thread');
+      expect(result.content[0].text).toContain('Another Open Thread');
+      expect(result.content[0].text).toContain('Closed Discussion');
+      expect(result.content[0].text).toContain('[CLOSED]');
+    });
+
+    it('should support pagination with limit and offset', async () => {
+      if (!client) throw new Error('Client not initialized');
+
+      // First page
+      const page1 = await client.callTool('get_threads', {
+        channel_id: 'ch_123',
+        limit: 1,
+        offset: 0,
+      });
+
+      expect(page1.content[0].text).toContain('Found 2 open threads (showing 1-1 of 2)');
+      expect(page1.content[0].text).toContain('Welcome Thread');
+
+      // Second page
+      const page2 = await client.callTool('get_threads', {
+        channel_id: 'ch_123',
+        limit: 1,
+        offset: 1,
+      });
+
+      expect(page2.content[0].text).toContain('Found 2 open threads (showing 2-2 of 2)');
+      expect(page2.content[0].text).toContain('Another Open Thread');
+    });
+
+    it('should handle offset beyond available threads', async () => {
+      if (!client) throw new Error('Client not initialized');
+
+      const result = await client.callTool('get_threads', {
+        channel_id: 'ch_123',
+        offset: 10,
+      });
+
+      expect(result.content[0].text).toContain('No threads to display at offset 10');
     });
   });
 
   describe('get_thread Tool', () => {
-    it('should get thread with messages', async () => {
+    it('should get thread with default message limit', async () => {
+      if (!client) throw new Error('Client not initialized');
+
+      const result = await client.callTool('get_thread', {
+        thread_id: 'th_003',
+      });
+
+      expect(result.content[0].type).toBe('text');
+      expect(result.content[0].text).toContain('Thread: "Another Open Thread"');
+      expect(result.content[0].text).toContain('Messages (15 total) (showing 10 of 15 messages):');
+      // Should show last 10 messages (messages 6-15)
+      expect(result.content[0].text).toContain('Message 6');
+      expect(result.content[0].text).toContain('Message 15');
+      expect(result.content[0].text).not.toContain('Message 5');
+    });
+
+    it('should support custom message limit', async () => {
+      if (!client) throw new Error('Client not initialized');
+
+      const result = await client.callTool('get_thread', {
+        thread_id: 'th_003',
+        message_limit: 5,
+      });
+
+      expect(result.content[0].type).toBe('text');
+      expect(result.content[0].text).toContain('Messages (15 total) (showing 5 of 15 messages):');
+      // Should show last 5 messages (messages 11-15)
+      expect(result.content[0].text).toContain('Message 11');
+      expect(result.content[0].text).toContain('Message 15');
+      expect(result.content[0].text).not.toContain('Message 10');
+    });
+
+    it('should support message offset', async () => {
+      if (!client) throw new Error('Client not initialized');
+
+      const result = await client.callTool('get_thread', {
+        thread_id: 'th_003',
+        message_limit: 5,
+        message_offset: 5,
+      });
+
+      expect(result.content[0].type).toBe('text');
+      expect(result.content[0].text).toContain('Messages (15 total) (showing 5 of 15 messages):');
+      // Should show messages 6-10 (offset 5 from end)
+      expect(result.content[0].text).toContain('Message 6');
+      expect(result.content[0].text).toContain('Message 10');
+      expect(result.content[0].text).not.toContain('Message 11');
+    });
+
+    it('should handle thread with single message', async () => {
       if (!client) throw new Error('Client not initialized');
 
       const result = await client.callTool('get_thread', {
@@ -200,7 +353,7 @@ describe('Twist MCP Server Integration Tests', () => {
       });
 
       expect(result.content[0].type).toBe('text');
-      expect(result.content[0].text).toContain('Thread:');
+      expect(result.content[0].text).toContain('Thread: "Welcome Thread"');
       expect(result.content[0].text).toContain('Messages (1 total):');
       expect(result.content[0].text).toContain('Welcome to the team!');
     });
