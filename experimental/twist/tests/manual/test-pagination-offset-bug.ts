@@ -111,7 +111,9 @@ describe('Pagination Offset Bug Fix Tests', () => {
     const defaultThreadsMatch = defaultResult.content[0].text.match(/(\d+\+?) threads?\)/);
     const defaultThreadCount = defaultThreadsMatch ? defaultThreadsMatch[1] : '0';
 
-    console.log(`Found ${defaultThreadCount} open threads with default behavior (should now include historical)`);
+    console.log(
+      `Found ${defaultThreadCount} open threads with default behavior (should now include historical)`
+    );
 
     // Should now find threads without needing explicit date filter
     expect(defaultResult.content[0].text).toContain('open threads');
@@ -209,7 +211,9 @@ describe('Pagination Offset Bug Fix Tests', () => {
     });
 
     // FIXED: Offset should be applied consistently regardless of filtering
-    console.log('✅ FIXED: Offset behavior is now consistent between filtered and unfiltered results');
+    console.log(
+      '✅ FIXED: Offset behavior is now consistent between filtered and unfiltered results'
+    );
 
     // Both should have valid responses
     expect(mixedPage1.content[0].text).toContain('threads');

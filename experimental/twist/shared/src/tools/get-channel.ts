@@ -147,7 +147,10 @@ Use cases:
             // Increase the API limit to account for filtering and pagination
             // Since we filter client-side, we need to fetch more than the final limit
             // to ensure we have enough results after filtering
-            const fetchLimit = Math.min(100, Math.max(threads_limit + threads_offset + 50, threads_limit * 3));
+            const fetchLimit = Math.min(
+              100,
+              Math.max(threads_limit + threads_offset + 50, threads_limit * 3)
+            );
 
             const threads = await client.getThreads(channel_id, {
               limit: fetchLimit,
