@@ -213,8 +213,13 @@ describe('Twist Tools', () => {
         message: 'Issue resolved - closing thread',
       });
 
-      expect(mockClient.closeThread).toHaveBeenCalledWith('th_001', 'Issue resolved - closing thread');
-      expect(result.content[0].text).toContain('Closing message: "Issue resolved - closing thread"');
+      expect(mockClient.closeThread).toHaveBeenCalledWith(
+        'th_001',
+        'Issue resolved - closing thread'
+      );
+      expect(result.content[0].text).toContain(
+        'Closing message: "Issue resolved - closing thread"'
+      );
     });
 
     it('should validate required thread_id parameter', async () => {

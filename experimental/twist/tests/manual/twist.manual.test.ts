@@ -226,7 +226,9 @@ describe('Twist Manual Tests', () => {
       expect(result.content[0].type).toBe('text');
       expect(result.content[0].text).toContain('Successfully closed thread:');
       expect(result.content[0].text).toContain(`Thread ID: ${createdThreadId}`);
-      expect(result.content[0].text).toContain('Closing message: "Test completed - closing thread"');
+      expect(result.content[0].text).toContain(
+        'Closing message: "Test completed - closing thread"'
+      );
       console.log(`✅ Thread closed successfully`);
     });
 

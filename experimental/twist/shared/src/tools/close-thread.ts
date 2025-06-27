@@ -7,9 +7,7 @@ import type { ClientFactory } from '../server.js';
  */
 export function closeThreadTool(server: Server, clientFactory: ClientFactory) {
   const CloseThreadSchema = z.object({
-    thread_id: z
-      .string()
-      .describe('The unique identifier of the thread to close (e.g., "789012")'),
+    thread_id: z.string().describe('The unique identifier of the thread to close (e.g., "789012")'),
     message: z
       .string()
       .optional()

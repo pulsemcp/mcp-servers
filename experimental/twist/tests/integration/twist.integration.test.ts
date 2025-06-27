@@ -425,7 +425,9 @@ describe('Twist MCP Server Integration Tests', () => {
 
       expect(result.content[0].type).toBe('text');
       expect(result.content[0].text).toContain('Successfully closed thread:');
-      expect(result.content[0].text).toContain('Closing message: "Issue resolved - closing thread"');
+      expect(result.content[0].text).toContain(
+        'Closing message: "Issue resolved - closing thread"'
+      );
     });
 
     it('should validate required thread_id', async () => {

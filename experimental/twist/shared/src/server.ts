@@ -17,7 +17,7 @@ export interface ITwistClient {
 
   // Message operations
   addMessageToThread(threadId: string, content: string): Promise<Message>;
-  
+
   // Thread management operations
   closeThread(threadId: string, message?: string): Promise<Message>;
 }
