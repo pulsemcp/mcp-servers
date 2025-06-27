@@ -90,3 +90,41 @@ jobs:
         env:
           TWIST_BEARER_TOKEN: test-token
           TWIST_WORKSPACE_ID: test-workspace
+
+  integration-published-tests:
+    name: Twist MCP Server Integration Tests (Published Build)
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: experimental/twist
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install shared dependencies
+        run: cd shared && npm install
+
+      - name: Install local dependencies
+        run: cd local && npm install
+
+      - name: Install test-mcp-client dependencies
+        run: cd ../../test-mcp-client && npm install
+
+      - name: Build test-mcp-client
+        run: cd ../../test-mcp-client && npm run build
+
+      - name: Run published integration tests
+        run: npm run test:integration-published
+        env:
+          TWIST_BEARER_TOKEN: test-token
+          TWIST_WORKSPACE_ID: test-workspace
