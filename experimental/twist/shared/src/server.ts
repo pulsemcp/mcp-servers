@@ -48,12 +48,57 @@ export interface ThreadWithMessages extends Thread {
   messages?: Message[];
 }
 
+export interface ActionButton {
+  action: 'open_url' | 'prefill_message' | 'send_reply';
+  type: 'action';
+  button_text: string;
+  message?: string;
+  url?: string;
+}
+
+export interface Attachment {
+  attachment_id: string;
+  title: string;
+  url: string;
+  url_type: string;
+  file_name: string;
+  file_size: number;
+  underlying_type: string;
+  upload_state: string;
+  image?: string;
+  image_width?: number;
+  image_height?: number;
+  duration?: string;
+}
+
+export interface SystemMessage {
+  is_integration: boolean | null;
+  initiator: number;
+  initiator_name: string;
+  channel_id: number;
+  type: string;
+  comment_id: number;
+  initiator_id: number;
+  thread_id: number;
+  user_id: number | null;
+  user_name: string | null;
+  title: string | null;
+  old_title: string | null;
+  new_title: string | null;
+  channel_name: string;
+  integration_name: string | null;
+}
+
 export interface Message {
   id: string;
   thread_id: string;
   content: string;
   creator?: string;
   created_ts?: number;
+  actions?: ActionButton[];
+  attachments?: Attachment[];
+  reactions?: Record<string, number[]>;
+  system_message?: SystemMessage | null;
 }
 
 // Twist API client implementation
