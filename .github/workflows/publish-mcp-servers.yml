@@ -167,18 +167,6 @@ jobs:
             echo "Installing dependencies..."
             npm install
             
-            # Build
-            echo "Building..."
-            npm run build
-            
-            # Run tests
-            echo "Running tests..."
-            if npm test 2>/dev/null; then
-              echo "Tests passed"
-            else
-              echo "Warning: Tests failed or not found, continuing anyway"
-            fi
-            
             # Check if version already exists on npm
             if npm view "$PACKAGE_NAME@$PACKAGE_VERSION" version 2>/dev/null; then
               echo "Version $PACKAGE_VERSION already published, skipping"

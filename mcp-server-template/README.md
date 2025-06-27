@@ -294,7 +294,13 @@ When publishing to npm, we need to ensure the shared code is included without wo
 
 **During Publishing:**
 
-- `npm publish` → triggers `prepublishOnly` → runs `tsc` directly (no prebuild) → runs `prepare-publish.js` → publishes
+- `npm publish` → triggers `prepublishOnly` → runs `prepare-publish.js` → publishes
+- `prepare-publish.js` handles everything:
+  1. Installs TypeScript temporarily (for CI environments)
+  2. Builds local package
+  3. Builds shared package
+  4. Copies shared files into local/shared
+  5. Package is ready for publishing
 
 ### Important Files
 

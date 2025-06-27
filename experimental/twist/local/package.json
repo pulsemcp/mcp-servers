@@ -25,7 +25,7 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "stage-publish": "npm version",
-    "prepublishOnly": "tsc && npm run build:integration && node prepare-publish.js"
+    "prepublishOnly": "node prepare-publish.js"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.4",
