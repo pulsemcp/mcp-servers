@@ -124,6 +124,102 @@ describe('Twist Tools', () => {
 
       expect(result.content[0].text).toContain('No messages in this thread yet.');
     });
+
+    it('should display action buttons, attachments, reactions, and system messages', async () => {
+      mockClient.getThread = vi.fn().mockResolvedValue({
+        id: 'th_001',
+        title: 'Rich Thread',
+        channel_id: 'ch_123',
+        workspace_id: '228287',
+        messages: [
+          {
+            id: 'msg_001',
+            thread_id: 'th_001',
+            content: 'Message with all features',
+            creator: 'user_123',
+            created_ts: 1234567890,
+            actions: [
+              {
+                action: 'open_url',
+                type: 'action',
+                button_text: 'Visit Website',
+                url: 'https://example.com',
+              },
+              {
+                action: 'prefill_message',
+                type: 'action',
+                button_text: 'Reply with template',
+                message: 'Thanks for the update!',
+              },
+            ],
+            attachments: [
+              {
+                attachment_id: 'att_001',
+                title: 'screenshot.png',
+                url: 'https://example.com/screenshot.png',
+                url_type: 'image',
+                file_name: 'screenshot.png',
+                file_size: 102400,
+                underlying_type: 'image/png',
+                upload_state: 'uploaded',
+                image: 'https://example.com/screenshot.png',
+                image_width: 1920,
+                image_height: 1080,
+              },
+            ],
+            reactions: {
+              '👍': [10001, 10002, 10003],
+              '🎉': [10004],
+            },
+            system_message: {
+              is_integration: false,
+              initiator: 10001,
+              initiator_name: 'John Doe',
+              channel_id: 123,
+              type: 'THREAD_MOVED',
+              comment_id: 56288719,
+              initiator_id: 10001,
+              thread_id: 1409756,
+              user_id: null,
+              user_name: null,
+              title: null,
+              old_title: null,
+              new_title: null,
+              channel_name: 'New Channel',
+              integration_name: null,
+            },
+          },
+        ],
+      });
+      const tool = getThreadTool(mockServer, () => mockClient);
+
+      const result = await tool.handler({ thread_id: 'th_001' });
+      const responseText = result.content[0].text;
+
+      // Check action buttons
+      expect(responseText).toContain('Action buttons:');
+      expect(responseText).toContain('Visit Website (open_url) - URL: https://example.com');
+      expect(responseText).toContain(
+        'Reply with template (prefill_message) - Message: "Thanks for the update!"'
+      );
+
+      // Check attachments
+      expect(responseText).toContain('Attachments:');
+      expect(responseText).toContain('screenshot.png (image/png)');
+      expect(responseText).toContain('Size: 102400 bytes');
+      expect(responseText).toContain('Image: 1920x1080');
+
+      // Check reactions
+      expect(responseText).toContain('Reactions:');
+      expect(responseText).toContain('👍: 3 users');
+      expect(responseText).toContain('🎉: 1 user');
+
+      // Check system message
+      expect(responseText).toContain('System message:');
+      expect(responseText).toContain('Type: THREAD_MOVED');
+      expect(responseText).toContain('Initiator: John Doe (ID: 10001)');
+      expect(responseText).toContain('Channel: New Channel');
+    });
   });
 
   describe('create_thread', () => {

@@ -1,6 +1,6 @@
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { z } from 'zod';
-import type { ClientFactory, Message } from '../server.js';
+import type { ClientFactory } from '../server.js';
 
 /**
  * Tool for getting a thread with all its messages
@@ -113,12 +113,69 @@ Messages (${thread.messages?.length || 0} total):
               const timestamp = msg.created_ts
                 ? new Date(msg.created_ts * 1000).toLocaleString()
                 : 'Unknown time';
-              // Check if this is a system message
-              const msgWithSystem = msg as Message & { system_message?: { type: string } };
-              const systemInfo = msgWithSystem.system_message
-                ? ` [${msgWithSystem.system_message.type}]`
-                : '';
-              return `\n[${timestamp}] ${msg.creator || 'Unknown'}${systemInfo}:\n${msg.content}`;
+              
+              let messageText = `\n[${timestamp}] ${msg.creator || 'Unknown'}:\n${msg.content}`;
+              
+              // Add action buttons if present
+              if (msg.actions && msg.actions.length > 0) {
+                messageText += '\n\nAction buttons:';
+                msg.actions.forEach((action) => {
+                  messageText += `\n  • ${action.button_text} (${action.action})`;
+                  if (action.url) {
+                    messageText += ` - URL: ${action.url}`;
+                  }
+                  if (action.message) {
+                    messageText += ` - Message: "${action.message}"`;
+                  }
+                });
+              }
+              
+              // Add attachments if present
+              if (msg.attachments && msg.attachments.length > 0) {
+                messageText += '\n\nAttachments:';
+                msg.attachments.forEach((attachment) => {
+                  messageText += `\n  • ${attachment.file_name} (${attachment.underlying_type})`;
+                  messageText += `\n    Size: ${attachment.file_size} bytes`;
+                  if (attachment.image) {
+                    messageText += `\n    Image: ${attachment.image_width}x${attachment.image_height}`;
+                  }
+                  if (attachment.duration) {
+                    messageText += `\n    Duration: ${attachment.duration}`;
+                  }
+                });
+              }
+              
+              // Add reactions if present
+              if (msg.reactions && Object.keys(msg.reactions).length > 0) {
+                messageText += '\n\nReactions:';
+                Object.entries(msg.reactions).forEach(([emoji, userIds]) => {
+                  messageText += `\n  • ${emoji}: ${userIds.length} ${userIds.length === 1 ? 'user' : 'users'}`;
+                });
+              }
+              
+              // Add system message if present
+              if (msg.system_message) {
+                const sm = msg.system_message;
+                messageText += '\n\nSystem message:';
+                messageText += `\n  Type: ${sm.type}`;
+                messageText += `\n  Initiator: ${sm.initiator_name} (ID: ${sm.initiator})`;
+                if (sm.user_name) {
+                  messageText += `\n  User: ${sm.user_name} (ID: ${sm.user_id})`;
+                }
+                if (sm.channel_name) {
+                  messageText += `\n  Channel: ${sm.channel_name}`;
+                }
+                if (sm.old_title && sm.new_title) {
+                  messageText += `\n  Title changed from "${sm.old_title}" to "${sm.new_title}"`;
+                } else if (sm.title) {
+                  messageText += `\n  Title: ${sm.title}`;
+                }
+                if (sm.integration_name) {
+                  messageText += `\n  Integration: ${sm.integration_name}`;
+                }
+              }
+              
+              return messageText;
             })
             .join('\n---');
 
