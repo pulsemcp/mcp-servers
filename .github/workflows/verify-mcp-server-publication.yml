@@ -30,12 +30,60 @@ jobs:
           files: |
             **/local/package.json
 
-      - name: Verify each changed MCP server
+      - name: Check if this is a version bump scenario
         if: steps.changed-files.outputs.any_changed == 'true'
+        id: check-version-bump
+        run: |
+          echo "Changed package.json files: ${{ steps.changed-files.outputs.all_changed_files }}"
+
+          # Check if any version was actually bumped
+          VERSION_BUMP_DETECTED=false
+
+          for file in ${{ steps.changed-files.outputs.all_changed_files }}; do
+            echo "Checking if $file has version bump..."
+            
+            # Get current version from package.json
+            SERVER_DIR=$(dirname $(dirname "$file"))
+            SERVER_NAME=$(basename "$SERVER_DIR")
+            LOCAL_DIR="$SERVER_DIR/local"
+            
+            # Skip the template directory
+            if [ "$SERVER_NAME" = "mcp-server-template" ]; then
+              continue
+            fi
+            
+            CURRENT_VERSION=$(node -e "console.log(require('./$LOCAL_DIR/package.json').version)")
+            
+            # Get base branch version
+            git show origin/${{ github.base_ref }}:$file > base-package.json 2>/dev/null || echo '{"version": "0.0.0"}' > base-package.json
+            BASE_VERSION=$(node -e "console.log(require('./base-package.json').version)")
+            
+            echo "  $SERVER_NAME: $BASE_VERSION -> $CURRENT_VERSION"
+            
+            if [ "$CURRENT_VERSION" != "$BASE_VERSION" ]; then
+              VERSION_BUMP_DETECTED=true
+              echo "  Version bump detected!"
+              break
+            fi
+          done
+
+          rm -f base-package.json
+
+          if [ "$VERSION_BUMP_DETECTED" = false ]; then
+            echo "✅ No version bumps detected - this appears to be feature development, not a publication."
+            echo "   Skipping publication verification checks."
+            echo "version_bump_detected=false" >> $GITHUB_OUTPUT
+          else
+            echo "📦 Version bump detected - running publication verification checks."
+            echo "version_bump_detected=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Verify each changed MCP server
+        if: steps.changed-files.outputs.any_changed == 'true' && steps.check-version-bump.outputs.version_bump_detected == 'true'
         run: |
           set -e
 
-          echo "Changed package.json files: ${{ steps.changed-files.outputs.all_changed_files }}"
+          echo "Running publication verification for servers with version bumps..."
 
           # Track if any verification fails
           VERIFICATION_FAILED=false
@@ -216,12 +264,27 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
 
           if [ "${{ steps.changed-files.outputs.any_changed }}" == "true" ]; then
-            echo "### Checked Servers:" >> $GITHUB_STEP_SUMMARY
-            for file in ${{ steps.changed-files.outputs.all_changed_files }}; do
-              SERVER_DIR=$(dirname $(dirname "$file"))
-              SERVER_NAME=$(basename "$SERVER_DIR")
-              echo "- $SERVER_NAME" >> $GITHUB_STEP_SUMMARY
-            done
+            if [ "${{ steps.check-version-bump.outputs.version_bump_detected }}" == "true" ]; then
+              echo "📦 **Publication verification completed** - version bumps detected" >> $GITHUB_STEP_SUMMARY
+              echo "" >> $GITHUB_STEP_SUMMARY
+              echo "### Verified Servers:" >> $GITHUB_STEP_SUMMARY
+              for file in ${{ steps.changed-files.outputs.all_changed_files }}; do
+                SERVER_DIR=$(dirname $(dirname "$file"))
+                SERVER_NAME=$(basename "$SERVER_DIR")
+                echo "- $SERVER_NAME" >> $GITHUB_STEP_SUMMARY
+              done
+            else
+              echo "✅ **Skipped publication verification** - no version bumps detected" >> $GITHUB_STEP_SUMMARY
+              echo "" >> $GITHUB_STEP_SUMMARY
+              echo "This appears to be feature development rather than a publication." >> $GITHUB_STEP_SUMMARY
+              echo "" >> $GITHUB_STEP_SUMMARY
+              echo "### Modified Servers:" >> $GITHUB_STEP_SUMMARY
+              for file in ${{ steps.changed-files.outputs.all_changed_files }}; do
+                SERVER_DIR=$(dirname $(dirname "$file"))
+                SERVER_NAME=$(basename "$SERVER_DIR")
+                echo "- $SERVER_NAME (feature development)" >> $GITHUB_STEP_SUMMARY
+              done
+            fi
           else
             echo "No MCP server package.json files were modified." >> $GITHUB_STEP_SUMMARY
           fi
