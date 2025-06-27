@@ -4,6 +4,9 @@
   "description": "Local implementation of NAME MCP server",
   "main": "build/index.js",
   "type": "module",
+  "bin": {
+    "NAME-mcp-server": "./build/index.js"
+  },
   "scripts": {
     "build": "tsc && npm run build:integration",
     "build:integration": "tsc -p tsconfig.integration.json",

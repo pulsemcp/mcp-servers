@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.4] - 2025-06-27
+
+### Fixed
+
+- Moved `bin` field from root package.json to local package.json for proper executable installation
+
 ## [0.1.3] - 2025-06-27
 
 ### Added
