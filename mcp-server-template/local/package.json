@@ -20,7 +20,7 @@
     "dev": "tsx src/index.ts",
     "predev": "cd ../shared && npm run build && cd ../local && node setup-dev.js",
     "prebuild": "cd ../shared && npm run build && cd ../local && node setup-dev.js",
-    "prepublishOnly": "npm run build && node prepare-publish.js",
+    "prepublishOnly": "tsc && npm run build:integration && node prepare-publish.js",
     "lint": "eslint . --ext .ts,.tsx",
     "lint:fix": "eslint . --ext .ts,.tsx --fix",
     "format": "prettier --write .",

@@ -1,6 +1,6 @@
 {
   "name": "twist-mcp-server",
-  "version": "0.1.8",
+  "version": "0.1.9",
   "description": "Local implementation of Twist MCP Server",
   "main": "build/index.js",
   "type": "module",
@@ -25,7 +25,7 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "stage-publish": "npm version",
-    "prepublishOnly": "npm run build && node prepare-publish.js"
+    "prepublishOnly": "tsc && npm run build:integration && node prepare-publish.js"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.4",

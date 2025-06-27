@@ -1,17 +1,60 @@
 name: Publish Updated MCP Servers
 
 on:
-  workflow_run:
-    workflows: ['CI Build & Test Checks']
-    types:
-      - completed
+  push:
     branches:
       - main
 
 jobs:
-  detect-and-publish:
+  wait-for-ci:
+    name: Wait for CI
     runs-on: ubuntu-latest
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    steps:
+      - name: Wait for CI Build & Test Checks
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const sha = context.sha;
+
+            console.log(`Waiting for CI Build & Test Checks on SHA: ${sha}`);
+
+            const maxWaitTime = 10 * 60 * 1000; // 10 minutes
+            const checkInterval = 10 * 1000; // 10 seconds
+            const startTime = Date.now();
+
+            while (Date.now() - startTime < maxWaitTime) {
+              const checkRuns = await github.rest.checks.listForRef({
+                owner,
+                repo,
+                ref: sha,
+                per_page: 100
+              });
+              
+              const ciCheck = checkRuns.data.check_runs.find(run => 
+                run.name === 'CI Build & Test Checks Passed'
+              );
+              
+              if (ciCheck && ciCheck.status === 'completed') {
+                if (ciCheck.conclusion === 'success') {
+                  console.log('✅ CI Build & Test Checks passed');
+                  return;
+                } else {
+                  core.setFailed(`CI Build & Test Checks failed with conclusion: ${ciCheck.conclusion}`);
+                  return;
+                }
+              }
+              
+              console.log(`Waiting for CI checks... (${Math.round((Date.now() - startTime) / 1000)}s elapsed)`);
+              await new Promise(resolve => setTimeout(resolve, checkInterval));
+            }
+
+            core.setFailed('Timeout waiting for CI Build & Test Checks');
+
+  detect-and-publish:
+    needs: wait-for-ci
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code

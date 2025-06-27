@@ -1,6 +1,6 @@
 {
   "name": "appsignal-mcp-server",
-  "version": "0.2.4",
+  "version": "0.2.5",
   "description": "Local implementation of AppSignal MCP server",
   "main": "build/index.js",
   "type": "module",
@@ -8,14 +8,19 @@
     "appsignal-mcp-server": "./build/index.js"
   },
   "scripts": {
-    "build": "../node_modules/typescript/bin/tsc",
+    "build": "tsc && npm run build:integration",
+    "build:integration": "tsc -p tsconfig.integration.json",
     "start": "node build/index.js",
     "start:integration": "node build/index.integration-with-mock.js",
     "dev": "tsx src/index.ts",
     "dev:integration": "tsx src/index.integration-with-mock.ts",
     "predev": "cd ../shared && npm run build && cd ../local && node setup-dev.js",
     "prebuild": "cd ../shared && npm run build && cd ../local && node setup-dev.js",
-    "prepublishOnly": "npm run build && node prepare-publish.js && node ../scripts/prepare-npm-readme.js",
+    "prepublishOnly": "tsc && npm run build:integration && node prepare-publish.js && node ../scripts/prepare-npm-readme.js",
+    "lint": "eslint . --ext .ts,.tsx",
+    "lint:fix": "eslint . --ext .ts,.tsx --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
     "stage-publish": "npm version"
   },
   "dependencies": {
