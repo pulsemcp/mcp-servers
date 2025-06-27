@@ -26,6 +26,9 @@ build/
 # Ignore shared symlinks in local directories
 **/local/shared
 
+# Ignore published-build directories (generated during testing)
+**/published-build/
+
 # Logs
 logs
 *.log
