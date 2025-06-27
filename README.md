@@ -27,9 +27,10 @@ These are PulseMCP-branded servers that we intend to maintain indefinitely as ou
 
 These are high-quality servers that we may discontinue if the official provider creates and maintains a better MCP server.
 
-| Name      | Description                                                     | Local Status | Remote Status | Target Audience                                       | Notes                                                                |
-| --------- | --------------------------------------------------------------- | ------------ | ------------- | ----------------------------------------------------- | -------------------------------------------------------------------- |
-| appsignal | AppSignal application performance monitoring and error tracking | 0.2.1        | Not Started   | Developers using AppSignal for application monitoring | Requires AppSignal API key; NOT officially affiliated with AppSignal |
+| Name      | Description                                                     | Local Status      | Remote Status | Target Audience                                       | Notes                                                                |
+| --------- | --------------------------------------------------------------- | ----------------- | ------------- | ----------------------------------------------------- | -------------------------------------------------------------------- |
+| appsignal | AppSignal application performance monitoring and error tracking | 0.2.1             | Not Started   | Developers using AppSignal for application monitoring | Requires AppSignal API key; NOT officially affiliated with AppSignal |
+| twist     | Twist team messaging and collaboration platform integration     | Not Yet Published | Not Started   | Teams using Twist for asynchronous communication      | Requires Twist API bearer token and workspace ID                     |
 
 ## Contributing
 

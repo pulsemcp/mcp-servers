@@ -65,16 +65,28 @@ jobs:
             echo "Base version: $BASE_VERSION"
             echo "Current version: $CURRENT_VERSION"
             
-            # Check if version was bumped
-            if [ "$CURRENT_VERSION" == "$BASE_VERSION" ]; then
-              echo "❌ ERROR: Version was not bumped in $file"
-              echo "   Base version: $BASE_VERSION"
-              echo "   Current version: $CURRENT_VERSION"
-              VERIFICATION_FAILED=true
-              continue
+            # Check if this is a new unpublished server
+            IS_UNPUBLISHED=false
+            if grep -q "| $SERVER_NAME .*| Not Yet Published |" README.md; then
+              IS_UNPUBLISHED=true
+              echo "ℹ️  This is an unpublished server"
             fi
             
-            echo "✅ Version was bumped from $BASE_VERSION to $CURRENT_VERSION"
+            # For unpublished servers, we don't require version bump
+            if [ "$IS_UNPUBLISHED" = true ]; then
+              echo "✅ Unpublished server - version bump check skipped"
+            else
+              # Check if version was bumped
+              if [ "$CURRENT_VERSION" == "$BASE_VERSION" ]; then
+                echo "❌ ERROR: Version was not bumped in $file"
+                echo "   Base version: $BASE_VERSION"
+                echo "   Current version: $CURRENT_VERSION"
+                VERIFICATION_FAILED=true
+                continue
+              fi
+              
+              echo "✅ Version was bumped from $BASE_VERSION to $CURRENT_VERSION"
+            fi
             
             # Check for CHANGELOG.md
             CHANGELOG_FILE="$SERVER_DIR/CHANGELOG.md"
@@ -110,32 +122,48 @@ jobs:
             fi
             
             # Check if the server appears in README.md with the current version
-            if grep -q "| $SERVER_NAME .*| $CURRENT_VERSION |" README.md; then
-              echo "✅ README.md contains entry for $SERVER_NAME with version $CURRENT_VERSION"
-            else
-              # Check if it's marked as "Not Yet Published"
+            if [ "$IS_UNPUBLISHED" = true ]; then
+              # For unpublished servers, we expect "Not Yet Published"
               if grep -q "| $SERVER_NAME .*| Not Yet Published |" README.md; then
-                echo "❌ ERROR: README.md still shows 'Not Yet Published' for $SERVER_NAME"
-                echo "   Please update README.md to show version $CURRENT_VERSION"
-                VERIFICATION_FAILED=true
-                continue
+                echo "✅ README.md correctly shows 'Not Yet Published' for unpublished server"
               else
-                echo "❌ ERROR: README.md does not contain correct version for $SERVER_NAME"
-                echo "   Expected to find version $CURRENT_VERSION in the $TABLE_SECTION table"
+                echo "❌ ERROR: README.md should show 'Not Yet Published' for unpublished server $SERVER_NAME"
                 VERIFICATION_FAILED=true
                 continue
               fi
+            else
+              # For published servers, we expect the version number
+              if grep -q "| $SERVER_NAME .*| $CURRENT_VERSION |" README.md; then
+                echo "✅ README.md contains entry for $SERVER_NAME with version $CURRENT_VERSION"
+              else
+                # Check if it's incorrectly marked as "Not Yet Published"
+                if grep -q "| $SERVER_NAME .*| Not Yet Published |" README.md; then
+                  echo "❌ ERROR: README.md still shows 'Not Yet Published' for $SERVER_NAME"
+                  echo "   Please update README.md to show version $CURRENT_VERSION"
+                  VERIFICATION_FAILED=true
+                  continue
+                else
+                  echo "❌ ERROR: README.md does not contain correct version for $SERVER_NAME"
+                  echo "   Expected to find version $CURRENT_VERSION in the $TABLE_SECTION table"
+                  VERIFICATION_FAILED=true
+                  continue
+                fi
+              fi
             fi
             
-            # Check for git tag
-            EXPECTED_TAG="${PACKAGE_NAME}@${CURRENT_VERSION}"
-            if git tag | grep -q "^${EXPECTED_TAG}$"; then
-              echo "✅ Git tag exists: $EXPECTED_TAG"
+            # Check for git tag (only for published servers)
+            if [ "$IS_UNPUBLISHED" = false ]; then
+              EXPECTED_TAG="${PACKAGE_NAME}@${CURRENT_VERSION}"
+              if git tag | grep -q "^${EXPECTED_TAG}$"; then
+                echo "✅ Git tag exists: $EXPECTED_TAG"
+              else
+                echo "⚠️  WARNING: Git tag not found: $EXPECTED_TAG"
+                echo "   Make sure to create and push the tag:"
+                echo "   git tag $EXPECTED_TAG"
+                echo "   git push origin $EXPECTED_TAG"
+              fi
             else
-              echo "⚠️  WARNING: Git tag not found: $EXPECTED_TAG"
-              echo "   Make sure to create and push the tag:"
-              echo "   git tag $EXPECTED_TAG"
-              echo "   git push origin $EXPECTED_TAG"
+              echo "ℹ️  Git tag check skipped for unpublished server"
             fi
             
             # Run tests for this server

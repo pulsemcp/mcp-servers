@@ -1,0 +1,116 @@
+import { Server } from '@modelcontextprotocol/sdk/server/index.js';
+import { z } from 'zod';
+import type { ClientFactory } from '../server.js';
+
+/**
+ * Tool for getting a thread with all its messages
+ */
+export function getThreadTool(server: Server, clientFactory: ClientFactory) {
+  const GetThreadSchema = z.object({
+    thread_id: z
+      .string()
+      .describe(
+        'The unique identifier of the thread (e.g., "789012"). Use get_threads to find thread IDs'
+      ),
+  });
+
+  return {
+    name: 'get_thread',
+    description: `Retrieve a complete thread conversation including all messages. This tool fetches the full context of a discussion, showing the thread metadata and every message posted in chronological order. Essential for understanding the complete conversation history.
+
+Example response:
+Thread: "Bug Report: Login Issues"
+ID: 789013
+Channel ID: 123457
+Created: 6/27/2025, 9:00:00 AM
+Status: Active
+
+Messages (3 total):
+
+[6/27/2025, 9:00:00 AM] sarah.chen:
+I'm experiencing login issues with the mobile app. After entering credentials, the app hangs on the loading screen. This started happening after the latest update.
+
+---
+[6/27/2025, 9:30:00 AM] mike.developer:
+Thanks for reporting this. I can reproduce the issue. It seems related to the new authentication flow. Working on a fix now.
+
+---
+[6/27/2025, 10:15:00 AM] mike.developer:
+Fix has been deployed. Please try logging in again and let me know if the issue persists.
+
+Use cases:
+- Reading full conversation history before responding
+- Understanding context before adding a new message
+- Archiving or documenting important discussions
+- Reviewing decision-making processes in threads
+- Catching up on missed conversations
+- Analyzing communication patterns in threads`,
+    inputSchema: {
+      type: 'object',
+      properties: {
+        thread_id: {
+          type: 'string',
+          description:
+            'The unique identifier of the thread (e.g., "789012"). Use get_threads to find thread IDs',
+        },
+      },
+      required: ['thread_id'],
+    },
+    handler: async (args: unknown) => {
+      const { thread_id } = GetThreadSchema.parse(args);
+      const client = clientFactory();
+
+      try {
+        const thread = await client.getThread(thread_id);
+
+        let response = `Thread: "${thread.title}"
+ID: ${thread.id}
+Channel ID: ${thread.channel_id}
+Created: ${thread.created_ts ? new Date(thread.created_ts * 1000).toLocaleString() : 'Unknown'}
+Status: ${thread.archived ? 'Archived' : 'Active'}
+
+Messages (${thread.messages?.length || 0} total):
+`;
+
+        if (thread.messages && thread.messages.length > 0) {
+          // Sort messages by creation time
+          const sortedMessages = thread.messages.sort(
+            (a, b) => (a.created_ts || 0) - (b.created_ts || 0)
+          );
+
+          const messageList = sortedMessages
+            .map((msg) => {
+              const timestamp = msg.created_ts
+                ? new Date(msg.created_ts * 1000).toLocaleString()
+                : 'Unknown time';
+              return `\n[${timestamp}] ${msg.creator || 'Unknown'}:\n${msg.content}`;
+            })
+            .join('\n---');
+
+          response += messageList;
+        } else {
+          response += '\nNo messages in this thread yet.';
+        }
+
+        return {
+          content: [
+            {
+              type: 'text',
+              text: response,
+            },
+          ],
+        };
+      } catch (error) {
+        return {
+          content: [
+            {
+              type: 'text',
+              text: `Error fetching thread: ${error instanceof Error ? error.message : 'Unknown error'}`,
+            },
+          ],
+          isError: true,
+        };
+      }
+    },
+  };
+}

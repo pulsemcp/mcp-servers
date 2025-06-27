@@ -1,0 +1,32 @@
+{
+  "name": "mcp-server-twist",
+  "version": "0.1.0",
+  "description": "Local implementation of Twist MCP Server",
+  "main": "build/index.js",
+  "type": "module",
+  "scripts": {
+    "build": "tsc && npm run build:integration",
+    "build:integration": "tsc -p tsconfig.integration.json",
+    "start": "node build/index.js",
+    "dev": "tsx src/index.ts",
+    "predev": "cd ../shared && npm run build",
+    "prebuild": "cd ../shared && npm run build",
+    "lint": "eslint . --ext .ts,.tsx",
+    "lint:fix": "eslint . --ext .ts,.tsx --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.4",
+    "zod": "^3.24.1",
+    "mcp-server-twist-shared": "file:../shared"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.6",
+    "tsx": "^4.19.4",
+    "typescript": "^5.7.3"
+  },
+  "keywords": [],
+  "author": "PulseMCP",
+  "license": "MIT"
+}
