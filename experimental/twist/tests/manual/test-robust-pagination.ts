@@ -48,7 +48,7 @@ async function testRobustPagination() {
     console.log(`✅ Found channel ID: ${channelId}\n`);
 
     console.log('=== ROBUST PAGINATION SYSTEM DEMONSTRATION ===\n');
-    
+
     // Test 1: Show all threads with closed included to see total
     console.log('Test 1: Get ALL threads (closed included) to see dataset');
     const allResult = await client.callTool('get_channel', {
@@ -69,7 +69,7 @@ async function testRobustPagination() {
         threads_limit: 2,
         threads_offset: offset,
       });
-      
+
       // Extract just the threads section for cleaner output
       const text = result.content[0].text;
       const threadsSection = text.split('Threads (')[1];
@@ -91,14 +91,14 @@ async function testRobustPagination() {
         threads_limit: 3,
         threads_offset: offset,
       });
-      
+
       // Extract just the threads section for cleaner output
       const text = result.content[0].text;
       const threadsSection = text.split('Threads (')[1];
       if (threadsSection) {
         console.log('Threads (' + threadsSection.split('\n\n')[0]);
         const threadLines = threadsSection.split('\n').slice(1, 4); // Get thread lines only
-        threadLines.forEach(line => {
+        threadLines.forEach((line) => {
           if (line.trim() && line.startsWith('- ')) {
             console.log(line);
           }
@@ -109,7 +109,7 @@ async function testRobustPagination() {
 
     // Test 4: Edge cases
     console.log('Test 4: Edge cases');
-    
+
     console.log('\n--- Large offset (beyond available threads) ---');
     const beyondResult = await client.callTool('get_channel', {
       channel_id: channelId,
@@ -140,10 +140,9 @@ async function testRobustPagination() {
     console.log('\nKey improvements:');
     console.log('• Always fetches max threads (500) from API to avoid API pagination issues');
     console.log('• Client-side filtering ensures accurate results');
-    console.log('• Pagination applied AFTER filtering for consistent behavior'); 
+    console.log('• Pagination applied AFTER filtering for consistent behavior');
     console.log('• Abstracts away Twist API limitations from callers');
     console.log('• Returns exact requested number of threads when possible');
-
   } catch (error) {
     console.error('❌ Error:', error);
   } finally {
