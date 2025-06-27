@@ -17,6 +17,9 @@ export interface ITwistClient {
 
   // Message operations
   addMessageToThread(threadId: string, content: string): Promise<Message>;
+  
+  // Thread management operations
+  closeThread(threadId: string, message?: string): Promise<Message>;
 }
 
 // Type definitions
@@ -99,6 +102,11 @@ export class TwistClient implements ITwistClient {
   async addMessageToThread(threadId: string, content: string): Promise<Message> {
     const { addMessageToThread } = await import('./twist-client/lib/add-message-to-thread.js');
     return addMessageToThread(this.baseUrl, this.headers, threadId, content);
+  }
+
+  async closeThread(threadId: string, message?: string): Promise<Message> {
+    const { closeThread } = await import('./twist-client/lib/close-thread.js');
+    return closeThread(this.baseUrl, this.headers, threadId, message);
   }
 }
 

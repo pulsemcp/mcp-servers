@@ -7,6 +7,7 @@ import { getThreadsTool } from './tools/get-threads.js';
 import { getThreadTool } from './tools/get-thread.js';
 import { createThreadTool } from './tools/create-thread.js';
 import { addMessageToThreadTool } from './tools/add-message-to-thread.js';
+import { closeThreadTool } from './tools/close-thread.js';
 
 /**
  * Creates a function to register all tools with the server.
@@ -28,6 +29,7 @@ export function createRegisterTools(clientFactory: ClientFactory) {
       getThreadTool(server, clientFactory),
       createThreadTool(server, clientFactory),
       addMessageToThreadTool(server, clientFactory),
+      closeThreadTool(server, clientFactory),
     ];
 
     // List available tools

@@ -168,7 +168,7 @@ describe('Twist MCP Server Integration Tests', () => {
       const result = await client.listTools();
       const tools = result.tools;
 
-      expect(tools).toHaveLength(6);
+      expect(tools).toHaveLength(7);
 
       const toolNames = tools.map((t) => t.name);
       expect(toolNames).toContain('get_channels');
@@ -177,6 +177,7 @@ describe('Twist MCP Server Integration Tests', () => {
       expect(toolNames).toContain('get_thread');
       expect(toolNames).toContain('create_thread');
       expect(toolNames).toContain('add_message_to_thread');
+      expect(toolNames).toContain('close_thread');
     });
 
     it('should have proper tool descriptions and schemas', async () => {
@@ -397,6 +398,40 @@ describe('Twist MCP Server Integration Tests', () => {
 
       expect(result.content[0].type).toBe('text');
       expect(result.content[0].text).toContain('Successfully added message to thread:');
+    });
+  });
+
+  describe('close_thread Tool', () => {
+    it('should close thread with default message', async () => {
+      if (!client) throw new Error('Client not initialized');
+
+      const result = await client.callTool('close_thread', {
+        thread_id: 'th_001',
+      });
+
+      expect(result.content[0].type).toBe('text');
+      expect(result.content[0].text).toContain('Successfully closed thread:');
+      expect(result.content[0].text).toContain('Thread ID: th_001');
+      expect(result.content[0].text).toContain('Closing message: "Thread closed"');
+    });
+
+    it('should close thread with custom message', async () => {
+      if (!client) throw new Error('Client not initialized');
+
+      const result = await client.callTool('close_thread', {
+        thread_id: 'th_001',
+        message: 'Issue resolved - closing thread',
+      });
+
+      expect(result.content[0].type).toBe('text');
+      expect(result.content[0].text).toContain('Successfully closed thread:');
+      expect(result.content[0].text).toContain('Closing message: "Issue resolved - closing thread"');
+    });
+
+    it('should validate required thread_id', async () => {
+      if (!client) throw new Error('Client not initialized');
+
+      await expect(client.callTool('close_thread', {})).rejects.toThrow();
     });
   });
 });
