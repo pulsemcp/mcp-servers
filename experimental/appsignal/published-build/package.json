@@ -1,0 +1,65 @@
+{
+  "name": "appsignal-mcp-server",
+  "version": "0.2.9",
+  "description": "Local implementation of AppSignal MCP server",
+  "main": "build/index.js",
+  "type": "module",
+  "bin": {
+    "appsignal-mcp-server": "./build/index.js"
+  },
+  "scripts": {
+    "build": "tsc && npm run build:integration",
+    "build:integration": "tsc -p tsconfig.integration.json",
+    "start": "node build/index.js",
+    "start:integration": "node build/index.integration-with-mock.js",
+    "dev": "tsx src/index.ts",
+    "dev:integration": "tsx src/index.integration-with-mock.ts",
+    "predev": "cd ../shared && npm run build && cd ../local && node setup-dev.js",
+    "prebuild": "cd ../shared && npm run build && cd ../local && node setup-dev.js",
+    "prepublishOnly": "node prepare-publish.js && node ../scripts/prepare-npm-readme.js",
+    "lint": "eslint . --ext .ts,.tsx",
+    "lint:fix": "eslint . --ext .ts,.tsx --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "stage-publish": "npm version"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.4",
+    "dotenv": "^16.5.0",
+    "graphql": "^16.11.0",
+    "graphql-request": "^7.2.0",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.31",
+    "tsx": "^4.19.4",
+    "typescript": "^5.8.3"
+  },
+  "keywords": [
+    "mcp",
+    "modelcontextprotocol",
+    "appsignal",
+    "monitoring",
+    "apm"
+  ],
+  "author": "PulseMCP",
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "build/",
+    "shared/",
+    "README.md",
+    "package.json"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/pulsemcp/mcp-servers.git",
+    "directory": "experimental/appsignal/local"
+  },
+  "bugs": {
+    "url": "https://github.com/pulsemcp/mcp-servers/issues"
+  },
+  "homepage": "https://github.com/pulsemcp/mcp-servers/tree/main/experimental/appsignal"
+}

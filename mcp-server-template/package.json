@@ -48,5 +48,8 @@
     "@rollup/rollup-linux-x64-musl": "^4.9.5",
     "@rollup/rollup-win32-arm64-msvc": "^4.9.5",
     "@rollup/rollup-win32-x64-msvc": "^4.9.5"
+  },
+  "dependencies": {
+    "prettier": "^3.6.2"
   }
 }

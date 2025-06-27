@@ -30,6 +30,23 @@ async function buildPublished() {
     console.log('Running prepublishOnly script (simulates publish build)...');
     execSync('npm run prepublishOnly', { stdio: 'inherit' });
 
+    // Create symlink for shared package to enable workspace imports in tests
+    console.log('Creating workspace symlink for tests...');
+    const nodeModulesDir = join(publishedBuildDir, 'node_modules');
+    await mkdir(nodeModulesDir, { recursive: true });
+    
+    // Create symlink for appsignal-mcp-server-shared
+    const sharedPackageLink = join(nodeModulesDir, 'appsignal-mcp-server-shared');
+    const sharedPackageTarget = join(publishedBuildDir, '../shared');
+    
+    try {
+      await rm(sharedPackageLink, { recursive: true, force: true });
+      execSync(`ln -s ${sharedPackageTarget} ${sharedPackageLink}`);
+      console.log('Created symlink for appsignal-mcp-server-shared');
+    } catch (error) {
+      console.warn('Failed to create symlink:', error.message);
+    }
+
     console.log('Published package simulation complete');
     console.log(`Published build available at: ${publishedBuildDir}`);
 
