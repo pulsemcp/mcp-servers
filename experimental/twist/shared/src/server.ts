@@ -38,6 +38,7 @@ export interface Thread {
   created_ts?: number;
   last_updated_ts?: number;
   archived?: boolean;
+  closed?: boolean;
 }
 
 export interface ThreadWithMessages extends Thread {
