@@ -31,10 +31,7 @@ jobs:
           node-version-file: '.nvmrc'
 
       - name: Install dependencies
-        run: |
-          # Use npm install to handle platform-specific dependencies
-          npm install
-          npm run install-all
+        run: npm ci && npm run install-all
 
       - name: Build project
         run: npm run build
@@ -74,7 +71,7 @@ jobs:
           node-version-file: '.nvmrc'
 
       - name: Install dependencies
-        run: npm install
+        run: npm ci
 
       - name: Install shared dependencies
         run: cd shared && npm install
