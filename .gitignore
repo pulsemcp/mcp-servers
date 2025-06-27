@@ -18,6 +18,9 @@ build/
 !**/dist/**
 !**/build/**
 !**/node_modules/**
+# Keep helper scripts
+!**/prepare-publish.js
+!**/setup-dev.js
 
 # Logs
 logs

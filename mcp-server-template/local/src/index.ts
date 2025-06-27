@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
-import { createMCPServer } from 'mcp-server-NAME-shared';
+import { createMCPServer } from '../shared/index.js';
 
 // Validate required environment variables before starting
 function validateEnvironment(): void {

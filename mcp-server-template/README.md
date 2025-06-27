@@ -258,6 +258,47 @@ it('should handle my_tool via MCP', async () => {
 });
 ```
 
+## Publishing to npm
+
+This template uses a workspace structure with `local` and `shared` directories. To handle this for npm publishing:
+
+### How It Works
+
+#### Development Setup
+During development, the `local` package references the `shared` package via a symlink:
+- `npm run dev` or `npm run build` automatically creates a symlink from `local/shared` to `shared/dist`
+- This allows TypeScript to resolve imports like `import { createMCPServer } from '../shared/index.js'`
+- The symlink is created by `setup-dev.js` script
+
+#### Publishing Process
+When publishing to npm, workspace file dependencies don't work. We solve this by:
+1. The `prepublishOnly` script runs automatically before `npm publish`
+2. It builds the project and then runs `prepare-publish.js`
+3. This script copies the built `shared/dist` files into `local/shared`
+4. The package is published with all necessary files included
+5. No bundler or extra dependencies needed!
+
+### Important Files
+- `local/prepare-publish.js` - Copies shared files during publish
+- `local/setup-dev.js` - Creates development symlink
+- `.gitignore` - Ignores `local/shared` (it's either a symlink or temporary copy)
+
+### Benefits
+This approach ensures:
+- Clean development experience with proper TypeScript support
+- Published packages work without workspace dependencies
+- No need for bundlers or extra build tools
+- Maintains the monorepo benefits during development
+
+### Publishing Steps
+
+1. Navigate to the `local` directory
+2. Update the version number in `package.json`
+3. Run `npm publish`
+4. The `prepublishOnly` script will handle building and bundling automatically
+
+Note: Always publish from the `local` directory, not from the root workspace.
+
 ## Configuration
 
 ### Claude Desktop

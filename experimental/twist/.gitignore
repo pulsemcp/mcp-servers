@@ -34,3 +34,6 @@ yarn-error.log*
 # Temporary files
 *.tmp
 *.temp
+
+# Shared directory symlink/copy in local package
+local/shared
