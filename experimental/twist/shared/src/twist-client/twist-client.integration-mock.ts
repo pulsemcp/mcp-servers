@@ -77,10 +77,9 @@ export function createIntegrationMockTwistClient(
           threads = threads.filter((t) => (t.created_ts || 0) > options.newerThanTs!);
         }
 
-        if (options?.limit) {
-          threads = threads.slice(0, options.limit);
-        }
-
+        // For integration tests, return all threads and let the tool handle pagination
+        // The real Twist API might return more threads than the limit,
+        // allowing the client to know the total count
         return threads;
       }
 

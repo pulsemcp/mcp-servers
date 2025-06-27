@@ -101,10 +101,8 @@ Use cases:
       const client = clientFactory();
 
       try {
-        // Fetch more threads than requested to account for filtering
-        const fetchLimit = include_closed ? limit : Math.min(limit * 3, 200);
         const threads = await client.getThreads(channel_id, {
-          limit: fetchLimit,
+          limit: limit,
           newerThanTs: newer_than_ts,
         });
 
@@ -154,7 +152,7 @@ Use cases:
         const totalCount = filteredThreads.length;
         const showingCount = paginatedThreads.length;
         const paginationInfo =
-          totalCount > offset + showingCount
+          totalCount > showingCount || offset > 0
             ? ` (showing ${showingCount > 0 ? offset + 1 : 0}-${offset + showingCount} of ${totalCount})`
             : '';
 
