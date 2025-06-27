@@ -117,18 +117,20 @@ describe('Twist Tools', () => {
       const result = await tool.handler({ thread_id: 'th_001' });
 
       const responseText = result.content[0].text;
-      
+
       // Should have 2 total messages (thread content + comment)
       expect(responseText).toContain('Messages (2 total):');
-      
+
       // Should include the original thread content as the first message
-      expect(responseText).toContain('This is the original thread content that starts the discussion');
+      expect(responseText).toContain(
+        'This is the original thread content that starts the discussion'
+      );
       expect(responseText).toContain('Thread Creator:');
-      
+
       // Should also include the comment message
       expect(responseText).toContain('Test message');
       expect(responseText).toContain('Test User:');
-      
+
       // Thread content should appear before the comment (chronologically first)
       const threadContentIndex = responseText.indexOf('This is the original thread content');
       const commentIndex = responseText.indexOf('Test message');
@@ -154,7 +156,7 @@ describe('Twist Tools', () => {
 
       // Should have 1 total message (just the thread content)
       expect(responseText).toContain('Messages (1 total):');
-      
+
       // Should include the thread content
       expect(responseText).toContain('This thread has only the initial content, no comments yet');
       expect(responseText).toContain('Thread Creator:');

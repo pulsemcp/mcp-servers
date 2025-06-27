@@ -146,15 +146,17 @@ These servers have a `local/` and `shared/` structure where:
 
 ### Import Path Rules
 
-**✅ CORRECT**: 
+**✅ CORRECT**:
+
 ```typescript
 import { createMCPServer } from '../shared/index.js';
 ```
 
 **❌ WRONG** - Breaks publish workflow:
+
 ```typescript
-import { createMCPServer } from 'twist-mcp-server-shared';  // Package name
-import { createMCPServer } from '../shared/dist/index.js';  // Direct dist path
+import { createMCPServer } from 'twist-mcp-server-shared'; // Package name
+import { createMCPServer } from '../shared/dist/index.js'; // Direct dist path
 ```
 
 ### If You Encounter Import Errors

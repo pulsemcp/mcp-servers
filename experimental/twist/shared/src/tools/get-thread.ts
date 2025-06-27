@@ -88,7 +88,7 @@ Use cases:
 
         // Combine thread content (first message) with comments
         const allMessages = [];
-        
+
         // Add thread content as the first message if it exists
         if (thread.content) {
           allMessages.push({
@@ -104,7 +104,7 @@ Use cases:
             system_message: null,
           });
         }
-        
+
         // Add all comment messages
         if (thread.messages && thread.messages.length > 0) {
           allMessages.push(...thread.messages);
