@@ -105,6 +105,22 @@ The template includes `index.integration-with-mock.ts` which:
 
 ## Implementation Guide
 
+### Environment Variable Validation
+
+The template includes built-in environment variable validation that runs before server startup. This ensures:
+
+- Users get clear error messages when required variables are missing
+- The server fails fast with helpful guidance
+- Optional variables are documented
+
+Update the `validateEnvironment()` function in `local/src/index.ts` with your requirements:
+
+```typescript
+const required = [{ name: 'YOUR_API_KEY', description: 'API key for authentication' }];
+
+const optional = [{ name: 'YOUR_OPTIONAL_CONFIG', description: 'Optional configuration' }];
+```
+
 ### Adding Tools
 
 The template uses a modular tool pattern where each tool is defined in its own file:

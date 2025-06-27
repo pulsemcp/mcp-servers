@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Environment variable validation at server startup
+  - Server now validates `APPSIGNAL_API_KEY` before starting
+  - Documents optional `APPSIGNAL_APP_ID` variable
+  - Provides clear error messages with descriptions when required variables are missing
+  - Includes example export commands to help users fix configuration issues
+  - Exits with error code 1 on validation failure
+  - Logs informational message when APPSIGNAL_APP_ID is set
+
 ## [0.2.1] - 2025-06-26
 
 ### Changed

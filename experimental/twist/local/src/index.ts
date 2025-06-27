@@ -2,7 +2,32 @@
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { createMCPServer } from 'twist-mcp-server-shared';
 
+// Validate required environment variables before starting
+function validateEnvironment(): void {
+  const required = [
+    { name: 'TWIST_BEARER_TOKEN', description: 'Twist API bearer token for authentication' },
+    { name: 'TWIST_WORKSPACE_ID', description: 'Twist workspace ID to operate within' },
+  ];
+
+  const missing = required.filter(({ name }) => !process.env[name]);
+
+  if (missing.length > 0) {
+    console.error('Error: Missing required environment variables:');
+    missing.forEach(({ name, description }) => {
+      console.error(`  - ${name}: ${description}`);
+    });
+    console.error('\nPlease set these environment variables and try again.');
+    console.error('Example:');
+    console.error('  export TWIST_BEARER_TOKEN="your-bearer-token"');
+    console.error('  export TWIST_WORKSPACE_ID="your-workspace-id"');
+    process.exit(1);
+  }
+}
+
 async function main() {
+  // Validate environment variables first
+  validateEnvironment();
+
   // Create server using factory
   const { server, registerHandlers } = createMCPServer();
 
