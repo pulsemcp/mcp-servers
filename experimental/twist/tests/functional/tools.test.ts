@@ -194,7 +194,7 @@ describe('Twist Tools', () => {
         // FIXED: Offset is now applied BEFORE filtering
         // This means offset=1 skips the first thread overall, then applies filtering
 
-        // Get first thread after offset 0, with closed threads filtered ou
+        // Get first thread after offset 0, with closed threads filtered out
         const page1Result = await tool.handler({
           channel_id: 'ch_123',
           threads_limit: 1,
@@ -202,7 +202,7 @@ describe('Twist Tools', () => {
           include_closed_threads: false,
         });
 
-        // Get thread after offset 1, with closed threads filtered ou
+        // Get thread after offset 1, with closed threads filtered out
         const page2Result = await tool.handler({
           channel_id: 'ch_123',
           threads_limit: 1,
@@ -252,7 +252,7 @@ describe('Twist Tools', () => {
         });
 
         // FIXED: The offset behavior is now consistent regardless of filtering
-        // Offset is applied before filtering, so same offset = same starting poin
+        // Offset is applied before filtering, so same offset = same starting point
 
         // All threads: th_001, th_002 on page 1; th_003, th_004 on page 2
         expect(allPage1.content[0].text).toContain('th_001');
@@ -309,11 +309,11 @@ describe('Twist Tools', () => {
         });
 
         // FIXED: Now uses an increased fetch limit to account for client-side pagination
-        // The offset is still handled client-side since the API doesn't support i
+        // The offset is still handled client-side since the API doesn't support it
         expect(mockClient.getThreads).toHaveBeenCalledWith('ch_123', {
-          limit: 65, // FIXED: Now increased (5 + 10 + 50) to account for filtering and offse
+          limit: 65, // FIXED: Now increased (5 + 10 + 50) to account for filtering and offset
           newerThanTs: 1234567890, // This is passed correctly
-          // Note: offset is still handled client-side since the Twist API doesn't support server-side offse
+          // Note: offset is still handled client-side since the Twist API doesn't support server-side offset
         });
       });
 
@@ -332,7 +332,7 @@ describe('Twist Tools', () => {
         const lastCall = calls[calls.length - 1];
 
         expect(lastCall[0]).toBe('ch_123');
-        expect(lastCall[1].limit).toBe(65); // Increased limi
+        expect(lastCall[1].limit).toBe(65); // Increased limit
         expect(lastCall[1].newerThanTs).toBeDefined(); // Default date filter applied
         expect(lastCall[1].newerThanTs).toBeGreaterThan(0); // Should be a valid timestamp
       });
@@ -399,7 +399,7 @@ describe('Twist Tools', () => {
       // Should have 1 total message (just the thread content)
       expect(responseText).toContain('Messages (1 total):');
 
-      // Should include the thread conten
+      // Should include the thread content
       expect(responseText).toContain('This thread has only the initial content, no comments yet');
       expect(responseText).toContain('Thread Creator:');
     });

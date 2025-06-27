@@ -233,13 +233,13 @@ describe('Pagination Offset Bug Fix Tests', () => {
       channel_id: testChannelId,
       include_threads: true,
       threads_limit: 5,
-      threads_offset: 1000, // Very large offse
+      threads_offset: 1000, // Very large offset
       include_closed_threads: false,
     });
 
     console.log('Large offset result:', result.content[0].text);
 
-    // FIXED: Should have a meaningful message about no results at this offse
+    // FIXED: Should have a meaningful message about no results at this offset
     expect(result.content[0].text).toMatch(/No.*threads found.*offset|Try a smaller offset/);
   });
 });
