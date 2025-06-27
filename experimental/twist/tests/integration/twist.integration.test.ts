@@ -124,7 +124,7 @@ describe('Twist MCP Server Integration Tests', () => {
       const tools = result.tools;
 
       const getChannelsTool = tools.find((t) => t.name === 'get_channels');
-      expect(getChannelsTool?.description).toContain('Get a list of all channels');
+      expect(getChannelsTool?.description).toContain('List all channels in your Twist workspace');
       expect(getChannelsTool?.inputSchema?.required).toEqual([]);
 
       const createThreadTool = tools.find((t) => t.name === 'create_thread');
