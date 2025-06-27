@@ -113,9 +113,9 @@ Messages (${thread.messages?.length || 0} total):
               const timestamp = msg.created_ts
                 ? new Date(msg.created_ts * 1000).toLocaleString()
                 : 'Unknown time';
-              
+
               let messageText = `\n[${timestamp}] ${msg.creator || 'Unknown'}:\n${msg.content}`;
-              
+
               // Add action buttons if present
               if (msg.actions && msg.actions.length > 0) {
                 messageText += '\n\nAction buttons:';
@@ -129,7 +129,7 @@ Messages (${thread.messages?.length || 0} total):
                   }
                 });
               }
-              
+
               // Add attachments if present
               if (msg.attachments && msg.attachments.length > 0) {
                 messageText += '\n\nAttachments:';
@@ -144,7 +144,7 @@ Messages (${thread.messages?.length || 0} total):
                   }
                 });
               }
-              
+
               // Add reactions if present
               if (msg.reactions && Object.keys(msg.reactions).length > 0) {
                 messageText += '\n\nReactions:';
@@ -152,7 +152,7 @@ Messages (${thread.messages?.length || 0} total):
                   messageText += `\n  • ${emoji}: ${userIds.length} ${userIds.length === 1 ? 'user' : 'users'}`;
                 });
               }
-              
+
               // Add system message if present
               if (msg.system_message) {
                 const sm = msg.system_message;
@@ -174,7 +174,7 @@ Messages (${thread.messages?.length || 0} total):
                   messageText += `\n  Integration: ${sm.integration_name}`;
                 }
               }
-              
+
               return messageText;
             })
             .join('\n---');
