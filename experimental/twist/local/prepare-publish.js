@@ -9,7 +9,25 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 async function prepare() {
   console.log('Preparing for publish...');
 
-  // First, ensure shared directory is built
+  // First, ensure TypeScript is available
+  console.log('Installing TypeScript for build...');
+  try {
+    execSync('npm install --no-save typescript @types/node', { stdio: 'inherit' });
+  } catch (e) {
+    console.error('Failed to install TypeScript:', e.message);
+    process.exit(1);
+  }
+
+  // Build the local package first
+  console.log('Building local package...');
+  try {
+    execSync('npx tsc && npx tsc -p tsconfig.integration.json', { stdio: 'inherit' });
+  } catch (e) {
+    console.error('Failed to build local package:', e.message);
+    process.exit(1);
+  }
+
+  // Then, ensure shared directory is built
   const sharedDir = join(__dirname, '../shared');
   console.log('Building shared directory...');
   try {

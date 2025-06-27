@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.7] - 2025-06-27
+
+### Fixed
+
+- Improved npm publish process consistency with other servers
+- Updated prepare-publish.js to handle TypeScript installation properly
+
+## [0.2.6] - 2025-06-27
+
+### Fixed
+
+- Completely resolved npm publish build issues by moving all build logic into prepare-publish.js
+- prepare-publish.js now installs TypeScript temporarily during publish to avoid dependency issues
+- Removed build step from CI publish workflow to let prepublishOnly handle everything
+
 ## [0.2.5] - 2025-06-27
 
 ### Fixed
