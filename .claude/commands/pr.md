@@ -42,21 +42,8 @@ For detailed git workflow information including branch naming conventions and re
 
 #### Merge conflicts
 
-Immediately check if there are any merge conflicts. Resolve them by:
-
-- [ ] Analyze the commit(s) that introduced the merge conflicts so you understand their intent
-- [ ] Initiate a git rebase on `main`
-- [ ] Go file-by-file as conflicts occur, assessing what the right merging is that still accomplishes the intent of both your PR and the conflicting commits
-- [ ] Push changes that resolve the merge conflict
+Immediately check if there are any merge conflicts. Resolve them by following [merge_conflicts.md](./merge_conflicts.md).
 
 #### CI Monitoring
 
-After creating the PR with no merge conflicts, monitor CI status and fix any failures:
-
-1. Check CI status with `gh pr checks <PR_NUMBER> --repo <OWNER>/<REPO>`
-2. If any checks fail:
-   - View the failure logs
-   - Fix the issues locally
-   - Commit and push the fixes
-   - Continue monitoring until all checks pass
-3. Only proceed to Post-PR steps after all CI checks are green
+After creating the PR with no merge conflicts, monitor CI status and fix any failures by following [ensure_ci_success.md](./ensure_ci_success.md).

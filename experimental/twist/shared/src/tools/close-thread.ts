@@ -64,7 +64,7 @@ Use cases:
               text: `Successfully closed thread:
 - Thread ID: ${thread_id}
 - Closing message: "${message || 'Thread closed'}"
-- Closed at: ${result.created_ts ? new Date(result.created_ts * 1000).toLocaleString() : 'Just now'}
+- Closed at: ${result.posted_ts ? new Date(result.posted_ts * 1000).toLocaleString() : 'Just now'}
 
 The thread has been marked as closed.`,
             },

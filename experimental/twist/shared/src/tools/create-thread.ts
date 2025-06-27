@@ -80,7 +80,7 @@ Use cases:
 - Title: "${thread.title}"
 - ID: ${thread.id}
 - Channel ID: ${thread.channel_id}
-- Created: ${thread.created_ts ? new Date(thread.created_ts * 1000).toLocaleString() : 'Just now'}
+- Created: ${thread.posted_ts ? new Date(thread.posted_ts * 1000).toLocaleString() : 'Just now'}
 
 The thread has been created with your initial message.`,
             },

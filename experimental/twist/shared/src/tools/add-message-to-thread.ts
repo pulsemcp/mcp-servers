@@ -68,7 +68,7 @@ Use cases:
               text: `Successfully added message to thread:
 - Message ID: ${message.id}
 - Thread ID: ${message.thread_id}
-- Posted: ${message.created_ts ? new Date(message.created_ts * 1000).toLocaleString() : 'Just now'}
+- Posted: ${message.posted_ts ? new Date(message.posted_ts * 1000).toLocaleString() : 'Just now'}
 
 Your message has been posted to the thread.`,
             },

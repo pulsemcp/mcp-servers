@@ -168,12 +168,11 @@ describe('Twist MCP Server Integration Tests', () => {
       const result = await client.listTools();
       const tools = result.tools;
 
-      expect(tools).toHaveLength(7);
+      expect(tools).toHaveLength(6);
 
       const toolNames = tools.map((t) => t.name);
       expect(toolNames).toContain('get_channels');
       expect(toolNames).toContain('get_channel');
-      expect(toolNames).toContain('get_threads');
       expect(toolNames).toContain('get_thread');
       expect(toolNames).toContain('create_thread');
       expect(toolNames).toContain('add_message_to_thread');
@@ -209,7 +208,7 @@ describe('Twist MCP Server Integration Tests', () => {
   });
 
   describe('get_channel Tool', () => {
-    it('should get specific channel details', async () => {
+    it('should get specific channel details with threads by default', async () => {
       if (!client) throw new Error('Client not initialized');
 
       const result = await client.callTool('get_channel', {
@@ -220,25 +219,7 @@ describe('Twist MCP Server Integration Tests', () => {
       expect(result.content[0].text).toContain('Channel Details:');
       expect(result.content[0].text).toContain('Name: #general');
       expect(result.content[0].text).toContain('ID: ch_123');
-    });
-
-    it('should fail without channel_id', async () => {
-      if (!client) throw new Error('Client not initialized');
-
-      await expect(client.callTool('get_channel', {})).rejects.toThrow();
-    });
-  });
-
-  describe('get_threads Tool', () => {
-    it('should list only open threads by default', async () => {
-      if (!client) throw new Error('Client not initialized');
-
-      const result = await client.callTool('get_threads', {
-        channel_id: 'ch_123',
-      });
-
-      expect(result.content[0].type).toBe('text');
-      expect(result.content[0].text).toContain('Found 2 open threads:');
+      expect(result.content[0].text).toContain('Threads (2 open threads):');
       expect(result.content[0].text).toContain('Welcome Thread');
       expect(result.content[0].text).toContain('Another Open Thread');
       expect(result.content[0].text).not.toContain('Closed Discussion');
@@ -247,52 +228,35 @@ describe('Twist MCP Server Integration Tests', () => {
     it('should include closed threads when requested', async () => {
       if (!client) throw new Error('Client not initialized');
 
-      const result = await client.callTool('get_threads', {
+      const result = await client.callTool('get_channel', {
         channel_id: 'ch_123',
-        include_closed: true,
+        include_closed_threads: true,
       });
 
       expect(result.content[0].type).toBe('text');
-      expect(result.content[0].text).toContain('Found 3 threads:');
+      expect(result.content[0].text).toContain('Threads (3 threads):');
       expect(result.content[0].text).toContain('Welcome Thread');
       expect(result.content[0].text).toContain('Another Open Thread');
-      expect(result.content[0].text).toContain('Closed Discussion');
       expect(result.content[0].text).toContain('[CLOSED]');
     });
 
-    it('should support pagination with limit and offset', async () => {
+    it('should skip threads when include_threads is false', async () => {
       if (!client) throw new Error('Client not initialized');
 
-      // First page
-      const page1 = await client.callTool('get_threads', {
+      const result = await client.callTool('get_channel', {
         channel_id: 'ch_123',
-        limit: 1,
-        offset: 0,
+        include_threads: false,
       });
 
-      expect(page1.content[0].text).toContain('Found 2 open threads (showing 1-1 of 2)');
-      expect(page1.content[0].text).toContain('Welcome Thread');
-
-      // Second page
-      const page2 = await client.callTool('get_threads', {
-        channel_id: 'ch_123',
-        limit: 1,
-        offset: 1,
-      });
-
-      expect(page2.content[0].text).toContain('Found 2 open threads (showing 2-2 of 2)');
-      expect(page2.content[0].text).toContain('Another Open Thread');
+      expect(result.content[0].type).toBe('text');
+      expect(result.content[0].text).toContain('Channel Details:');
+      expect(result.content[0].text).not.toContain('Threads');
     });
 
-    it('should handle offset beyond available threads', async () => {
+    it('should fail without channel_id', async () => {
       if (!client) throw new Error('Client not initialized');
 
-      const result = await client.callTool('get_threads', {
-        channel_id: 'ch_123',
-        offset: 10,
-      });
-
-      expect(result.content[0].text).toContain('No threads to display at offset 10');
+      await expect(client.callTool('get_channel', {})).rejects.toThrow();
     });
   });
 

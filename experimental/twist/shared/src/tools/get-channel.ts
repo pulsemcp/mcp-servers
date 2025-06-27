@@ -1,6 +1,6 @@
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { z } from 'zod';
-import type { ClientFactory } from '../server.js';
+import type { ClientFactory, Thread } from '../server.js';
 
 /**
  * Tool for getting details about a specific channel
@@ -12,11 +12,43 @@ export function getChannelTool(server: Server, clientFactory: ClientFactory) {
       .describe(
         'The unique identifier of the channel (e.g., "123456"). Use get_channels to find channel IDs'
       ),
+    include_threads: z
+      .boolean()
+      .optional()
+      .default(true)
+      .describe('Whether to include threads in the channel (default: true)'),
+    threads_limit: z
+      .number()
+      .optional()
+      .default(10)
+      .describe(
+        'Maximum number of threads to return when include_threads is true (default: 10, max: 100)'
+      ),
+    threads_offset: z
+      .number()
+      .optional()
+      .default(0)
+      .describe(
+        'Number of threads to skip for pagination when include_threads is true (e.g., offset: 50 to get the next page after first 50)'
+      ),
+    include_closed_threads: z
+      .boolean()
+      .optional()
+      .default(false)
+      .describe(
+        'Whether to include closed threads in the results when include_threads is true (default: false, only shows open threads)'
+      ),
+    threads_newer_than_ts: z
+      .number()
+      .optional()
+      .describe(
+        'Unix timestamp in seconds to filter threads created after this time when include_threads is true (e.g., 1704067200 for Jan 1, 2024)'
+      ),
   });
 
   return {
     name: 'get_channel',
-    description: `Retrieve detailed information about a specific Twist channel. This tool provides comprehensive metadata about a channel including its name, description, creation date, and status. Use this when you need more information than what's provided by get_channels.
+    description: `Retrieve detailed information about a specific Twist channel along with its threads. This tool provides comprehensive metadata about a channel including its name, description, creation date, status, and optionally lists threads within the channel. By default, it includes open threads but this can be disabled or customized.
 
 Example response:
 Channel Details:
@@ -27,12 +59,18 @@ Channel Details:
 - Status: Active
 - Created: 3/15/2024, 10:30:00 AM
 
+Threads (8 open threads):
+- "Q4 Planning Discussion" (ID: 789012) - Last updated: 6/27/2025, 2:30:00 PM
+- "Bug Report: Login Issues" (ID: 789013) - Last updated: 6/27/2025, 10:15:00 AM
+- "Feature Request: Dark Mode" (ID: 789015) - Last updated: 6/25/2025, 11:20:00 AM
+
 Use cases:
-- Getting full details about a channel before creating threads in it
-- Verifying channel status (active vs archived) before operations
-- Retrieving channel descriptions for documentation purposes
-- Checking channel creation dates for auditing
-- Confirming workspace association for multi-workspace setups`,
+- Getting full channel overview including active discussions
+- Verifying channel status and content before operations
+- Browsing threads without a separate API call
+- Getting thread IDs for message operations
+- Monitoring channel activity with thread listing
+- Paginating through channel threads with offset and limit`,
     inputSchema: {
       type: 'object',
       properties: {
@@ -41,27 +79,127 @@ Use cases:
           description:
             'The unique identifier of the channel (e.g., "123456"). Use get_channels to find channel IDs',
         },
+        include_threads: {
+          type: 'boolean',
+          description: 'Whether to include threads in the channel (default: true)',
+          default: true,
+        },
+        threads_limit: {
+          type: 'number',
+          description:
+            'Maximum number of threads to return when include_threads is true (default: 10, max: 100)',
+          default: 10,
+        },
+        threads_offset: {
+          type: 'number',
+          description:
+            'Number of threads to skip for pagination when include_threads is true (e.g., offset: 50 to get the next page after first 50)',
+          default: 0,
+        },
+        include_closed_threads: {
+          type: 'boolean',
+          description:
+            'Whether to include closed threads in the results when include_threads is true (default: false, only shows open threads)',
+          default: false,
+        },
+        threads_newer_than_ts: {
+          type: 'number',
+          description:
+            'Unix timestamp in seconds to filter threads created after this time when include_threads is true (e.g., 1704067200 for Jan 1, 2024)',
+        },
       },
       required: ['channel_id'],
     },
     handler: async (args: unknown) => {
-      const { channel_id } = GetChannelSchema.parse(args);
+      const {
+        channel_id,
+        include_threads,
+        threads_limit,
+        threads_offset,
+        include_closed_threads,
+        threads_newer_than_ts,
+      } = GetChannelSchema.parse(args);
       const client = clientFactory();
 
       try {
         const channel = await client.getChannel(channel_id);
 
-        return {
-          content: [
-            {
-              type: 'text',
-              text: `Channel Details:
+        let channelInfo = `Channel Details:
 - Name: #${channel.name}
 - ID: ${channel.id}
 - Description: ${channel.description || 'No description'}
 - Workspace ID: ${channel.workspace_id}
 - Status: ${channel.archived ? 'Archived' : 'Active'}
-- Created: ${channel.created_ts ? new Date(channel.created_ts * 1000).toLocaleString() : 'Unknown'}`,
+- Created: ${channel.created_ts ? new Date(channel.created_ts * 1000).toLocaleString() : 'Unknown'}`;
+
+        // Include threads if requested
+        if (include_threads) {
+          try {
+            const threads = await client.getThreads(channel_id, {
+              limit: threads_limit,
+              newerThanTs: threads_newer_than_ts,
+            });
+
+            if (threads.length === 0) {
+              channelInfo += '\n\nNo threads found in this channel.';
+            } else {
+              // Sort threads by last update time (most recent first)
+              const sortedThreads = threads.sort(
+                (a, b) => (b.last_updated_ts || 0) - (a.last_updated_ts || 0)
+              );
+
+              // Filter out archived threads and optionally closed threads
+              let filteredThreads = sortedThreads.filter((thread) => !thread.archived);
+
+              if (!include_closed_threads) {
+                // Filter out closed threads - threads with 'closed' property set to true
+                filteredThreads = filteredThreads.filter((thread) => {
+                  // The API returns a 'closed' boolean on thread objects
+                  const threadWithClosed = thread as Thread & { closed?: boolean };
+                  return !threadWithClosed.closed;
+                });
+              }
+
+              // Apply offset and limit for pagination
+              const paginatedThreads = filteredThreads.slice(
+                threads_offset,
+                threads_offset + threads_limit
+              );
+
+              const threadList = paginatedThreads
+                .map((thread) => {
+                  const lastUpdated = thread.last_updated_ts
+                    ? new Date(thread.last_updated_ts * 1000).toLocaleString()
+                    : 'Unknown';
+                  const threadWithClosed = thread as Thread & { closed?: boolean };
+                  const closedStatus = threadWithClosed.closed ? ' [CLOSED]' : '';
+                  return `- "${thread.title}" (ID: ${thread.id})${closedStatus} - Last updated: ${lastUpdated}`;
+                })
+                .join('\n');
+
+              const statusText = include_closed_threads ? 'threads' : 'open threads';
+              const totalCount = filteredThreads.length;
+              const showingCount = paginatedThreads.length;
+              const paginationInfo =
+                totalCount > showingCount || threads_offset > 0
+                  ? ` (showing ${showingCount > 0 ? threads_offset + 1 : 0}-${threads_offset + showingCount} of ${totalCount})`
+                  : '';
+
+              channelInfo +=
+                showingCount > 0
+                  ? `\n\nThreads (${totalCount} ${statusText}${paginationInfo}):\n${threadList}`
+                  : `\n\nThreads (${totalCount} ${statusText}). No threads to display at offset ${threads_offset}.`;
+            }
+          } catch (threadsError) {
+            channelInfo += `\n\nError fetching threads: ${threadsError instanceof Error ? threadsError.message : 'Unknown error'}`;
+          }
+        }
+
+        return {
+          content: [
+            {
+              type: 'text',
+              text: channelInfo,
             },
           ],
         };

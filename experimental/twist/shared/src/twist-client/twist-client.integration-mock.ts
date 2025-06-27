@@ -74,7 +74,7 @@ export function createIntegrationMockTwistClient(
         let threads = mockData.threads[channelId];
 
         if (options?.newerThanTs) {
-          threads = threads.filter((t) => (t.created_ts || 0) > options.newerThanTs!);
+          threads = threads.filter((t) => (t.posted_ts || 0) > options.newerThanTs!);
         }
 
         // For integration tests, return all threads and let the tool handle pagination
@@ -91,7 +91,7 @@ export function createIntegrationMockTwistClient(
           channel_id: channelId,
           workspace_id: '228287',
           creator: 'user_123',
-          created_ts: Date.now() / 1000,
+          posted_ts: Date.now() / 1000,
           last_updated_ts: Date.now() / 1000,
           archived: false,
         },
@@ -110,7 +110,7 @@ export function createIntegrationMockTwistClient(
         channel_id: 'ch_123',
         workspace_id: '228287',
         creator: 'user_123',
-        created_ts: Date.now() / 1000,
+        posted_ts: Date.now() / 1000,
         last_updated_ts: Date.now() / 1000,
         archived: false,
         messages: mockData.messages?.[threadId] || [
@@ -119,7 +119,7 @@ export function createIntegrationMockTwistClient(
             thread_id: threadId,
             content: 'First message in the thread',
             creator: 'user_123',
-            created_ts: Date.now() / 1000,
+            posted_ts: Date.now() / 1000,
           },
         ],
       };
@@ -134,7 +134,7 @@ export function createIntegrationMockTwistClient(
         channel_id: channelId,
         workspace_id: '228287',
         creator: 'test_user',
-        created_ts: Date.now() / 1000,
+        posted_ts: Date.now() / 1000,
         last_updated_ts: Date.now() / 1000,
         archived: false,
       };
@@ -156,7 +156,7 @@ export function createIntegrationMockTwistClient(
         thread_id: threadId,
         content,
         creator: 'test_user',
-        created_ts: Date.now() / 1000,
+        posted_ts: Date.now() / 1000,
       };
 
       // Store in mock data if messages exist
@@ -176,7 +176,7 @@ export function createIntegrationMockTwistClient(
         thread_id: threadId,
         content: message || 'Thread closed',
         creator: 'test_user',
-        created_ts: Date.now() / 1000,
+        posted_ts: Date.now() / 1000,
       };
 
       // Store in mock data if messages exist

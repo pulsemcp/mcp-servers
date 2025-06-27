@@ -89,16 +89,16 @@ Use cases:
         let response = `Thread: "${thread.title}"
 ID: ${thread.id}
 Channel ID: ${thread.channel_id}
-Created: ${thread.created_ts ? new Date(thread.created_ts * 1000).toLocaleString() : 'Unknown'}
+Created: ${thread.posted_ts ? new Date(thread.posted_ts * 1000).toLocaleString() : 'Unknown'}
 Status: ${thread.archived ? 'Archived' : 'Active'}
 
 Messages (${thread.messages?.length || 0} total):
 `;
 
         if (thread.messages && thread.messages.length > 0) {
-          // Sort messages by creation time
+          // Sort messages by posted time
           const sortedMessages = thread.messages.sort(
-            (a, b) => (a.created_ts || 0) - (b.created_ts || 0)
+            (a, b) => (a.posted_ts || 0) - (b.posted_ts || 0)
           );
 
           // Apply offset and limit for pagination
@@ -110,11 +110,15 @@ Messages (${thread.messages?.length || 0} total):
 
           const messageList = paginatedMessages
             .map((msg) => {
-              const timestamp = msg.created_ts
-                ? new Date(msg.created_ts * 1000).toLocaleString()
+              // Use posted_ts for timestamp
+              const timestamp = msg.posted_ts
+                ? new Date(msg.posted_ts * 1000).toLocaleString()
                 : 'Unknown time';
 
-              let messageText = `\n[${timestamp}] ${msg.creator || 'Unknown'}:\n${msg.content}`;
+              // Use creator_name if available, fall back to creator ID
+              const author = msg.creator_name || msg.creator || 'Unknown';
+
+              let messageText = `\n[${timestamp}] ${author}:\n${msg.content}`;
 
               // Add action buttons if present
               if (msg.actions && msg.actions.length > 0) {
@@ -134,8 +138,26 @@ Messages (${thread.messages?.length || 0} total):
               if (msg.attachments && msg.attachments.length > 0) {
                 messageText += '\n\nAttachments:';
                 msg.attachments.forEach((attachment) => {
-                  messageText += `\n  • ${attachment.file_name} (${attachment.underlying_type})`;
-                  messageText += `\n    Size: ${attachment.file_size} bytes`;
+                  // For website attachments
+                  if (attachment.url_type === 'website' || attachment.url_type === 'object') {
+                    messageText += `\n  • ${attachment.title || 'Untitled'} - ${attachment.url}`;
+                    if (attachment.site_name) {
+                      messageText += `\n    Site: ${attachment.site_name}`;
+                    }
+                    if (attachment.description) {
+                      messageText += `\n    Description: ${attachment.description}`;
+                    }
+                  } else {
+                    // For file attachments
+                    const fileName = attachment.file_name || attachment.title || 'Unnamed file';
+                    messageText += `\n  • ${fileName}`;
+                    if (attachment.underlying_type) {
+                      messageText += ` (${attachment.underlying_type})`;
+                    }
+                    if (attachment.file_size) {
+                      messageText += `\n    Size: ${attachment.file_size} bytes`;
+                    }
+                  }
                   if (attachment.image) {
                     messageText += `\n    Image: ${attachment.image_width}x${attachment.image_height}`;
                   }

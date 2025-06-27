@@ -28,10 +28,10 @@ jobs:
       - name: Use Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20.x'
+          node-version-file: '.nvmrc'
 
       - name: Install dependencies
-        run: npm run install-all
+        run: npm ci && npm run install-all
 
       - name: Build project
         run: npm run build
@@ -68,19 +68,19 @@ jobs:
       - name: Use Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20.x'
+          node-version-file: '.nvmrc'
 
       - name: Install dependencies
-        run: npm install
+        run: npm ci
 
       - name: Install shared dependencies
-        run: cd shared && npm install
+        run: cd shared && npm ci
 
       - name: Install local dependencies
-        run: cd local && npm install
+        run: cd local && npm ci
 
       - name: Install test-mcp-client dependencies
-        run: cd ../../test-mcp-client && npm install
+        run: cd ../../test-mcp-client && npm ci
 
       - name: Build test-mcp-client
         run: cd ../../test-mcp-client && npm run build
