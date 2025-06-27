@@ -48,6 +48,12 @@ jobs:
             SERVER_NAME=$(basename "$SERVER_DIR")
             LOCAL_DIR="$SERVER_DIR/local"
             
+            # Skip the template directory
+            if [ "$SERVER_NAME" = "mcp-server-template" ]; then
+              echo "ℹ️  Skipping mcp-server-template (template directory)"
+              continue
+            fi
+            
             echo "Server: $SERVER_NAME"
             echo "Server directory: $SERVER_DIR"
             echo "Local directory: $LOCAL_DIR"
