@@ -3,7 +3,6 @@ import { ListToolsRequestSchema, CallToolRequestSchema } from '@modelcontextprot
 import { ClientFactory } from './server.js';
 import { getChannelsTool } from './tools/get-channels.js';
 import { getChannelTool } from './tools/get-channel.js';
-import { getThreadsTool } from './tools/get-threads.js';
 import { getThreadTool } from './tools/get-thread.js';
 import { createThreadTool } from './tools/create-thread.js';
 import { addMessageToThreadTool } from './tools/add-message-to-thread.js';
@@ -25,7 +24,6 @@ export function createRegisterTools(clientFactory: ClientFactory) {
     const tools = [
       getChannelsTool(server, clientFactory),
       getChannelTool(server, clientFactory),
-      getThreadsTool(server, clientFactory),
       getThreadTool(server, clientFactory),
       createThreadTool(server, clientFactory),
       addMessageToThreadTool(server, clientFactory),

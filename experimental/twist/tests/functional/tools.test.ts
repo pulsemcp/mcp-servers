@@ -3,7 +3,6 @@ import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { createFunctionalMockTwistClient } from '../mocks/twist-client.functional-mock.js';
 import { getChannelsTool } from '../../shared/src/tools/get-channels.js';
 import { getChannelTool } from '../../shared/src/tools/get-channel.js';
-import { getThreadsTool } from '../../shared/src/tools/get-threads.js';
 import { getThreadTool } from '../../shared/src/tools/get-thread.js';
 import { createThreadTool } from '../../shared/src/tools/create-thread.js';
 import { addMessageToThreadTool } from '../../shared/src/tools/add-message-to-thread.js';
@@ -43,7 +42,7 @@ describe('Twist Tools', () => {
   });
 
   describe('get_channel', () => {
-    it('should return channel details', async () => {
+    it('should return channel details with threads by default', async () => {
       const tool = getChannelTool(mockServer, () => mockClient);
 
       const result = await tool.handler({ channel_id: 'ch_123' });
@@ -54,46 +53,47 @@ describe('Twist Tools', () => {
       });
       expect(result.content[0].text).toContain('Name: #test-channel');
       expect(result.content[0].text).toContain('ID: ch_123');
+      expect(result.content[0].text).toContain('Threads (1 open threads):');
+      expect(result.content[0].text).toContain('"Test Thread" (ID: th_001)');
+    });
+
+    it('should return channel details without threads when include_threads is false', async () => {
+      const tool = getChannelTool(mockServer, () => mockClient);
+
+      const result = await tool.handler({ channel_id: 'ch_123', include_threads: false });
+
+      expect(result.content[0]).toMatchObject({
+        type: 'text',
+        text: expect.stringContaining('Channel Details:'),
+      });
+      expect(result.content[0].text).toContain('Name: #test-channel');
+      expect(result.content[0].text).not.toContain('Threads');
+    });
+
+    it('should handle empty thread list', async () => {
+      mockClient.getThreads = vi.fn().mockResolvedValue([]);
+      const tool = getChannelTool(mockServer, () => mockClient);
+
+      const result = await tool.handler({ channel_id: 'ch_123' });
+
+      expect(result.content[0].text).toContain('No threads found in this channel.');
+    });
+
+    it('should respect threads_limit parameter', async () => {
+      const tool = getChannelTool(mockServer, () => mockClient);
+
+      await tool.handler({ channel_id: 'ch_123', threads_limit: 10 });
+
+      expect(mockClient.getThreads).toHaveBeenCalledWith('ch_123', {
+        limit: 10,
+        newerThanTs: undefined,
+      });
     });
 
     it('should validate input parameters', async () => {
       const tool = getChannelTool(mockServer, () => mockClient);
 
       await expect(tool.handler({})).rejects.toThrow();
-    });
-  });
-
-  describe('get_threads', () => {
-    it('should return formatted thread list', async () => {
-      const tool = getThreadsTool(mockServer, () => mockClient);
-
-      const result = await tool.handler({ channel_id: 'ch_123' });
-
-      expect(result.content[0]).toMatchObject({
-        type: 'text',
-        text: expect.stringContaining('Found 1 open threads:'),
-      });
-      expect(result.content[0].text).toContain('"Test Thread" (ID: th_001)');
-    });
-
-    it('should handle empty thread list', async () => {
-      mockClient.getThreads = vi.fn().mockResolvedValue([]);
-      const tool = getThreadsTool(mockServer, () => mockClient);
-
-      const result = await tool.handler({ channel_id: 'ch_123' });
-
-      expect(result.content[0].text).toBe('No threads found in this channel.');
-    });
-
-    it('should respect limit parameter', async () => {
-      const tool = getThreadsTool(mockServer, () => mockClient);
-
-      await tool.handler({ channel_id: 'ch_123', limit: 10 });
-
-      expect(mockClient.getThreads).toHaveBeenCalledWith('ch_123', {
-        limit: 10,
-        newerThanTs: undefined,
-      });
     });
   });
 

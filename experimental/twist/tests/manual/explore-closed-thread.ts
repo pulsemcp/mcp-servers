@@ -49,11 +49,12 @@ async function exploreClosedThread() {
     const companyWideChannelId = channelMatch[1];
     console.log(`\n✅ Found #company-wide channel: ${companyWideChannelId}`);
 
-    // List threads in the channel
-    console.log('\n📜 Listing threads in #company-wide...');
-    const threadsResult = await client.callTool('get_threads', {
+    // Get channel with threads
+    console.log('\n📜 Getting #company-wide channel with threads...');
+    const threadsResult = await client.callTool('get_channel', {
       channel_id: companyWideChannelId,
-      limit: 50,
+      threads_limit: 50,
+      include_closed_threads: true,
     });
     console.log(threadsResult.content[0].text);
 

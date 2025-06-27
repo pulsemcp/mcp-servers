@@ -126,21 +126,21 @@ describe('Twist Manual Tests', () => {
         return;
       }
 
-      console.log(`\n📜 Listing threads in channel ${testChannelId}...`);
+      console.log(`\n📜 Getting channel ${testChannelId} with threads...`);
 
-      const result = await client.callTool('get_threads', {
+      const result = await client.callTool('get_channel', {
         channel_id: testChannelId,
-        limit: 5,
+        threads_limit: 5,
       });
       console.log('Response:', result.content[0].text);
 
       expect(result.content[0].type).toBe('text');
+      expect(result.content[0].text).toContain('Channel Details:');
       // Could be empty or have threads
       if (result.content[0].text.includes('No threads found')) {
         console.log('✅ Channel is empty (no threads)');
-      } else {
-        expect(result.content[0].text).toContain('Found');
-        expect(result.content[0].text).toContain('threads:');
+      } else if (result.content[0].text.includes('Threads')) {
+        expect(result.content[0].text).toContain('threads)');
       }
     });
 
@@ -292,15 +292,15 @@ describe('Twist Manual Tests', () => {
       console.log('\n📊 Testing pagination with different limits...');
 
       // Test with small limit
-      const result1 = await client.callTool('get_threads', {
+      const result1 = await client.callTool('get_channel', {
         channel_id: testChannelId,
-        limit: 2,
+        threads_limit: 2,
       });
 
       // Test with larger limit
-      const result2 = await client.callTool('get_threads', {
+      const result2 = await client.callTool('get_channel', {
         channel_id: testChannelId,
-        limit: 10,
+        threads_limit: 10,
       });
 
       expect(result1.content[0].type).toBe('text');

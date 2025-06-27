@@ -47,39 +47,39 @@ async function testPaginationAndFilters() {
     const channelId = channelMatch[1];
     console.log(`✅ Found channel ID: ${channelId}\n`);
 
-    // Test 1: Get threads with default settings (should exclude closed threads)
-    console.log('=== Test 1: Default settings (open threads only, limit 50) ===');
-    const defaultResult = await client.callTool('get_threads', {
+    // Test 1: Get channel with threads (default settings should exclude closed threads)
+    console.log('=== Test 1: Channel with threads (open threads only, default limit) ===');
+    const defaultResult = await client.callTool('get_channel', {
       channel_id: channelId,
     });
     console.log(defaultResult.content[0].text);
     console.log('');
 
-    // Test 2: Get threads including closed ones
-    console.log('=== Test 2: Include closed threads ===');
-    const withClosedResult = await client.callTool('get_threads', {
+    // Test 2: Get channel with threads including closed ones
+    console.log('=== Test 2: Channel with closed threads included ===');
+    const withClosedResult = await client.callTool('get_channel', {
       channel_id: channelId,
-      include_closed: true,
+      include_closed_threads: true,
     });
     console.log(withClosedResult.content[0].text);
     console.log('');
 
     // Test 3: Test pagination with smaller limit
-    console.log('=== Test 3: Pagination - First 5 threads ===');
-    const page1Result = await client.callTool('get_threads', {
+    console.log('=== Test 3: Channel with first 5 threads ===');
+    const page1Result = await client.callTool('get_channel', {
       channel_id: channelId,
-      limit: 5,
-      offset: 0,
+      threads_limit: 5,
+      threads_offset: 0,
     });
     console.log(page1Result.content[0].text);
     console.log('');
 
     // Test 4: Get next page
-    console.log('=== Test 4: Pagination - Next 5 threads (offset 5) ===');
-    const page2Result = await client.callTool('get_threads', {
+    console.log('=== Test 4: Channel with next 5 threads (offset 5) ===');
+    const page2Result = await client.callTool('get_channel', {
       channel_id: channelId,
-      limit: 5,
-      offset: 5,
+      threads_limit: 5,
+      threads_offset: 5,
     });
     console.log(page2Result.content[0].text);
     console.log('');
