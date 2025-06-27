@@ -131,7 +131,10 @@ describe('Twist MCP Server Integration Tests (Published Build)', () => {
     };
 
     // Path to our published build integration entry point that uses mocked external services
-    const serverPath = path.join(__dirname, '../../published-build/build/index.integration-with-mock.js');
+    const serverPath = path.join(
+      __dirname,
+      '../../published-build/build/index.integration-with-mock.js'
+    );
 
     client = new TestMCPClient({
       serverPath,
