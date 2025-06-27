@@ -20,7 +20,7 @@
     "test:ui": "vitest --ui",
     "test:run": "vitest run",
     "test:integration": "npm run build:test && vitest run -c vitest.config.integration.ts && npm run clean",
-    "test:integration-published": "npm run build:test-published && vitest run -c vitest.config.integration-published.ts && npm run clean",
+    "test:integration-published": "npm run build:test-published && MCP_TEST_BUILD_TYPE=published vitest run -c vitest.config.integration.ts && npm run clean",
     "test:integration:watch": "vitest -c vitest.config.integration.ts",
     "test:manual": "vitest run -c vitest.config.manual.ts",
     "test:all": "npm run test:run && npm run test:integration && npm run test:integration-published",

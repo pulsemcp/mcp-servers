@@ -209,7 +209,11 @@ async function createTestMCPClientWithMock(
 ): Promise<TestMCPClient> {
   const mockData = mockAppSignalClient.mockData || {};
 
-  const serverPath = path.join(__dirname, '../../local/build/index.integration-with-mock.js');
+  // Support testing against both local and published builds
+  const buildType = process.env.MCP_TEST_BUILD_TYPE || 'local';
+  const serverPath = buildType === 'published' 
+    ? path.join(__dirname, '../../published-build/build/index.integration-with-mock.js')
+    : path.join(__dirname, '../../local/build/index.integration-with-mock.js');
 
   const env: Record<string, string> = {
     APPSIGNAL_API_KEY: 'test-api-key',

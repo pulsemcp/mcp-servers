@@ -16,7 +16,7 @@
     "dev:integration": "tsx src/index.integration-with-mock.ts",
     "predev": "cd ../shared && npm run build && cd ../local && node setup-dev.js",
     "prebuild": "cd ../shared && npm run build && cd ../local && node setup-dev.js",
-    "prepublishOnly": "node prepare-publish.js && node ../scripts/prepare-npm-readme.js",
+    "prepublishOnly": "node prepare-publish.js",
     "lint": "eslint . --ext .ts,.tsx",
     "lint:fix": "eslint . --ext .ts,.tsx --fix",
     "format": "prettier --write .",
