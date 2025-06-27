@@ -12,6 +12,8 @@ build/
 !**/dist/**
 !**/build/**
 !scripts/**/*.js
+!local/prepare-publish.js
+!local/setup-dev.js
 
 # Environment variables
 .env
@@ -35,3 +37,6 @@ yarn-error.log*
 # Package manager
 yarn.lock
 pnpm-lock.yaml
+
+# Shared directory symlink/copy in local package
+local/shared
