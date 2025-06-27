@@ -125,9 +125,10 @@ async function createTestMCPClientWithMock(
 
   // Support testing against both local and published builds
   const buildType = process.env.MCP_TEST_BUILD_TYPE || 'local';
-  const serverPath = buildType === 'published' 
-    ? path.join(__dirname, '../../published-build/build/index.integration-with-mock.js')
-    : path.join(__dirname, '../../local/build/index.integration-with-mock.js');
+  const serverPath =
+    buildType === 'published'
+      ? path.join(__dirname, '../../published-build/build/index.integration-with-mock.js')
+      : path.join(__dirname, '../../local/build/index.integration-with-mock.js');
 
   const client = new TestMCPClient({
     serverPath,
