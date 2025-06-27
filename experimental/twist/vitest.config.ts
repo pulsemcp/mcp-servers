@@ -10,6 +10,7 @@ export default defineConfig({
       '**/dist/**',
       '**/build/**',
       '**/integration/**',
+      '**/integration-published/**',
       '**/manual/**',
     ],
   },
