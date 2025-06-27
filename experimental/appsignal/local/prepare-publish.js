@@ -2,11 +2,22 @@
 import { cp, rm } from 'fs/promises';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
+import { execSync } from 'child_process';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 async function prepare() {
   console.log('Preparing for publish...');
+
+  // First, ensure shared directory is built
+  const sharedDir = join(__dirname, '../shared');
+  console.log('Building shared directory...');
+  try {
+    execSync('npm install && npm run build', { cwd: sharedDir, stdio: 'inherit' });
+  } catch (e) {
+    console.error('Failed to build shared directory:', e.message);
+    process.exit(1);
+  }
 
   // Clean up any existing shared directory
   try {

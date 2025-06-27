@@ -22,6 +22,9 @@ build/
 !**/prepare-publish.js
 !**/setup-dev.js
 
+# Ignore shared symlinks in local directories
+**/local/shared
+
 # Logs
 logs
 *.log
