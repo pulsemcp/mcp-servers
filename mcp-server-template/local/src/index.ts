@@ -21,14 +21,14 @@ function validateEnvironment(): void {
     missing.forEach(({ name, description }) => {
       console.error(`  - ${name}: ${description}`);
     });
-    
+
     if (optional.length > 0) {
       console.error('\nOptional environment variables:');
       optional.forEach(({ name, description }) => {
         console.error(`  - ${name}: ${description}`);
       });
     }
-    
+
     console.error('\nPlease set the required environment variables and try again.');
     console.error('Example:');
     console.error('  export YOUR_API_KEY="your-api-key"');

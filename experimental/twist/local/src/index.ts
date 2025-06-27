@@ -6,7 +6,7 @@ import { createMCPServer } from 'twist-mcp-server-shared';
 function validateEnvironment(): void {
   const required = [
     { name: 'TWIST_BEARER_TOKEN', description: 'Twist API bearer token for authentication' },
-    { name: 'TWIST_WORKSPACE_ID', description: 'Twist workspace ID to operate within' }
+    { name: 'TWIST_WORKSPACE_ID', description: 'Twist workspace ID to operate within' },
   ];
 
   const missing = required.filter(({ name }) => !process.env[name]);

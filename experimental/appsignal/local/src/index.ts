@@ -6,11 +6,14 @@ import { createMCPServer } from 'appsignal-mcp-server-shared';
 // Validate required environment variables before starting
 function validateEnvironment(): void {
   const required = [
-    { name: 'APPSIGNAL_API_KEY', description: 'AppSignal API key for authentication' }
+    { name: 'APPSIGNAL_API_KEY', description: 'AppSignal API key for authentication' },
   ];
 
   const optional = [
-    { name: 'APPSIGNAL_APP_ID', description: 'AppSignal application ID (optional - can be selected dynamically)' }
+    {
+      name: 'APPSIGNAL_APP_ID',
+      description: 'AppSignal application ID (optional - can be selected dynamically)',
+    },
   ];
 
   const missing = required.filter(({ name }) => !process.env[name]);

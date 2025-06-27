@@ -91,12 +91,10 @@ Update the `validateEnvironment()` function in `local/src/index.ts` with your se
 ```typescript
 const required = [
   { name: 'YOUR_API_KEY', description: 'API key for authentication' },
-  { name: 'YOUR_ENDPOINT', description: 'API endpoint URL' }
+  { name: 'YOUR_ENDPOINT', description: 'API endpoint URL' },
 ];
 
-const optional = [
-  { name: 'YOUR_TIMEOUT', description: 'Request timeout in milliseconds' }
-];
+const optional = [{ name: 'YOUR_TIMEOUT', description: 'Request timeout in milliseconds' }];
 ```
 
 ## Development

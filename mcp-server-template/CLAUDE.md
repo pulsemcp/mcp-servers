@@ -116,13 +116,9 @@ The template includes built-in environment variable validation that runs before 
 Update the `validateEnvironment()` function in `local/src/index.ts` with your requirements:
 
 ```typescript
-const required = [
-  { name: 'YOUR_API_KEY', description: 'API key for authentication' },
-];
+const required = [{ name: 'YOUR_API_KEY', description: 'API key for authentication' }];
 
-const optional = [
-  { name: 'YOUR_OPTIONAL_CONFIG', description: 'Optional configuration' }
-];
+const optional = [{ name: 'YOUR_OPTIONAL_CONFIG', description: 'Optional configuration' }];
 ```
 
 ### Adding Tools
