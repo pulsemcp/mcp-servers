@@ -75,7 +75,10 @@ jobs:
           node-version-file: '.nvmrc'
 
       - name: Install dependencies
-        run: npm install
+        run: |
+          # Remove lockfile to force fresh install with Linux binaries
+          rm -f package-lock.json
+          npm install
 
       - name: Install shared dependencies
         run: cd shared && npm install
