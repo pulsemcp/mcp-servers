@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Environment variable validation at server startup
+  - Server now validates `TWIST_BEARER_TOKEN` and `TWIST_WORKSPACE_ID` before starting
+  - Provides clear error messages with descriptions when variables are missing
+  - Includes example export commands to help users fix configuration issues
+  - Exits with error code 1 on validation failure
+
 ## [0.1.2] - 2025-06-27
 
 ### Added
