@@ -31,7 +31,7 @@ jobs:
           node-version-file: '.nvmrc'
 
       - name: Install dependencies
-        run: npm run install-all
+        run: npm install --force && npm run install-all
 
       - name: Build project
         run: npm run build
