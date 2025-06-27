@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.2] - 2025-06-27
+
+### Added
+
+- Pagination support for `get_threads` tool with `limit` and `offset` parameters
+- Pagination support for `get_thread` tool with `message_limit` and `message_offset` parameters
+- Filtering support for `get_threads` tool with `include_closed` parameter to optionally show closed threads
+- Detection of closed threads based on the `closed` property from Twist API
+
+### Changed
+
+- Default behavior of `get_threads` now excludes closed threads (breaking change for those expecting all threads)
+- Reduced default thread limit from 50 to 10 to minimize API calls
+- Updated tool descriptions to clarify pagination and filtering behavior
+
 ## [0.1.1] - 2025-06-27
 
 ### Fixed
