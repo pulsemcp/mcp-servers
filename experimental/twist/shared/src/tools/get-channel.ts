@@ -140,7 +140,7 @@ Use cases:
             let effectiveNewerThanTs = threads_newer_than_ts;
             if (!effectiveNewerThanTs) {
               // Default to threads from the last 90 days if no date filter is provided
-              const ninetyDaysAgo = Math.floor(Date.now() / 1000) - (90 * 24 * 60 * 60);
+              const ninetyDaysAgo = Math.floor(Date.now() / 1000) - 90 * 24 * 60 * 60;
               effectiveNewerThanTs = ninetyDaysAgo;
             }
 
@@ -216,9 +216,10 @@ Use cases:
               const endIndex = threads_offset + showingCount;
               const hasMoreResults = threads.length >= fetchLimit; // Might have more data beyond what we fetched
 
-              const paginationInfo = threads_offset > 0 || showingCount < totalFilteredCount || hasMoreResults
-                ? ` (showing ${showingCount > 0 ? startIndex : 0}-${endIndex}${hasMoreResults ? '+' : ` of ${totalFilteredCount}`})`
-                : '';
+              const paginationInfo =
+                threads_offset > 0 || showingCount < totalFilteredCount || hasMoreResults
+                  ? ` (showing ${showingCount > 0 ? startIndex : 0}-${endIndex}${hasMoreResults ? '+' : ` of ${totalFilteredCount}`})`
+                  : '';
 
               channelInfo +=
                 showingCount > 0

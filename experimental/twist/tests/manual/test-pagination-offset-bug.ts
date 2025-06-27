@@ -132,7 +132,7 @@ describe('Pagination Offset Bug Fix Tests', () => {
 
     console.log('🔧 === VERIFYING BUG FIX: Offset Pagination ===\n');
 
-    const sixtyDaysAgo = Math.floor(Date.now() / 1000) - (60 * 24 * 60 * 60);
+    const sixtyDaysAgo = Math.floor(Date.now() / 1000) - 60 * 24 * 60 * 60;
 
     // Get first 5 threads with offset 0
     const page1Result = await client.callTool('get_channel', {
@@ -157,19 +157,19 @@ describe('Pagination Offset Bug Fix Tests', () => {
     console.log('Page 1 (offset 0, limit 5):');
     const page1Threads = page1Result.content[0].text.match(/"[^"]*" \(ID: [^)]+\)/g);
     if (page1Threads) {
-      page1Threads.forEach(thread => console.log(`  - ${thread}`));
+      page1Threads.forEach((thread) => console.log(`  - ${thread}`));
     }
 
     console.log('\nPage 2 (offset 5, limit 5):');
     const page2Threads = page2Result.content[0].text.match(/"[^"]*" \(ID: [^)]+\)/g);
     if (page2Threads) {
-      page2Threads.forEach(thread => console.log(`  - ${thread}`));
+      page2Threads.forEach((thread) => console.log(`  - ${thread}`));
     }
 
     // FIXED: Should have no overlap between pages
     if (page1Threads && page2Threads) {
-      const overlap = page1Threads.some(thread1 =>
-        page2Threads.some(thread2 => thread1 === thread2)
+      const overlap = page1Threads.some((thread1) =>
+        page2Threads.some((thread2) => thread1 === thread2)
       );
 
       expect(overlap).toBe(false);
@@ -189,7 +189,7 @@ describe('Pagination Offset Bug Fix Tests', () => {
 
     console.log('🔧 === VERIFYING BUG FIX: Consistent Filtering Behavior ===\n');
 
-    const sixtyDaysAgo = Math.floor(Date.now() / 1000) - (60 * 24 * 60 * 60);
+    const sixtyDaysAgo = Math.floor(Date.now() / 1000) - 60 * 24 * 60 * 60;
 
     // Test offset behavior with mixed open/closed threads
     const mixedPage1 = await client.callTool('get_channel', {
