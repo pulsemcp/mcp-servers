@@ -1,0 +1,92 @@
+name: Twist MCP Server CI
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'experimental/twist/**'
+      - '.github/workflows/twist-ci.yml'
+  pull_request:
+    paths:
+      - 'experimental/twist/**'
+      - '.github/workflows/twist-ci.yml'
+
+jobs:
+  functional-tests:
+    name: Twist MCP Server Functional Tests
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: experimental/twist
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+
+      - name: Install dependencies
+        run: npm run install-all
+
+      - name: Build project
+        run: npm run build
+
+      - name: Install and build test-mcp-client
+        run: cd ../../test-mcp-client && npm install && npm run build
+
+      - name: Run functional tests
+        run: npm run test:run -- --reporter=json --reporter=default --outputFile=test-results.json
+        env:
+          TWIST_BEARER_TOKEN: test-token
+          TWIST_WORKSPACE_ID: test-workspace
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: functional-test-results
+          path: experimental/twist/test-results.json
+          retention-days: 7
+
+  integration-tests:
+    name: Twist MCP Server Integration Tests
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: experimental/twist
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Install shared dependencies
+        run: cd shared && npm install
+
+      - name: Install local dependencies
+        run: cd local && npm install
+
+      - name: Install test-mcp-client dependencies
+        run: cd ../../test-mcp-client && npm install
+
+      - name: Build test-mcp-client
+        run: cd ../../test-mcp-client && npm run build
+
+      - name: Run integration tests
+        run: npm run test:integration
+        env:
+          TWIST_BEARER_TOKEN: test-token
+          TWIST_WORKSPACE_ID: test-workspace
