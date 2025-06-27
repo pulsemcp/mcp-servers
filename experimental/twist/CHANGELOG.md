@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2025-06-27
+
+### Fixed
+
+- Fixed npm publish build issues by updating prepare-publish script to properly install and build shared dependencies
+- Removed prebuild scripts that were causing TypeScript compilation errors in CI environment
+
 ## [0.1.8] - 2025-06-27
 
 ### Fixed
