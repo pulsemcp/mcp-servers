@@ -1,6 +1,6 @@
 {
   "name": "appsignal-mcp-server",
-  "version": "0.2.8",
+  "version": "0.2.9",
   "description": "Local implementation of AppSignal MCP server",
   "main": "build/index.js",
   "type": "module",
@@ -26,6 +26,8 @@
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.4",
     "dotenv": "^16.5.0",
+    "graphql": "^16.11.0",
+    "graphql-request": "^7.2.0",
     "zod": "^3.24.1"
   },
   "devDependencies": {

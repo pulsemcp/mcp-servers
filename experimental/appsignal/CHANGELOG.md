@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.9] - 2025-06-27
+
+### Fixed
+
+- Added missing graphql and graphql-request dependencies to local package.json
+- This fixes runtime errors when running the server via npx or npm install
+
 ## [0.2.8] - 2025-06-27
 
 ### Fixed
