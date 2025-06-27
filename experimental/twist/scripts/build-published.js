@@ -27,10 +27,10 @@ async function buildPublished() {
   const sharedLinkPath = join(publishedBuildDir, 'shared');
   console.log('Building shared package...');
   execSync('npm run build', { cwd: sharedDir, stdio: 'inherit' });
-  
+
   // Create symlink for relative import path
   execSync(`ln -sf ${sharedDir}/dist ${sharedLinkPath}`, { stdio: 'inherit' });
-  
+
   // Also copy to node_modules for package resolution
   const sharedDestDir = join(publishedBuildDir, 'node_modules', 'twist-mcp-server-shared');
   execSync(`mkdir -p ${dirname(sharedDestDir)}`, { stdio: 'inherit' });
