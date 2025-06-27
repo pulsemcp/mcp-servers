@@ -123,18 +123,51 @@ export function createFunctionalMockTwistClient(): ITwistClient {
           newerThanTs?: number;
         }
       ) => {
-        // Mock the same logic as the real implementation
+        // Mock multiple threads to support pagination tests from main
         const allThreads = [
           {
             id: 'th_001',
-            title: 'Test Thread',
+            title: 'Test Thread 1',
             channel_id: channelId,
             workspace_id: '228287',
             creator: 'user_123',
             posted_ts: 1234567890,
-            last_updated_ts: 1234567890,
+            last_updated_ts: 1234567895,
             archived: false,
             closed: false,
+          },
+          {
+            id: 'th_002',
+            title: 'Test Thread 2',
+            channel_id: channelId,
+            workspace_id: '228287',
+            creator: 'user_123',
+            posted_ts: 1234567890,
+            last_updated_ts: 1234567894,
+            archived: false,
+            closed: true,
+          },
+          {
+            id: 'th_003',
+            title: 'Test Thread 3',
+            channel_id: channelId,
+            workspace_id: '228287',
+            creator: 'user_123',
+            posted_ts: 1234567890,
+            last_updated_ts: 1234567893,
+            archived: false,
+            closed: false,
+          },
+          {
+            id: 'th_004',
+            title: 'Test Thread 4',
+            channel_id: channelId,
+            workspace_id: '228287',
+            creator: 'user_123',
+            posted_ts: 1234567890,
+            last_updated_ts: 1234567892,
+            archived: false,
+            closed: true,
           },
         ] as Thread[];
 
