@@ -21,6 +21,7 @@ build/
 # Keep helper scripts
 !**/prepare-publish.js
 !**/setup-dev.js
+!**/build-published.js
 
 # Ignore shared symlinks in local directories
 **/local/shared
