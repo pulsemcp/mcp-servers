@@ -1,4 +1,4 @@
-import { describe, it, expect, afterEach } from 'vitest';
+import { describe, it, expect, afterEach } from "vitest";
 import { TestMCPClient } from '../../../../test-mcp-client/dist/index.js';
 import { createIntegrationMockAppsignalClient } from '../../shared/src/appsignal-client/appsignal-client.integration-mock.js';
 import type { IAppsignalClient } from '../../shared/src/appsignal-client/appsignal-client.js';
