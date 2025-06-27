@@ -130,6 +130,41 @@ npm run test:manual
 4. Replace "NAME" and "DESCRIPTION" placeholders
 5. Implement your resources and tools in src/index.ts
 
+## Workspace Dependencies and Import Paths
+
+**CRITICAL: DO NOT modify workspace import paths without understanding the publish workflow.**
+
+Some MCP servers (like `experimental/twist/` and `experimental/appsignal/`) use a specialized workspace setup with carefully designed import paths that support both development and publishing:
+
+### Development vs. Publishing Setup
+
+These servers have a `local/` and `shared/` structure where:
+
+- **Development**: `local/setup-dev.js` creates symlinks for development (e.g., `local/shared` → `../shared/dist`)
+- **Publishing**: `local/prepare-publish.js` copies built files for npm publishing
+- **Imports**: Use relative paths like `'../shared/index.js'` that work in both scenarios
+
+### Import Path Rules
+
+**✅ CORRECT**: 
+```typescript
+import { createMCPServer } from '../shared/index.js';
+```
+
+**❌ WRONG** - Breaks publish workflow:
+```typescript
+import { createMCPServer } from 'twist-mcp-server-shared';  // Package name
+import { createMCPServer } from '../shared/dist/index.js';  // Direct dist path
+```
+
+### If You Encounter Import Errors
+
+1. **First**, run the setup script: `node setup-dev.js` in the `local/` directory
+2. **Then**, ensure the shared module is built: `npm run build` in the `shared/` directory
+3. **Never** change import paths to use package names or direct dist paths
+
+This setup was established in commits #89, #91, #92 to resolve TypeScript build and npm publish issues. Modifying these import paths will break the publishing workflow.
+
 ## Additional Documentation
 
 Each server directory contains its own CLAUDE.md with specific implementation details.

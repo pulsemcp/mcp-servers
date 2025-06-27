@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.12] - 2025-06-27
+
+### Fixed
+
+- Fixed missing first message in thread responses by including thread content as the first chronological message
+- Enhanced Thread interface to include content, attachments, actions, and reactions fields
+- Updated get_thread tool to properly combine thread content with comments in chronological order
+- Fixed message count display to reflect all messages including the original thread content
+
 ## [0.1.11] - 2025-06-27
 
 ### Fixed

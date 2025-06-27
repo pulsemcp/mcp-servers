@@ -57,9 +57,11 @@ export function createFunctionalMockTwistClient(): ITwistClient {
           channel_id: 'ch_123',
           workspace_id: '228287',
           creator: 'user_123',
+          creator_name: 'Thread Creator',
           posted_ts: 1234567890,
           last_updated_ts: 1234567890,
           archived: false,
+          content: 'This is the original thread content that starts the discussion',
           messages: [
             {
               id: 'msg_001',

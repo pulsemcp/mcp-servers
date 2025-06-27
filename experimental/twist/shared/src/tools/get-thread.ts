@@ -86,18 +86,42 @@ Use cases:
       try {
         const thread = await client.getThread(thread_id);
 
+        // Combine thread content (first message) with comments
+        const allMessages = [];
+        
+        // Add thread content as the first message if it exists
+        if (thread.content) {
+          allMessages.push({
+            id: `thread-${thread.id}`,
+            thread_id: thread.id,
+            content: thread.content,
+            creator: thread.creator,
+            creator_name: thread.creator_name,
+            posted_ts: thread.posted_ts,
+            actions: thread.actions,
+            attachments: thread.attachments,
+            reactions: thread.reactions,
+            system_message: null,
+          });
+        }
+        
+        // Add all comment messages
+        if (thread.messages && thread.messages.length > 0) {
+          allMessages.push(...thread.messages);
+        }
+
         let response = `Thread: "${thread.title}"
 ID: ${thread.id}
 Channel ID: ${thread.channel_id}
 Created: ${thread.posted_ts ? new Date(thread.posted_ts * 1000).toLocaleString() : 'Unknown'}
 Status: ${thread.archived ? 'Archived' : 'Active'}
 
-Messages (${thread.messages?.length || 0} total):
+Messages (${allMessages.length} total):
 `;
 
-        if (thread.messages && thread.messages.length > 0) {
-          // Sort messages by posted time
-          const sortedMessages = thread.messages.sort(
+        if (allMessages.length > 0) {
+          // Sort all messages by posted time
+          const sortedMessages = allMessages.sort(
             (a, b) => (a.posted_ts || 0) - (b.posted_ts || 0)
           );
 
@@ -207,8 +231,8 @@ Messages (${thread.messages?.length || 0} total):
               : '';
 
           response = response.replace(
-            `Messages (${thread.messages?.length || 0} total):`,
-            `Messages (${thread.messages?.length || 0} total)${paginationInfo}:`
+            `Messages (${allMessages.length} total):`,
+            `Messages (${allMessages.length} total)${paginationInfo}:`
           );
           response += messageList;
         } else {
