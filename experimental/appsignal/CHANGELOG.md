@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.2] - 2025-06-27
+
 ### Added
 
 - Environment variable validation at server startup
@@ -16,6 +18,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Includes example export commands to help users fix configuration issues
   - Exits with error code 1 on validation failure
   - Logs informational message when APPSIGNAL_APP_ID is set
+
+### Fixed
+
+- Added missing `bin` field to package.json to enable proper executable installation via npx
 
 ## [0.2.1] - 2025-06-26
 

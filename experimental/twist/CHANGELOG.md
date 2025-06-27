@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.3] - 2025-06-27
+
 ### Added
 
 - Environment variable validation at server startup
@@ -14,6 +16,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Provides clear error messages with descriptions when variables are missing
   - Includes example export commands to help users fix configuration issues
   - Exits with error code 1 on validation failure
+
+### Changed
+
+- **BREAKING**: Consolidated `get_threads` functionality into `get_channel` tool
+  - Removed standalone `get_threads` tool
+  - `get_channel` now includes threads by default (disable with `include_threads=false`)
+  - Added thread-specific parameters: `threads_limit`, `threads_offset`, `include_closed_threads`, `threads_newer_than_ts`
+- Messages and threads now use `posted_ts` instead of `created_ts` to match Twist API
+- Added `creator_name` field to messages for better user display
+
+### Fixed
+
+- Added missing `bin` field to package.json to enable proper executable installation via npx
+- Fixed message timestamp display to show actual posted times
+- Fixed attachment display logic for website/object type attachments
 
 ## [0.1.2] - 2025-06-27
 
