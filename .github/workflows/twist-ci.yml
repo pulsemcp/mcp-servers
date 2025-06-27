@@ -32,8 +32,8 @@ jobs:
 
       - name: Install dependencies
         run: |
-          # Try npm ci first, fall back to npm install if platform binaries are missing
-          npm ci || npm install
+          # Use npm install to handle platform-specific dependencies
+          npm install
           npm run install-all
 
       - name: Build project
@@ -74,9 +74,7 @@ jobs:
           node-version-file: '.nvmrc'
 
       - name: Install dependencies
-        run: |
-          # Try npm ci first, fall back to npm install if platform binaries are missing
-          npm ci || npm install
+        run: npm install
 
       - name: Install shared dependencies
         run: cd shared && npm install
