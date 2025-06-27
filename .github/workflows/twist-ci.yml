@@ -31,7 +31,11 @@ jobs:
           node-version-file: '.nvmrc'
 
       - name: Install dependencies
-        run: npm install --force && npm run install-all
+        run: |
+          # Remove lockfile to force fresh install with Linux binaries
+          rm -f package-lock.json
+          npm install
+          npm run install-all
 
       - name: Build project
         run: npm run build
