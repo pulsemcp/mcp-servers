@@ -9,7 +9,7 @@
   },
   "files": [
     "build/**/*.js",
-    "shared/**/*.js", 
+    "shared/**/*.js",
     "shared/**/*.d.ts",
     "README.md"
   ],
