@@ -107,8 +107,59 @@ describe('Twist Tools', () => {
         type: 'text',
         text: expect.stringContaining('Thread: "Test Thread"'),
       });
-      expect(result.content[0].text).toContain('Messages (1 total):');
+      expect(result.content[0].text).toContain('Messages (2 total):');
       expect(result.content[0].text).toContain('Test message');
+    });
+
+    it('should include thread content as the first message', async () => {
+      const tool = getThreadTool(mockServer, () => mockClient);
+
+      const result = await tool.handler({ thread_id: 'th_001' });
+
+      const responseText = result.content[0].text;
+
+      // Should have 2 total messages (thread content + comment)
+      expect(responseText).toContain('Messages (2 total):');
+
+      // Should include the original thread content as the first message
+      expect(responseText).toContain(
+        'This is the original thread content that starts the discussion'
+      );
+      expect(responseText).toContain('Thread Creator:');
+
+      // Should also include the comment message
+      expect(responseText).toContain('Test message');
+      expect(responseText).toContain('Test User:');
+
+      // Thread content should appear before the comment (chronologically first)
+      const threadContentIndex = responseText.indexOf('This is the original thread content');
+      const commentIndex = responseText.indexOf('Test message');
+      expect(threadContentIndex).toBeLessThan(commentIndex);
+    });
+
+    it('should handle thread with content but no comments', async () => {
+      mockClient.getThread = vi.fn().mockResolvedValue({
+        id: 'th_001',
+        title: 'Thread with just content',
+        channel_id: 'ch_123',
+        workspace_id: '228287',
+        creator: 'user_123',
+        creator_name: 'Thread Creator',
+        posted_ts: 1234567890,
+        content: 'This thread has only the initial content, no comments yet',
+        messages: [], // No comments
+      });
+      const tool = getThreadTool(mockServer, () => mockClient);
+
+      const result = await tool.handler({ thread_id: 'th_001' });
+      const responseText = result.content[0].text;
+
+      // Should have 1 total message (just the thread content)
+      expect(responseText).toContain('Messages (1 total):');
+
+      // Should include the thread content
+      expect(responseText).toContain('This thread has only the initial content, no comments yet');
+      expect(responseText).toContain('Thread Creator:');
     });
 
     it('should handle thread with no messages', async () => {

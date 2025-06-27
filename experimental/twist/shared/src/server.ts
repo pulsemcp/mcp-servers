@@ -43,6 +43,10 @@ export interface Thread {
   last_updated_ts?: number;
   archived?: boolean;
   closed?: boolean;
+  content?: string;
+  attachments?: Attachment[];
+  actions?: ActionButton[];
+  reactions?: Record<string, number[]>;
 }
 
 export interface ThreadWithMessages extends Thread {
