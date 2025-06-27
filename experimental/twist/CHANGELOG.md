@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.8] - 2025-06-27
+
+### Fixed
+
+- Resolved npm publish issues with workspace dependencies
+  - Fixed "invalid or damaged lockfile" error when running via npx
+  - Implemented build-time copying approach to handle shared workspace code
+  - No bundler dependencies required
+
 ## [0.1.4] - 2025-06-27
 
 ### Fixed
