@@ -169,6 +169,32 @@ export function createIntegrationMockTwistClient(
 
       return message;
     },
+
+    async closeThread(threadId: string, message?: string): Promise<Message> {
+      const closeMessage: Message = {
+        id: `msg_close_${Date.now()}`,
+        thread_id: threadId,
+        content: message || 'Thread closed',
+        creator: 'test_user',
+        created_ts: Date.now() / 1000,
+      };
+
+      // Store in mock data if messages exist
+      if (mockData.messages) {
+        if (!mockData.messages[threadId]) {
+          mockData.messages[threadId] = [];
+        }
+        mockData.messages[threadId].push(closeMessage);
+      }
+
+      // Mark thread as closed in mock data if thread details exist
+      if (mockData.threadDetails?.[threadId]) {
+        // In a real API, this would set a closed status
+        // For the mock, we'll just add the closing message
+      }
+
+      return closeMessage;
+    },
   };
 
   return client;

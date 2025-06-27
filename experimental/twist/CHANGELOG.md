@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Pagination support for `get_thread` tool with `message_limit` and `message_offset` parameters
 - Filtering support for `get_threads` tool with `include_closed` parameter to optionally show closed threads
 - Detection of closed threads based on the `closed` property from Twist API
+- New `close_thread` tool to close threads with an optional closing message
 
 ### Changed
 

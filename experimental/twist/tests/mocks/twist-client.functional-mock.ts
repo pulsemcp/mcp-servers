@@ -96,5 +96,16 @@ export function createFunctionalMockTwistClient(): ITwistClient {
           created_ts: Date.now() / 1000,
         }) as Message
     ),
+
+    closeThread: vi.fn().mockImplementation(
+      async (threadId: string, message?: string) =>
+        ({
+          id: 'msg_close',
+          thread_id: threadId,
+          content: message || 'Thread closed',
+          creator: 'user_123',
+          created_ts: Date.now() / 1000,
+        }) as Message
+    ),
   };
 }
