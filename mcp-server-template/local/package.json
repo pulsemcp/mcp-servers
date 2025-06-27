@@ -14,7 +14,8 @@
     "lint": "eslint . --ext .ts,.tsx",
     "lint:fix": "eslint . --ext .ts,.tsx --fix",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "stage-publish": "npm version"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.4",
