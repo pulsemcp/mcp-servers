@@ -37,7 +37,9 @@ jobs:
           node-version-file: '.nvmrc'
 
       - name: Install root dependencies
-        run: npm ci
+        run: |
+          # Try npm ci first, fall back to npm install if platform binaries are missing
+          npm ci || npm install
 
       - name: Lint all code
         run: npm run lint

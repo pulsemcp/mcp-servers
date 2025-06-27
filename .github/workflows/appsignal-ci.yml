@@ -31,7 +31,10 @@ jobs:
           node-version-file: '.nvmrc'
 
       - name: Install dependencies
-        run: npm run install-all
+        run: |
+          # Try npm ci first, fall back to npm install if platform binaries are missing
+          npm ci || npm install
+          npm run install-all
 
       - name: Build project
         run: npm run build
@@ -71,16 +74,18 @@ jobs:
           node-version-file: '.nvmrc'
 
       - name: Install dependencies
-        run: npm install
+        run: |
+          # Try npm ci first, fall back to npm install if platform binaries are missing
+          npm ci || npm install
 
       - name: Install shared dependencies
-        run: cd shared && npm install
+        run: cd shared && (npm ci || npm install)
 
       - name: Install local dependencies
-        run: cd local && npm install
+        run: cd local && (npm ci || npm install)
 
       - name: Install test-mcp-client dependencies
-        run: cd ../../test-mcp-client && npm install
+        run: cd ../../test-mcp-client && (npm ci || npm install)
 
       - name: Build test-mcp-client
         run: cd ../../test-mcp-client && npm run build
