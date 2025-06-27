@@ -135,9 +135,23 @@ Use cases:
         // Include threads if requested
         if (include_threads) {
           try {
+            // Apply default date filter when none provided to ensure we get historical threads
+            // Without this, only very recent threads are returned by the API
+            let effectiveNewerThanTs = threads_newer_than_ts;
+            if (!effectiveNewerThanTs) {
+              // Default to threads from the last 90 days if no date filter is provided
+              const ninetyDaysAgo = Math.floor(Date.now() / 1000) - (90 * 24 * 60 * 60);
+              effectiveNewerThanTs = ninetyDaysAgo;
+            }
+
+            // Increase the API limit to account for filtering and pagination
+            // Since we filter client-side, we need to fetch more than the final limit
+            // to ensure we have enough results after filtering
+            const fetchLimit = Math.min(100, Math.max(threads_limit + threads_offset + 50, threads_limit * 3));
+
             const threads = await client.getThreads(channel_id, {
-              limit: threads_limit,
-              newerThanTs: threads_newer_than_ts,
+              limit: fetchLimit,
+              newerThanTs: effectiveNewerThanTs,
             });
 
             if (threads.length === 0) {
@@ -148,8 +162,12 @@ Use cases:
                 (a, b) => (b.last_updated_ts || 0) - (a.last_updated_ts || 0)
               );
 
+              // Apply offset before filtering to maintain consistent pagination
+              // This ensures that offset=10 means "skip the first 10 threads" regardless of filtering
+              const offsetThreads = sortedThreads.slice(threads_offset);
+
               // Filter out archived threads and optionally closed threads
-              let filteredThreads = sortedThreads.filter((thread) => !thread.archived);
+              let filteredThreads = offsetThreads.filter((thread) => !thread.archived);
 
               if (!include_closed_threads) {
                 // Filter out closed threads - threads with 'closed' property set to true
@@ -160,11 +178,8 @@ Use cases:
                 });
               }
 
-              // Apply offset and limit for pagination
-              const paginatedThreads = filteredThreads.slice(
-                threads_offset,
-                threads_offset + threads_limit
-              );
+              // Apply limit for pagination (offset already applied before filtering)
+              const paginatedThreads = filteredThreads.slice(0, threads_limit);
 
               const threadList = paginatedThreads
                 .map((thread) => {
@@ -177,18 +192,35 @@ Use cases:
                 })
                 .join('\n');
 
+              // Calculate pagination info with proper total counts
+              // Since offset is applied before filtering, we need separate counts for display
               const statusText = include_closed_threads ? 'threads' : 'open threads';
-              const totalCount = filteredThreads.length;
+              
+              // Count all threads that would pass the filter (for total count display)
+              let allFilteredThreads = sortedThreads.filter((thread) => !thread.archived);
+              if (!include_closed_threads) {
+                allFilteredThreads = allFilteredThreads.filter((thread) => {
+                  const threadWithClosed = thread as Thread & { closed?: boolean };
+                  return !threadWithClosed.closed;
+                });
+              }
+              const totalFilteredCount = allFilteredThreads.length;
+              
               const showingCount = paginatedThreads.length;
-              const paginationInfo =
-                totalCount > showingCount || threads_offset > 0
-                  ? ` (showing ${showingCount > 0 ? threads_offset + 1 : 0}-${threads_offset + showingCount} of ${totalCount})`
-                  : '';
+              
+              // Calculate pagination range more accurately
+              const startIndex = threads_offset + 1;
+              const endIndex = threads_offset + showingCount;
+              const hasMoreResults = threads.length >= fetchLimit; // Might have more data beyond what we fetched
+              
+              const paginationInfo = threads_offset > 0 || showingCount < totalFilteredCount || hasMoreResults
+                ? ` (showing ${showingCount > 0 ? startIndex : 0}-${endIndex}${hasMoreResults ? '+' : ` of ${totalFilteredCount}`})`
+                : '';
 
               channelInfo +=
                 showingCount > 0
-                  ? `\n\nThreads (${totalCount} ${statusText}${paginationInfo}):\n${threadList}`
-                  : `\n\nThreads (${totalCount} ${statusText}). No threads to display at offset ${threads_offset}.`;
+                  ? `\n\nThreads (${totalFilteredCount}${hasMoreResults ? '+' : ''} ${statusText}${paginationInfo}):\n${threadList}`
+                  : `\n\nNo ${statusText} found at offset ${threads_offset}. Try a smaller offset or different date filter.`;
             }
           } catch (threadsError) {
             channelInfo += `\n\nError fetching threads: ${threadsError instanceof Error ? threadsError.message : 'Unknown error'}`;
