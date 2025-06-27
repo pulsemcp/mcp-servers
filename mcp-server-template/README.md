@@ -278,12 +278,14 @@ During development, the `local` package imports from the `shared` package using 
 When publishing to npm, we need to ensure the shared code is included without workspace dependencies:
 
 1. The `prepublishOnly` script runs automatically before `npm publish`
-2. It runs `tsc` directly (not `npm run build`) to avoid triggering `prebuild`
-3. Then it runs `prepare-publish.js` which:
-   - Installs and builds the shared directory
-   - Copies the built `shared/dist` files into `local/shared`
-4. The package is published with all necessary files included
-5. No bundler or extra dependencies needed!
+2. It runs `prepare-publish.js` which:
+   - Installs TypeScript temporarily (for CI environments)
+   - Builds the shared directory first
+   - Creates a symlink for building (using setup-dev.js)
+   - Builds the local package with all imports resolved
+   - Replaces the symlink with actual files for publishing
+3. The package is published with all necessary files included
+4. No bundler or extra dependencies needed!
 
 #### Script Execution Flow
 
@@ -297,10 +299,11 @@ When publishing to npm, we need to ensure the shared code is included without wo
 - `npm publish` → triggers `prepublishOnly` → runs `prepare-publish.js` → publishes
 - `prepare-publish.js` handles everything:
   1. Installs TypeScript temporarily (for CI environments)
-  2. Builds local package
-  3. Builds shared package
-  4. Copies shared files into local/shared
-  5. Package is ready for publishing
+  2. Builds shared package first
+  3. Creates symlink using setup-dev.js
+  4. Builds local package (with imports resolved)
+  5. Replaces symlink with actual shared files
+  6. Package is ready for publishing
 
 ### Important Files
 

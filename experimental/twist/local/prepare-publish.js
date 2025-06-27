@@ -18,16 +18,7 @@ async function prepare() {
     process.exit(1);
   }
 
-  // Build the local package first
-  console.log('Building local package...');
-  try {
-    execSync('npx tsc && npx tsc -p tsconfig.integration.json', { stdio: 'inherit' });
-  } catch (e) {
-    console.error('Failed to build local package:', e.message);
-    process.exit(1);
-  }
-
-  // Then, ensure shared directory is built
+  // Build shared directory first
   const sharedDir = join(__dirname, '../shared');
   console.log('Building shared directory...');
   try {
@@ -37,7 +28,27 @@ async function prepare() {
     process.exit(1);
   }
 
-  // Clean up any existing shared directory
+  // Set up the shared directory for the build
+  console.log('Setting up shared directory for build...');
+  try {
+    // Create a symlink for the build process (like setup-dev.js does)
+    await rm(join(__dirname, 'shared'), { recursive: true, force: true });
+    execSync(`node setup-dev.js`, { cwd: __dirname, stdio: 'inherit' });
+  } catch (e) {
+    console.error('Failed to set up shared directory:', e.message);
+    process.exit(1);
+  }
+
+  // Now build the local package
+  console.log('Building local package...');
+  try {
+    execSync('npx tsc && npx tsc -p tsconfig.integration.json', { stdio: 'inherit' });
+  } catch (e) {
+    console.error('Failed to build local package:', e.message);
+    process.exit(1);
+  }
+
+  // Clean up the symlink and copy the actual files for publishing
   try {
     await rm(join(__dirname, 'shared'), { recursive: true, force: true });
   } catch (e) {
