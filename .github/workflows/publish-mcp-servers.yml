@@ -20,6 +20,10 @@ jobs:
 
             console.log(`Waiting for CI Build & Test Checks on SHA: ${sha}`);
 
+            // Wait a bit for the CI workflow to start
+            console.log('Waiting 30 seconds for CI workflow to start...');
+            await new Promise(resolve => setTimeout(resolve, 30000));
+
             const maxWaitTime = 10 * 60 * 1000; // 10 minutes
             const checkInterval = 10 * 1000; // 10 seconds
             const startTime = Date.now();
@@ -32,18 +36,28 @@ jobs:
                 per_page: 100
               });
               
+              console.log(`Found ${checkRuns.data.check_runs.length} check runs:`);
+              for (const run of checkRuns.data.check_runs) {
+                console.log(`- ${run.name}: ${run.status} (${run.conclusion})`);
+              }
+              
               const ciCheck = checkRuns.data.check_runs.find(run => 
                 run.name === 'CI Build & Test Checks Passed'
               );
               
-              if (ciCheck && ciCheck.status === 'completed') {
-                if (ciCheck.conclusion === 'success') {
-                  console.log('✅ CI Build & Test Checks passed');
-                  return;
-                } else {
-                  core.setFailed(`CI Build & Test Checks failed with conclusion: ${ciCheck.conclusion}`);
-                  return;
+              if (ciCheck) {
+                console.log(`Found CI check: ${ciCheck.name} - ${ciCheck.status} (${ciCheck.conclusion})`);
+                if (ciCheck.status === 'completed') {
+                  if (ciCheck.conclusion === 'success') {
+                    console.log('✅ CI Build & Test Checks passed');
+                    return;
+                  } else {
+                    core.setFailed(`CI Build & Test Checks failed with conclusion: ${ciCheck.conclusion}`);
+                    return;
+                  }
                 }
+              } else {
+                console.log('❌ CI Build & Test Checks Passed check not found yet');
               }
               
               console.log(`Waiting for CI checks... (${Math.round((Date.now() - startTime) / 1000)}s elapsed)`);
