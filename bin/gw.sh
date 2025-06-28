@@ -120,6 +120,23 @@ git worktree add "$NEW_WORKTREE_PATH" -b "$BRANCH_NAME"
 if [ $? -eq 0 ]; then
   echo "Worktree created successfully!"
   
+  # Ensure git commit safety wrapper is available in new worktree
+  echo "Setting up git commit safety wrapper..."
+  
+  # Copy the git wrapper script to the new worktree
+  if [ -f "$MAIN_WORKTREE/bin/git" ]; then
+    mkdir -p "$NEW_WORKTREE_PATH/bin"
+    cp "$MAIN_WORKTREE/bin/git" "$NEW_WORKTREE_PATH/bin/git"
+    chmod +x "$NEW_WORKTREE_PATH/bin/git"
+    echo "  ✓ Git wrapper copied to new worktree"
+  else
+    echo "  ⚠️  Git wrapper not found in main worktree bin/"
+  fi
+  
+  # Add a note about PATH setup
+  echo "  📝 Note: Add this worktree's bin/ to PATH to enable git safety wrapper:"
+  echo "      export PATH=\"$NEW_WORKTREE_PATH/bin:\$PATH\""
+  
   # Copy all gitignored files from source worktree
   echo "Copying gitignored files (e.g., .env files)..."
   

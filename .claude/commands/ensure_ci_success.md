@@ -4,5 +4,8 @@ Before handing back control to the user, ensure CI is successful:
 2. If any checks fail:
    - View the failure logs
    - Fix the issues locally
+   - **CRITICAL**: Run `git status` to see all modified files from the fix
+   - **CRITICAL**: Run `git add .` to stage all changes from the fix
+   - **CRITICAL**: Run `git status` again to verify working tree is clean
    - Commit and push the fixes
    - Continue monitoring until all checks pass
