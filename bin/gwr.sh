@@ -12,12 +12,13 @@ BOLD='\033[1m'
 RESET='\033[0m'
 REVERSE='\033[7m'
 
-# Arrays to store worktree data
+# Arrays to store worktree and branch data
 declare -a worktrees
 declare -a branches
 declare -a pr_statuses
 declare -a pr_merged
 declare -a selected
+declare -a item_types
 
 # Get GitHub repo info
 get_github_repo() {
@@ -61,15 +62,16 @@ check_pr_status() {
     fi
 }
 
-# Load worktree data
+# Load worktree and branch data
 load_worktrees() {
     worktrees=()
     branches=()
     pr_statuses=()
     pr_merged=()
     selected=()
+    item_types=()
     
-    echo -e "${YELLOW}Loading worktrees and checking PR statuses...${RESET}"
+    echo -e "${YELLOW}Loading worktrees, branches and checking PR statuses...${RESET}"
     
     # Get the actual main worktree path from git
     local main_worktree_path=""
@@ -91,6 +93,7 @@ load_worktrees() {
                 pr_statuses+=("MAIN BRANCH")
                 pr_merged+=("false")
                 selected+=("false")
+                item_types+=("worktree")
             fi
         fi
     done < <(git worktree list)
@@ -116,17 +119,55 @@ load_worktrees() {
                 pr_statuses+=("$pr_status")
                 pr_merged+=("$is_merged")
                 selected+=("false")
+                item_types+=("worktree")
             fi
         fi
     done < <(git worktree list)
+    
+    # Get all branches that don't have worktrees
+    local worktree_branches=()
+    for branch in "${branches[@]}"; do
+        worktree_branches+=("$branch")
+    done
+    
+    # Get all local branches
+    while IFS= read -r branch_line; do
+        # Remove leading/trailing whitespace and asterisk
+        local branch=$(echo "$branch_line" | sed 's/^[* ]*//' | sed 's/[[:space:]]*$//')
+        
+        # Skip if this branch already has a worktree
+        local has_worktree=false
+        for wt_branch in "${worktree_branches[@]}"; do
+            if [ "$branch" = "$wt_branch" ]; then
+                has_worktree=true
+                break
+            fi
+        done
+        
+        # Skip if branch has worktree or is HEAD
+        if [ "$has_worktree" = false ] && [ "$branch" != "HEAD" ] && [ -n "$branch" ]; then
+            worktrees+=("🌿 $branch")
+            branches+=("$branch")
+            
+            # Check PR status for standalone branch
+            local pr_result=$(check_pr_status "$branch")
+            local pr_status="${pr_result%|*}"
+            local is_merged="${pr_result#*|}"
+            
+            pr_statuses+=("$pr_status")
+            pr_merged+=("$is_merged")
+            selected+=("false")
+            item_types+=("branch")
+        fi
+    done < <(git branch --format='%(refname:short)')
 }
 
 # Display the table
 display_table() {
     clear
-    echo -e "${BOLD}Git Worktree Manager${RESET}"
+    echo -e "${BOLD}Git Worktree & Branch Manager${RESET}"
     echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
-    printf "%-3s %-35s %-25s %s\n" "[ ]" "WORKTREE" "PR STATUS" "MERGED"
+    printf "%-3s %-35s %-25s %s\n" "[ ]" "WORKTREE/BRANCH" "PR STATUS" "MERGED"
     echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
     
     for i in "${!worktrees[@]}"; do
@@ -136,10 +177,25 @@ display_table() {
         fi
         
         local color=""
+        local prefix=""
+        
+        # Set color based on PR status
         if [ "${pr_merged[$i]}" = "true" ]; then
             color=$GREEN
         elif [[ "${pr_statuses[$i]}" == "NO PR" ]]; then
             color=$YELLOW
+        fi
+        
+        # Add visual distinction for branches vs worktrees
+        if [ "${item_types[$i]}" = "branch" ]; then
+            # Branches get a different visual treatment
+            if [ "${pr_merged[$i]}" = "true" ]; then
+                color="\033[0;36m"  # Cyan for merged branches
+            elif [[ "${pr_statuses[$i]}" == "NO PR" ]]; then
+                color="\033[0;35m"  # Magenta for branches with no PR
+            else
+                color="\033[0;34m"  # Blue for branches with PR
+            fi
         fi
         
         if [ "$i" -eq "$current_row" ]; then
@@ -163,7 +219,7 @@ display_table() {
     done
     
     if [ "$selected_count" -gt 0 ]; then
-        echo -e "${YELLOW}Selected: $selected_count worktree(s)${RESET}"
+        echo -e "${YELLOW}Selected: $selected_count item(s)${RESET}"
     fi
     
     # Debug output
@@ -171,10 +227,11 @@ display_table() {
 }
 
 # Delete worktree and branch
-delete_worktree() {
-    local worktree=$1
+delete_item() {
+    local item_name=$1
     local branch=$2
     local index=$3
+    local item_type=${item_types[$index]}
     
     # Skip main worktree
     if [[ "${worktrees[$index]}" =~ \(main\) ]]; then
@@ -182,29 +239,40 @@ delete_worktree() {
         return 1
     fi
     
-    # Find the full path of the worktree
-    local worktree_path=""
-    while IFS= read -r line; do
-        # Check if this line contains our branch
-        if [[ $line == *"[$branch]"* ]] && [[ ! $line =~ \(bare\) ]]; then
-            # Extract the path (first field)
-            worktree_path=$(echo "$line" | awk '{print $1}')
-            break
+    if [ "$item_type" = "worktree" ]; then
+        # Handle worktree deletion
+        local worktree_path=""
+        while IFS= read -r line; do
+            # Check if this line contains our branch
+            if [[ $line == *"[$branch]"* ]] && [[ ! $line =~ \(bare\) ]]; then
+                # Extract the path (first field)
+                worktree_path=$(echo "$line" | awk '{print $1}')
+                break
+            fi
+        done < <(git worktree list)
+        
+        if [ -n "$worktree_path" ]; then
+            echo -e "${YELLOW}Removing worktree: $worktree_path${RESET}"
+            git worktree remove "$worktree_path" --force 2>/dev/null || git worktree remove "$worktree_path"
+            
+            # Try to delete the branch
+            echo -e "${YELLOW}Deleting branch: $branch${RESET}"
+            git branch -D "$branch" 2>/dev/null
+            
+            return 0
+        else
+            echo -e "${RED}Could not find worktree path for $item_name${RESET}"
+            return 1
         fi
-    done < <(git worktree list)
-    
-    if [ -n "$worktree_path" ]; then
-        echo -e "${YELLOW}Removing worktree: $worktree_path${RESET}"
-        git worktree remove "$worktree_path" --force 2>/dev/null || git worktree remove "$worktree_path"
-        
-        # Try to delete the branch
-        echo -e "${YELLOW}Deleting branch: $branch${RESET}"
-        git branch -D "$branch" 2>/dev/null
-        
-        return 0
     else
-        echo -e "${RED}Could not find worktree path for $worktree${RESET}"
-        return 1
+        # Handle standalone branch deletion
+        echo -e "${YELLOW}Deleting branch: $branch${RESET}"
+        if git branch -D "$branch" 2>/dev/null; then
+            return 0
+        else
+            echo -e "${RED}Failed to delete branch: $branch${RESET}"
+            return 1
+        fi
     fi
 }
 
@@ -287,13 +355,14 @@ while true; do
             done
             
             if [ ${#to_delete[@]} -eq 0 ]; then
-                echo -e "${YELLOW}No worktrees selected${RESET}"
+                echo -e "${YELLOW}No items selected${RESET}"
                 sleep 2
             else
                 echo
-                echo -e "${RED}About to delete ${#to_delete[@]} worktree(s):${RESET}"
+                echo -e "${RED}About to delete ${#to_delete[@]} item(s):${RESET}"
                 for i in "${to_delete[@]}"; do
-                    echo "  - ${worktrees[$i]} (${branches[$i]})"
+                    local type_label="${item_types[$i]}"
+                    echo "  - ${worktrees[$i]} (${branches[$i]}) [$type_label]"
                 done
                 echo
                 echo -n "Are you sure? (y/N): "
@@ -302,7 +371,7 @@ while true; do
                 
                 if [ "$confirm" = "y" ] || [ "$confirm" = "Y" ]; then
                     for i in "${to_delete[@]}"; do
-                        delete_worktree "${worktrees[$i]}" "${branches[$i]}" "$i"
+                        delete_item "${worktrees[$i]}" "${branches[$i]}" "$i"
                     done
                     echo
                     echo "Press any key to continue..."

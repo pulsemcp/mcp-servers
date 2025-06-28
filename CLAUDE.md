@@ -213,3 +213,25 @@ This setup was established in commits #89, #91, #92 to resolve TypeScript build 
 ## Additional Documentation
 
 Each server directory contains its own CLAUDE.md with specific implementation details.
+
+## Claude Learnings
+
+Contexts and tips I've collected while working on this codebase.
+
+### Development Workflow
+
+- Always run linting commands from the repository root, not from subdirectories, to ensure consistent tooling across the monorepo
+- When pre-commit hooks fail with "Cannot find module" errors, the solution is typically to `rm -rf node_modules package-lock.json && npm install` from the repo root
+- The specialized workspace setup in some servers (like `experimental/twist/` and `experimental/appsignal/`) uses relative import paths that work for both development and publishing - never change these to package names or direct dist paths
+
+### Testing Strategy
+
+- Manual tests are critical when modifying code that interacts with external APIs, as they verify real API responses match our interfaces
+- Integration tests with TestMCPClient are valuable for testing MCP server functionality without hitting real APIs
+- Environment variable validation at startup prevents silent failures and provides immediate feedback to users
+
+### Git and PR Workflow
+
+- Branch naming follows `<github-username>/<feature-description>` pattern
+- Always ensure CI passes before considering a PR complete
+- Pre-commit hooks automatically run lint-staged, but manual linting should still be run before pushing to avoid CI failures

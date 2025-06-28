@@ -9,3 +9,4 @@ Before handing back control to the user, ensure CI is successful:
    - **CRITICAL**: Run `git status` again to verify working tree is clean
    - Commit and push the fixes
    - Continue monitoring until all checks pass
+3. Once CI is successful, think about what you learned during this PR process. Add any useful insights to the "Claude Learnings" section in the appropriate CLAUDE.md file (could be root or subdirectory)

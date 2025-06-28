@@ -16,6 +16,7 @@ Follow this checklist when executing this:
 - [ ] Open a PR
 - [ ] Wait for the PR to successfully pass CI
 - [ ] If it fails CI, investigate the failure, fix it. Repeat until CI is passing
+- [ ] Think about what you learned during this PR creation process. Add any useful insights to the "Claude Learnings" section in the appropriate CLAUDE.md file (could be root or subdirectory)
 - [ ] Surface the PR link back to the user
 
 ## Workflow Details
