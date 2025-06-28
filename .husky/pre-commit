@@ -1,4 +1,8 @@
 #!/usr/bin/env sh
 . "$(dirname -- "$0")/_/husky.sh"
 
+# Ensure pre-commit hooks always run from repository root
+# This prevents module resolution issues in monorepo subdirectories
+cd "$(git rev-parse --show-toplevel)"
+
 npx lint-staged

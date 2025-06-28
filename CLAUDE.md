@@ -31,9 +31,11 @@ This is a monorepo containing Model Context Protocol (MCP) servers built by Puls
 - Only switch branches or create new ones when specifically instructed
 - Avoid using `git checkout -b`, `git switch -c`, or `git worktree add` without explicit permission
 
-### Post-Commit Linting
+### Linting and Pre-Commit Hooks
 
-After making any commit, you'll see a reminder to run linting. **Always run these commands before pushing to avoid CI failures:**
+**CRITICAL: ALL linting must be run from the repository root.** This monorepo uses centralized linting configuration.
+
+**Always run these commands from the repo root before pushing to avoid CI failures:**
 
 ```bash
 npm run lint       # Check for linting issues
@@ -43,9 +45,43 @@ npm run format     # Format code with Prettier
 
 **IMPORTANT: NEVER use `git commit --no-verify` to bypass pre-commit hooks.** If pre-commit hooks fail:
 
-1. Fix the underlying issue (install dependencies, run lint:fix, etc.)
-2. Only commit after all checks pass
-3. If dependencies are broken, fix them first before committing
+### Troubleshooting Pre-Commit Hook Failures
+
+**🔨 Module/Dependency Issues** (Most common - "Cannot find module" errors):
+
+```bash
+# Always run from repo root
+cd /path/to/repo/root
+rm -rf node_modules package-lock.json
+npm install
+```
+
+**📝 Linting Issues:**
+
+```bash
+npm run lint:fix    # From repo root only
+```
+
+**🎨 Formatting Issues:**
+
+```bash
+npm run format      # From repo root only
+```
+
+**📁 Committing from Subdirectories:**
+
+```bash
+# Instead of committing from experimental/twist/ or other subdirs:
+cd /path/to/repo/root
+git add .
+git commit -m "Your message"
+```
+
+**Why These Issues Happen:**
+
+- Monorepo complexity with nested workspaces
+- Module resolution conflicts between subdirectories
+- Stale or corrupted dependency trees
 
 The repository uses:
 
@@ -70,23 +106,30 @@ npm test           # Run tests (functional and/or integration)
 npm run test:manual # Run manual tests (if available - hits real APIs)
 ```
 
-### Linting at Different Levels
+### Linting Best Practices
 
-You can run linting at different directory levels:
+**ALWAYS run linting from the repository root:**
 
 ```bash
-# Root level (entire repo)
-npm run lint
+# ✅ CORRECT - Run from repo root
+npm run lint           # Lint entire repo
+npm run lint:fix       # Fix linting issues
+npm run format         # Format all code
 
-# Specific servers
-npm run lint:pulse-fetch    # Lint pulse-fetch server
-npm run lint:appsignal      # Lint appsignal server
-npm run lint:test-client    # Lint test-mcp-client
-
-# Or navigate to specific directories
-cd experimental/appsignal && npm run lint
-cd productionized/pulse-fetch && npm run lint
+# ✅ CORRECT - Individual server linting (delegated to root)
+cd experimental/twist && npm run lint    # Calls root linting
+cd experimental/appsignal && npm run lint # Calls root linting
 ```
+
+**❌ NEVER run linting tools directly from subdirectories:**
+
+```bash
+# ❌ WRONG - Direct eslint/prettier calls from subdirs
+cd experimental/twist && eslint . --fix
+cd experimental/twist && prettier --write .
+```
+
+**Why:** Subdirectories delegate to the root linting configuration to avoid dependency duplication and ensure consistent tooling across the monorepo.
 
 ## Technical Stack
 
