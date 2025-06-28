@@ -23,10 +23,10 @@
     "test:all": "npm run test:run && npm run test:integration",
     "test:manual": "npm run build:test && vitest run -c vitest.config.manual.ts",
     "test:manual:watch": "vitest -c vitest.config.manual.ts",
-    "lint": "eslint . --ext .ts,.tsx",
-    "lint:fix": "eslint . --ext .ts,.tsx --fix",
-    "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "lint": "cd ../.. && npm run lint",
+    "lint:fix": "cd ../.. && npm run lint:fix",
+    "format": "cd ../.. && npm run format",
+    "format:check": "cd ../.. && npm run format:check"
   },
   "repository": {
     "type": "git",
