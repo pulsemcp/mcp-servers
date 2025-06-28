@@ -58,20 +58,9 @@ git diff --cached
 
 ### Git Commit Safety
 
-**CRITICAL: NEVER use `git commit --no-verify`**
+**Always use the safe commit wrapper: `bash scripts/git-commit-safe.sh -m "commit message"`**
 
-This repository uses `scripts/git-commit-safe.sh` to prevent bypassing pre-commit hooks. The git alias should already be configured:
-
-```bash
-# Verify the safe commit alias is set up
-git config --get alias.commit
-# Should output: \!bash scripts/git-commit-safe.sh
-```
-
-**If pre-commit hooks fail:**
-1. **DO NOT** use `--no-verify` to bypass them
-2. **Fix the underlying issue** using the guidance in the error message
-3. **Use `git commit` (without --no-verify)** - the alias will enforce safety
+This prevents accidentally using `--no-verify` which bypasses important pre-commit hooks.
 
 ### Pre-PR checklist
 
