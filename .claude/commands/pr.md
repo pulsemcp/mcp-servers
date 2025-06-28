@@ -51,16 +51,11 @@ git diff --cached
 ```
 
 **Common scenarios that cause missed files:**
+
 - Running `npm version` or `npm run stage-publish` (modifies package.json, package-lock.json, creates git tags)
 - Build processes that modify generated files
 - Auto-formatting that changes multiple files
 - Dependency updates that modify lock files
-
-### Git Commit Safety
-
-**Always use the safe commit wrapper: `bash scripts/git-commit-safe.sh -m "commit message"`**
-
-This prevents accidentally using `--no-verify` which bypasses important pre-commit hooks.
 
 ### Pre-PR checklist
 
