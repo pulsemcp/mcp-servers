@@ -4,9 +4,13 @@ Our goal is to take the current state of our git diff (ALL The files), commit th
 
 Follow this checklist when executing this:
 
+- [ ] **CRITICAL**: Check git status and verify ALL modified files are included
 - [ ] Assess whether we are in a good state to commit to a feature branch
 - [ ] Analyze the diff to come up with a good commit message
+- [ ] **BEFORE COMMITTING**: Run `git status` and verify all intended changes are staged
+- [ ] **BEFORE COMMITTING**: Run `git diff --cached` to review exactly what will be committed
 - [ ] Commit the changes
+- [ ] **AFTER COMMITTING**: Run `git status` again to ensure working tree is clean
 - [ ] Run pre-commit checklist (see below)
 - [ ] Push it
 - [ ] Open a PR
@@ -25,16 +29,61 @@ For detailed git workflow information including branch naming conventions and re
 - **On main**: `git reset --soft` to origin/main, stash, create feature branch, pop stash
 - **On unrelated branch**: Same process - reset to origin, stash, checkout main, pull, create new branch
 
+### CRITICAL: Git Status Verification
+
+**ALWAYS run these commands before committing to ensure no files are missed:**
+
+```bash
+# 1. Check what files are modified
+git status
+
+# 2. Review all changes that will be committed
+git diff --cached
+
+# 3. If you see "Changes not staged for commit", add them:
+git add .
+
+# 4. Verify working tree is clean after staging
+git status
+
+# 5. Final review of what will be committed
+git diff --cached
+```
+
+**Common scenarios that cause missed files:**
+- Running `npm version` or `npm run stage-publish` (modifies package.json, package-lock.json, creates git tags)
+- Build processes that modify generated files
+- Auto-formatting that changes multiple files
+- Dependency updates that modify lock files
+
+### Git Commit Safety
+
+**CRITICAL: NEVER use `git commit --no-verify`**
+
+This repository uses `scripts/git-commit-safe.sh` to prevent bypassing pre-commit hooks. The git alias should already be configured:
+
+```bash
+# Verify the safe commit alias is set up
+git config --get alias.commit
+# Should output: \!bash scripts/git-commit-safe.sh
+```
+
+**If pre-commit hooks fail:**
+1. **DO NOT** use `--no-verify` to bypass them
+2. **Fix the underlying issue** using the guidance in the error message
+3. **Use `git commit` (without --no-verify)** - the alias will enforce safety
+
 ### Pre-PR checklist
 
-1. Check for and resolve any merge conflicts:
+1. **MANDATORY**: Complete git status verification above
+2. Check for and resolve any merge conflicts:
    - Pull latest from main with `git pull --rebase origin main`
    - If conflicts exist, resolve them before proceeding
-2. Run linting and formatting:
+3. Run linting and formatting:
    - `npm run lint:fix` - Auto-fix linting issues
    - `npm run format` - Format code with Prettier
-   - Commit any fixes
-3. Run tests to ensure everything passes:
+   - Commit any fixes with proper git status checks
+4. Run tests to ensure everything passes:
    - `npm run test:run` - Run functional tests
    - `npm run test:integration` - Run integration tests
 
