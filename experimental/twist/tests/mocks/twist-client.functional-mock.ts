@@ -112,5 +112,90 @@ export function createFunctionalMockTwistClient(): ITwistClient {
           posted_ts: Date.now() / 1000,
         }) as Message
     ),
+
+    getRobustThreads: vi.fn().mockImplementation(
+      async (
+        channelId: string,
+        options?: {
+          limit?: number;
+          offset?: number;
+          includeClosedThreads?: boolean;
+          newerThanTs?: number;
+        }
+      ) => {
+        // Mock multiple threads to support pagination tests from main
+        const allThreads = [
+          {
+            id: 'th_001',
+            title: 'Test Thread 1',
+            channel_id: channelId,
+            workspace_id: '228287',
+            creator: 'user_123',
+            posted_ts: 1234567890,
+            last_updated_ts: 1234567895,
+            archived: false,
+            closed: false,
+          },
+          {
+            id: 'th_002',
+            title: 'Test Thread 2',
+            channel_id: channelId,
+            workspace_id: '228287',
+            creator: 'user_123',
+            posted_ts: 1234567890,
+            last_updated_ts: 1234567894,
+            archived: false,
+            closed: true,
+          },
+          {
+            id: 'th_003',
+            title: 'Test Thread 3',
+            channel_id: channelId,
+            workspace_id: '228287',
+            creator: 'user_123',
+            posted_ts: 1234567890,
+            last_updated_ts: 1234567893,
+            archived: false,
+            closed: false,
+          },
+          {
+            id: 'th_004',
+            title: 'Test Thread 4',
+            channel_id: channelId,
+            workspace_id: '228287',
+            creator: 'user_123',
+            posted_ts: 1234567890,
+            last_updated_ts: 1234567892,
+            archived: false,
+            closed: true,
+          },
+        ] as Thread[];
+
+        // Filter out archived threads
+        let filteredThreads = allThreads.filter((thread) => !thread.archived);
+
+        // Filter closed threads if requested
+        if (!options?.includeClosedThreads) {
+          filteredThreads = filteredThreads.filter((thread) => {
+            const threadWithClosed = thread as Thread & { closed?: boolean };
+            return !threadWithClosed.closed;
+          });
+        }
+
+        const totalCount = filteredThreads.length;
+        const offset = options?.offset || 0;
+        const limit = options?.limit || totalCount;
+
+        // Apply pagination
+        const paginatedThreads = filteredThreads.slice(offset, offset + limit);
+        const hasMore = offset + limit < totalCount;
+
+        return {
+          threads: paginatedThreads,
+          totalCount,
+          hasMore,
+        };
+      }
+    ),
   };
 }

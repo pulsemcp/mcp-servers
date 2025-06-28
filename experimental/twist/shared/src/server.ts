@@ -12,6 +12,19 @@ export interface ITwistClient {
     channelId: string,
     options?: { limit?: number; newerThanTs?: number }
   ): Promise<Array<Thread>>;
+  getRobustThreads(
+    channelId: string,
+    options?: {
+      limit?: number;
+      offset?: number;
+      includeClosedThreads?: boolean;
+      newerThanTs?: number;
+    }
+  ): Promise<{
+    threads: Array<Thread>;
+    totalCount: number;
+    hasMore: boolean;
+  }>;
   getThread(threadId: string): Promise<ThreadWithMessages>;
   createThread(channelId: string, title: string, content: string): Promise<Thread>;
 
@@ -140,6 +153,23 @@ export class TwistClient implements ITwistClient {
   ): Promise<Array<Thread>> {
     const { getThreads } = await import('./twist-client/lib/get-threads.js');
     return getThreads(this.baseUrl, this.headers, channelId, options);
+  }
+
+  async getRobustThreads(
+    channelId: string,
+    options?: {
+      limit?: number;
+      offset?: number;
+      includeClosedThreads?: boolean;
+      newerThanTs?: number;
+    }
+  ): Promise<{
+    threads: Array<Thread>;
+    totalCount: number;
+    hasMore: boolean;
+  }> {
+    const { getRobustThreads } = await import('./twist-client/lib/get-threads-robust.js');
+    return getRobustThreads(this.baseUrl, this.headers, channelId, options);
   }
 
   async getThread(threadId: string): Promise<ThreadWithMessages> {

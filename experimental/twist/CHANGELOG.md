@@ -12,15 +12,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Fixed pagination offset bug in `get_channel` tool where offset was applied after filtering instead of before
+- Fixed pagination bug where closed threads would consume pagination slots, causing open threads to not appear in results
+- Implemented robust client-side pagination that fetches maximum threads (500) from API and applies filtering before pagination
+- Enhanced thread fetching with `getRobustThreads` method that abstracts away Twist API limitations
 - Added 90-day default date filter to retrieve historical threads when no `threads_newer_than_ts` is specified
-- Increased API fetch limit to account for client-side filtering to ensure adequate results after pagination
 - Improved pagination info display with more accurate counts and result ranges
 - Fixed inconsistent pagination behavior when filtering closed threads
+- Fixed channel listing to accurately reflect which threads are open vs closed regardless of API pagination
 
 ### Added
 
+- New `getRobustThreads` method in TwistClient that provides reliable pagination and filtering
 - Comprehensive test coverage for pagination offset edge cases and filtering scenarios
+- Comprehensive pagination test suite to verify correct behavior with mixed open/closed threads
 - Manual test suite `test-pagination-offset-bug.ts` to verify fix works with real Twist API
+- Improved error handling and pagination metadata in thread listings
 
 ## [0.1.12] - 2025-06-27
 
