@@ -1,7 +1,6 @@
-import { vi } from 'vitest';
 import { describe, it, expect, beforeEach } from 'vitest';
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
-import { createRegisterTools } from '../../shared/src/tools.js';
+import { scrapeTool } from '../../shared/src/tools/scrape.js';
 import {
   createMockScrapingClients,
   type MockNativeFetcher,
@@ -10,51 +9,18 @@ import {
 } from '../mocks/scraping-clients.functional-mock.js';
 import type { IScrapingClients } from '../../shared/src/server.js';
 
-interface Tool {
-  name: string;
-  description: string;
-  inputSchema: unknown;
-  handler: (args: unknown) => Promise<unknown>;
-}
-
 describe('Scrape Tool', () => {
   let mockServer: Server;
-  let registeredTools: Map<string, Tool>;
   let mockClients: IScrapingClients;
   let mockNative: MockNativeFetcher;
   let mockFirecrawl: MockFirecrawlClient;
   let mockBrightData: MockBrightDataClient;
 
-  // Helper to register tools with a custom mock client
-  const registerToolsWithClients = (clients: IScrapingClients) => {
-    const registerTools = createRegisterTools(() => clients);
-    registeredTools.clear();
-    registerTools(mockServer);
-  };
-
   beforeEach(() => {
-    // Create a mock server that captures tool registrations
-    registeredTools = new Map();
-    mockServer = {
-      setRequestHandler: vi.fn(),
-      tool: vi.fn(
-        (
-          name: string,
-          description: string,
-          inputSchema: unknown,
-          handler: (args: unknown) => Promise<unknown>
-        ) => {
-          const tool = { name, description, inputSchema, handler };
-          registeredTools.set(name, tool);
-          return {
-            enable: () => {},
-            disable: () => {},
-          };
-        }
-      ),
-    } as unknown as Server;
+    // Create a minimal mock server
+    mockServer = {} as Server;
 
-    // Create default mock clients
+    // Create mock clients
     const { clients, mocks } = createMockScrapingClients();
     mockClients = clients;
     mockNative = mocks.native;
@@ -71,9 +37,8 @@ describe('Scrape Tool', () => {
         data: 'Native content success',
       });
 
-      registerToolsWithClients(mockClients);
-      const tool = registeredTools.get('scrape');
-      const result = await tool!.handler({
+      const tool = scrapeTool(mockServer, () => mockClients);
+      const result = await tool.handler({
         url: 'https://example.com',
       });
 
@@ -106,9 +71,8 @@ describe('Scrape Tool', () => {
         },
       });
 
-      registerToolsWithClients(mockClients);
-      const tool = registeredTools.get('scrape');
-      const result = await tool!.handler({
+      const tool = scrapeTool(mockServer, () => mockClients);
+      const result = await tool.handler({
         url: 'https://example.com',
       });
 
@@ -141,9 +105,8 @@ describe('Scrape Tool', () => {
         data: 'BrightData content success',
       });
 
-      registerToolsWithClients(mockClients);
-      const tool = registeredTools.get('scrape');
-      const result = await tool!.handler({
+      const tool = scrapeTool(mockServer, () => mockClients);
+      const result = await tool.handler({
         url: 'https://example.com',
       });
 
@@ -176,9 +139,8 @@ describe('Scrape Tool', () => {
         error: 'BrightData failed',
       });
 
-      registerToolsWithClients(mockClients);
-      const tool = registeredTools.get('scrape');
-      const result = await tool!.handler({
+      const tool = scrapeTool(mockServer, () => mockClients);
+      const result = await tool.handler({
         url: 'https://example.com',
       });
 
@@ -202,9 +164,8 @@ describe('Scrape Tool', () => {
         data: longContent,
       });
 
-      registerToolsWithClients(mockClients);
-      const tool = registeredTools.get('scrape');
-      const result = await tool!.handler({
+      const tool = scrapeTool(mockServer, () => mockClients);
+      const result = await tool.handler({
         url: 'https://example.com',
         maxChars: 100,
       });
@@ -213,24 +174,26 @@ describe('Scrape Tool', () => {
     });
 
     it('should validate input schema', async () => {
-      registerToolsWithClients(mockClients);
-      const tool = registeredTools.get('scrape');
+      const tool = scrapeTool(mockServer, () => mockClients);
 
-      // Test with invalid URL
-      try {
-        await tool!.handler({
-          url: 'not-a-url',
-        });
-      } catch (error) {
-        expect(error).toBeDefined();
-      }
+      // The tool's inputSchema should be defined
+      expect(tool.inputSchema).toBeDefined();
+      expect(tool.inputSchema).toMatchObject({
+        type: 'object',
+        properties: {
+          url: {
+            type: 'string',
+            format: 'uri',
+          },
+        },
+        required: ['url'],
+      });
     });
 
     it('should require url parameter', async () => {
-      registerToolsWithClients(mockClients);
-      const tool = registeredTools.get('scrape');
+      const tool = scrapeTool(mockServer, () => mockClients);
 
-      const result = await tool!.handler({
+      const result = await tool.handler({
         // Missing url parameter
       });
 
