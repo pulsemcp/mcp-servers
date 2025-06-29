@@ -19,11 +19,16 @@ This is a comprehensive template for creating new MCP servers with TypeScript, t
    - `YOUR_API_KEY` → actual environment variable names
    - `IExampleClient`/`ExampleClient` → your client interface/class names
 
-3. **Set up CI/CD** (optional):
+3. **Choose appropriate naming**:
+   - **Experimental servers** (in `experimental/`): Use simple names like `my-server-mcp-server`
+   - **Productionized servers** (in `productionized/`): Use scoped npm names like `@pulsemcp/pulse-servername`
+   - Update package.json names, bin entries, and server name in server.ts accordingly
+
+4. **Set up CI/CD** (optional):
    - Follow the checklist in `CI_SETUP.md`
    - Delete `CI_SETUP.md` after completing setup
 
-4. **Install and build**:
+5. **Install and build**:
    ```bash
    npm run install-all
    npm run build

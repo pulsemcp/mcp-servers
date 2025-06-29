@@ -1,5 +1,5 @@
 /**
- * Common TypeScript types for MCP servers
+ * Common TypeScript types for Pulse Fetch MCP server
  */
 
 /**
@@ -14,40 +14,25 @@ export interface ToolResponse {
 }
 
 /**
- * Tool definition structure
+ * Scraping result interface
  */
-export interface ToolDefinition {
-  name: string;
-  description: string;
-  inputSchema: unknown; // JSON Schema
+export interface ScrapeResult {
+  success: boolean;
+  content?: string;
+  source: 'native' | 'firecrawl' | 'brightdata';
+  error?: string;
+  metadata?: Record<string, unknown>;
 }
 
 /**
- * Resource definition structure
+ * Scraping options interface
  */
-export interface ResourceDefinition {
-  uri: string;
-  name: string;
-  description?: string;
-  mimeType: string;
-}
-
-/**
- * Base client interface for business logic
- */
-export interface BaseClient {
-  initialize?(): Promise<void>;
-  dispose?(): Promise<void>;
-}
-
-/**
- * Server configuration
- */
-export interface ServerConfig {
-  name: string;
-  version: string;
-  capabilities?: {
-    resources?: boolean;
-    tools?: boolean;
-  };
+export interface ScrapeOptions {
+  format?: 'markdown' | 'html' | 'rawHtml' | 'links' | 'extract';
+  onlyMainContent?: boolean;
+  waitFor?: number;
+  timeout?: number;
+  maxChars?: number;
+  startIndex?: number;
+  saveResource?: boolean;
 }

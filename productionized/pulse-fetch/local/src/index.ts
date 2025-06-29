@@ -1,18 +1,44 @@
-import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+#!/usr/bin/env node
+
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
-import { registerResources, registerTools } from 'pulse-fetch-shared';
+import { createMCPServer } from '../shared/index.js';
 
-// Create an MCP server
-const server = new McpServer({
-  name: 'Pulse Fetch Local',
-  version: '1.0.0',
+// Validate environment variables
+function validateEnvironment() {
+  const required: Array<{ name: string; description: string }> = [];
+
+  // Check required variables
+  const missing = required.filter(({ name }) => !process.env[name]);
+
+  if (missing.length > 0) {
+    console.error('Missing required environment variables:');
+    missing.forEach(({ name, description }) => {
+      console.error(`  ${name}: ${description}`);
+    });
+    process.exit(1);
+  }
+
+  // Log available services
+  const available = [];
+  if (process.env.FIRECRAWL_API_KEY) available.push('Firecrawl');
+  if (process.env.BRIGHTDATA_BEARER_TOKEN) available.push('BrightData');
+
+  console.error(
+    `Pulse Fetch starting with services: native${available.length > 0 ? ', ' + available.join(', ') : ''}`
+  );
+}
+
+async function main() {
+  validateEnvironment();
+
+  const { server, registerHandlers } = createMCPServer();
+  await registerHandlers(server);
+
+  const transport = new StdioServerTransport();
+  await server.connect(transport);
+}
+
+main().catch((error) => {
+  console.error('Server error:', error);
+  process.exit(1);
 });
-
-// Register shared resources and tools
-registerResources(server);
-registerTools(server);
-
-// Start with stdio transport
-console.error('Starting Pulse Fetch with stdio transport');
-const transport = new StdioServerTransport();
-await server.connect(transport);
