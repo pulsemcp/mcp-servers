@@ -57,17 +57,6 @@ npm run test:all
 npm run test:ui
 ```
 
-## Test Coverage
-
-The test suite covers:
-
-- ✅ Scrape tool functionality with all fallback strategies
-- ✅ Input validation and error handling
-- ✅ Content truncation and pagination
-- ✅ MCP protocol compliance
-- ✅ Server lifecycle and capabilities
-- ✅ Tool registration and execution
-
 ## Mock Structure
 
 The mocks simulate:

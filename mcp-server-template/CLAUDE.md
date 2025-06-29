@@ -21,7 +21,7 @@ This is a comprehensive template for creating new MCP servers with TypeScript, t
 
 3. **Choose appropriate naming**:
    - **Experimental servers** (in `experimental/`): Use simple names like `my-server-mcp-server`
-   - **Productionized servers** (in `productionized/`): Use scoped npm names like `@pulsemcp/my-server`
+   - **Productionized servers** (in `productionized/`): Use scoped npm names like `@pulsemcp/pulse-servername`
    - Update package.json names, bin entries, and server name in server.ts accordingly
 
 4. **Set up CI/CD** (optional):

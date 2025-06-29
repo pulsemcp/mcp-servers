@@ -91,7 +91,6 @@ Key insights gathered during implementation and CI troubleshooting:
 
 ### CI/CD and Release Management
 
-- **Publication Verification**: New servers require a `CHANGELOG.md` file with version entries in format `## [0.0.1] - 2025-06-29`
 - **Pre-commit Hooks**: Always run linting from repository root, not subdirectories, to ensure consistent tooling
 - **Package-lock.json Sync**: CI failures with "Cannot find module" often indicate package-lock.json is out of sync - regenerate with `npm install`
 
