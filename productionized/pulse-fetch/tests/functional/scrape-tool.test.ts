@@ -2,7 +2,12 @@ import { vi } from 'vitest';
 import { describe, it, expect, beforeEach } from 'vitest';
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { createRegisterTools } from '../../shared/src/tools.js';
-import { createMockScrapingClients } from '../mocks/scraping-clients.functional-mock.js';
+import {
+  createMockScrapingClients,
+  type MockNativeFetcher,
+  type MockFirecrawlClient,
+  type MockBrightDataClient,
+} from '../mocks/scraping-clients.functional-mock.js';
 import type { IScrapingClients } from '../../shared/src/server.js';
 
 interface Tool {
@@ -16,6 +21,9 @@ describe('Scrape Tool', () => {
   let mockServer: Server;
   let registeredTools: Map<string, Tool>;
   let mockClients: IScrapingClients;
+  let mockNative: MockNativeFetcher;
+  let mockFirecrawl: MockFirecrawlClient;
+  let mockBrightData: MockBrightDataClient;
 
   // Helper to register tools with a custom mock client
   const registerToolsWithClients = (clients: IScrapingClients) => {
@@ -47,13 +55,17 @@ describe('Scrape Tool', () => {
     } as unknown as Server;
 
     // Create default mock clients
-    mockClients = createMockScrapingClients();
+    const { clients, mocks } = createMockScrapingClients();
+    mockClients = clients;
+    mockNative = mocks.native;
+    mockFirecrawl = mocks.firecrawl;
+    mockBrightData = mocks.brightData;
   });
 
   describe('scrape tool', () => {
     it('should use native fetcher when successful', async () => {
       // Set up mock for successful native fetch
-      mockClients.native.fetch = vi.fn().mockResolvedValue({
+      mockNative.setMockResponse({
         success: true,
         status: 200,
         data: 'Native content success',
@@ -78,23 +90,21 @@ describe('Scrape Tool', () => {
 
     it('should fallback to Firecrawl when native fails', async () => {
       // Set up mocks for native failure and Firecrawl success
-      mockClients.native.fetch = vi.fn().mockResolvedValue({
+      mockNative.setMockResponse({
         success: false,
         status: 500,
         error: 'Network error',
       });
 
-      mockClients.firecrawl = {
-        scrape: vi.fn().mockResolvedValue({
-          success: true,
-          data: {
-            content: 'Firecrawl content success',
-            markdown: 'Firecrawl content success',
-            html: '<p>Firecrawl content success</p>',
-            metadata: {},
-          },
-        }),
-      };
+      mockFirecrawl.setMockResponse({
+        success: true,
+        data: {
+          content: 'Firecrawl content success',
+          markdown: 'Firecrawl content success',
+          html: '<p>Firecrawl content success</p>',
+          metadata: {},
+        },
+      });
 
       registerToolsWithClients(mockClients);
       const tool = registeredTools.get('scrape');
@@ -115,25 +125,21 @@ describe('Scrape Tool', () => {
 
     it('should fallback to BrightData when native and Firecrawl fail', async () => {
       // Set up mocks for native and Firecrawl failure, BrightData success
-      mockClients.native.fetch = vi.fn().mockResolvedValue({
+      mockNative.setMockResponse({
         success: false,
         status: 500,
         error: 'Network error',
       });
 
-      mockClients.firecrawl = {
-        scrape: vi.fn().mockResolvedValue({
-          success: false,
-          error: 'Firecrawl failed',
-        }),
-      };
+      mockFirecrawl.setMockResponse({
+        success: false,
+        error: 'Firecrawl failed',
+      });
 
-      mockClients.brightData = {
-        scrape: vi.fn().mockResolvedValue({
-          success: true,
-          data: 'BrightData content success',
-        }),
-      };
+      mockBrightData.setMockResponse({
+        success: true,
+        data: 'BrightData content success',
+      });
 
       registerToolsWithClients(mockClients);
       const tool = registeredTools.get('scrape');
@@ -154,25 +160,21 @@ describe('Scrape Tool', () => {
 
     it('should return error when all methods fail', async () => {
       // Set up mocks for all failures
-      mockClients.native.fetch = vi.fn().mockResolvedValue({
+      mockNative.setMockResponse({
         success: false,
         status: 500,
         error: 'Network error',
       });
 
-      mockClients.firecrawl = {
-        scrape: vi.fn().mockResolvedValue({
-          success: false,
-          error: 'Firecrawl failed',
-        }),
-      };
+      mockFirecrawl.setMockResponse({
+        success: false,
+        error: 'Firecrawl failed',
+      });
 
-      mockClients.brightData = {
-        scrape: vi.fn().mockResolvedValue({
-          success: false,
-          error: 'BrightData failed',
-        }),
-      };
+      mockBrightData.setMockResponse({
+        success: false,
+        error: 'BrightData failed',
+      });
 
       registerToolsWithClients(mockClients);
       const tool = registeredTools.get('scrape');
@@ -194,7 +196,7 @@ describe('Scrape Tool', () => {
     it('should handle maxChars truncation', async () => {
       const longContent = 'A'.repeat(1000);
 
-      mockClients.native.fetch = vi.fn().mockResolvedValue({
+      mockNative.setMockResponse({
         success: true,
         status: 200,
         data: longContent,
