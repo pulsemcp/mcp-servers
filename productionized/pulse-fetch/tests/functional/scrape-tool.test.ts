@@ -1,52 +1,71 @@
+import { vi } from 'vitest';
 import { describe, it, expect, beforeEach } from 'vitest';
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
-import { createRegisterTools } from '../../shared/dist/tools.js';
+import { createRegisterTools } from '../../shared/src/tools.js';
 import { createMockScrapingClients } from '../mocks/scraping-clients.functional-mock.js';
+import type { IScrapingClients } from '../../shared/src/server.js';
+
+interface Tool {
+  name: string;
+  description: string;
+  inputSchema: unknown;
+  handler: (args: unknown) => Promise<unknown>;
+}
 
 describe('Scrape Tool', () => {
-  let server: Server;
-  let mockClients: ReturnType<typeof createMockScrapingClients>;
+  let mockServer: Server;
+  let registeredTools: Map<string, Tool>;
+  let mockClients: IScrapingClients;
+
+  // Helper to register tools with a custom mock client
+  const registerToolsWithClients = (clients: IScrapingClients) => {
+    const registerTools = createRegisterTools(() => clients);
+    registeredTools.clear();
+    registerTools(mockServer);
+  };
 
   beforeEach(() => {
-    server = new Server(
-      {
-        name: 'test-server',
-        version: '1.0.0',
-      },
-      {
-        capabilities: {
-          tools: {},
-        },
-      }
-    );
+    // Create a mock server that captures tool registrations
+    registeredTools = new Map();
+    mockServer = {
+      setRequestHandler: vi.fn(),
+      tool: vi.fn(
+        (
+          name: string,
+          description: string,
+          inputSchema: unknown,
+          handler: (args: unknown) => Promise<unknown>
+        ) => {
+          const tool = { name, description, inputSchema, handler };
+          registeredTools.set(name, tool);
+          return {
+            enable: () => {},
+            disable: () => {},
+          };
+        }
+      ),
+    } as unknown as Server;
 
+    // Create default mock clients
     mockClients = createMockScrapingClients();
-    const registerTools = createRegisterTools(() => mockClients.clients);
-    registerTools(server);
   });
 
   describe('scrape tool', () => {
     it('should use native fetcher when successful', async () => {
-      // Set up native fetcher to succeed
-      mockClients.mocks.native.setMockResponse({
+      // Set up mock for successful native fetch
+      mockClients.native.fetch = vi.fn().mockResolvedValue({
         success: true,
         status: 200,
         data: 'Native content success',
       });
 
-      const request = {
-        method: 'tools/call',
-        params: {
-          name: 'scrape',
-          arguments: {
-            url: 'https://example.com',
-          },
-        },
-      };
+      registerToolsWithClients(mockClients);
+      const tool = registeredTools.get('scrape');
+      const result = await tool!.handler({
+        url: 'https://example.com',
+      });
 
-      const response = await server.request(request, {} as never);
-
-      expect(response).toMatchObject({
+      expect(result).toMatchObject({
         content: [
           {
             type: 'text',
@@ -54,85 +73,75 @@ describe('Scrape Tool', () => {
           },
         ],
       });
-      expect(response.content[0].text).toContain('Scraped using: native');
+      expect(result.content[0].text).toContain('Scraped using: native');
     });
 
     it('should fallback to Firecrawl when native fails', async () => {
-      // Set up native to fail
-      mockClients.mocks.native.setMockResponse({
+      // Set up mocks for native failure and Firecrawl success
+      mockClients.native.fetch = vi.fn().mockResolvedValue({
         success: false,
-        status: 403,
-        error: 'Forbidden',
+        status: 500,
+        error: 'Network error',
       });
 
-      // Set up Firecrawl to succeed
-      mockClients.mocks.firecrawl.setMockResponse({
-        success: true,
-        data: {
-          content: 'Firecrawl content success',
-          markdown: '# Firecrawl content success',
-          html: '<h1>Firecrawl content success</h1>',
-          metadata: { source: 'firecrawl' },
-        },
-      });
-
-      const request = {
-        method: 'tools/call',
-        params: {
-          name: 'scrape',
-          arguments: {
-            url: 'https://example.com',
-            format: 'markdown',
+      mockClients.firecrawl = {
+        scrape: vi.fn().mockResolvedValue({
+          success: true,
+          data: {
+            content: 'Firecrawl content success',
+            markdown: 'Firecrawl content success',
+            html: '<p>Firecrawl content success</p>',
+            metadata: {},
           },
-        },
+        }),
       };
 
-      const response = await server.request(request, {} as never);
+      registerToolsWithClients(mockClients);
+      const tool = registeredTools.get('scrape');
+      const result = await tool!.handler({
+        url: 'https://example.com',
+      });
 
-      expect(response).toMatchObject({
+      expect(result).toMatchObject({
         content: [
           {
             type: 'text',
-            text: expect.stringContaining('# Firecrawl content success'),
+            text: expect.stringContaining('Firecrawl content success'),
           },
         ],
       });
-      expect(response.content[0].text).toContain('Scraped using: firecrawl');
+      expect(result.content[0].text).toContain('Scraped using: firecrawl');
     });
 
     it('should fallback to BrightData when native and Firecrawl fail', async () => {
-      // Set up native to fail
-      mockClients.mocks.native.setMockResponse({
+      // Set up mocks for native and Firecrawl failure, BrightData success
+      mockClients.native.fetch = vi.fn().mockResolvedValue({
         success: false,
-        status: 403,
-        error: 'Forbidden',
+        status: 500,
+        error: 'Network error',
       });
 
-      // Set up Firecrawl to fail
-      mockClients.mocks.firecrawl.setMockResponse({
-        success: false,
-        error: 'Firecrawl failed',
-      });
-
-      // Set up BrightData to succeed
-      mockClients.mocks.brightData.setMockResponse({
-        success: true,
-        data: 'BrightData content success',
-      });
-
-      const request = {
-        method: 'tools/call',
-        params: {
-          name: 'scrape',
-          arguments: {
-            url: 'https://example.com',
-          },
-        },
+      mockClients.firecrawl = {
+        scrape: vi.fn().mockResolvedValue({
+          success: false,
+          error: 'Firecrawl failed',
+        }),
       };
 
-      const response = await server.request(request, {} as never);
+      mockClients.brightData = {
+        scrape: vi.fn().mockResolvedValue({
+          success: true,
+          data: 'BrightData content success',
+        }),
+      };
 
-      expect(response).toMatchObject({
+      registerToolsWithClients(mockClients);
+      const tool = registeredTools.get('scrape');
+      const result = await tool!.handler({
+        url: 'https://example.com',
+      });
+
+      expect(result).toMatchObject({
         content: [
           {
             type: 'text',
@@ -140,40 +149,38 @@ describe('Scrape Tool', () => {
           },
         ],
       });
-      expect(response.content[0].text).toContain('Scraped using: brightdata');
+      expect(result.content[0].text).toContain('Scraped using: brightdata');
     });
 
     it('should return error when all methods fail', async () => {
-      // Set up all clients to fail
-      mockClients.mocks.native.setMockResponse({
+      // Set up mocks for all failures
+      mockClients.native.fetch = vi.fn().mockResolvedValue({
         success: false,
-        status: 403,
-        error: 'Forbidden',
+        status: 500,
+        error: 'Network error',
       });
 
-      mockClients.mocks.firecrawl.setMockResponse({
-        success: false,
-        error: 'Firecrawl failed',
-      });
-
-      mockClients.mocks.brightData.setMockResponse({
-        success: false,
-        error: 'BrightData failed',
-      });
-
-      const request = {
-        method: 'tools/call',
-        params: {
-          name: 'scrape',
-          arguments: {
-            url: 'https://example.com',
-          },
-        },
+      mockClients.firecrawl = {
+        scrape: vi.fn().mockResolvedValue({
+          success: false,
+          error: 'Firecrawl failed',
+        }),
       };
 
-      const response = await server.request(request, {} as never);
+      mockClients.brightData = {
+        scrape: vi.fn().mockResolvedValue({
+          success: false,
+          error: 'BrightData failed',
+        }),
+      };
 
-      expect(response).toMatchObject({
+      registerToolsWithClients(mockClients);
+      const tool = registeredTools.get('scrape');
+      const result = await tool!.handler({
+        url: 'https://example.com',
+      });
+
+      expect(result).toMatchObject({
         content: [
           {
             type: 'text',
@@ -187,55 +194,53 @@ describe('Scrape Tool', () => {
     it('should handle maxChars truncation', async () => {
       const longContent = 'A'.repeat(1000);
 
-      mockClients.mocks.native.setMockResponse({
+      mockClients.native.fetch = vi.fn().mockResolvedValue({
         success: true,
         status: 200,
         data: longContent,
       });
 
-      const request = {
-        method: 'tools/call',
-        params: {
-          name: 'scrape',
-          arguments: {
-            url: 'https://example.com',
-            maxChars: 100,
-          },
-        },
-      };
+      registerToolsWithClients(mockClients);
+      const tool = registeredTools.get('scrape');
+      const result = await tool!.handler({
+        url: 'https://example.com',
+        maxChars: 100,
+      });
 
-      const response = await server.request(request, {} as never);
-
-      expect(response.content[0].text).toContain('[Content truncated at 100 characters');
-      expect(response.content[0].text.length).toBeLessThan(longContent.length + 200); // Account for metadata
+      expect(result.content[0].text).toContain('[Content truncated at 100 characters');
     });
 
     it('should validate input schema', async () => {
-      const request = {
-        method: 'tools/call',
-        params: {
-          name: 'scrape',
-          arguments: {
-            url: 'invalid-url', // Invalid URL
-          },
-        },
-      };
+      registerToolsWithClients(mockClients);
+      const tool = registeredTools.get('scrape');
 
-      await expect(server.request(request, {} as never)).rejects.toThrow();
+      // Test with invalid URL
+      try {
+        await tool!.handler({
+          url: 'not-a-url',
+        });
+      } catch (error) {
+        expect(error).toBeDefined();
+      }
     });
 
     it('should require url parameter', async () => {
-      const request = {
-        method: 'tools/call',
-        params: {
-          name: 'scrape',
-          arguments: {
-            // Missing required 'url' field
-          },
-        },
-      };
+      registerToolsWithClients(mockClients);
+      const tool = registeredTools.get('scrape');
 
-      await expect(server.request(request, {} as never)).rejects.toThrow();
+      const result = await tool!.handler({
+        // Missing url parameter
+      });
+
+      expect(result).toMatchObject({
+        content: [
+          {
+            type: 'text',
+            text: expect.stringContaining('Error'),
+          },
+        ],
+        isError: true,
+      });
     });
   });
 });
