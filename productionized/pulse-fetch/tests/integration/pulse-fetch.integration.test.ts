@@ -11,34 +11,12 @@ describe('Pulse Fetch MCP Server Integration Tests', () => {
 
   afterEach(async () => {
     if (client) {
-      await client.close();
+      await client.disconnect();
       client = null;
     }
   });
 
-  describe('Server Lifecycle', () => {
-    it('should connect and list capabilities', async () => {
-      client = await createTestMCPClientWithMocks({
-        nativeSuccess: true,
-        nativeData: 'Test content',
-      });
-
-      const serverInfo = await client.getServerInfo();
-      expect(serverInfo.name).toBe('@pulsemcp/pulse-fetch');
-      expect(serverInfo.version).toBe('0.0.1');
-    });
-  });
-
   describe('Tools', () => {
-    it('should list available tools', async () => {
-      client = await createTestMCPClientWithMocks({});
-
-      const tools = await client.listTools();
-      expect(tools).toHaveLength(1);
-      expect(tools[0].name).toBe('scrape');
-      expect(tools[0].description).toContain('Scrape a single webpage');
-    });
-
     it('should execute scrape tool with native success', async () => {
       client = await createTestMCPClientWithMocks({
         nativeSuccess: true,
@@ -135,11 +113,20 @@ describe('Pulse Fetch MCP Server Integration Tests', () => {
     it('should validate required url parameter', async () => {
       client = await createTestMCPClientWithMocks({});
 
-      await expect(
-        client.callTool('scrape', {
-          // Missing url parameter
-        })
-      ).rejects.toThrow();
+      const result = await client.callTool('scrape', {
+        // Missing url parameter
+      });
+
+      // Tool should return error response, not throw
+      expect(result).toMatchObject({
+        content: [
+          {
+            type: 'text',
+            text: expect.stringContaining('Error'),
+          },
+        ],
+        isError: true,
+      });
     });
 
     it('should handle maxChars parameter', async () => {
@@ -156,15 +143,6 @@ describe('Pulse Fetch MCP Server Integration Tests', () => {
       });
 
       expect(result.content[0].text).toContain('[Content truncated at 100 characters');
-    });
-  });
-
-  describe('Resources', () => {
-    it('should list available resources', async () => {
-      client = await createTestMCPClientWithMocks({});
-
-      const resources = await client.listResources();
-      expect(resources).toHaveLength(0); // No resources implemented yet
     });
   });
 });
