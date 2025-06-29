@@ -117,6 +117,4 @@ Key insights gathered during implementation and CI troubleshooting:
 
 - **Publication Process**: Follow the detailed guidelines in `/docs/PUBLISHING_SERVERS.md` for version bumping, changelog updates, and automated publishing
 - **Merge Conflict Resolution**: When rebasing onto main during publication, combine changelog entries from both branches preserving the intent of all changes (e.g., merge README fixes with feature additions)
-- **Vitest Configuration**: Always exclude manual test directories (`**/manual/**`) from Vitest configuration to prevent CI failures - manual tests use `node --import tsx` and don't contain Vitest test suites
 - **CI Monitoring**: Use `gh run list --branch <branch-name>` to check workflow runs when `gh pr checks` doesn't show results - CI may complete successfully even if checks aren't visible in PR view
-- **Manual Test Verification**: Always test manual test suites locally with both success and failure cases to ensure they correctly detect issues and avoid false positives
