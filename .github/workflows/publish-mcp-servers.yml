@@ -190,31 +190,76 @@ jobs:
             
             # Publish to npm
             if npm publish --access public; then
-              echo "✅ Successfully published $PACKAGE_NAME@$PACKAGE_VERSION"
-              PUBLISHED_SERVERS="$PUBLISHED_SERVERS\n- $PACKAGE_NAME@$PACKAGE_VERSION"
+              echo "✅ Successfully published $PACKAGE_NAME@$PACKAGE_VERSION to npm"
               
-              # Create GitHub release
-              TAG_NAME="${PACKAGE_NAME}@${PACKAGE_VERSION}"
-              SERVER_DIR=$(dirname "$LOCAL_DIR")
-              SERVER_NAME=$(basename "$SERVER_DIR")
+              # Validate the published package is available on npm
+              echo "🔍 Validating published package availability..."
+              VALIDATION_FAILED=false
               
-              # Extract changelog entry for this version
-              CHANGELOG_FILE="$SERVER_DIR/CHANGELOG.md"
-              if [ -f "$CHANGELOG_FILE" ]; then
-                # Extract the changelog section for this version
-                CHANGELOG_ENTRY=$(awk "/## \[$PACKAGE_VERSION\]/{flag=1; next} /## \[/{flag=0} flag" "$CHANGELOG_FILE")
-                
-                RELEASE_NOTES="# $PACKAGE_NAME v$PACKAGE_VERSION"$'\n\n'"$CHANGELOG_ENTRY"$'\n\n'"---"$'\n'"Published to npm: https://www.npmjs.com/package/$PACKAGE_NAME"
+              # Wait for npm registry propagation and verify package metadata
+              echo "Waiting for npm registry propagation..."
+              for i in {1..12}; do
+                PUBLISHED_VERSION=$(npm view "$PACKAGE_NAME@$PACKAGE_VERSION" version 2>/dev/null)
+                if [ "$PUBLISHED_VERSION" = "$PACKAGE_VERSION" ]; then
+                  echo "✅ Package $PACKAGE_NAME@$PACKAGE_VERSION available on npm registry"
+                  
+                  # Additional validation: check package has required metadata
+                  MAIN_FIELD=$(npm view "$PACKAGE_NAME@$PACKAGE_VERSION" main 2>/dev/null)
+                  FILES_FIELD=$(npm view "$PACKAGE_NAME@$PACKAGE_VERSION" files 2>/dev/null)
+                  
+                  if [ -z "$MAIN_FIELD" ]; then
+                    echo "⚠️  Warning: Package missing 'main' field in package.json"
+                  else
+                    echo "✅ Package has main field: $MAIN_FIELD"
+                  fi
+                  
+                  if [ -z "$FILES_FIELD" ]; then
+                    echo "⚠️  Warning: Package missing 'files' field - may include unintended files"
+                  else
+                    echo "✅ Package has files field configured"
+                  fi
+                  
+                  break
+                fi
+                if [ $i -eq 12 ]; then
+                  echo "❌ Package not available after 60 seconds - registry propagation failed"
+                  VALIDATION_FAILED=true
+                fi
+                echo "Waiting for registry propagation... ($i/12)"
+                sleep 5
+              done
+              
+              # Check validation results
+              if [ "$VALIDATION_FAILED" = true ]; then
+                echo "❌ Package validation failed for $PACKAGE_NAME@$PACKAGE_VERSION"
+                FAILED_SERVERS="$FAILED_SERVERS\n- $PACKAGE_NAME@$PACKAGE_VERSION (published but validation failed)"
               else
-                RELEASE_NOTES="# $PACKAGE_NAME v$PACKAGE_VERSION"$'\n\n'"Published to npm: https://www.npmjs.com/package/$PACKAGE_NAME"
-              fi
-              
-              # Create release using GitHub CLI
-              if command -v gh &> /dev/null; then
-                echo "$RELEASE_NOTES" | gh release create "$TAG_NAME" \
-                  --title "$PACKAGE_NAME v$PACKAGE_VERSION" \
-                  --notes-file - \
-                  || echo "Failed to create GitHub release (tag might not exist)"
+                echo "✅ Package validation successful for $PACKAGE_NAME@$PACKAGE_VERSION"
+                PUBLISHED_SERVERS="$PUBLISHED_SERVERS\n- $PACKAGE_NAME@$PACKAGE_VERSION"
+                
+                # Create GitHub release
+                TAG_NAME="${PACKAGE_NAME}@${PACKAGE_VERSION}"
+                SERVER_DIR=$(dirname "$LOCAL_DIR")
+                SERVER_NAME=$(basename "$SERVER_DIR")
+                
+                # Extract changelog entry for this version
+                CHANGELOG_FILE="$SERVER_DIR/CHANGELOG.md"
+                if [ -f "$CHANGELOG_FILE" ]; then
+                  # Extract the changelog section for this version
+                  CHANGELOG_ENTRY=$(awk "/## \[$PACKAGE_VERSION\]/{flag=1; next} /## \[/{flag=0} flag" "$CHANGELOG_FILE")
+                  
+                  RELEASE_NOTES="# $PACKAGE_NAME v$PACKAGE_VERSION"$'\n\n'"$CHANGELOG_ENTRY"$'\n\n'"---"$'\n'"Published to npm: https://www.npmjs.com/package/$PACKAGE_NAME"
+                else
+                  RELEASE_NOTES="# $PACKAGE_NAME v$PACKAGE_VERSION"$'\n\n'"Published to npm: https://www.npmjs.com/package/$PACKAGE_NAME"
+                fi
+                
+                # Create release using GitHub CLI
+                if command -v gh &> /dev/null; then
+                  echo "$RELEASE_NOTES" | gh release create "$TAG_NAME" \
+                    --title "$PACKAGE_NAME v$PACKAGE_VERSION" \
+                    --notes-file - \
+                    || echo "Failed to create GitHub release (tag might not exist)"
+                fi
               fi
             else
               echo "❌ Failed to publish $PACKAGE_NAME@$PACKAGE_VERSION"
