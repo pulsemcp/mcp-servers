@@ -36,6 +36,10 @@ DESCRIPTION
    - `YOUR_API_KEY` → your actual environment variable name
    - `IExampleClient`/`ExampleClient` → your actual client interface/class
 
+   **Naming Convention:**
+   - **Experimental servers**: Use simple names like `weather-mcp-server`
+   - **Productionized servers**: Use scoped npm names like `@pulsemcp/weather`
+
 3. **Install dependencies**
 
    ```bash

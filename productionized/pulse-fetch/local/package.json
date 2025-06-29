@@ -1,27 +1,42 @@
 {
-  "name": "pulse-fetch",
+  "name": "@pulsemcp/pulse-fetch",
   "version": "0.0.1",
-  "description": "A local implementation of Pulse Fetch using MCP",
-  "main": "dist/index.js",
+  "description": "Local implementation of pulse-fetch MCP server",
+  "main": "build/index.js",
   "type": "module",
+  "bin": {
+    "@pulsemcp/pulse-fetch": "./build/index.js"
+  },
+  "files": [
+    "build/**/*.js",
+    "shared/**/*.js",
+    "shared/**/*.d.ts",
+    "README.md"
+  ],
   "scripts": {
-    "build": "tsc",
-    "start": "node dist/index.js",
+    "build": "tsc && npm run build:integration",
+    "build:integration": "tsc -p tsconfig.integration.json",
+    "start": "node build/index.js",
     "dev": "tsx src/index.ts",
-    "predev": "cd ../shared && npm run build",
-    "prebuild": "cd ../shared && npm run build"
+    "predev": "cd ../shared && npm run build && cd ../local && node setup-dev.js",
+    "prebuild": "cd ../shared && npm run build && cd ../local && node setup-dev.js",
+    "prepublishOnly": "node prepare-publish.js",
+    "lint": "eslint . --ext .ts,.tsx",
+    "lint:fix": "eslint . --ext .ts,.tsx --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "stage-publish": "npm version"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.11.2",
-    "zod": "^3.24.4",
-    "pulse-fetch-shared": "file:../shared"
+    "@modelcontextprotocol/sdk": "^1.0.4",
+    "zod": "^3.24.1"
   },
   "devDependencies": {
-    "@types/node": "^20.17.46",
+    "@types/node": "^22.10.6",
     "tsx": "^4.19.4",
-    "typescript": "^5.8.3"
+    "typescript": "^5.7.3"
   },
   "keywords": [],
-  "author": "",
-  "license": "ISC"
+  "author": "PulseMCP",
+  "license": "MIT"
 }

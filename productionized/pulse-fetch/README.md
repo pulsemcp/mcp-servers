@@ -141,8 +141,8 @@ Add this configuration to your Claude Desktop config file:
 {
   "mcpServers": {
     "pulse-fetch": {
-      "command": "node",
-      "args": ["/path/to/pulse-fetch/local/build/index.js"],
+      "command": "npx",
+      "args": ["-y", "@pulsemcp/pulse-fetch"],
       "env": {
         "FIRECRAWL_API_KEY": "your-firecrawl-api-key",
         "BRIGHTDATA_BEARER_TOKEN": "your-brightdata-bearer-token"
