@@ -7,11 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.0.4] - 2025-06-29
 
+### Added
+
+- Native scraping client class following MCP client architecture patterns
+- Comprehensive manual test suite with individual client tests
+- Class-based scraping client architecture (NativeScrapingClient, FirecrawlScrapingClient, BrightDataScrapingClient)
+- Enhanced manual testing with one-liner commands for each scraping mode
+- Detailed content analysis and response statistics in manual tests
+- README documentation for manual test usage and debugging
+
+### Changed
+
+- Refactored scraping clients from functions to class-based implementations
+- Improved manual test output with better formatting and analysis
+- Enhanced error detection and success/failure reporting in tests
+
 ### Fixed
 
 - Fixed missing README concatenation for npm publication: added `scripts/prepare-npm-readme.js` to properly merge main README with local configuration
 - Local README now contains only local-specific configuration, allowing proper concatenation during publish
 - Published npm package will now display full documentation instead of minimal local README
+- Fixed import paths and TypeScript compilation issues in manual tests
+- Improved error handling in scraping client classes
 
 ## [0.0.3] - 2025-06-29
 

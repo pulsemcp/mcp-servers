@@ -105,3 +105,16 @@ Key insights gathered during implementation and CI troubleshooting:
 - **Error Handling**: Use try-catch blocks without error parameters (`catch { }`) to avoid unused variable warnings
 - **Content Processing**: Implement truncation and pagination at the tool level for better user experience
 - **Service Validation**: Validate environment variables at startup and log available services for debugging
+
+### Manual Testing and Client Architecture
+
+- **Class-Based Client Design**: Following the twist-client pattern, create client classes with consistent interfaces (`scrape(url, options)`) rather than standalone functions
+- **Manual Test Suite Strategy**: Create individual test files for each client with one-liner commands for easy debugging - essential for testing external API integrations
+- **Success/Failure Detection**: Use specific success indicators in test output (e.g., "✅ [Client] scraping successful") to properly distinguish between actual failures and expected error content
+- **Test Output Formatting**: Include content analysis, response statistics, and character distribution analysis to help understand how different scraping services behave with various content types
+
+### Publication and CI Process
+
+- **Publication Process**: Follow the detailed guidelines in `/docs/PUBLISHING_SERVERS.md` for version bumping, changelog updates, and automated publishing
+- **Merge Conflict Resolution**: When rebasing onto main during publication, combine changelog entries from both branches preserving the intent of all changes (e.g., merge README fixes with feature additions)
+- **CI Monitoring**: Use `gh run list --branch <branch-name>` to check workflow runs when `gh pr checks` doesn't show results - CI may complete successfully even if checks aren't visible in PR view
