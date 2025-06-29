@@ -11,5 +11,5 @@ tell application "System Events"
 end tell
 EOF
 
-# Run Claude Code
-exec claude --dangerously-skip-permissions --continue
+# Run Claude Code - try --continue first, fallback to no flag if it fails
+claude --dangerously-skip-permissions --continue || exec claude --dangerously-skip-permissions

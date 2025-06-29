@@ -192,6 +192,16 @@ if [ $? -eq 0 ]; then
   
   echo "  ✓ Copied $COPIED_COUNT gitignored/untracked file(s)"
   
+  # Install dependencies in the new worktree
+  echo "Installing dependencies in new worktree..."
+  cd "$NEW_WORKTREE_PATH"
+  if npm ci --no-audit --no-fund; then
+    echo "  ✓ Dependencies installed successfully"
+  else
+    echo "  ⚠️  Failed to install dependencies - you may need to run 'npm ci' manually"
+  fi
+  cd "$CURRENT_ROOT"
+  
   # Handle MCP profile activation
   # Default to base profile if no MCP options provided
   if [ "$INTERACTIVE_MCP" = false ] && [ -z "$MCP_PROFILE" ]; then
