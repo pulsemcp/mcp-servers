@@ -51,9 +51,58 @@ npm run dev       # Development with auto-reload (builds shared first)
 - Currently implements a simple "hello" resource and mock "fetch" tool
 - The local module is just a thin wrapper that registers shared functionality
 
-## Planned Features
+## Implemented Features
 
-According to the README, future implementations will include:
+The server now includes:
 
-- Basic scraping tools
-- Web unblocker tools for accessing protected content
+- **Smart scraping tool** with three-tier fallback logic:
+  1. Native fetch (fastest, basic)
+  2. Firecrawl API (enhanced content extraction)
+  3. BrightData Web Unlocker (anti-bot bypass)
+- **Comprehensive test suite** with functional, integration, and mock tests
+- **Environment variable validation** with startup logging
+- **Content processing** with truncation and pagination support
+- **Error handling** with detailed Zod validation
+
+## Claude Learnings
+
+Key insights gathered during implementation and CI troubleshooting:
+
+### MCP Server Development Patterns
+
+- **Tool Registration**: MCP servers use `server.setRequestHandler()` for `ListToolsRequestSchema` and `CallToolRequestSchema`, not individual `server.tool()` calls
+- **Functional vs Integration Testing**:
+  - Functional tests should directly test tool functions (e.g., `scrapeTool(server, clientFactory)`) with mocked dependencies
+  - Integration tests use `TestMCPClient` to test the full server via IPC transport
+  - Don't try to mock server registration - test the actual tool functions
+
+### TypeScript and MCP SDK Usage
+
+- **Import Patterns**: Use `@modelcontextprotocol/sdk/server/index.js` not `/server/mcp.js`
+- **Tool Structure**: Tools return objects with `{ name, description, inputSchema, handler }` properties
+- **Error Handling**: Tools should return error responses with `isError: true` rather than throwing exceptions
+- **Type Safety**: Avoid `Function` type - use proper function signatures like `(args: unknown) => Promise<unknown>`
+
+### Testing Strategy for MCP Servers
+
+- **Mock Client Factory Pattern**: Use dependency injection with client factories for easy mocking
+- **Workspace Package Dependencies**: When packages aren't in package-lock.json, run `npm install` from the project root and commit the updated lock file
+- **TestMCPClient API**: Use `client.disconnect()` not `client.close()`, and `client.callTool()` for tool testing
+
+### CI/CD and Release Management
+
+- **Publication Verification**: New servers require a `CHANGELOG.md` file with version entries in format `## [0.0.1] - 2025-06-29`
+- **Pre-commit Hooks**: Always run linting from repository root, not subdirectories, to ensure consistent tooling
+- **Package-lock.json Sync**: CI failures with "Cannot find module" often indicate package-lock.json is out of sync - regenerate with `npm install`
+
+### Debugging Complex Build Issues
+
+- **Incremental Problem Solving**: When multiple systems fail (functional tests, integration tests, CI), fix one at a time and verify each step
+- **Log Analysis**: CI logs provide exact error messages - read them carefully to understand root causes rather than guessing
+- **Symlink Management**: Development setups with symlinks (like `setup-dev.js`) require proper import paths that work in both dev and publish scenarios
+
+### Smart Fallback Implementation
+
+- **Error Handling**: Use try-catch blocks without error parameters (`catch { }`) to avoid unused variable warnings
+- **Content Processing**: Implement truncation and pagination at the tool level for better user experience
+- **Service Validation**: Validate environment variables at startup and log available services for debugging
