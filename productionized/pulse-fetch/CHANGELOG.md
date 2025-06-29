@@ -5,6 +5,13 @@ All notable changes to the Pulse Fetch MCP server will be documented in this fil
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.0.3] - 2025-06-29
+
+### Fixed
+
+- Fixed build configuration: TypeScript compilation now correctly outputs to `build/` directory instead of `dist/`
+- Fixed package.json paths to match actual build output directory
+
 ## [0.0.2] - 2025-06-29
 
 ### Changed
