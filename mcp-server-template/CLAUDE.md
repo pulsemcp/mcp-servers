@@ -28,7 +28,12 @@ This is a comprehensive template for creating new MCP servers with TypeScript, t
    - Follow the checklist in `CI_SETUP.md`
    - Delete `CI_SETUP.md` after completing setup
 
-5. **Install and build**:
+5. **Update README preparation script**:
+   - Edit `scripts/prepare-npm-readme.js` to match your server's title pattern
+   - Update the GitHub repository URL path
+   - Customize the repository notice text as needed
+
+6. **Install and build**:
    ```bash
    npm run install-all
    npm run build
@@ -39,6 +44,8 @@ This is a comprehensive template for creating new MCP servers with TypeScript, t
 
 ```
 mcp-server-template/
+├── scripts/                    # Build and publication scripts
+│   └── prepare-npm-readme.js  # README concatenation for npm
 ├── local/                      # Local server implementation
 │   ├── src/
 │   │   ├── index.ts           # Main entry point
@@ -99,6 +106,17 @@ The template includes `index.integration-with-mock.ts` which:
 - Uses the real MCP server with mocked external dependencies
 - Demonstrates clear separation between MCP protocol and external API mocking
 - Enables testing various scenarios without hitting real APIs
+
+### README Preparation for npm Publication
+
+The template includes automatic README preparation for npm publication:
+
+- **Script**: `scripts/prepare-npm-readme.js` runs during `prepublishOnly`
+- **Combines READMEs**: Merges main README with local configuration sections
+- **Adds repository reference**: Links to GitHub monorepo for context
+- **Customizable**: Update server name pattern and repository URL when copying template
+
+This ensures published npm packages have comprehensive documentation with proper repository references.
 
 ### Development Scripts
 
