@@ -1,6 +1,6 @@
 {
   "name": "@pulsemcp/pulse-fetch",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Local implementation of pulse-fetch MCP server",
   "main": "build/index.js",
   "type": "module",
@@ -9,6 +9,7 @@
   },
   "files": [
     "build/**/*.js",
+    "build/**/*.d.ts",
     "shared/**/*.js",
     "shared/**/*.d.ts",
     "README.md"
