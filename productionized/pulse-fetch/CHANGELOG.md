@@ -5,6 +5,14 @@ All notable changes to the Pulse Fetch MCP server will be documented in this fil
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.0.4] - 2025-06-29
+
+### Fixed
+
+- Fixed missing README concatenation for npm publication: added `scripts/prepare-npm-readme.js` to properly merge main README with local configuration
+- Local README now contains only local-specific configuration, allowing proper concatenation during publish
+- Published npm package will now display full documentation instead of minimal local README
+
 ## [0.0.3] - 2025-06-29
 
 ### Fixed
