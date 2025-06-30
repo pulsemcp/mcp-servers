@@ -185,15 +185,13 @@ export async function scrapeWithSingleStrategy(
         }
 
         const result = await clients.firecrawl.scrape(url, {
-          onlyMainContent,
-          formats: [format === 'markdown' ? 'markdown' : 'html'],
+          formats: ['html'],
         });
 
         if (result.success && result.data) {
-          const content = format === 'markdown' ? result.data.markdown : result.data.html;
           return {
             success: true,
-            content,
+            content: result.data.html,
             source: 'firecrawl',
           };
         }
