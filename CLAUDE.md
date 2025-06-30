@@ -226,6 +226,11 @@ Contexts and tips I've collected while working on this codebase.
 
 Don't add: basic TypeScript fixes, standard npm troubleshooting, obvious file operations, implementation details that are self-evident from reading code, or anything already covered in existing documentation.
 
+### Interacting with human user
+
+- Whenever you hand back control to the user after doing some work, always be clear about what the next step / ask of the human is
+- For example, if it's to review a PR, include a link to the PR that needs reviewing
+
 ### Development Workflow
 
 - Always run linting commands from the repository root, not from subdirectories, to ensure consistent tooling across the monorepo
