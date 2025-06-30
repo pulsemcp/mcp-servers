@@ -128,3 +128,5 @@ Key insights gathered during implementation and CI troubleshooting:
 ### Development Workflow
 
 - **Changelog Updates**: Always update the CHANGELOG.md file when making changes to this MCP server to track improvements and maintain version history
+- **Resource Storage Implementation**: When implementing storage interfaces, use a factory pattern with environment variable configuration to allow easy switching between backends without code changes
+- **Version Bumping Process**: After running `npm version`, immediately check git status to ensure all modified files (package.json, package-lock.json in multiple locations) are staged together in the same commit
