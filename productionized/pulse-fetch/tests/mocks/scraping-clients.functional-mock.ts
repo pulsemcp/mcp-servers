@@ -44,7 +44,7 @@ export function createMockNativeFetcher(): MockNativeFetcher {
   };
 
   return {
-    async fetch(_url: string) {
+    async scrape(_url: string) {
       return mockResponse;
     },
     setMockResponse(response) {

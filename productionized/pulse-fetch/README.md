@@ -23,6 +23,7 @@ This project is built and maintained by [PulseMCP](https://www.pulsemcp.com/).
     - [Local Setup](#local-setup)
     - [Remote Setup](#remote-setup)
 - [Development](#development)
+- [Scraping Strategy Configuration](#scraping-strategy-configuration)
 
 # Highlights
 
@@ -31,6 +32,8 @@ This project is built and maintained by [PulseMCP](https://www.pulsemcp.com/).
 **Resource caching**: Optionally saves results as MCP Resources for effective caching and easy inspection of Tool call outcomes.
 
 **Anti-bot bypass**: Integrates with Firecrawl and BrightData APIs to reliably work around anti-scraping technology.
+
+**Smart strategy selection**: Automatically learns and applies the best scraping method for each domain, improving performance over time.
 
 **LLM-optimized**: Offers MCP Prompts and descriptive Tool design for better LLM interaction reliability.
 
@@ -303,3 +306,60 @@ Scrape a single webpage with advanced options for content extraction.
 ## License
 
 MIT
+
+# Scraping Strategy Configuration
+
+The pulse-fetch MCP server includes an intelligent strategy system that automatically selects the best scraping method for different websites.
+
+## How It Works
+
+1. **Configured Strategy**: The server checks a local config file for domain-specific strategies
+2. **Universal Fallback**: If no configured strategy exists or it fails, falls back to the universal approach (native → firecrawl → brightdata)
+3. **Auto-Learning**: When a strategy succeeds, it's automatically saved to the config file for future use
+
+## Strategy Types
+
+- **`native`**: Fast native fetch using Node.js fetch API (best for simple pages)
+- **`firecrawl`**: Enhanced content extraction using Firecrawl API (good for complex layouts)
+- **`brightdata`**: Anti-bot bypass using BrightData Web Unlocker (for protected content)
+
+## Configuration File
+
+The configuration is stored in a markdown table at `scraping-strategies.md`. The table has three columns:
+
+- **prefix**: Domain or URL prefix to match (e.g., `reddit.com` or `reddit.com/r/`)
+- **default_strategy**: The strategy to use (`native`, `firecrawl`, or `brightdata`)
+- **notes**: Optional description or reasoning
+
+### Example Configuration
+
+```markdown
+| prefix        | default_strategy | notes                                               |
+| ------------- | ---------------- | --------------------------------------------------- |
+| reddit.com/r/ | brightdata       | Reddit requires anti-bot bypass for subreddit pages |
+| reddit.com    | firecrawl        | General Reddit pages work well with Firecrawl       |
+| github.com    | native           | GitHub pages are simple and work with native fetch  |
+```
+
+### Prefix Matching Rules
+
+- **Domain matching**: `github.com` matches `github.com`, `www.github.com`, and `subdomain.github.com`
+- **Path matching**: `reddit.com/r/` matches `reddit.com/r/programming` but not `reddit.com/user/test`
+- **Longest match wins**: If multiple prefixes match, the longest one is used
+
+## Automatic Strategy Discovery
+
+When scraping a new domain:
+
+1. The system tries the universal fallback sequence (native → firecrawl → brightdata)
+2. The first successful strategy is automatically saved to the config file
+3. Future requests to that domain will use the discovered strategy
+
+## Configuration Client Abstraction
+
+The system uses an abstraction layer for config storage:
+
+- **FilesystemClient**: Stores config in a local markdown file (default)
+- **Future clients**: Could support GCS, S3, database storage, etc.
+
+You can swap the storage backend by providing a different `StrategyConfigFactory` when creating the MCP server.

@@ -1,6 +1,7 @@
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { z } from 'zod';
-import type { IScrapingClients } from '../server.js';
+import type { IScrapingClients, StrategyConfigFactory } from '../server.js';
+import { scrapeWithStrategy } from '../scraping-strategies.js';
 
 const ScrapeArgsSchema = z.object({
   url: z.string().url().describe('URL to scrape'),
@@ -34,20 +35,28 @@ const ScrapeArgsSchema = z.object({
   saveResource: z.boolean().optional().default(true).describe('Save result as MCP Resource'),
 });
 
-export function scrapeTool(_server: Server, clientsFactory: () => IScrapingClients) {
+export function scrapeTool(
+  _server: Server,
+  clientsFactory: () => IScrapingClients,
+  strategyConfigFactory: StrategyConfigFactory
+) {
   return {
     name: 'scrape',
-    description: `Scrape a single webpage with advanced content extraction options and multiple output formats.
+    description: `Scrape a single webpage with smart automatic strategy selection.
 
-This tool implements a smart fallback strategy:
-1. First tries native fetching for simple pages
-2. Falls back to Firecrawl for enhanced extraction if native fails
-3. Uses BrightData Web Unlocker as final fallback for protected content
+The tool automatically determines the best scraping method based on:
+1. Previously successful strategies for the domain (learned from past scrapes)
+2. Intelligent fallback sequence: native fetch → Firecrawl → BrightData
+
+Features:
+- Auto-learning: Successful strategies are remembered for each domain
+- Smart fallback: If one method fails, automatically tries the next
+- Optimized performance: Uses the fastest suitable method for each site
 
 Examples:
 - Extract article content: scrape({url: "https://example.com/article", onlyMainContent: true})
 - Get full HTML: scrape({url: "https://example.com", format: "html"})
-- Handle protected content: scrape({url: "https://protected-site.com"}) - automatically uses fallbacks`,
+- Handle protected content: scrape({url: "https://protected-site.com"}) - automatically selects appropriate method`,
     inputSchema: {
       type: 'object' as const,
       properties: {
@@ -91,60 +100,31 @@ Examples:
       try {
         const validatedArgs = ScrapeArgsSchema.parse(args);
         const clients = clientsFactory();
+        const configClient = strategyConfigFactory();
 
         const { url, format, onlyMainContent, maxChars, startIndex } = validatedArgs;
 
-        // Strategy 1: Try native fetch first
-        let content: string | null = null;
-        let source = 'unknown';
+        // Use the new strategy system (no explicit strategy from user)
+        const result = await scrapeWithStrategy(
+          clients,
+          configClient,
+          {
+            url,
+            format,
+            onlyMainContent,
+            waitFor: validatedArgs.waitFor,
+            timeout: validatedArgs.timeout,
+            removeBase64Images: validatedArgs.removeBase64Images,
+          },
+          undefined // No explicit strategy - let the system decide
+        );
 
-        try {
-          const nativeResult = await clients.native.fetch(url);
-          if (nativeResult.success && nativeResult.status === 200 && nativeResult.data) {
-            content = nativeResult.data;
-            source = 'native';
-          }
-        } catch {
-          // Continue to fallbacks
-        }
-
-        // Strategy 2: Try Firecrawl if native failed
-        if (!content && clients.firecrawl) {
-          try {
-            const firecrawlResult = await clients.firecrawl.scrape(url, {
-              onlyMainContent,
-              formats: [format === 'markdown' ? 'markdown' : 'html'],
-            });
-
-            if (firecrawlResult.success && firecrawlResult.data) {
-              content =
-                format === 'markdown' ? firecrawlResult.data.markdown : firecrawlResult.data.html;
-              source = 'firecrawl';
-            }
-          } catch {
-            // Continue to final fallback
-          }
-        }
-
-        // Strategy 3: Try BrightData as final fallback
-        if (!content && clients.brightData) {
-          try {
-            const brightDataResult = await clients.brightData.scrape(url);
-            if (brightDataResult.success && brightDataResult.data) {
-              content = brightDataResult.data;
-              source = 'brightdata';
-            }
-          } catch {
-            // All strategies failed
-          }
-        }
-
-        if (!content) {
+        if (!result.success || !result.content) {
           return {
             content: [
               {
                 type: 'text' as const,
-                text: `Failed to scrape ${url}. All fallback strategies failed. Available methods: ${[
+                text: `Failed to scrape ${url}. ${result.error || 'All strategies failed'}. Available methods: ${[
                   'native',
                   clients.firecrawl ? 'firecrawl' : null,
                   clients.brightData ? 'brightdata' : null,
@@ -158,7 +138,7 @@ Examples:
         }
 
         // Apply content processing
-        let processedContent = content;
+        let processedContent = result.content;
 
         // Apply character limits and pagination
         if (startIndex > 0) {
@@ -177,7 +157,7 @@ Examples:
           resultText += `\n\n[Content truncated at ${maxChars} characters. Use startIndex parameter to continue reading from character ${startIndex + maxChars}]`;
         }
 
-        resultText += `\n\n---\nScraped using: ${source}`;
+        resultText += `\n\n---\nScraped using: ${result.source}`;
 
         return {
           content: [
