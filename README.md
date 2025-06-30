@@ -21,7 +21,7 @@ These are PulseMCP-branded servers that we intend to maintain indefinitely as ou
 
 | Name                                         | Description                          | Local Status | Remote Status | Target Audience                                                                                        | Notes                                                                                  |
 | -------------------------------------------- | ------------------------------------ | ------------ | ------------- | ------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------- |
-| [pulse-fetch](./productionized/pulse-fetch/) | Pull internet resources into context | 0.1.1        | Not Started   | Agent-building frameworks (e.g. fast-agent, Mastra, PydanticAI) and MCP clients without built-in fetch | Supports Firecrawl and BrightData integrations; HTML noise stripping; Resource caching |
+| [pulse-fetch](./productionized/pulse-fetch/) | Pull internet resources into context | 0.1.2        | Not Started   | Agent-building frameworks (e.g. fast-agent, Mastra, PydanticAI) and MCP clients without built-in fetch | Supports Firecrawl and BrightData integrations; HTML noise stripping; Resource caching |
 
 ### Experimental Servers
 
