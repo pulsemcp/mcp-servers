@@ -218,6 +218,13 @@ Each server directory contains its own CLAUDE.md with specific implementation de
 
 Contexts and tips I've collected while working on this codebase.
 
+**Adding New Learnings**: Only add learnings that meet BOTH criteria:
+
+1. **Non-obvious**: Would take significant time to rediscover OR could be easily missed despite being important
+2. **Reusable**: Likely to be relevant in future work, not a one-off fix
+
+Don't add: basic TypeScript fixes, standard npm troubleshooting, obvious file operations, or implementation details that are self-evident from reading code.
+
 ### Development Workflow
 
 - Always run linting commands from the repository root, not from subdirectories, to ensure consistent tooling across the monorepo
