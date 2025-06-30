@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.1] - 2025-06-30
+
+### Added
+
+- OPTIMIZE_FOR environment variable for controlling scraping strategy optimization
+  - COST mode (default): Tries native first, then firecrawl, then brightdata
+  - SPEED mode: Skips native and goes straight to firecrawl, then brightdata
+- Comprehensive tests for both optimization modes
+- Environment variable validation at startup for OPTIMIZE_FOR values
+
+### Changed
+
+- Refactored scrapeUniversal function to support different optimization strategies
+- Updated documentation to explain the new optimization modes
+
 ## [0.1.0] - 2025-06-30
 
 ### Added
