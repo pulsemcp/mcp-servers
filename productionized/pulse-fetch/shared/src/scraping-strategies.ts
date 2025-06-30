@@ -3,11 +3,7 @@ import type { ScrapingStrategy, IStrategyConfigClient } from './strategy-config/
 
 export interface ScrapeOptions {
   url: string;
-  format?: string;
-  onlyMainContent?: boolean;
-  waitFor?: number;
   timeout?: number;
-  removeBase64Images?: boolean;
 }
 
 export interface ScrapeResult {
@@ -65,13 +61,13 @@ export async function scrapeUniversal(
   clients: IScrapingClients,
   options: ScrapeOptions
 ): Promise<ScrapeResult> {
-  const { url, format, onlyMainContent } = options;
+  const { url } = options;
   const optimizeFor = process.env.OPTIMIZE_FOR || 'COST';
 
   // Helper function to try native scraping
   const tryNative = async (): Promise<ScrapeResult | null> => {
     try {
-      const nativeResult = await clients.native.scrape(url);
+      const nativeResult = await clients.native.scrape(url, { timeout: options.timeout });
       if (nativeResult.success && nativeResult.status === 200 && nativeResult.data) {
         return {
           success: true,
@@ -91,16 +87,13 @@ export async function scrapeUniversal(
 
     try {
       const firecrawlResult = await clients.firecrawl.scrape(url, {
-        onlyMainContent,
-        formats: [format === 'markdown' ? 'markdown' : 'html'],
+        formats: ['html'],
       });
 
       if (firecrawlResult.success && firecrawlResult.data) {
-        const content =
-          format === 'markdown' ? firecrawlResult.data.markdown : firecrawlResult.data.html;
         return {
           success: true,
-          content,
+          content: firecrawlResult.data.html,
           source: 'firecrawl',
         };
       }
@@ -165,12 +158,12 @@ export async function scrapeWithSingleStrategy(
   strategy: ScrapingStrategy,
   options: ScrapeOptions
 ): Promise<ScrapeResult> {
-  const { url, format, onlyMainContent } = options;
+  const { url } = options;
 
   try {
     switch (strategy) {
       case 'native': {
-        const result = await clients.native.scrape(url);
+        const result = await clients.native.scrape(url, { timeout: options.timeout });
         if (result.success && result.status === 200 && result.data) {
           return {
             success: true,
