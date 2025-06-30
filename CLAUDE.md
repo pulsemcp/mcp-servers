@@ -236,12 +236,16 @@ Don't add: basic TypeScript fixes, standard npm troubleshooting, obvious file op
 - Always run linting commands from the repository root, not from subdirectories, to ensure consistent tooling across the monorepo
 - When pre-commit hooks fail with "Cannot find module" errors, the solution is typically to `rm -rf node_modules && npm install` from the repo root
 - The specialized workspace setup in some servers (like `experimental/twist/` and `experimental/appsignal/`) uses relative import paths that work for both development and publishing - never change these to package names or direct dist paths
+- When adding parameters that need to propagate through multiple layers (e.g., timeout), ensure they're passed at each level: tool → strategy → client implementation
 
 ### Testing Strategy
 
 - Manual tests are critical when modifying code that interacts with external APIs, as they verify real API responses match our interfaces
 - Integration tests with TestMCPClient are valuable for testing MCP server functionality without hitting real APIs
 - Environment variable validation at startup prevents silent failures and provides immediate feedback to users
+- When removing parameters from tool APIs, check for: duplicate interface definitions (e.g., in types.ts), test mock expectations, and all test files using those parameters
+- TypeScript compilation errors in tests often reveal missed updates - the error messages point to exact locations needing fixes
+- When changing output formats (e.g., markdown to HTML), update both the implementation AND test expectations to match
 
 ### Git and PR Workflow
 
@@ -255,3 +259,5 @@ Don't add: basic TypeScript fixes, standard npm troubleshooting, obvious file op
 - Key gotcha: Git tags may not be created automatically by npm version - always verify with `git tag | grep <server-name>` and create manually if needed
 - When running `npm run stage-publish` from the local directory, it modifies both the local package-lock.json AND the parent package-lock.json - both must be committed together
 - The version bump commit should include all modified files: local/package.json, local/package-lock.json, parent package-lock.json, CHANGELOG.md, and main README.md
+- When simplifying tool parameters, consider the MCP best practices guide in mcp-server-template/shared/src/tools/TOOL_DESCRIPTIONS_GUIDE.md for writing clear descriptions
+- Breaking changes in tool parameters should be clearly marked in CHANGELOG.md with **BREAKING** prefix to alert users

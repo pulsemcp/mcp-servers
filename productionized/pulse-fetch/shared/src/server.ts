@@ -35,7 +35,7 @@ export interface IBrightDataClient {
 export interface INativeFetcher {
   scrape(
     url: string,
-    options?: RequestInit
+    options?: { timeout?: number } & RequestInit
   ): Promise<{
     success: boolean;
     status?: number;
@@ -48,7 +48,7 @@ export interface INativeFetcher {
 export class NativeFetcher implements INativeFetcher {
   async scrape(
     url: string,
-    options?: RequestInit
+    options?: { timeout?: number } & RequestInit
   ): Promise<{
     success: boolean;
     status?: number;
@@ -56,13 +56,27 @@ export class NativeFetcher implements INativeFetcher {
     error?: string;
   }> {
     try {
+      const { timeout, ...fetchOptions } = options || {};
+
+      let timeoutId: NodeJS.Timeout | undefined;
+      const controller = new AbortController();
+
+      if (timeout) {
+        timeoutId = setTimeout(() => controller.abort(), timeout);
+      }
+
       const response = await fetch(url, {
-        ...options,
+        ...fetchOptions,
         headers: {
           'User-Agent': 'PulseMCP-Fetch/0.0.1',
-          ...options?.headers,
+          ...fetchOptions?.headers,
         },
+        signal: controller.signal,
       });
+
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
 
       const data = await response.text();
 
@@ -72,6 +86,12 @@ export class NativeFetcher implements INativeFetcher {
         data,
       };
     } catch (error) {
+      if (error instanceof Error && error.name === 'AbortError') {
+        return {
+          success: false,
+          error: `Request timed out. The server did not respond within the timeout period. Consider increasing the timeout parameter if this URL typically takes longer to load.`,
+        };
+      }
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error',

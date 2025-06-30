@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.3] - 2025-06-30
+
+### Changed
+
+- **BREAKING**: Simplified scrape tool parameters - removed `format`, `waitFor`, `removeBase64Images`, and `onlyMainContent` parameters
+- Tool now returns raw HTML content without format transformations
+- Default timeout increased to 60000ms (60 seconds) from unspecified default
+- Renamed `saveResource` parameter to `saveResult` for clarity
+- Simplified `extract` parameter from complex object to simple string description
+- Improved tool description following MCP best practices guide
+- Enhanced parameter descriptions with examples and clear defaults
+- Added proper timeout handling with AbortController in NativeFetcher
+
+### Fixed
+
+- Timeout parameter now properly propagates to native fetch strategy
+- Improved timeout error messages to guide users on increasing timeout values
+
 ## [0.1.2] - 2025-06-30
 
 ### Changed

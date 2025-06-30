@@ -4,35 +4,46 @@ import type { IScrapingClients, StrategyConfigFactory } from '../server.js';
 import { scrapeWithStrategy } from '../scraping-strategies.js';
 
 const ScrapeArgsSchema = z.object({
-  url: z.string().url().describe('URL to scrape'),
-  format: z
-    .enum(['markdown', 'html', 'rawHtml', 'links', 'extract'])
+  url: z
+    .string()
+    .url()
+    .describe(
+      'The webpage URL to scrape (e.g., "https://example.com/article", "https://api.example.com/docs")'
+    ),
+  timeout: z
+    .number()
     .optional()
-    .default('markdown')
-    .describe('Output format for the scraped content'),
-  onlyMainContent: z
-    .boolean()
-    .optional()
-    .default(true)
-    .describe('Extract only main content, removing navigation and ads'),
-  waitFor: z.number().optional().describe('Milliseconds to wait for dynamic content to load'),
-  timeout: z.number().optional().describe('Maximum time to wait for page load'),
+    .default(60000)
+    .describe(
+      'Maximum time to wait for page load in milliseconds. Increase for slow-loading sites (e.g., 120000 for 2 minutes). Default: 60000 (1 minute)'
+    ),
   extract: z
-    .object({
-      schema: z.record(z.unknown()).optional().describe('JSON schema for structured data'),
-      systemPrompt: z.string().optional().describe('System prompt for LLM extraction'),
-      prompt: z.string().optional().describe('User prompt for LLM extraction'),
-    })
+    .string()
     .optional()
-    .describe('Configuration for structured data extraction'),
-  removeBase64Images: z
+    .describe(
+      'Natural language description of what specific information to extract from the page (e.g., "article title and publish date", "product prices and availability", "all email addresses"). Note: This feature is not yet implemented - currently returns raw HTML'
+    ),
+  maxChars: z
+    .number()
+    .optional()
+    .default(100000)
+    .describe(
+      'Maximum number of characters to return from the scraped content. Useful for limiting response size. Default: 100000'
+    ),
+  startIndex: z
+    .number()
+    .optional()
+    .default(0)
+    .describe(
+      'Character position to start reading from. Use with maxChars for pagination through large documents (e.g., startIndex: 100000 to skip first 100k chars). Default: 0'
+    ),
+  saveResult: z
     .boolean()
     .optional()
     .default(true)
-    .describe('Remove base64 images from output'),
-  maxChars: z.number().optional().default(100000).describe('Maximum characters to return'),
-  startIndex: z.number().optional().default(0).describe('Character index to start output from'),
-  saveResource: z.boolean().optional().default(true).describe('Save result as MCP Resource'),
+    .describe(
+      'Whether to save the scraped content as an MCP Resource for later retrieval. Default: true'
+    ),
 });
 
 export function scrapeTool(
@@ -42,56 +53,68 @@ export function scrapeTool(
 ) {
   return {
     name: 'scrape',
-    description: `Scrape a single webpage with smart automatic strategy selection.
+    description: `Scrape webpage content using intelligent automatic strategy selection. This tool fetches raw HTML content from any URL, automatically choosing the best scraping method based on the site's requirements and past successes.
 
-The tool automatically determines the best scraping method based on:
-1. Previously successful strategies for the domain (learned from past scrapes)
-2. Intelligent fallback sequence: native fetch → Firecrawl → BrightData
+Example response:
+{
+  "content": [
+    {
+      "type": "text",
+      "text": "<!DOCTYPE html>\n<html>\n<head><title>Example Article</title></head>\n<body>\n<article>\n<h1>Breaking News: Technology Advances</h1>\n<p>Content of the article...</p>\n</article>\n</body>\n</html>\n\n---\nScraped using: native"
+    }
+  ]
+}
 
-Features:
-- Auto-learning: Successful strategies are remembered for each domain
-- Smart fallback: If one method fails, automatically tries the next
-- Optimized performance: Uses the fastest suitable method for each site
+Scraping strategies:
+- native: Direct HTTP fetch (fastest, works for most public sites)
+- firecrawl: Advanced scraping with JavaScript rendering (requires FIRECRAWL_API_KEY)
+- brightdata: Premium scraping for heavily protected sites (requires BRIGHTDATA_BEARER_TOKEN)
 
-Examples:
-- Extract article content: scrape({url: "https://example.com/article", onlyMainContent: true})
-- Get full HTML: scrape({url: "https://example.com", format: "html"})
-- Handle protected content: scrape({url: "https://protected-site.com"}) - automatically selects appropriate method`,
+The tool automatically:
+1. Tries the most appropriate method based on learned domain patterns
+2. Falls back to alternative methods if the first attempt fails
+3. Remembers successful strategies for future requests to the same domain
+
+Use cases:
+- Fetching article content for analysis or summarization
+- Extracting data from public websites for research
+- Accessing JavaScript-heavy sites that require rendering
+- Scraping content from sites with anti-bot protection
+- Monitoring webpage changes over time
+- Gathering data for competitive analysis`,
     inputSchema: {
       type: 'object' as const,
       properties: {
-        url: { type: 'string', format: 'uri', description: 'URL to scrape' },
-        format: {
+        url: {
           type: 'string',
-          enum: ['markdown', 'html', 'rawHtml', 'links', 'extract'],
-          default: 'markdown',
-          description: 'Output format for the scraped content',
+          format: 'uri',
+          description: 'The webpage URL to scrape (e.g., "https://example.com/article")',
         },
-        onlyMainContent: {
-          type: 'boolean',
-          default: true,
-          description: 'Extract only main content, removing navigation and ads',
-        },
-        waitFor: {
+        timeout: {
           type: 'number',
-          description: 'Milliseconds to wait for dynamic content to load',
+          default: 60000,
+          description:
+            'Maximum time to wait for page load in milliseconds. Increase for slow sites. Default: 60000',
         },
-        timeout: { type: 'number', description: 'Maximum time to wait for page load' },
-        removeBase64Images: {
-          type: 'boolean',
-          default: true,
-          description: 'Remove base64 images from output',
+        extract: {
+          type: 'string',
+          description:
+            'Natural language description of what to extract (not yet implemented - returns raw HTML)',
         },
-        maxChars: { type: 'number', default: 100000, description: 'Maximum characters to return' },
+        maxChars: {
+          type: 'number',
+          default: 100000,
+          description: 'Maximum number of characters to return. Default: 100000',
+        },
         startIndex: {
           type: 'number',
           default: 0,
-          description: 'Character index to start output from',
+          description: 'Character position to start from. Use for pagination. Default: 0',
         },
-        saveResource: {
+        saveResult: {
           type: 'boolean',
           default: true,
-          description: 'Save result as MCP Resource',
+          description: 'Whether to save as MCP Resource. Default: true',
         },
       },
       required: ['url'],
@@ -102,7 +125,7 @@ Examples:
         const clients = clientsFactory();
         const configClient = strategyConfigFactory();
 
-        const { url, format, onlyMainContent, maxChars, startIndex } = validatedArgs;
+        const { url, maxChars, startIndex, timeout, extract } = validatedArgs;
 
         // Use the new strategy system (no explicit strategy from user)
         const result = await scrapeWithStrategy(
@@ -110,27 +133,32 @@ Examples:
           configClient,
           {
             url,
-            format,
-            onlyMainContent,
-            waitFor: validatedArgs.waitFor,
-            timeout: validatedArgs.timeout,
-            removeBase64Images: validatedArgs.removeBase64Images,
+            timeout,
           },
           undefined // No explicit strategy - let the system decide
         );
 
         if (!result.success || !result.content) {
+          let errorMessage = `Failed to scrape ${url}. ${result.error || 'All strategies failed'}.`;
+
+          // Add specific guidance for timeout errors
+          if (result.error && result.error.toLowerCase().includes('timeout')) {
+            errorMessage += ` The current timeout is ${timeout}ms. You can increase it by passing a larger timeout value.`;
+          }
+
+          errorMessage += ` Available methods: ${[
+            'native',
+            clients.firecrawl ? 'firecrawl' : null,
+            clients.brightData ? 'brightdata' : null,
+          ]
+            .filter(Boolean)
+            .join(', ')}`;
+
           return {
             content: [
               {
                 type: 'text' as const,
-                text: `Failed to scrape ${url}. ${result.error || 'All strategies failed'}. Available methods: ${[
-                  'native',
-                  clients.firecrawl ? 'firecrawl' : null,
-                  clients.brightData ? 'brightdata' : null,
-                ]
-                  .filter(Boolean)
-                  .join(', ')}`,
+                text: errorMessage,
               },
             ],
             isError: true,
@@ -139,6 +167,13 @@ Examples:
 
         // Apply content processing
         let processedContent = result.content;
+
+        // TODO: Implement extraction logic when extract parameter is provided
+        // For now, just return the raw content regardless of extract parameter
+        if (extract) {
+          // Future implementation will transform content based on the extract description
+          // Currently just passes through the raw content
+        }
 
         // Apply character limits and pagination
         if (startIndex > 0) {
