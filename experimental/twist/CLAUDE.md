@@ -102,3 +102,7 @@ Each tool should have clear, user-friendly descriptions following the pattern in
 - Document all parameters clearly
 - Provide sample responses
 - Note any limitations or special behaviors
+
+## Development Workflow
+
+- **Changelog Updates**: Always update the CHANGELOG.md file when making changes to this MCP server to track improvements and maintain version history

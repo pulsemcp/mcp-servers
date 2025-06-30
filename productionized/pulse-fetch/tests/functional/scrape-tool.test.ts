@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { scrapeTool } from '../../shared/src/tools/scrape.js';
 import {
@@ -8,6 +8,7 @@ import {
   type MockBrightDataClient,
 } from '../mocks/scraping-clients.functional-mock.js';
 import type { IScrapingClients } from '../../shared/src/server.js';
+import type { IStrategyConfigClient } from '../../shared/src/strategy-config/index.js';
 
 describe('Scrape Tool', () => {
   let mockServer: Server;
@@ -15,6 +16,7 @@ describe('Scrape Tool', () => {
   let mockNative: MockNativeFetcher;
   let mockFirecrawl: MockFirecrawlClient;
   let mockBrightData: MockBrightDataClient;
+  let mockStrategyConfigClient: IStrategyConfigClient;
 
   beforeEach(() => {
     // Create a minimal mock server
@@ -26,6 +28,14 @@ describe('Scrape Tool', () => {
     mockNative = mocks.native;
     mockFirecrawl = mocks.firecrawl;
     mockBrightData = mocks.brightData;
+
+    // Create mock strategy config client
+    mockStrategyConfigClient = {
+      loadConfig: vi.fn().mockResolvedValue([]),
+      saveConfig: vi.fn().mockResolvedValue(undefined),
+      upsertEntry: vi.fn().mockResolvedValue(undefined),
+      getStrategyForUrl: vi.fn().mockResolvedValue(null), // No configured strategy by default
+    };
   });
 
   describe('scrape tool', () => {
@@ -37,7 +47,11 @@ describe('Scrape Tool', () => {
         data: 'Native content success',
       });
 
-      const tool = scrapeTool(mockServer, () => mockClients);
+      const tool = scrapeTool(
+        mockServer,
+        () => mockClients,
+        () => mockStrategyConfigClient
+      );
       const result = await tool.handler({
         url: 'https://example.com',
       });
@@ -71,7 +85,11 @@ describe('Scrape Tool', () => {
         },
       });
 
-      const tool = scrapeTool(mockServer, () => mockClients);
+      const tool = scrapeTool(
+        mockServer,
+        () => mockClients,
+        () => mockStrategyConfigClient
+      );
       const result = await tool.handler({
         url: 'https://example.com',
       });
@@ -105,7 +123,11 @@ describe('Scrape Tool', () => {
         data: 'BrightData content success',
       });
 
-      const tool = scrapeTool(mockServer, () => mockClients);
+      const tool = scrapeTool(
+        mockServer,
+        () => mockClients,
+        () => mockStrategyConfigClient
+      );
       const result = await tool.handler({
         url: 'https://example.com',
       });
@@ -139,7 +161,11 @@ describe('Scrape Tool', () => {
         error: 'BrightData failed',
       });
 
-      const tool = scrapeTool(mockServer, () => mockClients);
+      const tool = scrapeTool(
+        mockServer,
+        () => mockClients,
+        () => mockStrategyConfigClient
+      );
       const result = await tool.handler({
         url: 'https://example.com',
       });
@@ -164,7 +190,11 @@ describe('Scrape Tool', () => {
         data: longContent,
       });
 
-      const tool = scrapeTool(mockServer, () => mockClients);
+      const tool = scrapeTool(
+        mockServer,
+        () => mockClients,
+        () => mockStrategyConfigClient
+      );
       const result = await tool.handler({
         url: 'https://example.com',
         maxChars: 100,
@@ -174,7 +204,11 @@ describe('Scrape Tool', () => {
     });
 
     it('should validate input schema', async () => {
-      const tool = scrapeTool(mockServer, () => mockClients);
+      const tool = scrapeTool(
+        mockServer,
+        () => mockClients,
+        () => mockStrategyConfigClient
+      );
 
       // The tool's inputSchema should be defined
       expect(tool.inputSchema).toBeDefined();
@@ -191,7 +225,11 @@ describe('Scrape Tool', () => {
     });
 
     it('should require url parameter', async () => {
-      const tool = scrapeTool(mockServer, () => mockClients);
+      const tool = scrapeTool(
+        mockServer,
+        () => mockClients,
+        () => mockStrategyConfigClient
+      );
 
       const result = await tool.handler({
         // Missing url parameter

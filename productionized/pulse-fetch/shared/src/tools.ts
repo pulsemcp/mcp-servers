@@ -1,12 +1,15 @@
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { ListToolsRequestSchema, CallToolRequestSchema } from '@modelcontextprotocol/sdk/types.js';
-import type { ClientFactory } from './server.js';
+import type { ClientFactory, StrategyConfigFactory } from './server.js';
 import { scrapeTool } from './tools/scrape.js';
 
-export function createRegisterTools(clientFactory: ClientFactory) {
+export function createRegisterTools(
+  clientFactory: ClientFactory,
+  strategyConfigFactory: StrategyConfigFactory
+) {
   return (server: Server) => {
     // Create tool instances
-    const tools = [scrapeTool(server, clientFactory)];
+    const tools = [scrapeTool(server, clientFactory, strategyConfigFactory)];
 
     // Register tool definitions
     server.setRequestHandler(ListToolsRequestSchema, async () => ({
