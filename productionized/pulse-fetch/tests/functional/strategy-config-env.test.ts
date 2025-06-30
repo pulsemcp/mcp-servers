@@ -79,6 +79,13 @@ describe('FilesystemStrategyConfigClient with Environment', () => {
   it('should use default temp directory when no path provided and no env var', async () => {
     delete process.env.PULSE_FETCH_STRATEGY_CONFIG_PATH;
 
+    // Clean up default temp directory before test
+    try {
+      await fs.rm(join(tmpdir(), 'pulse-fetch'), { recursive: true, force: true });
+    } catch {
+      // Ignore if doesn't exist
+    }
+
     const client = new FilesystemStrategyConfigClient();
 
     // Add an entry
@@ -99,5 +106,12 @@ describe('FilesystemStrategyConfigClient with Environment', () => {
     expect(addedEntry).toBeDefined();
     expect(addedEntry?.default_strategy).toBe('brightdata');
     expect(addedEntry?.notes).toBe('Default location');
+
+    // Clean up after test
+    try {
+      await fs.rm(join(tmpdir(), 'pulse-fetch'), { recursive: true, force: true });
+    } catch {
+      // Ignore cleanup errors
+    }
   });
 });
