@@ -198,7 +198,8 @@ jobs:
               
               # Wait for npm registry propagation and verify package metadata
               echo "Waiting for npm registry propagation..."
-              for i in {1..12}; do
+              # Increase timeout to 3 minutes (36 iterations × 5 seconds)
+              for i in {1..36}; do
                 PUBLISHED_VERSION=$(npm view "$PACKAGE_NAME@$PACKAGE_VERSION" version 2>/dev/null)
                 if [ "$PUBLISHED_VERSION" = "$PACKAGE_VERSION" ]; then
                   echo "✅ Package $PACKAGE_NAME@$PACKAGE_VERSION available on npm registry"
@@ -221,11 +222,11 @@ jobs:
                   
                   break
                 fi
-                if [ $i -eq 12 ]; then
-                  echo "❌ Package not available after 60 seconds - registry propagation failed"
+                if [ $i -eq 36 ]; then
+                  echo "❌ Package not available after 180 seconds - registry propagation failed"
                   VALIDATION_FAILED=true
                 fi
-                echo "Waiting for registry propagation... ($i/12)"
+                echo "Waiting for registry propagation... ($i/36)"
                 sleep 5
               done
               
