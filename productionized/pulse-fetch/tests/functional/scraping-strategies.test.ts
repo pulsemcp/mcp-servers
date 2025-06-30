@@ -50,7 +50,9 @@ describe('Scraping Strategies', () => {
         content: 'Native content',
         source: 'native',
       });
-      expect(mockClients.native.scrape).toHaveBeenCalledWith('https://example.com');
+      expect(mockClients.native.scrape).toHaveBeenCalledWith('https://example.com', {
+        timeout: undefined,
+      });
       expect(mockClients.firecrawl?.scrape).not.toHaveBeenCalled();
     });
 
