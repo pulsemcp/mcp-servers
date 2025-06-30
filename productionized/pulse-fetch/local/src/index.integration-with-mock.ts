@@ -11,7 +11,7 @@ import type {
 
 // Mock client implementations for integration testing
 class MockNativeFetcher implements INativeFetcher {
-  async fetch(_url: string): Promise<{
+  async scrape(_url: string): Promise<{
     success: boolean;
     status?: number;
     data?: string;
