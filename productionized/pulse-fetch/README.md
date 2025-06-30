@@ -128,6 +128,7 @@ Most other alternatives fall short on one or more vectors:
 | `FIRECRAWL_API_KEY`                | API key for Firecrawl service to bypass anti-bot measures        | No       | N/A           | `fc-abc123...`                    |
 | `BRIGHTDATA_BEARER_TOKEN`          | Bearer token for BrightData Web Unlocker service                 | No       | N/A           | `Bearer bd_abc123...`             |
 | `PULSE_FETCH_STRATEGY_CONFIG_PATH` | Path to markdown file containing scraping strategy configuration | No       | OS temp dir   | `/path/to/scraping-strategies.md` |
+| `OPTIMIZE_FOR`                     | Optimization strategy for scraping: `COST` or `SPEED`            | No       | `COST`        | `SPEED`                           |
 
 ## Claude Desktop
 
@@ -150,7 +151,8 @@ Add this configuration to your Claude Desktop config file:
       "env": {
         "FIRECRAWL_API_KEY": "your-firecrawl-api-key",
         "BRIGHTDATA_BEARER_TOKEN": "your-brightdata-bearer-token",
-        "PULSE_FETCH_STRATEGY_CONFIG_PATH": "/path/to/your/scraping-strategies.md"
+        "PULSE_FETCH_STRATEGY_CONFIG_PATH": "/path/to/your/scraping-strategies.md",
+        "OPTIMIZE_FOR": "COST"
       }
     }
   }
@@ -312,6 +314,27 @@ MIT
 # Scraping Strategy Configuration
 
 The pulse-fetch MCP server includes an intelligent strategy system that automatically selects the best scraping method for different websites.
+
+## Optimization Modes
+
+The `OPTIMIZE_FOR` environment variable controls the order and selection of scraping strategies:
+
+- **`COST` (default)**: Optimizes for the lowest cost by trying native fetch first, then Firecrawl, then BrightData
+  - Order: `native → firecrawl → brightdata`
+  - Best for: Most use cases where cost is a concern
+  - Behavior: Always tries the free native method first before paid services
+
+- **`SPEED`**: Optimizes for faster results by skipping native fetch and starting with more powerful scrapers
+  - Order: `firecrawl → brightdata` (skips native entirely)
+  - Best for: Time-sensitive applications or sites known to block native fetch
+  - Behavior: Goes straight to advanced scrapers that are more likely to succeed on complex sites
+
+Example configuration:
+
+```bash
+export OPTIMIZE_FOR=SPEED  # For faster, more reliable scraping
+export OPTIMIZE_FOR=COST   # For cost-effective scraping (default)
+```
 
 ## How It Works
 

@@ -120,6 +120,109 @@ describe('Scraping Strategies', () => {
         error: 'All fallback strategies failed',
       });
     });
+
+    describe('with OPTIMIZE_FOR environment variable', () => {
+      const originalEnv = process.env.OPTIMIZE_FOR;
+
+      afterEach(() => {
+        process.env.OPTIMIZE_FOR = originalEnv;
+      });
+
+      it('should use COST optimization by default (native -> firecrawl -> brightdata)', async () => {
+        delete process.env.OPTIMIZE_FOR;
+
+        const mockNativeResult = {
+          success: true,
+          status: 200,
+          data: 'Native content',
+        };
+        vi.mocked(mockClients.native.scrape).mockResolvedValue(mockNativeResult);
+
+        const result = await scrapeUniversal(mockClients, {
+          url: 'https://example.com',
+          format: 'markdown',
+        });
+
+        expect(result).toEqual({
+          success: true,
+          content: 'Native content',
+          source: 'native',
+        });
+        expect(mockClients.native.scrape).toHaveBeenCalled();
+        expect(mockClients.firecrawl?.scrape).not.toHaveBeenCalled();
+      });
+
+      it('should skip native and use firecrawl first with SPEED optimization', async () => {
+        process.env.OPTIMIZE_FOR = 'SPEED';
+
+        const mockFirecrawlResult = {
+          success: true,
+          data: { markdown: 'Firecrawl content', html: '<p>Firecrawl content</p>' },
+        };
+        vi.mocked(mockClients.firecrawl!.scrape).mockResolvedValue(mockFirecrawlResult);
+
+        const result = await scrapeUniversal(mockClients, {
+          url: 'https://example.com',
+          format: 'markdown',
+        });
+
+        expect(result).toEqual({
+          success: true,
+          content: 'Firecrawl content',
+          source: 'firecrawl',
+        });
+        expect(mockClients.native.scrape).not.toHaveBeenCalled();
+        expect(mockClients.firecrawl!.scrape).toHaveBeenCalled();
+      });
+
+      it('should fall back to brightdata in SPEED mode when firecrawl fails', async () => {
+        process.env.OPTIMIZE_FOR = 'SPEED';
+
+        vi.mocked(mockClients.firecrawl!.scrape).mockResolvedValue({ success: false });
+        const mockBrightDataResult = {
+          success: true,
+          data: 'BrightData content',
+        };
+        vi.mocked(mockClients.brightData!.scrape).mockResolvedValue(mockBrightDataResult);
+
+        const result = await scrapeUniversal(mockClients, {
+          url: 'https://example.com',
+          format: 'markdown',
+        });
+
+        expect(result).toEqual({
+          success: true,
+          content: 'BrightData content',
+          source: 'brightdata',
+        });
+        expect(mockClients.native.scrape).not.toHaveBeenCalled();
+        expect(mockClients.firecrawl!.scrape).toHaveBeenCalled();
+        expect(mockClients.brightData!.scrape).toHaveBeenCalled();
+      });
+
+      it('should handle COST mode explicitly set', async () => {
+        process.env.OPTIMIZE_FOR = 'COST';
+
+        const mockNativeResult = {
+          success: true,
+          status: 200,
+          data: 'Native content',
+        };
+        vi.mocked(mockClients.native.scrape).mockResolvedValue(mockNativeResult);
+
+        const result = await scrapeUniversal(mockClients, {
+          url: 'https://example.com',
+          format: 'markdown',
+        });
+
+        expect(result).toEqual({
+          success: true,
+          content: 'Native content',
+          source: 'native',
+        });
+        expect(mockClients.native.scrape).toHaveBeenCalled();
+      });
+    });
   });
 
   describe('scrapeWithSingleStrategy', () => {

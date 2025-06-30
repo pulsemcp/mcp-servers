@@ -18,6 +18,13 @@ function validateEnvironment() {
     process.exit(1);
   }
 
+  // Validate OPTIMIZE_FOR if provided
+  const optimizeFor = process.env.OPTIMIZE_FOR;
+  if (optimizeFor && !['COST', 'SPEED'].includes(optimizeFor)) {
+    console.error(`Invalid OPTIMIZE_FOR value: ${optimizeFor}. Must be 'COST' or 'SPEED'.`);
+    process.exit(1);
+  }
+
   // Log available services
   const available = [];
   if (process.env.FIRECRAWL_API_KEY) available.push('Firecrawl');
@@ -26,6 +33,10 @@ function validateEnvironment() {
   console.error(
     `Pulse Fetch starting with services: native${available.length > 0 ? ', ' + available.join(', ') : ''}`
   );
+
+  if (optimizeFor) {
+    console.error(`Optimization strategy: ${optimizeFor}`);
+  }
 }
 
 async function main() {

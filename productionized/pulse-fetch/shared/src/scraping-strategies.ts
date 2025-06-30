@@ -19,30 +19,37 @@ export interface ScrapeResult {
 
 /**
  * Universal scraping that tries all strategies sequentially
- * This is the current naive approach: native -> firecrawl -> brightdata
+ * Default (COST optimization): native -> firecrawl -> brightdata
+ * SPEED optimization: firecrawl -> brightdata (skips native)
  */
 export async function scrapeUniversal(
   clients: IScrapingClients,
   options: ScrapeOptions
 ): Promise<ScrapeResult> {
   const { url, format, onlyMainContent } = options;
+  const optimizeFor = process.env.OPTIMIZE_FOR || 'COST';
 
-  // Strategy 1: Try native fetch first
-  try {
-    const nativeResult = await clients.native.scrape(url);
-    if (nativeResult.success && nativeResult.status === 200 && nativeResult.data) {
-      return {
-        success: true,
-        content: nativeResult.data,
-        source: 'native',
-      };
+  // Helper function to try native scraping
+  const tryNative = async (): Promise<ScrapeResult | null> => {
+    try {
+      const nativeResult = await clients.native.scrape(url);
+      if (nativeResult.success && nativeResult.status === 200 && nativeResult.data) {
+        return {
+          success: true,
+          content: nativeResult.data,
+          source: 'native',
+        };
+      }
+    } catch {
+      // Continue to next strategy
     }
-  } catch {
-    // Continue to fallbacks
-  }
+    return null;
+  };
 
-  // Strategy 2: Try Firecrawl if native failed
-  if (clients.firecrawl) {
+  // Helper function to try Firecrawl scraping
+  const tryFirecrawl = async (): Promise<ScrapeResult | null> => {
+    if (!clients.firecrawl) return null;
+
     try {
       const firecrawlResult = await clients.firecrawl.scrape(url, {
         onlyMainContent,
@@ -59,12 +66,15 @@ export async function scrapeUniversal(
         };
       }
     } catch {
-      // Continue to final fallback
+      // Continue to next strategy
     }
-  }
+    return null;
+  };
 
-  // Strategy 3: Try BrightData as final fallback
-  if (clients.brightData) {
+  // Helper function to try BrightData scraping
+  const tryBrightData = async (): Promise<ScrapeResult | null> => {
+    if (!clients.brightData) return null;
+
     try {
       const brightDataResult = await clients.brightData.scrape(url);
       if (brightDataResult.success && brightDataResult.data) {
@@ -77,6 +87,27 @@ export async function scrapeUniversal(
     } catch {
       // All strategies failed
     }
+    return null;
+  };
+
+  // Execute strategies based on optimization mode
+  if (optimizeFor === 'SPEED') {
+    // SPEED mode: firecrawl -> brightdata (skip native)
+    const firecrawlResult = await tryFirecrawl();
+    if (firecrawlResult) return firecrawlResult;
+
+    const brightDataResult = await tryBrightData();
+    if (brightDataResult) return brightDataResult;
+  } else {
+    // COST mode (default): native -> firecrawl -> brightdata
+    const nativeResult = await tryNative();
+    if (nativeResult) return nativeResult;
+
+    const firecrawlResult = await tryFirecrawl();
+    if (firecrawlResult) return firecrawlResult;
+
+    const brightDataResult = await tryBrightData();
+    if (brightDataResult) return brightDataResult;
   }
 
   return {
