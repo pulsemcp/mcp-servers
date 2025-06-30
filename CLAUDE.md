@@ -218,12 +218,13 @@ Each server directory contains its own CLAUDE.md with specific implementation de
 
 Contexts and tips I've collected while working on this codebase.
 
-**Adding New Learnings**: Only add learnings that meet BOTH criteria:
+**Adding New Learnings**: Only add learnings that meet ALL criteria:
 
 1. **Non-obvious**: Would take significant time to rediscover OR could be easily missed despite being important
 2. **Reusable**: Likely to be relevant in future work, not a one-off fix
+3. **Not already documented**: Before adding, review existing documentation (README files, docs/, CONTRIBUTING.md, etc.) to ensure you're not duplicating guidance. If the information exists elsewhere, reference that documentation instead of restating it.
 
-Don't add: basic TypeScript fixes, standard npm troubleshooting, obvious file operations, or implementation details that are self-evident from reading code.
+Don't add: basic TypeScript fixes, standard npm troubleshooting, obvious file operations, implementation details that are self-evident from reading code, or anything already covered in existing documentation.
 
 ### Development Workflow
 
@@ -245,8 +246,5 @@ Don't add: basic TypeScript fixes, standard npm troubleshooting, obvious file op
 
 ### Publishing Process
 
-- The `stage-publish` script must be run from the server's `local/` directory, not from the root or server directory
-- Version bumps modify local package.json, local package-lock.json, and parent package-lock.json - all must be committed together
-- Git tags may not be created automatically by npm version - verify with `git tag | grep <server-name>` and create manually if needed
-- The PR title should follow the format "Publish <package-name>@<version>" for consistency
-- Always update both CHANGELOG.md and the main README.md with the new version before creating the PR
+- See [PUBLISHING_SERVERS.md](./docs/PUBLISHING_SERVERS.md) for the complete publishing process
+- Key gotcha: Git tags may not be created automatically by npm version - always verify with `git tag | grep <server-name>` and create manually if needed
