@@ -192,15 +192,27 @@ if [ $? -eq 0 ]; then
   
   echo "  ✓ Copied $COPIED_COUNT gitignored/untracked file(s)"
   
-  # Install dependencies in the new worktree
-  echo "Installing dependencies in new worktree..."
-  cd "$NEW_WORKTREE_PATH"
-  if npm ci --no-audit --no-fund; then
-    echo "  ✓ Dependencies installed successfully"
+  # Install dependencies in the new worktree if it's a Node.js project
+  if [ -f "$NEW_WORKTREE_PATH/package.json" ]; then
+    echo "Installing dependencies in new worktree..."
+    cd "$NEW_WORKTREE_PATH"
+    if [ -f "package-lock.json" ]; then
+      if npm ci --no-audit --no-fund; then
+        echo "  ✓ Dependencies installed successfully"
+      else
+        echo "  ⚠️  Failed to install dependencies - you may need to run 'npm ci' manually"
+      fi
+    else
+      if npm install --no-audit --no-fund; then
+        echo "  ✓ Dependencies installed successfully"
+      else
+        echo "  ⚠️  Failed to install dependencies - you may need to run 'npm install' manually"
+      fi
+    fi
+    cd "$CURRENT_ROOT"
   else
-    echo "  ⚠️  Failed to install dependencies - you may need to run 'npm ci' manually"
+    echo "Skipping npm install - no package.json found"
   fi
-  cd "$CURRENT_ROOT"
   
   # Handle MCP profile activation
   # Default to base profile if no MCP options provided
