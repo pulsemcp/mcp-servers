@@ -242,3 +242,9 @@ Don't add: basic TypeScript fixes, standard npm troubleshooting, obvious file op
 - Branch naming follows `<github-username>/<feature-description>` pattern
 - Always ensure CI passes before considering a PR complete
 - Pre-commit hooks automatically run lint-staged, but manual linting should still be run before pushing to avoid CI failures
+
+### CI/CD Publication Workflow
+
+- The npm registry validation timeout can cause false failures - packages may be successfully published but take longer than expected to propagate
+- When debugging "exit code 1" failures in the publish workflow, check if FAILED_SERVERS was populated due to validation timeout
+- npm registry propagation can take 60+ seconds during high load times, so validation timeouts should be generous (3+ minutes)
