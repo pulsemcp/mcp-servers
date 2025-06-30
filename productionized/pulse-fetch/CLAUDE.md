@@ -118,3 +118,7 @@ Key insights gathered during implementation and CI troubleshooting:
 - **Publication Process**: Follow the detailed guidelines in `/docs/PUBLISHING_SERVERS.md` for version bumping, changelog updates, and automated publishing
 - **Merge Conflict Resolution**: When rebasing onto main during publication, combine changelog entries from both branches preserving the intent of all changes (e.g., merge README fixes with feature additions)
 - **CI Monitoring**: Use `gh run list --branch <branch-name>` to check workflow runs when `gh pr checks` doesn't show results - CI may complete successfully even if checks aren't visible in PR view
+
+### Development Workflow
+
+- **Changelog Updates**: Always update the CHANGELOG.md file when making changes to this MCP server to track improvements and maintain version history
