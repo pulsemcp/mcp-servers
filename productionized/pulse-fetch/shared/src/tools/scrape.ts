@@ -197,11 +197,10 @@ Use cases:
 
         // Save as resource if requested
         let resourceUri: string | undefined;
-        if (validatedArgs.saveResource) {
+        if (validatedArgs.saveResult) {
           try {
             const storage = await ResourceStorageFactory.create();
-            const contentType =
-              format === 'html' || format === 'rawHtml' ? 'text/html' : 'text/markdown';
+            const contentType = 'text/html'; // Always HTML since we return raw HTML now
 
             resourceUri = await storage.write(url, processedContent, {
               contentType,
@@ -210,8 +209,6 @@ Use cases:
                 (result.metadata?.description as string | undefined) ||
                 `Scraped content from ${url}`,
               source: result.source,
-              format,
-              onlyMainContent,
             });
           } catch (error) {
             console.error('Failed to save resource:', error);
@@ -242,7 +239,7 @@ Use cases:
             type: 'resource_link' as const,
             uri: resourceUri,
             name: `Scraped: ${new URL(url).hostname}`,
-            mimeType: format === 'html' || format === 'rawHtml' ? 'text/html' : 'text/markdown',
+            mimeType: 'text/html', // Always HTML since we return raw HTML now
             description: `Scraped content from ${url}`,
           });
         }

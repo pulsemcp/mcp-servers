@@ -54,7 +54,7 @@ describe('Scrape Tool', () => {
       );
       const result = await tool.handler({
         url: 'https://example.com',
-        saveResource: false,
+        saveResult: false,
       });
 
       expect(result).toMatchObject({
@@ -93,7 +93,7 @@ describe('Scrape Tool', () => {
       );
       const result = await tool.handler({
         url: 'https://example.com',
-        saveResource: false,
+        saveResult: false,
       });
 
       expect(result).toMatchObject({
@@ -132,7 +132,7 @@ describe('Scrape Tool', () => {
       );
       const result = await tool.handler({
         url: 'https://example.com',
-        saveResource: false,
+        saveResult: false,
       });
 
       expect(result).toMatchObject({
@@ -171,7 +171,7 @@ describe('Scrape Tool', () => {
       );
       const result = await tool.handler({
         url: 'https://example.com',
-        saveResource: false,
+        saveResult: false,
       });
 
       expect(result).toMatchObject({
@@ -265,7 +265,7 @@ describe('Scrape Tool', () => {
       );
       const result = await tool.handler({
         url: 'https://example.com',
-        saveResource: true, // Explicitly enable resource saving
+        saveResult: true, // Explicitly enable resource saving
       });
 
       expect(result).toMatchObject({
@@ -278,7 +278,7 @@ describe('Scrape Tool', () => {
             type: 'resource_link',
             uri: expect.stringMatching(/^memory:\/\/example\.com_\d+$/),
             name: 'Scraped: example.com',
-            mimeType: 'text/markdown',
+            mimeType: 'text/html',
             description: 'Scraped content from https://example.com',
           },
         ],
