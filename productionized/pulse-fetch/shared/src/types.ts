@@ -28,11 +28,9 @@ export interface ScrapeResult {
  * Scraping options interface
  */
 export interface ScrapeOptions {
-  format?: 'markdown' | 'html' | 'rawHtml' | 'links' | 'extract';
-  onlyMainContent?: boolean;
-  waitFor?: number;
   timeout?: number;
+  extract?: string;
   maxChars?: number;
   startIndex?: number;
-  saveResource?: boolean;
+  saveResult?: boolean;
 }

@@ -43,7 +43,6 @@ describe('Scraping Strategies', () => {
 
       const result = await scrapeUniversal(mockClients, {
         url: 'https://example.com',
-        format: 'markdown',
       });
 
       expect(result).toEqual({
@@ -67,17 +66,15 @@ describe('Scraping Strategies', () => {
 
       const result = await scrapeUniversal(mockClients, {
         url: 'https://example.com',
-        format: 'markdown',
       });
 
       expect(result).toEqual({
         success: true,
-        content: 'Firecrawl content',
+        content: '<p>Firecrawl content</p>',
         source: 'firecrawl',
       });
       expect(mockClients.firecrawl!.scrape).toHaveBeenCalledWith('https://example.com', {
-        onlyMainContent: undefined,
-        formats: ['markdown'],
+        formats: ['html'],
       });
     });
 
@@ -93,7 +90,6 @@ describe('Scraping Strategies', () => {
 
       const result = await scrapeUniversal(mockClients, {
         url: 'https://example.com',
-        format: 'markdown',
       });
 
       expect(result).toEqual({
@@ -110,7 +106,6 @@ describe('Scraping Strategies', () => {
 
       const result = await scrapeUniversal(mockClients, {
         url: 'https://example.com',
-        format: 'markdown',
       });
 
       expect(result).toEqual({
@@ -140,7 +135,6 @@ describe('Scraping Strategies', () => {
 
         const result = await scrapeUniversal(mockClients, {
           url: 'https://example.com',
-          format: 'markdown',
         });
 
         expect(result).toEqual({
@@ -163,12 +157,11 @@ describe('Scraping Strategies', () => {
 
         const result = await scrapeUniversal(mockClients, {
           url: 'https://example.com',
-          format: 'markdown',
         });
 
         expect(result).toEqual({
           success: true,
-          content: 'Firecrawl content',
+          content: '<p>Firecrawl content</p>',
           source: 'firecrawl',
         });
         expect(mockClients.native.scrape).not.toHaveBeenCalled();
@@ -187,7 +180,6 @@ describe('Scraping Strategies', () => {
 
         const result = await scrapeUniversal(mockClients, {
           url: 'https://example.com',
-          format: 'markdown',
         });
 
         expect(result).toEqual({
@@ -212,7 +204,6 @@ describe('Scraping Strategies', () => {
 
         const result = await scrapeUniversal(mockClients, {
           url: 'https://example.com',
-          format: 'markdown',
         });
 
         expect(result).toEqual({
@@ -250,12 +241,11 @@ describe('Scraping Strategies', () => {
 
       const result = await scrapeWithSingleStrategy(mockClients, 'firecrawl', {
         url: 'https://example.com',
-        format: 'markdown',
       });
 
       expect(result).toEqual({
         success: true,
-        content: 'Firecrawl content',
+        content: '<p>Content</p>',
         source: 'firecrawl',
       });
     });
