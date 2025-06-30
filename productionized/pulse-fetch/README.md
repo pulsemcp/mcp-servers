@@ -142,6 +142,21 @@ You'll need Node.js installed on your machine to run the local version.
 
 Add this configuration to your Claude Desktop config file:
 
+**Minimal configuration** (uses native fetch only):
+
+```json
+{
+  "mcpServers": {
+    "pulse-fetch": {
+      "command": "npx",
+      "args": ["-y", "@pulsemcp/pulse-fetch"]
+    }
+  }
+}
+```
+
+**Full configuration** (with all optional environment variables):
+
 ```json
 {
   "mcpServers": {
