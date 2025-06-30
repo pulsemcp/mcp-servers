@@ -261,3 +261,4 @@ Don't add: basic TypeScript fixes, standard npm troubleshooting, obvious file op
 - The version bump commit should include all modified files: local/package.json, local/package-lock.json, parent package-lock.json, CHANGELOG.md, and main README.md
 - When simplifying tool parameters, consider the MCP best practices guide in mcp-server-template/shared/src/tools/TOOL_DESCRIPTIONS_GUIDE.md for writing clear descriptions
 - Breaking changes in tool parameters should be clearly marked in CHANGELOG.md with **BREAKING** prefix to alert users
+- When using `set -e` in shell scripts with npm commands, be aware that `npm view` returns exit code 1 when a package doesn't exist yet - use `|| true` to prevent premature script termination during npm registry propagation checks
