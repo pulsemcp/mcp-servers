@@ -124,3 +124,7 @@ Key insights gathered during implementation and CI troubleshooting:
 - **Consistent Naming**: When refactoring environment variables, ensure consistency across all files (code, tests, documentation) to avoid subtle bugs and user confusion
 - **User Experience**: Remove technical prefixes (like "Bearer ") from environment variables and handle them programmatically - users shouldn't need to understand implementation details
 - **Documentation Files**: Always provide .env.example files that match the patterns used in similar servers (twist, appsignal) for consistency across the monorepo
+
+### Development Workflow
+
+- **Changelog Updates**: Always update the CHANGELOG.md file when making changes to this MCP server to track improvements and maintain version history

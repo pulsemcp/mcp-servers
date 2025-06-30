@@ -96,3 +96,7 @@ Manual tests follow a complete end-to-end workflow:
 
 - AppSignal GraphQL API doesn't support top-level `app(id:)` queries - must query through `viewer.organizations.apps`
 - The `attributes` field in log lines causes 500 errors and has been removed from queries
+
+## Development Workflow
+
+- **Changelog Updates**: Always update the CHANGELOG.md file when making changes to this MCP server to track improvements and maintain version history

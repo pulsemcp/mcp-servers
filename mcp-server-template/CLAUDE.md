@@ -203,3 +203,7 @@ The template uses a modular client pattern with a lib subdirectory for external 
 - Handle errors gracefully
 - Keep business logic in shared module
 - Document all tools and resources
+
+## Development Workflow
+
+- **Changelog Updates**: Always update the CHANGELOG.md file when making changes to this MCP server to track improvements and maintain version history
