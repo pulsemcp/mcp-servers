@@ -19,6 +19,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Comprehensive test suite for strategy system (33 passing tests)
 - Example configuration with common domains pre-configured
 - Manual tests demonstrating strategy fallback with Yelp URL
+- Environment variable `PULSE_FETCH_STRATEGY_CONFIG_PATH` for custom config file location
+- Automatic initialization of strategy config in OS temp directory when environment variable not set
 
 ### Changed
 
@@ -29,6 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Strategy selection is now completely automatic - no manual strategy parameter exposed to users
 - Renamed `native.fetch()` to `native.scrape()` for consistency with other scraping clients
 - Documentation moved from separate STRATEGY_CONFIGURATION.md into main README
+- Strategy config now defaults to OS temp directory instead of current working directory
 
 ## [0.0.4] - 2025-06-29
 

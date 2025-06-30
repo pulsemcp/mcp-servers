@@ -1,5 +1,6 @@
 import { promises as fs } from 'fs';
-import { join, dirname } from 'path';
+import { dirname } from 'path';
+import { getStrategyConfigPath } from './default-config.js';
 import type {
   IStrategyConfigClient,
   StrategyConfigEntry,
@@ -12,15 +13,37 @@ import type {
  * Stores configuration as a markdown table in a local file
  */
 export class FilesystemStrategyConfigClient implements IStrategyConfigClient {
-  private configPath: string;
+  private configPath: string | undefined;
+  private configPathPromise: Promise<string> | undefined;
+  private options: StrategyConfigOptions;
 
   constructor(options: StrategyConfigOptions = {}) {
-    this.configPath = options.configPath || join(process.cwd(), 'scraping-strategies.md');
+    this.options = options;
+    if (options.configPath) {
+      this.configPath = options.configPath;
+    }
+  }
+
+  private async getConfigPath(): Promise<string> {
+    if (this.configPath) {
+      return this.configPath;
+    }
+
+    // If we're already resolving the path, wait for it
+    if (this.configPathPromise) {
+      return this.configPathPromise;
+    }
+
+    // Start resolving the path
+    this.configPathPromise = getStrategyConfigPath();
+    this.configPath = await this.configPathPromise;
+    return this.configPath;
   }
 
   async loadConfig(): Promise<StrategyConfigEntry[]> {
     try {
-      const content = await fs.readFile(this.configPath, 'utf-8');
+      const configPath = await this.getConfigPath();
+      const content = await fs.readFile(configPath, 'utf-8');
       return this.parseMarkdownTable(content);
     } catch (error) {
       if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
@@ -32,12 +55,13 @@ export class FilesystemStrategyConfigClient implements IStrategyConfigClient {
   }
 
   async saveConfig(config: StrategyConfigEntry[]): Promise<void> {
+    const configPath = await this.getConfigPath();
     const markdownContent = this.generateMarkdownTable(config);
 
     // Ensure directory exists
-    await fs.mkdir(dirname(this.configPath), { recursive: true });
+    await fs.mkdir(dirname(configPath), { recursive: true });
 
-    await fs.writeFile(this.configPath, markdownContent, 'utf-8');
+    await fs.writeFile(configPath, markdownContent, 'utf-8');
   }
 
   async upsertEntry(entry: StrategyConfigEntry): Promise<void> {

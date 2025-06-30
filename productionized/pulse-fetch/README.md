@@ -123,10 +123,11 @@ Most other alternatives fall short on one or more vectors:
 
 ## Environment Variables
 
-| Environment Variable      | Description                                               | Required | Default Value | Example               |
-| ------------------------- | --------------------------------------------------------- | -------- | ------------- | --------------------- |
-| `FIRECRAWL_API_KEY`       | API key for Firecrawl service to bypass anti-bot measures | No       | N/A           | `fc-abc123...`        |
-| `BRIGHTDATA_BEARER_TOKEN` | Bearer token for BrightData Web Unlocker service          | No       | N/A           | `Bearer bd_abc123...` |
+| Environment Variable               | Description                                                      | Required | Default Value | Example                           |
+| ---------------------------------- | ---------------------------------------------------------------- | -------- | ------------- | --------------------------------- |
+| `FIRECRAWL_API_KEY`                | API key for Firecrawl service to bypass anti-bot measures        | No       | N/A           | `fc-abc123...`                    |
+| `BRIGHTDATA_BEARER_TOKEN`          | Bearer token for BrightData Web Unlocker service                 | No       | N/A           | `Bearer bd_abc123...`             |
+| `PULSE_FETCH_STRATEGY_CONFIG_PATH` | Path to markdown file containing scraping strategy configuration | No       | OS temp dir   | `/path/to/scraping-strategies.md` |
 
 ## Claude Desktop
 
@@ -148,7 +149,8 @@ Add this configuration to your Claude Desktop config file:
       "args": ["-y", "@pulsemcp/pulse-fetch"],
       "env": {
         "FIRECRAWL_API_KEY": "your-firecrawl-api-key",
-        "BRIGHTDATA_BEARER_TOKEN": "your-brightdata-bearer-token"
+        "BRIGHTDATA_BEARER_TOKEN": "your-brightdata-bearer-token",
+        "PULSE_FETCH_STRATEGY_CONFIG_PATH": "/path/to/your/scraping-strategies.md"
       }
     }
   }
@@ -325,7 +327,9 @@ The pulse-fetch MCP server includes an intelligent strategy system that automati
 
 ## Configuration File
 
-The configuration is stored in a markdown table at `scraping-strategies.md`. The table has three columns:
+The configuration is stored in a markdown table. By default, it's automatically created in your OS temp directory (e.g., `/tmp/pulse-fetch/scraping-strategies.md` on Unix systems). You can customize the location by setting the `PULSE_FETCH_STRATEGY_CONFIG_PATH` environment variable.
+
+The table has three columns:
 
 - **prefix**: Domain or URL prefix to match (e.g., `reddit.com` or `reddit.com/r/`)
 - **default_strategy**: The strategy to use (`native`, `firecrawl`, or `brightdata`)
@@ -360,6 +364,9 @@ When scraping a new domain:
 The system uses an abstraction layer for config storage:
 
 - **FilesystemClient**: Stores config in a local markdown file (default)
+  - Uses `PULSE_FETCH_STRATEGY_CONFIG_PATH` if set
+  - Otherwise uses OS temp directory (e.g., `/tmp/pulse-fetch/scraping-strategies.md`)
+  - Automatically creates initial config with common patterns
 - **Future clients**: Could support GCS, S3, database storage, etc.
 
 You can swap the storage backend by providing a different `StrategyConfigFactory` when creating the MCP server.
