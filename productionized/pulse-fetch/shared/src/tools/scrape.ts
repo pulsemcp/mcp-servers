@@ -2,6 +2,7 @@ import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { z } from 'zod';
 import type { IScrapingClients, StrategyConfigFactory } from '../server.js';
 import { scrapeWithStrategy } from '../scraping-strategies.js';
+import { ResourceStorageFactory } from '../storage/index.js';
 
 const ScrapeArgsSchema = z.object({
   url: z
@@ -194,7 +195,39 @@ Use cases:
 
         resultText += `\n\n---\nScraped using: ${result.source}`;
 
-        return {
+        // Save as resource if requested
+        let resourceUri: string | undefined;
+        if (validatedArgs.saveResource) {
+          try {
+            const storage = await ResourceStorageFactory.create();
+            const contentType =
+              format === 'html' || format === 'rawHtml' ? 'text/html' : 'text/markdown';
+
+            resourceUri = await storage.write(url, processedContent, {
+              contentType,
+              title: result.metadata?.title as string | undefined,
+              description:
+                (result.metadata?.description as string | undefined) ||
+                `Scraped content from ${url}`,
+              source: result.source,
+              format,
+              onlyMainContent,
+            });
+          } catch (error) {
+            console.error('Failed to save resource:', error);
+          }
+        }
+
+        const response: {
+          content: Array<{
+            type: string;
+            text?: string;
+            uri?: string;
+            name?: string;
+            mimeType?: string;
+            description?: string;
+          }>;
+        } = {
           content: [
             {
               type: 'text' as const,
@@ -202,6 +235,19 @@ Use cases:
             },
           ],
         };
+
+        // Add resource link if saved
+        if (resourceUri) {
+          response.content.push({
+            type: 'resource_link' as const,
+            uri: resourceUri,
+            name: `Scraped: ${new URL(url).hostname}`,
+            mimeType: format === 'html' || format === 'rawHtml' ? 'text/html' : 'text/markdown',
+            description: `Scraped content from ${url}`,
+          });
+        }
+
+        return response;
       } catch (error) {
         return {
           content: [

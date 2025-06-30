@@ -11,6 +11,7 @@ export interface ScrapeResult {
   content: string | null;
   source: string;
   error?: string;
+  metadata?: Record<string, unknown>;
 }
 
 /**
@@ -62,7 +63,7 @@ export async function scrapeUniversal(
   options: ScrapeOptions
 ): Promise<ScrapeResult> {
   const { url } = options;
-  const optimizeFor = process.env.OPTIMIZE_FOR || 'COST';
+  const optimizeFor = process.env.OPTIMIZE_FOR || 'cost';
 
   // Helper function to try native scraping
   const tryNative = async (): Promise<ScrapeResult | null> => {
@@ -123,15 +124,15 @@ export async function scrapeUniversal(
   };
 
   // Execute strategies based on optimization mode
-  if (optimizeFor === 'SPEED') {
-    // SPEED mode: firecrawl -> brightdata (skip native)
+  if (optimizeFor === 'speed') {
+    // speed mode: firecrawl -> brightdata (skip native)
     const firecrawlResult = await tryFirecrawl();
     if (firecrawlResult) return firecrawlResult;
 
     const brightDataResult = await tryBrightData();
     if (brightDataResult) return brightDataResult;
   } else {
-    // COST mode (default): native -> firecrawl -> brightdata
+    // cost mode (default): native -> firecrawl -> brightdata
     const nativeResult = await tryNative();
     if (nativeResult) return nativeResult;
 
