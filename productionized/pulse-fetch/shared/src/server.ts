@@ -1,6 +1,8 @@
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { registerResources } from './resources.js';
 import { createRegisterTools } from './tools.js';
+import type { IStrategyConfigClient } from './strategy-config/index.js';
+import { FilesystemStrategyConfigClient } from './strategy-config/index.js';
 
 // Scraping client interfaces for external services
 export interface IFirecrawlClient {
@@ -31,7 +33,7 @@ export interface IBrightDataClient {
 }
 
 export interface INativeFetcher {
-  fetch(
+  scrape(
     url: string,
     options?: RequestInit
   ): Promise<{
@@ -44,7 +46,7 @@ export interface INativeFetcher {
 
 // Native fetcher implementation
 export class NativeFetcher implements INativeFetcher {
-  async fetch(
+  async scrape(
     url: string,
     options?: RequestInit
   ): Promise<{
@@ -124,6 +126,7 @@ export interface IScrapingClients {
 }
 
 export type ClientFactory = () => IScrapingClients;
+export type StrategyConfigFactory = () => IStrategyConfigClient;
 
 export function createMCPServer() {
   const server = new Server(
@@ -139,7 +142,11 @@ export function createMCPServer() {
     }
   );
 
-  const registerHandlers = async (server: Server, clientFactory?: ClientFactory) => {
+  const registerHandlers = async (
+    server: Server,
+    clientFactory?: ClientFactory,
+    strategyConfigFactory?: StrategyConfigFactory
+  ) => {
     // Use provided factory or create default clients
     const factory =
       clientFactory ||
@@ -162,8 +169,11 @@ export function createMCPServer() {
         return clients;
       });
 
+    // Use provided strategy config factory or create default
+    const configFactory = strategyConfigFactory || (() => new FilesystemStrategyConfigClient());
+
     registerResources(server);
-    const registerTools = createRegisterTools(factory);
+    const registerTools = createRegisterTools(factory, configFactory);
     registerTools(server);
   };
 

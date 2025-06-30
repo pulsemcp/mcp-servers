@@ -5,6 +5,31 @@ All notable changes to the Pulse Fetch MCP server will be documented in this fil
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+## [0.1.0] - 2025-06-30
+
+### Added
+
+- Automatic scraping strategy system with intelligent selection and fallback logic
+- Strategy configuration file using markdown table format (`scraping-strategies.md`)
+- Auto-learning capability - successful strategies are saved for future use
+- FilesystemStrategyConfigClient for managing strategy configuration
+- Strategy abstraction layer supporting future backends (GCS, S3, database)
+- Comprehensive test suite for strategy system (33 passing tests)
+- Example configuration with common domains pre-configured
+- Manual tests demonstrating strategy fallback with Yelp URL
+
+### Changed
+
+- Refactored scraping logic into modular strategy functions (`scrapeUniversal`, `scrapeWithStrategy`, etc.)
+- Enhanced scrape tool to use automatic strategy selection based on configuration
+- Updated tool description to emphasize automatic optimization
+- Improved dependency injection to include strategy configuration factory
+- Strategy selection is now completely automatic - no manual strategy parameter exposed to users
+- Renamed `native.fetch()` to `native.scrape()` for consistency with other scraping clients
+- Documentation moved from separate STRATEGY_CONFIGURATION.md into main README
+
 ## [0.0.4] - 2025-06-29
 
 ### Added

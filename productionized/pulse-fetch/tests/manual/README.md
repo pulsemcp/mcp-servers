@@ -122,3 +122,32 @@ All clients follow the same interface pattern with:
 - **BrightData Client**: Should work on protected sites, provides raw HTML, best for bypassing bot detection
 
 Each client provides detailed output including content previews, metadata, and analysis to help you understand how different scraping approaches behave with various types of websites.
+
+## Strategy System Tests
+
+These tests verify the automatic strategy selection and configuration system:
+
+### scrape-tool-simple.manual.test.ts
+
+Tests the automatic strategy selection with simple URLs that work with native fetch:
+
+```bash
+npm run test:manual -- scrape-tool-simple
+```
+
+This test demonstrates:
+
+- Auto-discovery of optimal scraping strategies
+- Saving successful strategies to configuration file
+- Using saved strategies on subsequent requests
+- Learning strategies for new domains
+
+### scrape-tool-strategy.manual.test.ts
+
+Tests the complete strategy fallback system with a Yelp URL that typically requires BrightData:
+
+```bash
+npm run test:manual -- scrape-tool-strategy
+```
+
+**Note**: This test requires `BRIGHTDATA_BEARER_TOKEN` to be set for full functionality. Without it, the test will show how the system handles fallback scenarios.

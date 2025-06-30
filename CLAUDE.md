@@ -228,7 +228,7 @@ Don't add: basic TypeScript fixes, standard npm troubleshooting, obvious file op
 ### Development Workflow
 
 - Always run linting commands from the repository root, not from subdirectories, to ensure consistent tooling across the monorepo
-- When pre-commit hooks fail with "Cannot find module" errors, the solution is typically to `rm -rf node_modules package-lock.json && npm install` from the repo root
+- When pre-commit hooks fail with "Cannot find module" errors, the solution is typically to `rm -rf node_modules && npm install` from the repo root
 - The specialized workspace setup in some servers (like `experimental/twist/` and `experimental/appsignal/`) uses relative import paths that work for both development and publishing - never change these to package names or direct dist paths
 
 ### Testing Strategy
