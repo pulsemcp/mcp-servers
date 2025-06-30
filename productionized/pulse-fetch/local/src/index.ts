@@ -20,8 +20,8 @@ function validateEnvironment() {
 
   // Validate OPTIMIZE_FOR if provided
   const optimizeFor = process.env.OPTIMIZE_FOR;
-  if (optimizeFor && !['COST', 'SPEED'].includes(optimizeFor)) {
-    console.error(`Invalid OPTIMIZE_FOR value: ${optimizeFor}. Must be 'COST' or 'SPEED'.`);
+  if (optimizeFor && !['cost', 'speed'].includes(optimizeFor)) {
+    console.error(`Invalid OPTIMIZE_FOR value: ${optimizeFor}. Must be 'cost' or 'speed'.`);
     process.exit(1);
   }
 

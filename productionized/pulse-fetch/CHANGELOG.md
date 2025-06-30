@@ -7,7 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.1.3] - 2025-06-30
+## [0.1.4] - 2025-06-30
+
+### Added
+
+- Unified resource storage interface with support for multiple backends
+  - Memory storage (default) - stores resources in memory, lost on restart
+  - Filesystem storage - persists resources to disk as markdown files with YAML frontmatter
+  - Configurable via `MCP_RESOURCE_STORAGE` environment variable
+- Resource saving functionality in the scrape tool
+  - Scraped content is automatically saved as MCP resources when `saveResource: true` (default)
+  - Returns a resource link in the tool response for easy access
+- Comprehensive test suite for resource storage implementations
+- Environment variables for resource storage configuration:
+  - `MCP_RESOURCE_STORAGE`: Choose storage backend (`memory` or `filesystem`)
+  - `MCP_RESOURCE_FILESYSTEM_ROOT`: Directory for filesystem storage (defaults to `/tmp/pulse-fetch/resources`)
 
 ### Changed
 
@@ -18,12 +32,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Simplified `extract` parameter from complex object to simple string description
 - Improved tool description following MCP best practices guide
 - Enhanced parameter descriptions with examples and clear defaults
-- Added proper timeout handling with AbortController in NativeFetcher
+- Updated `OPTIMIZE_FOR` environment variable values from uppercase to lowercase
+  - `COST` → `cost` (default)
+  - `SPEED` → `speed`
+- Improved resource handlers to use the new storage interface
+- Enhanced documentation with resource storage configuration examples
 
 ### Fixed
 
 - Timeout parameter now properly propagates to native fetch strategy
 - Improved timeout error messages to guide users on increasing timeout values
+- Test isolation issues by adding proper temp directory cleanup
+
+## [0.1.3] - 2025-06-30
+
+[Note: This version was skipped due to merge conflict resolution]
 
 ## [0.1.2] - 2025-06-30
 

@@ -54,6 +54,7 @@ describe('Scrape Tool', () => {
       );
       const result = await tool.handler({
         url: 'https://example.com',
+        saveResult: false,
       });
 
       expect(result).toMatchObject({
@@ -92,6 +93,7 @@ describe('Scrape Tool', () => {
       );
       const result = await tool.handler({
         url: 'https://example.com',
+        saveResult: false,
       });
 
       expect(result).toMatchObject({
@@ -130,6 +132,7 @@ describe('Scrape Tool', () => {
       );
       const result = await tool.handler({
         url: 'https://example.com',
+        saveResult: false,
       });
 
       expect(result).toMatchObject({
@@ -168,6 +171,7 @@ describe('Scrape Tool', () => {
       );
       const result = await tool.handler({
         url: 'https://example.com',
+        saveResult: false,
       });
 
       expect(result).toMatchObject({
@@ -243,6 +247,41 @@ describe('Scrape Tool', () => {
           },
         ],
         isError: true,
+      });
+    });
+
+    it('should save resource when saveResource is true', async () => {
+      // Set up mock for successful native scrape
+      mockNative.setMockResponse({
+        success: true,
+        status: 200,
+        data: 'Content to be saved as resource',
+      });
+
+      const tool = scrapeTool(
+        mockServer,
+        () => mockClients,
+        () => mockStrategyConfigClient
+      );
+      const result = await tool.handler({
+        url: 'https://example.com',
+        saveResult: true, // Explicitly enable resource saving
+      });
+
+      expect(result).toMatchObject({
+        content: [
+          {
+            type: 'text',
+            text: expect.stringContaining('Content to be saved as resource'),
+          },
+          {
+            type: 'resource_link',
+            uri: expect.stringMatching(/^memory:\/\/example\.com_\d+$/),
+            name: 'Scraped: example.com',
+            mimeType: 'text/html',
+            description: 'Scraped content from https://example.com',
+          },
+        ],
       });
     });
   });

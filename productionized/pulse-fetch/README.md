@@ -29,7 +29,7 @@ This project is built and maintained by [PulseMCP](https://www.pulsemcp.com/).
 
 **Clean content extraction**: Strips out HTML noise using Mozilla's Readability algorithm to minimize token usage during MCP Tool calls.
 
-**Resource caching**: Optionally saves results as MCP Resources for effective caching and easy inspection of Tool call outcomes.
+**Resource caching**: Optionally saves results as MCP Resources for effective caching and easy inspection of Tool call outcomes. Supports both in-memory and filesystem storage backends.
 
 **Anti-bot bypass**: Integrates with Firecrawl and BrightData APIs to reliably work around anti-scraping technology.
 
@@ -123,12 +123,14 @@ Most other alternatives fall short on one or more vectors:
 
 ## Environment Variables
 
-| Environment Variable               | Description                                                      | Required | Default Value | Example                           |
-| ---------------------------------- | ---------------------------------------------------------------- | -------- | ------------- | --------------------------------- |
-| `FIRECRAWL_API_KEY`                | API key for Firecrawl service to bypass anti-bot measures        | No       | N/A           | `fc-abc123...`                    |
-| `BRIGHTDATA_BEARER_TOKEN`          | Bearer token for BrightData Web Unlocker service                 | No       | N/A           | `Bearer bd_abc123...`             |
-| `PULSE_FETCH_STRATEGY_CONFIG_PATH` | Path to markdown file containing scraping strategy configuration | No       | OS temp dir   | `/path/to/scraping-strategies.md` |
-| `OPTIMIZE_FOR`                     | Optimization strategy for scraping: `COST` or `SPEED`            | No       | `COST`        | `SPEED`                           |
+| Environment Variable               | Description                                                         | Required | Default Value                | Example                           |
+| ---------------------------------- | ------------------------------------------------------------------- | -------- | ---------------------------- | --------------------------------- |
+| `FIRECRAWL_API_KEY`                | API key for Firecrawl service to bypass anti-bot measures           | No       | N/A                          | `fc-abc123...`                    |
+| `BRIGHTDATA_BEARER_TOKEN`          | Bearer token for BrightData Web Unlocker service                    | No       | N/A                          | `Bearer bd_abc123...`             |
+| `PULSE_FETCH_STRATEGY_CONFIG_PATH` | Path to markdown file containing scraping strategy configuration    | No       | OS temp dir                  | `/path/to/scraping-strategies.md` |
+| `OPTIMIZE_FOR`                     | Optimization strategy for scraping: `cost` or `speed`               | No       | `cost`                       | `speed`                           |
+| `MCP_RESOURCE_STORAGE`             | Storage backend for saved resources: `memory` or `filesystem`       | No       | `memory`                     | `filesystem`                      |
+| `MCP_RESOURCE_FILESYSTEM_ROOT`     | Directory for filesystem storage (only used with `filesystem` type) | No       | `/tmp/pulse-fetch/resources` | `/home/user/mcp-resources`        |
 
 ## Claude Desktop
 
@@ -167,7 +169,9 @@ Add this configuration to your Claude Desktop config file:
         "FIRECRAWL_API_KEY": "your-firecrawl-api-key",
         "BRIGHTDATA_BEARER_TOKEN": "your-brightdata-bearer-token",
         "PULSE_FETCH_STRATEGY_CONFIG_PATH": "/path/to/your/scraping-strategies.md",
-        "OPTIMIZE_FOR": "COST"
+        "OPTIMIZE_FOR": "cost",
+        "MCP_RESOURCE_STORAGE": "filesystem",
+        "MCP_RESOURCE_FILESYSTEM_ROOT": "/path/to/resource/storage"
       }
     }
   }

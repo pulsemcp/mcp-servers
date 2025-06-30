@@ -125,7 +125,7 @@ describe('Scraping Strategies', () => {
         process.env.OPTIMIZE_FOR = originalEnv;
       });
 
-      it('should use COST optimization by default (native -> firecrawl -> brightdata)', async () => {
+      it('should use cost optimization by default (native -> firecrawl -> brightdata)', async () => {
         delete process.env.OPTIMIZE_FOR;
 
         const mockNativeResult = {
@@ -148,8 +148,8 @@ describe('Scraping Strategies', () => {
         expect(mockClients.firecrawl?.scrape).not.toHaveBeenCalled();
       });
 
-      it('should skip native and use firecrawl first with SPEED optimization', async () => {
-        process.env.OPTIMIZE_FOR = 'SPEED';
+      it('should skip native and use firecrawl first with speed optimization', async () => {
+        process.env.OPTIMIZE_FOR = 'speed';
 
         const mockFirecrawlResult = {
           success: true,
@@ -170,8 +170,8 @@ describe('Scraping Strategies', () => {
         expect(mockClients.firecrawl!.scrape).toHaveBeenCalled();
       });
 
-      it('should fall back to brightdata in SPEED mode when firecrawl fails', async () => {
-        process.env.OPTIMIZE_FOR = 'SPEED';
+      it('should fall back to brightdata in speed mode when firecrawl fails', async () => {
+        process.env.OPTIMIZE_FOR = 'speed';
 
         vi.mocked(mockClients.firecrawl!.scrape).mockResolvedValue({ success: false });
         const mockBrightDataResult = {
@@ -194,8 +194,8 @@ describe('Scraping Strategies', () => {
         expect(mockClients.brightData!.scrape).toHaveBeenCalled();
       });
 
-      it('should handle COST mode explicitly set', async () => {
-        process.env.OPTIMIZE_FOR = 'COST';
+      it('should handle cost mode explicitly set', async () => {
+        process.env.OPTIMIZE_FOR = 'cost';
 
         const mockNativeResult = {
           success: true,
