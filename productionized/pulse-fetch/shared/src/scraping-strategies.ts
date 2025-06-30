@@ -18,6 +18,45 @@ export interface ScrapeResult {
 }
 
 /**
+ * Extract URL pattern for strategy learning by taking the path up to the last segment.
+ * For example:
+ * - https://yelp.com/biz/dolly-san-francisco → yelp.com/biz/
+ * - https://reddit.com/r/programming/comments/123/title → reddit.com/r/programming/comments/123/
+ * - https://example.com/blog/2024/article → example.com/blog/2024/
+ */
+export function extractUrlPattern(url: string): string {
+  try {
+    const urlObj = new URL(url);
+    const hostname = urlObj.hostname;
+    const port = urlObj.port;
+    const pathname = urlObj.pathname;
+
+    // Include port in hostname if present
+    const hostWithPort = port ? `${hostname}:${port}` : hostname;
+
+    // If no path or just root, return hostname with port
+    if (!pathname || pathname === '/') {
+      return hostWithPort;
+    }
+
+    // Split path into segments
+    const segments = pathname.split('/').filter((s) => s.length > 0);
+
+    // If no segments or only one segment, return hostname
+    if (segments.length <= 1) {
+      return hostWithPort;
+    }
+
+    // Return everything except the last segment
+    const pathWithoutLastSegment = segments.slice(0, -1).join('/');
+    return hostWithPort + '/' + pathWithoutLastSegment + '/';
+  } catch {
+    // If URL parsing fails, return as-is
+    return url;
+  }
+}
+
+/**
  * Universal scraping that tries all strategies sequentially
  * Default (COST optimization): native -> firecrawl -> brightdata
  * SPEED optimization: firecrawl -> brightdata (skips native)
@@ -240,9 +279,9 @@ export async function scrapeWithStrategy(
     // If universal succeeded and we have a config client, save the successful strategy
     if (universalResult.success && universalResult.source !== 'none') {
       try {
-        const hostname = new URL(options.url).hostname;
+        const urlPattern = extractUrlPattern(options.url);
         await configClient.upsertEntry({
-          prefix: hostname,
+          prefix: urlPattern,
           default_strategy: universalResult.source as ScrapingStrategy,
           notes: `Auto-discovered after ${explicitStrategy} failed`,
         });
@@ -281,9 +320,9 @@ export async function scrapeWithStrategy(
   // If universal succeeded and we don't have a configured strategy, save it
   if (universalResult.success && universalResult.source !== 'none' && !configuredStrategy) {
     try {
-      const hostname = new URL(options.url).hostname;
+      const urlPattern = extractUrlPattern(options.url);
       await configClient.upsertEntry({
-        prefix: hostname,
+        prefix: urlPattern,
         default_strategy: universalResult.source as ScrapingStrategy,
         notes: 'Auto-discovered via universal fallback',
       });

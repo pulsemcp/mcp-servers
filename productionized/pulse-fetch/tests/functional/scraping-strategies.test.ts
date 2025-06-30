@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import {
   scrapeUniversal,
   scrapeWithSingleStrategy,
@@ -397,6 +397,112 @@ describe('Scraping Strategies', () => {
         success: true,
         content: 'Content despite error',
         source: 'native',
+      });
+    });
+
+    describe('URL pattern learning', () => {
+      it('should save Yelp business pattern when successful', async () => {
+        vi.mocked(mockConfigClient.getStrategyForUrl).mockResolvedValue(null);
+
+        const mockBrightDataResult = { success: true, data: 'Yelp content' };
+        vi.mocked(mockClients.native.scrape).mockResolvedValue({ success: false });
+        vi.mocked(mockClients.firecrawl!.scrape).mockResolvedValue({ success: false });
+        vi.mocked(mockClients.brightData!.scrape).mockResolvedValue(mockBrightDataResult);
+
+        const result = await scrapeWithStrategy(mockClients, mockConfigClient, {
+          url: 'https://yelp.com/biz/dolly-san-francisco',
+        });
+
+        expect(result.success).toBe(true);
+        expect(mockConfigClient.upsertEntry).toHaveBeenCalledWith({
+          prefix: 'yelp.com/biz/',
+          default_strategy: 'brightdata',
+          notes: 'Auto-discovered via universal fallback',
+        });
+      });
+
+      it('should save Reddit subreddit pattern when successful', async () => {
+        vi.mocked(mockConfigClient.getStrategyForUrl).mockResolvedValue(null);
+
+        const mockFirecrawlResult = {
+          success: true,
+          data: { markdown: 'Reddit content', html: '<p>Reddit content</p>' },
+        };
+        vi.mocked(mockClients.native.scrape).mockResolvedValue({ success: false });
+        vi.mocked(mockClients.firecrawl!.scrape).mockResolvedValue(mockFirecrawlResult);
+
+        const result = await scrapeWithStrategy(mockClients, mockConfigClient, {
+          url: 'https://reddit.com/r/programming/comments/123/title',
+        });
+
+        expect(result.success).toBe(true);
+        expect(mockConfigClient.upsertEntry).toHaveBeenCalledWith({
+          prefix: 'reddit.com/r/programming/comments/123/',
+          default_strategy: 'firecrawl',
+          notes: 'Auto-discovered via universal fallback',
+        });
+      });
+
+      it('should save blog category pattern when successful', async () => {
+        vi.mocked(mockConfigClient.getStrategyForUrl).mockResolvedValue(null);
+
+        const mockNativeResult = { success: true, status: 200, data: 'Blog content' };
+        vi.mocked(mockClients.native.scrape).mockResolvedValue(mockNativeResult);
+
+        const result = await scrapeWithStrategy(mockClients, mockConfigClient, {
+          url: 'https://example.com/blog/2024/article-title',
+        });
+
+        expect(result.success).toBe(true);
+        expect(mockConfigClient.upsertEntry).toHaveBeenCalledWith({
+          prefix: 'example.com/blog/2024/',
+          default_strategy: 'native',
+          notes: 'Auto-discovered via universal fallback',
+        });
+      });
+
+      it('should save pattern after explicit strategy fails', async () => {
+        // Explicit firecrawl strategy fails
+        vi.mocked(mockClients.firecrawl!.scrape).mockResolvedValue({ success: false });
+
+        // Universal fallback succeeds with brightdata
+        vi.mocked(mockClients.native.scrape).mockResolvedValue({ success: false });
+        vi.mocked(mockClients.brightData!.scrape).mockResolvedValue({
+          success: true,
+          data: 'Stack Overflow content',
+        });
+
+        const result = await scrapeWithStrategy(
+          mockClients,
+          mockConfigClient,
+          { url: 'https://stackoverflow.com/questions/123456/how-to-do-x' },
+          'firecrawl'
+        );
+
+        expect(result.success).toBe(true);
+        expect(mockConfigClient.upsertEntry).toHaveBeenCalledWith({
+          prefix: 'stackoverflow.com/questions/123456/',
+          default_strategy: 'brightdata',
+          notes: 'Auto-discovered after firecrawl failed',
+        });
+      });
+
+      it('should handle hostname-only URLs correctly', async () => {
+        vi.mocked(mockConfigClient.getStrategyForUrl).mockResolvedValue(null);
+
+        const mockNativeResult = { success: true, status: 200, data: 'Homepage content' };
+        vi.mocked(mockClients.native.scrape).mockResolvedValue(mockNativeResult);
+
+        const result = await scrapeWithStrategy(mockClients, mockConfigClient, {
+          url: 'https://simple-site.com',
+        });
+
+        expect(result.success).toBe(true);
+        expect(mockConfigClient.upsertEntry).toHaveBeenCalledWith({
+          prefix: 'simple-site.com',
+          default_strategy: 'native',
+          notes: 'Auto-discovered via universal fallback',
+        });
       });
     });
   });

@@ -81,7 +81,7 @@ describe('FilesystemStrategyConfigClient with Environment', () => {
 
     const client = new FilesystemStrategyConfigClient();
 
-    // Add an entry directly without reading first
+    // Add an entry
     const testEntry: StrategyConfigEntry = {
       prefix: 'default.com',
       default_strategy: 'brightdata',
@@ -90,11 +90,14 @@ describe('FilesystemStrategyConfigClient with Environment', () => {
 
     await client.upsertEntry(testEntry);
 
-    // Verify it can read back
-    const config = await client.loadConfig();
+    // Create a new client to ensure we're reading from disk
+    const newClient = new FilesystemStrategyConfigClient();
+    const config = await newClient.loadConfig();
 
+    // The config should contain our entry (among possibly others from initialization)
     const addedEntry = config.find((e) => e.prefix === 'default.com');
     expect(addedEntry).toBeDefined();
     expect(addedEntry?.default_strategy).toBe('brightdata');
+    expect(addedEntry?.notes).toBe('Default location');
   });
 });

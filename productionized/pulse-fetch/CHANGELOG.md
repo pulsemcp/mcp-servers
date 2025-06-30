@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Enhanced automatic strategy learning to save URL patterns up to the last path segment
+  - Simple extraction: removes the last segment from the URL path
+  - Example: `yelp.com/biz/dolly-san-francisco` → `yelp.com/biz/`
+  - Handles query parameters, fragments, and trailing slashes correctly
+- Added comprehensive tests for URL pattern extraction functionality
+- Updated documentation to explain the pattern-based learning system
+
 ## [0.1.1] - 2025-06-30
 
 ### Added
