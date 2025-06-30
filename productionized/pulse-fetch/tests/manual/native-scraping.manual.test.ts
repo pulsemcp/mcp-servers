@@ -6,7 +6,27 @@
  */
 
 import 'dotenv/config';
+import { writeFileSync, mkdirSync } from 'fs';
+import { join, dirname } from 'path';
+import { fileURLToPath } from 'url';
 import { NativeScrapingClient } from '../../shared/src/scraping-client/native-scrape-client.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+// Helper function to save scraped results to temporary file
+function saveScrapedResult(url: string, data: string, clientName: string): string {
+  const tempDir = join(__dirname, 'temp-results');
+  mkdirSync(tempDir, { recursive: true });
+
+  const sanitizedUrl = url.replace(/[^a-zA-Z0-9]/g, '_');
+  const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+  const filename = `${clientName}_${sanitizedUrl}_${timestamp}.txt`;
+  const filepath = join(tempDir, filename);
+
+  writeFileSync(filepath, data, 'utf-8');
+  return filepath;
+}
 
 async function testNativeScrapingClient(url: string) {
   console.log(`🔍 Testing Native Scraping Client for: ${url}`);
@@ -30,6 +50,12 @@ async function testNativeScrapingClient(url: string) {
     console.log(`📊 Content-Type: ${result.contentType || 'unknown'}`);
     console.log(`📏 Content-Length: ${result.contentLength || 'unknown'}`);
     console.log(`📝 Data length: ${result.data?.length || 0} characters`);
+
+    if (result.data) {
+      // Save scraped result to temporary file
+      const savedPath = saveScrapedResult(url, result.data, 'native');
+      console.log(`💾 Full scraped content saved to: ${savedPath}`);
+    }
 
     if (result.data) {
       // Show first 500 characters

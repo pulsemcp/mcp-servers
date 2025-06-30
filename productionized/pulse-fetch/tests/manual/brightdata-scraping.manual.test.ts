@@ -6,7 +6,27 @@
  */
 
 import 'dotenv/config';
+import { writeFileSync, mkdirSync } from 'fs';
+import { join, dirname } from 'path';
+import { fileURLToPath } from 'url';
 import { BrightDataScrapingClient } from '../../shared/src/scraping-client/brightdata-scrape-client.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+// Helper function to save scraped results to temporary file
+function saveScrapedResult(url: string, data: string, clientName: string): string {
+  const tempDir = join(__dirname, 'temp-results');
+  mkdirSync(tempDir, { recursive: true });
+
+  const sanitizedUrl = url.replace(/[^a-zA-Z0-9]/g, '_');
+  const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+  const filename = `${clientName}_${sanitizedUrl}_${timestamp}.txt`;
+  const filepath = join(tempDir, filename);
+
+  writeFileSync(filepath, data, 'utf-8');
+  return filepath;
+}
 
 async function testBrightDataScrapingClient(url: string) {
   console.log(`🌟 Testing BrightData Scraping Client for: ${url}`);
@@ -42,6 +62,10 @@ async function testBrightDataScrapingClient(url: string) {
 
     console.log('✅ BrightData scraping successful');
     console.log(`📝 Content length: ${result.data.length} characters`);
+
+    // Save scraped result to temporary file
+    const savedPath = saveScrapedResult(url, result.data, 'brightdata');
+    console.log(`💾 Full scraped content saved to: ${savedPath}`);
 
     // Show content preview
     console.log('\n📖 Content preview:');
