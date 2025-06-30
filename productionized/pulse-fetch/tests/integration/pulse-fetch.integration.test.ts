@@ -25,6 +25,7 @@ describe('Pulse Fetch MCP Server Integration Tests', () => {
 
       const result = await client.callTool('scrape', {
         url: 'https://example.com',
+        saveResource: false,
       });
 
       expect(result).toMatchObject({
@@ -48,6 +49,7 @@ describe('Pulse Fetch MCP Server Integration Tests', () => {
 
       const result = await client.callTool('scrape', {
         url: 'https://example.com',
+        saveResource: false,
       });
 
       expect(result).toMatchObject({
@@ -73,6 +75,7 @@ describe('Pulse Fetch MCP Server Integration Tests', () => {
 
       const result = await client.callTool('scrape', {
         url: 'https://example.com',
+        saveResource: false,
       });
 
       expect(result).toMatchObject({
@@ -97,6 +100,7 @@ describe('Pulse Fetch MCP Server Integration Tests', () => {
 
       const result = await client.callTool('scrape', {
         url: 'https://example.com',
+        saveResource: false,
       });
 
       expect(result).toMatchObject({
@@ -115,6 +119,7 @@ describe('Pulse Fetch MCP Server Integration Tests', () => {
 
       const result = await client.callTool('scrape', {
         // Missing url parameter
+        saveResource: false,
       });
 
       // Tool should return error response, not throw
@@ -140,6 +145,7 @@ describe('Pulse Fetch MCP Server Integration Tests', () => {
       const result = await client.callTool('scrape', {
         url: 'https://example.com',
         maxChars: 100,
+        saveResource: false,
       });
 
       expect(result.content[0].text).toContain('[Content truncated at 100 characters');
