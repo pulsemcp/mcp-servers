@@ -32,11 +32,11 @@ async function testBrightDataScrapingClient(url: string) {
   console.log(`🌟 Testing BrightData Scraping Client for: ${url}`);
   console.log('='.repeat(60));
 
-  const bearerToken = process.env.BRIGHTDATA_API_KEY;
+  const bearerToken = process.env.BRIGHTDATA_BEARER_TOKEN;
   if (!bearerToken) {
-    console.log('❌ BRIGHTDATA_API_KEY not found in environment variables');
-    console.log('   Please set BRIGHTDATA_API_KEY in your .env file');
-    console.log('   Format: Bearer <your-token>');
+    console.log('❌ BRIGHTDATA_BEARER_TOKEN not found in environment variables');
+    console.log('   Please set BRIGHTDATA_BEARER_TOKEN in your .env file');
+    console.log('   Format: <your-token> (Bearer will be added automatically)');
     return;
   }
 

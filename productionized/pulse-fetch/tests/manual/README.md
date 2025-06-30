@@ -8,7 +8,7 @@ This directory contains manual tests for the three scraping client classes: Nati
 
    ```bash
    FIRECRAWL_API_KEY=fc-your-api-key-here
-   BRIGHTDATA_API_KEY=Bearer your-bearer-token-here
+   BRIGHTDATA_BEARER_TOKEN=your-bearer-token-here
    ```
 
 2. **Dependencies**: Ensure you've built the project:
