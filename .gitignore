@@ -51,3 +51,6 @@ Thumbs.db
 # MCP configuration - never commit this file as it may contain secrets
 .mcp.json
 mcp-json-profiles/.secrets
+
+# Temporary test result files
+**/tests/manual/temp-results/

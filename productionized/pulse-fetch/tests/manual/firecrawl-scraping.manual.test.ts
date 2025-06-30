@@ -6,7 +6,27 @@
  */
 
 import 'dotenv/config';
+import { writeFileSync, mkdirSync } from 'fs';
+import { join, dirname } from 'path';
+import { fileURLToPath } from 'url';
 import { FirecrawlScrapingClient } from '../../shared/src/scraping-client/firecrawl-scrape-client.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+// Helper function to save scraped results to temporary file
+function saveScrapedResult(url: string, data: unknown, clientName: string): string {
+  const tempDir = join(__dirname, 'temp-results');
+  mkdirSync(tempDir, { recursive: true });
+
+  const sanitizedUrl = url.replace(/[^a-zA-Z0-9]/g, '_');
+  const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+  const filename = `${clientName}_${sanitizedUrl}_${timestamp}.json`;
+  const filepath = join(tempDir, filename);
+
+  writeFileSync(filepath, JSON.stringify(data, null, 2), 'utf-8');
+  return filepath;
+}
 
 async function testFirecrawlScrapingClient(url: string) {
   console.log(`🔥 Testing Firecrawl Scraping Client for: ${url}`);
@@ -40,6 +60,10 @@ async function testFirecrawlScrapingClient(url: string) {
     }
 
     console.log('✅ Firecrawl scraping successful');
+
+    // Save scraped result to temporary file
+    const savedPath = saveScrapedResult(url, result.data, 'firecrawl');
+    console.log(`💾 Full scraped content saved to: ${savedPath}`);
 
     // Show content lengths
     console.log(`📝 Markdown length: ${result.data.markdown?.length || 0} characters`);

@@ -52,7 +52,7 @@ npm run format     # Format code with Prettier
 ```bash
 # Always run from repo root
 cd /path/to/repo/root
-rm -rf node_modules package-lock.json
+rm -rf node_modules
 npm install
 ```
 
@@ -217,6 +217,13 @@ Each server directory contains its own CLAUDE.md with specific implementation de
 ## Claude Learnings
 
 Contexts and tips I've collected while working on this codebase.
+
+**Adding New Learnings**: Only add learnings that meet BOTH criteria:
+
+1. **Non-obvious**: Would take significant time to rediscover OR could be easily missed despite being important
+2. **Reusable**: Likely to be relevant in future work, not a one-off fix
+
+Don't add: basic TypeScript fixes, standard npm troubleshooting, obvious file operations, or implementation details that are self-evident from reading code.
 
 ### Development Workflow
 
