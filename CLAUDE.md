@@ -52,7 +52,7 @@ npm run format     # Format code with Prettier
 ```bash
 # Always run from repo root
 cd /path/to/repo/root
-rm -rf node_modules package-lock.json
+rm -rf node_modules
 npm install
 ```
 
