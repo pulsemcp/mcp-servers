@@ -242,3 +242,11 @@ Don't add: basic TypeScript fixes, standard npm troubleshooting, obvious file op
 - Branch naming follows `<github-username>/<feature-description>` pattern
 - Always ensure CI passes before considering a PR complete
 - Pre-commit hooks automatically run lint-staged, but manual linting should still be run before pushing to avoid CI failures
+
+### Publishing Process
+
+- The `stage-publish` script must be run from the server's `local/` directory, not from the root or server directory
+- Version bumps modify local package.json, local package-lock.json, and parent package-lock.json - all must be committed together
+- Git tags may not be created automatically by npm version - verify with `git tag | grep <server-name>` and create manually if needed
+- The PR title should follow the format "Publish <package-name>@<version>" for consistency
+- Always update both CHANGELOG.md and the main README.md with the new version before creating the PR
