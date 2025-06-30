@@ -150,7 +150,7 @@ async function runComprehensiveClientTests() {
     }
 
     // Test BrightData Client (if API key available)
-    if (process.env.BRIGHTDATA_API_KEY) {
+    if (process.env.BRIGHTDATA_BEARER_TOKEN) {
       console.log('\n🌟 Testing BrightData Scraping Client...');
       const brightdataResult = await captureTestOutput(() =>
         testBrightDataScrapingClient(testCase.url)

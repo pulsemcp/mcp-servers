@@ -12,7 +12,7 @@ export async function scrapeWithBrightData(
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: bearerToken, // Already includes "Bearer " prefix
+        Authorization: `Bearer ${bearerToken}`,
       },
       body: JSON.stringify({
         zone: 'mcp_server_unlocker',
