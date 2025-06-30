@@ -196,10 +196,10 @@ export class FilesystemStrategyConfigClient implements IStrategyConfigClient {
   private generateMarkdownTable(config: StrategyConfigEntry[]): string {
     const header = `# Scraping Strategy Configuration
 
-This file defines which scraping strategy to use for different URL prefixes.
+This file defines which scraping strategy to use for different URL prefixes (firecrawl, brightdata, native).
 
 | prefix | default_strategy | notes |
-|--------|------------------|-------|`;
+| ------ | ---------------- | ----- |`;
 
     const rows = config.map((entry) => {
       const notes = entry.notes || '';

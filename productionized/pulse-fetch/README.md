@@ -33,7 +33,7 @@ This project is built and maintained by [PulseMCP](https://www.pulsemcp.com/).
 
 **Anti-bot bypass**: Integrates with Firecrawl and BrightData APIs to reliably work around anti-scraping technology.
 
-**Smart strategy selection**: Automatically learns and applies the best scraping method for each domain, improving performance over time.
+**Smart strategy selection**: Automatically learns and applies the best scraping method for specific URL patterns, improving performance over time.
 
 **LLM-optimized**: Offers MCP Prompts and descriptive Tool design for better LLM interaction reliability.
 
@@ -290,10 +290,14 @@ Scrape a single webpage with advanced options for content extraction.
 
 ### Planned Features
 
+- [ ] Sampling (with external API fallback) to extract data w/ natural language. So you can just fetch URL + the data you're interested in, and get that back well-formatted.
+  - [ ] Firecrawl API can do this, but we want parity across all the options
+- [ ] Sampling (with external API fallback) to determine whether scrape was a success (and thus save it as a learning)
+  - [ ] Right now, we determine whether a scrape succeeded based on HTTP status codes, which may not be reliable (e.g. 200 but anti-bot screen)
 - [ ] Screenshot support
   - [ ] Allow format of `screenshot` and `screenshot-full-page` in `scrape` tool
 
-### Future Enhancements
+### Future Enhancement Ideas
 
 **Enhanced scraping parameters:**
 
@@ -317,10 +321,6 @@ Scrape a single webpage with advanced options for content extraction.
 - `imageMaxHeight/Width`: Image dimension limits
 - `imageQuality`: JPEG quality (1-100)
 - `enableFetchImages`: Enable image fetching and processing
-
-**Learning system:**
-
-- Maintain a `learnings` resource to improve scraping approaches over time
 
 ## License
 
@@ -353,9 +353,9 @@ export OPTIMIZE_FOR=COST   # For cost-effective scraping (default)
 
 ## How It Works
 
-1. **Configured Strategy**: The server checks a local config file for domain-specific strategies
+1. **Configured Strategy**: The server checks a local config file for URL-specific strategies
 2. **Universal Fallback**: If no configured strategy exists or it fails, falls back to the universal approach (native → firecrawl → brightdata)
-3. **Auto-Learning**: When a strategy succeeds, it's automatically saved to the config file for future use
+3. **Auto-Learning**: When a strategy succeeds, it's automatically saved to the config file with an intelligent URL pattern for future use
 
 ## Strategy Types
 
@@ -391,11 +391,22 @@ The table has three columns:
 
 ## Automatic Strategy Discovery
 
-When scraping a new domain:
+When scraping a new URL:
 
 1. The system tries the universal fallback sequence (native → firecrawl → brightdata)
-2. The first successful strategy is automatically saved to the config file
-3. Future requests to that domain will use the discovered strategy
+2. The first successful strategy is automatically saved to the config file with an intelligently extracted URL pattern
+3. Future requests matching that pattern will use the discovered strategy
+
+### URL Pattern Extraction
+
+The system extracts URL patterns by removing the last path segment:
+
+- **`yelp.com/biz/dolly-san-francisco`** → `yelp.com/biz/`
+- **`reddit.com/r/programming/comments/123`** → `reddit.com/r/programming/comments/`
+- **`example.com/blog/2024/article`** → `example.com/blog/2024/`
+- **`stackoverflow.com/questions/123456`** → `stackoverflow.com/questions/`
+
+For single-segment URLs or root URLs, only the hostname is saved. Query parameters and fragments are ignored during pattern extraction.
 
 ## Configuration Client Abstraction
 
