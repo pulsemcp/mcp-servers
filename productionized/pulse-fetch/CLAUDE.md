@@ -118,3 +118,9 @@ Key insights gathered during implementation and CI troubleshooting:
 - **Publication Process**: Follow the detailed guidelines in `/docs/PUBLISHING_SERVERS.md` for version bumping, changelog updates, and automated publishing
 - **Merge Conflict Resolution**: When rebasing onto main during publication, combine changelog entries from both branches preserving the intent of all changes (e.g., merge README fixes with feature additions)
 - **CI Monitoring**: Use `gh run list --branch <branch-name>` to check workflow runs when `gh pr checks` doesn't show results - CI may complete successfully even if checks aren't visible in PR view
+
+### Environment Variable Management and UX
+
+- **Consistent Naming**: When refactoring environment variables, ensure consistency across all files (code, tests, documentation) to avoid subtle bugs and user confusion
+- **User Experience**: Remove technical prefixes (like "Bearer ") from environment variables and handle them programmatically - users shouldn't need to understand implementation details
+- **Documentation Files**: Always provide .env.example files that match the patterns used in similar servers (twist, appsignal) for consistency across the monorepo
