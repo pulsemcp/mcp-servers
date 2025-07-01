@@ -60,7 +60,7 @@ describe('Extract Clients', () => {
       expect(result.success).toBe(true);
       expect(result.content).toBe('Test Article');
       expect(mockCreate).toHaveBeenCalledWith({
-        model: 'claude-3-5-sonnet-20241022',
+        model: 'claude-opus-4-20250514',
         max_tokens: 8192,
         temperature: 0,
         system: expect.stringContaining('expert at extracting'),
@@ -156,7 +156,7 @@ describe('Extract Clients', () => {
       expect(result.success).toBe(true);
       expect(result.content).toBe('Test Article');
       expect(mockCreate).toHaveBeenCalledWith({
-        model: 'gpt-4-turbo',
+        model: 'gpt-4.1',
         max_tokens: 4096,
         temperature: 0,
         messages: [
