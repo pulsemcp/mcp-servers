@@ -280,7 +280,7 @@ describe('Scrape Tool', () => {
           },
           {
             type: 'resource_link',
-            uri: expect.stringMatching(/^memory:\/\/example\.com_save-resource-test-.*$/),
+            uri: expect.stringMatching(/^memory:\/\/cleaned\/example\.com_save-resource-test-.*$/),
             name: expect.stringMatching(/^https:\/\/example\.com\/save-resource-test-.*$/),
             mimeType: 'text/html',
             description: expect.stringMatching(
