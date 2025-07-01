@@ -140,6 +140,70 @@ cd experimental/twist && prettier --write .
 - **Dev Tool**: tsx for development mode
 - **Testing**: Vitest for unit, integration, and manual tests
 
+## Dependency Management
+
+### Important: Monorepo Structure
+
+This repository uses npm workspaces with a specific structure for MCP servers:
+
+```
+server-name/
+├── package.json          # Root workspace file - NO production dependencies here!
+├── shared/
+│   └── package.json     # Has @modelcontextprotocol/sdk and other deps
+└── local/
+    └── package.json     # Has @modelcontextprotocol/sdk and other deps
+```
+
+### Rules for Adding/Updating Dependencies
+
+1. **Root package.json** (e.g., `experimental/twist/package.json`):
+   - Should ONLY contain `devDependencies` (like vitest, dotenv, @types/node)
+   - Should NOT contain `@modelcontextprotocol/sdk` or other production dependencies
+   - Used only for workspace management and development tools
+
+2. **Shared and Local package.json files**:
+   - These are where production dependencies like `@modelcontextprotocol/sdk` belong
+   - Update these files directly when changing SDK or other runtime dependencies
+
+### Updating Dependencies Across All Servers
+
+When updating a dependency (like `@modelcontextprotocol/sdk`) across all servers:
+
+```bash
+# ❌ WRONG - Don't run npm install from root directories
+cd experimental/twist && npm install @modelcontextprotocol/sdk@latest --save
+
+# ✅ CORRECT - Update each package.json that needs it
+cd experimental/twist/shared && npm install @modelcontextprotocol/sdk@^1.13.2 --save
+cd experimental/twist/local && npm install @modelcontextprotocol/sdk@^1.13.2 --save
+```
+
+Example for updating SDK across all servers:
+
+```bash
+# Update twist
+cd experimental/twist/shared && npm install @modelcontextprotocol/sdk@^1.13.2 --save
+cd ../local && npm install @modelcontextprotocol/sdk@^1.13.2 --save
+
+# Update appsignal
+cd ../../appsignal/shared && npm install @modelcontextprotocol/sdk@^1.13.2 --save
+cd ../local && npm install @modelcontextprotocol/sdk@^1.13.2 --save
+
+# Update pulse-fetch
+cd ../../../productionized/pulse-fetch/shared && npm install @modelcontextprotocol/sdk@^1.13.2 --save
+cd ../local && npm install @modelcontextprotocol/sdk@^1.13.2 --save
+
+# Don't forget test-mcp-client if needed
+cd ../../../test-mcp-client && npm install @modelcontextprotocol/sdk@^1.13.2 --save
+```
+
+### Why This Structure?
+
+- The root package.json manages workspaces and dev tools shared across the server
+- The shared/local separation allows for clean publishing to npm
+- Dependencies in the wrong place can cause build issues or incorrect npm packages
+
 ## Testing Strategy
 
 MCP servers may include up to three types of tests:
@@ -262,3 +326,9 @@ Don't add: basic TypeScript fixes, standard npm troubleshooting, obvious file op
 - When simplifying tool parameters, consider the MCP best practices guide in mcp-server-template/shared/src/tools/TOOL_DESCRIPTIONS_GUIDE.md for writing clear descriptions
 - Breaking changes in tool parameters should be clearly marked in CHANGELOG.md with **BREAKING** prefix to alert users
 - When using `set -e` in shell scripts with npm commands, be aware that `npm view` returns exit code 1 when a package doesn't exist yet - use `|| true` to prevent premature script termination during npm registry propagation checks
+
+### Monorepo Dependency Management
+
+- **Critical**: Never add production dependencies to root package.json files in workspace servers - these should only contain devDependencies
+- **SDK Updates**: When updating @modelcontextprotocol/sdk, update it in both shared/package.json and local/package.json, never in the root
+- **Common Mistake**: Running `npm install <package> --save` from the server root directory adds dependencies to the wrong package.json - always cd into shared/ or local/ first
