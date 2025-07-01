@@ -354,3 +354,4 @@ Don't add: basic TypeScript fixes, standard npm troubleshooting, obvious file op
 - **Critical**: Never add production dependencies to root package.json files in workspace servers - these should only contain devDependencies
 - **SDK Updates**: When updating @modelcontextprotocol/sdk, update it in both shared/package.json and local/package.json, never in the root
 - **Common Mistake**: Running `npm install <package> --save` from the server root directory adds dependencies to the wrong package.json - always cd into shared/ or local/ first
+- **CI Installation**: All MCP servers now have a `ci:install` script that ensures dependencies are installed in all subdirectories - this prevents `ERR_MODULE_NOT_FOUND` errors in published packages that occur when CI only runs `npm install` at the root level
