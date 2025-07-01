@@ -24,6 +24,7 @@ This project is built and maintained by [PulseMCP](https://www.pulsemcp.com/).
     - [Remote Setup](#remote-setup)
 - [Development](#development)
 - [Scraping Strategy Configuration](#scraping-strategy-configuration)
+- [Extract Feature](#extract-feature)
 
 # Highlights
 
@@ -38,6 +39,8 @@ This project is built and maintained by [PulseMCP](https://www.pulsemcp.com/).
 **LLM-optimized**: Offers MCP Prompts and descriptive Tool design for better LLM interaction reliability.
 
 **Flexible formats**: Supports multiple output formats including clean markdown, HTML, screenshots, and structured data extraction.
+
+**Intelligent extraction**: Extract specific information using natural language queries powered by LLMs.
 
 # Capabilities
 
@@ -55,6 +58,8 @@ This server is built and tested on macOS with Claude Desktop. It should work wit
 - Set `saveResult: false` to disable both caching and resource saving (not recommended)
 - Use `maxChars` and `startIndex` parameters to handle large content that exceeds token limits
 - Configure the timeout parameter (default 60s) for slow-loading sites
+- Format options include `markdown` (default), `html`, `rawHtml`, `links`, and `extract` for structured data
+- Use the `extract` parameter with natural language queries to extract specific information from pages (requires LLM configuration)
 
 # Examples
 
@@ -141,6 +146,8 @@ Most other alternatives fall short on one or more vectors:
 
 ## Environment Variables
 
+### Core Configuration
+
 | Environment Variable               | Description                                                         | Required | Default Value                | Example                           |
 | ---------------------------------- | ------------------------------------------------------------------- | -------- | ---------------------------- | --------------------------------- |
 | `FIRECRAWL_API_KEY`                | API key for Firecrawl service to bypass anti-bot measures           | No       | N/A                          | `fc-abc123...`                    |
@@ -149,6 +156,23 @@ Most other alternatives fall short on one or more vectors:
 | `OPTIMIZE_FOR`                     | Optimization strategy for scraping: `cost` or `speed`               | No       | `cost`                       | `speed`                           |
 | `MCP_RESOURCE_STORAGE`             | Storage backend for saved resources: `memory` or `filesystem`       | No       | `memory`                     | `filesystem`                      |
 | `MCP_RESOURCE_FILESYSTEM_ROOT`     | Directory for filesystem storage (only used with `filesystem` type) | No       | `/tmp/pulse-fetch/resources` | `/home/user/mcp-resources`        |
+
+### LLM Configuration for Extract Feature
+
+The extract feature provides an alternative to MCP's native sampling capability for clients that don't support it. When configured, it enables intelligent information extraction from scraped content using LLMs. If neither LLM configuration nor MCP sampling is available, the `extract` parameter will not be shown in the tool.
+
+| Environment Variable | Description                                              | Required | Default Value      | Example                       |
+| -------------------- | -------------------------------------------------------- | -------- | ------------------ | ----------------------------- |
+| `LLM_PROVIDER`       | LLM provider: `anthropic`, `openai`, `openai-compatible` | No       | N/A                | `anthropic`                   |
+| `LLM_API_KEY`        | API key for the chosen LLM provider                      | No       | N/A                | `sk-abc123...`                |
+| `LLM_API_BASE_URL`   | Base URL for OpenAI-compatible providers                 | No       | N/A                | `https://api.together.xyz/v1` |
+| `LLM_MODEL`          | Specific model to use for extraction                     | No       | See defaults below | `gpt-4-turbo`                 |
+
+**Default Models:**
+
+- Anthropic: `claude-3-5-sonnet-20241022` (Claude 3.5 Sonnet - best value)
+- OpenAI: `gpt-4-turbo` (GPT-4 Turbo - best value)
+- OpenAI-compatible: Provider-specific (must be specified)
 
 ## Claude Desktop
 
@@ -312,8 +336,7 @@ Scrape a single webpage with advanced options for content extraction.
 
 ### Planned Features
 
-- [ ] Sampling (with external API fallback) to extract data w/ natural language. So you can just fetch URL + the data you're interested in, and get that back well-formatted.
-  - [ ] Firecrawl API can do this, but we want parity across all the options
+- [ ] MCP Sampling support for extraction - use the MCP client's native LLM capabilities when available
 - [ ] Sampling (with external API fallback) to determine whether scrape was a success (and thus save it as a learning)
   - [ ] Right now, we determine whether a scrape succeeded based on HTTP status codes, which may not be reliable (e.g. 200 but anti-bot screen)
 - [ ] Screenshot support
@@ -441,3 +464,97 @@ The system uses an abstraction layer for config storage:
 - **Future clients**: Could support GCS, S3, database storage, etc.
 
 You can swap the storage backend by providing a different `StrategyConfigFactory` when creating the MCP server.
+
+# Extract Feature
+
+The extract feature enables intelligent information extraction from scraped web content using LLMs. It serves as an alternative to MCP's native sampling capability for clients that don't support it.
+
+## Overview
+
+The extract functionality provides two ways to extract information:
+
+1. **MCP Sampling** (not yet implemented): Uses the MCP client's native LLM capabilities
+2. **Direct LLM API calls**: Configurable fallback using your own API keys
+
+When neither option is available, the tool will work without extraction capabilities, returning raw scraped content only.
+
+## How It Works
+
+When you provide an `extract` parameter with a natural language query, the tool will:
+
+1. First scrape the webpage content normally
+2. Process the content through an LLM to extract the requested information
+3. Return the extracted data instead of the raw HTML
+
+## Architecture
+
+### LLM Provider Support
+
+The implementation supports three provider types:
+
+1. **Anthropic (Native)**: Direct integration using Anthropic's SDK
+   - Best for: Claude models with advanced reasoning capabilities
+   - API: Uses Anthropic's native format
+
+2. **OpenAI**: Direct integration with OpenAI's API
+   - Best for: GPT-4 and GPT-3.5 models
+   - API: Standard OpenAI format
+
+3. **OpenAI-Compatible**: Support for any provider with OpenAI-compatible endpoints
+   - Includes: Together.ai, Groq, Perplexity, DeepSeek, Fireworks AI, and more
+   - API: OpenAI format with custom base URLs
+
+### Configuration
+
+Configure the extract feature using the environment variables described in the [LLM Configuration](#llm-configuration-for-extract-feature) section above.
+
+### Usage Examples
+
+#### Basic Extraction
+
+```
+User: "Get the author and publication date from this article: https://example.com/article"
+Assistant: I'll extract that information from the article.
+
+[Uses scrape tool with extract: "author name and publication date"]
+
+The article was written by John Doe and published on March 15, 2024.
+```
+
+#### Complex Data Extraction
+
+```
+User: "Extract all product specifications from this page: https://shop.example.com/laptop"
+Assistant: I'll extract the detailed specifications from that product page.
+
+[Uses scrape tool with extract: "all technical specifications including processor, RAM, storage, display details, ports, and dimensions"]
+
+Here are the laptop specifications:
+- Processor: Intel Core i7-13700H
+- RAM: 16GB DDR5
+- Storage: 512GB NVMe SSD
+...
+```
+
+### Implementation Strategy
+
+1. **Client Abstraction Layer**: Common interface for all LLM providers
+2. **Provider-Specific Clients**:
+   - `AnthropicClient`: Native Anthropic API integration
+   - `OpenAIClient`: OpenAI API integration
+   - `OpenAICompatibleClient`: Flexible client for any OpenAI-compatible endpoint
+3. **Extraction Pipeline**:
+   - Content preprocessing and chunking for large documents
+   - Smart prompting based on extraction query
+   - Response parsing and formatting
+4. **Fallback Mechanisms**:
+   - MCP sampling as primary method (when available)
+   - Direct API calls as fallback
+   - Error handling and retry logic
+
+### Why This Approach?
+
+- **Flexibility**: Users can choose their preferred LLM provider
+- **Cost Optimization**: Support for various providers allows cost/performance trade-offs
+- **Future-Proof**: OpenAI-compatible interface ensures new providers work automatically
+- **MCP-First**: Designed to use MCP's sampling capabilities when available (not yet implemented)

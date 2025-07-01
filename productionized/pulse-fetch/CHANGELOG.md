@@ -20,12 +20,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `findByUrl` method in ResourceStorage interface
   - Enables efficient lookup of cached resources by original URL
   - Returns resources sorted by timestamp (most recent first)
+- Extract feature for intelligent information extraction from scraped content using LLMs
+  - Support for multiple LLM providers: Anthropic, OpenAI, and OpenAI-compatible providers
+  - Configurable via environment variables (LLM_PROVIDER, LLM_API_KEY, LLM_API_BASE_URL, LLM_MODEL)
+  - Extract parameter conditionally shown in scrape tool based on availability
+  - Automatic content type detection (plain text for extracted content, HTML for raw scrapes)
+  - Comprehensive test suite including functional and manual tests
+  - Support for popular OpenAI-compatible providers: Together.ai, Groq, Perplexity, DeepSeek, Fireworks AI
+  - Default models optimized for best value: Claude 3.5 Sonnet for Anthropic, GPT-4 Turbo for OpenAI
+  - Fallback to raw content if extraction fails with clear error messages
 
 ### Changed
 
 - Scrape tool now checks for cached content before making network requests
 - Cache hits include metadata about when content was originally cached
 - Enhanced storage backends (memory and filesystem) with URL-based lookups
+- Updated scrape tool to dynamically build schema based on available features
+- Resource content type now depends on whether extraction was performed
+- Resource descriptions include extraction query when extract parameter is used
 
 ## [0.1.4] - 2025-06-30
 
