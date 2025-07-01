@@ -319,7 +319,7 @@ Scrape a single webpage with advanced options for content extraction.
 
 By default (`cleanScrape: true`), the tool automatically cleans scraped content:
 
-- **HTML content**: Converts to semantic Markdown, removing navigation, ads, sidebars, and other boilerplate while preserving the main content structure. This typically reduces content size by ~78%.
+- **HTML content**: Converts to semantic Markdown, removing navigation, ads, sidebars, and other boilerplate while preserving the main content structure. This typically reduces content size by 50-90%.
 - **JSON/XML content**: Passes through unchanged (already structured)
 - **Plain text**: Passes through unchanged
 

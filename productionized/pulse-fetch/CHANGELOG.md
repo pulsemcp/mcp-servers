@@ -14,7 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Intelligent content cleaning with `cleanScrape` parameter
   - New `cleanScrape` parameter (default: true) controls whether to clean HTML content
   - Cleaning converts HTML to semantic Markdown, removing ads, navigation, and boilerplate
-  - Achieves ~78% content reduction while preserving main content
+  - Achieves 50-90% content reduction while preserving main content
   - Pass-through cleaners for JSON, XML, and plain text content
   - Graceful fallback to raw content if cleaning fails
   - Cleaning is now decoupled from extraction - works independently

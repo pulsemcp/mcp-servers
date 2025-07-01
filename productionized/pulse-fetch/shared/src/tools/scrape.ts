@@ -55,7 +55,7 @@ const buildScrapeArgsSchema = () => {
       .optional()
       .default(true)
       .describe(
-        'Whether to clean the scraped content by converting HTML to semantic Markdown, removing ads, navigation, and boilerplate. This typically reduces content size by ~78% while preserving main content. Only disable this for debugging or when you need the exact raw HTML structure. Default: true'
+        'Whether to clean the scraped content by converting HTML to semantic Markdown, removing ads, navigation, and boilerplate. This typically reduces content size by 50-90% while preserving main content. Only disable this for debugging or when you need the exact raw HTML structure. Default: true'
       ),
   };
 
