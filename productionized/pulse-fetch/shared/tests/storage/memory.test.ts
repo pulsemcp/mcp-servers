@@ -16,7 +16,7 @@ describe('MemoryResourceStorage', () => {
 
       const uri = await storage.write(url, content, metadata);
 
-      expect(uri).toMatch(/^memory:\/\/example.com_test_/);
+      expect(uri).toMatch(/^memory:\/\/raw\/example.com_test_/);
     });
 
     it('should generate unique URIs for same URL at different times', async () => {
@@ -29,6 +29,85 @@ describe('MemoryResourceStorage', () => {
       const uri2 = await storage.write(url, content);
 
       expect(uri1).not.toBe(uri2);
+    });
+
+    it('should include resourceType in URI when specified', async () => {
+      const url = 'https://example.com/test';
+      const content = 'Test content';
+
+      const rawUri = await storage.write(url, content, { resourceType: 'raw' });
+      const filteredUri = await storage.write(url, content, { resourceType: 'filtered' });
+      const extractedUri = await storage.write(url, content, { resourceType: 'extracted' });
+
+      expect(rawUri).toContain('memory://raw/');
+      expect(filteredUri).toContain('memory://filtered/');
+      expect(extractedUri).toContain('memory://extracted/');
+    });
+  });
+
+  describe('writeMulti', () => {
+    it('should write multiple resource types and return all URIs', async () => {
+      const url = 'https://example.com/multi';
+      const rawContent = 'Raw content';
+      const filteredContent = 'Filtered content';
+      const extractedContent = 'Extracted content';
+
+      const uris = await storage.writeMulti({
+        url,
+        raw: rawContent,
+        filtered: filteredContent,
+        extracted: extractedContent,
+        metadata: {
+          source: 'test',
+          extract: 'test prompt',
+        },
+      });
+
+      expect(uris.raw).toContain('memory://raw/');
+      expect(uris.filtered).toContain('memory://filtered/');
+      expect(uris.extracted).toContain('memory://extracted/');
+
+      // Verify content
+      const rawResult = await storage.read(uris.raw);
+      const filteredResult = await storage.read(uris.filtered!);
+      const extractedResult = await storage.read(uris.extracted!);
+
+      expect(rawResult.text).toBe(rawContent);
+      expect(filteredResult.text).toBe(filteredContent);
+      expect(extractedResult.text).toBe(extractedContent);
+    });
+
+    it('should only write raw when filtered and extracted are not provided', async () => {
+      const url = 'https://example.com/raw-only';
+      const rawContent = 'Only raw';
+
+      const uris = await storage.writeMulti({
+        url,
+        raw: rawContent,
+      });
+
+      expect(uris.raw).toBeDefined();
+      expect(uris.filtered).toBeUndefined();
+      expect(uris.extracted).toBeUndefined();
+    });
+
+    it('should include extraction prompt in extracted resource metadata', async () => {
+      const url = 'https://example.com/extract-test';
+      const extractPrompt = 'Extract title and author';
+
+      const uris = await storage.writeMulti({
+        url,
+        raw: 'Raw',
+        extracted: 'Title: Test',
+        metadata: {
+          extract: extractPrompt,
+        },
+      });
+
+      const resources = await storage.list();
+      const extractedResource = resources.find((r) => r.uri === uris.extracted);
+
+      expect(extractedResource?.metadata.extractionPrompt).toBe(extractPrompt);
     });
   });
 
@@ -140,6 +219,24 @@ describe('MemoryResourceStorage', () => {
       const timestamps = resources.map((r) => new Date(r.metadata.timestamp).getTime());
       expect(timestamps[0]).toBeGreaterThan(timestamps[1]);
       expect(timestamps[1]).toBeGreaterThan(timestamps[2]);
+    });
+
+    it('should find resources across all resource types', async () => {
+      const testUrl = 'https://example.com/multi-type-test-' + Date.now();
+
+      // Write the same URL with different resource types
+      await storage.writeMulti({
+        url: testUrl,
+        raw: 'Raw content',
+        filtered: 'Filtered content',
+        extracted: 'Extracted content',
+      });
+
+      const resources = await storage.findByUrl(testUrl);
+
+      expect(resources).toHaveLength(3);
+      const resourceTypes = resources.map((r) => r.metadata.resourceType).sort();
+      expect(resourceTypes).toEqual(['extracted', 'filtered', 'raw']);
     });
   });
 });

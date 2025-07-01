@@ -16,6 +16,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Pass-through filters for JSON, XML, and plain text content
   - Graceful fallback to raw content if filtering fails
 
+- Multi-tier resource storage with raw, filtered, and extracted responses
+  - Resources are now saved in three separate stages: raw (original content), filtered (cleaned content), and extracted (LLM-processed content)
+  - FileSystem storage organizes files into `raw/`, `filtered/`, and `extracted/` subdirectories
+  - Each stage shares the same filename for easy correlation
+  - Extraction prompt is saved as metadata in extracted files for full traceability
+  - New `writeMulti` method in storage interface for atomic multi-stage writes
+  - Memory storage updated to support the same multi-tier structure
+
 ## [0.2.4] - 2025-07-01
 
 ### Changed

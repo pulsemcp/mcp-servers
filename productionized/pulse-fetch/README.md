@@ -458,6 +458,49 @@ The system uses an abstraction layer for config storage:
 
 You can swap the storage backend by providing a different `StrategyConfigFactory` when creating the MCP server.
 
+# Resource Storage
+
+Pulse Fetch stores scraped content as MCP Resources for caching and later retrieval. The storage system supports multiple tiers to preserve content at different processing stages.
+
+## Storage Structure
+
+Resources are saved in three separate stages:
+
+1. **Raw**: Original content as scraped from the website
+2. **Filtered**: Cleaned content after applying content filters (HTML → Markdown, etc.)
+3. **Extracted**: LLM-processed content containing only the requested information
+
+### FileSystem Storage
+
+When using filesystem storage (`MCP_RESOURCE_STORAGE=filesystem`), files are organized into subdirectories:
+
+```
+/tmp/pulse-fetch/resources/
+├── raw/
+│   └── example.com_article_20250701_123456.md
+├── filtered/
+│   └── example.com_article_20250701_123456.md
+└── extracted/
+    └── example.com_article_20250701_123456.md
+```
+
+Each stage shares the same filename for easy correlation. The extracted files include the extraction prompt in their metadata for full traceability.
+
+### Memory Storage
+
+Memory storage uses a similar structure with URIs like:
+
+- `memory://raw/example.com_article_20250701_123456`
+- `memory://filtered/example.com_article_20250701_123456`
+- `memory://extracted/example.com_article_20250701_123456`
+
+## Benefits
+
+- **Debugging**: Easily inspect content at each processing stage
+- **Efficiency**: Reuse filtered content for different extraction queries
+- **Traceability**: Track how content was transformed through each stage
+- **Flexibility**: Choose which version to return based on your needs
+
 # Extract Feature
 
 The extract feature enables intelligent information extraction from scraped web content using LLMs. It serves as an alternative to MCP's native sampling capability for clients that don't support it.

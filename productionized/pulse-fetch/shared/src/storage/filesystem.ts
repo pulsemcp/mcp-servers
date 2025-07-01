@@ -1,4 +1,12 @@
-import { ResourceStorage, ResourceData, ResourceContent, ResourceMetadata } from './types.js';
+import {
+  ResourceStorage,
+  ResourceData,
+  ResourceContent,
+  ResourceMetadata,
+  ResourceType,
+  MultiResourceWrite,
+  MultiResourceUris,
+} from './types.js';
 import { promises as fs } from 'fs';
 import path from 'path';
 import os from 'os';
@@ -12,32 +20,44 @@ export class FileSystemResourceStorage implements ResourceStorage {
 
   async init(): Promise<void> {
     await fs.mkdir(this.rootDir, { recursive: true });
+    // Create subdirectories for each resource type
+    await fs.mkdir(path.join(this.rootDir, 'raw'), { recursive: true });
+    await fs.mkdir(path.join(this.rootDir, 'filtered'), { recursive: true });
+    await fs.mkdir(path.join(this.rootDir, 'extracted'), { recursive: true });
   }
 
   async list(): Promise<ResourceData[]> {
     await this.init();
 
-    const files = await fs.readdir(this.rootDir);
     const resources: ResourceData[] = [];
+    const subdirs: ResourceType[] = ['raw', 'filtered', 'extracted'];
 
-    for (const file of files) {
-      if (file.endsWith('.md')) {
-        try {
-          const filePath = path.join(this.rootDir, file);
-          const content = await fs.readFile(filePath, 'utf-8');
-          const { metadata } = this.parseMarkdownFile(content);
+    for (const subdir of subdirs) {
+      const subdirPath = path.join(this.rootDir, subdir);
+      try {
+        const files = await fs.readdir(subdirPath);
+        for (const file of files) {
+          if (file.endsWith('.md')) {
+            try {
+              const filePath = path.join(subdirPath, file);
+              const content = await fs.readFile(filePath, 'utf-8');
+              const { metadata } = this.parseMarkdownFile(content);
 
-          const uri = `file://${filePath}`;
-          resources.push({
-            uri,
-            name: file.replace('.md', ''),
-            description: metadata.description || `Fetched content from ${metadata.url}`,
-            mimeType: metadata.contentType || 'text/plain',
-            metadata,
-          });
-        } catch (error) {
-          console.error(`Error reading resource file ${file}:`, error);
+              const uri = `file://${filePath}`;
+              resources.push({
+                uri,
+                name: `${subdir}/${file.replace('.md', '')}`,
+                description: metadata.description || `Fetched content from ${metadata.url}`,
+                mimeType: metadata.contentType || 'text/plain',
+                metadata: { ...metadata, resourceType: subdir },
+              });
+            } catch {
+              // Ignore files that can't be parsed
+            }
+          }
         }
+      } catch {
+        // Subdirectory might not exist yet, continue
       }
     }
 
@@ -66,11 +86,13 @@ export class FileSystemResourceStorage implements ResourceStorage {
 
     const timestamp = new Date().toISOString();
     const fileName = this.generateFileName(url, timestamp);
-    const filePath = path.join(this.rootDir, fileName);
+    const resourceType = metadata?.resourceType || 'raw';
+    const filePath = path.join(this.rootDir, resourceType, fileName);
 
     const fullMetadata: ResourceMetadata = {
       url,
       timestamp,
+      resourceType,
       ...metadata,
     };
 
@@ -78,6 +100,62 @@ export class FileSystemResourceStorage implements ResourceStorage {
     await fs.writeFile(filePath, markdownContent, 'utf-8');
 
     return `file://${filePath}`;
+  }
+
+  async writeMulti(data: MultiResourceWrite): Promise<MultiResourceUris> {
+    await this.init();
+
+    const timestamp = new Date().toISOString();
+    const fileName = this.generateFileName(data.url, timestamp);
+    const uris: MultiResourceUris = {} as MultiResourceUris;
+
+    // Save raw content
+    const rawMetadata: ResourceMetadata = {
+      url: data.url,
+      timestamp,
+      resourceType: 'raw',
+      ...data.metadata,
+    };
+    const rawPath = path.join(this.rootDir, 'raw', fileName);
+    await fs.writeFile(rawPath, this.createMarkdownFile(rawMetadata, data.raw), 'utf-8');
+    uris.raw = `file://${rawPath}`;
+
+    // Save filtered content if provided
+    if (data.filtered) {
+      const filteredMetadata: ResourceMetadata = {
+        url: data.url,
+        timestamp,
+        resourceType: 'filtered',
+        ...data.metadata,
+      };
+      const filteredPath = path.join(this.rootDir, 'filtered', fileName);
+      await fs.writeFile(
+        filteredPath,
+        this.createMarkdownFile(filteredMetadata, data.filtered),
+        'utf-8'
+      );
+      uris.filtered = `file://${filteredPath}`;
+    }
+
+    // Save extracted content if provided
+    if (data.extracted) {
+      const extractedMetadata: ResourceMetadata = {
+        url: data.url,
+        timestamp,
+        resourceType: 'extracted',
+        extractionPrompt: (data.metadata?.extract as string) || data.metadata?.extractionPrompt,
+        ...data.metadata,
+      };
+      const extractedPath = path.join(this.rootDir, 'extracted', fileName);
+      await fs.writeFile(
+        extractedPath,
+        this.createMarkdownFile(extractedMetadata, data.extracted),
+        'utf-8'
+      );
+      uris.extracted = `file://${extractedPath}`;
+    }
+
+    return uris;
   }
 
   async exists(uri: string): Promise<boolean> {
@@ -98,29 +176,37 @@ export class FileSystemResourceStorage implements ResourceStorage {
   async findByUrl(url: string): Promise<ResourceData[]> {
     await this.init();
 
-    const files = await fs.readdir(this.rootDir);
     const matchingResources: ResourceData[] = [];
+    const subdirs: ResourceType[] = ['raw', 'filtered', 'extracted'];
 
-    for (const file of files) {
-      if (file.endsWith('.md')) {
-        try {
-          const filePath = path.join(this.rootDir, file);
-          const content = await fs.readFile(filePath, 'utf-8');
-          const { metadata } = this.parseMarkdownFile(content);
+    for (const subdir of subdirs) {
+      const subdirPath = path.join(this.rootDir, subdir);
+      try {
+        const files = await fs.readdir(subdirPath);
+        for (const file of files) {
+          if (file.endsWith('.md')) {
+            try {
+              const filePath = path.join(subdirPath, file);
+              const content = await fs.readFile(filePath, 'utf-8');
+              const { metadata } = this.parseMarkdownFile(content);
 
-          if (metadata.url === url) {
-            const uri = `file://${filePath}`;
-            matchingResources.push({
-              uri,
-              name: file.replace('.md', ''),
-              description: metadata.description || `Fetched content from ${metadata.url}`,
-              mimeType: metadata.contentType || 'text/plain',
-              metadata,
-            });
+              if (metadata.url === url) {
+                const uri = `file://${filePath}`;
+                matchingResources.push({
+                  uri,
+                  name: `${subdir}/${file.replace('.md', '')}`,
+                  description: metadata.description || `Fetched content from ${metadata.url}`,
+                  mimeType: metadata.contentType || 'text/plain',
+                  metadata: { ...metadata, resourceType: subdir },
+                });
+              }
+            } catch {
+              // Ignore files that can't be parsed
+            }
           }
-        } catch (error) {
-          console.error(`Error reading resource file ${file}:`, error);
         }
+      } catch {
+        // Subdirectory might not exist yet, continue
       }
     }
 

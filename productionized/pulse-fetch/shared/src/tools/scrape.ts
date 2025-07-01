@@ -285,17 +285,22 @@ Use cases:
           };
         }
 
-        let rawContent = result.content || '';
+        const rawContent = result.content || '';
+        let filteredContent: string | undefined;
+        let extractedContent: string | undefined;
+        let displayContent = rawContent;
 
         // Apply filtering if extract is requested
         // This reduces content size before sending to LLM for extraction
         if (extract && ExtractClientFactory.isAvailable()) {
           try {
             const filter = createFilter(rawContent, url);
-            rawContent = await filter.filter(rawContent, url);
+            filteredContent = await filter.filter(rawContent, url);
+            displayContent = filteredContent;
           } catch (filterError) {
             console.warn('Content filtering failed, proceeding with raw content:', filterError);
             // Continue with raw content if filtering fails
+            displayContent = rawContent;
           }
         }
 
@@ -306,22 +311,25 @@ Use cases:
             if (extractClient) {
               // TypeScript needs explicit confirmation that extract is a string here
               const extractQuery: string = extract;
-              const extractResult = await extractClient.extract(rawContent, extractQuery);
+              // Use filtered content if available, otherwise raw content
+              const contentToExtract = filteredContent || rawContent;
+              const extractResult = await extractClient.extract(contentToExtract, extractQuery);
               if (extractResult.success && extractResult.content) {
-                rawContent = extractResult.content;
+                extractedContent = extractResult.content;
+                displayContent = extractedContent;
               } else {
-                // Include error in the response but still return the raw content
-                rawContent = `Extraction failed: ${extractResult.error}\n\n---\nRaw content:\n${rawContent}`;
+                // Include error in the response but still return the filtered/raw content
+                displayContent = `Extraction failed: ${extractResult.error}\n\n---\nRaw content:\n${displayContent}`;
               }
             }
           } catch (error) {
             console.error('Extraction error:', error);
-            rawContent = `Extraction error: ${error instanceof Error ? error.message : String(error)}\n\n---\nRaw content:\n${rawContent}`;
+            displayContent = `Extraction error: ${error instanceof Error ? error.message : String(error)}\n\n---\nRaw content:\n${displayContent}`;
           }
         }
 
         // Apply character limits and pagination
-        let processedContent = rawContent;
+        let processedContent = displayContent;
         if (startIndex > 0) {
           processedContent = processedContent.slice(startIndex);
         }
@@ -362,21 +370,33 @@ Use cases:
         if (validatedArgs.saveResult) {
           try {
             const storage = await ResourceStorageFactory.create();
-            const resourceId = await storage.write(url, rawContent, {
+            const uris = await storage.writeMulti({
               url,
-              source: result.source,
-              timestamp: new Date().toISOString(),
-              extract: extract || undefined,
-              contentLength: rawContent.length,
-              startIndex,
-              maxChars,
-              wasTruncated,
+              raw: rawContent,
+              filtered: filteredContent,
+              extracted: extractedContent,
+              metadata: {
+                url,
+                source: result.source,
+                timestamp: new Date().toISOString(),
+                extract: extract || undefined,
+                contentLength: rawContent.length,
+                startIndex,
+                maxChars,
+                wasTruncated,
+              },
             });
 
-            // Add the resource link to the response
+            // Add the resource link to the response - use the most processed version
+            const primaryUri = extractedContent
+              ? uris.extracted
+              : filteredContent
+                ? uris.filtered
+                : uris.raw;
+
             response.content.push({
               type: 'resource_link',
-              uri: resourceId,
+              uri: primaryUri!,
               name: url,
               mimeType: extract ? 'text/plain' : 'text/html',
               description: extract

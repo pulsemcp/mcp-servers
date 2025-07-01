@@ -34,6 +34,21 @@ describe('FileSystemResourceStorage', () => {
       const stats = await fs.stat(customDir);
       expect(stats.isDirectory()).toBe(true);
     });
+
+    it('should create subdirectories for raw, filtered, and extracted', async () => {
+      const customDir = path.join(testDir, 'custom-subdirs');
+      const customStorage = new FileSystemResourceStorage(customDir);
+
+      await customStorage.init();
+
+      const rawStats = await fs.stat(path.join(customDir, 'raw'));
+      const filteredStats = await fs.stat(path.join(customDir, 'filtered'));
+      const extractedStats = await fs.stat(path.join(customDir, 'extracted'));
+
+      expect(rawStats.isDirectory()).toBe(true);
+      expect(filteredStats.isDirectory()).toBe(true);
+      expect(extractedStats.isDirectory()).toBe(true);
+    });
   });
 
   describe('write', () => {
@@ -64,6 +79,103 @@ describe('FileSystemResourceStorage', () => {
       expect(fileContent).toMatch(/^---\n[\s\S]*?\n---\n/);
       expect(fileContent).toContain(`url: "${url}"`);
     });
+
+    it('should write to the appropriate subdirectory based on resourceType', async () => {
+      const url = 'https://example.com/test';
+      const content = 'Test content';
+
+      const rawUri = await storage.write(url, content, { resourceType: 'raw' });
+      const filteredUri = await storage.write(url, content, { resourceType: 'filtered' });
+      const extractedUri = await storage.write(url, content, { resourceType: 'extracted' });
+
+      expect(rawUri).toContain('/raw/');
+      expect(filteredUri).toContain('/filtered/');
+      expect(extractedUri).toContain('/extracted/');
+    });
+  });
+
+  describe('writeMulti', () => {
+    it('should write raw, filtered, and extracted content to separate files', async () => {
+      const url = 'https://example.com/multi-test';
+      const rawContent = '<html>Raw HTML content</html>';
+      const filteredContent = 'Filtered content';
+      const extractedContent = 'Extracted information';
+
+      const uris = await storage.writeMulti({
+        url,
+        raw: rawContent,
+        filtered: filteredContent,
+        extracted: extractedContent,
+        metadata: {
+          source: 'test-scraper',
+          extract: 'test extraction prompt',
+        },
+      });
+
+      expect(uris.raw).toMatch(/\/raw\//);
+      expect(uris.filtered).toMatch(/\/filtered\//);
+      expect(uris.extracted).toMatch(/\/extracted\//);
+
+      // Verify content
+      const rawResult = await storage.read(uris.raw);
+      const filteredResult = await storage.read(uris.filtered!);
+      const extractedResult = await storage.read(uris.extracted!);
+
+      expect(rawResult.text).toBe(rawContent);
+      expect(filteredResult.text).toBe(filteredContent);
+      expect(extractedResult.text).toBe(extractedContent);
+    });
+
+    it('should only write raw content when filtered and extracted are not provided', async () => {
+      const url = 'https://example.com/raw-only';
+      const rawContent = 'Only raw content';
+
+      const uris = await storage.writeMulti({
+        url,
+        raw: rawContent,
+      });
+
+      expect(uris.raw).toBeDefined();
+      expect(uris.filtered).toBeUndefined();
+      expect(uris.extracted).toBeUndefined();
+    });
+
+    it('should include extraction prompt in extracted file metadata', async () => {
+      const url = 'https://example.com/extract-test';
+      const extractPrompt = 'Extract the main article title and author';
+
+      const uris = await storage.writeMulti({
+        url,
+        raw: 'Raw content',
+        extracted: 'Title: Test, Author: John',
+        metadata: {
+          extract: extractPrompt,
+        },
+      });
+
+      const filePath = uris.extracted!.substring(7);
+      const fileContent = await fs.readFile(filePath, 'utf-8');
+
+      expect(fileContent).toContain(`extractionPrompt: "${extractPrompt}"`);
+    });
+
+    it('should use the same filename across all subdirectories', async () => {
+      const url = 'https://example.com/same-filename';
+
+      const uris = await storage.writeMulti({
+        url,
+        raw: 'Raw',
+        filtered: 'Filtered',
+        extracted: 'Extracted',
+      });
+
+      const rawFilename = path.basename(uris.raw);
+      const filteredFilename = path.basename(uris.filtered!);
+      const extractedFilename = path.basename(uris.extracted!);
+
+      expect(rawFilename).toBe(filteredFilename);
+      expect(rawFilename).toBe(extractedFilename);
+    });
   });
 
   describe('list', () => {
@@ -87,12 +199,28 @@ describe('FileSystemResourceStorage', () => {
 
     it('should ignore non-markdown files', async () => {
       await storage.write('https://example.com/test', 'Content');
-      await fs.writeFile(path.join(testDir, 'ignore.txt'), 'Should be ignored');
+      await fs.writeFile(path.join(testDir, 'raw', 'ignore.txt'), 'Should be ignored');
 
       const resources = await storage.list();
 
       expect(resources).toHaveLength(1);
       expect(resources[0].metadata.url).toBe('https://example.com/test');
+    });
+
+    it('should list resources from all subdirectories', async () => {
+      await storage.write('https://example.com/raw', 'Raw content', { resourceType: 'raw' });
+      await storage.write('https://example.com/filtered', 'Filtered content', {
+        resourceType: 'filtered',
+      });
+      await storage.write('https://example.com/extracted', 'Extracted content', {
+        resourceType: 'extracted',
+      });
+
+      const resources = await storage.list();
+
+      expect(resources).toHaveLength(3);
+      const resourceTypes = resources.map((r) => r.metadata.resourceType).sort();
+      expect(resourceTypes).toEqual(['extracted', 'filtered', 'raw']);
     });
   });
 
@@ -217,12 +345,30 @@ describe('FileSystemResourceStorage', () => {
       await storage.write(testUrl, 'Valid content');
 
       // Write an invalid markdown file directly
-      const invalidFile = path.join(testDir, 'invalid.md');
+      const invalidFile = path.join(testDir, 'raw', 'invalid.md');
       await fs.writeFile(invalidFile, 'Invalid content without frontmatter');
 
       // Should still return the valid resource
       const resources = await storage.findByUrl(testUrl);
       expect(resources).toHaveLength(1);
+    });
+
+    it('should find resources across all subdirectories', async () => {
+      const testUrl = 'https://example.com/multi-dir-test-' + Date.now();
+
+      // Write the same URL to different subdirectories using writeMulti
+      await storage.writeMulti({
+        url: testUrl,
+        raw: 'Raw content',
+        filtered: 'Filtered content',
+        extracted: 'Extracted content',
+      });
+
+      const resources = await storage.findByUrl(testUrl);
+
+      expect(resources).toHaveLength(3);
+      const resourceTypes = resources.map((r) => r.metadata.resourceType).sort();
+      expect(resourceTypes).toEqual(['extracted', 'filtered', 'raw']);
     });
   });
 });
