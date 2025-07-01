@@ -145,3 +145,10 @@ Key insights gathered during implementation and CI troubleshooting:
 - **Resource Name Format Changes**: Be aware that changing resource naming patterns (e.g., from "Scraped: domain" to full URL) requires updating test expectations that use string matchers or regex patterns
 - **Comprehensive Parameter Documentation**: For complex features like natural language extraction, provide detailed parameter descriptions with categorized examples (simple, formatted, structured, complex) - this dramatically improves user understanding and adoption
 - **Type Inference with Conditional Schemas**: When using Zod schemas that conditionally include fields, TypeScript may struggle with type inference. Use type assertions (e.g., `validatedArgs as { extract?: string }`) or check for field existence before accessing to avoid compilation errors
+
+### Content Filtering Architecture
+
+- **Modular Filter Design**: When implementing content filtering, use a factory pattern with content type detection and specialized filters for different formats (HTML, JSON, XML). This allows easy extension and maintenance
+- **HTML Content Extraction**: The dom-to-semantic-markdown library provides excellent HTML-to-Markdown conversion with built-in main content extraction. It automatically removes navigation, ads, and boilerplate while preserving semantic structure
+- **Filter Integration Points**: Apply filtering after content fetching but before LLM processing to maximize context window efficiency. Always include graceful fallbacks to raw content if filtering fails
+- **Monorepo Dependency Synchronization**: When adding production dependencies in workspace-based monorepos, ensure they're added to both `shared/package.json` AND `local/package.json`. The local package needs these dependencies for the published npm package to work correctly
