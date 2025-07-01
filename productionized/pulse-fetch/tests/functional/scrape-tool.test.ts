@@ -247,7 +247,7 @@ describe('Scrape Tool', () => {
         content: [
           {
             type: 'text',
-            text: expect.stringContaining('Error'),
+            text: expect.stringContaining('Invalid arguments'),
           },
         ],
         isError: true,
