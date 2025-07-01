@@ -69,6 +69,9 @@ jobs:
   detect-and-publish:
     needs: wait-for-ci
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
 
     steps:
       - name: Checkout code
@@ -157,6 +160,7 @@ jobs:
         if: steps.detect-changes.outputs.publish_needed == 'true'
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -e
 
@@ -260,11 +264,21 @@ jobs:
                 fi
                 
                 # Create release using GitHub CLI
-                if command -v gh &> /dev/null; then
-                  echo "$RELEASE_NOTES" | gh release create "$TAG_NAME" \
-                    --title "$PACKAGE_NAME v$PACKAGE_VERSION" \
-                    --notes-file - \
-                    || echo "Failed to create GitHub release (tag might not exist)"
+                echo "Creating GitHub release for $TAG_NAME..."
+                if echo "$RELEASE_NOTES" | gh release create "$TAG_NAME" \
+                  --title "$PACKAGE_NAME v$PACKAGE_VERSION" \
+                  --notes-file - \
+                  --target main; then
+                  echo "✅ GitHub release created successfully"
+                else
+                  echo "❌ Failed to create GitHub release"
+                  echo "Attempting to check if tag exists..."
+                  if ! git rev-parse "$TAG_NAME" >/dev/null 2>&1; then
+                    echo "Tag $TAG_NAME does not exist. The tag should have been created during 'npm version' command."
+                    echo "Check if the version bump process created the tag correctly."
+                  else
+                    echo "Tag exists but release creation failed. Check GitHub permissions."
+                  fi
                 fi
               fi
             else
