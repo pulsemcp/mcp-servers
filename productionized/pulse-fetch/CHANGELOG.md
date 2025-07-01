@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.2] - 2025-07-01
+
+### Fixed
+
+- Fixed CI/CD dependency installation for npm workspaces
+  - Added `ci:install` script to ensure dependencies are installed in all subdirectories
+  - Prevents `ERR_MODULE_NOT_FOUND` errors when running published package
+  - Updated CI workflows to use the new installation approach
+
 ## [0.2.1] - 2025-07-01
 
 ### Changed
