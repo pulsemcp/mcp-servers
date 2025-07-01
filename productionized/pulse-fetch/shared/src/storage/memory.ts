@@ -1,4 +1,12 @@
-import { ResourceStorage, ResourceData, ResourceContent, ResourceMetadata } from './types.js';
+import {
+  ResourceStorage,
+  ResourceData,
+  ResourceContent,
+  ResourceMetadata,
+  ResourceType,
+  MultiResourceWrite,
+  MultiResourceUris,
+} from './types.js';
 
 export class MemoryResourceStorage implements ResourceStorage {
   private resources: Map<string, { data: ResourceData; content: string }> = new Map();
@@ -22,17 +30,19 @@ export class MemoryResourceStorage implements ResourceStorage {
 
   async write(url: string, content: string, metadata?: Partial<ResourceMetadata>): Promise<string> {
     const timestamp = new Date().toISOString();
-    const uri = this.generateUri(url, timestamp);
+    const resourceType = metadata?.resourceType || 'raw';
+    const uri = this.generateUri(url, timestamp, resourceType);
 
     const fullMetadata: ResourceMetadata = {
       url,
       timestamp,
+      resourceType,
       ...metadata,
     };
 
     const resourceData: ResourceData = {
       uri,
-      name: this.generateName(url, timestamp),
+      name: this.generateName(url, timestamp, resourceType),
       description: metadata?.description || `Fetched content from ${url}`,
       mimeType: metadata?.contentType || 'text/plain',
       metadata: fullMetadata,
@@ -44,6 +54,39 @@ export class MemoryResourceStorage implements ResourceStorage {
     });
 
     return uri;
+  }
+
+  async writeMulti(data: MultiResourceWrite): Promise<MultiResourceUris> {
+    const timestamp = new Date().toISOString();
+    const uris: MultiResourceUris = {} as MultiResourceUris;
+
+    // Save raw content
+    uris.raw = await this.write(data.url, data.raw, {
+      ...data.metadata,
+      resourceType: 'raw',
+      timestamp,
+    });
+
+    // Save cleaned content if provided
+    if (data.cleaned) {
+      uris.cleaned = await this.write(data.url, data.cleaned, {
+        ...data.metadata,
+        resourceType: 'cleaned',
+        timestamp,
+      });
+    }
+
+    // Save extracted content if provided
+    if (data.extracted) {
+      uris.extracted = await this.write(data.url, data.extracted, {
+        ...data.metadata,
+        resourceType: 'extracted',
+        extractionPrompt: (data.metadata?.extract as string) || data.metadata?.extractionPrompt,
+        timestamp,
+      });
+    }
+
+    return uris;
   }
 
   async exists(uri: string): Promise<boolean> {
@@ -71,16 +114,16 @@ export class MemoryResourceStorage implements ResourceStorage {
     return matchingResources;
   }
 
-  private generateUri(url: string, timestamp: string): string {
+  private generateUri(url: string, timestamp: string, resourceType: ResourceType = 'raw'): string {
     const sanitizedUrl = url.replace(/^https?:\/\//, '').replace(/[^a-zA-Z0-9.-]/g, '_');
     const timestampPart = timestamp.replace(/[^0-9]/g, '');
-    return `memory://${sanitizedUrl}_${timestampPart}`;
+    return `memory://${resourceType}/${sanitizedUrl}_${timestampPart}`;
   }
 
-  private generateName(url: string, timestamp: string): string {
+  private generateName(url: string, timestamp: string, resourceType: ResourceType = 'raw'): string {
     const urlObj = new URL(url);
     const hostname = urlObj.hostname;
     const dateStr = new Date(timestamp).toISOString().split('T')[0];
-    return `${hostname}_${dateStr}`;
+    return `${resourceType}/${hostname}_${dateStr}`;
   }
 }

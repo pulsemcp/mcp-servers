@@ -315,6 +315,20 @@ npm run format:check
 
 Scrape a single webpage with advanced options for content extraction.
 
+**Content Cleaning**
+
+By default (`cleanScrape: true`), the tool automatically cleans scraped content:
+
+- **HTML content**: Converts to semantic Markdown, removing navigation, ads, sidebars, and other boilerplate while preserving the main content structure. This typically reduces content size by 50-90%.
+- **JSON/XML content**: Passes through unchanged (already structured)
+- **Plain text**: Passes through unchanged
+
+Disable cleaning (`cleanScrape: false`) only when:
+
+- You need the exact raw HTML structure for parsing
+- You're debugging scraping issues
+- You're working with pre-structured content
+
 **Parameters:**
 
 - `url` (string, required): URL to scrape
@@ -323,6 +337,7 @@ Scrape a single webpage with advanced options for content extraction.
 - `startIndex` (number): Character index to start output from (for pagination)
 - `saveResult` (boolean): Save result as MCP Resource (default: true)
 - `forceRescrape` (boolean): Force fresh scrape even if cached (default: false)
+- `cleanScrape` (boolean): Clean HTML content by converting to semantic Markdown (default: true)
 - `extract` (string): Natural language query for intelligent content extraction (requires LLM configuration)
 
 ## Roadmap & Future Ideas
@@ -457,6 +472,49 @@ The system uses an abstraction layer for config storage:
 - **Future clients**: Could support GCS, S3, database storage, etc.
 
 You can swap the storage backend by providing a different `StrategyConfigFactory` when creating the MCP server.
+
+# Resource Storage
+
+Pulse Fetch stores scraped content as MCP Resources for caching and later retrieval. The storage system supports multiple tiers to preserve content at different processing stages.
+
+## Storage Structure
+
+Resources are saved in three separate stages:
+
+1. **Raw**: Original content as scraped from the website
+2. **Cleaned**: Cleaned content after applying content cleaners (HTML → Markdown, etc.)
+3. **Extracted**: LLM-processed content containing only the requested information
+
+### FileSystem Storage
+
+When using filesystem storage (`MCP_RESOURCE_STORAGE=filesystem`), files are organized into subdirectories:
+
+```
+/tmp/pulse-fetch/resources/
+├── raw/
+│   └── example.com_article_20250701_123456.md
+├── cleaned/
+│   └── example.com_article_20250701_123456.md
+└── extracted/
+    └── example.com_article_20250701_123456.md
+```
+
+Each stage shares the same filename for easy correlation. The extracted files include the extraction prompt in their metadata for full traceability.
+
+### Memory Storage
+
+Memory storage uses a similar structure with URIs like:
+
+- `memory://raw/example.com_article_20250701_123456`
+- `memory://cleaned/example.com_article_20250701_123456`
+- `memory://extracted/example.com_article_20250701_123456`
+
+## Benefits
+
+- **Debugging**: Easily inspect content at each processing stage
+- **Efficiency**: Reuse cleaned content for different extraction queries
+- **Traceability**: Track how content was transformed through each stage
+- **Flexibility**: Choose which version to return based on your needs
 
 # Extract Feature
 
