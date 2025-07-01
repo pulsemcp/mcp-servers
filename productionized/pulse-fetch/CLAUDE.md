@@ -130,3 +130,10 @@ Key insights gathered during implementation and CI troubleshooting:
 - **Changelog Updates**: Always update the CHANGELOG.md file when making changes to this MCP server to track improvements and maintain version history
 - **Resource Storage Implementation**: When implementing storage interfaces, use a factory pattern with environment variable configuration to allow easy switching between backends without code changes
 - **Version Bumping Process**: After running `npm version`, immediately check git status to ensure all modified files (package.json, package-lock.json in multiple locations) are staged together in the same commit
+
+### Test Isolation and Storage Patterns
+
+- **Storage Factory Singleton**: ResourceStorageFactory maintains a singleton instance that can cause test pollution across test suites. Always call `ResourceStorageFactory.reset()` in beforeEach hooks to ensure test isolation
+- **Timestamp-based URI Collisions**: Memory storage generates URIs using millisecond timestamps. Rapid writes within the same millisecond can cause URI collisions where one resource overwrites another. Add small delays (1ms) between writes in tests to ensure unique timestamps
+- **Test URL Uniqueness**: Always use unique URLs in tests (e.g., append `Date.now()`) to avoid cross-test pollution when tests share storage instances
+- **Mock Isolation in Functional Tests**: When using vi.doMock() for mocking modules, be aware that mocks may persist across tests. Consider resetting mocks or using unique test data to avoid interference

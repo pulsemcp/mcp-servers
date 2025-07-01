@@ -28,4 +28,5 @@ export interface ResourceStorage {
   write(url: string, content: string, metadata?: Partial<ResourceMetadata>): Promise<string>;
   exists(uri: string): Promise<boolean>;
   delete(uri: string): Promise<void>;
+  findByUrl(url: string): Promise<ResourceData[]>;
 }

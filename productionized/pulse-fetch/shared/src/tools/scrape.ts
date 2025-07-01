@@ -45,6 +45,13 @@ const ScrapeArgsSchema = z.object({
     .describe(
       'Whether to save the scraped content as an MCP Resource for later retrieval. Default: true'
     ),
+  forceRescrape: z
+    .boolean()
+    .optional()
+    .default(false)
+    .describe(
+      'Force a fresh scrape even if cached content exists for this URL. Useful when you know the content has changed. Default: false'
+    ),
 });
 
 export function scrapeTool(
@@ -54,7 +61,7 @@ export function scrapeTool(
 ) {
   return {
     name: 'scrape',
-    description: `Scrape webpage content using intelligent automatic strategy selection. This tool fetches raw HTML content from any URL, automatically choosing the best scraping method based on the site's requirements and past successes.
+    description: `Scrape webpage content using intelligent automatic strategy selection with built-in caching. This tool fetches raw HTML content from any URL, using cached content when available to improve performance and reduce API usage.
 
 Example response:
 {
@@ -66,23 +73,30 @@ Example response:
   ]
 }
 
-Scraping strategies:
+Caching behavior:
+- Previously scraped URLs are automatically cached as MCP Resources
+- Subsequent requests for the same URL return cached content (fastest)
+- Use forceRescrape: true to bypass cache and get fresh content
+- Cache hits show "Served from cache" with original scrape method and timestamp
+
+Scraping strategies (for fresh scrapes):
 - native: Direct HTTP fetch (fastest, works for most public sites)
 - firecrawl: Advanced scraping with JavaScript rendering (requires FIRECRAWL_API_KEY)
 - brightdata: Premium scraping for heavily protected sites (requires BRIGHTDATA_BEARER_TOKEN)
 
 The tool automatically:
-1. Tries the most appropriate method based on learned domain patterns
-2. Falls back to alternative methods if the first attempt fails
-3. Remembers successful strategies for future requests to the same domain
+1. Checks for cached content first (unless forceRescrape is true)
+2. For fresh scrapes, tries the most appropriate method based on learned domain patterns
+3. Falls back to alternative methods if the first attempt fails
+4. Remembers successful strategies for future requests to the same domain
 
 Use cases:
 - Fetching article content for analysis or summarization
 - Extracting data from public websites for research
 - Accessing JavaScript-heavy sites that require rendering
 - Scraping content from sites with anti-bot protection
-- Monitoring webpage changes over time
-- Gathering data for competitive analysis`,
+- Monitoring webpage changes over time (use forceRescrape for updates)
+- Gathering data for competitive analysis with automatic caching`,
     inputSchema: {
       type: 'object' as const,
       properties: {
@@ -117,6 +131,11 @@ Use cases:
           default: true,
           description: 'Whether to save as MCP Resource. Default: true',
         },
+        forceRescrape: {
+          type: 'boolean',
+          default: false,
+          description: 'Force fresh scrape even if cached. Default: false',
+        },
       },
       required: ['url'],
     },
@@ -126,7 +145,62 @@ Use cases:
         const clients = clientsFactory();
         const configClient = strategyConfigFactory();
 
-        const { url, maxChars, startIndex, timeout, extract } = validatedArgs;
+        const { url, maxChars, startIndex, timeout, extract, forceRescrape } = validatedArgs;
+
+        // Check for cached resources unless forceRescrape is true
+        if (!forceRescrape) {
+          try {
+            const storage = await ResourceStorageFactory.create();
+            const cachedResources = await storage.findByUrl(url);
+
+            if (cachedResources.length > 0) {
+              // Use the most recent cached resource (already sorted by timestamp desc)
+              const cachedResource = cachedResources[0];
+              const cachedContent = await storage.read(cachedResource.uri);
+
+              // Apply the same content processing as fresh scrapes
+              let processedContent = cachedContent.text || '';
+
+              // Apply character limits and pagination
+              if (startIndex > 0) {
+                processedContent = processedContent.slice(startIndex);
+              }
+
+              let wasTruncated = false;
+              if (processedContent.length > maxChars) {
+                processedContent = processedContent.slice(0, maxChars);
+                wasTruncated = true;
+              }
+
+              // Format output
+              let resultText = processedContent;
+              if (wasTruncated) {
+                resultText += `\n\n[Content truncated at ${maxChars} characters. Use startIndex parameter to continue reading from character ${startIndex + maxChars}]`;
+              }
+
+              resultText += `\n\n---\nServed from cache (originally scraped using: ${cachedResource.metadata.source || 'unknown'})\nCached at: ${cachedResource.metadata.timestamp}`;
+
+              return {
+                content: [
+                  {
+                    type: 'text' as const,
+                    text: resultText,
+                  },
+                  {
+                    type: 'resource_link' as const,
+                    uri: cachedResource.uri,
+                    name: cachedResource.name,
+                    mimeType: cachedResource.mimeType,
+                    description: cachedResource.description,
+                  },
+                ],
+              };
+            }
+          } catch (error) {
+            // If cache lookup fails, proceed with fresh scrape
+            console.error('Cache lookup failed, proceeding with fresh scrape:', error);
+          }
+        }
 
         // Use the new strategy system (no explicit strategy from user)
         const result = await scrapeWithStrategy(

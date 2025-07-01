@@ -57,6 +57,20 @@ export class MemoryResourceStorage implements ResourceStorage {
     this.resources.delete(uri);
   }
 
+  async findByUrl(url: string): Promise<ResourceData[]> {
+    const matchingResources = Array.from(this.resources.values())
+      .filter((r) => r.data.metadata.url === url)
+      .sort((a, b) => {
+        // Sort by timestamp descending (most recent first)
+        const timeA = new Date(a.data.metadata.timestamp).getTime();
+        const timeB = new Date(b.data.metadata.timestamp).getTime();
+        return timeB - timeA;
+      })
+      .map((r) => r.data);
+
+    return matchingResources;
+  }
+
   private generateUri(url: string, timestamp: string): string {
     const sanitizedUrl = url.replace(/^https?:\/\//, '').replace(/[^a-zA-Z0-9.-]/g, '_');
     const timestampPart = timestamp.replace(/[^0-9]/g, '');

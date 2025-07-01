@@ -163,4 +163,66 @@ describe('FileSystemResourceStorage', () => {
       expect(result.text).toBe(content);
     });
   });
+
+  describe('findByUrl', () => {
+    it('should return empty array for URL with no resources', async () => {
+      const resources = await storage.findByUrl('https://example.com/not-found');
+      expect(resources).toEqual([]);
+    });
+
+    it('should find resources by exact URL', async () => {
+      // Use a unique URL to avoid conflicts with other tests
+      const testUrl = 'https://example.com/findbyurl-test-' + Date.now();
+      const otherUrl = 'https://example.com/findbyurl-other-' + Date.now();
+
+      await storage.write(testUrl, 'Content 1');
+      // Small delay to ensure different timestamp
+      await new Promise((resolve) => setTimeout(resolve, 1));
+      await storage.write(otherUrl, 'Content 2');
+      // Small delay to ensure different timestamp
+      await new Promise((resolve) => setTimeout(resolve, 1));
+      await storage.write(testUrl, 'Content 3');
+
+      const resources = await storage.findByUrl(testUrl);
+
+      expect(resources).toHaveLength(2);
+      expect(resources.every((r) => r.metadata.url === testUrl)).toBe(true);
+    });
+
+    it('should return resources sorted by timestamp descending', async () => {
+      // Use a unique URL to avoid conflicts with other tests
+      const testUrl = 'https://example.com/timestamp-test-' + Date.now();
+
+      // Write resources with small delays to ensure different timestamps
+      await storage.write(testUrl, 'Old content');
+      await new Promise((resolve) => setTimeout(resolve, 10));
+      await storage.write(testUrl, 'Middle content');
+      await new Promise((resolve) => setTimeout(resolve, 10));
+      await storage.write(testUrl, 'New content');
+
+      const resources = await storage.findByUrl(testUrl);
+
+      expect(resources).toHaveLength(3);
+      // Check that timestamps are in descending order (newest first)
+      const timestamps = resources.map((r) => new Date(r.metadata.timestamp).getTime());
+      expect(timestamps[0]).toBeGreaterThan(timestamps[1]);
+      expect(timestamps[1]).toBeGreaterThan(timestamps[2]);
+    });
+
+    it('should handle files with parsing errors gracefully', async () => {
+      // Use a unique URL to avoid conflicts
+      const testUrl = 'https://example.com/parse-error-test-' + Date.now();
+
+      // Write a valid resource
+      await storage.write(testUrl, 'Valid content');
+
+      // Write an invalid markdown file directly
+      const invalidFile = path.join(testDir, 'invalid.md');
+      await fs.writeFile(invalidFile, 'Invalid content without frontmatter');
+
+      // Should still return the valid resource
+      const resources = await storage.findByUrl(testUrl);
+      expect(resources).toHaveLength(1);
+    });
+  });
 });
