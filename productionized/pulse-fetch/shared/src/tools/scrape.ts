@@ -4,6 +4,7 @@ import type { IScrapingClients, StrategyConfigFactory } from '../server.js';
 import { scrapeWithStrategy } from '../scraping-strategies.js';
 import { ResourceStorageFactory } from '../storage/index.js';
 import { ExtractClientFactory } from '../extract/index.js';
+import { createFilter } from '../filter/index.js';
 
 // Build the schema dynamically based on available features
 const buildScrapeArgsSchema = () => {
@@ -285,6 +286,18 @@ Use cases:
         }
 
         let rawContent = result.content || '';
+
+        // Apply filtering if extract is requested
+        // This reduces content size before sending to LLM for extraction
+        if (extract && ExtractClientFactory.isAvailable()) {
+          try {
+            const filter = createFilter(rawContent, url);
+            rawContent = await filter.filter(rawContent, url);
+          } catch (filterError) {
+            console.warn('Content filtering failed, proceeding with raw content:', filterError);
+            // Continue with raw content if filtering fails
+          }
+        }
 
         // If extract parameter is provided and extraction is available, perform extraction
         if (extract && ExtractClientFactory.isAvailable()) {

@@ -16,10 +16,13 @@
   "dependencies": {
     "@anthropic-ai/sdk": "^0.36.3",
     "@modelcontextprotocol/sdk": "^1.13.2",
+    "dom-to-semantic-markdown": "^1.5.0",
+    "jsdom": "^26.1.0",
     "openai": "^4.104.0",
     "zod": "^3.24.1"
   },
   "devDependencies": {
+    "@types/jsdom": "^21.1.7",
     "@types/node": "^24.0.0",
     "typescript": "^5.8.3",
     "vitest": "^2.1.8"
