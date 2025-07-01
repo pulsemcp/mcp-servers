@@ -175,10 +175,12 @@ Use cases:
         const configClient = strategyConfigFactory();
 
         const { url, maxChars, startIndex, timeout, forceRescrape } = validatedArgs;
-        const extract =
-          'extract' in validatedArgs
-            ? (validatedArgs as z.infer<ReturnType<typeof buildScrapeArgsSchema>>).extract
-            : undefined;
+        // Type-safe extraction of optional extract parameter
+        let extract: string | undefined;
+        if (ExtractClientFactory.isAvailable() && 'extract' in validatedArgs) {
+          // We know extract exists if ExtractClientFactory is available and it's in validatedArgs
+          extract = (validatedArgs as { extract?: string }).extract;
+        }
 
         // Check for cached resources unless forceRescrape is true
         if (!forceRescrape) {
