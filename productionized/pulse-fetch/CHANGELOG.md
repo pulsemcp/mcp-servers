@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Intelligent content filtering for extract operations
+  - Automatically filters content when using the `extract` parameter to reduce LLM context usage
+  - HTML filter using dom-to-semantic-markdown removes navigation, ads, and boilerplate
+  - Achieves ~78% content reduction while preserving main content
+  - Pass-through filters for JSON, XML, and plain text content
+  - Graceful fallback to raw content if filtering fails
+
 ## [0.2.4] - 2025-07-01
 
 ### Changed
