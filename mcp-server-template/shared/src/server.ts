@@ -1,4 +1,4 @@
-import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { registerResources } from './resources.js';
 import { createRegisterTools } from './tools.js';
 
@@ -36,7 +36,7 @@ export class ExampleClient implements IExampleClient {
 export type ClientFactory = () => IExampleClient;
 
 export function createMCPServer() {
-  const server = new McpServer(
+  const server = new Server(
     {
       name: 'NAME-mcp-server',
       version: '0.1.0',
@@ -49,7 +49,7 @@ export function createMCPServer() {
     }
   );
 
-  const registerHandlers = async (server: McpServer, clientFactory?: ClientFactory) => {
+  const registerHandlers = async (server: Server, clientFactory?: ClientFactory) => {
     // Use provided factory or create default client
     const factory =
       clientFactory ||

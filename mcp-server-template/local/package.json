@@ -15,7 +15,7 @@
     "README.md"
   ],
   "scripts": {
-    "build": "tsc && npm run build:integration",
+    "build": "tsc",
     "build:integration": "tsc -p tsconfig.integration.json",
     "start": "node build/index.js",
     "dev": "tsx src/index.ts",
@@ -29,7 +29,7 @@
     "stage-publish": "npm version"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.0.4",
+    "@modelcontextprotocol/sdk": "^1.13.2",
     "zod": "^3.24.1"
   },
   "devDependencies": {

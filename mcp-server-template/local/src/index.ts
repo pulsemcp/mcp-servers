@@ -5,12 +5,12 @@ import { createMCPServer } from '../shared/index.js';
 // Validate required environment variables before starting
 function validateEnvironment(): void {
   // TODO: Update this list with your server's required environment variables
-  const required = [
+  const required: { name: string; description: string }[] = [
     // { name: 'YOUR_API_KEY', description: 'API key for authentication' },
     // { name: 'YOUR_ENDPOINT', description: 'API endpoint URL' }
   ];
 
-  const optional = [
+  const optional: { name: string; description: string }[] = [
     // { name: 'YOUR_OPTIONAL_CONFIG', description: 'Optional configuration value' }
   ];
 

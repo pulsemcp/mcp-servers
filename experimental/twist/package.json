@@ -44,5 +44,8 @@
     "@rollup/rollup-linux-x64-musl": "^4.9.5",
     "@rollup/rollup-win32-arm64-msvc": "^4.9.5",
     "@rollup/rollup-win32-x64-msvc": "^4.9.5"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.13.2"
   }
 }

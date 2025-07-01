@@ -36,5 +36,5 @@ export async function searchItems(
     throw new Error(`Search failed: ${response.statusText}`);
   }
 
-  return response.json();
+  return response.json() as Promise<Array<{ id: string; name: string; score: number }>>;
 }

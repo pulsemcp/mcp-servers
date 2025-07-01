@@ -21,7 +21,7 @@
   "author": "PulseMCP",
   "license": "MIT",
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.12.1"
+    "@modelcontextprotocol/sdk": "^1.13.2"
   },
   "devDependencies": {
     "@types/node": "^24.0.0",
