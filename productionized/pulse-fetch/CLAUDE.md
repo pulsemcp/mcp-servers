@@ -145,9 +145,3 @@ Key insights gathered during implementation and CI troubleshooting:
 - **Resource Name Format Changes**: Be aware that changing resource naming patterns (e.g., from "Scraped: domain" to full URL) requires updating test expectations that use string matchers or regex patterns
 - **Comprehensive Parameter Documentation**: For complex features like natural language extraction, provide detailed parameter descriptions with categorized examples (simple, formatted, structured, complex) - this dramatically improves user understanding and adoption
 - **Type Inference with Conditional Schemas**: When using Zod schemas that conditionally include fields, TypeScript may struggle with type inference. Use type assertions (e.g., `validatedArgs as { extract?: string }`) or check for field existence before accessing to avoid compilation errors
-
-### npm Publishing and Version Management
-
-- **Never Run npm publish Locally**: Always let CI/CD handle npm publishing when PRs are merged to main. Running `npm publish` locally bypasses important checks and can lead to inconsistent releases. The `/publish_and_pr` command means "stage for publishing" not "publish to npm"
-- **npm unpublish Dangers**: Be extremely cautious with `npm unpublish --force`. It can sometimes unpublish the entire package instead of just the specified version. Always verify the package state after unpublishing and have a recovery plan
-- **Test Updates with Model Changes**: When updating default model names or versions (e.g., Claude Opus 4 → Claude Sonnet 4), ensure all test expectations are updated to match. Tests often assert exact model names in mock calls, causing CI failures if overlooked
