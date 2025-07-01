@@ -177,9 +177,14 @@ jobs:
             
             echo "Publishing $PACKAGE_NAME@$PACKAGE_VERSION..."
             
-            # Install dependencies
+            # Install dependencies - use ci:install if available
             echo "Installing dependencies..."
-            npm install
+            if npm run --silent ci:install 2>/dev/null; then
+              echo "Dependencies installed with ci:install"
+            else
+              echo "No ci:install script found, using npm install"
+              npm install
+            fi
             
             # Check if version already exists on npm
             if npm view "$PACKAGE_NAME@$PACKAGE_VERSION" version 2>/dev/null; then
