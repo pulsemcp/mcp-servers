@@ -288,7 +288,14 @@ Use cases:
         resultText += `\n\n---\nScraped using: ${result.method}`;
 
         const response: {
-          content: Array<{ type: string; text?: string; uri?: string; name?: string; mimeType?: string; description?: string }>;
+          content: Array<{
+            type: string;
+            text?: string;
+            uri?: string;
+            name?: string;
+            mimeType?: string;
+            description?: string;
+          }>;
         } = {
           content: [
             {
@@ -326,7 +333,7 @@ Use cases:
               uri: savedResource.uri,
               name: savedResource.name,
               mimeType: savedResource.mimeType,
-              description: extract 
+              description: extract
                 ? `Extracted information from ${url} using query: "${extract}"`
                 : `Scraped content from ${url}`,
             });
