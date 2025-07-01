@@ -2,7 +2,7 @@ import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { scrapeTool } from '../../shared/src/tools/scrape.js';
 import type { IScrapingClients } from '../../shared/src/server.js';
 import { NativeScrapingClient } from '../../shared/src/scraping-client/native-scrape-client.js';
-import { FilesystemStrategyConfigClient } from '../../shared/src/strategy-config/filesystem-strategy-config-client.js';
+import { FilesystemStrategyConfigClient } from '../../shared/src/strategy-config/index.js';
 
 /**
  * Manual test for scrape tool with extraction
