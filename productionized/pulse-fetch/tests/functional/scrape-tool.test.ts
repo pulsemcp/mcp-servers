@@ -9,6 +9,7 @@ import {
 } from '../mocks/scraping-clients.functional-mock.js';
 import type { IScrapingClients } from '../../shared/src/server.js';
 import type { IStrategyConfigClient } from '../../shared/src/strategy-config/index.js';
+import { ResourceStorageFactory } from '../../shared/src/storage/index.js';
 
 describe('Scrape Tool', () => {
   let mockServer: Server;
@@ -19,6 +20,9 @@ describe('Scrape Tool', () => {
   let mockStrategyConfigClient: IStrategyConfigClient;
 
   beforeEach(() => {
+    // Reset storage factory to ensure test isolation
+    ResourceStorageFactory.reset();
+
     // Create a minimal mock server
     mockServer = {} as Server;
 
@@ -264,7 +268,7 @@ describe('Scrape Tool', () => {
         () => mockStrategyConfigClient
       );
       const result = await tool.handler({
-        url: 'https://example.com',
+        url: 'https://example.com/save-resource-test-' + Date.now(),
         saveResult: true, // Explicitly enable resource saving
       });
 
@@ -276,10 +280,12 @@ describe('Scrape Tool', () => {
           },
           {
             type: 'resource_link',
-            uri: expect.stringMatching(/^memory:\/\/example\.com_\d+$/),
-            name: 'Scraped: example.com',
+            uri: expect.stringMatching(/^memory:\/\/example\.com_save-resource-test-.*$/),
+            name: expect.stringMatching(/^Scraped: example\.com$/),
             mimeType: 'text/html',
-            description: 'Scraped content from https://example.com',
+            description: expect.stringMatching(
+              /^Scraped content from https:\/\/example\.com\/save-resource-test-.*/
+            ),
           },
         ],
       });

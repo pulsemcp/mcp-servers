@@ -186,14 +186,17 @@ describe('FileSystemResourceStorage', () => {
     });
 
     it('should return resources sorted by timestamp descending', async () => {
-      // Write resources with small delays to ensure different timestamps
-      await storage.write('https://example.com/test', 'Old content');
-      await new Promise((resolve) => setTimeout(resolve, 10));
-      await storage.write('https://example.com/test', 'Middle content');
-      await new Promise((resolve) => setTimeout(resolve, 10));
-      await storage.write('https://example.com/test', 'New content');
+      // Use a unique URL to avoid conflicts with other tests
+      const testUrl = 'https://example.com/timestamp-test-' + Date.now();
 
-      const resources = await storage.findByUrl('https://example.com/test');
+      // Write resources with small delays to ensure different timestamps
+      await storage.write(testUrl, 'Old content');
+      await new Promise((resolve) => setTimeout(resolve, 10));
+      await storage.write(testUrl, 'Middle content');
+      await new Promise((resolve) => setTimeout(resolve, 10));
+      await storage.write(testUrl, 'New content');
+
+      const resources = await storage.findByUrl(testUrl);
 
       expect(resources).toHaveLength(3);
       // Check that timestamps are in descending order (newest first)
@@ -203,15 +206,18 @@ describe('FileSystemResourceStorage', () => {
     });
 
     it('should handle files with parsing errors gracefully', async () => {
+      // Use a unique URL to avoid conflicts
+      const testUrl = 'https://example.com/parse-error-test-' + Date.now();
+
       // Write a valid resource
-      await storage.write('https://example.com/test', 'Valid content');
+      await storage.write(testUrl, 'Valid content');
 
       // Write an invalid markdown file directly
       const invalidFile = path.join(testDir, 'invalid.md');
       await fs.writeFile(invalidFile, 'Invalid content without frontmatter');
 
       // Should still return the valid resource
-      const resources = await storage.findByUrl('https://example.com/test');
+      const resources = await storage.findByUrl(testUrl);
       expect(resources).toHaveLength(1);
     });
   });
