@@ -243,6 +243,19 @@ Use cases:
           timeout,
         });
 
+        // Check if scraping failed
+        if (!result.success) {
+          return {
+            content: [
+              {
+                type: 'text',
+                text: `Failed to scrape ${url}: ${result.error || 'All scraping strategies failed'}`,
+              },
+            ],
+            isError: true,
+          };
+        }
+
         let rawContent = result.content || '';
 
         // If extract parameter is provided and extraction is available, perform extraction
