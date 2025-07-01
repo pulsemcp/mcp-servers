@@ -4,7 +4,7 @@ import type { IScrapingClients, StrategyConfigFactory } from '../server.js';
 import { scrapeWithStrategy } from '../scraping-strategies.js';
 import { ResourceStorageFactory } from '../storage/index.js';
 import { ExtractClientFactory } from '../extract/index.js';
-import { createFilter } from '../filter/index.js';
+import { createCleaner } from '../clean/index.js';
 
 // Build the schema dynamically based on available features
 const buildScrapeArgsSchema = () => {
@@ -49,6 +49,13 @@ const buildScrapeArgsSchema = () => {
       .default(false)
       .describe(
         'Force a fresh scrape even if cached content exists for this URL. Useful when you know the content has changed. Default: false'
+      ),
+    cleanScrape: z
+      .boolean()
+      .optional()
+      .default(true)
+      .describe(
+        'Whether to clean the scraped content by converting HTML to semantic Markdown, removing ads, navigation, and boilerplate. This typically reduces content size by ~78% while preserving main content. Only disable this for debugging or when you need the exact raw HTML structure. Default: true'
       ),
   };
 
@@ -172,6 +179,11 @@ Use cases:
           default: false,
           description: 'Force fresh scrape even if cached. Default: false',
         },
+        cleanScrape: {
+          type: 'boolean',
+          default: true,
+          description: 'Clean content by converting HTML to Markdown. Default: true',
+        },
       };
 
       // Only include extract parameter if extraction is available
@@ -203,7 +215,7 @@ Use cases:
         const clients = clientsFactory();
         const configClient = strategyConfigFactory();
 
-        const { url, maxChars, startIndex, timeout, forceRescrape } = validatedArgs;
+        const { url, maxChars, startIndex, timeout, forceRescrape, cleanScrape } = validatedArgs;
         // Type-safe extraction of optional extract parameter
         let extract: string | undefined;
         if (ExtractClientFactory.isAvailable() && 'extract' in validatedArgs) {
@@ -286,20 +298,20 @@ Use cases:
         }
 
         const rawContent = result.content || '';
-        let filteredContent: string | undefined;
+        let cleanedContent: string | undefined;
         let extractedContent: string | undefined;
         let displayContent = rawContent;
 
-        // Apply filtering if extract is requested
-        // This reduces content size before sending to LLM for extraction
-        if (extract && ExtractClientFactory.isAvailable()) {
+        // Apply cleaning if cleanScrape is true (default)
+        // This converts HTML to semantic Markdown and removes ads, navigation, etc.
+        if (cleanScrape) {
           try {
-            const filter = createFilter(rawContent, url);
-            filteredContent = await filter.filter(rawContent, url);
-            displayContent = filteredContent;
-          } catch (filterError) {
-            console.warn('Content filtering failed, proceeding with raw content:', filterError);
-            // Continue with raw content if filtering fails
+            const cleaner = createCleaner(rawContent, url);
+            cleanedContent = await cleaner.clean(rawContent, url);
+            displayContent = cleanedContent;
+          } catch (cleanError) {
+            console.warn('Content cleaning failed, proceeding with raw content:', cleanError);
+            // Continue with raw content if cleaning fails
             displayContent = rawContent;
           }
         }
@@ -311,14 +323,14 @@ Use cases:
             if (extractClient) {
               // TypeScript needs explicit confirmation that extract is a string here
               const extractQuery: string = extract;
-              // Use filtered content if available, otherwise raw content
-              const contentToExtract = filteredContent || rawContent;
+              // Use cleaned content if available, otherwise raw content
+              const contentToExtract = cleanedContent || rawContent;
               const extractResult = await extractClient.extract(contentToExtract, extractQuery);
               if (extractResult.success && extractResult.content) {
                 extractedContent = extractResult.content;
                 displayContent = extractedContent;
               } else {
-                // Include error in the response but still return the filtered/raw content
+                // Include error in the response but still return the cleaned/raw content
                 displayContent = `Extraction failed: ${extractResult.error}\n\n---\nRaw content:\n${displayContent}`;
               }
             }
@@ -373,7 +385,7 @@ Use cases:
             const uris = await storage.writeMulti({
               url,
               raw: rawContent,
-              filtered: filteredContent,
+              cleaned: cleanedContent,
               extracted: extractedContent,
               metadata: {
                 url,
@@ -390,8 +402,8 @@ Use cases:
             // Add the resource link to the response - use the most processed version
             const primaryUri = extractedContent
               ? uris.extracted
-              : filteredContent
-                ? uris.filtered
+              : cleanedContent
+                ? uris.cleaned
                 : uris.raw;
 
             response.content.push({

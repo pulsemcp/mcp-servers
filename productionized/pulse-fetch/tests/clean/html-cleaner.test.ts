@@ -1,12 +1,12 @@
 import { describe, it, expect } from 'vitest';
-import { HtmlFilter } from '../../shared/src/filter/html-filter.js';
+import { HtmlCleaner } from '../../shared/src/clean/html-cleaner.js';
 
-describe('HtmlFilter', () => {
-  const filter = new HtmlFilter();
+describe('HtmlCleaner', () => {
+  const cleaner = new HtmlCleaner();
 
-  it('should identify as HTML filter', () => {
-    expect(filter.canHandle('text/html')).toBe(true);
-    expect(filter.canHandle('application/json')).toBe(false);
+  it('should identify as HTML cleaner', () => {
+    expect(cleaner.canHandle('text/html')).toBe(true);
+    expect(cleaner.canHandle('application/json')).toBe(false);
   });
 
   it('should convert simple HTML to markdown', async () => {
@@ -25,7 +25,7 @@ describe('HtmlFilter', () => {
       </html>
     `;
 
-    const result = await filter.filter(html, 'https://example.com');
+    const result = await cleaner.clean(html, 'https://example.com');
     expect(result).toContain('# Hello World');
     expect(result).toContain('This is a test paragraph.');
     expect(result).toContain('- Item 1');
@@ -54,7 +54,7 @@ describe('HtmlFilter', () => {
       </html>
     `;
 
-    const result = await filter.filter(html, 'https://example.com');
+    const result = await cleaner.clean(html, 'https://example.com');
     expect(result).toContain('Main Article');
     expect(result).toContain('This is the main content we want to extract.');
     // Navigation and footer should be removed by extractMainContent
@@ -83,7 +83,7 @@ describe('HtmlFilter', () => {
       </html>
     `;
 
-    const result = await filter.filter(html, 'https://example.com');
+    const result = await cleaner.clean(html, 'https://example.com');
     expect(result).toContain('# Complex Article');
     expect(result).toContain('## Section 1');
     expect(result).toContain('### Subsection');
@@ -97,25 +97,25 @@ describe('HtmlFilter', () => {
   it('should handle malformed HTML gracefully', async () => {
     const malformedHtml = '<p>Unclosed paragraph <div>Nested without closing';
 
-    const result = await filter.filter(malformedHtml, 'https://example.com');
+    const result = await cleaner.clean(malformedHtml, 'https://example.com');
     // Should not throw and should return something
     expect(result).toBeTruthy();
   });
 
   it('should respect maxLength option', async () => {
-    const filterWithLimit = new HtmlFilter({ maxLength: 50 });
+    const cleanerWithLimit = new HtmlCleaner({ maxLength: 50 });
     const html =
       '<p>This is a very long paragraph that will definitely exceed our character limit when converted to markdown.</p>';
 
-    const result = await filterWithLimit.filter(html, 'https://example.com');
+    const result = await cleanerWithLimit.clean(html, 'https://example.com');
     expect(result).toContain('[Content truncated]');
     // The truncated content should be around 50 chars plus the truncation message
     expect(result.length).toBeLessThanOrEqual(100);
   });
 
-  it('should return original content on filter failure', async () => {
+  it('should return original content on clean failure', async () => {
     // Pass null to trigger an error
-    const result = await filter.filter(null as unknown as string, 'https://example.com');
+    const result = await cleaner.clean(null as unknown as string, 'https://example.com');
     expect(result).toBe('null'); // null gets converted to string 'null'
   });
 });

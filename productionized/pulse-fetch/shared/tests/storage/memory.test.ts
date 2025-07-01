@@ -36,11 +36,11 @@ describe('MemoryResourceStorage', () => {
       const content = 'Test content';
 
       const rawUri = await storage.write(url, content, { resourceType: 'raw' });
-      const filteredUri = await storage.write(url, content, { resourceType: 'filtered' });
+      const cleanedUri = await storage.write(url, content, { resourceType: 'cleaned' });
       const extractedUri = await storage.write(url, content, { resourceType: 'extracted' });
 
       expect(rawUri).toContain('memory://raw/');
-      expect(filteredUri).toContain('memory://filtered/');
+      expect(cleanedUri).toContain('memory://cleaned/');
       expect(extractedUri).toContain('memory://extracted/');
     });
   });
@@ -49,13 +49,13 @@ describe('MemoryResourceStorage', () => {
     it('should write multiple resource types and return all URIs', async () => {
       const url = 'https://example.com/multi';
       const rawContent = 'Raw content';
-      const filteredContent = 'Filtered content';
+      const cleanedContent = 'Cleaned content';
       const extractedContent = 'Extracted content';
 
       const uris = await storage.writeMulti({
         url,
         raw: rawContent,
-        filtered: filteredContent,
+        cleaned: cleanedContent,
         extracted: extractedContent,
         metadata: {
           source: 'test',
@@ -64,16 +64,16 @@ describe('MemoryResourceStorage', () => {
       });
 
       expect(uris.raw).toContain('memory://raw/');
-      expect(uris.filtered).toContain('memory://filtered/');
+      expect(uris.cleaned).toContain('memory://cleaned/');
       expect(uris.extracted).toContain('memory://extracted/');
 
       // Verify content
       const rawResult = await storage.read(uris.raw);
-      const filteredResult = await storage.read(uris.filtered!);
+      const cleanedResult = await storage.read(uris.cleaned!);
       const extractedResult = await storage.read(uris.extracted!);
 
       expect(rawResult.text).toBe(rawContent);
-      expect(filteredResult.text).toBe(filteredContent);
+      expect(cleanedResult.text).toBe(cleanedContent);
       expect(extractedResult.text).toBe(extractedContent);
     });
 
@@ -87,7 +87,7 @@ describe('MemoryResourceStorage', () => {
       });
 
       expect(uris.raw).toBeDefined();
-      expect(uris.filtered).toBeUndefined();
+      expect(uris.cleaned).toBeUndefined();
       expect(uris.extracted).toBeUndefined();
     });
 
@@ -228,7 +228,7 @@ describe('MemoryResourceStorage', () => {
       await storage.writeMulti({
         url: testUrl,
         raw: 'Raw content',
-        filtered: 'Filtered content',
+        cleaned: 'Cleaned content',
         extracted: 'Extracted content',
       });
 
@@ -236,7 +236,7 @@ describe('MemoryResourceStorage', () => {
 
       expect(resources).toHaveLength(3);
       const resourceTypes = resources.map((r) => r.metadata.resourceType).sort();
-      expect(resourceTypes).toEqual(['extracted', 'filtered', 'raw']);
+      expect(resourceTypes).toEqual(['cleaned', 'extracted', 'raw']);
     });
   });
 });

@@ -9,20 +9,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Intelligent content filtering for extract operations
-  - Automatically filters content when using the `extract` parameter to reduce LLM context usage
-  - HTML filter using dom-to-semantic-markdown removes navigation, ads, and boilerplate
+- Intelligent content cleaning with `cleanScrape` parameter
+  - New `cleanScrape` parameter (default: true) controls whether to clean HTML content
+  - Cleaning converts HTML to semantic Markdown, removing ads, navigation, and boilerplate
   - Achieves ~78% content reduction while preserving main content
-  - Pass-through filters for JSON, XML, and plain text content
-  - Graceful fallback to raw content if filtering fails
+  - Pass-through cleaners for JSON, XML, and plain text content
+  - Graceful fallback to raw content if cleaning fails
+  - Cleaning is now decoupled from extraction - works independently
 
-- Multi-tier resource storage with raw, filtered, and extracted responses
-  - Resources are now saved in three separate stages: raw (original content), filtered (cleaned content), and extracted (LLM-processed content)
-  - FileSystem storage organizes files into `raw/`, `filtered/`, and `extracted/` subdirectories
+- Multi-tier resource storage with raw, cleaned, and extracted responses
+  - Resources are now saved in three separate stages: raw (original content), cleaned (semantic content), and extracted (LLM-processed content)
+  - FileSystem storage organizes files into `raw/`, `cleaned/`, and `extracted/` subdirectories
   - Each stage shares the same filename for easy correlation
   - Extraction prompt is saved as metadata in extracted files for full traceability
   - New `writeMulti` method in storage interface for atomic multi-stage writes
   - Memory storage updated to support the same multi-tier structure
+
+### Changed
+
+- **BREAKING**: Renamed "filter" concept to "clean" throughout the codebase
+  - Storage subdirectory changed from `filtered/` to `cleaned/`
+  - Resource type changed from `filtered` to `cleaned`
+  - All related classes, methods, and files renamed for consistency
 
 ## [0.2.4] - 2025-07-01
 

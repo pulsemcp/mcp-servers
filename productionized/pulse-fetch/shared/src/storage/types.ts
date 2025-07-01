@@ -24,19 +24,19 @@ export interface ResourceContent {
   blob?: string;
 }
 
-export type ResourceType = 'raw' | 'filtered' | 'extracted';
+export type ResourceType = 'raw' | 'cleaned' | 'extracted';
 
 export interface MultiResourceWrite {
   url: string;
   raw: string;
-  filtered?: string;
+  cleaned?: string;
   extracted?: string;
   metadata?: Partial<ResourceMetadata>;
 }
 
 export interface MultiResourceUris {
   raw: string;
-  filtered?: string;
+  cleaned?: string;
   extracted?: string;
 }
 

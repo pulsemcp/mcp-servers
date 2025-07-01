@@ -1,12 +1,12 @@
-import { ContentFilter } from './index.js';
+import { ContentCleaner } from './index.js';
 
 /**
- * Base implementation for content filters
+ * Base implementation for content cleaners
  */
-export abstract class BaseFilter implements ContentFilter {
+export abstract class BaseCleaner implements ContentCleaner {
   constructor(protected readonly options?: { maxLength?: number }) {}
 
-  abstract filter(content: string, url: string): Promise<string>;
+  abstract clean(content: string, url: string): Promise<string>;
   abstract canHandle(contentType: string): boolean;
 
   /**

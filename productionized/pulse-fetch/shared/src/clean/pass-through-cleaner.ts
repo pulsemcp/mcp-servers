@@ -1,10 +1,10 @@
-import { BaseFilter } from './base-filter.js';
+import { BaseCleaner } from './base-cleaner.js';
 
 /**
- * A filter that passes content through unchanged
+ * A cleaner that passes content through unchanged
  * Used for JSON, XML, and other structured formats
  */
-export class PassThroughFilter extends BaseFilter {
+export class PassThroughCleaner extends BaseCleaner {
   private readonly supportedTypes: Set<string>;
 
   constructor(supportedTypes: string[], options?: { maxLength?: number }) {
@@ -12,7 +12,7 @@ export class PassThroughFilter extends BaseFilter {
     this.supportedTypes = new Set(supportedTypes);
   }
 
-  async filter(content: string, _url: string): Promise<string> {
+  async clean(content: string, _url: string): Promise<string> {
     // Simply pass through the content, applying truncation if needed
     return this.truncateIfNeeded(content);
   }

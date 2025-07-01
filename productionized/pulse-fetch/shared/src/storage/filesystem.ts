@@ -22,7 +22,7 @@ export class FileSystemResourceStorage implements ResourceStorage {
     await fs.mkdir(this.rootDir, { recursive: true });
     // Create subdirectories for each resource type
     await fs.mkdir(path.join(this.rootDir, 'raw'), { recursive: true });
-    await fs.mkdir(path.join(this.rootDir, 'filtered'), { recursive: true });
+    await fs.mkdir(path.join(this.rootDir, 'cleaned'), { recursive: true });
     await fs.mkdir(path.join(this.rootDir, 'extracted'), { recursive: true });
   }
 
@@ -30,7 +30,7 @@ export class FileSystemResourceStorage implements ResourceStorage {
     await this.init();
 
     const resources: ResourceData[] = [];
-    const subdirs: ResourceType[] = ['raw', 'filtered', 'extracted'];
+    const subdirs: ResourceType[] = ['raw', 'cleaned', 'extracted'];
 
     for (const subdir of subdirs) {
       const subdirPath = path.join(this.rootDir, subdir);
@@ -120,21 +120,21 @@ export class FileSystemResourceStorage implements ResourceStorage {
     await fs.writeFile(rawPath, this.createMarkdownFile(rawMetadata, data.raw), 'utf-8');
     uris.raw = `file://${rawPath}`;
 
-    // Save filtered content if provided
-    if (data.filtered) {
-      const filteredMetadata: ResourceMetadata = {
+    // Save cleaned content if provided
+    if (data.cleaned) {
+      const cleanedMetadata: ResourceMetadata = {
         url: data.url,
         timestamp,
-        resourceType: 'filtered',
+        resourceType: 'cleaned',
         ...data.metadata,
       };
-      const filteredPath = path.join(this.rootDir, 'filtered', fileName);
+      const cleanedPath = path.join(this.rootDir, 'cleaned', fileName);
       await fs.writeFile(
-        filteredPath,
-        this.createMarkdownFile(filteredMetadata, data.filtered),
+        cleanedPath,
+        this.createMarkdownFile(cleanedMetadata, data.cleaned),
         'utf-8'
       );
-      uris.filtered = `file://${filteredPath}`;
+      uris.cleaned = `file://${cleanedPath}`;
     }
 
     // Save extracted content if provided
@@ -177,7 +177,7 @@ export class FileSystemResourceStorage implements ResourceStorage {
     await this.init();
 
     const matchingResources: ResourceData[] = [];
-    const subdirs: ResourceType[] = ['raw', 'filtered', 'extracted'];
+    const subdirs: ResourceType[] = ['raw', 'cleaned', 'extracted'];
 
     for (const subdir of subdirs) {
       const subdirPath = path.join(this.rootDir, subdir);

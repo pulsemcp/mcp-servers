@@ -67,11 +67,11 @@ export class MemoryResourceStorage implements ResourceStorage {
       timestamp,
     });
 
-    // Save filtered content if provided
-    if (data.filtered) {
-      uris.filtered = await this.write(data.url, data.filtered, {
+    // Save cleaned content if provided
+    if (data.cleaned) {
+      uris.cleaned = await this.write(data.url, data.cleaned, {
         ...data.metadata,
-        resourceType: 'filtered',
+        resourceType: 'cleaned',
         timestamp,
       });
     }

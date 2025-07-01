@@ -315,6 +315,20 @@ npm run format:check
 
 Scrape a single webpage with advanced options for content extraction.
 
+**Content Cleaning**
+
+By default (`cleanScrape: true`), the tool automatically cleans scraped content:
+
+- **HTML content**: Converts to semantic Markdown, removing navigation, ads, sidebars, and other boilerplate while preserving the main content structure. This typically reduces content size by ~78%.
+- **JSON/XML content**: Passes through unchanged (already structured)
+- **Plain text**: Passes through unchanged
+
+Disable cleaning (`cleanScrape: false`) only when:
+
+- You need the exact raw HTML structure for parsing
+- You're debugging scraping issues
+- You're working with pre-structured content
+
 **Parameters:**
 
 - `url` (string, required): URL to scrape
@@ -323,6 +337,7 @@ Scrape a single webpage with advanced options for content extraction.
 - `startIndex` (number): Character index to start output from (for pagination)
 - `saveResult` (boolean): Save result as MCP Resource (default: true)
 - `forceRescrape` (boolean): Force fresh scrape even if cached (default: false)
+- `cleanScrape` (boolean): Clean HTML content by converting to semantic Markdown (default: true)
 - `extract` (string): Natural language query for intelligent content extraction (requires LLM configuration)
 
 ## Roadmap & Future Ideas
@@ -467,7 +482,7 @@ Pulse Fetch stores scraped content as MCP Resources for caching and later retrie
 Resources are saved in three separate stages:
 
 1. **Raw**: Original content as scraped from the website
-2. **Filtered**: Cleaned content after applying content filters (HTML → Markdown, etc.)
+2. **Cleaned**: Cleaned content after applying content cleaners (HTML → Markdown, etc.)
 3. **Extracted**: LLM-processed content containing only the requested information
 
 ### FileSystem Storage
@@ -478,7 +493,7 @@ When using filesystem storage (`MCP_RESOURCE_STORAGE=filesystem`), files are org
 /tmp/pulse-fetch/resources/
 ├── raw/
 │   └── example.com_article_20250701_123456.md
-├── filtered/
+├── cleaned/
 │   └── example.com_article_20250701_123456.md
 └── extracted/
     └── example.com_article_20250701_123456.md
@@ -491,13 +506,13 @@ Each stage shares the same filename for easy correlation. The extracted files in
 Memory storage uses a similar structure with URIs like:
 
 - `memory://raw/example.com_article_20250701_123456`
-- `memory://filtered/example.com_article_20250701_123456`
+- `memory://cleaned/example.com_article_20250701_123456`
 - `memory://extracted/example.com_article_20250701_123456`
 
 ## Benefits
 
 - **Debugging**: Easily inspect content at each processing stage
-- **Efficiency**: Reuse filtered content for different extraction queries
+- **Efficiency**: Reuse cleaned content for different extraction queries
 - **Traceability**: Track how content was transformed through each stage
 - **Flexibility**: Choose which version to return based on your needs
 
