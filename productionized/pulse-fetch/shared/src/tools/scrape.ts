@@ -175,7 +175,10 @@ Use cases:
         const configClient = strategyConfigFactory();
 
         const { url, maxChars, startIndex, timeout, forceRescrape } = validatedArgs;
-        const extract = 'extract' in validatedArgs ? validatedArgs.extract : undefined;
+        const extract =
+          'extract' in validatedArgs
+            ? (validatedArgs as z.infer<ReturnType<typeof buildScrapeArgsSchema>>).extract
+            : undefined;
 
         // Check for cached resources unless forceRescrape is true
         if (!forceRescrape) {
@@ -233,18 +236,10 @@ Use cases:
         }
 
         // Use the new strategy system (no explicit strategy from user)
-        const result = await scrapeWithStrategy(
-          clients,
-          configClient,
-          {
-            url,
-            timeout,
-          },
-          {
-            onlyMainContent: false,
-            includeRawHtml: true,
-          }
-        );
+        const result = await scrapeWithStrategy(clients, configClient, {
+          url,
+          timeout,
+        });
 
         let rawContent = result.content || '';
 
@@ -253,8 +248,10 @@ Use cases:
           try {
             const extractClient = ExtractClientFactory.createFromEnv();
             if (extractClient) {
-              const extractResult = await extractClient.extract(rawContent, extract);
-              if (extractResult.success) {
+              // TypeScript needs explicit confirmation that extract is a string here
+              const extractQuery: string = extract;
+              const extractResult = await extractClient.extract(rawContent, extractQuery);
+              if (extractResult.success && extractResult.content) {
                 rawContent = extractResult.content;
               } else {
                 // Include error in the response but still return the raw content
@@ -285,7 +282,7 @@ Use cases:
           resultText += `\n\n[Content truncated at ${maxChars} characters. Use startIndex parameter to continue reading from character ${startIndex + maxChars}]`;
         }
 
-        resultText += `\n\n---\nScraped using: ${result.method}`;
+        resultText += `\n\n---\nScraped using: ${result.source}`;
 
         const response: {
           content: Array<{
@@ -309,30 +306,23 @@ Use cases:
         if (validatedArgs.saveResult) {
           try {
             const storage = await ResourceStorageFactory.create();
-            const resourceId = await storage.save({
-              name: url,
-              mimeType: extract ? 'text/plain' : 'text/html',
-              text: rawContent,
-              metadata: {
-                url,
-                method: result.method,
-                timestamp: new Date().toISOString(),
-                extract: extract || undefined,
-                source: result.method,
-                contentLength: rawContent.length,
-                startIndex,
-                maxChars,
-                wasTruncated,
-              },
+            const resourceId = await storage.write(url, rawContent, {
+              url,
+              source: result.source,
+              timestamp: new Date().toISOString(),
+              extract: extract || undefined,
+              contentLength: rawContent.length,
+              startIndex,
+              maxChars,
+              wasTruncated,
             });
 
-            // Get the saved resource to include in the response
-            const savedResource = await storage.read(resourceId);
+            // Add the resource link to the response
             response.content.push({
               type: 'resource_link',
-              uri: savedResource.uri,
-              name: savedResource.name,
-              mimeType: savedResource.mimeType,
+              uri: resourceId,
+              name: url,
+              mimeType: extract ? 'text/plain' : 'text/html',
               description: extract
                 ? `Extracted information from ${url} using query: "${extract}"`
                 : `Scraped content from ${url}`,
