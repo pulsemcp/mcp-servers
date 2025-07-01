@@ -22,5 +22,5 @@ export async function getItem(
     throw new Error(`Failed to get item: ${response.statusText}`);
   }
 
-  return response.json();
+  return response.json() as Promise<{ id: string; name: string; value: string }>;
 }
