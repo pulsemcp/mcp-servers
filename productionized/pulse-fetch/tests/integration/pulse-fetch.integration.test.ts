@@ -127,7 +127,7 @@ describe('Pulse Fetch MCP Server Integration Tests', () => {
         content: [
           {
             type: 'text',
-            text: expect.stringContaining('Invalid arguments'),
+            text: expect.stringContaining('Required'),
           },
         ],
         isError: true,

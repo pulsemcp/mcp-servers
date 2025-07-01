@@ -71,13 +71,7 @@ jobs:
           node-version-file: '.nvmrc'
 
       - name: Install dependencies
-        run: npm ci
-
-      - name: Install shared dependencies
-        run: cd shared && npm install
-
-      - name: Install local dependencies
-        run: cd local && npm install
+        run: npm ci && npm run ci:install
 
       - name: Install test-mcp-client dependencies
         run: cd ../../test-mcp-client && npm install

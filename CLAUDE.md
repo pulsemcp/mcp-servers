@@ -204,6 +204,25 @@ cd ../../../test-mcp-client && npm install @modelcontextprotocol/sdk@^1.13.2 --s
 - The shared/local separation allows for clean publishing to npm
 - Dependencies in the wrong place can cause build issues or incorrect npm packages
 
+### Adding Dependencies to MCP Servers
+
+When adding new dependencies:
+
+1. **Add to the correct package.json**: Production dependencies go in `shared/package.json`, not the root
+2. **Install the dependency**: Run `npm install <package> --save` from the `shared/` directory
+3. **Build and test**: Run `npm run build` from the server root to verify everything works
+
+Example:
+
+```bash
+cd productionized/pulse-fetch/shared
+npm install @anthropic-ai/sdk --save  # Adds to package.json AND installs
+cd ..
+npm run build                         # Builds both shared and local
+```
+
+**Note**: CI automatically handles proper installation across all subdirectories using the `ci:install` script, so manual installation in multiple directories is not needed.
+
 ## Testing Strategy
 
 MCP servers may include up to three types of tests:
@@ -335,3 +354,4 @@ Don't add: basic TypeScript fixes, standard npm troubleshooting, obvious file op
 - **Critical**: Never add production dependencies to root package.json files in workspace servers - these should only contain devDependencies
 - **SDK Updates**: When updating @modelcontextprotocol/sdk, update it in both shared/package.json and local/package.json, never in the root
 - **Common Mistake**: Running `npm install <package> --save` from the server root directory adds dependencies to the wrong package.json - always cd into shared/ or local/ first
+- **CI Installation**: All MCP servers now have a `ci:install` script that ensures dependencies are installed in all subdirectories - this prevents `ERR_MODULE_NOT_FOUND` errors in published packages that occur when CI only runs `npm install` at the root level

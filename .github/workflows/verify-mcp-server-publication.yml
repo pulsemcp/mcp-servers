@@ -174,8 +174,13 @@ jobs:
             echo "Running tests for $SERVER_NAME..."
             cd "$SERVER_DIR"
             
-            # Install dependencies
-            npm install
+            # Install dependencies - use ci:install if available, otherwise npm install
+            if npm run --silent ci:install 2>/dev/null; then
+              echo "✅ Dependencies installed with ci:install"
+            else
+              echo "ℹ️  No ci:install script found, using npm install"
+              npm install
+            fi
             
             # Run build
             if npm run build; then
