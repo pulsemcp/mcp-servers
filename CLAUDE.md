@@ -335,7 +335,6 @@ Don't add: basic TypeScript fixes, standard npm troubleshooting, obvious file op
 - Branch naming follows `<github-username>/<feature-description>` pattern
 - Always ensure CI passes before considering a PR complete
 - Pre-commit hooks automatically run lint-staged, but manual linting should still be run before pushing to avoid CI failures
-- **GitHub Release Creation**: The CI/CD workflow creates GitHub releases when publishing npm packages, but requires: 1) `contents: write` permission in the workflow job, 2) `GITHUB_TOKEN` environment variable for `gh` CLI authentication, and 3) the git tag to exist (created by `npm version`). Without these, release creation fails silently
 
 ### Publishing Process
 
