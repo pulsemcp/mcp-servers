@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.3] - 2025-07-01
+
+### Fixed
+
+- Fixed missing dependencies in published package
+  - Added `@anthropic-ai/sdk` and `openai` to local package.json
+  - These dependencies were only in shared/package.json causing ERR_MODULE_NOT_FOUND in published package
+
 ## [0.2.2] - 2025-07-01
 
 ### Fixed
