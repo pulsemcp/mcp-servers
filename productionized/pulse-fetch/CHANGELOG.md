@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2025-07-01
+
 ### Added
 
 - Intelligent caching system for scraped content
@@ -27,8 +29,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Automatic content type detection (plain text for extracted content, HTML for raw scrapes)
   - Comprehensive test suite including functional and manual tests
   - Support for popular OpenAI-compatible providers: Together.ai, Groq, Perplexity, DeepSeek, Fireworks AI
-  - Default models optimized for best value: Claude 3.5 Sonnet for Anthropic, GPT-4 Turbo for OpenAI
+  - Default models optimized for best value: Claude Opus 4 for Anthropic, GPT-4.1 for OpenAI
   - Fallback to raw content if extraction fails with clear error messages
+- CONTRIBUTING.md documentation with inspector commands and development workflow guidance
 
 ### Changed
 
@@ -38,6 +41,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Updated scrape tool to dynamically build schema based on available features
 - Resource content type now depends on whether extraction was performed
 - Resource descriptions include extraction query when extract parameter is used
+- Updated default LLM models to latest 2025 versions (Claude Opus 4, GPT-4.1)
+- Improved extract parameter documentation with comprehensive examples
 
 ## [0.1.4] - 2025-06-30
 
