@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Intelligent caching system for scraped content
+  - Automatically caches scraped URLs as MCP Resources
+  - Subsequent requests for the same URL return cached content (no API calls)
+  - Shows "Served from cache" with original scrape method and timestamp
+  - Dramatically improves performance for repeated requests
+- `forceRescrape` parameter to bypass cache and force fresh content retrieval
+  - Useful when you know the content has changed
+  - Default: `false` (uses cache when available)
+- `findByUrl` method in ResourceStorage interface
+  - Enables efficient lookup of cached resources by original URL
+  - Returns resources sorted by timestamp (most recent first)
+
+### Changed
+
+- Scrape tool now checks for cached content before making network requests
+- Cache hits include metadata about when content was originally cached
+- Enhanced storage backends (memory and filesystem) with URL-based lookups
+
 ## [0.1.4] - 2025-06-30
 
 ### Added

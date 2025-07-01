@@ -29,7 +29,7 @@ This project is built and maintained by [PulseMCP](https://www.pulsemcp.com/).
 
 **Clean content extraction**: Strips out HTML noise using Mozilla's Readability algorithm to minimize token usage during MCP Tool calls.
 
-**Resource caching**: Optionally saves results as MCP Resources for effective caching and easy inspection of Tool call outcomes. Supports both in-memory and filesystem storage backends.
+**Intelligent caching**: Automatically caches scraped content as MCP Resources. Subsequent requests for the same URL return cached content instantly without network calls, dramatically improving performance.
 
 **Anti-bot bypass**: Integrates with Firecrawl and BrightData APIs to reliably work around anti-scraping technology.
 
@@ -50,11 +50,11 @@ This server is built and tested on macOS with Claude Desktop. It should work wit
 # Usage Tips
 
 - The `scrape` tool handles all web content extraction needs and automatically bypasses anti-bot protection when necessary
-- Set `saveResource: true` to cache results as MCP Resources for easy re-use and inspection
-- Use `onlyMainContent: true` to extract just the article content and minimize token usage
-- Configure `waitFor` parameter for JavaScript-heavy sites that need time to load dynamic content
+- **Automatic caching**: Previously scraped URLs are cached by default. The tool returns cached content instantly on repeat requests
+- Use `forceRescrape: true` to bypass the cache and get fresh content when you know the page has changed
+- Set `saveResult: false` to disable both caching and resource saving (not recommended)
 - Use `maxChars` and `startIndex` parameters to handle large content that exceeds token limits
-- Format options include `markdown` (default), `html`, `rawHtml`, `links`, and `extract` for structured data
+- Configure the timeout parameter (default 60s) for slow-loading sites
 
 # Examples
 
@@ -93,6 +93,24 @@ Assistant: I'll extract the content from that protected page for you.
 [Uses scrape tool with automatic anti-bot bypass]
 
 I successfully bypassed the protection and extracted the content from the page using BrightData's Web Unlocker capabilities.
+```
+
+## Intelligent Caching
+
+```
+User: "Get the content from https://example.com/article again"
+Assistant: I'll retrieve that content for you.
+
+[Uses scrape tool - automatically returns cached content]
+
+I've retrieved the content from cache (originally scraped 2 hours ago). The article contains...
+
+User: "Actually, I think that article was updated. Can you get the latest version?"
+Assistant: I'll fetch a fresh copy of the article for you.
+
+[Uses scrape tool with forceRescrape: true]
+
+I've fetched the latest version of the article. I can see it was indeed updated with new information about...
 ```
 
 # Why Choose Pulse Fetch?

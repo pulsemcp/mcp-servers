@@ -95,6 +95,45 @@ export class FileSystemResourceStorage implements ResourceStorage {
     await fs.unlink(filePath);
   }
 
+  async findByUrl(url: string): Promise<ResourceData[]> {
+    await this.init();
+
+    const files = await fs.readdir(this.rootDir);
+    const matchingResources: ResourceData[] = [];
+
+    for (const file of files) {
+      if (file.endsWith('.md')) {
+        try {
+          const filePath = path.join(this.rootDir, file);
+          const content = await fs.readFile(filePath, 'utf-8');
+          const { metadata } = this.parseMarkdownFile(content);
+
+          if (metadata.url === url) {
+            const uri = `file://${filePath}`;
+            matchingResources.push({
+              uri,
+              name: file.replace('.md', ''),
+              description: metadata.description || `Fetched content from ${metadata.url}`,
+              mimeType: metadata.contentType || 'text/plain',
+              metadata,
+            });
+          }
+        } catch (error) {
+          console.error(`Error reading resource file ${file}:`, error);
+        }
+      }
+    }
+
+    // Sort by timestamp descending (most recent first)
+    matchingResources.sort((a, b) => {
+      const timeA = new Date(a.metadata.timestamp).getTime();
+      const timeB = new Date(b.metadata.timestamp).getTime();
+      return timeB - timeA;
+    });
+
+    return matchingResources;
+  }
+
   private async fileExists(filePath: string): Promise<boolean> {
     try {
       await fs.access(filePath);

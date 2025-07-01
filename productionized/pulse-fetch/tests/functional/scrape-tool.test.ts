@@ -284,5 +284,200 @@ describe('Scrape Tool', () => {
         ],
       });
     });
+
+    describe('caching behavior', () => {
+      it('should use cached content on second request for same URL', async () => {
+        const testUrl = 'https://example.com/cached-test';
+        const firstContent = 'First scrape content';
+        const secondContent = 'Second scrape content';
+
+        // First request - fresh scrape
+        mockNative.setMockResponse({
+          success: true,
+          status: 200,
+          data: firstContent,
+        });
+
+        const tool = scrapeTool(
+          mockServer,
+          () => mockClients,
+          () => mockStrategyConfigClient
+        );
+
+        const firstResult = await tool.handler({
+          url: testUrl,
+          saveResult: true,
+        });
+
+        expect(firstResult.content[0].text).toContain(firstContent);
+        expect(firstResult.content[0].text).toContain('Scraped using: native');
+
+        // Change the mock response to verify we're getting cached content
+        mockNative.setMockResponse({
+          success: true,
+          status: 200,
+          data: secondContent,
+        });
+
+        // Second request - should use cache
+        const secondResult = await tool.handler({
+          url: testUrl,
+          saveResult: true,
+        });
+
+        // Should get the first content from cache, not the second
+        expect(secondResult.content[0].text).toContain(firstContent);
+        expect(secondResult.content[0].text).not.toContain(secondContent);
+        expect(secondResult.content[0].text).toContain('Served from cache');
+        expect(secondResult.content[0].text).toContain('Cached at:');
+      });
+
+      it('should use most recent cached resource when multiple exist', async () => {
+        const testUrl = 'https://example.com/multi-cache-test';
+
+        const tool = scrapeTool(
+          mockServer,
+          () => mockClients,
+          () => mockStrategyConfigClient
+        );
+
+        // Create multiple cached resources
+        for (let i = 1; i <= 3; i++) {
+          mockNative.setMockResponse({
+            success: true,
+            status: 200,
+            data: `Content version ${i}`,
+          });
+
+          await tool.handler({
+            url: testUrl,
+            saveResult: true,
+            forceRescrape: true, // Force fresh scrape for each
+          });
+
+          // Small delay to ensure different timestamps
+          await new Promise((resolve) => setTimeout(resolve, 10));
+        }
+
+        // Request without force should get the latest (version 3)
+        const cachedResult = await tool.handler({
+          url: testUrl,
+        });
+
+        expect(cachedResult.content[0].text).toContain('Content version 3');
+        expect(cachedResult.content[0].text).toContain('Served from cache');
+      });
+
+      it('should force fresh scrape when forceRescrape is true', async () => {
+        const testUrl = 'https://example.com/force-rescrape-test';
+
+        const tool = scrapeTool(
+          mockServer,
+          () => mockClients,
+          () => mockStrategyConfigClient
+        );
+
+        // First request - create cache
+        mockNative.setMockResponse({
+          success: true,
+          status: 200,
+          data: 'Original content',
+        });
+
+        await tool.handler({
+          url: testUrl,
+          saveResult: true,
+        });
+
+        // Change content for fresh scrape
+        mockNative.setMockResponse({
+          success: true,
+          status: 200,
+          data: 'Updated content',
+        });
+
+        // Request with forceRescrape should get fresh content
+        const freshResult = await tool.handler({
+          url: testUrl,
+          forceRescrape: true,
+        });
+
+        expect(freshResult.content[0].text).toContain('Updated content');
+        expect(freshResult.content[0].text).not.toContain('Original content');
+        expect(freshResult.content[0].text).toContain('Scraped using: native');
+        expect(freshResult.content[0].text).not.toContain('Served from cache');
+      });
+
+      it('should handle cache lookup failure gracefully', async () => {
+        const testUrl = 'https://example.com/cache-failure-test';
+
+        // Mock storage factory to throw an error
+        vi.doMock('../../shared/src/storage/index.js', () => ({
+          ResourceStorageFactory: {
+            create: vi
+              .fn()
+              .mockRejectedValueOnce(new Error('Storage error'))
+              .mockResolvedValue({
+                findByUrl: vi.fn().mockResolvedValue([]),
+                write: vi.fn().mockResolvedValue('memory://test'),
+              }),
+          },
+        }));
+
+        mockNative.setMockResponse({
+          success: true,
+          status: 200,
+          data: 'Fresh content after cache failure',
+        });
+
+        const tool = scrapeTool(
+          mockServer,
+          () => mockClients,
+          () => mockStrategyConfigClient
+        );
+
+        const result = await tool.handler({
+          url: testUrl,
+        });
+
+        // Should proceed with fresh scrape despite cache error
+        expect(result.content[0].text).toContain('Fresh content after cache failure');
+        expect(result.content[0].text).toContain('Scraped using: native');
+      });
+
+      it('should apply pagination to cached content', async () => {
+        const testUrl = 'https://example.com/paginated-cache-test';
+        const longContent = 'A'.repeat(500);
+
+        // Create cached content
+        mockNative.setMockResponse({
+          success: true,
+          status: 200,
+          data: longContent,
+        });
+
+        const tool = scrapeTool(
+          mockServer,
+          () => mockClients,
+          () => mockStrategyConfigClient
+        );
+
+        await tool.handler({
+          url: testUrl,
+          saveResult: true,
+        });
+
+        // Request cached content with pagination
+        const paginatedResult = await tool.handler({
+          url: testUrl,
+          startIndex: 100,
+          maxChars: 50,
+        });
+
+        expect(paginatedResult.content[0].text).toContain('Served from cache');
+        expect(paginatedResult.content[0].text).toContain('[Content truncated at 50 characters');
+        expect(paginatedResult.content[0].text).toContain('continue reading from character 150');
+      });
+    });
   });
 });
