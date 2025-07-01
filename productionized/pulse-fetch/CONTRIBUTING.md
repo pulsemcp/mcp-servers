@@ -39,7 +39,7 @@ Using local build:
 cd productionized/pulse-fetch
 npm install
 npm run build
-npx @modelcontextprotocol/inspector node local/dist/index.js \
+npx @modelcontextprotocol/inspector node local/build/index.js \
   -e FIRECRAWL_API_KEY=<your-firecrawl-api-key> \
   -e BRIGHTDATA_BEARER_TOKEN=<your-brightdata-token> \
   -e LLM_PROVIDER=<anthropic|openai|openai-compatible> \

@@ -62,7 +62,7 @@ Using local build:
 cd experimental/appsignal
 npm install
 npm run build
-npx @modelcontextprotocol/inspector node local/dist/index.js \
+npx @modelcontextprotocol/inspector node local/build/index.js \
   -e APPSIGNAL_API_KEY=<your-api-key> \
   -e APPSIGNAL_APP_ID=<your-app-id>
 ```

@@ -35,7 +35,7 @@ Using local build:
 cd experimental/twist
 npm install
 npm run build
-npx @modelcontextprotocol/inspector node local/dist/index.js \
+npx @modelcontextprotocol/inspector node local/build/index.js \
   -e TWIST_WORKSPACE=<your-workspace-id-or-url> \
   -e TWIST_API_KEY=<your-api-key>
 ```

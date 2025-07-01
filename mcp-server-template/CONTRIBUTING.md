@@ -40,7 +40,7 @@ Using local build:
 cd your-server-directory
 npm install
 npm run build
-npx @modelcontextprotocol/inspector node local/dist/index.js \
+npx @modelcontextprotocol/inspector node local/build/index.js \
   -e YOUR_ENV_VAR=<your-value> \
   -e ANOTHER_ENV_VAR=<another-value>
 ```
