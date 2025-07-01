@@ -247,7 +247,7 @@ describe('Scrape Tool', () => {
         content: [
           {
             type: 'text',
-            text: expect.stringContaining('Error'),
+            text: expect.stringContaining('Invalid arguments'),
           },
         ],
         isError: true,
@@ -281,7 +281,7 @@ describe('Scrape Tool', () => {
           {
             type: 'resource_link',
             uri: expect.stringMatching(/^memory:\/\/example\.com_save-resource-test-.*$/),
-            name: expect.stringMatching(/^Scraped: example\.com$/),
+            name: expect.stringMatching(/^https:\/\/example\.com\/save-resource-test-.*$/),
             mimeType: 'text/html',
             description: expect.stringMatching(
               /^Scraped content from https:\/\/example\.com\/save-resource-test-.*/

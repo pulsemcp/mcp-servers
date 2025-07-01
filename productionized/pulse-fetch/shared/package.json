@@ -14,7 +14,9 @@
     "format:check": "prettier --check ."
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.36.3",
     "@modelcontextprotocol/sdk": "^1.13.2",
+    "openai": "^4.104.0",
     "zod": "^3.24.1"
   },
   "devDependencies": {

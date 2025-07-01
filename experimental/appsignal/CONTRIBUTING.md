@@ -56,11 +56,23 @@ This will generate:
 
 ### Running Inspector
 
-```
+Using local build:
+
+```bash
 cd experimental/appsignal
 npm install
 npm run build
-npx @modelcontextprotocol/inspector node path/to/appsignal-mcp-server/build/index.js
+npx @modelcontextprotocol/inspector node local/build/index.js \
+  -e APPSIGNAL_API_KEY=<your-api-key> \
+  -e APPSIGNAL_APP_ID=<your-app-id>
+```
+
+Using published package:
+
+```bash
+npx @modelcontextprotocol/inspector npx @pulsemcp/appsignal-mcp-server@latest \
+  -e APPSIGNAL_API_KEY=<your-api-key> \
+  -e APPSIGNAL_APP_ID=<your-app-id>
 ```
 
 ### Claude

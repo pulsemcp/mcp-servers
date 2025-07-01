@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.1] - 2025-07-01
+
+### Changed
+
+- Updated default LLM models to latest 2025 versions
+  - Anthropic: Changed from Claude Opus 4 to Claude Sonnet 4 (`claude-sonnet-4-20250514`)
+  - OpenAI: Changed from GPT-4.1 to GPT-4.1 Mini (`gpt-4.1-mini`)
+- These new defaults provide better cost efficiency while maintaining high quality extraction
+
+## [0.2.0] - 2025-07-01
+
 ### Added
 
 - Intelligent caching system for scraped content
@@ -20,12 +31,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `findByUrl` method in ResourceStorage interface
   - Enables efficient lookup of cached resources by original URL
   - Returns resources sorted by timestamp (most recent first)
+- Extract feature for intelligent information extraction from scraped content using LLMs
+  - Support for multiple LLM providers: Anthropic, OpenAI, and OpenAI-compatible providers
+  - Configurable via environment variables (LLM_PROVIDER, LLM_API_KEY, LLM_API_BASE_URL, LLM_MODEL)
+  - Extract parameter conditionally shown in scrape tool based on availability
+  - Automatic content type detection (plain text for extracted content, HTML for raw scrapes)
+  - Comprehensive test suite including functional and manual tests
+  - Support for popular OpenAI-compatible providers: Together.ai, Groq, Perplexity, DeepSeek, Fireworks AI
+  - Default models optimized for best value: Claude Sonnet 4 for Anthropic, GPT-4.1 Mini for OpenAI
+  - Fallback to raw content if extraction fails with clear error messages
+- CONTRIBUTING.md documentation with inspector commands and development workflow guidance
 
 ### Changed
 
 - Scrape tool now checks for cached content before making network requests
 - Cache hits include metadata about when content was originally cached
 - Enhanced storage backends (memory and filesystem) with URL-based lookups
+- Updated scrape tool to dynamically build schema based on available features
+- Resource content type now depends on whether extraction was performed
+- Resource descriptions include extraction query when extract parameter is used
+- Updated default LLM models to latest 2025 versions (Claude Sonnet 4, GPT-4.1 Mini)
+- Improved extract parameter documentation with comprehensive examples
 
 ## [0.1.4] - 2025-06-30
 
