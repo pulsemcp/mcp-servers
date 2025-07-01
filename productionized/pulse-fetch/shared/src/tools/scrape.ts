@@ -59,7 +59,35 @@ const buildScrapeArgsSchema = () => {
         .string()
         .optional()
         .describe(
-          'Natural language description of what specific information to extract from the page (e.g., "article title and publish date", "product prices and availability", "all email addresses")'
+          `Natural language query for intelligent content extraction. Describe what information you want extracted from the scraped page.
+
+Examples:
+
+Simple data extraction:
+- "the author name and publication date"
+- "all email addresses mentioned on the page"
+- "the main product price and availability status"
+- "company address and phone number"
+
+Formatted extraction (specify desired format):
+- "summarize the main article in 3 bullet points"
+- "extract the recipe ingredients as a markdown list"
+- "get the pricing tiers as a comparison table in markdown"
+- "extract all testimonials with customer names and quotes formatted as markdown blockquotes"
+
+Structured data extraction (request specific output format):
+- "extract product details as JSON with fields: name, price, description, specifications"
+- "get all job listings as JSON array with title, location, salary, and requirements"
+- "extract the FAQ section as JSON with question and answer pairs"
+- "parse the contact information into JSON format with fields for address, phone, email, and hours"
+
+Complex queries:
+- "analyze the sentiment of customer reviews and categorize them as positive, negative, or neutral"
+- "extract and summarize the key features of the product, highlighting unique selling points"
+- "identify all dates mentioned and what events they relate to"
+- "extract technical specifications and explain them in simple terms"
+
+The LLM will intelligently parse the page content and return only the requested information in a clear, readable format.`
         ),
     });
   }

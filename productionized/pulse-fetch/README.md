@@ -58,7 +58,6 @@ This server is built and tested on macOS with Claude Desktop. It should work wit
 - Set `saveResult: false` to disable both caching and resource saving (not recommended)
 - Use `maxChars` and `startIndex` parameters to handle large content that exceeds token limits
 - Configure the timeout parameter (default 60s) for slow-loading sites
-- Format options include `markdown` (default), `html`, `rawHtml`, `links`, and `extract` for structured data
 - Use the `extract` parameter with natural language queries to extract specific information from pages (requires LLM configuration)
 
 # Examples
@@ -170,8 +169,8 @@ The extract feature provides an alternative to MCP's native sampling capability 
 
 **Default Models:**
 
-- Anthropic: `claude-3-5-sonnet-20241022` (Claude 3.5 Sonnet - best value)
-- OpenAI: `gpt-4-turbo` (GPT-4 Turbo - best value)
+- Anthropic: `claude-opus-4-20250514` (Claude Opus 4 - latest and most capable)
+- OpenAI: `gpt-4.1` (GPT-4.1 - latest and most capable)
 - OpenAI-compatible: Provider-specific (must be specified)
 
 ## Claude Desktop
@@ -319,18 +318,12 @@ Scrape a single webpage with advanced options for content extraction.
 **Parameters:**
 
 - `url` (string, required): URL to scrape
-- `format` (string): Output format - 'markdown', 'html', 'rawHtml', 'links', 'extract'
-- `onlyMainContent` (boolean): Extract only main content, removing navigation and ads
-- `waitFor` (number): Milliseconds to wait for dynamic content to load
 - `timeout` (number): Maximum time to wait for page load
-- `extract` (object): Configuration for structured data extraction
-  - `schema`: JSON schema for structured data
-  - `systemPrompt`: System prompt for LLM extraction
-  - `prompt`: User prompt for LLM extraction
-- `removeBase64Images` (boolean): Remove base64 images from output (default: true)
-- `maxChars` (number): Maximum characters to return (default: 100k)
-- `startIndex` (number): Character index to start output from
-- `saveResource` (boolean): Save result as MCP Resource (default: true)
+- `maxChars` (number): Maximum characters to return (default: 100,000)
+- `startIndex` (number): Character index to start output from (for pagination)
+- `saveResult` (boolean): Save result as MCP Resource (default: true)
+- `forceRescrape` (boolean): Force fresh scrape even if cached (default: false)
+- `extract` (string): Natural language query for intelligent content extraction (requires LLM configuration)
 
 ## Roadmap & Future Ideas
 
