@@ -12,6 +12,8 @@ Our monorepo contains multiple MCP servers that can be independently versioned a
 
 ## Publication Flow
 
+**⚠️ IMPORTANT: DO NOT run `npm publish` locally! Publishing is handled automatically by CI when your PR is merged to main.**
+
 ### 1. Stage the Publication
 
 From within the server's `local/` directory (e.g., `experimental/appsignal/local/`):
@@ -92,14 +94,18 @@ When you open a PR, the "Verify MCP Server Publication Staged" GitHub Action wil
 
 ### 5. Automatic Publishing
 
+**🚀 This is where the actual npm publishing happens!**
+
 When your PR is merged to `main`, the "Publish Updated MCP Servers" GitHub Action will:
 
 1. Detect which servers have version bumps
 2. For each updated server:
    - Run the build process
    - Run all tests
-   - Publish to npm with public access
+   - **Publish to npm with public access** (DO NOT do this locally!)
    - Update GitHub releases
+
+**Remember**: You should NEVER run `npm publish` locally. The CI/CD pipeline handles all npm publishing automatically.
 
 ## Important Notes
 
@@ -192,12 +198,16 @@ When adding a new MCP server:
 
 ## Manual Publishing (Emergency Only)
 
-If automatic publishing fails, authorized maintainers can manually publish:
+**⚠️ WARNING: This should ONLY be used by authorized maintainers when the CI/CD pipeline is broken.**
+
+**DO NOT use this for regular releases!** All normal releases should go through the PR → merge → CI publish flow.
+
+If automatic publishing fails and manual intervention is absolutely necessary:
 
 ```bash
 cd experimental/appsignal/local/
 npm run build
-npm publish --access public
+npm publish --access public  # EMERGENCY USE ONLY - NOT FOR NORMAL RELEASES
 ```
 
-Always prefer the automated process to ensure consistency and proper verification.
+**Always prefer the automated process** to ensure consistency and proper verification. Using manual publishing bypasses important checks and can lead to inconsistent releases.

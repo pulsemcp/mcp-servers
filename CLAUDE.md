@@ -320,12 +320,15 @@ Don't add: basic TypeScript fixes, standard npm troubleshooting, obvious file op
 ### Publishing Process
 
 - See [PUBLISHING_SERVERS.md](./docs/PUBLISHING_SERVERS.md) for the complete publishing process
+- **⚠️ CRITICAL: NEVER run `npm publish` locally! CI/CD handles all npm publishing automatically when PRs are merged to main**
 - Key gotcha: Git tags may not be created automatically by npm version - always verify with `git tag | grep <server-name>` and create manually if needed
 - When running `npm run stage-publish` from the local directory, it modifies both the local package-lock.json AND the parent package-lock.json - both must be committed together
 - The version bump commit should include all modified files: local/package.json, local/package-lock.json, parent package-lock.json, CHANGELOG.md, and main README.md
+- Your role is to **stage** the publication (version bump, tag, changelog) - NOT to publish to npm
 - When simplifying tool parameters, consider the MCP best practices guide in mcp-server-template/shared/src/tools/TOOL_DESCRIPTIONS_GUIDE.md for writing clear descriptions
 - Breaking changes in tool parameters should be clearly marked in CHANGELOG.md with **BREAKING** prefix to alert users
 - When using `set -e` in shell scripts with npm commands, be aware that `npm view` returns exit code 1 when a package doesn't exist yet - use `|| true` to prevent premature script termination during npm registry propagation checks
+- **For `/publish_and_pr` command**: This means "stage for publishing and update PR" - it does NOT mean actually publish to npm. The workflow is: bump version → update changelog → commit → push → update PR. NPM publishing happens automatically via CI when PR is merged
 
 ### Monorepo Dependency Management
 
