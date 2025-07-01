@@ -171,8 +171,8 @@ The extract feature provides an alternative to MCP's native sampling capability 
 
 **Default Models:**
 
-- Anthropic: `claude-opus-4-20250514` (Claude Opus 4 - latest and most capable)
-- OpenAI: `gpt-4.1` (GPT-4.1 - latest and most capable)
+- Anthropic: `claude-sonnet-4-20250514` (Claude Sonnet 4 - latest and most capable)
+- OpenAI: `gpt-4.1-mini` (GPT-4.1 Mini - latest and most capable)
 - OpenAI-compatible: Provider-specific (must be specified)
 
 ## Claude Desktop

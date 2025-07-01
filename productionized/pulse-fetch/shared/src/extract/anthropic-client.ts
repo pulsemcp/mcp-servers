@@ -1,7 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk';
 import type { IExtractClient, ExtractOptions, ExtractResult, LLMConfig } from './types.js';
 
-const DEFAULT_MODEL = 'claude-opus-4-20250514';
+const DEFAULT_MODEL = 'claude-sonnet-4-20250514';
 const MAX_TOKENS = 8192; // Maximum we'll use
 
 export class AnthropicExtractClient implements IExtractClient {

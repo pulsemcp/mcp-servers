@@ -141,7 +141,7 @@ Key insights gathered during implementation and CI troubleshooting:
 ### Extract Feature Implementation
 
 - **Conditional Parameter Display**: When implementing features that depend on configuration (like LLM providers), use factory pattern with `isAvailable()` checks to conditionally include parameters in tool schemas - this provides better UX by only showing options that are actually usable
-- **Model Version Updates**: When updating default model versions across the codebase (e.g., from claude-3-5-sonnet to claude-opus-4), remember to update test expectations as well - tests often verify exact model names in API calls
+- **Model Version Updates**: When updating default model versions across the codebase (e.g., from claude-3-5-sonnet to claude-sonnet-4), remember to update test expectations as well - tests often verify exact model names in API calls
 - **Resource Name Format Changes**: Be aware that changing resource naming patterns (e.g., from "Scraped: domain" to full URL) requires updating test expectations that use string matchers or regex patterns
 - **Comprehensive Parameter Documentation**: For complex features like natural language extraction, provide detailed parameter descriptions with categorized examples (simple, formatted, structured, complex) - this dramatically improves user understanding and adoption
 - **Type Inference with Conditional Schemas**: When using Zod schemas that conditionally include fields, TypeScript may struggle with type inference. Use type assertions (e.g., `validatedArgs as { extract?: string }`) or check for field existence before accessing to avoid compilation errors
