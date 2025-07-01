@@ -176,7 +176,11 @@ describe('FileSystemResourceStorage', () => {
       const otherUrl = 'https://example.com/findbyurl-other-' + Date.now();
 
       await storage.write(testUrl, 'Content 1');
+      // Small delay to ensure different timestamp
+      await new Promise((resolve) => setTimeout(resolve, 1));
       await storage.write(otherUrl, 'Content 2');
+      // Small delay to ensure different timestamp
+      await new Promise((resolve) => setTimeout(resolve, 1));
       await storage.write(testUrl, 'Content 3');
 
       const resources = await storage.findByUrl(testUrl);
