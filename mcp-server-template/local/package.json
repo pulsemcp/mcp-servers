@@ -15,7 +15,7 @@
     "README.md"
   ],
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && npm run build:integration",
     "build:integration": "tsc -p tsconfig.integration.json",
     "start": "node build/index.js",
     "dev": "tsx src/index.ts",
