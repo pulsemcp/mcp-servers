@@ -164,3 +164,9 @@ Key insights gathered during implementation and CI troubleshooting:
 - **Silent Failure Prevention**: When implementing API integrations, always check for authentication errors explicitly and return them immediately to users. Silent failures that swallow authentication errors lead to confusing generic error messages
 - **Error Response Extraction**: Different APIs return error details in different formats - some in JSON response bodies, others as plain text. Always attempt to extract the actual error message from the response to provide meaningful feedback to users
 - **Strategy Pattern with Early Returns**: In fallback strategy patterns, check for authentication errors after each strategy attempt and return immediately rather than continuing to other strategies. This prevents wasting time on additional API calls that will also fail due to the same credential issues
+
+### Cache Key Generation and Storage Design
+
+- **Multi-dimensional Cache Keys**: When implementing caching, consider all parameters that affect the output. For scraped content with extraction, both URL and extract prompt must be part of the cache key - using only URL leads to incorrect cache hits
+- **Storage Interface Evolution**: When adding new lookup methods to storage interfaces (like `findByUrlAndExtract`), implement them in all concrete implementations (Memory, FileSystem) to maintain interface consistency
+- **Test-Driven Cache Fixes**: Cache bugs can be subtle - write comprehensive tests that verify different parameter combinations create separate cache entries before implementing the fix

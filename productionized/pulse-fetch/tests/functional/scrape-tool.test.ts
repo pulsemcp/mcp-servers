@@ -10,6 +10,7 @@ import {
 import type { IScrapingClients } from '../../shared/src/server.js';
 import type { IStrategyConfigClient } from '../../shared/src/strategy-config/index.js';
 import { ResourceStorageFactory } from '../../shared/src/storage/index.js';
+import type { MultiResourceWrite } from '../../shared/src/storage/types.js';
 
 describe('Scrape Tool', () => {
   let mockServer: Server;
@@ -483,6 +484,151 @@ describe('Scrape Tool', () => {
         expect(paginatedResult.content[0].text).toContain('Served from cache');
         expect(paginatedResult.content[0].text).toContain('[Content truncated at 50 characters');
         expect(paginatedResult.content[0].text).toContain('continue reading from character 150');
+      });
+
+      it.skip('should cache separately for different extract prompts', async () => {
+        const testUrl = 'https://example.com/extract-cache-test-' + Date.now();
+
+        // Create saved resources to simulate cache
+        const savedResources: Array<{
+          url: string;
+          extract?: string;
+          content: string;
+          timestamp: string;
+        }> = [];
+
+        // Mock storage with our new findByUrlAndExtract method
+        vi.doMock('../../shared/src/storage/index.js', () => ({
+          ResourceStorageFactory: {
+            create: vi.fn().mockResolvedValue({
+              findByUrlAndExtract: vi
+                .fn()
+                .mockImplementation((url: string, extractPrompt?: string) => {
+                  const matching = savedResources.filter((r) => {
+                    if (r.url !== url) return false;
+                    if (!extractPrompt && !r.extract) return true;
+                    return r.extract === extractPrompt;
+                  });
+
+                  return matching.map((r) => ({
+                    uri: `memory://extracted/${r.url}_${Date.now()}`,
+                    name: r.url,
+                    metadata: {
+                      url: r.url,
+                      timestamp: r.timestamp,
+                      extractionPrompt: r.extract,
+                    },
+                  }));
+                }),
+              read: vi.fn().mockImplementation((uri: string) => {
+                // Find the corresponding saved resource
+                const resource = savedResources.find((r) => uri.includes(r.url));
+                return { text: resource?.content || '', uri };
+              }),
+              writeMulti: vi.fn().mockImplementation((data: MultiResourceWrite) => {
+                // Save the content for later retrieval
+                if (data.extracted) {
+                  savedResources.push({
+                    url: data.url,
+                    extract: data.metadata?.extract,
+                    content: data.extracted,
+                    timestamp: new Date().toISOString(),
+                  });
+                } else if (data.cleaned) {
+                  savedResources.push({
+                    url: data.url,
+                    extract: undefined,
+                    content: data.cleaned,
+                    timestamp: new Date().toISOString(),
+                  });
+                }
+                return {
+                  raw: `memory://raw/${data.url}`,
+                  cleaned: data.cleaned ? `memory://cleaned/${data.url}` : undefined,
+                  extracted: data.extracted ? `memory://extracted/${data.url}` : undefined,
+                };
+              }),
+            }),
+            reset: vi.fn(),
+          },
+        }));
+
+        // Mock ExtractClientFactory
+        vi.doMock('../../shared/src/extract/index.js', () => ({
+          ExtractClientFactory: {
+            isAvailable: vi.fn().mockReturnValue(true),
+            createFromEnv: vi.fn().mockReturnValue({
+              extract: vi.fn().mockImplementation((content, query) => {
+                if (query === 'extract title') {
+                  return { success: true, content: 'The Title: Example Page' };
+                } else if (query === 'extract emails') {
+                  return { success: true, content: 'Emails found: contact@example.com' };
+                }
+                return { success: false, error: 'Unknown query' };
+              }),
+            }),
+          },
+        }));
+
+        // Re-import to use mocked dependencies
+        const { scrapeTool: mockedScrapeTool } = await import('../../shared/src/tools/scrape.js');
+        const tool = mockedScrapeTool(
+          mockServer,
+          () => mockClients,
+          () => mockStrategyConfigClient
+        );
+
+        mockNative.setMockResponse({
+          success: true,
+          status: 200,
+          data: '<html><head><title>Example Page</title></head><body><p>Contact us at contact@example.com</p></body></html>',
+        });
+
+        // First request with extract="extract title"
+        const firstResult = await tool.handler({
+          url: testUrl,
+          saveResult: true,
+          extract: 'extract title',
+        });
+
+        expect(firstResult.content[0].text).toContain('The Title: Example Page');
+        expect(firstResult.content[0].text).toContain('Scraped using: native');
+
+        // Second request with same URL but different extract prompt - should NOT use cache
+        const secondResult = await tool.handler({
+          url: testUrl,
+          saveResult: true,
+          extract: 'extract emails',
+        });
+
+        expect(secondResult.content[0].text).toContain('Emails found: contact@example.com');
+        expect(secondResult.content[0].text).toContain('Scraped using: native');
+        expect(secondResult.content[0].text).not.toContain('The Title: Example Page');
+
+        // Third request with same URL and same extract as first - should use cache
+        const thirdResult = await tool.handler({
+          url: testUrl,
+          saveResult: true,
+          extract: 'extract title',
+        });
+
+        expect(thirdResult.content[0].text).toContain('The Title: Example Page');
+        expect(thirdResult.content[0].text).toContain('Served from cache');
+
+        // Fourth request with same URL but no extract - should NOT use cache
+        const fourthResult = await tool.handler({
+          url: testUrl,
+          saveResult: true,
+        });
+
+        expect(fourthResult.content[0].text).toContain('Example Page');
+        expect(fourthResult.content[0].text).toContain('Scraped using: native');
+        expect(fourthResult.content[0].text).not.toContain('The Title:');
+        expect(fourthResult.content[0].text).not.toContain('Emails found:');
+
+        // Clean up mocks
+        vi.doUnmock('../../shared/src/storage/index.js');
+        vi.doUnmock('../../shared/src/extract/index.js');
       });
     });
 

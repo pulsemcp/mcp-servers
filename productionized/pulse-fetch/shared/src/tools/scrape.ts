@@ -254,7 +254,7 @@ Use cases:
         if (!forceRescrape) {
           try {
             const storage = await ResourceStorageFactory.create();
-            const cachedResources = await storage.findByUrl(url);
+            const cachedResources = await storage.findByUrlAndExtract(url, extract);
 
             if (cachedResources.length > 0) {
               // Use the most recent cached resource (already sorted by timestamp desc)

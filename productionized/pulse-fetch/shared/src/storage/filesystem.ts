@@ -220,6 +220,69 @@ export class FileSystemResourceStorage implements ResourceStorage {
     return matchingResources;
   }
 
+  async findByUrlAndExtract(url: string, extractPrompt?: string): Promise<ResourceData[]> {
+    await this.init();
+
+    const matchingResources: ResourceData[] = [];
+    const subdirs: ResourceType[] = ['raw', 'cleaned', 'extracted'];
+
+    for (const subdir of subdirs) {
+      const subdirPath = path.join(this.rootDir, subdir);
+      try {
+        const files = await fs.readdir(subdirPath);
+        for (const file of files) {
+          if (file.endsWith('.md')) {
+            try {
+              const filePath = path.join(subdirPath, file);
+              const content = await fs.readFile(filePath, 'utf-8');
+              const { metadata } = this.parseMarkdownFile(content);
+
+              const matchesUrl = metadata.url === url;
+              if (!extractPrompt) {
+                // If no extract prompt specified, only return resources without extraction
+                if (matchesUrl && !metadata.extractionPrompt) {
+                  const uri = `file://${filePath}`;
+                  matchingResources.push({
+                    uri,
+                    name: `${subdir}/${file.replace('.md', '')}`,
+                    description: metadata.description || `Fetched content from ${metadata.url}`,
+                    mimeType: metadata.contentType || 'text/plain',
+                    metadata: { ...metadata, resourceType: subdir },
+                  });
+                }
+              } else {
+                // If extract prompt specified, match both URL and extraction prompt
+                if (matchesUrl && metadata.extractionPrompt === extractPrompt) {
+                  const uri = `file://${filePath}`;
+                  matchingResources.push({
+                    uri,
+                    name: `${subdir}/${file.replace('.md', '')}`,
+                    description: metadata.description || `Fetched content from ${metadata.url}`,
+                    mimeType: metadata.contentType || 'text/plain',
+                    metadata: { ...metadata, resourceType: subdir },
+                  });
+                }
+              }
+            } catch {
+              // Ignore files that can't be parsed
+            }
+          }
+        }
+      } catch {
+        // Subdirectory might not exist yet, continue
+      }
+    }
+
+    // Sort by timestamp descending (most recent first)
+    matchingResources.sort((a, b) => {
+      const timeA = new Date(a.metadata.timestamp).getTime();
+      const timeB = new Date(b.metadata.timestamp).getTime();
+      return timeB - timeA;
+    });
+
+    return matchingResources;
+  }
+
   private async fileExists(filePath: string): Promise<boolean> {
     try {
       await fs.access(filePath);
