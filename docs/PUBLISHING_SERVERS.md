@@ -154,6 +154,7 @@ Before creating a PR:
 - [ ] Version bumped using `npm run stage-publish`
 - [ ] CHANGELOG.md updated with new version section
 - [ ] All tests pass (`npm test`, `npm run test:integration`)
+- [ ] Manual tests run and results updated in MANUAL_TESTING.md (if applicable)
 - [ ] Build succeeds (`npm run build`)
 - [ ] No sensitive information in code
 - [ ] Git tag created and pushed

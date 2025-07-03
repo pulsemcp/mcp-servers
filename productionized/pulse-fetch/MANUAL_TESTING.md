@@ -8,7 +8,9 @@ This file tracks the **most recent** manual test results for the Pulse Fetch MCP
 
 ### Prerequisites
 
-1. **Commit your changes first** - The test results will reference the current commit hash, so ensure all changes are committed before running tests:
+1. **⚠️ IMPORTANT: Commit your changes BEFORE running tests**
+
+   The test results will reference the current commit hash. If you have uncommitted changes, the commit hash will not represent what was actually tested:
 
    ```bash
    git add .
@@ -47,57 +49,42 @@ npm run test:manual:features     # Features test suite
 
 ### Pages Test Results
 
-```
-📊 PAGES TEST SUITE SUMMARY
-================================================================================
+**Overall:** 20/20 tests passed (100%)
 
-📈 Overall Results:
-  Total tests run: 20/20
-  Passed: 20 (100%)
-  Failed: 0
+**By Configuration:**
 
-📦 Results by Configuration:
-  Native Only: 4/4 passed
-  Firecrawl Only: 4/4 passed
-  BrightData Only: 4/4 passed
-  All Services (Cost Optimized): 4/4 passed
-  All Services (Speed Optimized): 4/4 passed
+- ✅ Native Only: 4/4 passed
+- ✅ Firecrawl Only: 4/4 passed
+- ✅ BrightData Only: 4/4 passed
+- ✅ All Services (Cost Optimized): 4/4 passed
+- ✅ All Services (Speed Optimized): 4/4 passed
 
-🌐 Results by Page:
-  GitHub homepage (may have anti-bot protection): 5/5 passed
-  Simple HTML example page: 5/5 passed
-  HTTP 403 error page: 5/5 passed
-  HTTP 500 error page: 5/5 passed
+**Details:**
 
-================================================================================
-✅ All tests passed with expected strategies!
-================================================================================
-```
-
-Exit code: 0 (All tests passed with correct strategies)
+- All tests correctly used their expected scraping strategies
+- GitHub homepage correctly scraped with each configured strategy
+- Example.com correctly scraped with each configured strategy
+- HTTP 403/500 error pages correctly failed as expected
 
 ### Features Test Results
 
-```
-Test Files  1 failed | 6 passed (7)
-     Tests  2 failed | 14 passed (16)
+**Overall:** 14/16 tests passed (87.5%)
 
-✓ tests/manual/features/authentication-healthcheck.test.ts (5 tests)
-  ✓ Authentication Health Checks > Scraping Service Authentication
-    ✓ should check scraping service authentication without consuming credits
+**Passed:**
 
-✓ tests/manual/features/scrape-tool.test.ts (3 tests | 2 failed)
-  ✓ should scrape a simple page with automatic strategy selection
-  × should handle errors gracefully (timeout after 30s)
-  × should support content extraction when LLM is configured
+- ✅ authentication-healthcheck.test.ts: All 5 tests passed
+  - Firecrawl authentication check working
+  - BrightData authentication check working
+- ✅ brightdata-client.test.ts: BrightData client scraping working
+- ✅ firecrawl-client.test.ts: Firecrawl client scraping working
+- ✅ native-client.test.ts: Native HTTP client working
+- ✅ server-initialization.test.ts: Server starts correctly
+- ✅ file-storage.test.ts: File storage operations working
+- ✅ scrape-tool.test.ts: Basic scraping with automatic strategy selection working
 
-✓ tests/manual/clients/brightdata-client.test.ts
-✓ tests/manual/clients/firecrawl-client.test.ts
-✓ tests/manual/clients/native-client.test.ts
-✓ tests/manual/server/server-initialization.test.ts
-✓ tests/manual/storage/file-storage.test.ts
-```
+**Failed:**
 
-Exit code: 1 (2 test failures)
+- ❌ scrape-tool.test.ts: "should handle errors gracefully" - Test timed out after 30s
+- ❌ scrape-tool.test.ts: "should support content extraction when LLM is configured" - Assertion error on result.isError
 
-**Summary:** The pages test framework now correctly detects which scraping strategy was used and validates it against expectations. All pages tests are passing with the correct strategies being used. The features tests have 2 failures that need investigation, but the core API integrations (Firecrawl, BrightData) are working correctly.
+**Summary:** Core scraping functionality and API integrations are working correctly. The two failures in scrape-tool.test.ts need investigation but don't affect the main scraping strategies that were the focus of this fix.
