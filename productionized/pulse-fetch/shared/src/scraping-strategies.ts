@@ -13,6 +13,7 @@ export interface ScrapeResult {
   source: string;
   error?: string;
   metadata?: Record<string, unknown>;
+  isAuthError?: boolean;
 }
 
 /**
@@ -99,6 +100,24 @@ export async function scrapeUniversal(
           source: 'firecrawl',
         };
       }
+
+      // Check for authentication errors
+      if (!firecrawlResult.success && firecrawlResult.error) {
+        const errorLower = firecrawlResult.error.toLowerCase();
+        if (
+          errorLower.includes('unauthorized') ||
+          errorLower.includes('invalid token') ||
+          errorLower.includes('authentication')
+        ) {
+          return {
+            success: false,
+            content: null,
+            source: 'firecrawl',
+            error: `Firecrawl authentication error: ${firecrawlResult.error}`,
+            isAuthError: true,
+          };
+        }
+      }
     } catch {
       // Continue to next strategy
     }
@@ -118,6 +137,25 @@ export async function scrapeUniversal(
           source: 'brightdata',
         };
       }
+
+      // Check for authentication errors
+      if (!brightDataResult.success && brightDataResult.error) {
+        const errorLower = brightDataResult.error.toLowerCase();
+        if (
+          errorLower.includes('unauthorized') ||
+          errorLower.includes('invalid token') ||
+          errorLower.includes('authentication') ||
+          errorLower.includes('token expired')
+        ) {
+          return {
+            success: false,
+            content: null,
+            source: 'brightdata',
+            error: `BrightData authentication error: ${brightDataResult.error}`,
+            isAuthError: true,
+          };
+        }
+      }
     } catch {
       // All strategies failed
     }
@@ -128,20 +166,52 @@ export async function scrapeUniversal(
   if (optimizeFor === 'speed') {
     // speed mode: firecrawl -> brightdata (skip native)
     const firecrawlResult = await tryFirecrawl();
-    if (firecrawlResult) return firecrawlResult;
+    if (firecrawlResult) {
+      // Return immediately on authentication errors
+      if (firecrawlResult.isAuthError) {
+        return firecrawlResult;
+      }
+      if (firecrawlResult.success) {
+        return firecrawlResult;
+      }
+    }
 
     const brightDataResult = await tryBrightData();
-    if (brightDataResult) return brightDataResult;
+    if (brightDataResult) {
+      // Return immediately on authentication errors
+      if (brightDataResult.isAuthError) {
+        return brightDataResult;
+      }
+      if (brightDataResult.success) {
+        return brightDataResult;
+      }
+    }
   } else {
     // cost mode (default): native -> firecrawl -> brightdata
     const nativeResult = await tryNative();
     if (nativeResult) return nativeResult;
 
     const firecrawlResult = await tryFirecrawl();
-    if (firecrawlResult) return firecrawlResult;
+    if (firecrawlResult) {
+      // Return immediately on authentication errors
+      if (firecrawlResult.isAuthError) {
+        return firecrawlResult;
+      }
+      if (firecrawlResult.success) {
+        return firecrawlResult;
+      }
+    }
 
     const brightDataResult = await tryBrightData();
-    if (brightDataResult) return brightDataResult;
+    if (brightDataResult) {
+      // Return immediately on authentication errors
+      if (brightDataResult.isAuthError) {
+        return brightDataResult;
+      }
+      if (brightDataResult.success) {
+        return brightDataResult;
+      }
+    }
   }
 
   return {

@@ -41,6 +41,7 @@
     "@types/node": "^24.0.0",
     "@vitest/ui": "^3.2.3",
     "dotenv": "^16.6.1",
+    "typescript": "^5.8.3",
     "vitest": "^3.2.4"
   },
   "optionalDependencies": {

@@ -158,3 +158,9 @@ Key insights gathered during implementation and CI troubleshooting:
 ### .js files
 
 - **Git and JavaScript Files**: When creating JavaScript utility scripts in a TypeScript project, remember that .gitignore often excludes all .js files. Use `git add -f` to force-add necessary scripts or add specific exceptions to .gitignore to ensure CI has access to required files
+
+### Authentication Error Handling
+
+- **Silent Failure Prevention**: When implementing API integrations, always check for authentication errors explicitly and return them immediately to users. Silent failures that swallow authentication errors lead to confusing generic error messages
+- **Error Response Extraction**: Different APIs return error details in different formats - some in JSON response bodies, others as plain text. Always attempt to extract the actual error message from the response to provide meaningful feedback to users
+- **Strategy Pattern with Early Returns**: In fallback strategy patterns, check for authentication errors after each strategy attempt and return immediately rather than continuing to other strategies. This prevents wasting time on additional API calls that will also fail due to the same credential issues

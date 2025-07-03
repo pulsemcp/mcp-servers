@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.7] - 2025-07-03
+
+### Fixed
+
+- Fixed silent authentication failures in scraping strategies
+  - Authentication errors from Firecrawl and BrightData APIs are now immediately returned to users instead of being silently swallowed
+  - Added detailed error messages that include the actual API response (e.g., "Invalid token", "Token expired")
+  - Prevents confusing "All fallback strategies failed" messages when the real issue is invalid credentials
+
 ## [0.2.6] - 2025-07-03
 
 ### Fixed
