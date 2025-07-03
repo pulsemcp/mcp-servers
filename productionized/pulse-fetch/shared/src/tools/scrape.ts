@@ -283,11 +283,34 @@ Use cases:
 
         // Check if scraping failed
         if (!result.success) {
+          let errorMessage = `Failed to scrape ${url}`;
+
+          if (result.diagnostics) {
+            errorMessage += `\n\nDiagnostics:\n`;
+            errorMessage += `- Strategies attempted: ${result.diagnostics.strategiesAttempted.join(', ')}\n`;
+
+            if (Object.keys(result.diagnostics.strategyErrors).length > 0) {
+              errorMessage += `- Strategy errors:\n`;
+              for (const [strategy, error] of Object.entries(result.diagnostics.strategyErrors)) {
+                errorMessage += `  - ${strategy}: ${error}\n`;
+              }
+            }
+
+            if (result.diagnostics.timing && Object.keys(result.diagnostics.timing).length > 0) {
+              errorMessage += `- Timing:\n`;
+              for (const [strategy, ms] of Object.entries(result.diagnostics.timing)) {
+                errorMessage += `  - ${strategy}: ${ms}ms\n`;
+              }
+            }
+          } else {
+            errorMessage += `: ${result.error || 'All scraping strategies failed'}`;
+          }
+
           return {
             content: [
               {
                 type: 'text',
-                text: `Failed to scrape ${url}: ${result.error || 'All scraping strategies failed'}`,
+                text: errorMessage,
               },
             ],
             isError: true,

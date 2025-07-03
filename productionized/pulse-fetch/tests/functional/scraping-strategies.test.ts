@@ -11,6 +11,23 @@ describe('Scraping Strategies', () => {
   let mockClients: IScrapingClients;
   let mockConfigClient: IStrategyConfigClient;
 
+  // Helper to check result without diagnostics for backward compatibility
+  const expectResultWithoutDiagnostics = (
+    actual: ScrapeResult,
+    expected: ScrapeResult,
+    shouldHaveDiagnostics = true
+  ) => {
+    const { diagnostics, ...actualWithoutDiagnostics } = actual;
+    expect(actualWithoutDiagnostics).toEqual(expected);
+    // Verify diagnostics exists and has expected structure (only for scrapeUniversal and scrapeWithStrategy)
+    if (shouldHaveDiagnostics) {
+      expect(diagnostics).toBeDefined();
+      expect(diagnostics.strategiesAttempted).toBeDefined();
+      expect(diagnostics.strategyErrors).toBeDefined();
+      expect(diagnostics.timing).toBeDefined();
+    }
+  };
+
   beforeEach(() => {
     mockClients = {
       native: {
@@ -45,7 +62,7 @@ describe('Scraping Strategies', () => {
         url: 'https://example.com',
       });
 
-      expect(result).toEqual({
+      expectResultWithoutDiagnostics(result, {
         success: true,
         content: 'Native content',
         source: 'native',
@@ -70,7 +87,7 @@ describe('Scraping Strategies', () => {
         url: 'https://example.com',
       });
 
-      expect(result).toEqual({
+      expectResultWithoutDiagnostics(result, {
         success: true,
         content: '<p>Firecrawl content</p>',
         source: 'firecrawl',
@@ -94,7 +111,7 @@ describe('Scraping Strategies', () => {
         url: 'https://example.com',
       });
 
-      expect(result).toEqual({
+      expectResultWithoutDiagnostics(result, {
         success: true,
         content: 'BrightData content',
         source: 'brightdata',
@@ -110,12 +127,11 @@ describe('Scraping Strategies', () => {
         url: 'https://example.com',
       });
 
-      expect(result).toEqual({
-        success: false,
-        content: null,
-        source: 'none',
-        error: 'All fallback strategies failed',
-      });
+      expect(result.success).toBe(false);
+      expect(result.content).toBe(null);
+      expect(result.source).toBe('none');
+      expect(result.error).toContain('All strategies failed');
+      expect(result.diagnostics).toBeDefined();
     });
 
     describe('with OPTIMIZE_FOR environment variable', () => {
@@ -139,7 +155,7 @@ describe('Scraping Strategies', () => {
           url: 'https://example.com',
         });
 
-        expect(result).toEqual({
+        expectResultWithoutDiagnostics(result, {
           success: true,
           content: 'Native content',
           source: 'native',
@@ -161,7 +177,7 @@ describe('Scraping Strategies', () => {
           url: 'https://example.com',
         });
 
-        expect(result).toEqual({
+        expectResultWithoutDiagnostics(result, {
           success: true,
           content: '<p>Firecrawl content</p>',
           source: 'firecrawl',
@@ -184,7 +200,7 @@ describe('Scraping Strategies', () => {
           url: 'https://example.com',
         });
 
-        expect(result).toEqual({
+        expectResultWithoutDiagnostics(result, {
           success: true,
           content: 'BrightData content',
           source: 'brightdata',
@@ -208,7 +224,7 @@ describe('Scraping Strategies', () => {
           url: 'https://example.com',
         });
 
-        expect(result).toEqual({
+        expectResultWithoutDiagnostics(result, {
           success: true,
           content: 'Native content',
           source: 'native',
@@ -319,7 +335,7 @@ describe('Scraping Strategies', () => {
         'firecrawl'
       );
 
-      expect(result).toEqual({
+      expectResultWithoutDiagnostics(result, {
         success: true,
         content: 'Native fallback',
         source: 'native',
@@ -361,7 +377,7 @@ describe('Scraping Strategies', () => {
         url: 'https://newsite.com',
       });
 
-      expect(result).toEqual({
+      expectResultWithoutDiagnostics(result, {
         success: true,
         content: 'Universal content',
         source: 'native',
@@ -385,7 +401,7 @@ describe('Scraping Strategies', () => {
         url: 'https://example.com',
       });
 
-      expect(result).toEqual({
+      expectResultWithoutDiagnostics(result, {
         success: true,
         content: 'Content despite error',
         source: 'native',

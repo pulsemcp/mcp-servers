@@ -14,6 +14,11 @@ export interface ScrapeResult {
   error?: string;
   metadata?: Record<string, unknown>;
   isAuthError?: boolean;
+  diagnostics?: {
+    strategiesAttempted: string[];
+    strategyErrors: Record<string, string>;
+    timing?: Record<string, number>;
+  };
 }
 
 /**
@@ -67,97 +72,152 @@ export async function scrapeUniversal(
   const { url } = options;
   const optimizeFor = process.env.OPTIMIZE_FOR || 'cost';
 
+  // Track diagnostics
+  const diagnostics = {
+    strategiesAttempted: [] as string[],
+    strategyErrors: {} as Record<string, string>,
+    timing: {} as Record<string, number>,
+  };
+
   // Helper function to try native scraping
   const tryNative = async (): Promise<ScrapeResult | null> => {
+    const startTime = Date.now();
+    diagnostics.strategiesAttempted.push('native');
+
     try {
       const nativeResult = await clients.native.scrape(url, { timeout: options.timeout });
+      diagnostics.timing.native = Date.now() - startTime;
+
       if (nativeResult.success && nativeResult.status === 200 && nativeResult.data) {
         return {
           success: true,
           content: nativeResult.data,
           source: 'native',
+          diagnostics,
         };
       }
-    } catch {
-      // Continue to next strategy
+
+      // Record the failure reason
+      if (!nativeResult.success) {
+        diagnostics.strategyErrors.native =
+          nativeResult.error || `HTTP ${nativeResult.status || 'unknown'}`;
+      }
+    } catch (error) {
+      diagnostics.timing.native = Date.now() - startTime;
+      diagnostics.strategyErrors.native = error instanceof Error ? error.message : 'Unknown error';
     }
     return null;
   };
 
   // Helper function to try Firecrawl scraping
   const tryFirecrawl = async (): Promise<ScrapeResult | null> => {
-    if (!clients.firecrawl) return null;
+    if (!clients.firecrawl) {
+      diagnostics.strategyErrors.firecrawl = 'Firecrawl client not configured';
+      return null;
+    }
+
+    const startTime = Date.now();
+    diagnostics.strategiesAttempted.push('firecrawl');
 
     try {
       const firecrawlResult = await clients.firecrawl.scrape(url, {
         formats: ['html'],
       });
+      diagnostics.timing.firecrawl = Date.now() - startTime;
 
       if (firecrawlResult.success && firecrawlResult.data) {
         return {
           success: true,
           content: firecrawlResult.data.html,
           source: 'firecrawl',
+          diagnostics,
         };
       }
 
       // Check for authentication errors
-      if (!firecrawlResult.success && firecrawlResult.error) {
-        const errorLower = firecrawlResult.error.toLowerCase();
-        if (
-          errorLower.includes('unauthorized') ||
-          errorLower.includes('invalid token') ||
-          errorLower.includes('authentication')
-        ) {
-          return {
-            success: false,
-            content: null,
-            source: 'firecrawl',
-            error: `Firecrawl authentication error: ${firecrawlResult.error}`,
-            isAuthError: true,
-          };
+      if (!firecrawlResult.success) {
+        if (firecrawlResult.error) {
+          const errorLower = firecrawlResult.error.toLowerCase();
+          if (
+            errorLower.includes('unauthorized') ||
+            errorLower.includes('invalid token') ||
+            errorLower.includes('authentication')
+          ) {
+            diagnostics.strategyErrors.firecrawl = `Authentication failed: ${firecrawlResult.error}`;
+            return {
+              success: false,
+              content: null,
+              source: 'firecrawl',
+              error: `Firecrawl authentication error: ${firecrawlResult.error}`,
+              isAuthError: true,
+              diagnostics,
+            };
+          }
+          diagnostics.strategyErrors.firecrawl = firecrawlResult.error;
+        } else {
+          diagnostics.strategyErrors.firecrawl = 'Request failed without error details';
         }
       }
-    } catch {
-      // Continue to next strategy
+    } catch (error) {
+      diagnostics.timing.firecrawl = Date.now() - startTime;
+      diagnostics.strategyErrors.firecrawl =
+        error instanceof Error ? error.message : 'Unknown error';
     }
     return null;
   };
 
   // Helper function to try BrightData scraping
   const tryBrightData = async (): Promise<ScrapeResult | null> => {
-    if (!clients.brightData) return null;
+    if (!clients.brightData) {
+      diagnostics.strategyErrors.brightdata = 'BrightData client not configured';
+      return null;
+    }
+
+    const startTime = Date.now();
+    diagnostics.strategiesAttempted.push('brightdata');
 
     try {
       const brightDataResult = await clients.brightData.scrape(url);
+      diagnostics.timing.brightdata = Date.now() - startTime;
+
       if (brightDataResult.success && brightDataResult.data) {
         return {
           success: true,
           content: brightDataResult.data,
           source: 'brightdata',
+          diagnostics,
         };
       }
 
       // Check for authentication errors
-      if (!brightDataResult.success && brightDataResult.error) {
-        const errorLower = brightDataResult.error.toLowerCase();
-        if (
-          errorLower.includes('unauthorized') ||
-          errorLower.includes('invalid token') ||
-          errorLower.includes('authentication') ||
-          errorLower.includes('token expired')
-        ) {
-          return {
-            success: false,
-            content: null,
-            source: 'brightdata',
-            error: `BrightData authentication error: ${brightDataResult.error}`,
-            isAuthError: true,
-          };
+      if (!brightDataResult.success) {
+        if (brightDataResult.error) {
+          const errorLower = brightDataResult.error.toLowerCase();
+          if (
+            errorLower.includes('unauthorized') ||
+            errorLower.includes('invalid token') ||
+            errorLower.includes('authentication') ||
+            errorLower.includes('token expired')
+          ) {
+            diagnostics.strategyErrors.brightdata = `Authentication failed: ${brightDataResult.error}`;
+            return {
+              success: false,
+              content: null,
+              source: 'brightdata',
+              error: `BrightData authentication error: ${brightDataResult.error}`,
+              isAuthError: true,
+              diagnostics,
+            };
+          }
+          diagnostics.strategyErrors.brightdata = brightDataResult.error;
+        } else {
+          diagnostics.strategyErrors.brightdata = 'Request failed without error details';
         }
       }
-    } catch {
-      // All strategies failed
+    } catch (error) {
+      diagnostics.timing.brightdata = Date.now() - startTime;
+      diagnostics.strategyErrors.brightdata =
+        error instanceof Error ? error.message : 'Unknown error';
     }
     return null;
   };
@@ -214,11 +274,17 @@ export async function scrapeUniversal(
     }
   }
 
+  // Generate detailed error message
+  const errorDetails = Object.entries(diagnostics.strategyErrors)
+    .map(([strategy, error]) => `${strategy}: ${error}`)
+    .join('; ');
+
   return {
     success: false,
     content: null,
     source: 'none',
-    error: 'All fallback strategies failed',
+    error: `All strategies failed. Attempted: ${diagnostics.strategiesAttempted.join(', ')}. Errors: ${errorDetails}`,
+    diagnostics,
   };
 }
 

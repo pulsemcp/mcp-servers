@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Fixed BrightData health check using wrong environment variable name
+  - Health check was looking for `BRIGHTDATA_BEARER_TOKEN` instead of `BRIGHTDATA_API_KEY`
+  - This caused the health check to incorrectly pass when using the documented API key variable
+  - Updated health check, tests, and .env.example to use consistent `BRIGHTDATA_API_KEY` naming
+  - Removed all references to `BRIGHTDATA_BEARER_TOKEN` from codebase (except historical changelog)
+
+### Improved
+
+- Enhanced error diagnostics for failed scraping attempts
+  - Now provides detailed information about which strategies were attempted
+  - Shows specific error messages for each failed strategy
+  - Includes timing information for performance debugging
+  - Helps users understand why scraping failed and what to fix
+  - Added comprehensive functional test coverage for diagnostics feature
+- Server startup behavior with health checks
+  - Server now properly exits with code 1 when authentication health checks fail
+  - Provides clear error messages indicating which services failed authentication
+  - Users can skip health checks with `SKIP_HEALTH_CHECKS=true` if needed
+
 ## [0.2.8] - 2025-07-03
 
 ### Added
