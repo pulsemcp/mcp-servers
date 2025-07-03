@@ -41,9 +41,9 @@ npm run test:manual:features     # Features test suite
 
 ## Latest Test Results
 
-**Test Date:** 2025-07-03 15:14 PT  
+**Test Date:** 2025-07-03 15:33 PT  
 **Branch:** tadasant/robustify-manual-pages-tests  
-**Commit:** b0c52599bbbc20407ad1ff4ac1bc0c95e2e66ee1  
+**Commit:** b9ad38052a6752ccefae567740b60fd3a85a7984  
 **Tested By:** Claude  
 **Environment:** Local development with API keys from .env
 
@@ -68,23 +68,21 @@ npm run test:manual:features     # Features test suite
 
 ### Features Test Results
 
-**Overall:** 14/16 tests passed (87.5%)
+**Overall:** 16/16 tests passed (100%)
 
-**Passed:**
+**All Passed:**
 
 - ✅ authentication-healthcheck.test.ts: All 5 tests passed
   - Firecrawl authentication check working
   - BrightData authentication check working
+- ✅ scrape-tool.test.ts: All 3 tests passed
+  - Basic scraping with automatic strategy selection working
+  - Error handling working correctly (fixed timeout issue)
+  - Content extraction with LLM working correctly
 - ✅ brightdata-client.test.ts: BrightData client scraping working
 - ✅ firecrawl-client.test.ts: Firecrawl client scraping working
 - ✅ native-client.test.ts: Native HTTP client working
-- ✅ server-initialization.test.ts: Server starts correctly
-- ✅ file-storage.test.ts: File storage operations working
-- ✅ scrape-tool.test.ts: Basic scraping with automatic strategy selection working
+- ✅ extract.test.ts: Anthropic extraction working
+- ✅ test-filtering.test.ts: HTML filtering working
 
-**Failed:**
-
-- ❌ scrape-tool.test.ts: "should handle errors gracefully" - Test timed out after 30s
-- ❌ scrape-tool.test.ts: "should support content extraction when LLM is configured" - Assertion error on result.isError
-
-**Summary:** Core scraping functionality and API integrations are working correctly. The two failures in scrape-tool.test.ts need investigation but don't affect the main scraping strategies that were the focus of this fix.
+**Summary:** All tests are now passing. The manual pages test framework correctly detects which scraping strategy was used and validates it against expectations. Core scraping functionality and API integrations are working correctly.

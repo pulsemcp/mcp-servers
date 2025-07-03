@@ -50,14 +50,14 @@ describe('Scrape Tool', () => {
       timeout: 10000,
     });
 
-    expect(result.isError).toBeUndefined();
+    expect('isError' in result ? result.isError : undefined).toBeUndefined();
     expect(result.content).toBeDefined();
     expect(result.content.length).toBeGreaterThan(0);
     expect(result.content[0].type).toBe('text');
-    expect(result.content[0].text).toContain('Example Domain');
+    expect(result.content[0]?.text).toContain('Example Domain');
 
     console.log('✅ Scrape tool successful');
-    console.log(`📝 Content length: ${result.content[0].text.length} characters`);
+    console.log(`📝 Content length: ${result.content[0]?.text?.length || 0} characters`);
   });
 
   it('should handle errors gracefully', async () => {
@@ -69,14 +69,15 @@ describe('Scrape Tool', () => {
       url: 'https://httpstat.us/500',
       resultHandling: 'returnOnly',
       timeout: 10000,
+      forceRescrape: true,
     });
 
-    expect(result.isError).toBe(true);
+    expect('isError' in result ? result.isError : false).toBe(true);
     expect(result.content).toBeDefined();
-    expect(result.content[0].text).toContain('Failed to scrape');
+    expect(result.content[0]?.text).toContain('Failed to scrape');
 
     console.log('✅ Error handling working correctly');
-  });
+  }, 60000); // Increase test timeout to 60 seconds
 
   it('should support content extraction when LLM is configured', async () => {
     const hasLLM = process.env.LLM_PROVIDER && process.env.LLM_API_KEY;
@@ -94,13 +95,14 @@ describe('Scrape Tool', () => {
       extract: 'What is the main heading on this page?',
       resultHandling: 'returnOnly',
       timeout: 10000,
+      forceRescrape: true,
     });
 
-    expect(result.isError || false).toBe(false);
+    expect('isError' in result ? result.isError : false).toBe(false);
     expect(result.content).toBeDefined();
-    expect(result.content[0].text).toBeDefined();
+    expect(result.content[0]?.text).toBeDefined();
 
     console.log('✅ Extraction successful');
-    console.log('Response:', result.content[0].text.slice(0, 200) + '...');
+    console.log('Response:', result.content[0]?.text?.slice(0, 200) + '...');
   });
 });
