@@ -118,7 +118,7 @@ Integration tests use a real MCP client (`TestMCPClient`) to communicate with a 
 
 ### Components
 
-1. **TestMCPClient** - Located at `/test-mcp-client`, provides a programmatic interface to test MCP servers
+1. **TestMCPClient** - Located at `/libs/test-mcp-client`, provides a programmatic interface to test MCP servers
 2. **Integration build** - Special build of the server (`index.integration-with-mock.js`) that uses mocked dependencies
 3. **Configurable mocks** - Each test can define its own mock responses via environment variables
 
