@@ -1,5 +1,6 @@
 import type { IScrapingClients } from './server.js';
 import type { ScrapingStrategy, IStrategyConfigClient } from './strategy-config/index.js';
+import { logDebug, logWarning } from './logging.js';
 
 export interface ScrapeOptions {
   url: string;
@@ -263,7 +264,8 @@ export async function scrapeWithStrategy(
     }
 
     // If explicit strategy failed, fall back to universal
-    console.log(
+    logDebug(
+      'scrapeWithStrategy',
       `Explicit strategy '${explicitStrategy}' failed, falling back to universal approach`
     );
     const universalResult = await scrapeUniversal(clients, options);
@@ -279,7 +281,7 @@ export async function scrapeWithStrategy(
         });
       } catch (error) {
         // Don't fail scraping if config update fails
-        console.warn('Failed to update strategy config:', error);
+        logWarning('scrapeWithStrategy', `Failed to update strategy config: ${error}`);
       }
     }
 
@@ -291,7 +293,7 @@ export async function scrapeWithStrategy(
   try {
     configuredStrategy = await configClient.getStrategyForUrl(options.url);
   } catch (error) {
-    console.warn('Failed to load strategy config:', error);
+    logWarning('scrapeWithStrategy', `Failed to load strategy config: ${error}`);
   }
 
   // If we have a configured strategy, try it first
@@ -301,7 +303,8 @@ export async function scrapeWithStrategy(
       return configuredResult;
     }
 
-    console.log(
+    logDebug(
+      'scrapeWithStrategy',
       `Configured strategy '${configuredStrategy}' failed, falling back to universal approach`
     );
   }
@@ -320,7 +323,7 @@ export async function scrapeWithStrategy(
       });
     } catch (error) {
       // Don't fail scraping if config update fails
-      console.warn('Failed to update strategy config:', error);
+      logWarning('scrapeWithStrategy', `Failed to update strategy config: ${error}`);
     }
   }
 

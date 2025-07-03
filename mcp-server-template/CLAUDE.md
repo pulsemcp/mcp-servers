@@ -207,3 +207,16 @@ The template uses a modular client pattern with a lib subdirectory for external 
 ## Development Workflow
 
 - **Changelog Updates**: Always update the CHANGELOG.md file when making changes to this MCP server to track improvements and maintain version history
+
+## Logging
+
+This server uses a centralized logging module (`shared/src/logging.ts`) for all output. **IMPORTANT**: Never use `console.log` directly in server code as it interferes with the MCP protocol (stdout must only contain JSON messages).
+
+Instead, use the logging functions:
+
+- `logServerStart(serverName)` - Log server startup
+- `logError(context, error)` - Log errors with context
+- `logWarning(context, message)` - Log warnings
+- `logDebug(context, message)` - Log debug info (only when NODE_ENV=development or DEBUG=true)
+
+All logging functions output to stderr to maintain MCP protocol compliance.

@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.10] - 2025-07-03
+
+### Added
+
+- Centralized logging infrastructure (`shared/src/logging.ts`) for MCP protocol compliance
+- Logging functions: `logServerStart()`, `logError()`, `logWarning()`, `logDebug()`
+
+### Changed
+
+- Updated server startup to use `logServerStart()` instead of direct console.error
+- Updated error handling to use `logError()` for better error context
+- Updated environment validation to use proper logging functions
+- Optional environment variable logging now uses `logDebug()` for cleaner output
+
+### Fixed
+
+- Ensured MCP protocol compliance by using stderr-only logging (stdout must contain only JSON)
+
 ## [0.2.9] - 2025-06-27
 
 ### Fixed

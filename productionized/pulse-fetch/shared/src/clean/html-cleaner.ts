@@ -1,6 +1,7 @@
 import { BaseCleaner } from './base-cleaner.js';
 import { JSDOM } from 'jsdom';
 import { convertHtmlToMarkdown } from 'dom-to-semantic-markdown';
+import { logWarning } from '../logging.js';
 
 /**
  * Cleaner for HTML content that extracts main content and converts to clean Markdown
@@ -25,7 +26,7 @@ export class HtmlCleaner extends BaseCleaner {
       return this.truncateIfNeeded(markdown);
     } catch (error) {
       // If cleaning fails, return the original content
-      console.warn('HTML cleaning failed, returning original content:', error);
+      logWarning('HtmlCleaner', `HTML cleaning failed, returning original content: ${error}`);
       return this.truncateIfNeeded(content);
     }
   }

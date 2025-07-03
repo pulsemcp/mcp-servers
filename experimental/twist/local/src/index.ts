@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { createMCPServer } from '../shared/index.js';
+import { logServerStart, logError } from '../shared/logging.js';
 
 // Validate required environment variables before starting
 function validateEnvironment(): void {
@@ -12,7 +13,7 @@ function validateEnvironment(): void {
   const missing = required.filter(({ name }) => !process.env[name]);
 
   if (missing.length > 0) {
-    console.error('Error: Missing required environment variables:');
+    logError('validateEnvironment', 'Missing required environment variables:');
     missing.forEach(({ name, description }) => {
       console.error(`  - ${name}: ${description}`);
     });
@@ -38,11 +39,11 @@ async function main() {
   const transport = new StdioServerTransport();
   await server.connect(transport);
 
-  console.error('Twist MCP Server running on stdio');
+  logServerStart('Twist');
 }
 
 // Run the server
 main().catch((error) => {
-  console.error('Fatal error:', error);
+  logError('main', error);
   process.exit(1);
 });
