@@ -25,7 +25,6 @@ import type {
   IScrapingClients,
 } from '../../../shared/src/server.js';
 import { NativeFetcher, FirecrawlClient, BrightDataClient } from '../../../shared/src/server.js';
-import { FilesystemStrategyConfigClient } from '../../../shared/src/strategy-config/index.js';
 
 interface TestResult {
   page: PageTestCase;
@@ -54,16 +53,21 @@ async function testPageWithConfig(page: PageTestCase, config: EnvVarConfig): Pro
 
   try {
     // Apply config environment variables
-    if (config.FIRECRAWL_API_KEY === 'from_env') {
-      // Keep the original env var
+    // Note: config here has already been resolved, so 'from_env' has been replaced with actual values
+    if (config.FIRECRAWL_API_KEY) {
+      process.env.FIRECRAWL_API_KEY = config.FIRECRAWL_API_KEY;
+      // FIRECRAWL_API_KEY is set for this config
     } else {
       delete process.env.FIRECRAWL_API_KEY;
+      // FIRECRAWL_API_KEY is not set for this config
     }
 
-    if (config.BRIGHTDATA_API_KEY === 'from_env') {
-      // Keep the original env var
+    if (config.BRIGHTDATA_API_KEY) {
+      process.env.BRIGHTDATA_API_KEY = config.BRIGHTDATA_API_KEY;
+      // BRIGHTDATA_API_KEY is set for this config
     } else {
       delete process.env.BRIGHTDATA_API_KEY;
+      // BRIGHTDATA_API_KEY is not set for this config
     }
 
     if (config.OPTIMIZE_FOR) {
@@ -83,6 +87,8 @@ async function testPageWithConfig(page: PageTestCase, config: EnvVarConfig): Pro
       const firecrawlApiKey = process.env.FIRECRAWL_API_KEY;
       const brightDataToken = process.env.BRIGHTDATA_API_KEY;
 
+      // Create clients based on available API keys
+
       const clients: IScrapingClients = {
         native: new NativeFetcher(),
       };
@@ -98,8 +104,13 @@ async function testPageWithConfig(page: PageTestCase, config: EnvVarConfig): Pro
       return clients;
     };
 
-    // Create strategy config factory
-    const strategyConfigFactory: StrategyConfigFactory = () => new FilesystemStrategyConfigClient();
+    // Create strategy config factory that returns a mock client (no persistence)
+    const strategyConfigFactory: StrategyConfigFactory = () => ({
+      getStrategyForUrl: async () => null, // Always return null (no stored strategy)
+      upsertEntry: async () => {}, // No-op
+      getAllEntries: async () => [], // Empty array
+      deleteEntry: async () => false, // No-op
+    });
 
     // Get the scrape tool
     const tool = scrapeTool(server, clientFactory, strategyConfigFactory);
@@ -110,6 +121,7 @@ async function testPageWithConfig(page: PageTestCase, config: EnvVarConfig): Pro
         url: page.url,
         saveResult: false, // Don't save test results
         timeout: 10000, // Short timeout for tests
+        forceRescrape: true, // Force fresh scrape to test strategies
       });
 
       const duration = Date.now() - startTime;
@@ -180,6 +192,7 @@ async function runPagesTestSuite() {
   console.log('='.repeat(80));
   console.log(`Testing ${TEST_PAGES.length} pages across ${ENV_CONFIGS.length} configurations`);
   console.log(`Mode: ${continueOnFailure ? 'Continue on failure' : 'Fail fast'}`);
+  // Environment variables loaded from .env file
   console.log('='.repeat(80));
 
   // Store actual env values
@@ -189,17 +202,21 @@ async function runPagesTestSuite() {
   };
 
   // Update configs with actual values
-  const resolvedConfigs = ENV_CONFIGS.map((config) => ({
-    ...config,
-    FIRECRAWL_API_KEY:
-      config.FIRECRAWL_API_KEY === 'from_env'
-        ? actualEnvValues.FIRECRAWL_API_KEY
-        : config.FIRECRAWL_API_KEY,
-    BRIGHTDATA_API_KEY:
-      config.BRIGHTDATA_API_KEY === 'from_env'
-        ? actualEnvValues.BRIGHTDATA_API_KEY
-        : config.BRIGHTDATA_API_KEY,
-  }));
+  const resolvedConfigs = ENV_CONFIGS.map((config) => {
+    const resolved = {
+      ...config,
+      FIRECRAWL_API_KEY:
+        config.FIRECRAWL_API_KEY === 'from_env'
+          ? actualEnvValues.FIRECRAWL_API_KEY
+          : config.FIRECRAWL_API_KEY,
+      BRIGHTDATA_API_KEY:
+        config.BRIGHTDATA_API_KEY === 'from_env'
+          ? actualEnvValues.BRIGHTDATA_API_KEY
+          : config.BRIGHTDATA_API_KEY,
+    };
+    // Config resolved with appropriate API keys
+    return resolved;
+  });
 
   const results: TestResult[] = [];
   const totalTests = TEST_PAGES.length * resolvedConfigs.length;

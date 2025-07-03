@@ -29,6 +29,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Strategy mismatches are tracked separately from failures and exit with non-zero code
   - Helps catch regressions where a stable fallback masks issues with primary strategies
 
+- Improved manual test infrastructure
+  - Manual tests now always run against built code by default
+  - Tests automatically build the project before running (no separate build step needed)
+  - Created MANUAL_TESTING.md for tracking manual test results per release
+  - Updated publishing process to include manual test verification step
+  - Fixed .gitignore to properly track JavaScript files in scripts directories
+
+### Fixed
+
+- Pages manual tests now correctly isolate scraping strategies
+  - Fixed issue where cached results interfered with strategy testing
+  - Added forceRescrape: true to ensure fresh scrapes during tests
+  - Used mock strategy config client to prevent stored preferences from affecting tests
+  - All strategy expectations now pass correctly
+
 ## [0.2.9] - 2025-07-03
 
 ### Fixed

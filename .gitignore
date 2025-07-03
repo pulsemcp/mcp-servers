@@ -20,6 +20,8 @@ build/
 !**/prepare-publish.js
 !**/setup-dev.js
 !**/prepare-npm-readme.js
+# Keep all scripts in scripts directories
+!**/scripts/**/*.js
 
 # Ignore shared symlinks in local directories
 **/local/shared
