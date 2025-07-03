@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.16] - 2025-07-03
+
 ### Changed
 
 - Applied DRY (Don't Repeat Yourself) pattern to tool parameter descriptions across all tools
