@@ -37,16 +37,20 @@ buildProcess.on('close', (code) => {
   console.log('\n🧪 Running manual tests against BUILT code...\n');
 
   // Run the tests using vitest with the manual config
-  const testProcess = spawn('node', ['scripts/run-vitest.js', 'run', '-c', 'vitest.config.manual.ts', ...additionalArgs], {
-    stdio: 'inherit',
-    shell: true,
-    cwd: rootDir,
-    env: {
-      ...process.env,
-      // Ensure we're testing the built code
-      TWIST_TEST_MODE: 'built',
-    },
-  });
+  const testProcess = spawn(
+    'node',
+    ['scripts/run-vitest.js', 'run', '-c', 'vitest.config.manual.ts', ...additionalArgs],
+    {
+      stdio: 'inherit',
+      shell: true,
+      cwd: rootDir,
+      env: {
+        ...process.env,
+        // Ensure we're testing the built code
+        TWIST_TEST_MODE: 'built',
+      },
+    }
+  );
 
   testProcess.on('close', (testCode) => {
     process.exit(testCode || 0);
