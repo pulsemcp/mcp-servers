@@ -253,7 +253,8 @@ jobs:
                 SERVER_NAME=$(basename "$SERVER_DIR")
                 
                 # Extract changelog entry for this version
-                CHANGELOG_FILE="$SERVER_DIR/CHANGELOG.md"
+                # Since we're in the local directory, we need to go up one level to find CHANGELOG.md
+                CHANGELOG_FILE="../CHANGELOG.md"
                 if [ -f "$CHANGELOG_FILE" ]; then
                   # Extract the changelog section for this version
                   # Look for version with or without 'v' prefix and handle both formats
