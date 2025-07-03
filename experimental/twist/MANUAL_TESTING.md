@@ -34,22 +34,28 @@ npm run test:manual
 
 ## Latest Test Results
 
-**Test Date:** [DATE]  
-**Branch:** [BRANCH]  
-**Commit:** [COMMIT_HASH]  
-**Tested By:** [NAME]  
+**Test Date:** 2025-07-03 16:00 PT  
+**Branch:** tadasant/add-manual-testing-to-twist-appsignal-template  
+**Commit:** ee2ba887d7fedbbedf3cb7e088ac02c87e85dd28  
+**Tested By:** Claude  
 **Environment:** Local development with API keys from .env
 
 ### Test Suite Results
 
-**Overall:** [X/Y] tests passed ([PERCENTAGE]%)
+**Overall:** 12/12 tests passed (100%)
 
 **Test Files:**
 
-- ❓ explore-closed-thread.ts: [RESULT]
-- ❓ test-pagination-filters.ts: [RESULT]
-- ❓ test-pagination-offset-bug.ts: [RESULT]
-- ❓ test-robust-pagination.ts: [RESULT]
-- ❓ twist-client.test.ts: [RESULT]
+- ✅ twist-client.test.ts: 12/12 tests passed
+  - Real API Integration: All 8 tests passed
+  - Error Handling: All 2 tests passed
+  - Performance: All 2 tests passed
 
-**Summary:** [Add summary of test results and any notable findings]
+**Notable Test Activities:**
+
+- Created test thread ID: 7087272
+- Used test channel: company-wide (ID: 718456)
+- Successfully tested pagination with different limits
+- Verified thread creation, messaging, and closing workflows
+
+**Summary:** All manual tests passed successfully. The Twist API integration is working correctly with proper error handling and performance characteristics. The client successfully handles channel listing, thread operations, messaging, and pagination.

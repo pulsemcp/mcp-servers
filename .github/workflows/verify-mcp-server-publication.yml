@@ -170,6 +170,49 @@ jobs:
               echo "ℹ️  Skipping CHANGELOG/README checks - no version bump"
             fi
             
+            # Check for manual test results if version was bumped
+            if [ "$VERSION_BUMPED" = true ]; then
+              MANUAL_TESTING_FILE="$SERVER_DIR/MANUAL_TESTING.md"
+              if [ -f "$MANUAL_TESTING_FILE" ]; then
+                echo "Checking manual test results..."
+                
+                # Get the commit hash from the PR
+                PR_COMMIT="${{ github.event.pull_request.head.sha }}"
+                PR_COMMIT_SHORT="${PR_COMMIT:0:7}"
+                
+                # Check if MANUAL_TESTING.md contains test results for a recent commit
+                if grep -q "^**Commit:**" "$MANUAL_TESTING_FILE"; then
+                  # Extract the commit hash from the file
+                  TESTED_COMMIT=$(grep "^**Commit:**" "$MANUAL_TESTING_FILE" | sed 's/^**Commit:** *//' | cut -d' ' -f1)
+                  TESTED_COMMIT_SHORT="${TESTED_COMMIT:0:7}"
+                  
+                  echo "Manual tests were run on commit: $TESTED_COMMIT_SHORT"
+                  
+                  # Check if the tested commit is in the PR's commit history
+                  if git merge-base --is-ancestor "$TESTED_COMMIT" "$PR_COMMIT" 2>/dev/null; then
+                    echo "✅ Manual tests were run on a commit in this PR's history"
+                    
+                    # Check if tests passed
+                    if grep -q "**Overall:**.* 100%" "$MANUAL_TESTING_FILE" || grep -q "All manual tests passed" "$MANUAL_TESTING_FILE"; then
+                      echo "✅ Manual tests passed"
+                    else
+                      echo "⚠️  WARNING: Manual tests may not have fully passed"
+                      echo "   Please review MANUAL_TESTING.md for details"
+                    fi
+                  else
+                    echo "⚠️  WARNING: Manual tests were run on commit $TESTED_COMMIT_SHORT"
+                    echo "   This commit is not in the current PR's history"
+                    echo "   Consider re-running manual tests on the latest commit"
+                  fi
+                else
+                  echo "⚠️  WARNING: MANUAL_TESTING.md exists but doesn't contain test results"
+                  echo "   Please run manual tests and document the results"
+                fi
+              else
+                echo "ℹ️  No MANUAL_TESTING.md found - manual tests may not be applicable"
+              fi
+            fi
+            
             # Run tests for this server
             echo "Running tests for $SERVER_NAME..."
             cd "$SERVER_DIR"
