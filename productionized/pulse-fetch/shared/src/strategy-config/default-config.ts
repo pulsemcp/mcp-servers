@@ -12,7 +12,7 @@ const __dirname = dirname(__filename);
  * Get the path to the strategy configuration file.
  *
  * Priority:
- * 1. PULSE_FETCH_STRATEGY_CONFIG_PATH environment variable
+ * 1. STRATEGY_CONFIG_PATH environment variable
  * 2. Default temp directory location
  *
  * If using default location and file doesn't exist, copies the
@@ -20,7 +20,7 @@ const __dirname = dirname(__filename);
  */
 export async function getStrategyConfigPath(): Promise<string> {
   // Check for environment variable
-  const envPath = process.env.PULSE_FETCH_STRATEGY_CONFIG_PATH;
+  const envPath = process.env.STRATEGY_CONFIG_PATH;
   if (envPath) {
     return envPath;
   }

@@ -45,7 +45,7 @@ async function testPageWithConfig(page: PageTestCase, config: EnvVarConfig): Pro
   // Save original env vars
   const originalEnv = {
     FIRECRAWL_API_KEY: process.env.FIRECRAWL_API_KEY,
-    BRIGHTDATA_BEARER_TOKEN: process.env.BRIGHTDATA_BEARER_TOKEN,
+    BRIGHTDATA_API_KEY: process.env.BRIGHTDATA_API_KEY,
     OPTIMIZE_FOR: process.env.OPTIMIZE_FOR,
   };
 
@@ -57,10 +57,10 @@ async function testPageWithConfig(page: PageTestCase, config: EnvVarConfig): Pro
       delete process.env.FIRECRAWL_API_KEY;
     }
 
-    if (config.BRIGHTDATA_BEARER_TOKEN === 'from_env') {
+    if (config.BRIGHTDATA_API_KEY === 'from_env') {
       // Keep the original env var
     } else {
-      delete process.env.BRIGHTDATA_BEARER_TOKEN;
+      delete process.env.BRIGHTDATA_API_KEY;
     }
 
     if (config.OPTIMIZE_FOR) {
@@ -78,7 +78,7 @@ async function testPageWithConfig(page: PageTestCase, config: EnvVarConfig): Pro
     // Create the client factory based on current env vars
     const clientFactory: ClientFactory = () => {
       const firecrawlApiKey = process.env.FIRECRAWL_API_KEY;
-      const brightDataToken = process.env.BRIGHTDATA_BEARER_TOKEN;
+      const brightDataToken = process.env.BRIGHTDATA_API_KEY;
 
       const clients: IScrapingClients = {
         native: new NativeFetcher(),
@@ -159,7 +159,7 @@ async function runPagesTestSuite() {
   // Store actual env values
   const actualEnvValues = {
     FIRECRAWL_API_KEY: process.env.FIRECRAWL_API_KEY,
-    BRIGHTDATA_BEARER_TOKEN: process.env.BRIGHTDATA_BEARER_TOKEN,
+    BRIGHTDATA_API_KEY: process.env.BRIGHTDATA_API_KEY,
   };
 
   // Update configs with actual values
@@ -169,10 +169,10 @@ async function runPagesTestSuite() {
       config.FIRECRAWL_API_KEY === 'from_env'
         ? actualEnvValues.FIRECRAWL_API_KEY
         : config.FIRECRAWL_API_KEY,
-    BRIGHTDATA_BEARER_TOKEN:
-      config.BRIGHTDATA_BEARER_TOKEN === 'from_env'
-        ? actualEnvValues.BRIGHTDATA_BEARER_TOKEN
-        : config.BRIGHTDATA_BEARER_TOKEN,
+    BRIGHTDATA_API_KEY:
+      config.BRIGHTDATA_API_KEY === 'from_env'
+        ? actualEnvValues.BRIGHTDATA_API_KEY
+        : config.BRIGHTDATA_API_KEY,
   }));
 
   const results: TestResult[] = [];

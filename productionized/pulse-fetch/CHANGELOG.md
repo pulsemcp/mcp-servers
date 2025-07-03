@@ -28,6 +28,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Added new `findByUrlAndExtract` method to storage interfaces for proper cache key generation
   - Added comprehensive test coverage for extract field cache busting functionality
 
+### Changed
+
+- **BREAKING**: Renamed environment variables for consistency
+  - `BRIGHTDATA_BEARER_TOKEN` → `BRIGHTDATA_API_KEY` (users no longer need to include "Bearer " prefix)
+  - `PULSE_FETCH_STRATEGY_CONFIG_PATH` → `STRATEGY_CONFIG_PATH`
+  - Updated all documentation, tests, and examples to reflect the new names
+
 ## [0.2.7] - 2025-07-03
 
 ### Fixed
@@ -229,7 +236,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Comprehensive test suite for strategy system (33 passing tests)
 - Example configuration with common domains pre-configured
 - Manual tests demonstrating strategy fallback with Yelp URL
-- Environment variable `PULSE_FETCH_STRATEGY_CONFIG_PATH` for custom config file location
+- Environment variable `STRATEGY_CONFIG_PATH` for custom config file location
 - Automatic initialization of strategy config in OS temp directory when environment variable not set
 
 ### Changed

@@ -16,7 +16,7 @@ export interface PageTestCase {
 export interface EnvVarConfig {
   name: string;
   FIRECRAWL_API_KEY?: string;
-  BRIGHTDATA_BEARER_TOKEN?: string;
+  BRIGHTDATA_API_KEY?: string;
   OPTIMIZE_FOR?: 'cost' | 'speed';
   description: string;
 }
@@ -85,21 +85,21 @@ export const ENV_CONFIGS: EnvVarConfig[] = [
   {
     name: 'BrightData Only',
     description: 'Only BrightData API available',
-    BRIGHTDATA_BEARER_TOKEN: 'from_env',
+    BRIGHTDATA_API_KEY: 'from_env',
     OPTIMIZE_FOR: 'speed',
   },
   {
     name: 'All Services (Cost Optimized)',
     description: 'All scraping services available, optimized for cost',
     FIRECRAWL_API_KEY: 'from_env',
-    BRIGHTDATA_BEARER_TOKEN: 'from_env',
+    BRIGHTDATA_API_KEY: 'from_env',
     OPTIMIZE_FOR: 'cost',
   },
   {
     name: 'All Services (Speed Optimized)',
     description: 'All scraping services available, optimized for speed',
     FIRECRAWL_API_KEY: 'from_env',
-    BRIGHTDATA_BEARER_TOKEN: 'from_env',
+    BRIGHTDATA_API_KEY: 'from_env',
     OPTIMIZE_FOR: 'speed',
   },
 ];

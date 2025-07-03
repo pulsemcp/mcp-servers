@@ -19,7 +19,7 @@ describe('Scrape Tool', () => {
   const createClientFactory = (): ClientFactory => {
     return () => {
       const firecrawlApiKey = process.env.FIRECRAWL_API_KEY;
-      const brightDataToken = process.env.BRIGHTDATA_BEARER_TOKEN;
+      const brightDataToken = process.env.BRIGHTDATA_API_KEY;
 
       const clients: IScrapingClients = {
         native: new NativeFetcher(),

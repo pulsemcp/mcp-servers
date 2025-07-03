@@ -32,7 +32,7 @@ To run manual tests:
 ```bash
 # Set up environment variables first
 export FIRECRAWL_API_KEY="your-real-firecrawl-key"
-export BRIGHTDATA_BEARER_TOKEN="Bearer your-real-brightdata-token"
+export BRIGHTDATA_API_KEY="your-real-brightdata-api-key"
 
 # Run manual tests
 npm run test:manual

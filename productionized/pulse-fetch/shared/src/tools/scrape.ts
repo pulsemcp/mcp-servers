@@ -158,7 +158,7 @@ Caching behavior:
 Scraping strategies (for fresh scrapes):
 - native: Direct HTTP fetch (fastest, works for most public sites)
 - firecrawl: Advanced scraping with JavaScript rendering (requires FIRECRAWL_API_KEY)
-- brightdata: Premium scraping for heavily protected sites (requires BRIGHTDATA_BEARER_TOKEN)
+- brightdata: Premium scraping for heavily protected sites (requires BRIGHTDATA_API_KEY)
 
 The tool automatically:
 1. Checks for cached content first (unless forceRescrape is true)

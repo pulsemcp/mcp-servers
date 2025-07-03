@@ -23,7 +23,7 @@ cp .env.example .env
 Key environment variables:
 
 - `FIRECRAWL_API_KEY`: API key for Firecrawl service (optional)
-- `BRIGHTDATA_BEARER_TOKEN`: Token for BrightData Web Unlocker (optional)
+- `BRIGHTDATA_API_KEY`: Token for BrightData Web Unlocker (optional)
 - `LLM_PROVIDER`: Provider for extract feature (anthropic/openai/openai-compatible)
 - `LLM_API_KEY`: API key for chosen LLM provider
 - `LLM_MODEL`: Model to use for extraction
@@ -41,13 +41,13 @@ npm install
 npm run build
 npx @modelcontextprotocol/inspector node local/build/index.js \
   -e FIRECRAWL_API_KEY=<your-firecrawl-api-key> \
-  -e BRIGHTDATA_BEARER_TOKEN=<your-brightdata-token> \
+  -e BRIGHTDATA_API_KEY=<your-brightdata-token> \
   -e LLM_PROVIDER=<anthropic|openai|openai-compatible> \
   -e LLM_API_KEY=<your-llm-api-key> \
   -e LLM_MODEL=<model-name> \
   -e MCP_RESOURCE_STORAGE=<memory|filesystem> \
   -e MCP_RESOURCE_FILESYSTEM_ROOT=<path-to-storage> \
-  -e PULSE_FETCH_STRATEGY_CONFIG_PATH=<path-to-strategy-config>
+  -e STRATEGY_CONFIG_PATH=<path-to-strategy-config>
 ```
 
 Using published package:
@@ -55,13 +55,13 @@ Using published package:
 ```bash
 npx @modelcontextprotocol/inspector npx @pulsemcp/pulse-fetch@latest \
   -e FIRECRAWL_API_KEY=<your-firecrawl-api-key> \
-  -e BRIGHTDATA_BEARER_TOKEN=<your-brightdata-token> \
+  -e BRIGHTDATA_API_KEY=<your-brightdata-token> \
   -e LLM_PROVIDER=<anthropic|openai|openai-compatible> \
   -e LLM_API_KEY=<your-llm-api-key> \
   -e LLM_MODEL=<model-name> \
   -e MCP_RESOURCE_STORAGE=<memory|filesystem> \
   -e MCP_RESOURCE_FILESYSTEM_ROOT=<path-to-storage> \
-  -e PULSE_FETCH_STRATEGY_CONFIG_PATH=<path-to-strategy-config>
+  -e STRATEGY_CONFIG_PATH=<path-to-strategy-config>
 ```
 
 ### Claude Desktop
