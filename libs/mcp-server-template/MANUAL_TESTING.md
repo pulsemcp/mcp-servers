@@ -25,11 +25,17 @@ This file tracks the **most recent** manual test results for the NAME MCP server
 
 ### Running Tests
 
-Run manual tests (automatically builds and tests against built code):
+Run manual tests (automatically builds project and tests against built code):
 
 ```bash
 npm run test:manual
 ```
+
+The tests will:
+
+1. Build the project first (compiles TypeScript to JavaScript)
+2. Run tests against the built JavaScript code (not source TypeScript)
+3. This ensures we're testing the actual code that would be published
 
 ## Latest Test Results
 
