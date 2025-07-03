@@ -58,25 +58,15 @@ Use cases:
 - Understanding the impact and frequency of a performance bottleneck
 - Checking if an incident has N+1 query problems
 - Determining if samples are available for deeper analysis`,
-      inputSchema: {
-        type: 'object',
-        properties: {
-          incidentNumber: {
-            type: 'string',
-            description: PARAM_DESCRIPTIONS.incidentNumber,
-          },
-        },
-        required: ['incidentNumber'],
-      } as any, // eslint-disable-line @typescript-eslint/no-explicit-any
+      inputSchema: GetPerformanceIncidentSchema,
     },
-    async (args: unknown) => {
-      const { incidentNumber } = GetPerformanceIncidentSchema.parse(args);
+    async ({ incidentNumber }) => {
       const appId = getEffectiveAppId();
       if (!appId) {
         return {
           content: [
             {
-              type: 'text' as const,
+              type: 'text',
               text: 'Error: No app ID configured. Please use select_app_id tool first or set APPSIGNAL_APP_ID environment variable.',
             },
           ],
@@ -90,7 +80,7 @@ Use cases:
         return {
           content: [
             {
-              type: 'text' as const,
+              type: 'text',
               text: JSON.stringify(incident, null, 2),
             },
           ],
@@ -99,7 +89,7 @@ Use cases:
         return {
           content: [
             {
-              type: 'text' as const,
+              type: 'text',
               text: `Error fetching performance incident: ${error instanceof Error ? error.message : 'Unknown error'}`,
             },
           ],

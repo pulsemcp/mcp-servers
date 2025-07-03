@@ -80,45 +80,15 @@ Use cases:
 - Analyzing log patterns around specific time periods
 - Debugging by following trace IDs across services
 - Filtering logs by severity to focus on critical issues`,
-      inputSchema: {
-        type: 'object',
-        properties: {
-          query: {
-            type: 'string',
-            description: PARAM_DESCRIPTIONS.query,
-          },
-          limit: {
-            type: 'number',
-            description: PARAM_DESCRIPTIONS.limit,
-          },
-          severities: {
-            type: 'array',
-            items: {
-              type: 'string',
-              enum: ['debug', 'info', 'warn', 'error', 'fatal'],
-            },
-            description: PARAM_DESCRIPTIONS.severities,
-          },
-          start: {
-            type: 'string',
-            description: PARAM_DESCRIPTIONS.start,
-          },
-          end: {
-            type: 'string',
-            description: PARAM_DESCRIPTIONS.end,
-          },
-        },
-        required: ['query'],
-      } as any, // eslint-disable-line @typescript-eslint/no-explicit-any
+      inputSchema: SearchLogsSchema,
     },
-    async (args: unknown) => {
-      const { query, limit, severities, start, end } = SearchLogsSchema.parse(args);
+    async ({ query, limit, severities, start, end }) => {
       const appId = getEffectiveAppId();
       if (!appId) {
         return {
           content: [
             {
-              type: 'text' as const,
+              type: 'text',
               text: 'Error: No app ID configured. Please use select_app_id tool first or set APPSIGNAL_APP_ID environment variable.',
             },
           ],
@@ -132,7 +102,7 @@ Use cases:
         return {
           content: [
             {
-              type: 'text' as const,
+              type: 'text',
               text: JSON.stringify(logs, null, 2),
             },
           ],
@@ -141,7 +111,7 @@ Use cases:
         return {
           content: [
             {
-              type: 'text' as const,
+              type: 'text',
               text: `Error searching logs: ${error instanceof Error ? error.message : 'Unknown error'}`,
             },
           ],

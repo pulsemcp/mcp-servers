@@ -51,25 +51,15 @@ Use cases:
 - Tracking down intermittent issues captured in logs
 - Analyzing the impact of log incidents on different services
 - Monitoring the resolution status of identified log patterns`,
-      inputSchema: {
-        type: 'object',
-        properties: {
-          incidentNumber: {
-            type: 'string',
-            description: PARAM_DESCRIPTIONS.incidentNumber,
-          },
-        },
-        required: ['incidentNumber'],
-      } as any, // eslint-disable-line @typescript-eslint/no-explicit-any
+      inputSchema: GetLogIncidentSchema,
     },
-    async (args: unknown) => {
-      const { incidentNumber } = GetLogIncidentSchema.parse(args);
+    async ({ incidentNumber }) => {
       const appId = getEffectiveAppId();
       if (!appId) {
         return {
           content: [
             {
-              type: 'text' as const,
+              type: 'text',
               text: 'Error: No app ID configured. Please use select_app_id tool first or set APPSIGNAL_APP_ID environment variable.',
             },
           ],
@@ -83,7 +73,7 @@ Use cases:
         return {
           content: [
             {
-              type: 'text' as const,
+              type: 'text',
               text: JSON.stringify(incident, null, 2),
             },
           ],
@@ -92,7 +82,7 @@ Use cases:
         return {
           content: [
             {
-              type: 'text' as const,
+              type: 'text',
               text: `Error fetching log incident details: ${error instanceof Error ? error.message : 'Unknown error'}`,
             },
           ],

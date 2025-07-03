@@ -71,25 +71,15 @@ Use cases:
 - Viewing request parameters and custom data for context
 - Checking if N+1 queries occurred in this specific sample
 - Understanding queue wait times vs actual processing time`,
-      inputSchema: {
-        type: 'object',
-        properties: {
-          incidentNumber: {
-            type: 'string',
-            description: PARAM_DESCRIPTIONS.incidentNumber,
-          },
-        },
-        required: ['incidentNumber'],
-      } as any, // eslint-disable-line @typescript-eslint/no-explicit-any
+      inputSchema: GetPerformanceIncidentSampleSchema,
     },
-    async (args: unknown) => {
-      const { incidentNumber } = GetPerformanceIncidentSampleSchema.parse(args);
+    async ({ incidentNumber }) => {
       const appId = getEffectiveAppId();
       if (!appId) {
         return {
           content: [
             {
-              type: 'text' as const,
+              type: 'text',
               text: 'Error: No app ID configured. Please use select_app_id tool first or set APPSIGNAL_APP_ID environment variable.',
             },
           ],
@@ -103,7 +93,7 @@ Use cases:
         return {
           content: [
             {
-              type: 'text' as const,
+              type: 'text',
               text: JSON.stringify(sample, null, 2),
             },
           ],
@@ -112,7 +102,7 @@ Use cases:
         return {
           content: [
             {
-              type: 'text' as const,
+              type: 'text',
               text: `Error fetching performance incident sample: ${error instanceof Error ? error.message : 'Unknown error'}`,
             },
           ],

@@ -50,25 +50,15 @@ Use cases:
 - Analyzing stack traces to identify root causes
 - Tracking which users are affected by specific errors
 - Monitoring the resolution status of known issues`,
-      inputSchema: {
-        type: 'object',
-        properties: {
-          incidentNumber: {
-            type: 'string',
-            description: PARAM_DESCRIPTIONS.incidentNumber,
-          },
-        },
-        required: ['incidentNumber'],
-      } as any, // eslint-disable-line @typescript-eslint/no-explicit-any
+      inputSchema: GetExceptionIncidentSchema,
     },
-    async (args: unknown) => {
-      const { incidentNumber } = GetExceptionIncidentSchema.parse(args);
+    async ({ incidentNumber }) => {
       const appId = getEffectiveAppId();
       if (!appId) {
         return {
           content: [
             {
-              type: 'text' as const,
+              type: 'text',
               text: 'Error: No app ID configured. Please use select_app_id tool first or set APPSIGNAL_APP_ID environment variable.',
             },
           ],
@@ -82,7 +72,7 @@ Use cases:
         return {
           content: [
             {
-              type: 'text' as const,
+              type: 'text',
               text: JSON.stringify(incident, null, 2),
             },
           ],
@@ -91,7 +81,7 @@ Use cases:
         return {
           content: [
             {
-              type: 'text' as const,
+              type: 'text',
               text: `Error fetching exception incident details: ${error instanceof Error ? error.message : 'Unknown error'}`,
             },
           ],

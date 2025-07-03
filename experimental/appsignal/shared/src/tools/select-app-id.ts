@@ -33,19 +33,9 @@ This tool is crucial for:
 - Activating incident monitoring tools for a specific app
 - Switching between different applications during a session
 - Establishing the context for all subsequent monitoring operations`,
-      inputSchema: {
-        type: 'object',
-        properties: {
-          appId: {
-            type: 'string',
-            description: PARAM_DESCRIPTIONS.appId,
-          },
-        },
-        required: ['appId'],
-      } as any, // eslint-disable-line @typescript-eslint/no-explicit-any
+      inputSchema: SelectAppIdSchema,
     },
-    async (args: unknown) => {
-      const { appId } = SelectAppIdSchema.parse(args);
+    async ({ appId }) => {
       // Store the selected app ID
       setSelectedAppId(appId);
 
@@ -58,7 +48,7 @@ This tool is crucial for:
       return {
         content: [
           {
-            type: 'text' as const,
+            type: 'text',
             text: `Successfully ${action} app ID: ${appId}. All AppSignal tools are now available.`,
           },
         ],

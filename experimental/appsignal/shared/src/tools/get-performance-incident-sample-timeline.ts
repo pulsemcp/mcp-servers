@@ -104,25 +104,15 @@ Use cases:
 - Understanding the call hierarchy and timing breakdown
 - Finding unexpected database queries or external API calls
 - Analyzing memory allocation patterns`,
-      inputSchema: {
-        type: 'object',
-        properties: {
-          incidentNumber: {
-            type: 'string',
-            description: PARAM_DESCRIPTIONS.incidentNumber,
-          },
-        },
-        required: ['incidentNumber'],
-      } as any, // eslint-disable-line @typescript-eslint/no-explicit-any
+      inputSchema: GetPerformanceIncidentSampleTimelineSchema,
     },
-    async (args: unknown) => {
-      const { incidentNumber } = GetPerformanceIncidentSampleTimelineSchema.parse(args);
+    async ({ incidentNumber }) => {
       const appId = getEffectiveAppId();
       if (!appId) {
         return {
           content: [
             {
-              type: 'text' as const,
+              type: 'text',
               text: 'Error: No app ID configured. Please use select_app_id tool first or set APPSIGNAL_APP_ID environment variable.',
             },
           ],
@@ -136,7 +126,7 @@ Use cases:
         return {
           content: [
             {
-              type: 'text' as const,
+              type: 'text',
               text: JSON.stringify(timeline, null, 2),
             },
           ],
@@ -145,7 +135,7 @@ Use cases:
         return {
           content: [
             {
-              type: 'text' as const,
+              type: 'text',
               text: `Error fetching performance incident sample timeline: ${error instanceof Error ? error.message : 'Unknown error'}`,
             },
           ],
