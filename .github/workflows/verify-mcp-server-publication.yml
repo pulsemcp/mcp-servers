@@ -192,21 +192,23 @@ jobs:
                   if git merge-base --is-ancestor "$TESTED_COMMIT" "$PR_COMMIT" 2>/dev/null; then
                     echo "✅ Manual tests were run on a commit in this PR's history"
                     
-                    # Check if tests passed
+                    # Check test results (but don't fail if tests didn't pass)
                     if grep -q "**Overall:**.* 100%" "$MANUAL_TESTING_FILE" || grep -q "All manual tests passed" "$MANUAL_TESTING_FILE"; then
                       echo "✅ Manual tests passed"
                     else
-                      echo "⚠️  WARNING: Manual tests may not have fully passed"
-                      echo "   Please review MANUAL_TESTING.md for details"
+                      echo "ℹ️  Manual tests did not achieve 100% pass rate"
+                      echo "   Review MANUAL_TESTING.md for details"
                     fi
                   else
-                    echo "⚠️  WARNING: Manual tests were run on commit $TESTED_COMMIT_SHORT"
+                    echo "❌ ERROR: Manual tests were run on commit $TESTED_COMMIT_SHORT"
                     echo "   This commit is not in the current PR's history"
-                    echo "   Consider re-running manual tests on the latest commit"
+                    echo "   Please re-run manual tests on a commit in this PR"
+                    VERIFICATION_FAILED=true
                   fi
                 else
-                  echo "⚠️  WARNING: MANUAL_TESTING.md exists but doesn't contain test results"
+                  echo "❌ ERROR: MANUAL_TESTING.md exists but doesn't contain test results"
                   echo "   Please run manual tests and document the results"
+                  VERIFICATION_FAILED=true
                 fi
               else
                 echo "ℹ️  No MANUAL_TESTING.md found - manual tests may not be applicable"
