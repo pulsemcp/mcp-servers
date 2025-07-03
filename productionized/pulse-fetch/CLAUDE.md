@@ -170,3 +170,10 @@ Key insights gathered during implementation and CI troubleshooting:
 - **Multi-dimensional Cache Keys**: When implementing caching, consider all parameters that affect the output. For scraped content with extraction, both URL and extract prompt must be part of the cache key - using only URL leads to incorrect cache hits
 - **Storage Interface Evolution**: When adding new lookup methods to storage interfaces (like `findByUrlAndExtract`), implement them in all concrete implementations (Memory, FileSystem) to maintain interface consistency
 - **Test-Driven Cache Fixes**: Cache bugs can be subtle - write comprehensive tests that verify different parameter combinations create separate cache entries before implementing the fix
+
+### Environment Variable Refactoring
+
+- **Consistent Naming**: When renaming environment variables across a project, ensure all references are updated including code, tests, documentation (README, CONTRIBUTING, etc.), and examples in JSON configurations
+- **Breaking Changes**: Environment variable renames are breaking changes that require clear CHANGELOG entries and migration guidance for users
+- **Merge Conflict Resolution**: When rebasing onto main after environment variable changes, carefully merge new features (like SKIP_HEALTH_CHECKS) with renamed variables to preserve both sets of changes
+- **Monorepo Linting**: Pre-existing linting errors in other parts of a monorepo shouldn't block PRs - verify that your specific changes pass linting using targeted eslint commands on modified files
