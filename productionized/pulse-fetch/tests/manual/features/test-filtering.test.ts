@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { createFilter } from '../../shared/src/filter/index.js';
+import { createCleaner } from '../../../shared/src/clean/index.js';
 
 describe('Manual filtering test', () => {
   it('should filter HTML content effectively', async () => {
@@ -59,8 +59,8 @@ describe('Manual filtering test', () => {
       </html>
     `;
 
-    const filter = createFilter(htmlContent, 'https://example.com/article');
-    const filtered = await filter.filter(htmlContent, 'https://example.com/article');
+    const cleaner = createCleaner(htmlContent, 'https://example.com/article');
+    const filtered = await cleaner.clean(htmlContent, 'https://example.com/article');
 
     console.log('Original length:', htmlContent.length);
     console.log('Filtered length:', filtered.length);
