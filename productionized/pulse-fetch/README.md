@@ -332,7 +332,7 @@ Disable cleaning (`cleanScrape: false`) only when:
 
 **Parameters:**
 
-- `url` (string, required): URL to scrape
+- `url` (string, required): URL to scrape (e.g., "https://example.com" or just "example.com" - https:// is added automatically if no protocol is specified)
 - `timeout` (number): Maximum time to wait for page load
 - `maxChars` (number): Maximum characters to return (default: 100,000)
 - `startIndex` (number): Character index to start output from (for pagination)

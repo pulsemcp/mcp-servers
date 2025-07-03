@@ -79,10 +79,27 @@ Complex queries:
 The LLM will intelligently parse the page content and return only the requested information in a clear, readable format.`,
 } as const;
 
+// Preprocess URL to make it more forgiving
+function preprocessUrl(url: string): string {
+  // Trim whitespace
+  url = url.trim();
+
+  // If no protocol is specified, add https://
+  if (!url.match(/^[a-zA-Z][a-zA-Z0-9+.-]*:/)) {
+    url = 'https://' + url;
+  }
+
+  return url;
+}
+
 // Build the schema dynamically based on available features
 const buildScrapeArgsSchema = () => {
   const baseSchema = {
-    url: z.string().url().describe(PARAM_DESCRIPTIONS.url),
+    url: z
+      .string()
+      .transform(preprocessUrl)
+      .pipe(z.string().url())
+      .describe(PARAM_DESCRIPTIONS.url),
     timeout: z.number().optional().default(60000).describe(PARAM_DESCRIPTIONS.timeout),
     maxChars: z.number().optional().default(100000).describe(PARAM_DESCRIPTIONS.maxChars),
     startIndex: z.number().optional().default(0).describe(PARAM_DESCRIPTIONS.startIndex),

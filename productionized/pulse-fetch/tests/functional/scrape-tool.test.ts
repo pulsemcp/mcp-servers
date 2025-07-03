@@ -794,6 +794,202 @@ describe('Scrape Tool', () => {
       });
     });
 
+    describe('URL preprocessing', () => {
+      it('should add https:// to URLs without protocol', async () => {
+        mockNative.setMockResponse({
+          success: true,
+          status: 200,
+          data: 'Content from example.com',
+        });
+
+        const tool = scrapeTool(
+          mockServer,
+          () => mockClients,
+          () => mockStrategyConfigClient
+        );
+
+        // Test with URL without protocol
+        const result = await tool.handler({
+          url: 'example.com',
+          saveResult: false,
+        });
+
+        expect(result).toMatchObject({
+          content: [
+            {
+              type: 'text',
+              text: expect.stringContaining('Content from example.com'),
+            },
+          ],
+        });
+
+        // The test passes if the URL was processed correctly
+        // (without protocol, it would have failed Zod validation)
+      });
+
+      it('should trim whitespace from URLs', async () => {
+        mockNative.setMockResponse({
+          success: true,
+          status: 200,
+          data: 'Content from trimmed URL',
+        });
+
+        const tool = scrapeTool(
+          mockServer,
+          () => mockClients,
+          () => mockStrategyConfigClient
+        );
+
+        // Test with URL with leading and trailing whitespace
+        const result = await tool.handler({
+          url: '  https://example.com  \n',
+          saveResult: false,
+        });
+
+        expect(result).toMatchObject({
+          content: [
+            {
+              type: 'text',
+              text: expect.stringContaining('Content from trimmed URL'),
+            },
+          ],
+        });
+
+        // The test passes if the URL was trimmed correctly
+        // (with whitespace, it would have failed Zod validation)
+      });
+
+      it('should preserve URLs that already have protocols', async () => {
+        mockNative.setMockResponse({
+          success: true,
+          status: 200,
+          data: 'Content with existing protocol',
+        });
+
+        const tool = scrapeTool(
+          mockServer,
+          () => mockClients,
+          () => mockStrategyConfigClient
+        );
+
+        // Test with http:// protocol
+        const result = await tool.handler({
+          url: 'http://example.com',
+          saveResult: false,
+        });
+
+        expect(result).toMatchObject({
+          content: [
+            {
+              type: 'text',
+              text: expect.stringContaining('Content with existing protocol'),
+            },
+          ],
+        });
+
+        // The URL with http:// protocol should work correctly
+      });
+
+      it('should handle URLs with whitespace and no protocol', async () => {
+        mockNative.setMockResponse({
+          success: true,
+          status: 200,
+          data: 'Content from processed URL',
+        });
+
+        const tool = scrapeTool(
+          mockServer,
+          () => mockClients,
+          () => mockStrategyConfigClient
+        );
+
+        // Test with URL with whitespace and no protocol
+        const result = await tool.handler({
+          url: '  example.com/path  ',
+          saveResult: false,
+        });
+
+        expect(result).toMatchObject({
+          content: [
+            {
+              type: 'text',
+              text: expect.stringContaining('Content from processed URL'),
+            },
+          ],
+        });
+
+        // The URL should be processed correctly with both trimming and protocol addition
+      });
+
+      it('should handle various protocol formats correctly', async () => {
+        mockNative.setMockResponse({
+          success: true,
+          status: 200,
+          data: 'Content from URL',
+        });
+
+        const tool = scrapeTool(
+          mockServer,
+          () => mockClients,
+          () => mockStrategyConfigClient
+        );
+
+        // Test with ftp:// protocol
+        const ftpResult = await tool.handler({
+          url: 'ftp://example.com',
+          saveResult: false,
+        });
+
+        expect(ftpResult).toMatchObject({
+          content: [
+            {
+              type: 'text',
+              text: expect.stringContaining('Content from URL'),
+            },
+          ],
+        });
+
+        // Test with custom protocol
+        const customResult = await tool.handler({
+          url: 'custom://example.com',
+          saveResult: false,
+        });
+
+        expect(customResult).toMatchObject({
+          content: [
+            {
+              type: 'text',
+              text: expect.stringContaining('Content from URL'),
+            },
+          ],
+        });
+      });
+
+      it('should reject invalid URLs after preprocessing', async () => {
+        const tool = scrapeTool(
+          mockServer,
+          () => mockClients,
+          () => mockStrategyConfigClient
+        );
+
+        // Test with URL that's invalid even after preprocessing
+        const result = await tool.handler({
+          url: '   not a valid url at all   ',
+          saveResult: false,
+        });
+
+        expect(result).toMatchObject({
+          content: [
+            {
+              type: 'text',
+              text: expect.stringContaining('Invalid arguments'),
+            },
+          ],
+          isError: true,
+        });
+      });
+    });
+
     describe('error diagnostics', () => {
       it('should display detailed diagnostics when all strategies fail', async () => {
         // Set up mocks for all failures with specific errors
