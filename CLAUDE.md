@@ -358,7 +358,6 @@ Don't add: basic TypeScript fixes, standard npm troubleshooting, obvious file op
 - When setting up manual tests for servers with workspace structures (local/shared), ensure dependencies are properly installed in all subdirectories before running tests
 - Manual tests should run against built code (not source) - create a `run-manual-built.js` script that builds the project first, then runs tests against the compiled JavaScript
 - CI should fail when MANUAL_TESTING.md isn't updated for the current PR, but NOT when tests fail (some failures might be expected due to API limitations)
-- Always run prettier on new JavaScript files to ensure they pass CI formatting checks
 
 ### Monorepo Dependency Management
 
