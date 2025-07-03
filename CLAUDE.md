@@ -348,7 +348,6 @@ Don't add: basic TypeScript fixes, standard npm troubleshooting, obvious file op
 - When using `set -e` in shell scripts with npm commands, be aware that `npm view` returns exit code 1 when a package doesn't exist yet - use `|| true` to prevent premature script termination during npm registry propagation checks
 - **For `/publish_and_pr` command**: This means "stage for publishing and update PR" - it does NOT mean actually publish to npm. The workflow is: bump version → update changelog → commit → push → update PR. NPM publishing happens automatically via CI when PR is merged
 - **Manual Testing Before Publishing**: Always run manual tests (with real API credentials) before staging a version bump to ensure the server works correctly with external APIs
-- **Test File Patterns**: When simplifying manual tests to follow vitest patterns (like pulse-fetch), test the tool functions directly rather than using TestMCPClient, and ensure vitest config includes the correct test file patterns
 
 ### Monorepo Dependency Management
 
