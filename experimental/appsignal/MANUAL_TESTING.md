@@ -39,9 +39,9 @@ The tests will:
 
 ## Latest Test Results
 
-**Test Date:** 2025-07-03 16:03 PT  
-**Branch:** tadasant/add-manual-testing-to-twist-appsignal-template  
-**Commit:** ee2ba887d7fedbbedf3cb7e088ac02c87e85dd28  
+**Test Date:** 2025-07-03 16:45 PT  
+**Branch:** tadasant/bump-all-versions  
+**Commit:** 785d94f  
 **Tested By:** Claude  
 **Environment:** Local development with API keys from .env
 
