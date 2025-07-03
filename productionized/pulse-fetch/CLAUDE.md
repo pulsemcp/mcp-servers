@@ -155,7 +155,6 @@ Key insights gathered during implementation and CI troubleshooting:
 - **Multi-tier Resource Storage**: Resources are now saved in three stages (raw, cleaned, extracted) to enable debugging and reuse. FileSystem storage uses subdirectories, Memory storage uses prefixed URIs. The `writeMulti` method ensures atomic writes across all tiers with shared filenames for correlation
 - **Content Cleaning Architecture**: Renamed "filter" to "clean" throughout for clarity. The `cleanScrape` parameter (default: true) controls HTML-to-Markdown conversion independently of extraction. Cleaning is decoupled from extraction, allowing cleaned content without LLM processing
 
-### Vitest and ES Module Issues
+### .js files
 
-- **Vitest Binary ES Module Issue**: The vitest binary wrapper script uses ES module imports but doesn't specify proper Node.js ES module execution. Create a wrapper script that explicitly imports vitest's CLI to work around this issue
 - **Git and JavaScript Files**: When creating JavaScript utility scripts in a TypeScript project, remember that .gitignore often excludes all .js files. Use `git add -f` to force-add necessary scripts or add specific exceptions to .gitignore to ensure CI has access to required files
