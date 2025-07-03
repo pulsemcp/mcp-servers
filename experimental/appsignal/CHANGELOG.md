@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.11] - 2025-07-03
+
 ### Changed
 
 - Applied DRY (Don't Repeat Yourself) pattern to all tool parameter descriptions
@@ -14,6 +16,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - All 14 tool files now use consistent parameter descriptions
   - Separated Zod shape definitions from schema objects for better organization
   - Improves maintainability by eliminating description duplication
+
+### Fixed
+
+- Fixed integration test imports to use relative paths instead of package names
+  - Updated `index.integration-with-mock.ts` to use '../shared/index.js' pattern
+  - Follows monorepo workspace setup requirements for proper module resolution
 
 ## [0.2.10] - 2025-07-03
 

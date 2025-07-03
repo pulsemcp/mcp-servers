@@ -2,6 +2,7 @@ import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { TestMCPClient } from '../../../../test-mcp-client/build/index.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import 'dotenv/config';
 import type { TimelineEvent } from '../../shared/src/appsignal-client/lib/performance-incident-sample-timeline.js';
 
 const __filename = fileURLToPath(import.meta.url);
