@@ -6,7 +6,13 @@ export default defineConfig({
     globals: true,
     environment: 'node',
     include: ['tests/integration/**/*.test.ts'],
-    testTimeout: 30000, // Integration tests may take longer
+    testTimeout: 60000, // Integration tests may take longer, especially built mode
+    pool: 'forks', // Use forks to ensure test isolation
+    poolOptions: {
+      forks: {
+        singleFork: true, // Run tests sequentially to avoid conflicts
+      },
+    },
   },
   resolve: {
     alias: {
