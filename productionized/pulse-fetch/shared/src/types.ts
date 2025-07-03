@@ -3,13 +3,31 @@
  */
 
 /**
+ * Content types for MCP tool responses
+ */
+export type ToolContent =
+  | {
+      type: 'text';
+      text: string;
+    }
+  | {
+      type: 'image';
+      data: string;
+      mimeType: string;
+    }
+  | {
+      type: 'resource_link';
+      uri: string;
+      name?: string;
+      mimeType?: string;
+      description?: string;
+    };
+
+/**
  * Standard response format for MCP tools
  */
 export interface ToolResponse {
-  content: Array<{
-    type: string;
-    text: string;
-  }>;
+  content: ToolContent[];
   isError?: boolean;
 }
 

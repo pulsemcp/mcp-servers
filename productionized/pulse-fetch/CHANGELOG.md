@@ -5,6 +5,16 @@ All notable changes to the Pulse Fetch MCP server will be documented in this fil
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+- Fixed TypeScript type definitions for tool responses to match MCP specification
+  - Updated `ToolResponse` interface to properly support all content types (text, image, resource_link)
+  - Previously, the type definition only allowed text content, causing TypeScript errors when returning resource links
+  - Added proper `ToolContent` union type that matches the MCP spec for different content types
+  - This ensures type safety and proper IDE support when working with tool responses
+
 ## [0.2.9] - 2025-07-03
 
 ### Fixed

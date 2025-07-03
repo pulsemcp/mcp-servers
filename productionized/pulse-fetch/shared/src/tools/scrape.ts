@@ -5,6 +5,7 @@ import { scrapeWithStrategy } from '../scraping-strategies.js';
 import { ResourceStorageFactory } from '../storage/index.js';
 import { ExtractClientFactory } from '../extract/index.js';
 import { createCleaner } from '../clean/index.js';
+import type { ToolResponse } from '../types.js';
 
 // Detect content type based on content
 function detectContentType(content: string): string {
@@ -205,7 +206,7 @@ Use cases:
         required: ['url'],
       };
     })(),
-    handler: async (args: unknown) => {
+    handler: async (args: unknown): Promise<ToolResponse> => {
       try {
         const ScrapeArgsSchema = buildScrapeArgsSchema();
         const validatedArgs = ScrapeArgsSchema.parse(args);
@@ -309,7 +310,7 @@ Use cases:
           return {
             content: [
               {
-                type: 'text',
+                type: 'text' as const,
                 text: errorMessage,
               },
             ],
@@ -380,19 +381,10 @@ Use cases:
 
         resultText += `\n\n---\nScraped using: ${result.source}`;
 
-        const response: {
-          content: Array<{
-            type: string;
-            text?: string;
-            uri?: string;
-            name?: string;
-            mimeType?: string;
-            description?: string;
-          }>;
-        } = {
+        const response: ToolResponse = {
           content: [
             {
-              type: 'text',
+              type: 'text' as const,
               text: resultText,
             },
           ],
@@ -428,7 +420,7 @@ Use cases:
                 : uris.raw;
 
             response.content.push({
-              type: 'resource_link',
+              type: 'resource_link' as const,
               uri: primaryUri!,
               name: url,
               mimeType: detectContentType(rawContent),
@@ -448,7 +440,7 @@ Use cases:
           return {
             content: [
               {
-                type: 'text',
+                type: 'text' as const,
                 text: `Invalid arguments: ${error.errors.map((e) => `${e.path.join('.')}: ${e.message}`).join(', ')}`,
               },
             ],
@@ -459,7 +451,7 @@ Use cases:
         return {
           content: [
             {
-              type: 'text',
+              type: 'text' as const,
               text: `Failed to scrape ${(args as { url?: string })?.url || 'URL'}: ${
                 error instanceof Error ? error.message : String(error)
               }`,

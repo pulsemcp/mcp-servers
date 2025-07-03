@@ -1,4 +1,4 @@
-import type { ToolResponse } from './types.js';
+import type { ToolResponse, ToolContent } from './types.js';
 
 /**
  * Create a standard text response
@@ -24,9 +24,7 @@ export function createSuccessResponse(message: string): ToolResponse {
 /**
  * Create a response with multiple content items
  */
-export function createMultiContentResponse(
-  contents: Array<{ type: string; text: string }>
-): ToolResponse {
+export function createMultiContentResponse(contents: ToolContent[]): ToolResponse {
   return {
     content: contents,
   };
