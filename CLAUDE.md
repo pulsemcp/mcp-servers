@@ -336,6 +336,14 @@ Don't add: basic TypeScript fixes, standard npm troubleshooting, obvious file op
 - Always ensure CI passes before considering a PR complete
 - Pre-commit hooks automatically run lint-staged, but manual linting should still be run before pushing to avoid CI failures
 
+### MCP Protocol Compliance
+
+- **Critical Insight**: The MCP protocol requires stdout to contain only JSON messages. Any `console.log()` statement in server runtime code will cause protocol violations and errors like "Unexpected token...is not valid JSON"
+- **Solution**: Always use a centralized logging module that outputs to stderr, never stdout
+- **Detection**: These errors often appear when using MCP inspector or when clients try to parse server output
+- **Prevention**: Use the standardized logging infrastructure (`shared/src/logging.ts`) in all MCP servers
+- **Debugging Tip**: When users report JSON parsing errors, immediately check for console.log statements in the execution path
+
 ### Publishing Process
 
 - See [PUBLISHING_SERVERS.md](./docs/PUBLISHING_SERVERS.md) for the complete publishing process
