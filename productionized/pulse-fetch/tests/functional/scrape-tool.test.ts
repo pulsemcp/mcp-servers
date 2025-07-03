@@ -255,11 +255,11 @@ describe('Scrape Tool', () => {
     });
 
     it('should save resource when saveResource is true', async () => {
-      // Set up mock for successful native scrape
+      // Set up mock for successful native scrape with HTML content
       mockNative.setMockResponse({
         success: true,
         status: 200,
-        data: 'Content to be saved as resource',
+        data: '<html><body>Content to be saved as resource</body></html>',
       });
 
       const tool = scrapeTool(
@@ -483,6 +483,168 @@ describe('Scrape Tool', () => {
         expect(paginatedResult.content[0].text).toContain('Served from cache');
         expect(paginatedResult.content[0].text).toContain('[Content truncated at 50 characters');
         expect(paginatedResult.content[0].text).toContain('continue reading from character 150');
+      });
+    });
+
+    describe('MIME type detection', () => {
+      it('should detect text/html for HTML content', async () => {
+        const htmlContent = `<!DOCTYPE html>
+<html>
+<head><title>Example Domain</title></head>
+<body>
+<h1>Example Domain</h1>
+<p>This domain is for use in illustrative examples in documents.</p>
+</body>
+</html>`;
+
+        mockNative.setMockResponse({
+          success: true,
+          status: 200,
+          data: htmlContent,
+        });
+
+        const tool = scrapeTool(
+          mockServer,
+          () => mockClients,
+          () => mockStrategyConfigClient
+        );
+
+        const result = await tool.handler({
+          url: 'https://example.com/html-test-' + Date.now(),
+          saveResult: true,
+        });
+
+        // Check that the resource link has text/html MIME type
+        expect(result.content[1]).toMatchObject({
+          type: 'resource_link',
+          mimeType: 'text/html',
+        });
+      });
+
+      it('should detect application/json for JSON content', async () => {
+        const jsonContent = JSON.stringify({
+          message: 'Hello World',
+          status: 'success',
+          data: { id: 123, name: 'Test' },
+        });
+
+        mockNative.setMockResponse({
+          success: true,
+          status: 200,
+          data: jsonContent,
+        });
+
+        const tool = scrapeTool(
+          mockServer,
+          () => mockClients,
+          () => mockStrategyConfigClient
+        );
+
+        const result = await tool.handler({
+          url: 'https://api.example.com/json-test-' + Date.now(),
+          saveResult: true,
+        });
+
+        // Check that the resource link has application/json MIME type
+        expect(result.content[1]).toMatchObject({
+          type: 'resource_link',
+          mimeType: 'application/json',
+        });
+      });
+
+      it('should detect application/xml for XML content', async () => {
+        const xmlContent = `<?xml version="1.0" encoding="UTF-8"?>
+<root>
+  <message>Hello World</message>
+  <status>success</status>
+</root>`;
+
+        mockNative.setMockResponse({
+          success: true,
+          status: 200,
+          data: xmlContent,
+        });
+
+        const tool = scrapeTool(
+          mockServer,
+          () => mockClients,
+          () => mockStrategyConfigClient
+        );
+
+        const result = await tool.handler({
+          url: 'https://api.example.com/xml-test-' + Date.now(),
+          saveResult: true,
+        });
+
+        // Check that the resource link has application/xml MIME type
+        expect(result.content[1]).toMatchObject({
+          type: 'resource_link',
+          mimeType: 'application/xml',
+        });
+      });
+
+      it('should default to text/plain for plain text content', async () => {
+        const plainContent = 'This is just plain text without any markup or structure.';
+
+        mockNative.setMockResponse({
+          success: true,
+          status: 200,
+          data: plainContent,
+        });
+
+        const tool = scrapeTool(
+          mockServer,
+          () => mockClients,
+          () => mockStrategyConfigClient
+        );
+
+        const result = await tool.handler({
+          url: 'https://example.com/plain-test-' + Date.now(),
+          saveResult: true,
+        });
+
+        // Check that the resource link has text/plain MIME type
+        expect(result.content[1]).toMatchObject({
+          type: 'resource_link',
+          mimeType: 'text/plain',
+        });
+      });
+
+      it('should detect HTML content from BrightData and Firecrawl responses', async () => {
+        // Test with BrightData returning HTML
+        mockNative.setMockResponse({
+          success: false,
+          status: 500,
+          error: 'Native failed',
+        });
+
+        mockFirecrawl.setMockResponse({
+          success: false,
+          error: 'Firecrawl failed',
+        });
+
+        const htmlFromBrightData = '<html><body><h1>Content from BrightData</h1></body></html>';
+        mockBrightData.setMockResponse({
+          success: true,
+          data: htmlFromBrightData,
+        });
+
+        const tool = scrapeTool(
+          mockServer,
+          () => mockClients,
+          () => mockStrategyConfigClient
+        );
+
+        const result = await tool.handler({
+          url: 'https://example.com/brightdata-html-test-' + Date.now(),
+          saveResult: true,
+        });
+
+        // Check that HTML from BrightData is detected as text/html
+        expect(result.content[1]).toMatchObject({
+          type: 'resource_link',
+          mimeType: 'text/html',
+        });
       });
     });
   });

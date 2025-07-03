@@ -6,6 +6,33 @@ import { ResourceStorageFactory } from '../storage/index.js';
 import { ExtractClientFactory } from '../extract/index.js';
 import { createCleaner } from '../clean/index.js';
 
+// Detect content type based on content
+function detectContentType(content: string): string {
+  // Check if content is HTML
+  const htmlRegex =
+    /<(!DOCTYPE\s+)?html[^>]*>|<head[^>]*>|<body[^>]*>|<div[^>]*>|<p[^>]*>|<h[1-6][^>]*>/i;
+  if (htmlRegex.test(content.substring(0, 1000))) {
+    return 'text/html';
+  }
+
+  // Check if content is JSON
+  try {
+    JSON.parse(content);
+    return 'application/json';
+  } catch {
+    // Not JSON
+  }
+
+  // Check if content is XML
+  const xmlRegex = /^\s*<\?xml[^>]*\?>|^\s*<[^>]+>/;
+  if (xmlRegex.test(content)) {
+    return 'application/xml';
+  }
+
+  // Default to plain text
+  return 'text/plain';
+}
+
 // Build the schema dynamically based on available features
 const buildScrapeArgsSchema = () => {
   const baseSchema = {
@@ -396,6 +423,7 @@ Use cases:
                 startIndex,
                 maxChars,
                 wasTruncated,
+                contentType: detectContentType(rawContent),
               },
             });
 
@@ -410,7 +438,7 @@ Use cases:
               type: 'resource_link',
               uri: primaryUri!,
               name: url,
-              mimeType: extract ? 'text/plain' : 'text/html',
+              mimeType: detectContentType(rawContent),
               description: extract
                 ? `Extracted information from ${url} using query: "${extract}"`
                 : `Scraped content from ${url}`,
