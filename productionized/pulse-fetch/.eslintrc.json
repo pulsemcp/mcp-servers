@@ -3,5 +3,5 @@
   "parserOptions": {
     "project": true
   },
-  "ignorePatterns": ["**/*.js", "dist", "build"]
+  "ignorePatterns": ["**/*.js", "build"]
 }

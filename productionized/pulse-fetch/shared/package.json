@@ -2,7 +2,7 @@
   "name": "@pulsemcp/pulse-fetch-shared",
   "version": "0.0.1",
   "description": "Shared code for pulse-fetch MCP server implementations",
-  "main": "dist/index.js",
+  "main": "build/index.js",
   "type": "module",
   "scripts": {
     "build": "tsc",

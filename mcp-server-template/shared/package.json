@@ -2,7 +2,7 @@
   "name": "NAME-mcp-server-shared",
   "version": "0.1.0",
   "description": "Shared code for NAME MCP server implementations",
-  "main": "dist/index.js",
+  "main": "build/index.js",
   "type": "module",
   "scripts": {
     "build": "tsc",

@@ -1,5 +1,5 @@
 import { describe, it, expect, afterEach, beforeAll } from 'vitest';
-import { TestMCPClient } from '../../../../test-mcp-client/dist/index.js';
+import { TestMCPClient } from '../../../../test-mcp-client/build/index.js';
 import { existsSync } from 'fs';
 
 interface MockConfig {

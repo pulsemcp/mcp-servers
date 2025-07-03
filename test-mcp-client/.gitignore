@@ -2,7 +2,6 @@
 node_modules/
 
 # Build output
-dist/
 
 # TypeScript compiled files in source directories
 src/**/*.js

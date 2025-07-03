@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import { TestMCPClient } from '../../../../test-mcp-client/dist/index.js';
+import { TestMCPClient } from '../../../../test-mcp-client/build/index.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
 

@@ -7,7 +7,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 
 async function setupDev() {
   const linkPath = join(__dirname, 'shared');
-  const targetPath = join(__dirname, '../shared/dist');
+  const targetPath = join(__dirname, '../shared/build');
 
   try {
     await unlink(linkPath);

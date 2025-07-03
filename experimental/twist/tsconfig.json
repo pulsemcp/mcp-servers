@@ -3,7 +3,7 @@
     "target": "ES2022",
     "module": "Node16",
     "lib": ["ES2022"],
-    "outDir": "./dist",
+    "outDir": "./build",
     "rootDir": "./",
     "strict": true,
     "esModuleInterop": true,
@@ -15,5 +15,5 @@
     "noEmit": true
   },
   "include": ["**/*.ts"],
-  "exclude": ["node_modules", "**/dist/**", "**/build/**"]
+  "exclude": ["node_modules", "**/build/**"]
 }

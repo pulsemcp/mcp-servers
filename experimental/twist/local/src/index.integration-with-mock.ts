@@ -11,7 +11,7 @@ import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import { createMCPServer } from 'twist-mcp-server-shared';
 // Import the mock client factory from the shared module
 // Note: This import path assumes the shared module is built and the integration mock is exported
-import { createIntegrationMockTwistClient } from 'twist-mcp-server-shared/dist/twist-client/twist-client.integration-mock.js';
+import { createIntegrationMockTwistClient } from 'twist-mcp-server-shared/build/twist-client/twist-client.integration-mock.js';
 
 async function main() {
   const transport = new StdioServerTransport();

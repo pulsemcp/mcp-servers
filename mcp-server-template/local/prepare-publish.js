@@ -56,7 +56,7 @@ async function prepare() {
   }
 
   // Copy the built shared files
-  await cp(join(__dirname, '../shared/dist'), join(__dirname, 'shared'), { recursive: true });
+  await cp(join(__dirname, '../shared/build'), join(__dirname, 'shared'), { recursive: true });
 
   console.log('Copied shared files to local package');
 }

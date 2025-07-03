@@ -2,14 +2,12 @@
 node_modules/
 
 # Build output
-dist/
 build/
 
 # TypeScript compiled files in source directories
 **/*.js
 **/*.js.map
 **/*.d.ts
-!**/dist/**
 !**/build/**
 !scripts/**/*.js
 !local/prepare-publish.js
