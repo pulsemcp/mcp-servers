@@ -30,7 +30,7 @@ These are high-quality servers that we may discontinue if the official provider 
 | Name                                   | Description                                                     | Local Status | Remote Status | Target Audience                                       | Notes                                                                |
 | -------------------------------------- | --------------------------------------------------------------- | ------------ | ------------- | ----------------------------------------------------- | -------------------------------------------------------------------- |
 | [appsignal](./experimental/appsignal/) | AppSignal application performance monitoring and error tracking | 0.2.10       | Not Started   | Developers using AppSignal for application monitoring | Requires AppSignal API key; NOT officially affiliated with AppSignal |
-| [twist](./experimental/twist/)         | Twist team messaging and collaboration platform integration     | 0.1.15       | Not Started   | Teams using Twist for asynchronous communication      | Requires Twist API bearer token and workspace ID                     |
+| [twist](./experimental/twist/)         | Twist team messaging and collaboration platform integration     | 0.1.16       | Not Started   | Teams using Twist for asynchronous communication      | Requires Twist API bearer token and workspace ID                     |
 
 ## Contributing
 
