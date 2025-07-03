@@ -356,6 +356,7 @@ Don't add: basic TypeScript fixes, standard npm troubleshooting, obvious file op
 - Breaking changes in tool parameters should be clearly marked in CHANGELOG.md with **BREAKING** prefix to alert users
 - When using `set -e` in shell scripts with npm commands, be aware that `npm view` returns exit code 1 when a package doesn't exist yet - use `|| true` to prevent premature script termination during npm registry propagation checks
 - **For `/publish_and_pr` command**: This means "stage for publishing and update PR" - it does NOT mean actually publish to npm. The workflow is: bump version → update changelog → commit → push → update PR. NPM publishing happens automatically via CI when PR is merged
+- **Version Bump Process**: When making changes that affect multiple servers, bump all affected servers in a single commit. The process is: 1) Update CHANGELOGs first with the changes, 2) Run `npm run stage-publish patch` in each server's local directory, 3) Move changelog entries to the new version section with date, 4) Update README.md version table, 5) Create git tags if npm version didn't (format: `package-name@version`), 6) Commit ALL changes together
 
 ### Monorepo Dependency Management
 
