@@ -2,7 +2,7 @@
 
 /**
  * Run manual tests against built code
- * 
+ *
  * This script ensures manual tests run against the built version of the code,
  * similar to how integration tests have built vs source versions.
  */
