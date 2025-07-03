@@ -5,7 +5,6 @@ node_modules
 .pnp/
 
 # Build outputs
-dist/
 build/
 *.tsbuildinfo
 
@@ -15,7 +14,6 @@ build/
 **/*.d.ts
 **/*.d.ts.map
 # Exclude build directories from the above patterns
-!**/dist/**
 !**/build/**
 !**/node_modules/**
 # Keep helper scripts

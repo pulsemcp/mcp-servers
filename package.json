@@ -9,7 +9,8 @@
     "lint": "eslint . --ext .ts,.tsx --max-warnings 0",
     "lint:fix": "eslint . --ext .ts,.tsx --fix",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "clean": "rm -rf experimental/**/build experimental/**/dist productionized/**/build productionized/**/dist"
   },
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^8.19.0",

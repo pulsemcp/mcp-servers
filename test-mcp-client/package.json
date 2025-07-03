@@ -3,8 +3,8 @@
   "version": "1.0.0",
   "description": "Test client for MCP servers - drives integration tests via stdio transport",
   "type": "module",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "main": "build/index.js",
+  "types": "build/index.d.ts",
   "scripts": {
     "build": "tsc",
     "dev": "tsx src/index.ts",

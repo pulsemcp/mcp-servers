@@ -9,7 +9,7 @@
  */
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { createMCPServer } from 'appsignal-mcp-server-shared';
-import { createIntegrationMockAppsignalClient } from 'appsignal-mcp-server-shared/dist/appsignal-client/appsignal-client.integration-mock.js';
+import { createIntegrationMockAppsignalClient } from 'appsignal-mcp-server-shared/build/appsignal-client/appsignal-client.integration-mock.js';
 
 async function main() {
   const transport = new StdioServerTransport();

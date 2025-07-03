@@ -12,5 +12,5 @@
     "allowJs": false,
     "noEmit": true
   },
-  "exclude": ["node_modules", "**/node_modules", "dist", "build", "**/dist", "**/build"]
+  "exclude": ["node_modules", "**/node_modules", "build", "**/build"]
 }

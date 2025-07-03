@@ -3,7 +3,7 @@ import type {
   IFirecrawlClient,
   IBrightDataClient,
   IScrapingClients,
-} from '../../shared/dist/server.js';
+} from '../../shared/build/server.js';
 
 export interface MockNativeFetcher extends INativeFetcher {
   setMockResponse(response: {
