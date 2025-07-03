@@ -22,6 +22,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Added comprehensive functional test coverage for URL preprocessing behavior
   - URLs with existing protocols (http://, ftp://, custom://) are preserved as-is
 
+- Enhanced manual pages test framework to detect strategy regressions
+  - Tests now verify both pass/fail status AND which scraping strategy succeeded
+  - Added expected strategy assertions for each page/configuration combination
+  - Test output shows strategy used vs expected with clear visual indicators
+  - Strategy mismatches are tracked separately from failures and exit with non-zero code
+  - Helps catch regressions where a stable fallback masks issues with primary strategies
+
 ## [0.2.9] - 2025-07-03
 
 ### Fixed
