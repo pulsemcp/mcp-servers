@@ -336,14 +336,6 @@ Don't add: basic TypeScript fixes, standard npm troubleshooting, obvious file op
 - Always ensure CI passes before considering a PR complete
 - Pre-commit hooks automatically run lint-staged, but manual linting should still be run before pushing to avoid CI failures
 
-### MCP Protocol Compliance
-
-- **Critical Insight**: The MCP protocol requires stdout to contain only JSON messages. Any `console.log()` statement in server runtime code will cause protocol violations and errors like "Unexpected token...is not valid JSON"
-- **Solution**: Always use a centralized logging module that outputs to stderr, never stdout
-- **Detection**: These errors often appear when using MCP inspector or when clients try to parse server output
-- **Prevention**: Use the standardized logging infrastructure (`shared/src/logging.ts`) in all MCP servers
-- **Debugging Tip**: When users report JSON parsing errors, immediately check for console.log statements in the execution path
-
 ### Publishing Process
 
 - See [PUBLISHING_SERVERS.md](./docs/PUBLISHING_SERVERS.md) for the complete publishing process
@@ -356,7 +348,6 @@ Don't add: basic TypeScript fixes, standard npm troubleshooting, obvious file op
 - Breaking changes in tool parameters should be clearly marked in CHANGELOG.md with **BREAKING** prefix to alert users
 - When using `set -e` in shell scripts with npm commands, be aware that `npm view` returns exit code 1 when a package doesn't exist yet - use `|| true` to prevent premature script termination during npm registry propagation checks
 - **For `/publish_and_pr` command**: This means "stage for publishing and update PR" - it does NOT mean actually publish to npm. The workflow is: bump version → update changelog → commit → push → update PR. NPM publishing happens automatically via CI when PR is merged
-- **Version Bump Process**: When making changes that affect multiple servers, bump all affected servers in a single commit. The process is: 1) Update CHANGELOGs first with the changes, 2) Run `npm run stage-publish patch` in each server's local directory, 3) Move changelog entries to the new version section with date, 4) Update README.md version table, 5) Create git tags if npm version didn't (format: `package-name@version`), 6) Commit ALL changes together
 
 ### Monorepo Dependency Management
 
