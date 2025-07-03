@@ -23,9 +23,10 @@ export async function scrapeWithBrightData(
     });
 
     if (!response.ok) {
+      const errorText = await response.text();
       return {
         success: false,
-        error: `BrightData API error: ${response.status} ${response.statusText}`,
+        error: `BrightData API error: ${response.status} ${response.statusText}${errorText ? ` - ${errorText}` : ''}`,
       };
     }
 

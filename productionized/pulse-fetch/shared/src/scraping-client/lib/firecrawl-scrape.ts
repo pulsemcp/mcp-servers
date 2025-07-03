@@ -27,9 +27,16 @@ export async function scrapeWithFirecrawl(
     });
 
     if (!response.ok) {
+      let errorDetail = '';
+      try {
+        const errorJson = await response.json();
+        errorDetail = errorJson.error || errorJson.message || '';
+      } catch {
+        errorDetail = await response.text();
+      }
       return {
         success: false,
-        error: `Firecrawl API error: ${response.status} ${response.statusText}`,
+        error: `Firecrawl API error: ${response.status} ${response.statusText}${errorDetail ? ` - ${errorDetail}` : ''}`,
       };
     }
 

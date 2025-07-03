@@ -1,5 +1,7 @@
 Goal: get a version bump for any relevant MCP servers in place, and get the PR going that we can merge after human review.
 
+We are doing a version bump of type (major/minor/patch): $ARGUMENTS
+
 I want you to:
 
 - [ ] **CRITICAL FIRST STEP**: Before starting, run `git status` to see current state

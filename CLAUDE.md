@@ -340,7 +340,6 @@ Don't add: basic TypeScript fixes, standard npm troubleshooting, obvious file op
 
 - See [PUBLISHING_SERVERS.md](./docs/PUBLISHING_SERVERS.md) for the complete publishing process
 - **⚠️ CRITICAL: NEVER run `npm publish` locally! CI/CD handles all npm publishing automatically when PRs are merged to main**
-- Key gotcha: Git tags may not be created automatically by npm version - always verify with `git tag | grep <server-name>` and create manually if needed
 - When running `npm run stage-publish` from the local directory, it modifies both the local package-lock.json AND the parent package-lock.json - both must be committed together
 - The version bump commit should include all modified files: local/package.json, local/package-lock.json, parent package-lock.json, CHANGELOG.md, and main README.md
 - Your role is to **stage** the publication (version bump, tag, changelog) - NOT to publish to npm
@@ -356,3 +355,7 @@ Don't add: basic TypeScript fixes, standard npm troubleshooting, obvious file op
 - **Common Mistake**: Running `npm install <package> --save` from the server root directory adds dependencies to the wrong package.json - always cd into shared/ or local/ first
 - **CI Installation**: All MCP servers now have a `ci:install` script that ensures dependencies are installed in all subdirectories - this prevents `ERR_MODULE_NOT_FOUND` errors in published packages that occur when CI only runs `npm install` at the root level
 - **Published Package Dependencies**: When adding new dependencies to shared/, they MUST also be added to local/package.json to ensure they're included in the published npm package - the prepare-publish.js script only copies built JS files, not node_modules
+
+### Changelog management
+
+Whenever you make any sort of code change to an MCP server, make sure to update the unreleased section of its corresponding `CHANGELOG.md`.
