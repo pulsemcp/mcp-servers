@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **BREAKING**: Replaced `saveResult` parameter with `resultHandling` parameter for more flexible control over scraped content
+  - New options: `returnOnly` (returns content without saving), `saveAndReturn` (default - saves as embedded resource and returns), `saveOnly` (saves as linked resource only)
+  - `saveAndReturn` mode now returns a single embedded resource element instead of separate text and resource elements
+  - This change simplifies the response structure and aligns better with MCP resource patterns
+
 ### Improved
 
 - Made URL parameter more forgiving in the scrape tool

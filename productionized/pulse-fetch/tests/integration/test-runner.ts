@@ -108,7 +108,7 @@ export function runIntegrationTests(mode: TestMode) {
 
         const result = await client.callTool('scrape', {
           url: 'https://example.com',
-          saveResult: false,
+          resultHandling: 'returnOnly',
         });
 
         expect(result).toMatchObject({
@@ -132,7 +132,7 @@ export function runIntegrationTests(mode: TestMode) {
 
         const result = await client.callTool('scrape', {
           url: 'https://example.com',
-          saveResult: false,
+          resultHandling: 'returnOnly',
         });
 
         expect(result).toMatchObject({
@@ -158,7 +158,7 @@ export function runIntegrationTests(mode: TestMode) {
 
         const result = await client.callTool('scrape', {
           url: 'https://example.com',
-          saveResult: false,
+          resultHandling: 'returnOnly',
         });
 
         expect(result).toMatchObject({
@@ -183,7 +183,7 @@ export function runIntegrationTests(mode: TestMode) {
 
         const result = await client.callTool('scrape', {
           url: 'https://example.com',
-          saveResult: false,
+          resultHandling: 'returnOnly',
         });
 
         expect(result).toMatchObject({
@@ -202,7 +202,7 @@ export function runIntegrationTests(mode: TestMode) {
 
         const result = await client.callTool('scrape', {
           // Missing url parameter
-          saveResult: false,
+          resultHandling: 'returnOnly',
         });
 
         // Tool should return error response, not throw
@@ -228,7 +228,7 @@ export function runIntegrationTests(mode: TestMode) {
         const result = await client.callTool('scrape', {
           url: 'https://example.com',
           maxChars: 100,
-          saveResult: false,
+          resultHandling: 'returnOnly',
         });
 
         expect(result.content[0].text).toContain('[Content truncated at 100 characters');

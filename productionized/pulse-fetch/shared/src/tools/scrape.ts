@@ -42,8 +42,8 @@ const PARAM_DESCRIPTIONS = {
     'Maximum number of characters to return from the scraped content. Useful for limiting response size. Default: 100000',
   startIndex:
     'Character position to start reading from. Use with maxChars for pagination through large documents (e.g., startIndex: 100000 to skip first 100k chars). Default: 0',
-  saveResult:
-    'Whether to save the scraped content as an MCP Resource for later retrieval. Default: true',
+  resultHandling:
+    'How to handle scraped content and MCP Resources. Options: "saveOnly" (saves as linked resource, no content returned), "saveAndReturn" (saves as embedded resource and returns content - default), "returnOnly" (returns content without saving). Default: "saveAndReturn"',
   forceRescrape:
     'Force a fresh scrape even if cached content exists for this URL. Useful when you know the content has changed. Default: false',
   cleanScrape:
@@ -103,7 +103,11 @@ const buildScrapeArgsSchema = () => {
     timeout: z.number().optional().default(60000).describe(PARAM_DESCRIPTIONS.timeout),
     maxChars: z.number().optional().default(100000).describe(PARAM_DESCRIPTIONS.maxChars),
     startIndex: z.number().optional().default(0).describe(PARAM_DESCRIPTIONS.startIndex),
-    saveResult: z.boolean().optional().default(true).describe(PARAM_DESCRIPTIONS.saveResult),
+    resultHandling: z
+      .enum(['saveOnly', 'saveAndReturn', 'returnOnly'])
+      .optional()
+      .default('saveAndReturn')
+      .describe(PARAM_DESCRIPTIONS.resultHandling),
     forceRescrape: z.boolean().optional().default(false).describe(PARAM_DESCRIPTIONS.forceRescrape),
     cleanScrape: z.boolean().optional().default(true).describe(PARAM_DESCRIPTIONS.cleanScrape),
   };
@@ -126,42 +130,63 @@ export function scrapeTool(
 ) {
   return {
     name: 'scrape',
-    description: `Scrape webpage content using intelligent automatic strategy selection with built-in caching. This tool fetches raw HTML content from any URL, using cached content when available to improve performance and reduce API usage.
+    description: `Scrape webpage content using intelligent automatic strategy selection with built-in caching. This tool fetches content from any URL with flexible result handling options.
 
-Example response:
+Result handling modes:
+- returnOnly: Returns scraped content without saving (uses maxChars for size limits)
+- saveAndReturn: Saves content as MCP Resource AND returns it (default, best for reuse)
+- saveOnly: Saves content as MCP Resource, returns only resource link (no content)
+
+Example responses by mode:
+
+returnOnly:
 {
   "content": [
     {
       "type": "text",
-      "text": "<!DOCTYPE html>\n<html>\n<head><title>Example Article</title></head>\n<body>\n<article>\n<h1>Breaking News: Technology Advances</h1>\n<p>Content of the article...</p>\n</article>\n</body>\n</html>\n\n---\nScraped using: native"
+      "text": "Article content here...\n\n---\nScraped using: native"
+    }
+  ]
+}
+
+saveAndReturn (embedded resource):
+{
+  "content": [
+    {
+      "type": "resource",
+      "uri": "scraped://example.com/article_2024-01-15T10:30:00Z",
+      "name": "https://example.com/article",
+      "text": "Full article content..."
+    }
+  ]
+}
+
+saveOnly (linked resource):
+{
+  "content": [
+    {
+      "type": "resource_link",
+      "uri": "scraped://example.com/article_2024-01-15T10:30:00Z",
+      "name": "https://example.com/article"
     }
   ]
 }
 
 Caching behavior:
 - Previously scraped URLs are automatically cached as MCP Resources
-- Subsequent requests for the same URL return cached content (fastest)
-- Use forceRescrape: true to bypass cache and get fresh content
-- Cache hits show "Served from cache" with original scrape method and timestamp
+- Subsequent requests return cached content (unless forceRescrape: true)
+- saveOnly mode bypasses cache lookup for efficiency
 
-Scraping strategies (for fresh scrapes):
+Scraping strategies:
 - native: Direct HTTP fetch (fastest, works for most public sites)
 - firecrawl: Advanced scraping with JavaScript rendering (requires FIRECRAWL_API_KEY)
 - brightdata: Premium scraping for heavily protected sites (requires BRIGHTDATA_API_KEY)
 
 The tool automatically:
-1. Checks for cached content first (unless forceRescrape is true)
-2. For fresh scrapes, tries the most appropriate method based on learned domain patterns
-3. Falls back to alternative methods if the first attempt fails
-4. Remembers successful strategies for future requests to the same domain
-
-Use cases:
-- Fetching article content for analysis or summarization
-- Extracting data from public websites for research
-- Accessing JavaScript-heavy sites that require rendering
-- Scraping content from sites with anti-bot protection
-- Monitoring webpage changes over time (use forceRescrape for updates)
-- Gathering data for competitive analysis with automatic caching`,
+1. Checks cache first (except in saveOnly mode)
+2. Tries the most appropriate scraping method based on domain patterns
+3. Falls back to alternative methods if needed
+4. Remembers successful strategies for future requests`,
     inputSchema: (() => {
       const baseProperties = {
         url: {
@@ -184,10 +209,11 @@ Use cases:
           default: 0,
           description: PARAM_DESCRIPTIONS.startIndex,
         },
-        saveResult: {
-          type: 'boolean',
-          default: true,
-          description: PARAM_DESCRIPTIONS.saveResult,
+        resultHandling: {
+          type: 'string',
+          enum: ['saveOnly', 'saveAndReturn', 'returnOnly'],
+          default: 'saveAndReturn',
+          description: PARAM_DESCRIPTIONS.resultHandling,
         },
         forceRescrape: {
           type: 'boolean',
@@ -229,7 +255,9 @@ Use cases:
         const clients = clientsFactory();
         const configClient = strategyConfigFactory();
 
-        const { url, maxChars, startIndex, timeout, forceRescrape, cleanScrape } = validatedArgs;
+        const { url, maxChars, startIndex, timeout, forceRescrape, cleanScrape, resultHandling } =
+          validatedArgs;
+
         // Type-safe extraction of optional extract parameter
         let extract: string | undefined;
         if (ExtractClientFactory.isAvailable() && 'extract' in validatedArgs) {
@@ -237,8 +265,8 @@ Use cases:
           extract = (validatedArgs as { extract?: string }).extract;
         }
 
-        // Check for cached resources unless forceRescrape is true
-        if (!forceRescrape) {
+        // Check for cached resources unless forceRescrape is true or resultHandling is saveOnly
+        if (!forceRescrape && resultHandling !== 'saveOnly') {
           try {
             const storage = await ResourceStorageFactory.create();
             const cachedResources = await storage.findByUrlAndExtract(url, extract);
@@ -270,21 +298,34 @@ Use cases:
 
               resultText += `\n\n---\nServed from cache (originally scraped using: ${cachedResource.metadata.source || 'unknown'})\nCached at: ${cachedResource.metadata.timestamp}`;
 
-              return {
-                content: [
-                  {
-                    type: 'text' as const,
-                    text: resultText,
-                  },
-                  {
-                    type: 'resource_link' as const,
-                    uri: cachedResource.uri,
-                    name: cachedResource.name,
-                    mimeType: cachedResource.mimeType,
-                    description: cachedResource.description,
-                  },
-                ],
-              };
+              // Return based on resultHandling mode
+              if (resultHandling === 'returnOnly') {
+                return {
+                  content: [
+                    {
+                      type: 'text' as const,
+                      text: resultText,
+                    },
+                  ],
+                };
+              } else if (resultHandling === 'saveAndReturn') {
+                // For saveAndReturn, return embedded resource with content
+                return {
+                  content: [
+                    {
+                      type: 'resource' as const,
+                      uri: cachedResource.uri,
+                      name: cachedResource.name,
+                      mimeType: cachedResource.mimeType,
+                      description: cachedResource.description,
+                      text: processedContent, // Original content without metadata
+                    },
+                  ],
+                };
+              } else {
+                // saveOnly mode shouldn't reach here due to cache bypass
+                throw new Error('Invalid state: saveOnly mode should bypass cache');
+              }
             }
           } catch (error) {
             // If cache lookup fails, proceed with fresh scrape
@@ -377,25 +418,30 @@ Use cases:
           }
         }
 
-        // Apply character limits and pagination
+        // Apply character limits and pagination (only for return options)
         let processedContent = displayContent;
-        if (startIndex > 0) {
-          processedContent = processedContent.slice(startIndex);
-        }
-
         let wasTruncated = false;
-        if (processedContent.length > maxChars) {
-          processedContent = processedContent.slice(0, maxChars);
-          wasTruncated = true;
+
+        if (resultHandling !== 'saveOnly') {
+          if (startIndex > 0) {
+            processedContent = processedContent.slice(startIndex);
+          }
+
+          if (processedContent.length > maxChars) {
+            processedContent = processedContent.slice(0, maxChars);
+            wasTruncated = true;
+          }
         }
 
-        // Format output
-        let resultText = processedContent;
-        if (wasTruncated) {
-          resultText += `\n\n[Content truncated at ${maxChars} characters. Use startIndex parameter to continue reading from character ${startIndex + maxChars}]`;
+        // Format output for return options
+        let resultText = '';
+        if (resultHandling !== 'saveOnly') {
+          resultText = processedContent;
+          if (wasTruncated) {
+            resultText += `\n\n[Content truncated at ${maxChars} characters. Use startIndex parameter to continue reading from character ${startIndex + maxChars}]`;
+          }
+          resultText += `\n\n---\nScraped using: ${result.source}`;
         }
-
-        resultText += `\n\n---\nScraped using: ${result.source}`;
 
         const response: {
           content: Array<{
@@ -407,16 +453,19 @@ Use cases:
             description?: string;
           }>;
         } = {
-          content: [
-            {
-              type: 'text',
-              text: resultText,
-            },
-          ],
+          content: [],
         };
 
-        // Save as a resource if requested
-        if (validatedArgs.saveResult) {
+        // Add text content for returnOnly option
+        if (resultHandling === 'returnOnly') {
+          response.content.push({
+            type: 'text',
+            text: resultText,
+          });
+        }
+
+        // Save as a resource for save options
+        if (resultHandling === 'saveOnly' || resultHandling === 'saveAndReturn') {
           try {
             const storage = await ResourceStorageFactory.create();
             const uris = await storage.writeMulti({
@@ -444,15 +493,36 @@ Use cases:
                 ? uris.cleaned
                 : uris.raw;
 
-            response.content.push({
-              type: 'resource_link',
-              uri: primaryUri!,
-              name: url,
-              mimeType: detectContentType(rawContent),
-              description: extract
-                ? `Extracted information from ${url} using query: "${extract}"`
-                : `Scraped content from ${url}`,
-            });
+            const resourceDescription = extract
+              ? `Extracted information from ${url} using query: "${extract}"`
+              : `Scraped content from ${url}`;
+
+            // Determine MIME type based on what content we're actually storing/returning
+            const contentMimeType =
+              extractedContent || cleanedContent
+                ? 'text/markdown' // Cleaned/extracted content is in Markdown format
+                : detectContentType(rawContent); // Raw content keeps original type
+
+            if (resultHandling === 'saveOnly') {
+              // For saveOnly, return only the resource link
+              response.content.push({
+                type: 'resource_link',
+                uri: primaryUri!,
+                name: url,
+                mimeType: contentMimeType,
+                description: resourceDescription,
+              });
+            } else if (resultHandling === 'saveAndReturn') {
+              // For saveAndReturn, return embedded resource with content
+              response.content.push({
+                type: 'resource',
+                uri: primaryUri!,
+                name: url,
+                mimeType: contentMimeType,
+                description: resourceDescription,
+                text: displayContent,
+              });
+            }
           } catch (error) {
             console.error('Failed to save scraped content as resource:', error);
             // Continue without resource saving - the scraping was still successful

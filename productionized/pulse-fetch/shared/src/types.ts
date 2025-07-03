@@ -25,6 +25,11 @@ export interface ScrapeResult {
 }
 
 /**
+ * Result handling options for scrape results
+ */
+export type ResultHandling = 'saveOnly' | 'saveAndReturn' | 'returnOnly';
+
+/**
  * Scraping options interface
  */
 export interface ScrapeOptions {
@@ -32,5 +37,5 @@ export interface ScrapeOptions {
   extract?: string;
   maxChars?: number;
   startIndex?: number;
-  saveResult?: boolean;
+  resultHandling?: ResultHandling;
 }

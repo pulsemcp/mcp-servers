@@ -46,7 +46,7 @@ describe('Scrape Tool', () => {
 
     const result = await tool.handler({
       url: 'https://example.com',
-      saveResult: false,
+      resultHandling: 'returnOnly',
       timeout: 10000,
     });
 
@@ -67,7 +67,7 @@ describe('Scrape Tool', () => {
 
     const result = await tool.handler({
       url: 'https://httpstat.us/500',
-      saveResult: false,
+      resultHandling: 'returnOnly',
       timeout: 10000,
     });
 
@@ -92,7 +92,7 @@ describe('Scrape Tool', () => {
     const result = await tool.handler({
       url: 'https://example.com',
       extract: 'What is the main heading on this page?',
-      saveResult: false,
+      resultHandling: 'returnOnly',
       timeout: 10000,
     });
 
