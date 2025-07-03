@@ -59,15 +59,29 @@ Use cases:
 - Understanding the context where errors occurred
 - Investigating user-specific error conditions
 - Tracking error occurrences across different app versions`,
-      inputSchema: GetExceptionIncidentSampleSchema,
+      inputSchema: {
+        type: 'object',
+        properties: {
+          incidentNumber: {
+            type: 'string',
+            description: PARAM_DESCRIPTIONS.incidentNumber,
+          },
+          offset: {
+            type: 'number',
+            description: PARAM_DESCRIPTIONS.offset,
+          },
+        },
+        required: ['incidentNumber'],
+      } as any, // eslint-disable-line @typescript-eslint/no-explicit-any
     },
-    async ({ incidentNumber, offset }) => {
+    async (args: unknown) => {
+      const { incidentNumber, offset } = GetExceptionIncidentSampleSchema.parse(args);
       const appId = getEffectiveAppId();
       if (!appId) {
         return {
           content: [
             {
-              type: 'text',
+              type: 'text' as const,
               text: 'Error: No app ID configured. Please use select_app_id tool first or set APPSIGNAL_APP_ID environment variable.',
             },
           ],
@@ -81,7 +95,7 @@ Use cases:
         return {
           content: [
             {
-              type: 'text',
+              type: 'text' as const,
               text: JSON.stringify(sample, null, 2),
             },
           ],
@@ -90,7 +104,7 @@ Use cases:
         return {
           content: [
             {
-              type: 'text',
+              type: 'text' as const,
               text: `Error fetching exception incident sample: ${error instanceof Error ? error.message : 'Unknown error'}`,
             },
           ],

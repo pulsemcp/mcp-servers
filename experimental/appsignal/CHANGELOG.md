@@ -14,6 +14,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Added `PARAM_DESCRIPTIONS` constants to maintain single source of truth
   - All 14 tool files now follow consistent modern pattern
   - Improves maintainability and type safety with better tool configuration objects
+- Updated all tools to use JSON Schema format for `inputSchema` instead of passing Zod schemas directly
+  - This aligns with MCP SDK best practices for tool registration
+  - Handler functions now accept `args: unknown` and parse with Zod schemas for validation
+  - Added TypeScript type assertions to satisfy compiler requirements
 
 ## [0.2.10] - 2025-07-03
 

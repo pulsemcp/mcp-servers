@@ -71,17 +71,38 @@ Use cases:
 - Monitoring error trends and patterns
 - Tracking the status of error resolution efforts
 - Identifying the most frequent or critical exceptions`,
-      inputSchema: GetExceptionIncidentsSchema,
+      inputSchema: {
+        type: 'object',
+        properties: {
+          states: {
+            type: 'array',
+            items: {
+              type: 'string',
+              enum: ['OPEN', 'CLOSED', 'WIP'],
+            },
+            description: PARAM_DESCRIPTIONS.states,
+          },
+          limit: {
+            type: 'number',
+            description: PARAM_DESCRIPTIONS.limit,
+          },
+          offset: {
+            type: 'number',
+            description: PARAM_DESCRIPTIONS.offset,
+          },
+        },
+        required: [],
+      } as any, // eslint-disable-line @typescript-eslint/no-explicit-any
     },
-    async (args) => {
+    async (args: unknown) => {
       // Handle all parameter scenarios: {}, undefined, or missing entirely
-      const { states, limit, offset } = args || {};
+      const { states, limit, offset } = GetExceptionIncidentsSchema.parse(args || {});
       const appId = getEffectiveAppId();
       if (!appId) {
         return {
           content: [
             {
-              type: 'text',
+              type: 'text' as const,
               text: 'Error: No app ID configured. Please use select_app_id tool first or set APPSIGNAL_APP_ID environment variable.',
             },
           ],
@@ -100,7 +121,7 @@ Use cases:
         return {
           content: [
             {
-              type: 'text',
+              type: 'text' as const,
               text: JSON.stringify(result, null, 2),
             },
           ],
@@ -109,7 +130,7 @@ Use cases:
         return {
           content: [
             {
-              type: 'text',
+              type: 'text' as const,
               text: `Error fetching exception incidents: ${error instanceof Error ? error.message : 'Unknown error'}`,
             },
           ],

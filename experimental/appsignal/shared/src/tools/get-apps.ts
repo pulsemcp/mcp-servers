@@ -33,9 +33,14 @@ Use cases:
 - Starting a monitoring session by listing available apps
 - Verifying which applications are configured in AppSignal
 - Finding the correct app ID to use with other monitoring tools`,
-      inputSchema: GetAppsSchema,
+      inputSchema: {
+        type: 'object',
+        properties: {},
+        required: [],
+      } as any, // eslint-disable-line @typescript-eslint/no-explicit-any
     },
-    async () => {
+    async (args: unknown) => {
+      GetAppsSchema.parse(args || {});
       try {
         const client = clientFactory();
         const apps = await client.getApps();
@@ -43,7 +48,7 @@ Use cases:
         return {
           content: [
             {
-              type: 'text',
+              type: 'text' as const,
               text: JSON.stringify(
                 {
                   apps: apps,
@@ -58,7 +63,7 @@ Use cases:
         return {
           content: [
             {
-              type: 'text',
+              type: 'text' as const,
               text: `Error fetching apps: ${error instanceof Error ? error.message : 'Unknown error'}`,
             },
           ],
