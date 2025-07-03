@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Modernized all tools to use `McpServer.registerTool()` instead of deprecated `server.tool()` method
+- Applied DRY (Don't Repeat Yourself) pattern to all tool parameter descriptions
+  - Added `PARAM_DESCRIPTIONS` constants to maintain single source of truth
+  - All 14 tool files now follow consistent modern pattern
+  - Improves maintainability and type safety with better tool configuration objects
+
 ## [0.2.10] - 2025-07-03
 
 ### Added

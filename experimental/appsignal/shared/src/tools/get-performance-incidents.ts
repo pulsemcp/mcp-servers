@@ -3,13 +3,32 @@ import { z } from 'zod';
 import { getEffectiveAppId } from '../state.js';
 import { IAppsignalClient } from '../appsignal-client/appsignal-client.js';
 
+// Parameter descriptions - single source of truth
+const PARAM_DESCRIPTIONS = {
+  states:
+    'Filter incidents by state(s). OPEN = active issues, WIP = being investigated, CLOSED = resolved. Defaults to ["OPEN"] if not provided',
+  limit: 'Maximum number of incidents to return for pagination. Defaults to 50',
+  offset: 'Number of incidents to skip for pagination. Defaults to 0',
+} as const;
+
 export function getPerformanceIncidentsTool(
   server: McpServer,
   clientFactory: () => IAppsignalClient
 ) {
-  return server.tool(
+  const GetPerformanceIncidentsSchema = z.object({
+    states: z
+      .array(z.enum(['OPEN', 'CLOSED', 'WIP']))
+      .optional()
+      .describe(PARAM_DESCRIPTIONS.states),
+    limit: z.number().optional().describe(PARAM_DESCRIPTIONS.limit),
+    offset: z.number().optional().describe(PARAM_DESCRIPTIONS.offset),
+  });
+
+  return server.registerTool(
     'get_performance_incidents',
-    `Retrieve a list of performance incidents from your AppSignal application. Performance incidents identify slow endpoints, database queries, and other performance bottlenecks in your application. This tool provides an overview of all performance issues affecting your application, with filtering and pagination capabilities.
+    {
+      title: 'Get Performance Incidents',
+      description: `Retrieve a list of performance incidents from your AppSignal application. Performance incidents identify slow endpoints, database queries, and other performance bottlenecks in your application. This tool provides an overview of all performance issues affecting your application, with filtering and pagination capabilities.
 
 Example response:
 {
@@ -70,21 +89,7 @@ Use cases:
 - Monitoring performance trends and patterns
 - Tracking the status of performance optimization efforts
 - Identifying N+1 queries and slow database operations`,
-    {
-      states: z
-        .array(z.enum(['OPEN', 'CLOSED', 'WIP']))
-        .optional()
-        .describe(
-          'Filter incidents by state(s). OPEN = active issues, WIP = being investigated, CLOSED = resolved. Defaults to ["OPEN"] if not provided'
-        ),
-      limit: z
-        .number()
-        .optional()
-        .describe('Maximum number of incidents to return for pagination. Defaults to 50'),
-      offset: z
-        .number()
-        .optional()
-        .describe('Number of incidents to skip for pagination. Defaults to 0'),
+      inputSchema: GetPerformanceIncidentsSchema,
     },
     async (args) => {
       // Handle all parameter scenarios: {}, undefined, or missing entirely

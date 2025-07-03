@@ -1,10 +1,15 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { z } from 'zod';
 import { IAppsignalClient } from '../appsignal-client/appsignal-client.js';
 
 export function getAppsTool(server: McpServer, clientFactory: () => IAppsignalClient) {
-  return server.tool(
+  const GetAppsSchema = z.object({});
+
+  return server.registerTool(
     'get_apps',
-    `Retrieve a list of all available AppSignal applications associated with your account. This tool is essential for discovering which applications you can monitor and must be used before selecting a specific app to work with. Returns an array of application objects containing details like app ID, name, environment, and other metadata. This is typically the first tool you'll use when starting an AppSignal monitoring session.
+    {
+      title: 'Get Apps',
+      description: `Retrieve a list of all available AppSignal applications associated with your account. This tool is essential for discovering which applications you can monitor and must be used before selecting a specific app to work with. Returns an array of application objects containing details like app ID, name, environment, and other metadata. This is typically the first tool you'll use when starting an AppSignal monitoring session.
 
 Example response:
 {
@@ -28,7 +33,8 @@ Use cases:
 - Starting a monitoring session by listing available apps
 - Verifying which applications are configured in AppSignal
 - Finding the correct app ID to use with other monitoring tools`,
-    {},
+      inputSchema: GetAppsSchema,
+    },
     async () => {
       try {
         const client = clientFactory();

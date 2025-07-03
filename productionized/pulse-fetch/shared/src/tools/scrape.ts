@@ -33,68 +33,22 @@ function detectContentType(content: string): string {
   return 'text/plain';
 }
 
-// Build the schema dynamically based on available features
-const buildScrapeArgsSchema = () => {
-  const baseSchema = {
-    url: z
-      .string()
-      .url()
-      .describe(
-        'The webpage URL to scrape (e.g., "https://example.com/article", "https://api.example.com/docs")'
-      ),
-    timeout: z
-      .number()
-      .optional()
-      .default(60000)
-      .describe(
-        'Maximum time to wait for page load in milliseconds. Increase for slow-loading sites (e.g., 120000 for 2 minutes). Default: 60000 (1 minute)'
-      ),
-    maxChars: z
-      .number()
-      .optional()
-      .default(100000)
-      .describe(
-        'Maximum number of characters to return from the scraped content. Useful for limiting response size. Default: 100000'
-      ),
-    startIndex: z
-      .number()
-      .optional()
-      .default(0)
-      .describe(
-        'Character position to start reading from. Use with maxChars for pagination through large documents (e.g., startIndex: 100000 to skip first 100k chars). Default: 0'
-      ),
-    saveResult: z
-      .boolean()
-      .optional()
-      .default(true)
-      .describe(
-        'Whether to save the scraped content as an MCP Resource for later retrieval. Default: true'
-      ),
-    forceRescrape: z
-      .boolean()
-      .optional()
-      .default(false)
-      .describe(
-        'Force a fresh scrape even if cached content exists for this URL. Useful when you know the content has changed. Default: false'
-      ),
-    cleanScrape: z
-      .boolean()
-      .optional()
-      .default(true)
-      .describe(
-        'Whether to clean the scraped content by converting HTML to semantic Markdown, removing ads, navigation, and boilerplate. This typically reduces content size by 50-90% while preserving main content. Only disable this for debugging or when you need the exact raw HTML structure. Default: true'
-      ),
-  };
-
-  // Only include extract parameter if extraction is available
-  if (ExtractClientFactory.isAvailable()) {
-    return z.object({
-      ...baseSchema,
-      extract: z
-        .string()
-        .optional()
-        .describe(
-          `Natural language query for intelligent content extraction. Describe what information you want extracted from the scraped page.
+// Parameter descriptions - single source of truth
+const PARAM_DESCRIPTIONS = {
+  url: 'The webpage URL to scrape (e.g., "https://example.com/article", "https://api.example.com/docs")',
+  timeout:
+    'Maximum time to wait for page load in milliseconds. Increase for slow-loading sites (e.g., 120000 for 2 minutes). Default: 60000 (1 minute)',
+  maxChars:
+    'Maximum number of characters to return from the scraped content. Useful for limiting response size. Default: 100000',
+  startIndex:
+    'Character position to start reading from. Use with maxChars for pagination through large documents (e.g., startIndex: 100000 to skip first 100k chars). Default: 0',
+  saveResult:
+    'Whether to save the scraped content as an MCP Resource for later retrieval. Default: true',
+  forceRescrape:
+    'Force a fresh scrape even if cached content exists for this URL. Useful when you know the content has changed. Default: false',
+  cleanScrape:
+    "Whether to clean the scraped content by converting HTML to semantic Markdown of what's on the page, removing ads, navigation, and boilerplate. This typically reduces content size by 50-90% while preserving main content. Only disable this for debugging or when you need the exact raw HTML structure. Default: true",
+  extract: `Natural language query for intelligent content extraction. Describe what information you want extracted from the scraped page.
 
 Examples:
 
@@ -122,8 +76,26 @@ Complex queries:
 - "identify all dates mentioned and what events they relate to"
 - "extract technical specifications and explain them in simple terms"
 
-The LLM will intelligently parse the page content and return only the requested information in a clear, readable format.`
-        ),
+The LLM will intelligently parse the page content and return only the requested information in a clear, readable format.`,
+} as const;
+
+// Build the schema dynamically based on available features
+const buildScrapeArgsSchema = () => {
+  const baseSchema = {
+    url: z.string().url().describe(PARAM_DESCRIPTIONS.url),
+    timeout: z.number().optional().default(60000).describe(PARAM_DESCRIPTIONS.timeout),
+    maxChars: z.number().optional().default(100000).describe(PARAM_DESCRIPTIONS.maxChars),
+    startIndex: z.number().optional().default(0).describe(PARAM_DESCRIPTIONS.startIndex),
+    saveResult: z.boolean().optional().default(true).describe(PARAM_DESCRIPTIONS.saveResult),
+    forceRescrape: z.boolean().optional().default(false).describe(PARAM_DESCRIPTIONS.forceRescrape),
+    cleanScrape: z.boolean().optional().default(true).describe(PARAM_DESCRIPTIONS.cleanScrape),
+  };
+
+  // Only include extract parameter if extraction is available
+  if (ExtractClientFactory.isAvailable()) {
+    return z.object({
+      ...baseSchema,
+      extract: z.string().optional().describe(PARAM_DESCRIPTIONS.extract),
     });
   }
 
@@ -178,38 +150,37 @@ Use cases:
         url: {
           type: 'string',
           format: 'uri',
-          description: 'The webpage URL to scrape (e.g., "https://example.com/article")',
+          description: PARAM_DESCRIPTIONS.url,
         },
         timeout: {
           type: 'number',
           default: 60000,
-          description:
-            'Maximum time to wait for page load in milliseconds. Increase for slow sites. Default: 60000',
+          description: PARAM_DESCRIPTIONS.timeout,
         },
         maxChars: {
           type: 'number',
           default: 100000,
-          description: 'Maximum number of characters to return. Default: 100000',
+          description: PARAM_DESCRIPTIONS.maxChars,
         },
         startIndex: {
           type: 'number',
           default: 0,
-          description: 'Character position to start from. Use for pagination. Default: 0',
+          description: PARAM_DESCRIPTIONS.startIndex,
         },
         saveResult: {
           type: 'boolean',
           default: true,
-          description: 'Whether to save as MCP Resource. Default: true',
+          description: PARAM_DESCRIPTIONS.saveResult,
         },
         forceRescrape: {
           type: 'boolean',
           default: false,
-          description: 'Force fresh scrape even if cached. Default: false',
+          description: PARAM_DESCRIPTIONS.forceRescrape,
         },
         cleanScrape: {
           type: 'boolean',
           default: true,
-          description: 'Clean content by converting HTML to Markdown. Default: true',
+          description: PARAM_DESCRIPTIONS.cleanScrape,
         },
       };
 
@@ -221,8 +192,7 @@ Use cases:
             ...baseProperties,
             extract: {
               type: 'string',
-              description:
-                'Natural language description of what to extract from the page (e.g., "article title and publish date")',
+              description: PARAM_DESCRIPTIONS.extract,
             },
           },
           required: ['url'],

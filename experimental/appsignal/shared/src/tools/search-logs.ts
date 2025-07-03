@@ -3,10 +3,33 @@ import { z } from 'zod';
 import { getEffectiveAppId } from '../state.js';
 import { IAppsignalClient } from '../appsignal-client/appsignal-client.js';
 
+// Parameter descriptions - single source of truth
+const PARAM_DESCRIPTIONS = {
+  query:
+    'Search query to filter logs (e.g., "payment failed", "user_id:123", "error_code:timeout")',
+  limit: 'Maximum number of log entries to return (default: 50, max: 1000)',
+  severities: 'Filter by severity levels. If not specified, returns logs of all severities',
+  start: 'Start time for the search window in ISO 8601 format (e.g., "2024-01-15T00:00:00Z")',
+  end: 'End time for the search window in ISO 8601 format (e.g., "2024-01-15T23:59:59Z")',
+} as const;
+
 export function searchLogsTool(server: McpServer, clientFactory: () => IAppsignalClient) {
-  return server.tool(
+  const SearchLogsSchema = z.object({
+    query: z.string().describe(PARAM_DESCRIPTIONS.query),
+    limit: z.number().int().positive().default(50).describe(PARAM_DESCRIPTIONS.limit),
+    severities: z
+      .array(z.enum(['debug', 'info', 'warn', 'error', 'fatal']))
+      .optional()
+      .describe(PARAM_DESCRIPTIONS.severities),
+    start: z.string().optional().describe(PARAM_DESCRIPTIONS.start),
+    end: z.string().optional().describe(PARAM_DESCRIPTIONS.end),
+  });
+
+  return server.registerTool(
     'search_logs',
-    `Search through application logs in AppSignal with powerful filtering capabilities. This tool allows you to query logs by content, filter by severity levels, and retrieve recent log entries matching your criteria. It's essential for troubleshooting specific issues, analyzing application behavior, and investigating error conditions.
+    {
+      title: 'Search Logs',
+      description: `Search through application logs in AppSignal with powerful filtering capabilities. This tool allows you to query logs by content, filter by severity levels, and retrieve recent log entries matching your criteria. It's essential for troubleshooting specific issues, analyzing application behavior, and investigating error conditions.
 
 Note that it can be very helpful to use start/end parameters around the time of an incident to pull together all the context on it. Generally, you probably want 10 seconds leading up to the incident through 3 seconds after it; and then expand from there if that's not enough context.
 
@@ -57,34 +80,7 @@ Use cases:
 - Analyzing log patterns around specific time periods
 - Debugging by following trace IDs across services
 - Filtering logs by severity to focus on critical issues`,
-    {
-      query: z
-        .string()
-        .describe(
-          'Search query to filter logs (e.g., "payment failed", "user_id:123", "error_code:timeout")'
-        ),
-      limit: z
-        .number()
-        .int()
-        .positive()
-        .default(50)
-        .describe('Maximum number of log entries to return (default: 50, max: 1000)'),
-      severities: z
-        .array(z.enum(['debug', 'info', 'warn', 'error', 'fatal']))
-        .optional()
-        .describe('Filter by severity levels. If not specified, returns logs of all severities'),
-      start: z
-        .string()
-        .optional()
-        .describe(
-          'Start time for the search window in ISO 8601 format (e.g., "2024-01-15T00:00:00Z")'
-        ),
-      end: z
-        .string()
-        .optional()
-        .describe(
-          'End time for the search window in ISO 8601 format (e.g., "2024-01-15T23:59:59Z")'
-        ),
+      inputSchema: SearchLogsSchema,
     },
     async ({ query, limit, severities, start, end }) => {
       const appId = getEffectiveAppId();

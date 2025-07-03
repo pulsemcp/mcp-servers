@@ -2,48 +2,40 @@ import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { z } from 'zod';
 import type { ClientFactory, Thread } from '../server.js';
 
+// Parameter descriptions (single source of truth)
+const PARAM_DESCRIPTIONS = {
+  channel_id:
+    'The unique identifier of the channel (e.g., "123456"). Use get_channels to find channel IDs',
+  include_threads: 'Whether to include threads in the channel (default: true)',
+  threads_limit:
+    'Maximum number of threads to return when include_threads is true (default: 10, max: 100)',
+  threads_offset:
+    'Number of threads to skip for pagination when include_threads is true (e.g., offset: 50 to get the next page after first 50)',
+  include_closed_threads:
+    'Whether to include closed threads in the results when include_threads is true (default: false, only shows open threads)',
+  threads_newer_than_ts:
+    'Unix timestamp in seconds to filter threads created after this time when include_threads is true (e.g., 1704067200 for Jan 1, 2024)',
+} as const;
+
 /**
  * Tool for getting details about a specific channel
  */
 export function getChannelTool(server: Server, clientFactory: ClientFactory) {
   const GetChannelSchema = z.object({
-    channel_id: z
-      .string()
-      .describe(
-        'The unique identifier of the channel (e.g., "123456"). Use get_channels to find channel IDs'
-      ),
+    channel_id: z.string().describe(PARAM_DESCRIPTIONS.channel_id),
     include_threads: z
       .boolean()
       .optional()
       .default(true)
-      .describe('Whether to include threads in the channel (default: true)'),
-    threads_limit: z
-      .number()
-      .optional()
-      .default(10)
-      .describe(
-        'Maximum number of threads to return when include_threads is true (default: 10, max: 100)'
-      ),
-    threads_offset: z
-      .number()
-      .optional()
-      .default(0)
-      .describe(
-        'Number of threads to skip for pagination when include_threads is true (e.g., offset: 50 to get the next page after first 50)'
-      ),
+      .describe(PARAM_DESCRIPTIONS.include_threads),
+    threads_limit: z.number().optional().default(10).describe(PARAM_DESCRIPTIONS.threads_limit),
+    threads_offset: z.number().optional().default(0).describe(PARAM_DESCRIPTIONS.threads_offset),
     include_closed_threads: z
       .boolean()
       .optional()
       .default(false)
-      .describe(
-        'Whether to include closed threads in the results when include_threads is true (default: false, only shows open threads)'
-      ),
-    threads_newer_than_ts: z
-      .number()
-      .optional()
-      .describe(
-        'Unix timestamp in seconds to filter threads created after this time when include_threads is true (e.g., 1704067200 for Jan 1, 2024)'
-      ),
+      .describe(PARAM_DESCRIPTIONS.include_closed_threads),
+    threads_newer_than_ts: z.number().optional().describe(PARAM_DESCRIPTIONS.threads_newer_than_ts),
   });
 
   return {
@@ -76,36 +68,31 @@ Use cases:
       properties: {
         channel_id: {
           type: 'string',
-          description:
-            'The unique identifier of the channel (e.g., "123456"). Use get_channels to find channel IDs',
+          description: PARAM_DESCRIPTIONS.channel_id,
         },
         include_threads: {
           type: 'boolean',
-          description: 'Whether to include threads in the channel (default: true)',
+          description: PARAM_DESCRIPTIONS.include_threads,
           default: true,
         },
         threads_limit: {
           type: 'number',
-          description:
-            'Maximum number of threads to return when include_threads is true (default: 10, max: 100)',
+          description: PARAM_DESCRIPTIONS.threads_limit,
           default: 10,
         },
         threads_offset: {
           type: 'number',
-          description:
-            'Number of threads to skip for pagination when include_threads is true (e.g., offset: 50 to get the next page after first 50)',
+          description: PARAM_DESCRIPTIONS.threads_offset,
           default: 0,
         },
         include_closed_threads: {
           type: 'boolean',
-          description:
-            'Whether to include closed threads in the results when include_threads is true (default: false, only shows open threads)',
+          description: PARAM_DESCRIPTIONS.include_closed_threads,
           default: false,
         },
         threads_newer_than_ts: {
           type: 'number',
-          description:
-            'Unix timestamp in seconds to filter threads created after this time when include_threads is true (e.g., 1704067200 for Jan 1, 2024)',
+          description: PARAM_DESCRIPTIONS.threads_newer_than_ts,
         },
       },
       required: ['channel_id'],

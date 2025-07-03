@@ -3,10 +3,21 @@ import { z } from 'zod';
 import { getEffectiveAppId } from '../state.js';
 import { IAppsignalClient } from '../appsignal-client/appsignal-client.js';
 
+// Parameter descriptions - single source of truth
+const PARAM_DESCRIPTIONS = {
+  incidentNumber: 'The unique number of the log incident to retrieve',
+} as const;
+
 export function getLogIncidentTool(server: McpServer, clientFactory: () => IAppsignalClient) {
-  return server.tool(
+  const GetLogIncidentSchema = z.object({
+    incidentNumber: z.string().describe(PARAM_DESCRIPTIONS.incidentNumber),
+  });
+
+  return server.registerTool(
     'get_log_incident',
-    `Retrieve detailed information about a specific log incident in your AppSignal application. Log incidents represent patterns in your application logs that indicate potential issues, such as repeated error messages, warning patterns, or critical system events. This tool provides comprehensive details about a single log incident including the log pattern, frequency, and context.
+    {
+      title: 'Get Log Incident',
+      description: `Retrieve detailed information about a specific log incident in your AppSignal application. Log incidents represent patterns in your application logs that indicate potential issues, such as repeated error messages, warning patterns, or critical system events. This tool provides comprehensive details about a single log incident including the log pattern, frequency, and context.
 
 Example response:
 {
@@ -40,7 +51,8 @@ Use cases:
 - Tracking down intermittent issues captured in logs
 - Analyzing the impact of log incidents on different services
 - Monitoring the resolution status of identified log patterns`,
-    { incidentNumber: z.string().describe('The unique number of the log incident to retrieve') },
+      inputSchema: GetLogIncidentSchema,
+    },
     async ({ incidentNumber }) => {
       const appId = getEffectiveAppId();
       if (!appId) {

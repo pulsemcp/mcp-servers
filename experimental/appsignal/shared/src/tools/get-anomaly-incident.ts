@@ -3,10 +3,21 @@ import { z } from 'zod';
 import { getEffectiveAppId } from '../state.js';
 import { IAppsignalClient } from '../appsignal-client/appsignal-client.js';
 
+// Parameter descriptions - single source of truth
+const PARAM_DESCRIPTIONS = {
+  incidentNumber: 'The unique number of the anomaly incident to retrieve',
+} as const;
+
 export function getAnomalyIncidentTool(server: McpServer, clientFactory: () => IAppsignalClient) {
-  return server.tool(
+  const GetAnomalyIncidentSchema = z.object({
+    incidentNumber: z.string().describe(PARAM_DESCRIPTIONS.incidentNumber),
+  });
+
+  return server.registerTool(
     'get_anomaly_incident',
-    `Retrieve detailed information about a specific anomaly incident in your AppSignal application. Anomaly incidents are automatically detected unusual patterns in your application's performance metrics, such as abnormal response times, memory usage spikes, or throughput variations. This tool provides comprehensive details about a single anomaly, including when it was detected, its severity, affected metrics, and current status.
+    {
+      title: 'Get Anomaly Incident',
+      description: `Retrieve detailed information about a specific anomaly incident in your AppSignal application. Anomaly incidents are automatically detected unusual patterns in your application's performance metrics, such as abnormal response times, memory usage spikes, or throughput variations. This tool provides comprehensive details about a single anomaly, including when it was detected, its severity, affected metrics, and current status.
 
 Example response:
 {
@@ -28,8 +39,7 @@ Use cases:
 - Getting detailed metrics about unusual application behavior
 - Understanding the scope and impact of detected anomalies
 - Tracking the resolution status of performance issues`,
-    {
-      incidentNumber: z.string().describe('The unique number of the anomaly incident to retrieve'),
+      inputSchema: GetAnomalyIncidentSchema,
     },
     async ({ incidentNumber }) => {
       const appId = getEffectiveAppId();

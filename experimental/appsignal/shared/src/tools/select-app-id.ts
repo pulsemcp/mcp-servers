@@ -3,15 +3,26 @@ import { z } from 'zod';
 import { setSelectedAppId } from '../state.js';
 import { IAppsignalClient } from '../appsignal-client/appsignal-client.js';
 
+// Parameter descriptions - single source of truth
+const PARAM_DESCRIPTIONS = {
+  appId: 'The AppSignal application ID to select from the list returned by get_apps',
+} as const;
+
 export function selectAppIdTool(
   server: McpServer,
   toolName: string,
   enableMainTools?: () => void,
   _clientFactory?: () => IAppsignalClient
 ) {
-  return server.tool(
+  const SelectAppIdSchema = z.object({
+    appId: z.string().describe(PARAM_DESCRIPTIONS.appId),
+  });
+
+  return server.registerTool(
     toolName,
-    `Select a specific AppSignal application to monitor and enable all incident management tools. This tool must be called after get_apps to activate the monitoring capabilities for a particular application. Once an app is selected, all other AppSignal tools (exception incidents, log incidents, anomaly detection, etc.) become available for use. The selection persists for the entire session unless changed.
+    {
+      title: toolName === 'change_app_id' ? 'Change App ID' : 'Select App ID',
+      description: `Select a specific AppSignal application to monitor and enable all incident management tools. This tool must be called after get_apps to activate the monitoring capabilities for a particular application. Once an app is selected, all other AppSignal tools (exception incidents, log incidents, anomaly detection, etc.) become available for use. The selection persists for the entire session unless changed.
 
 Example usage:
 - First use get_apps to list available applications
@@ -22,10 +33,7 @@ This tool is crucial for:
 - Activating incident monitoring tools for a specific app
 - Switching between different applications during a session
 - Establishing the context for all subsequent monitoring operations`,
-    {
-      appId: z
-        .string()
-        .describe('The AppSignal application ID to select from the list returned by get_apps'),
+      inputSchema: SelectAppIdSchema,
     },
     async ({ appId }) => {
       // Store the selected app ID

@@ -3,10 +3,29 @@ import { z } from 'zod';
 import { getEffectiveAppId } from '../state.js';
 import { IAppsignalClient } from '../appsignal-client/appsignal-client.js';
 
+// Parameter descriptions - single source of truth
+const PARAM_DESCRIPTIONS = {
+  states:
+    'Filter incidents by state(s). OPEN = new/unacknowledged, WIP = work in progress, CLOSED = resolved. Defaults to ["OPEN"] if not provided',
+  limit: 'Maximum number of incidents to return. Useful for pagination. Defaults to 50',
+  offset: 'Number of incidents to skip for pagination. Defaults to 0',
+} as const;
+
 export function getAnomalyIncidentsTool(server: McpServer, clientFactory: () => IAppsignalClient) {
-  return server.tool(
+  const GetAnomalyIncidentsSchema = z.object({
+    states: z
+      .array(z.enum(['OPEN', 'CLOSED', 'WIP']))
+      .optional()
+      .describe(PARAM_DESCRIPTIONS.states),
+    limit: z.number().optional().describe(PARAM_DESCRIPTIONS.limit),
+    offset: z.number().optional().describe(PARAM_DESCRIPTIONS.offset),
+  });
+
+  return server.registerTool(
     'get_anomaly_incidents',
-    `Retrieve a list of anomaly incidents detected by AppSignal's automatic performance monitoring. Anomaly incidents represent unusual patterns in your application's behavior, such as response time spikes, memory usage anomalies, or throughput variations. This tool allows filtering by incident state and supports pagination for large result sets.
+    {
+      title: 'Get Anomaly Incidents',
+      description: `Retrieve a list of anomaly incidents detected by AppSignal's automatic performance monitoring. Anomaly incidents represent unusual patterns in your application's behavior, such as response time spikes, memory usage anomalies, or throughput variations. This tool allows filtering by incident state and supports pagination for large result sets.
 
 Example response:
 {
@@ -46,21 +65,7 @@ Use cases:
 - Reviewing historical anomaly patterns
 - Identifying trends in application performance issues
 - Prioritizing performance optimization efforts`,
-    {
-      states: z
-        .array(z.enum(['OPEN', 'CLOSED', 'WIP']))
-        .optional()
-        .describe(
-          'Filter incidents by state(s). OPEN = new/unacknowledged, WIP = work in progress, CLOSED = resolved. Defaults to ["OPEN"] if not provided'
-        ),
-      limit: z
-        .number()
-        .optional()
-        .describe('Maximum number of incidents to return. Useful for pagination. Defaults to 50'),
-      offset: z
-        .number()
-        .optional()
-        .describe('Number of incidents to skip for pagination. Defaults to 0'),
+      inputSchema: GetAnomalyIncidentsSchema,
     },
     async (args) => {
       // Handle all parameter scenarios: {}, undefined, or missing entirely

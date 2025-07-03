@@ -27,6 +27,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Different extraction queries on the same URL will no longer return incorrect cached results
   - Added new `findByUrlAndExtract` method to storage interfaces for proper cache key generation
   - Added comprehensive test coverage for extract field cache busting functionality
+- Updated `cleanScrape` parameter description to more accurately describe its function
+  - Changed from "converting HTML to Markdown" to "converting HTML to semantic Markdown of what's on the page"
+  - Better reflects that the cleaning process extracts meaningful content, not just format conversion
+- Made tool parameter descriptions DRY (Don't Repeat Yourself) using PARAM_DESCRIPTIONS constant
+  - Eliminates duplication between Zod schema and inputSchema descriptions
 
 ### Changed
 
@@ -34,6 +39,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `BRIGHTDATA_BEARER_TOKEN` → `BRIGHTDATA_API_KEY` (users no longer need to include "Bearer " prefix)
   - `PULSE_FETCH_STRATEGY_CONFIG_PATH` → `STRATEGY_CONFIG_PATH`
   - Updated all documentation, tests, and examples to reflect the new names
+
+### Known Issues
+
+- MCP client timeout errors (-32001) cannot be configured from the server side
+  - The MCP protocol timeout is controlled by the client (Claude), not the server
+  - Current workaround: Use the timeout parameter to control individual HTTP request timeouts
+  - This is a protocol limitation, not a server bug
 
 ## [0.2.7] - 2025-07-03
 

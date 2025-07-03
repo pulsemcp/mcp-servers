@@ -3,10 +3,29 @@ import { z } from 'zod';
 import { getEffectiveAppId } from '../state.js';
 import { IAppsignalClient } from '../appsignal-client/appsignal-client.js';
 
+// Parameter descriptions - single source of truth
+const PARAM_DESCRIPTIONS = {
+  states:
+    'Filter incidents by state(s). OPEN = new patterns, WIP = being investigated, CLOSED = resolved. Defaults to ["OPEN"] if not provided',
+  limit: 'Maximum number of incidents to return for pagination. Defaults to 50',
+  offset: 'Number of incidents to skip for pagination. Defaults to 0',
+} as const;
+
 export function getLogIncidentsTool(server: McpServer, clientFactory: () => IAppsignalClient) {
-  return server.tool(
+  const GetLogIncidentsSchema = z.object({
+    states: z
+      .array(z.enum(['OPEN', 'CLOSED', 'WIP']))
+      .optional()
+      .describe(PARAM_DESCRIPTIONS.states),
+    limit: z.number().optional().describe(PARAM_DESCRIPTIONS.limit),
+    offset: z.number().optional().describe(PARAM_DESCRIPTIONS.offset),
+  });
+
+  return server.registerTool(
     'get_log_incidents',
-    `Retrieve a list of log incidents from your AppSignal application. Log incidents are automatically detected patterns in your application logs that may indicate issues, such as repeated errors, warnings, or critical events. This tool provides an overview of all log patterns requiring attention, with filtering and pagination support.
+    {
+      title: 'Get Log Incidents',
+      description: `Retrieve a list of log incidents from your AppSignal application. Log incidents are automatically detected patterns in your application logs that may indicate issues, such as repeated errors, warnings, or critical events. This tool provides an overview of all log patterns requiring attention, with filtering and pagination support.
 
 Example response:
 {
@@ -49,21 +68,7 @@ Use cases:
 - Prioritizing which log patterns to investigate
 - Tracking the status of log-based issues
 - Monitoring for new or escalating log patterns`,
-    {
-      states: z
-        .array(z.enum(['OPEN', 'CLOSED', 'WIP']))
-        .optional()
-        .describe(
-          'Filter incidents by state(s). OPEN = new patterns, WIP = being investigated, CLOSED = resolved. Defaults to ["OPEN"] if not provided'
-        ),
-      limit: z
-        .number()
-        .optional()
-        .describe('Maximum number of incidents to return for pagination. Defaults to 50'),
-      offset: z
-        .number()
-        .optional()
-        .describe('Number of incidents to skip for pagination. Defaults to 0'),
+      inputSchema: GetLogIncidentsSchema,
     },
     async (args) => {
       // Handle all parameter scenarios: {}, undefined, or missing entirely

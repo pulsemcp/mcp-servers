@@ -3,10 +3,21 @@ import { z } from 'zod';
 import { getEffectiveAppId } from '../state.js';
 import { IAppsignalClient } from '../appsignal-client/appsignal-client.js';
 
+// Parameter descriptions - single source of truth
+const PARAM_DESCRIPTIONS = {
+  incidentNumber: 'The unique number of the exception incident to retrieve',
+} as const;
+
 export function getExceptionIncidentTool(server: McpServer, clientFactory: () => IAppsignalClient) {
-  return server.tool(
+  const GetExceptionIncidentSchema = z.object({
+    incidentNumber: z.string().describe(PARAM_DESCRIPTIONS.incidentNumber),
+  });
+
+  return server.registerTool(
     'get_exception_incident',
-    `Retrieve detailed information about a specific exception incident in your AppSignal application. Exception incidents represent errors, crashes, or unhandled exceptions that occurred in your application. This tool provides comprehensive details about a single exception, including the error message, stack trace, occurrence count, affected users, and environment context.
+    {
+      title: 'Get Exception Incident',
+      description: `Retrieve detailed information about a specific exception incident in your AppSignal application. Exception incidents represent errors, crashes, or unhandled exceptions that occurred in your application. This tool provides comprehensive details about a single exception, including the error message, stack trace, occurrence count, affected users, and environment context.
 
 Example response:
 {
@@ -39,10 +50,7 @@ Use cases:
 - Analyzing stack traces to identify root causes
 - Tracking which users are affected by specific errors
 - Monitoring the resolution status of known issues`,
-    {
-      incidentNumber: z
-        .string()
-        .describe('The unique number of the exception incident to retrieve'),
+      inputSchema: GetExceptionIncidentSchema,
     },
     async ({ incidentNumber }) => {
       const appId = getEffectiveAppId();

@@ -3,13 +3,24 @@ import { z } from 'zod';
 import { getEffectiveAppId } from '../state.js';
 import { IAppsignalClient } from '../appsignal-client/appsignal-client.js';
 
+// Parameter descriptions - single source of truth
+const PARAM_DESCRIPTIONS = {
+  incidentNumber: 'The number of the performance incident to get a sample for',
+} as const;
+
 export function getPerformanceIncidentSampleTool(
   server: McpServer,
   clientFactory: () => IAppsignalClient
 ) {
-  return server.tool(
+  const GetPerformanceIncidentSampleSchema = z.object({
+    incidentNumber: z.string().describe(PARAM_DESCRIPTIONS.incidentNumber),
+  });
+
+  return server.registerTool(
     'get_performance_incident_sample',
-    `Retrieve a sample transaction for a specific performance incident from AppSignal. Samples provide detailed timing information about a specific slow request or operation, helping you understand exactly where time is being spent.
+    {
+      title: 'Get Performance Incident Sample',
+      description: `Retrieve a sample transaction for a specific performance incident from AppSignal. Samples provide detailed timing information about a specific slow request or operation, helping you understand exactly where time is being spent.
 
 💡 Recommended follow-up: After retrieving the sample, use the search_logs tool with:
 - Time range around the sample's timestamp (-10 seconds through +3 seconds)
@@ -60,10 +71,7 @@ Use cases:
 - Viewing request parameters and custom data for context
 - Checking if N+1 queries occurred in this specific sample
 - Understanding queue wait times vs actual processing time`,
-    {
-      incidentNumber: z
-        .string()
-        .describe('The number of the performance incident to get a sample for'),
+      inputSchema: GetPerformanceIncidentSampleSchema,
     },
     async ({ incidentNumber }) => {
       const appId = getEffectiveAppId();

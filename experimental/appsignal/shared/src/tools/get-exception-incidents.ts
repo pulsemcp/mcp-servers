@@ -3,13 +3,32 @@ import { z } from 'zod';
 import { getEffectiveAppId } from '../state.js';
 import { IAppsignalClient } from '../appsignal-client/appsignal-client.js';
 
+// Parameter descriptions - single source of truth
+const PARAM_DESCRIPTIONS = {
+  states:
+    'Filter incidents by state(s). OPEN = active errors, WIP = being investigated, CLOSED = resolved. Defaults to ["OPEN"] if not provided',
+  limit: 'Maximum number of incidents to return for pagination. Defaults to 50',
+  offset: 'Number of incidents to skip for pagination. Defaults to 0',
+} as const;
+
 export function getExceptionIncidentsTool(
   server: McpServer,
   clientFactory: () => IAppsignalClient
 ) {
-  return server.tool(
+  const GetExceptionIncidentsSchema = z.object({
+    states: z
+      .array(z.enum(['OPEN', 'CLOSED', 'WIP']))
+      .optional()
+      .describe(PARAM_DESCRIPTIONS.states),
+    limit: z.number().optional().describe(PARAM_DESCRIPTIONS.limit),
+    offset: z.number().optional().describe(PARAM_DESCRIPTIONS.offset),
+  });
+
+  return server.registerTool(
     'get_exception_incidents',
-    `Retrieve a list of exception incidents from your AppSignal application. Exception incidents group similar errors together, showing patterns of application crashes, errors, and unhandled exceptions. This tool provides an overview of all exception types affecting your application, with filtering and pagination capabilities.
+    {
+      title: 'Get Exception Incidents',
+      description: `Retrieve a list of exception incidents from your AppSignal application. Exception incidents group similar errors together, showing patterns of application crashes, errors, and unhandled exceptions. This tool provides an overview of all exception types affecting your application, with filtering and pagination capabilities.
 
 Example response:
 {
@@ -52,21 +71,7 @@ Use cases:
 - Monitoring error trends and patterns
 - Tracking the status of error resolution efforts
 - Identifying the most frequent or critical exceptions`,
-    {
-      states: z
-        .array(z.enum(['OPEN', 'CLOSED', 'WIP']))
-        .optional()
-        .describe(
-          'Filter incidents by state(s). OPEN = active errors, WIP = being investigated, CLOSED = resolved. Defaults to ["OPEN"] if not provided'
-        ),
-      limit: z
-        .number()
-        .optional()
-        .describe('Maximum number of incidents to return for pagination. Defaults to 50'),
-      offset: z
-        .number()
-        .optional()
-        .describe('Number of incidents to skip for pagination. Defaults to 0'),
+      inputSchema: GetExceptionIncidentsSchema,
     },
     async (args) => {
       // Handle all parameter scenarios: {}, undefined, or missing entirely

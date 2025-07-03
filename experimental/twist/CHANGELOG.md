@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Applied DRY (Don't Repeat Yourself) pattern to tool parameter descriptions across all tools
+  - Extracted parameter descriptions into `PARAM_DESCRIPTIONS` constants to maintain single source of truth
+  - Both Zod schemas and inputSchema now reference the same descriptions
+  - Improves maintainability and prevents description drift between schema definitions
+  - Applied to: `create-thread.ts`, `add-message-to-thread.ts`, `close-thread.ts`, `get-channel.ts`, `get-thread.ts`
+
 ## [0.1.15] - 2025-07-03
 
 ### Added
