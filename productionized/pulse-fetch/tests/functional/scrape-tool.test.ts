@@ -59,7 +59,7 @@ describe('Scrape Tool', () => {
       );
       const result = await tool.handler({
         url: 'https://example.com',
-        saveResult: false,
+        resultHandling: 'returnOnly',
       });
 
       expect(result).toMatchObject({
@@ -98,7 +98,7 @@ describe('Scrape Tool', () => {
       );
       const result = await tool.handler({
         url: 'https://example.com',
-        saveResult: false,
+        resultHandling: 'returnOnly',
       });
 
       expect(result).toMatchObject({
@@ -137,7 +137,7 @@ describe('Scrape Tool', () => {
       );
       const result = await tool.handler({
         url: 'https://example.com',
-        saveResult: false,
+        resultHandling: 'returnOnly',
       });
 
       expect(result).toMatchObject({
@@ -176,7 +176,7 @@ describe('Scrape Tool', () => {
       );
       const result = await tool.handler({
         url: 'https://example.com',
-        saveResult: false,
+        resultHandling: 'returnOnly',
       });
 
       expect(result).toMatchObject({
@@ -207,6 +207,7 @@ describe('Scrape Tool', () => {
       const result = await tool.handler({
         url: 'https://example.com',
         maxChars: 100,
+        resultHandling: 'returnOnly', // Test with returnOnly to check text truncation
       });
 
       expect(result.content[0].text).toContain('[Content truncated at 100 characters');
@@ -255,40 +256,101 @@ describe('Scrape Tool', () => {
       });
     });
 
-    it('should save resource when saveResource is true', async () => {
-      // Set up mock for successful native scrape with HTML content
-      mockNative.setMockResponse({
-        success: true,
-        status: 200,
-        data: '<html><body>Content to be saved as resource</body></html>',
+    describe('resultHandling modes', () => {
+      it('should return only content with returnOnly mode', async () => {
+        mockNative.setMockResponse({
+          success: true,
+          status: 200,
+          data: '<html><body>Content to return only</body></html>',
+        });
+
+        const tool = scrapeTool(
+          mockServer,
+          () => mockClients,
+          () => mockStrategyConfigClient
+        );
+        const result = await tool.handler({
+          url: 'https://example.com/return-only-test-' + Date.now(),
+          resultHandling: 'returnOnly',
+        });
+
+        expect(result).toMatchObject({
+          content: [
+            {
+              type: 'text',
+              text: expect.stringContaining('Content to return only'),
+            },
+          ],
+        });
+        // Should not have resource link
+        expect(result.content).toHaveLength(1);
       });
 
-      const tool = scrapeTool(
-        mockServer,
-        () => mockClients,
-        () => mockStrategyConfigClient
-      );
-      const result = await tool.handler({
-        url: 'https://example.com/save-resource-test-' + Date.now(),
-        saveResult: true, // Explicitly enable resource saving
+      it('should save and return with saveAndReturn mode (default)', async () => {
+        mockNative.setMockResponse({
+          success: true,
+          status: 200,
+          data: '<html><body>Content to save and return</body></html>',
+        });
+
+        const tool = scrapeTool(
+          mockServer,
+          () => mockClients,
+          () => mockStrategyConfigClient
+        );
+        const result = await tool.handler({
+          url: 'https://example.com/save-and-return-test-' + Date.now(),
+          // Not specifying resultHandling - should default to saveAndReturn
+        });
+
+        expect(result).toMatchObject({
+          content: [
+            {
+              type: 'resource',
+              uri: expect.stringMatching(/^memory:\/\//),
+              name: expect.stringMatching(/^https:\/\/example\.com\/save-and-return-test-.*$/),
+              mimeType: 'text/markdown',
+              text: expect.stringContaining('Content to save and return'),
+            },
+          ],
+        });
+        // Should only have the embedded resource
+        expect(result.content).toHaveLength(1);
       });
 
-      expect(result).toMatchObject({
-        content: [
-          {
-            type: 'text',
-            text: expect.stringContaining('Content to be saved as resource'),
-          },
-          {
-            type: 'resource_link',
-            uri: expect.stringMatching(/^memory:\/\/cleaned\/example\.com_save-resource-test-.*$/),
-            name: expect.stringMatching(/^https:\/\/example\.com\/save-resource-test-.*$/),
-            mimeType: 'text/html',
-            description: expect.stringMatching(
-              /^Scraped content from https:\/\/example\.com\/save-resource-test-.*/
-            ),
-          },
-        ],
+      it('should save only with saveOnly mode', async () => {
+        mockNative.setMockResponse({
+          success: true,
+          status: 200,
+          data: '<html><body>Content to save only</body></html>',
+        });
+
+        const tool = scrapeTool(
+          mockServer,
+          () => mockClients,
+          () => mockStrategyConfigClient
+        );
+        const result = await tool.handler({
+          url: 'https://example.com/save-only-test-' + Date.now(),
+          resultHandling: 'saveOnly',
+        });
+
+        expect(result).toMatchObject({
+          content: [
+            {
+              type: 'resource_link',
+              uri: expect.stringMatching(/^memory:\/\//),
+              name: expect.stringMatching(/^https:\/\/example\.com\/save-only-test-.*$/),
+              mimeType: 'text/markdown',
+              description: expect.stringMatching(
+                /^Scraped content from https:\/\/example\.com\/save-only-test-.*/
+              ),
+            },
+          ],
+        });
+        // Should not have text content
+        expect(result.content).toHaveLength(1);
+        expect(result.content[0].type).toBe('resource_link');
       });
     });
 
@@ -313,11 +375,13 @@ describe('Scrape Tool', () => {
 
         const firstResult = await tool.handler({
           url: testUrl,
-          saveResult: true,
+          resultHandling: 'saveAndReturn',
         });
 
+        // For saveAndReturn, content is in the embedded resource's text field
+        expect(firstResult.content[0].type).toBe('resource');
         expect(firstResult.content[0].text).toContain(firstContent);
-        expect(firstResult.content[0].text).toContain('Scraped using: native');
+        // The embedded resource text doesn't contain metadata like "Scraped using:"
 
         // Change the mock response to verify we're getting cached content
         mockNative.setMockResponse({
@@ -329,14 +393,64 @@ describe('Scrape Tool', () => {
         // Second request - should use cache
         const secondResult = await tool.handler({
           url: testUrl,
-          saveResult: true,
+          resultHandling: 'saveAndReturn',
         });
 
         // Should get the first content from cache, not the second
+        expect(secondResult.content[0].type).toBe('resource');
         expect(secondResult.content[0].text).toContain(firstContent);
         expect(secondResult.content[0].text).not.toContain(secondContent);
-        expect(secondResult.content[0].text).toContain('Served from cache');
-        expect(secondResult.content[0].text).toContain('Cached at:');
+        // Embedded resources don't contain cache metadata
+      });
+
+      it('should bypass cache lookup with saveOnly mode', async () => {
+        const testUrl = 'https://example.com/save-only-cache-test';
+        const firstContent = 'First scrape content';
+        const secondContent = 'Second scrape content';
+
+        // First request - save with saveAndReturn
+        mockNative.setMockResponse({
+          success: true,
+          status: 200,
+          data: firstContent,
+        });
+
+        const tool = scrapeTool(
+          mockServer,
+          () => mockClients,
+          () => mockStrategyConfigClient
+        );
+
+        await tool.handler({
+          url: testUrl,
+          resultHandling: 'saveAndReturn',
+        });
+
+        // Change the mock response
+        mockNative.setMockResponse({
+          success: true,
+          status: 200,
+          data: secondContent,
+        });
+
+        // Second request with saveOnly - should NOT use cache
+        const saveOnlyResult = await tool.handler({
+          url: testUrl,
+          resultHandling: 'saveOnly',
+        });
+
+        // Should save the new content, not return cached
+        expect(saveOnlyResult.content).toHaveLength(1);
+        expect(saveOnlyResult.content[0].type).toBe('resource_link');
+
+        // Verify it saved the new content by doing a returnOnly request
+        const verifyResult = await tool.handler({
+          url: testUrl,
+          resultHandling: 'returnOnly',
+        });
+
+        // Should now get the second content from cache
+        expect(verifyResult.content[0].text).toContain(secondContent);
       });
 
       it('should use most recent cached resource when multiple exist', async () => {
@@ -358,7 +472,7 @@ describe('Scrape Tool', () => {
 
           await tool.handler({
             url: testUrl,
-            saveResult: true,
+            resultHandling: 'saveAndReturn',
             forceRescrape: true, // Force fresh scrape for each
           });
 
@@ -369,6 +483,7 @@ describe('Scrape Tool', () => {
         // Request without force should get the latest (version 3)
         const cachedResult = await tool.handler({
           url: testUrl,
+          resultHandling: 'returnOnly', // Use returnOnly to see cache metadata
         });
 
         expect(cachedResult.content[0].text).toContain('Content version 3');
@@ -393,7 +508,7 @@ describe('Scrape Tool', () => {
 
         await tool.handler({
           url: testUrl,
-          saveResult: true,
+          resultHandling: 'saveAndReturn',
         });
 
         // Change content for fresh scrape
@@ -407,6 +522,7 @@ describe('Scrape Tool', () => {
         const freshResult = await tool.handler({
           url: testUrl,
           forceRescrape: true,
+          resultHandling: 'returnOnly', // Use returnOnly to check metadata
         });
 
         expect(freshResult.content[0].text).toContain('Updated content');
@@ -445,6 +561,7 @@ describe('Scrape Tool', () => {
 
         const result = await tool.handler({
           url: testUrl,
+          resultHandling: 'returnOnly', // Use returnOnly to check metadata
         });
 
         // Should proceed with fresh scrape despite cache error
@@ -471,7 +588,7 @@ describe('Scrape Tool', () => {
 
         await tool.handler({
           url: testUrl,
-          saveResult: true,
+          resultHandling: 'saveAndReturn',
         });
 
         // Request cached content with pagination
@@ -479,6 +596,7 @@ describe('Scrape Tool', () => {
           url: testUrl,
           startIndex: 100,
           maxChars: 50,
+          resultHandling: 'returnOnly', // Use returnOnly to see truncation message
         });
 
         expect(paginatedResult.content[0].text).toContain('Served from cache');
@@ -530,7 +648,7 @@ describe('Scrape Tool', () => {
                 if (data.extracted) {
                   savedResources.push({
                     url: data.url,
-                    extract: data.metadata?.extract,
+                    extract: data.metadata?.extract as string | undefined,
                     content: data.extracted,
                     timestamp: new Date().toISOString(),
                   });
@@ -558,7 +676,7 @@ describe('Scrape Tool', () => {
           ExtractClientFactory: {
             isAvailable: vi.fn().mockReturnValue(true),
             createFromEnv: vi.fn().mockReturnValue({
-              extract: vi.fn().mockImplementation((content, query) => {
+              extract: vi.fn().mockImplementation((_content, query) => {
                 if (query === 'extract title') {
                   return { success: true, content: 'The Title: Example Page' };
                 } else if (query === 'extract emails') {
@@ -587,7 +705,7 @@ describe('Scrape Tool', () => {
         // First request with extract="extract title"
         const firstResult = await tool.handler({
           url: testUrl,
-          saveResult: true,
+          resultHandling: 'saveAndReturn',
           extract: 'extract title',
         });
 
@@ -597,7 +715,7 @@ describe('Scrape Tool', () => {
         // Second request with same URL but different extract prompt - should NOT use cache
         const secondResult = await tool.handler({
           url: testUrl,
-          saveResult: true,
+          resultHandling: 'saveAndReturn',
           extract: 'extract emails',
         });
 
@@ -608,7 +726,7 @@ describe('Scrape Tool', () => {
         // Third request with same URL and same extract as first - should use cache
         const thirdResult = await tool.handler({
           url: testUrl,
-          saveResult: true,
+          resultHandling: 'saveAndReturn',
           extract: 'extract title',
         });
 
@@ -618,7 +736,7 @@ describe('Scrape Tool', () => {
         // Fourth request with same URL but no extract - should NOT use cache
         const fourthResult = await tool.handler({
           url: testUrl,
-          saveResult: true,
+          resultHandling: 'saveAndReturn',
         });
 
         expect(fourthResult.content[0].text).toContain('Example Page');
@@ -657,13 +775,13 @@ describe('Scrape Tool', () => {
 
         const result = await tool.handler({
           url: 'https://example.com/html-test-' + Date.now(),
-          saveResult: true,
+          resultHandling: 'saveAndReturn',
         });
 
-        // Check that the resource link has text/html MIME type
-        expect(result.content[1]).toMatchObject({
-          type: 'resource_link',
-          mimeType: 'text/html',
+        // Check that the embedded resource has text/markdown MIME type (cleaned content)
+        expect(result.content[0]).toMatchObject({
+          type: 'resource',
+          mimeType: 'text/markdown',
         });
       });
 
@@ -688,12 +806,13 @@ describe('Scrape Tool', () => {
 
         const result = await tool.handler({
           url: 'https://api.example.com/json-test-' + Date.now(),
-          saveResult: true,
+          resultHandling: 'saveAndReturn',
+          cleanScrape: false, // Disable cleaning to preserve original content type
         });
 
-        // Check that the resource link has application/json MIME type
-        expect(result.content[1]).toMatchObject({
-          type: 'resource_link',
+        // Check that the embedded resource has application/json MIME type
+        expect(result.content[0]).toMatchObject({
+          type: 'resource',
           mimeType: 'application/json',
         });
       });
@@ -719,12 +838,13 @@ describe('Scrape Tool', () => {
 
         const result = await tool.handler({
           url: 'https://api.example.com/xml-test-' + Date.now(),
-          saveResult: true,
+          resultHandling: 'saveAndReturn',
+          cleanScrape: false, // Disable cleaning to preserve original content type
         });
 
-        // Check that the resource link has application/xml MIME type
-        expect(result.content[1]).toMatchObject({
-          type: 'resource_link',
+        // Check that the embedded resource has application/xml MIME type
+        expect(result.content[0]).toMatchObject({
+          type: 'resource',
           mimeType: 'application/xml',
         });
       });
@@ -746,12 +866,13 @@ describe('Scrape Tool', () => {
 
         const result = await tool.handler({
           url: 'https://example.com/plain-test-' + Date.now(),
-          saveResult: true,
+          resultHandling: 'saveAndReturn',
+          cleanScrape: false, // Disable cleaning to preserve original content type
         });
 
-        // Check that the resource link has text/plain MIME type
-        expect(result.content[1]).toMatchObject({
-          type: 'resource_link',
+        // Check that the embedded resource has text/plain MIME type
+        expect(result.content[0]).toMatchObject({
+          type: 'resource',
           mimeType: 'text/plain',
         });
       });
@@ -783,13 +904,13 @@ describe('Scrape Tool', () => {
 
         const result = await tool.handler({
           url: 'https://example.com/brightdata-html-test-' + Date.now(),
-          saveResult: true,
+          resultHandling: 'saveAndReturn',
         });
 
-        // Check that HTML from BrightData is detected as text/html
-        expect(result.content[1]).toMatchObject({
-          type: 'resource_link',
-          mimeType: 'text/html',
+        // Check that cleaned HTML is detected as text/markdown (default behavior cleans HTML to markdown)
+        expect(result.content[0]).toMatchObject({
+          type: 'resource',
+          mimeType: 'text/markdown',
         });
       });
     });
@@ -1016,10 +1137,10 @@ describe('Scrape Tool', () => {
         );
         const result = await tool.handler({
           url: 'https://example.com/protected',
-          saveResult: false,
+          resultHandling: 'returnOnly',
         });
 
-        expect(result.isError).toBe(true);
+        expect('isError' in result && result.isError).toBe(true);
         const errorText = result.content[0].text;
 
         // Check for main error message
@@ -1060,10 +1181,10 @@ describe('Scrape Tool', () => {
         );
         const result = await tool.handler({
           url: 'https://example.com',
-          saveResult: false,
+          resultHandling: 'returnOnly',
         });
 
-        expect(result.isError).toBe(true);
+        expect('isError' in result && result.isError).toBe(true);
         const errorText = result.content[0].text;
 
         // Should show authentication error prominently
@@ -1099,10 +1220,10 @@ describe('Scrape Tool', () => {
         );
         const result = await tool.handler({
           url: 'https://example.com',
-          saveResult: false,
+          resultHandling: 'returnOnly',
         });
 
-        expect(result.isError).toBe(true);
+        expect('isError' in result && result.isError).toBe(true);
         const errorText = result.content[0].text;
 
         expect(errorText).toContain('Diagnostics:');

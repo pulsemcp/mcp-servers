@@ -53,9 +53,12 @@ This server is built and tested on macOS with Claude Desktop. It should work wit
 # Usage Tips
 
 - The `scrape` tool handles all web content extraction needs and automatically bypasses anti-bot protection when necessary
+- **Result handling modes**: Control how scraped content is handled with the `resultHandling` parameter:
+  - `saveAndReturn` (default): Saves content as MCP Resource AND returns it - best for reuse
+  - `returnOnly`: Returns content without saving - use when you only need content once
+  - `saveOnly`: Saves content as MCP Resource, returns only resource link - efficient for large content
 - **Automatic caching**: Previously scraped URLs are cached by default. The tool returns cached content instantly on repeat requests
 - Use `forceRescrape: true` to bypass the cache and get fresh content when you know the page has changed
-- Set `saveResult: false` to disable both caching and resource saving (not recommended)
 - Use `maxChars` and `startIndex` parameters to handle large content that exceeds token limits
 - Configure the timeout parameter (default 60s) for slow-loading sites
 - Use the `extract` parameter with natural language queries to extract specific information from pages (requires LLM configuration)
@@ -115,6 +118,24 @@ Assistant: I'll fetch a fresh copy of the article for you.
 [Uses scrape tool with forceRescrape: true]
 
 I've fetched the latest version of the article. I can see it was indeed updated with new information about...
+```
+
+## Result Handling Options
+
+```
+User: "I need to archive this entire article: https://example.com/long-article"
+Assistant: I'll save that article as a resource for you.
+
+[Uses scrape tool with resultHandling: 'saveOnly']
+
+I've successfully archived the article. It's now saved as an MCP Resource that you can access later.
+
+User: "Can you extract just the summary from https://example.com/report without saving it?"
+Assistant: I'll extract just the summary without saving the full content.
+
+[Uses scrape tool with resultHandling: 'returnOnly' and extract parameter]
+
+Here's the summary I extracted from the report: [summary content]
 ```
 
 # Why Choose Pulse Fetch?
