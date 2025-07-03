@@ -155,6 +155,7 @@ Most other alternatives fall short on one or more vectors:
 | `OPTIMIZE_FOR`                     | Optimization strategy for scraping: `cost` or `speed`               | No       | `cost`                       | `speed`                           |
 | `MCP_RESOURCE_STORAGE`             | Storage backend for saved resources: `memory` or `filesystem`       | No       | `memory`                     | `filesystem`                      |
 | `MCP_RESOURCE_FILESYSTEM_ROOT`     | Directory for filesystem storage (only used with `filesystem` type) | No       | `/tmp/pulse-fetch/resources` | `/home/user/mcp-resources`        |
+| `SKIP_HEALTH_CHECKS`               | Skip API authentication health checks at startup                    | No       | `false`                      | `true`                            |
 
 ### LLM Configuration for Extract Feature
 
@@ -378,6 +379,29 @@ Disable cleaning (`cleanScrape: false`) only when:
 ## License
 
 MIT
+
+## Authentication Health Checks
+
+Pulse Fetch validates API credentials at server startup to fail fast when authentication is misconfigured. This prevents silent failures during tool execution.
+
+**Health Check Behavior:**
+
+- Runs automatically when the server starts (unless disabled)
+- Makes minimal test requests to verify API keys without consuming credits
+- Exits with clear error messages if authentication fails
+- Can be disabled by setting `SKIP_HEALTH_CHECKS=true`
+
+**Example output with invalid credentials:**
+
+```
+Running authentication health checks...
+
+Authentication health check failures:
+  Firecrawl: Invalid API key - authentication failed
+  BrightData: Invalid bearer token - authentication failed
+
+To skip health checks, set SKIP_HEALTH_CHECKS=true
+```
 
 # Scraping Strategy Configuration
 
