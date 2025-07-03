@@ -932,7 +932,7 @@ describe('Scrape Tool', () => {
         // Test with URL without protocol
         const result = await tool.handler({
           url: 'example.com',
-          saveResult: false,
+          resultHandling: 'returnOnly',
         });
 
         expect(result).toMatchObject({
@@ -964,7 +964,7 @@ describe('Scrape Tool', () => {
         // Test with URL with leading and trailing whitespace
         const result = await tool.handler({
           url: '  https://example.com  \n',
-          saveResult: false,
+          resultHandling: 'returnOnly',
         });
 
         expect(result).toMatchObject({
@@ -996,7 +996,7 @@ describe('Scrape Tool', () => {
         // Test with http:// protocol
         const result = await tool.handler({
           url: 'http://example.com',
-          saveResult: false,
+          resultHandling: 'returnOnly',
         });
 
         expect(result).toMatchObject({
@@ -1027,7 +1027,7 @@ describe('Scrape Tool', () => {
         // Test with URL with whitespace and no protocol
         const result = await tool.handler({
           url: '  example.com/path  ',
-          saveResult: false,
+          resultHandling: 'returnOnly',
         });
 
         expect(result).toMatchObject({
@@ -1058,7 +1058,7 @@ describe('Scrape Tool', () => {
         // Test with ftp:// protocol
         const ftpResult = await tool.handler({
           url: 'ftp://example.com',
-          saveResult: false,
+          resultHandling: 'returnOnly',
         });
 
         expect(ftpResult).toMatchObject({
@@ -1073,7 +1073,7 @@ describe('Scrape Tool', () => {
         // Test with custom protocol
         const customResult = await tool.handler({
           url: 'custom://example.com',
-          saveResult: false,
+          resultHandling: 'returnOnly',
         });
 
         expect(customResult).toMatchObject({
@@ -1096,7 +1096,7 @@ describe('Scrape Tool', () => {
         // Test with URL that's invalid even after preprocessing
         const result = await tool.handler({
           url: '   not a valid url at all   ',
-          saveResult: false,
+          resultHandling: 'returnOnly',
         });
 
         expect(result).toMatchObject({
