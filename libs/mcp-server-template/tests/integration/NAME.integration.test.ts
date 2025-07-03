@@ -1,5 +1,5 @@
 import { describe, it, expect, afterEach } from 'vitest';
-import { TestMCPClient } from '../../../../test-mcp-client/build/index.js';
+import { TestMCPClient } from '../../../test-mcp-client/build/index.js';
 import { createIntegrationMockExampleClient } from '../../shared/src/example-client/example-client.integration-mock.js';
 import type { IExampleClient } from '../../shared/src/server.js';
 import path from 'path';

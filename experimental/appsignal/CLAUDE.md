@@ -13,7 +13,7 @@ experimental/appsignal/
 
 ## Implementation Status
 
-- ✅ Basic project structure set up following mcp-server-template
+- ✅ Basic project structure set up following libs/mcp-server-template
 - ✅ Tool schemas defined for all three AppSignal operations
 - ⚠️ Tool implementations are currently stubbed (TODO: integrate with AppSignal REST API)
 - ❌ Remote/HTTP implementation not started

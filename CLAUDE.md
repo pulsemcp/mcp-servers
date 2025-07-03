@@ -10,9 +10,9 @@ This is a monorepo containing Model Context Protocol (MCP) servers built by Puls
 
 ## Repository Structure
 
-- **`pulse-fetch/`**: MCP server for pulling internet resources into context
+- **`productionized/`**: Directory for production-ready MCP servers
 - **`experimental/`**: Directory for experimental MCP servers in development
-- **`mcp-server-template/`**: Template structure for creating new MCP servers
+- **`libs/mcp-server-template/`**: Template structure for creating new MCP servers
 
 ## Git Workflow
 
@@ -195,7 +195,7 @@ cd ../../../productionized/pulse-fetch/shared && npm install @modelcontextprotoc
 cd ../local && npm install @modelcontextprotocol/sdk@^1.13.2 --save
 
 # Don't forget test-mcp-client if needed
-cd ../../../test-mcp-client && npm install @modelcontextprotocol/sdk@^1.13.2 --save
+cd ../../../libs/test-mcp-client && npm install @modelcontextprotocol/sdk@^1.13.2 --save
 ```
 
 ### Why This Structure?
@@ -250,7 +250,7 @@ npm run test:manual
 
 ## Creating New Servers
 
-1. Copy the `mcp-server-template/` directory
+1. Copy the `libs/mcp-server-template/` directory
 2. Rename it to your server name
 3. Update package.json name and description
 4. Replace "NAME" and "DESCRIPTION" placeholders
@@ -343,7 +343,7 @@ Don't add: basic TypeScript fixes, standard npm troubleshooting, obvious file op
 - When running `npm run stage-publish` from the local directory, it modifies both the local package-lock.json AND the parent package-lock.json - both must be committed together
 - The version bump commit should include all modified files: local/package.json, local/package-lock.json, parent package-lock.json, CHANGELOG.md, and main README.md
 - Your role is to **stage** the publication (version bump, tag, changelog) - NOT to publish to npm
-- When simplifying tool parameters, consider the MCP best practices guide in mcp-server-template/shared/src/tools/TOOL_DESCRIPTIONS_GUIDE.md for writing clear descriptions
+- When simplifying tool parameters, consider the MCP best practices guide in libs/mcp-server-template/shared/src/tools/TOOL_DESCRIPTIONS_GUIDE.md for writing clear descriptions
 - Breaking changes in tool parameters should be clearly marked in CHANGELOG.md with **BREAKING** prefix to alert users
 - When using `set -e` in shell scripts with npm commands, be aware that `npm view` returns exit code 1 when a package doesn't exist yet - use `|| true` to prevent premature script termination during npm registry propagation checks
 - **For `/publish_and_pr` command**: This means "stage for publishing and update PR" - it does NOT mean actually publish to npm. The workflow is: bump version → update changelog → commit → push → update PR. NPM publishing happens automatically via CI when PR is merged

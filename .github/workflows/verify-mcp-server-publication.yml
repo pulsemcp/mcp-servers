@@ -49,7 +49,7 @@ jobs:
             LOCAL_DIR="$SERVER_DIR/local"
             
             # Skip the template directory
-            if [ "$SERVER_NAME" = "mcp-server-template" ]; then
+            if [ "$SERVER_NAME" = "mcp-server-template" ] || [ "$SERVER_DIR" = "libs/mcp-server-template" ]; then
               echo "ℹ️  Skipping mcp-server-template (template directory)"
               continue
             fi

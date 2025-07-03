@@ -8,7 +8,7 @@ This directory contains experimental MCP servers that are in active development 
 
 ## Creating New Experimental Servers
 
-1. Copy the `mcp-server-template/` from the root directory
+1. Copy the `libs/mcp-server-template/` from the root directory
 2. Move it into this experimental directory with your server name
 3. Follow the standard development process
 4. Once stable, the server can be moved to the root directory
