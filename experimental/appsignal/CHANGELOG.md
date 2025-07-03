@@ -9,11 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Modernized all tools to use `McpServer.registerTool()` instead of deprecated `server.tool()` method
 - Applied DRY (Don't Repeat Yourself) pattern to all tool parameter descriptions
   - Added `PARAM_DESCRIPTIONS` constants to maintain single source of truth
-  - All 14 tool files now follow consistent modern pattern
-  - Improves maintainability and type safety with better tool configuration objects
+  - All 14 tool files now use consistent parameter descriptions
+  - Separated Zod shape definitions from schema objects for better organization
+  - Improves maintainability by eliminating description duplication
 
 ## [0.2.10] - 2025-07-03
 
