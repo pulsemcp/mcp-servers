@@ -359,9 +359,3 @@ Don't add: basic TypeScript fixes, standard npm troubleshooting, obvious file op
 ### Changelog management
 
 Whenever you make any sort of code change to an MCP server, make sure to update the unreleased section of its corresponding `CHANGELOG.md`.
-
-### Build Directory Management
-
-- **Standardized Build Output**: All MCP servers use `build` as the output directory (not `dist`) for consistency across the monorepo
-- **Clean Script Pattern**: Use glob patterns in the root clean script (e.g., `experimental/**/build`) instead of enumerating every single directory - this is more maintainable and handles nested structures automatically
-- **Gitignore Cleanup**: When standardizing build directories, remove redundant entries from .gitignore files - having both `dist/` and `build/` is unnecessary when only using `build/`
