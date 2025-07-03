@@ -12,14 +12,16 @@ const PARAM_DESCRIPTIONS = {
 } as const;
 
 export function getLogIncidentsTool(server: McpServer, clientFactory: () => IAppsignalClient) {
-  const GetLogIncidentsSchema = z.object({
+  const GetLogIncidentsShape = {
     states: z
       .array(z.enum(['OPEN', 'CLOSED', 'WIP']))
       .optional()
       .describe(PARAM_DESCRIPTIONS.states),
     limit: z.number().optional().describe(PARAM_DESCRIPTIONS.limit),
     offset: z.number().optional().describe(PARAM_DESCRIPTIONS.offset),
-  });
+  };
+
+  const GetLogIncidentsSchema = z.object(GetLogIncidentsShape);
 
   return server.registerTool(
     'get_log_incidents',
@@ -68,11 +70,11 @@ Use cases:
 - Prioritizing which log patterns to investigate
 - Tracking the status of log-based issues
 - Monitoring for new or escalating log patterns`,
-      inputSchema: GetLogIncidentsSchema,
+      inputSchema: GetLogIncidentsShape,
     },
     async (args) => {
       // Handle all parameter scenarios: {}, undefined, or missing entirely
-      const { states, limit, offset } = args || {};
+      const { states, limit, offset } = GetLogIncidentsSchema.parse(args || {});
       const appId = getEffectiveAppId();
       if (!appId) {
         return {

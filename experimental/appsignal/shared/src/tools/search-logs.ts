@@ -14,7 +14,7 @@ const PARAM_DESCRIPTIONS = {
 } as const;
 
 export function searchLogsTool(server: McpServer, clientFactory: () => IAppsignalClient) {
-  const SearchLogsSchema = z.object({
+  const SearchLogsShape = {
     query: z.string().describe(PARAM_DESCRIPTIONS.query),
     limit: z.number().int().positive().default(50).describe(PARAM_DESCRIPTIONS.limit),
     severities: z
@@ -23,7 +23,9 @@ export function searchLogsTool(server: McpServer, clientFactory: () => IAppsigna
       .describe(PARAM_DESCRIPTIONS.severities),
     start: z.string().optional().describe(PARAM_DESCRIPTIONS.start),
     end: z.string().optional().describe(PARAM_DESCRIPTIONS.end),
-  });
+  };
+
+  const SearchLogsSchema = z.object(SearchLogsShape);
 
   return server.registerTool(
     'search_logs',
@@ -80,9 +82,10 @@ Use cases:
 - Analyzing log patterns around specific time periods
 - Debugging by following trace IDs across services
 - Filtering logs by severity to focus on critical issues`,
-      inputSchema: SearchLogsSchema,
+      inputSchema: SearchLogsShape,
     },
-    async ({ query, limit, severities, start, end }) => {
+    async (args) => {
+      const { query, limit, severities, start, end } = SearchLogsSchema.parse(args);
       const appId = getEffectiveAppId();
       if (!appId) {
         return {

@@ -1,9 +1,8 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { z } from 'zod';
 import { IAppsignalClient } from '../appsignal-client/appsignal-client.js';
 
 export function getAppsTool(server: McpServer, clientFactory: () => IAppsignalClient) {
-  const GetAppsSchema = z.object({});
+  const GetAppsShape = {};
 
   return server.registerTool(
     'get_apps',
@@ -33,7 +32,7 @@ Use cases:
 - Starting a monitoring session by listing available apps
 - Verifying which applications are configured in AppSignal
 - Finding the correct app ID to use with other monitoring tools`,
-      inputSchema: GetAppsSchema,
+      inputSchema: GetAppsShape,
     },
     async () => {
       try {

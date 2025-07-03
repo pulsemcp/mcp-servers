@@ -15,14 +15,16 @@ export function getPerformanceIncidentsTool(
   server: McpServer,
   clientFactory: () => IAppsignalClient
 ) {
-  const GetPerformanceIncidentsSchema = z.object({
+  const GetPerformanceIncidentsShape = {
     states: z
       .array(z.enum(['OPEN', 'CLOSED', 'WIP']))
       .optional()
       .describe(PARAM_DESCRIPTIONS.states),
     limit: z.number().optional().describe(PARAM_DESCRIPTIONS.limit),
     offset: z.number().optional().describe(PARAM_DESCRIPTIONS.offset),
-  });
+  };
+
+  const GetPerformanceIncidentsSchema = z.object(GetPerformanceIncidentsShape);
 
   return server.registerTool(
     'get_performance_incidents',
@@ -89,11 +91,11 @@ Use cases:
 - Monitoring performance trends and patterns
 - Tracking the status of performance optimization efforts
 - Identifying N+1 queries and slow database operations`,
-      inputSchema: GetPerformanceIncidentsSchema,
+      inputSchema: GetPerformanceIncidentsShape,
     },
     async (args) => {
       // Handle all parameter scenarios: {}, undefined, or missing entirely
-      const { states, limit, offset } = args || {};
+      const { states, limit, offset } = GetPerformanceIncidentsSchema.parse(args || {});
       const appId = getEffectiveAppId();
       if (!appId) {
         return {

@@ -9,9 +9,11 @@ const PARAM_DESCRIPTIONS = {
 } as const;
 
 export function getAnomalyIncidentTool(server: McpServer, clientFactory: () => IAppsignalClient) {
-  const GetAnomalyIncidentSchema = z.object({
+  const GetAnomalyIncidentShape = {
     incidentNumber: z.string().describe(PARAM_DESCRIPTIONS.incidentNumber),
-  });
+  };
+
+  const GetAnomalyIncidentSchema = z.object(GetAnomalyIncidentShape);
 
   return server.registerTool(
     'get_anomaly_incident',
@@ -39,9 +41,10 @@ Use cases:
 - Getting detailed metrics about unusual application behavior
 - Understanding the scope and impact of detected anomalies
 - Tracking the resolution status of performance issues`,
-      inputSchema: GetAnomalyIncidentSchema,
+      inputSchema: GetAnomalyIncidentShape,
     },
-    async ({ incidentNumber }) => {
+    async (args) => {
+      const { incidentNumber } = GetAnomalyIncidentSchema.parse(args);
       const appId = getEffectiveAppId();
       if (!appId) {
         return {

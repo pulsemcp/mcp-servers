@@ -13,10 +13,12 @@ export function getExceptionIncidentSampleTool(
   server: McpServer,
   clientFactory: () => IAppsignalClient
 ) {
-  const GetExceptionIncidentSampleSchema = z.object({
+  const GetExceptionIncidentSampleShape = {
     incidentNumber: z.string().describe(PARAM_DESCRIPTIONS.incidentNumber),
     offset: z.number().int().min(0).default(0).describe(PARAM_DESCRIPTIONS.offset),
-  });
+  };
+
+  const GetExceptionIncidentSampleSchema = z.object(GetExceptionIncidentSampleShape);
 
   return server.registerTool(
     'get_exception_incident_sample',
@@ -59,9 +61,10 @@ Use cases:
 - Understanding the context where errors occurred
 - Investigating user-specific error conditions
 - Tracking error occurrences across different app versions`,
-      inputSchema: GetExceptionIncidentSampleSchema,
+      inputSchema: GetExceptionIncidentSampleShape,
     },
-    async ({ incidentNumber, offset }) => {
+    async (args) => {
+      const { incidentNumber, offset } = GetExceptionIncidentSampleSchema.parse(args);
       const appId = getEffectiveAppId();
       if (!appId) {
         return {

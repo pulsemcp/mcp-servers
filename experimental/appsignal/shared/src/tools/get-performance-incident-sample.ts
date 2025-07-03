@@ -12,9 +12,11 @@ export function getPerformanceIncidentSampleTool(
   server: McpServer,
   clientFactory: () => IAppsignalClient
 ) {
-  const GetPerformanceIncidentSampleSchema = z.object({
+  const GetPerformanceIncidentSampleShape = {
     incidentNumber: z.string().describe(PARAM_DESCRIPTIONS.incidentNumber),
-  });
+  };
+
+  const GetPerformanceIncidentSampleSchema = z.object(GetPerformanceIncidentSampleShape);
 
   return server.registerTool(
     'get_performance_incident_sample',
@@ -71,9 +73,10 @@ Use cases:
 - Viewing request parameters and custom data for context
 - Checking if N+1 queries occurred in this specific sample
 - Understanding queue wait times vs actual processing time`,
-      inputSchema: GetPerformanceIncidentSampleSchema,
+      inputSchema: GetPerformanceIncidentSampleShape,
     },
-    async ({ incidentNumber }) => {
+    async (args) => {
+      const { incidentNumber } = GetPerformanceIncidentSampleSchema.parse(args);
       const appId = getEffectiveAppId();
       if (!appId) {
         return {

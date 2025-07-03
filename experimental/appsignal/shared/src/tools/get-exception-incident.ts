@@ -9,9 +9,11 @@ const PARAM_DESCRIPTIONS = {
 } as const;
 
 export function getExceptionIncidentTool(server: McpServer, clientFactory: () => IAppsignalClient) {
-  const GetExceptionIncidentSchema = z.object({
+  const GetExceptionIncidentShape = {
     incidentNumber: z.string().describe(PARAM_DESCRIPTIONS.incidentNumber),
-  });
+  };
+
+  const GetExceptionIncidentSchema = z.object(GetExceptionIncidentShape);
 
   return server.registerTool(
     'get_exception_incident',
@@ -50,9 +52,10 @@ Use cases:
 - Analyzing stack traces to identify root causes
 - Tracking which users are affected by specific errors
 - Monitoring the resolution status of known issues`,
-      inputSchema: GetExceptionIncidentSchema,
+      inputSchema: GetExceptionIncidentShape,
     },
-    async ({ incidentNumber }) => {
+    async (args) => {
+      const { incidentNumber } = GetExceptionIncidentSchema.parse(args);
       const appId = getEffectiveAppId();
       if (!appId) {
         return {

@@ -14,9 +14,11 @@ export function selectAppIdTool(
   enableMainTools?: () => void,
   _clientFactory?: () => IAppsignalClient
 ) {
-  const SelectAppIdSchema = z.object({
+  const SelectAppIdShape = {
     appId: z.string().describe(PARAM_DESCRIPTIONS.appId),
-  });
+  };
+
+  const SelectAppIdSchema = z.object(SelectAppIdShape);
 
   return server.registerTool(
     toolName,
@@ -33,9 +35,10 @@ This tool is crucial for:
 - Activating incident monitoring tools for a specific app
 - Switching between different applications during a session
 - Establishing the context for all subsequent monitoring operations`,
-      inputSchema: SelectAppIdSchema,
+      inputSchema: SelectAppIdShape,
     },
-    async ({ appId }) => {
+    async (args) => {
+      const { appId } = SelectAppIdSchema.parse(args);
       // Store the selected app ID
       setSelectedAppId(appId);
 

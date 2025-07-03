@@ -12,14 +12,16 @@ const PARAM_DESCRIPTIONS = {
 } as const;
 
 export function getAnomalyIncidentsTool(server: McpServer, clientFactory: () => IAppsignalClient) {
-  const GetAnomalyIncidentsSchema = z.object({
+  const GetAnomalyIncidentsShape = {
     states: z
       .array(z.enum(['OPEN', 'CLOSED', 'WIP']))
       .optional()
       .describe(PARAM_DESCRIPTIONS.states),
     limit: z.number().optional().describe(PARAM_DESCRIPTIONS.limit),
     offset: z.number().optional().describe(PARAM_DESCRIPTIONS.offset),
-  });
+  };
+
+  const GetAnomalyIncidentsSchema = z.object(GetAnomalyIncidentsShape);
 
   return server.registerTool(
     'get_anomaly_incidents',
@@ -65,11 +67,11 @@ Use cases:
 - Reviewing historical anomaly patterns
 - Identifying trends in application performance issues
 - Prioritizing performance optimization efforts`,
-      inputSchema: GetAnomalyIncidentsSchema,
+      inputSchema: GetAnomalyIncidentsShape,
     },
     async (args) => {
       // Handle all parameter scenarios: {}, undefined, or missing entirely
-      const { states, limit, offset } = args || {};
+      const { states, limit, offset } = GetAnomalyIncidentsSchema.parse(args || {});
       const appId = getEffectiveAppId();
       if (!appId) {
         return {

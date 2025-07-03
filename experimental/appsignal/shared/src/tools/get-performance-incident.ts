@@ -12,9 +12,11 @@ export function getPerformanceIncidentTool(
   server: McpServer,
   clientFactory: () => IAppsignalClient
 ) {
-  const GetPerformanceIncidentSchema = z.object({
+  const GetPerformanceIncidentShape = {
     incidentNumber: z.string().describe(PARAM_DESCRIPTIONS.incidentNumber),
-  });
+  };
+
+  const GetPerformanceIncidentSchema = z.object(GetPerformanceIncidentShape);
 
   return server.registerTool(
     'get_performance_incident',
@@ -58,9 +60,10 @@ Use cases:
 - Understanding the impact and frequency of a performance bottleneck
 - Checking if an incident has N+1 query problems
 - Determining if samples are available for deeper analysis`,
-      inputSchema: GetPerformanceIncidentSchema,
+      inputSchema: GetPerformanceIncidentShape,
     },
-    async ({ incidentNumber }) => {
+    async (args) => {
+      const { incidentNumber } = GetPerformanceIncidentSchema.parse(args);
       const appId = getEffectiveAppId();
       if (!appId) {
         return {

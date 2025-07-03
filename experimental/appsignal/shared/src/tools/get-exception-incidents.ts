@@ -15,14 +15,16 @@ export function getExceptionIncidentsTool(
   server: McpServer,
   clientFactory: () => IAppsignalClient
 ) {
-  const GetExceptionIncidentsSchema = z.object({
+  const GetExceptionIncidentsShape = {
     states: z
       .array(z.enum(['OPEN', 'CLOSED', 'WIP']))
       .optional()
       .describe(PARAM_DESCRIPTIONS.states),
     limit: z.number().optional().describe(PARAM_DESCRIPTIONS.limit),
     offset: z.number().optional().describe(PARAM_DESCRIPTIONS.offset),
-  });
+  };
+
+  const GetExceptionIncidentsSchema = z.object(GetExceptionIncidentsShape);
 
   return server.registerTool(
     'get_exception_incidents',
@@ -71,11 +73,11 @@ Use cases:
 - Monitoring error trends and patterns
 - Tracking the status of error resolution efforts
 - Identifying the most frequent or critical exceptions`,
-      inputSchema: GetExceptionIncidentsSchema,
+      inputSchema: GetExceptionIncidentsShape,
     },
     async (args) => {
       // Handle all parameter scenarios: {}, undefined, or missing entirely
-      const { states, limit, offset } = args || {};
+      const { states, limit, offset } = GetExceptionIncidentsSchema.parse(args || {});
       const appId = getEffectiveAppId();
       if (!appId) {
         return {

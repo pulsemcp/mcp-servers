@@ -9,9 +9,11 @@ const PARAM_DESCRIPTIONS = {
 } as const;
 
 export function getLogIncidentTool(server: McpServer, clientFactory: () => IAppsignalClient) {
-  const GetLogIncidentSchema = z.object({
+  const GetLogIncidentShape = {
     incidentNumber: z.string().describe(PARAM_DESCRIPTIONS.incidentNumber),
-  });
+  };
+
+  const GetLogIncidentSchema = z.object(GetLogIncidentShape);
 
   return server.registerTool(
     'get_log_incident',
@@ -51,9 +53,10 @@ Use cases:
 - Tracking down intermittent issues captured in logs
 - Analyzing the impact of log incidents on different services
 - Monitoring the resolution status of identified log patterns`,
-      inputSchema: GetLogIncidentSchema,
+      inputSchema: GetLogIncidentShape,
     },
-    async ({ incidentNumber }) => {
+    async (args) => {
+      const { incidentNumber } = GetLogIncidentSchema.parse(args);
       const appId = getEffectiveAppId();
       if (!appId) {
         return {

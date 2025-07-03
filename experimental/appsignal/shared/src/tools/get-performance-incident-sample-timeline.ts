@@ -12,9 +12,13 @@ export function getPerformanceIncidentSampleTimelineTool(
   server: McpServer,
   clientFactory: () => IAppsignalClient
 ) {
-  const GetPerformanceIncidentSampleTimelineSchema = z.object({
+  const GetPerformanceIncidentSampleTimelineShape = {
     incidentNumber: z.string().describe(PARAM_DESCRIPTIONS.incidentNumber),
-  });
+  };
+
+  const GetPerformanceIncidentSampleTimelineSchema = z.object(
+    GetPerformanceIncidentSampleTimelineShape
+  );
 
   return server.registerTool(
     'get_performance_incident_sample_timeline',
@@ -104,9 +108,10 @@ Use cases:
 - Understanding the call hierarchy and timing breakdown
 - Finding unexpected database queries or external API calls
 - Analyzing memory allocation patterns`,
-      inputSchema: GetPerformanceIncidentSampleTimelineSchema,
+      inputSchema: GetPerformanceIncidentSampleTimelineShape,
     },
-    async ({ incidentNumber }) => {
+    async (args) => {
+      const { incidentNumber } = GetPerformanceIncidentSampleTimelineSchema.parse(args);
       const appId = getEffectiveAppId();
       if (!appId) {
         return {
