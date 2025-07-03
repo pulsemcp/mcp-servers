@@ -29,7 +29,7 @@ function validateEnvironment() {
   // Log available services
   const available = [];
   if (process.env.FIRECRAWL_API_KEY) available.push('Firecrawl');
-  if (process.env.BRIGHTDATA_BEARER_TOKEN) available.push('BrightData');
+  if (process.env.BRIGHTDATA_API_KEY) available.push('BrightData');
 
   console.error(
     `Pulse Fetch starting with services: native${available.length > 0 ? ', ' + available.join(', ') : ''}`

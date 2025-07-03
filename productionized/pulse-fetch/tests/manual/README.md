@@ -19,7 +19,7 @@ Before running manual tests, ensure you have the necessary API keys set in your 
 export FIRECRAWL_API_KEY="your-firecrawl-api-key"
 
 # For BrightData tests
-export BRIGHTDATA_BEARER_TOKEN="your-brightdata-bearer-token"
+export BRIGHTDATA_API_KEY="your-brightdata-api-key"
 
 # For LLM/Extract tests
 export LLM_PROVIDER="anthropic"  # or "openai", "openai-compatible"
@@ -97,7 +97,7 @@ npm run test:manual -- tests/manual/features/firecrawl-scraping.test.ts
 Tests integration with BrightData Web Unlocker for anti-bot protected sites.
 
 ```bash
-# Requires BRIGHTDATA_BEARER_TOKEN
+# Requires BRIGHTDATA_API_KEY
 npm run test:manual -- tests/manual/features/brightdata-scraping.test.ts
 ```
 

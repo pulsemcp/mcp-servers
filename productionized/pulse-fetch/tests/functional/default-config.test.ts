@@ -5,19 +5,19 @@ import { tmpdir } from 'os';
 import { getStrategyConfigPath } from '../../shared/src/strategy-config/default-config.js';
 
 describe('Default Config Path', () => {
-  const originalEnv = process.env.PULSE_FETCH_STRATEGY_CONFIG_PATH;
+  const originalEnv = process.env.STRATEGY_CONFIG_PATH;
 
   beforeEach(() => {
     // Clear the environment variable
-    delete process.env.PULSE_FETCH_STRATEGY_CONFIG_PATH;
+    delete process.env.STRATEGY_CONFIG_PATH;
   });
 
   afterEach(async () => {
     // Restore original environment
     if (originalEnv) {
-      process.env.PULSE_FETCH_STRATEGY_CONFIG_PATH = originalEnv;
+      process.env.STRATEGY_CONFIG_PATH = originalEnv;
     } else {
-      delete process.env.PULSE_FETCH_STRATEGY_CONFIG_PATH;
+      delete process.env.STRATEGY_CONFIG_PATH;
     }
 
     // Clean up default temp directory used by the function
@@ -31,7 +31,7 @@ describe('Default Config Path', () => {
 
   it('should use environment variable when set', async () => {
     const customPath = '/custom/path/strategies.md';
-    process.env.PULSE_FETCH_STRATEGY_CONFIG_PATH = customPath;
+    process.env.STRATEGY_CONFIG_PATH = customPath;
 
     const configPath = await getStrategyConfigPath();
     expect(configPath).toBe(customPath);

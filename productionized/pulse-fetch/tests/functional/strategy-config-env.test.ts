@@ -6,7 +6,7 @@ import { FilesystemStrategyConfigClient } from '../../shared/src/strategy-config
 import type { StrategyConfigEntry } from '../../shared/src/strategy-config/types.js';
 
 describe('FilesystemStrategyConfigClient with Environment', () => {
-  const originalEnv = process.env.PULSE_FETCH_STRATEGY_CONFIG_PATH;
+  const originalEnv = process.env.STRATEGY_CONFIG_PATH;
   const testDir = join(tmpdir(), 'pulse-fetch-test-' + Date.now());
   const customConfigPath = join(testDir, 'custom-strategies.md');
 
@@ -18,9 +18,9 @@ describe('FilesystemStrategyConfigClient with Environment', () => {
   afterEach(async () => {
     // Restore original environment
     if (originalEnv) {
-      process.env.PULSE_FETCH_STRATEGY_CONFIG_PATH = originalEnv;
+      process.env.STRATEGY_CONFIG_PATH = originalEnv;
     } else {
-      delete process.env.PULSE_FETCH_STRATEGY_CONFIG_PATH;
+      delete process.env.STRATEGY_CONFIG_PATH;
     }
 
     // Clean up test directory
@@ -56,7 +56,7 @@ describe('FilesystemStrategyConfigClient with Environment', () => {
   });
 
   it('should use environment variable path when no path provided', async () => {
-    process.env.PULSE_FETCH_STRATEGY_CONFIG_PATH = customConfigPath;
+    process.env.STRATEGY_CONFIG_PATH = customConfigPath;
 
     // Create a test config file
     const testContent = `# Test Config
@@ -77,7 +77,7 @@ describe('FilesystemStrategyConfigClient with Environment', () => {
   });
 
   it('should use default temp directory when no path provided and no env var', async () => {
-    delete process.env.PULSE_FETCH_STRATEGY_CONFIG_PATH;
+    delete process.env.STRATEGY_CONFIG_PATH;
 
     // Clean up default temp directory before test
     try {

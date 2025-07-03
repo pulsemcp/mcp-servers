@@ -3,9 +3,9 @@ import { BrightDataScrapingClient } from '../../../shared/src/scraping-client/br
 
 describe('BrightData Scraping Client', () => {
   it('should scrape a simple page', async () => {
-    const apiKey = process.env.BRIGHTDATA_BEARER_TOKEN;
+    const apiKey = process.env.BRIGHTDATA_API_KEY;
     if (!apiKey) {
-      console.log('⚠️  Skipping BrightData test - BRIGHTDATA_BEARER_TOKEN not set');
+      console.log('⚠️  Skipping BrightData test - BRIGHTDATA_API_KEY not set');
       return;
     }
 
