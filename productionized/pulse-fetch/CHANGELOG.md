@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Authentication health checks at server startup
+  - Validates API credentials for Firecrawl and BrightData before accepting connections
+  - Makes minimal test requests that don't consume credits
+  - Provides clear error messages when authentication fails
+  - Can be disabled with `SKIP_HEALTH_CHECKS=true` environment variable
+  - Prevents confusing runtime errors by failing fast on invalid credentials
+
 ### Fixed
 
 - Fixed incorrect MIME type detection for scraped resources

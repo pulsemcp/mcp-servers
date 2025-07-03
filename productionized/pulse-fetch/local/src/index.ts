@@ -2,6 +2,7 @@
 
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { createMCPServer } from '../shared/index.js';
+import { runHealthChecks } from '../shared/healthcheck.js';
 
 // Validate environment variables
 function validateEnvironment() {
@@ -41,6 +42,27 @@ function validateEnvironment() {
 
 async function main() {
   validateEnvironment();
+
+  // Run health checks if SKIP_HEALTH_CHECKS is not set
+  if (process.env.SKIP_HEALTH_CHECKS !== 'true') {
+    console.error('Running authentication health checks...');
+    const healthResults = await runHealthChecks();
+
+    const failedChecks = healthResults.filter((result) => !result.success);
+    if (failedChecks.length > 0) {
+      console.error('\nAuthentication health check failures:');
+      failedChecks.forEach(({ service, error }) => {
+        console.error(`  ${service}: ${error}`);
+      });
+      console.error('\nTo skip health checks, set SKIP_HEALTH_CHECKS=true');
+      process.exit(1);
+    }
+
+    const successfulChecks = healthResults.filter((result) => result.success);
+    if (successfulChecks.length > 0) {
+      console.error('Health checks passed for:', successfulChecks.map((r) => r.service).join(', '));
+    }
+  }
 
   const { server, registerHandlers } = createMCPServer();
   await registerHandlers(server);
