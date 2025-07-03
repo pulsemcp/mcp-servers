@@ -12,7 +12,7 @@ const PARAM_DESCRIPTIONS = {
 } as const;
 
 export function getExceptionIncidentsTool(
-  server: McpServer,
+  _server: McpServer,
   clientFactory: () => IAppsignalClient
 ) {
   const GetExceptionIncidentsShape = {
@@ -26,11 +26,9 @@ export function getExceptionIncidentsTool(
 
   const GetExceptionIncidentsSchema = z.object(GetExceptionIncidentsShape);
 
-  return server.registerTool(
-    'get_exception_incidents',
-    {
-      title: 'Get Exception Incidents',
-      description: `Retrieve a list of exception incidents from your AppSignal application. Exception incidents group similar errors together, showing patterns of application crashes, errors, and unhandled exceptions. This tool provides an overview of all exception types affecting your application, with filtering and pagination capabilities.
+  return {
+    name: 'get_exception_incidents',
+    description: `Retrieve a list of exception incidents from your AppSignal application. Exception incidents group similar errors together, showing patterns of application crashes, errors, and unhandled exceptions. This tool provides an overview of all exception types affecting your application, with filtering and pagination capabilities.
 
 Example response:
 {
@@ -73,9 +71,8 @@ Use cases:
 - Monitoring error trends and patterns
 - Tracking the status of error resolution efforts
 - Identifying the most frequent or critical exceptions`,
-      inputSchema: GetExceptionIncidentsShape,
-    },
-    async (args) => {
+    inputSchema: GetExceptionIncidentsShape,
+    handler: async (args: unknown) => {
       // Handle all parameter scenarios: {}, undefined, or missing entirely
       const { states, limit, offset } = GetExceptionIncidentsSchema.parse(args || {});
       const appId = getEffectiveAppId();
@@ -83,7 +80,7 @@ Use cases:
         return {
           content: [
             {
-              type: 'text',
+              type: 'text' as const,
               text: 'Error: No app ID configured. Please use select_app_id tool first or set APPSIGNAL_APP_ID environment variable.',
             },
           ],
@@ -102,7 +99,7 @@ Use cases:
         return {
           content: [
             {
-              type: 'text',
+              type: 'text' as const,
               text: JSON.stringify(result, null, 2),
             },
           ],
@@ -111,12 +108,12 @@ Use cases:
         return {
           content: [
             {
-              type: 'text',
+              type: 'text' as const,
               text: `Error fetching exception incidents: ${error instanceof Error ? error.message : 'Unknown error'}`,
             },
           ],
         };
       }
-    }
-  );
+    },
+  };
 }

@@ -11,7 +11,7 @@ const PARAM_DESCRIPTIONS = {
   offset: 'Number of incidents to skip for pagination. Defaults to 0',
 } as const;
 
-export function getLogIncidentsTool(server: McpServer, clientFactory: () => IAppsignalClient) {
+export function getLogIncidentsTool(_server: McpServer, clientFactory: () => IAppsignalClient) {
   const GetLogIncidentsShape = {
     states: z
       .array(z.enum(['OPEN', 'CLOSED', 'WIP']))
@@ -23,11 +23,9 @@ export function getLogIncidentsTool(server: McpServer, clientFactory: () => IApp
 
   const GetLogIncidentsSchema = z.object(GetLogIncidentsShape);
 
-  return server.registerTool(
-    'get_log_incidents',
-    {
-      title: 'Get Log Incidents',
-      description: `Retrieve a list of log incidents from your AppSignal application. Log incidents are automatically detected patterns in your application logs that may indicate issues, such as repeated errors, warnings, or critical events. This tool provides an overview of all log patterns requiring attention, with filtering and pagination support.
+  return {
+    name: 'get_log_incidents',
+    description: `Retrieve a list of log incidents from your AppSignal application. Log incidents are automatically detected patterns in your application logs that may indicate issues, such as repeated errors, warnings, or critical events. This tool provides an overview of all log patterns requiring attention, with filtering and pagination support.
 
 Example response:
 {
@@ -70,9 +68,8 @@ Use cases:
 - Prioritizing which log patterns to investigate
 - Tracking the status of log-based issues
 - Monitoring for new or escalating log patterns`,
-      inputSchema: GetLogIncidentsShape,
-    },
-    async (args) => {
+    inputSchema: GetLogIncidentsShape,
+    handler: async (args: unknown) => {
       // Handle all parameter scenarios: {}, undefined, or missing entirely
       const { states, limit, offset } = GetLogIncidentsSchema.parse(args || {});
       const appId = getEffectiveAppId();
@@ -80,7 +77,7 @@ Use cases:
         return {
           content: [
             {
-              type: 'text',
+              type: 'text' as const,
               text: 'Error: No app ID configured. Please use select_app_id tool first or set APPSIGNAL_APP_ID environment variable.',
             },
           ],
@@ -99,7 +96,7 @@ Use cases:
         return {
           content: [
             {
-              type: 'text',
+              type: 'text' as const,
               text: JSON.stringify(result, null, 2),
             },
           ],
@@ -108,12 +105,12 @@ Use cases:
         return {
           content: [
             {
-              type: 'text',
+              type: 'text' as const,
               text: `Error fetching log incidents: ${error instanceof Error ? error.message : 'Unknown error'}`,
             },
           ],
         };
       }
-    }
-  );
+    },
+  };
 }

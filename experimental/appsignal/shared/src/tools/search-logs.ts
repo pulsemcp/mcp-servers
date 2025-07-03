@@ -13,7 +13,7 @@ const PARAM_DESCRIPTIONS = {
   end: 'End time for the search window in ISO 8601 format (e.g., "2024-01-15T23:59:59Z")',
 } as const;
 
-export function searchLogsTool(server: McpServer, clientFactory: () => IAppsignalClient) {
+export function searchLogsTool(_server: McpServer, clientFactory: () => IAppsignalClient) {
   const SearchLogsShape = {
     query: z.string().describe(PARAM_DESCRIPTIONS.query),
     limit: z.number().int().positive().default(50).describe(PARAM_DESCRIPTIONS.limit),
@@ -27,11 +27,9 @@ export function searchLogsTool(server: McpServer, clientFactory: () => IAppsigna
 
   const SearchLogsSchema = z.object(SearchLogsShape);
 
-  return server.registerTool(
-    'search_logs',
-    {
-      title: 'Search Logs',
-      description: `Search through application logs in AppSignal with powerful filtering capabilities. This tool allows you to query logs by content, filter by severity levels, and retrieve recent log entries matching your criteria. It's essential for troubleshooting specific issues, analyzing application behavior, and investigating error conditions.
+  return {
+    name: 'search_logs',
+    description: `Search through application logs in AppSignal with powerful filtering capabilities. This tool allows you to query logs by content, filter by severity levels, and retrieve recent log entries matching your criteria. It's essential for troubleshooting specific issues, analyzing application behavior, and investigating error conditions.
 
 Note that it can be very helpful to use start/end parameters around the time of an incident to pull together all the context on it. Generally, you probably want 10 seconds leading up to the incident through 3 seconds after it; and then expand from there if that's not enough context.
 
@@ -82,16 +80,15 @@ Use cases:
 - Analyzing log patterns around specific time periods
 - Debugging by following trace IDs across services
 - Filtering logs by severity to focus on critical issues`,
-      inputSchema: SearchLogsShape,
-    },
-    async (args) => {
+    inputSchema: SearchLogsShape,
+    handler: async (args: unknown) => {
       const { query, limit, severities, start, end } = SearchLogsSchema.parse(args);
       const appId = getEffectiveAppId();
       if (!appId) {
         return {
           content: [
             {
-              type: 'text',
+              type: 'text' as const,
               text: 'Error: No app ID configured. Please use select_app_id tool first or set APPSIGNAL_APP_ID environment variable.',
             },
           ],
@@ -105,7 +102,7 @@ Use cases:
         return {
           content: [
             {
-              type: 'text',
+              type: 'text' as const,
               text: JSON.stringify(logs, null, 2),
             },
           ],
@@ -114,12 +111,12 @@ Use cases:
         return {
           content: [
             {
-              type: 'text',
+              type: 'text' as const,
               text: `Error searching logs: ${error instanceof Error ? error.message : 'Unknown error'}`,
             },
           ],
         };
       }
-    }
-  );
+    },
+  };
 }

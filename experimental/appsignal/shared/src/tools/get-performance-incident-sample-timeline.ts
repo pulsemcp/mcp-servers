@@ -9,7 +9,7 @@ const PARAM_DESCRIPTIONS = {
 } as const;
 
 export function getPerformanceIncidentSampleTimelineTool(
-  server: McpServer,
+  _server: McpServer,
   clientFactory: () => IAppsignalClient
 ) {
   const GetPerformanceIncidentSampleTimelineShape = {
@@ -20,11 +20,9 @@ export function getPerformanceIncidentSampleTimelineTool(
     GetPerformanceIncidentSampleTimelineShape
   );
 
-  return server.registerTool(
-    'get_performance_incident_sample_timeline',
-    {
-      title: 'Get Performance Incident Sample Timeline',
-      description: `Retrieve the detailed timeline for a performance incident sample from AppSignal. The timeline shows a hierarchical breakdown of all operations performed during a request, including database queries, view rendering, external API calls, and custom instrumentation. This is essential for identifying the exact bottlenecks in slow requests.
+  return {
+    name: 'get_performance_incident_sample_timeline',
+    description: `Retrieve the detailed timeline for a performance incident sample from AppSignal. The timeline shows a hierarchical breakdown of all operations performed during a request, including database queries, view rendering, external API calls, and custom instrumentation. This is essential for identifying the exact bottlenecks in slow requests.
 
 Example response:
 {
@@ -108,16 +106,15 @@ Use cases:
 - Understanding the call hierarchy and timing breakdown
 - Finding unexpected database queries or external API calls
 - Analyzing memory allocation patterns`,
-      inputSchema: GetPerformanceIncidentSampleTimelineShape,
-    },
-    async (args) => {
+    inputSchema: GetPerformanceIncidentSampleTimelineShape,
+    handler: async (args: unknown) => {
       const { incidentNumber } = GetPerformanceIncidentSampleTimelineSchema.parse(args);
       const appId = getEffectiveAppId();
       if (!appId) {
         return {
           content: [
             {
-              type: 'text',
+              type: 'text' as const,
               text: 'Error: No app ID configured. Please use select_app_id tool first or set APPSIGNAL_APP_ID environment variable.',
             },
           ],
@@ -131,7 +128,7 @@ Use cases:
         return {
           content: [
             {
-              type: 'text',
+              type: 'text' as const,
               text: JSON.stringify(timeline, null, 2),
             },
           ],
@@ -140,12 +137,12 @@ Use cases:
         return {
           content: [
             {
-              type: 'text',
+              type: 'text' as const,
               text: `Error fetching performance incident sample timeline: ${error instanceof Error ? error.message : 'Unknown error'}`,
             },
           ],
         };
       }
-    }
-  );
+    },
+  };
 }

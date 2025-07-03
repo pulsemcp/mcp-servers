@@ -12,7 +12,7 @@ const PARAM_DESCRIPTIONS = {
 } as const;
 
 export function getPerformanceIncidentsTool(
-  server: McpServer,
+  _server: McpServer,
   clientFactory: () => IAppsignalClient
 ) {
   const GetPerformanceIncidentsShape = {
@@ -26,11 +26,9 @@ export function getPerformanceIncidentsTool(
 
   const GetPerformanceIncidentsSchema = z.object(GetPerformanceIncidentsShape);
 
-  return server.registerTool(
-    'get_performance_incidents',
-    {
-      title: 'Get Performance Incidents',
-      description: `Retrieve a list of performance incidents from your AppSignal application. Performance incidents identify slow endpoints, database queries, and other performance bottlenecks in your application. This tool provides an overview of all performance issues affecting your application, with filtering and pagination capabilities.
+  return {
+    name: 'get_performance_incidents',
+    description: `Retrieve a list of performance incidents from your AppSignal application. Performance incidents identify slow endpoints, database queries, and other performance bottlenecks in your application. This tool provides an overview of all performance issues affecting your application, with filtering and pagination capabilities.
 
 Example response:
 {
@@ -91,9 +89,8 @@ Use cases:
 - Monitoring performance trends and patterns
 - Tracking the status of performance optimization efforts
 - Identifying N+1 queries and slow database operations`,
-      inputSchema: GetPerformanceIncidentsShape,
-    },
-    async (args) => {
+    inputSchema: GetPerformanceIncidentsShape,
+    handler: async (args: unknown) => {
       // Handle all parameter scenarios: {}, undefined, or missing entirely
       const { states, limit, offset } = GetPerformanceIncidentsSchema.parse(args || {});
       const appId = getEffectiveAppId();
@@ -101,7 +98,7 @@ Use cases:
         return {
           content: [
             {
-              type: 'text',
+              type: 'text' as const,
               text: 'Error: No app ID configured. Please use select_app_id tool first or set APPSIGNAL_APP_ID environment variable.',
             },
           ],
@@ -124,7 +121,7 @@ Use cases:
         return {
           content: [
             {
-              type: 'text',
+              type: 'text' as const,
               text: JSON.stringify(result, null, 2),
             },
           ],
@@ -133,12 +130,12 @@ Use cases:
         return {
           content: [
             {
-              type: 'text',
+              type: 'text' as const,
               text: `Error fetching performance incidents: ${error instanceof Error ? error.message : 'Unknown error'}`,
             },
           ],
         };
       }
-    }
-  );
+    },
+  };
 }

@@ -11,7 +11,7 @@ const PARAM_DESCRIPTIONS = {
   offset: 'Number of incidents to skip for pagination. Defaults to 0',
 } as const;
 
-export function getAnomalyIncidentsTool(server: McpServer, clientFactory: () => IAppsignalClient) {
+export function getAnomalyIncidentsTool(_server: McpServer, clientFactory: () => IAppsignalClient) {
   const GetAnomalyIncidentsShape = {
     states: z
       .array(z.enum(['OPEN', 'CLOSED', 'WIP']))
@@ -23,11 +23,9 @@ export function getAnomalyIncidentsTool(server: McpServer, clientFactory: () => 
 
   const GetAnomalyIncidentsSchema = z.object(GetAnomalyIncidentsShape);
 
-  return server.registerTool(
-    'get_anomaly_incidents',
-    {
-      title: 'Get Anomaly Incidents',
-      description: `Retrieve a list of anomaly incidents detected by AppSignal's automatic performance monitoring. Anomaly incidents represent unusual patterns in your application's behavior, such as response time spikes, memory usage anomalies, or throughput variations. This tool allows filtering by incident state and supports pagination for large result sets.
+  return {
+    name: 'get_anomaly_incidents',
+    description: `Retrieve a list of anomaly incidents detected by AppSignal's automatic performance monitoring. Anomaly incidents represent unusual patterns in your application's behavior, such as response time spikes, memory usage anomalies, or throughput variations. This tool allows filtering by incident state and supports pagination for large result sets.
 
 Example response:
 {
@@ -67,9 +65,8 @@ Use cases:
 - Reviewing historical anomaly patterns
 - Identifying trends in application performance issues
 - Prioritizing performance optimization efforts`,
-      inputSchema: GetAnomalyIncidentsShape,
-    },
-    async (args) => {
+    inputSchema: GetAnomalyIncidentsShape,
+    handler: async (args: unknown) => {
       // Handle all parameter scenarios: {}, undefined, or missing entirely
       const { states, limit, offset } = GetAnomalyIncidentsSchema.parse(args || {});
       const appId = getEffectiveAppId();
@@ -77,7 +74,7 @@ Use cases:
         return {
           content: [
             {
-              type: 'text',
+              type: 'text' as const,
               text: 'Error: No app ID configured. Please use select_app_id tool first or set APPSIGNAL_APP_ID environment variable.',
             },
           ],
@@ -96,7 +93,7 @@ Use cases:
         return {
           content: [
             {
-              type: 'text',
+              type: 'text' as const,
               text: JSON.stringify(result, null, 2),
             },
           ],
@@ -105,12 +102,12 @@ Use cases:
         return {
           content: [
             {
-              type: 'text',
+              type: 'text' as const,
               text: `Error fetching anomaly incidents: ${error instanceof Error ? error.message : 'Unknown error'}`,
             },
           ],
         };
       }
-    }
-  );
+    },
+  };
 }

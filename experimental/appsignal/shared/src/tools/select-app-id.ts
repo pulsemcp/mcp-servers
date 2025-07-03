@@ -9,7 +9,7 @@ const PARAM_DESCRIPTIONS = {
 } as const;
 
 export function selectAppIdTool(
-  server: McpServer,
+  _server: McpServer,
   toolName: string,
   enableMainTools?: () => void,
   _clientFactory?: () => IAppsignalClient
@@ -20,11 +20,9 @@ export function selectAppIdTool(
 
   const SelectAppIdSchema = z.object(SelectAppIdShape);
 
-  return server.registerTool(
-    toolName,
-    {
-      title: toolName === 'change_app_id' ? 'Change App ID' : 'Select App ID',
-      description: `Select a specific AppSignal application to monitor and enable all incident management tools. This tool must be called after get_apps to activate the monitoring capabilities for a particular application. Once an app is selected, all other AppSignal tools (exception incidents, log incidents, anomaly detection, etc.) become available for use. The selection persists for the entire session unless changed.
+  return {
+    name: toolName,
+    description: `Select a specific AppSignal application to monitor and enable all incident management tools. This tool must be called after get_apps to activate the monitoring capabilities for a particular application. Once an app is selected, all other AppSignal tools (exception incidents, log incidents, anomaly detection, etc.) become available for use. The selection persists for the entire session unless changed.
 
 Example usage:
 - First use get_apps to list available applications
@@ -35,9 +33,8 @@ This tool is crucial for:
 - Activating incident monitoring tools for a specific app
 - Switching between different applications during a session
 - Establishing the context for all subsequent monitoring operations`,
-      inputSchema: SelectAppIdShape,
-    },
-    async (args) => {
+    inputSchema: SelectAppIdShape,
+    handler: async (args: unknown) => {
       const { appId } = SelectAppIdSchema.parse(args);
       // Store the selected app ID
       setSelectedAppId(appId);
@@ -51,11 +48,11 @@ This tool is crucial for:
       return {
         content: [
           {
-            type: 'text',
+            type: 'text' as const,
             text: `Successfully ${action} app ID: ${appId}. All AppSignal tools are now available.`,
           },
         ],
       };
-    }
-  );
+    },
+  };
 }

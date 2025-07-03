@@ -10,7 +10,7 @@ const PARAM_DESCRIPTIONS = {
 } as const;
 
 export function getExceptionIncidentSampleTool(
-  server: McpServer,
+  _server: McpServer,
   clientFactory: () => IAppsignalClient
 ) {
   const GetExceptionIncidentSampleShape = {
@@ -20,11 +20,9 @@ export function getExceptionIncidentSampleTool(
 
   const GetExceptionIncidentSampleSchema = z.object(GetExceptionIncidentSampleShape);
 
-  return server.registerTool(
-    'get_exception_incident_sample',
-    {
-      title: 'Get Exception Incident Sample',
-      description: `Retrieve sample data for a specific occurrence of an exception incident. While exception incidents group similar errors together, this tool provides context of a single occurrence, including request parameters, session data, and environment details. Note: Due to API limitations, the actual exception message and backtrace are not available.
+  return {
+    name: 'get_exception_incident_sample',
+    description: `Retrieve sample data for a specific occurrence of an exception incident. While exception incidents group similar errors together, this tool provides context of a single occurrence, including request parameters, session data, and environment details. Note: Due to API limitations, the actual exception message and backtrace are not available.
 
 💡 Recommended follow-up: After retrieving the sample, use the search_logs tool with:
 - Time range around the sample's timestamp (-10 seconds through +3 seconds)
@@ -61,16 +59,15 @@ Use cases:
 - Understanding the context where errors occurred
 - Investigating user-specific error conditions
 - Tracking error occurrences across different app versions`,
-      inputSchema: GetExceptionIncidentSampleShape,
-    },
-    async (args) => {
+    inputSchema: GetExceptionIncidentSampleShape,
+    handler: async (args: unknown) => {
       const { incidentNumber, offset } = GetExceptionIncidentSampleSchema.parse(args);
       const appId = getEffectiveAppId();
       if (!appId) {
         return {
           content: [
             {
-              type: 'text',
+              type: 'text' as const,
               text: 'Error: No app ID configured. Please use select_app_id tool first or set APPSIGNAL_APP_ID environment variable.',
             },
           ],
@@ -84,7 +81,7 @@ Use cases:
         return {
           content: [
             {
-              type: 'text',
+              type: 'text' as const,
               text: JSON.stringify(sample, null, 2),
             },
           ],
@@ -93,12 +90,12 @@ Use cases:
         return {
           content: [
             {
-              type: 'text',
+              type: 'text' as const,
               text: `Error fetching exception incident sample: ${error instanceof Error ? error.message : 'Unknown error'}`,
             },
           ],
         };
       }
-    }
-  );
+    },
+  };
 }
