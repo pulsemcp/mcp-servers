@@ -54,3 +54,6 @@ mcp-json-profiles/.secrets
 
 # Temporary test result files
 **/tests/manual/temp-results/
+
+# Test publish directories
+**/.test-publish/
