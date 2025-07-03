@@ -359,9 +359,3 @@ Don't add: basic TypeScript fixes, standard npm troubleshooting, obvious file op
 ### Changelog management
 
 Whenever you make any sort of code change to an MCP server, make sure to update the unreleased section of its corresponding `CHANGELOG.md`.
-
-### MCP Tool Definition Patterns
-
-- **Tool Registration Duality**: MCP servers can use either `server.tool()` or the newer pattern of returning tool definition objects from tool functions. When modernizing tools, ensure consistency between the tool functions and how they're registered in tools.ts
-- **InputSchema Types**: When using `server.tool()`, the inputSchema parameter expects a ZodRawShape (object with Zod schemas as values), not a full ZodObject. Define shapes separately: `const MyShape = { field: z.string() }` then use `z.object(MyShape)` for validation
-- **Functional vs Integration Test Patterns**: Functional tests may mock the server object differently than how the actual MCP SDK works. Tool functions that work with the real SDK may need adjustments for test compatibility
