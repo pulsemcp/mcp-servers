@@ -7,12 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.6] - 2025-07-03
+
 ### Fixed
 
 - Fixed MCP protocol violations caused by console.log statements
   - Replaced all console.log and console.warn statements with proper logging to stderr
   - MCP protocol requires only JSON messages on stdout; debug messages must go to stderr
   - Updated files: scraping-strategies.ts, default-config.ts, html-cleaner.ts
+
+### Changed
+
+- Added @types/jsdom as dev dependency for TypeScript type definitions
 
 ## [0.2.5] - 2025-07-01
 
