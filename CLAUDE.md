@@ -349,6 +349,16 @@ Don't add: basic TypeScript fixes, standard npm troubleshooting, obvious file op
 - **For `/publish_and_pr` command**: This means "stage for publishing and update PR" - it does NOT mean actually publish to npm. The workflow is: bump version → update changelog → commit → push → update PR. NPM publishing happens automatically via CI when PR is merged
 - **Manual Testing Before Publishing**: Always run manual tests (with real API credentials) before staging a version bump to ensure the server works correctly with external APIs
 
+### Manual Testing Infrastructure
+
+- All MCP servers should have a `MANUAL_TESTING.md` file to track manual test results
+- Manual test files typically live in `tests/manual/` and use `.manual.test.ts` extension
+- To run manual tests with proper ESM support, create a `scripts/run-vitest.js` wrapper that imports vitest's CLI directly
+- The CI workflow `verify-mcp-server-publication.yml` checks for manual test results when version bumps occur - it verifies tests were run on a commit in the PR's history and checks for passing results
+- When setting up manual tests for servers with workspace structures (local/shared), ensure dependencies are properly installed in all subdirectories before running tests
+- Manual tests should run against built code (not source) - create a `run-manual-built.js` script that builds the project first, then runs tests against the compiled JavaScript
+- CI should fail when MANUAL_TESTING.md isn't updated for the current PR, but NOT when tests fail (some failures might be expected due to API limitations)
+
 ### Monorepo Dependency Management
 
 - **Critical**: Never add production dependencies to root package.json files in workspace servers - these should only contain devDependencies
