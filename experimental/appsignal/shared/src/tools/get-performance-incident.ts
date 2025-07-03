@@ -3,13 +3,24 @@ import { z } from 'zod';
 import { getEffectiveAppId } from '../state.js';
 import { IAppsignalClient } from '../appsignal-client/appsignal-client.js';
 
+// Parameter descriptions - single source of truth
+const PARAM_DESCRIPTIONS = {
+  incidentNumber: 'The number of the performance incident to retrieve',
+} as const;
+
 export function getPerformanceIncidentTool(
-  server: McpServer,
+  _server: McpServer,
   clientFactory: () => IAppsignalClient
 ) {
-  return server.tool(
-    'get_performance_incident',
-    `Retrieve details about a specific performance incident from AppSignal. Performance incidents represent specific performance bottlenecks like slow endpoints, database queries, or external API calls. This tool provides detailed information about a single performance issue.
+  const GetPerformanceIncidentShape = {
+    incidentNumber: z.string().describe(PARAM_DESCRIPTIONS.incidentNumber),
+  };
+
+  const GetPerformanceIncidentSchema = z.object(GetPerformanceIncidentShape);
+
+  return {
+    name: 'get_performance_incident',
+    description: `Retrieve details about a specific performance incident from AppSignal. Performance incidents represent specific performance bottlenecks like slow endpoints, database queries, or external API calls. This tool provides detailed information about a single performance issue.
 
 Example response:
 {
@@ -47,16 +58,15 @@ Use cases:
 - Understanding the impact and frequency of a performance bottleneck
 - Checking if an incident has N+1 query problems
 - Determining if samples are available for deeper analysis`,
-    {
-      incidentNumber: z.string().describe('The number of the performance incident to retrieve'),
-    },
-    async ({ incidentNumber }) => {
+    inputSchema: GetPerformanceIncidentShape,
+    handler: async (args: unknown) => {
+      const { incidentNumber } = GetPerformanceIncidentSchema.parse(args);
       const appId = getEffectiveAppId();
       if (!appId) {
         return {
           content: [
             {
-              type: 'text',
+              type: 'text' as const,
               text: 'Error: No app ID configured. Please use select_app_id tool first or set APPSIGNAL_APP_ID environment variable.',
             },
           ],
@@ -70,7 +80,7 @@ Use cases:
         return {
           content: [
             {
-              type: 'text',
+              type: 'text' as const,
               text: JSON.stringify(incident, null, 2),
             },
           ],
@@ -79,12 +89,12 @@ Use cases:
         return {
           content: [
             {
-              type: 'text',
+              type: 'text' as const,
               text: `Error fetching performance incident: ${error instanceof Error ? error.message : 'Unknown error'}`,
             },
           ],
         };
       }
-    }
-  );
+    },
+  };
 }

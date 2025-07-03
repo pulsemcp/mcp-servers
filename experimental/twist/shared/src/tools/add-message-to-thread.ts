@@ -2,21 +2,21 @@ import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { z } from 'zod';
 import type { ClientFactory } from '../server.js';
 
+// Parameter descriptions (single source of truth)
+const PARAM_DESCRIPTIONS = {
+  thread_id:
+    'The unique identifier of the thread (e.g., "789012"). Use get_threads to find thread IDs',
+  content:
+    'The message text to post. Supports line breaks for formatting. Keep messages focused and relevant to the thread topic',
+} as const;
+
 /**
  * Tool for adding a message to an existing thread
  */
 export function addMessageToThreadTool(server: Server, clientFactory: ClientFactory) {
   const AddMessageSchema = z.object({
-    thread_id: z
-      .string()
-      .describe(
-        'The unique identifier of the thread (e.g., "789012"). Use get_threads to find thread IDs'
-      ),
-    content: z
-      .string()
-      .describe(
-        'The message text to post. Supports line breaks for formatting. Keep messages focused and relevant to the thread topic'
-      ),
+    thread_id: z.string().describe(PARAM_DESCRIPTIONS.thread_id),
+    content: z.string().describe(PARAM_DESCRIPTIONS.content),
   });
 
   return {
@@ -43,13 +43,11 @@ Use cases:
       properties: {
         thread_id: {
           type: 'string',
-          description:
-            'The unique identifier of the thread (e.g., "789012"). Use get_threads to find thread IDs',
+          description: PARAM_DESCRIPTIONS.thread_id,
         },
         content: {
           type: 'string',
-          description:
-            'The message text to post. Supports line breaks for formatting. Keep messages focused and relevant to the thread topic',
+          description: PARAM_DESCRIPTIONS.content,
         },
       },
       required: ['thread_id', 'content'],

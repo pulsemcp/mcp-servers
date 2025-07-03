@@ -2,28 +2,23 @@ import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { z } from 'zod';
 import type { ClientFactory } from '../server.js';
 
+// Parameter descriptions (single source of truth)
+const PARAM_DESCRIPTIONS = {
+  thread_id:
+    'The unique identifier of the thread (e.g., "789012"). Use get_threads to find thread IDs',
+  message_limit: 'Maximum number of recent messages to return (default: 10, max: 100)',
+  message_offset:
+    'Number of messages to skip from the end for pagination (e.g., offset: 10 to get older messages)',
+} as const;
+
 /**
  * Tool for getting a thread with all its messages
  */
 export function getThreadTool(server: Server, clientFactory: ClientFactory) {
   const GetThreadSchema = z.object({
-    thread_id: z
-      .string()
-      .describe(
-        'The unique identifier of the thread (e.g., "789012"). Use get_threads to find thread IDs'
-      ),
-    message_limit: z
-      .number()
-      .optional()
-      .default(10)
-      .describe('Maximum number of recent messages to return (default: 10, max: 100)'),
-    message_offset: z
-      .number()
-      .optional()
-      .default(0)
-      .describe(
-        'Number of messages to skip from the end for pagination (e.g., offset: 10 to get older messages)'
-      ),
+    thread_id: z.string().describe(PARAM_DESCRIPTIONS.thread_id),
+    message_limit: z.number().optional().default(10).describe(PARAM_DESCRIPTIONS.message_limit),
+    message_offset: z.number().optional().default(0).describe(PARAM_DESCRIPTIONS.message_offset),
   });
 
   return {
@@ -62,18 +57,16 @@ Use cases:
       properties: {
         thread_id: {
           type: 'string',
-          description:
-            'The unique identifier of the thread (e.g., "789012"). Use get_threads to find thread IDs',
+          description: PARAM_DESCRIPTIONS.thread_id,
         },
         message_limit: {
           type: 'number',
-          description: 'Maximum number of recent messages to return (default: 10, max: 100)',
+          description: PARAM_DESCRIPTIONS.message_limit,
           default: 10,
         },
         message_offset: {
           type: 'number',
-          description:
-            'Number of messages to skip from the end for pagination (e.g., offset: 10 to get older messages)',
+          description: PARAM_DESCRIPTIONS.message_offset,
           default: 0,
         },
       },

@@ -2,18 +2,20 @@ import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { z } from 'zod';
 import type { ClientFactory } from '../server.js';
 
+// Parameter descriptions (single source of truth)
+const PARAM_DESCRIPTIONS = {
+  thread_id: 'The unique identifier of the thread to close (e.g., "789012")',
+  message:
+    'Optional closing message to add to the thread. If not provided, defaults to "Thread closed"',
+} as const;
+
 /**
  * Tool for closing a thread
  */
 export function closeThreadTool(server: Server, clientFactory: ClientFactory) {
   const CloseThreadSchema = z.object({
-    thread_id: z.string().describe('The unique identifier of the thread to close (e.g., "789012")'),
-    message: z
-      .string()
-      .optional()
-      .describe(
-        'Optional closing message to add to the thread. If not provided, defaults to "Thread closed"'
-      ),
+    thread_id: z.string().describe(PARAM_DESCRIPTIONS.thread_id),
+    message: z.string().optional().describe(PARAM_DESCRIPTIONS.message),
   });
 
   return {
@@ -40,12 +42,11 @@ Use cases:
       properties: {
         thread_id: {
           type: 'string',
-          description: 'The unique identifier of the thread to close (e.g., "789012")',
+          description: PARAM_DESCRIPTIONS.thread_id,
         },
         message: {
           type: 'string',
-          description:
-            'Optional closing message to add to the thread. If not provided, defaults to "Thread closed"',
+          description: PARAM_DESCRIPTIONS.message,
         },
       },
       required: ['thread_id'],

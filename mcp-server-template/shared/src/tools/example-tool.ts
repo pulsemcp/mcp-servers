@@ -2,9 +2,14 @@ import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { z } from 'zod';
 import { IExampleClient } from '../example-client/example-client.js';
 
+// Parameter descriptions - single source of truth
+const PARAM_DESCRIPTIONS = {
+  message: 'The message to process',
+} as const;
+
 // Schema for tool input validation
 export const ExampleToolSchema = z.object({
-  message: z.string().describe('The message to process'),
+  message: z.string().describe(PARAM_DESCRIPTIONS.message),
 });
 
 /**
@@ -24,7 +29,7 @@ export function exampleTool(_server: Server, _clientFactory: () => IExampleClien
       properties: {
         message: {
           type: 'string',
-          description: 'The message to process',
+          description: PARAM_DESCRIPTIONS.message,
         },
       },
       required: ['message'],

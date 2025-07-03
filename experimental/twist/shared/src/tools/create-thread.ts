@@ -2,26 +2,24 @@ import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { z } from 'zod';
 import type { ClientFactory } from '../server.js';
 
+// Parameter descriptions - single source of truth
+const PARAM_DESCRIPTIONS = {
+  channel_id:
+    'The unique identifier of the channel where the thread will be created (e.g., "123456"). Use get_channels to find channel IDs',
+  title:
+    'A descriptive title for the thread (e.g., "Q4 Planning Discussion" or "Bug Report: Login Issues"). Keep it concise but informative',
+  content:
+    'The first message in the thread. This sets the context for the discussion. Supports basic formatting like line breaks',
+} as const;
+
 /**
  * Tool for creating a new thread in a channel
  */
 export function createThreadTool(server: Server, clientFactory: ClientFactory) {
   const CreateThreadSchema = z.object({
-    channel_id: z
-      .string()
-      .describe(
-        'The unique identifier of the channel where the thread will be created (e.g., "123456"). Use get_channels to find channel IDs'
-      ),
-    title: z
-      .string()
-      .describe(
-        'A descriptive title for the thread (e.g., "Q4 Planning Discussion" or "Bug Report: Login Issues"). Keep it concise but informative'
-      ),
-    content: z
-      .string()
-      .describe(
-        'The first message in the thread. This sets the context for the discussion. Supports basic formatting like line breaks'
-      ),
+    channel_id: z.string().describe(PARAM_DESCRIPTIONS.channel_id),
+    title: z.string().describe(PARAM_DESCRIPTIONS.title),
+    content: z.string().describe(PARAM_DESCRIPTIONS.content),
   });
 
   return {
@@ -49,18 +47,15 @@ Use cases:
       properties: {
         channel_id: {
           type: 'string',
-          description:
-            'The unique identifier of the channel where the thread will be created (e.g., "123456"). Use get_channels to find channel IDs',
+          description: PARAM_DESCRIPTIONS.channel_id,
         },
         title: {
           type: 'string',
-          description:
-            'A descriptive title for the thread (e.g., "Q4 Planning Discussion" or "Bug Report: Login Issues"). Keep it concise but informative',
+          description: PARAM_DESCRIPTIONS.title,
         },
         content: {
           type: 'string',
-          description:
-            'The first message in the thread. This sets the context for the discussion. Supports basic formatting like line breaks',
+          description: PARAM_DESCRIPTIONS.content,
         },
       },
       required: ['channel_id', 'title', 'content'],

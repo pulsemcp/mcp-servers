@@ -3,10 +3,29 @@ import { z } from 'zod';
 import { getEffectiveAppId } from '../state.js';
 import { IAppsignalClient } from '../appsignal-client/appsignal-client.js';
 
-export function getLogIncidentsTool(server: McpServer, clientFactory: () => IAppsignalClient) {
-  return server.tool(
-    'get_log_incidents',
-    `Retrieve a list of log incidents from your AppSignal application. Log incidents are automatically detected patterns in your application logs that may indicate issues, such as repeated errors, warnings, or critical events. This tool provides an overview of all log patterns requiring attention, with filtering and pagination support.
+// Parameter descriptions - single source of truth
+const PARAM_DESCRIPTIONS = {
+  states:
+    'Filter incidents by state(s). OPEN = new patterns, WIP = being investigated, CLOSED = resolved. Defaults to ["OPEN"] if not provided',
+  limit: 'Maximum number of incidents to return for pagination. Defaults to 50',
+  offset: 'Number of incidents to skip for pagination. Defaults to 0',
+} as const;
+
+export function getLogIncidentsTool(_server: McpServer, clientFactory: () => IAppsignalClient) {
+  const GetLogIncidentsShape = {
+    states: z
+      .array(z.enum(['OPEN', 'CLOSED', 'WIP']))
+      .optional()
+      .describe(PARAM_DESCRIPTIONS.states),
+    limit: z.number().optional().describe(PARAM_DESCRIPTIONS.limit),
+    offset: z.number().optional().describe(PARAM_DESCRIPTIONS.offset),
+  };
+
+  const GetLogIncidentsSchema = z.object(GetLogIncidentsShape);
+
+  return {
+    name: 'get_log_incidents',
+    description: `Retrieve a list of log incidents from your AppSignal application. Log incidents are automatically detected patterns in your application logs that may indicate issues, such as repeated errors, warnings, or critical events. This tool provides an overview of all log patterns requiring attention, with filtering and pagination support.
 
 Example response:
 {
@@ -49,31 +68,16 @@ Use cases:
 - Prioritizing which log patterns to investigate
 - Tracking the status of log-based issues
 - Monitoring for new or escalating log patterns`,
-    {
-      states: z
-        .array(z.enum(['OPEN', 'CLOSED', 'WIP']))
-        .optional()
-        .describe(
-          'Filter incidents by state(s). OPEN = new patterns, WIP = being investigated, CLOSED = resolved. Defaults to ["OPEN"] if not provided'
-        ),
-      limit: z
-        .number()
-        .optional()
-        .describe('Maximum number of incidents to return for pagination. Defaults to 50'),
-      offset: z
-        .number()
-        .optional()
-        .describe('Number of incidents to skip for pagination. Defaults to 0'),
-    },
-    async (args) => {
+    inputSchema: GetLogIncidentsShape,
+    handler: async (args: unknown) => {
       // Handle all parameter scenarios: {}, undefined, or missing entirely
-      const { states, limit, offset } = args || {};
+      const { states, limit, offset } = GetLogIncidentsSchema.parse(args || {});
       const appId = getEffectiveAppId();
       if (!appId) {
         return {
           content: [
             {
-              type: 'text',
+              type: 'text' as const,
               text: 'Error: No app ID configured. Please use select_app_id tool first or set APPSIGNAL_APP_ID environment variable.',
             },
           ],
@@ -92,7 +96,7 @@ Use cases:
         return {
           content: [
             {
-              type: 'text',
+              type: 'text' as const,
               text: JSON.stringify(result, null, 2),
             },
           ],
@@ -101,12 +105,12 @@ Use cases:
         return {
           content: [
             {
-              type: 'text',
+              type: 'text' as const,
               text: `Error fetching log incidents: ${error instanceof Error ? error.message : 'Unknown error'}`,
             },
           ],
         };
       }
-    }
-  );
+    },
+  };
 }

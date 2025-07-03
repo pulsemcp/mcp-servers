@@ -19,6 +19,72 @@ A complete tool description should include:
 
 ## Implementation Pattern
 
+### Modern Pattern (Recommended)
+
+Use this pattern for new tools, which provides better type safety and maintainability:
+
+```typescript
+// Parameter descriptions - single source of truth
+const PARAM_DESCRIPTIONS = {
+  query: 'Search query to filter logs (e.g., "payment failed", "user_id:123")',
+  limit: 'Maximum number of entries to return (default: 50, max: 1000)',
+  severities: 'Filter by severity levels. If not specified, returns all severities',
+} as const;
+
+export function myTool(server: Server, clientFactory: () => IClient) {
+  // Define Zod schema with descriptions
+  const MyToolSchema = z.object({
+    query: z.string().describe(PARAM_DESCRIPTIONS.query),
+    limit: z.number().optional().describe(PARAM_DESCRIPTIONS.limit),
+    severities: z
+      .array(z.enum(['debug', 'info', 'warn', 'error', 'fatal']))
+      .optional()
+      .describe(PARAM_DESCRIPTIONS.severities),
+  });
+
+  return {
+    name: 'tool_name',
+    description: `[PURPOSE STATEMENT]
+    
+[EXAMPLE RESPONSE SECTION]
+
+[ENUM EXPLANATIONS IF APPLICABLE]
+
+[USE CASES SECTION]`,
+    inputSchema: {
+      type: 'object',
+      properties: {
+        query: {
+          type: 'string',
+          description: PARAM_DESCRIPTIONS.query,
+        },
+        limit: {
+          type: 'number',
+          description: PARAM_DESCRIPTIONS.limit,
+        },
+        severities: {
+          type: 'array',
+          items: {
+            type: 'string',
+            enum: ['debug', 'info', 'warn', 'error', 'fatal'],
+          },
+          description: PARAM_DESCRIPTIONS.severities,
+        },
+      },
+      required: ['query'],
+    },
+    handler: async (args: unknown) => {
+      const validatedArgs = MyToolSchema.parse(args);
+      // Implementation using validatedArgs
+    },
+  };
+}
+```
+
+### Legacy Pattern (server.tool method)
+
+Some existing servers use this older pattern:
+
 ```typescript
 export function myTool(server: McpServer, clientFactory: () => IClient) {
   return server.tool(

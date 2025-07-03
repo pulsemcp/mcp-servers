@@ -3,13 +3,24 @@ import { z } from 'zod';
 import { getEffectiveAppId } from '../state.js';
 import { IAppsignalClient } from '../appsignal-client/appsignal-client.js';
 
+// Parameter descriptions - single source of truth
+const PARAM_DESCRIPTIONS = {
+  incidentNumber: 'The number of the performance incident to get a sample for',
+} as const;
+
 export function getPerformanceIncidentSampleTool(
-  server: McpServer,
+  _server: McpServer,
   clientFactory: () => IAppsignalClient
 ) {
-  return server.tool(
-    'get_performance_incident_sample',
-    `Retrieve a sample transaction for a specific performance incident from AppSignal. Samples provide detailed timing information about a specific slow request or operation, helping you understand exactly where time is being spent.
+  const GetPerformanceIncidentSampleShape = {
+    incidentNumber: z.string().describe(PARAM_DESCRIPTIONS.incidentNumber),
+  };
+
+  const GetPerformanceIncidentSampleSchema = z.object(GetPerformanceIncidentSampleShape);
+
+  return {
+    name: 'get_performance_incident_sample',
+    description: `Retrieve a sample transaction for a specific performance incident from AppSignal. Samples provide detailed timing information about a specific slow request or operation, helping you understand exactly where time is being spent.
 
 💡 Recommended follow-up: After retrieving the sample, use the search_logs tool with:
 - Time range around the sample's timestamp (-10 seconds through +3 seconds)
@@ -60,18 +71,15 @@ Use cases:
 - Viewing request parameters and custom data for context
 - Checking if N+1 queries occurred in this specific sample
 - Understanding queue wait times vs actual processing time`,
-    {
-      incidentNumber: z
-        .string()
-        .describe('The number of the performance incident to get a sample for'),
-    },
-    async ({ incidentNumber }) => {
+    inputSchema: GetPerformanceIncidentSampleShape,
+    handler: async (args: unknown) => {
+      const { incidentNumber } = GetPerformanceIncidentSampleSchema.parse(args);
       const appId = getEffectiveAppId();
       if (!appId) {
         return {
           content: [
             {
-              type: 'text',
+              type: 'text' as const,
               text: 'Error: No app ID configured. Please use select_app_id tool first or set APPSIGNAL_APP_ID environment variable.',
             },
           ],
@@ -85,7 +93,7 @@ Use cases:
         return {
           content: [
             {
-              type: 'text',
+              type: 'text' as const,
               text: JSON.stringify(sample, null, 2),
             },
           ],
@@ -94,12 +102,12 @@ Use cases:
         return {
           content: [
             {
-              type: 'text',
+              type: 'text' as const,
               text: `Error fetching performance incident sample: ${error instanceof Error ? error.message : 'Unknown error'}`,
             },
           ],
         };
       }
-    }
-  );
+    },
+  };
 }

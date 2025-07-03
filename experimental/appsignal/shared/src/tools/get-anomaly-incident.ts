@@ -3,10 +3,21 @@ import { z } from 'zod';
 import { getEffectiveAppId } from '../state.js';
 import { IAppsignalClient } from '../appsignal-client/appsignal-client.js';
 
-export function getAnomalyIncidentTool(server: McpServer, clientFactory: () => IAppsignalClient) {
-  return server.tool(
-    'get_anomaly_incident',
-    `Retrieve detailed information about a specific anomaly incident in your AppSignal application. Anomaly incidents are automatically detected unusual patterns in your application's performance metrics, such as abnormal response times, memory usage spikes, or throughput variations. This tool provides comprehensive details about a single anomaly, including when it was detected, its severity, affected metrics, and current status.
+// Parameter descriptions - single source of truth
+const PARAM_DESCRIPTIONS = {
+  incidentNumber: 'The unique number of the anomaly incident to retrieve',
+} as const;
+
+export function getAnomalyIncidentTool(_server: McpServer, clientFactory: () => IAppsignalClient) {
+  const GetAnomalyIncidentShape = {
+    incidentNumber: z.string().describe(PARAM_DESCRIPTIONS.incidentNumber),
+  };
+
+  const GetAnomalyIncidentSchema = z.object(GetAnomalyIncidentShape);
+
+  return {
+    name: 'get_anomaly_incident',
+    description: `Retrieve detailed information about a specific anomaly incident in your AppSignal application. Anomaly incidents are automatically detected unusual patterns in your application's performance metrics, such as abnormal response times, memory usage spikes, or throughput variations. This tool provides comprehensive details about a single anomaly, including when it was detected, its severity, affected metrics, and current status.
 
 Example response:
 {
@@ -28,16 +39,15 @@ Use cases:
 - Getting detailed metrics about unusual application behavior
 - Understanding the scope and impact of detected anomalies
 - Tracking the resolution status of performance issues`,
-    {
-      incidentNumber: z.string().describe('The unique number of the anomaly incident to retrieve'),
-    },
-    async ({ incidentNumber }) => {
+    inputSchema: GetAnomalyIncidentShape,
+    handler: async (args: unknown) => {
+      const { incidentNumber } = GetAnomalyIncidentSchema.parse(args);
       const appId = getEffectiveAppId();
       if (!appId) {
         return {
           content: [
             {
-              type: 'text',
+              type: 'text' as const,
               text: 'Error: No app ID configured. Please use select_app_id tool first or set APPSIGNAL_APP_ID environment variable.',
             },
           ],
@@ -51,7 +61,7 @@ Use cases:
         return {
           content: [
             {
-              type: 'text',
+              type: 'text' as const,
               text: JSON.stringify(incident, null, 2),
             },
           ],
@@ -60,12 +70,12 @@ Use cases:
         return {
           content: [
             {
-              type: 'text',
+              type: 'text' as const,
               text: `Error fetching anomaly incident details: ${error instanceof Error ? error.message : 'Unknown error'}`,
             },
           ],
         };
       }
-    }
-  );
+    },
+  };
 }

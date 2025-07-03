@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Applied DRY (Don't Repeat Yourself) pattern to all tool parameter descriptions
+  - Added `PARAM_DESCRIPTIONS` constants to maintain single source of truth
+  - All 14 tool files now use consistent parameter descriptions
+  - Separated Zod shape definitions from schema objects for better organization
+  - Improves maintainability by eliminating description duplication
+
 ## [0.2.10] - 2025-07-03
 
 ### Added

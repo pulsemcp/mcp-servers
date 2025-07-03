@@ -3,10 +3,21 @@ import { z } from 'zod';
 import { getEffectiveAppId } from '../state.js';
 import { IAppsignalClient } from '../appsignal-client/appsignal-client.js';
 
-export function getLogIncidentTool(server: McpServer, clientFactory: () => IAppsignalClient) {
-  return server.tool(
-    'get_log_incident',
-    `Retrieve detailed information about a specific log incident in your AppSignal application. Log incidents represent patterns in your application logs that indicate potential issues, such as repeated error messages, warning patterns, or critical system events. This tool provides comprehensive details about a single log incident including the log pattern, frequency, and context.
+// Parameter descriptions - single source of truth
+const PARAM_DESCRIPTIONS = {
+  incidentNumber: 'The unique number of the log incident to retrieve',
+} as const;
+
+export function getLogIncidentTool(_server: McpServer, clientFactory: () => IAppsignalClient) {
+  const GetLogIncidentShape = {
+    incidentNumber: z.string().describe(PARAM_DESCRIPTIONS.incidentNumber),
+  };
+
+  const GetLogIncidentSchema = z.object(GetLogIncidentShape);
+
+  return {
+    name: 'get_log_incident',
+    description: `Retrieve detailed information about a specific log incident in your AppSignal application. Log incidents represent patterns in your application logs that indicate potential issues, such as repeated error messages, warning patterns, or critical system events. This tool provides comprehensive details about a single log incident including the log pattern, frequency, and context.
 
 Example response:
 {
@@ -40,14 +51,15 @@ Use cases:
 - Tracking down intermittent issues captured in logs
 - Analyzing the impact of log incidents on different services
 - Monitoring the resolution status of identified log patterns`,
-    { incidentNumber: z.string().describe('The unique number of the log incident to retrieve') },
-    async ({ incidentNumber }) => {
+    inputSchema: GetLogIncidentShape,
+    handler: async (args: unknown) => {
+      const { incidentNumber } = GetLogIncidentSchema.parse(args);
       const appId = getEffectiveAppId();
       if (!appId) {
         return {
           content: [
             {
-              type: 'text',
+              type: 'text' as const,
               text: 'Error: No app ID configured. Please use select_app_id tool first or set APPSIGNAL_APP_ID environment variable.',
             },
           ],
@@ -61,7 +73,7 @@ Use cases:
         return {
           content: [
             {
-              type: 'text',
+              type: 'text' as const,
               text: JSON.stringify(incident, null, 2),
             },
           ],
@@ -70,12 +82,12 @@ Use cases:
         return {
           content: [
             {
-              type: 'text',
+              type: 'text' as const,
               text: `Error fetching log incident details: ${error instanceof Error ? error.message : 'Unknown error'}`,
             },
           ],
         };
       }
-    }
-  );
+    },
+  };
 }

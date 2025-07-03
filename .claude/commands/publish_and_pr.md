@@ -4,7 +4,8 @@ We are doing a version bump of type (major/minor/patch): $ARGUMENTS
 
 I want you to:
 
-- [ ] **CRITICAL FIRST STEP**: Before starting, run `git status` to see current state
+- [ ] Before you start, make sure you have recently run the `manual` test suites (with valid secrets in place - you can usually find them in a .env file within the MCP server source) and proven the happen path is working. We don't want to accidentally publish a version bump that fails manual tests.
+- [ ] Before starting, run `git status` to see current state
 - [ ] Run the publication process for server updates ([PUBLISHING_SERVERS.md](../../docs/PUBLISHING_SERVERS.md))
 - [ ] **IMMEDIATELY AFTER VERSION BUMP**: Run `git status` to see ALL files modified by npm version command
 - [ ] **BEFORE ANY COMMITS**: Ensure ALL files from the version bump are staged (package.json, package-lock.json, CHANGELOG.md, README.md, etc.)

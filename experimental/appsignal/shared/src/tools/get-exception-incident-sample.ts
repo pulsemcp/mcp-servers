@@ -3,13 +3,26 @@ import { z } from 'zod';
 import { getEffectiveAppId } from '../state.js';
 import { IAppsignalClient } from '../appsignal-client/appsignal-client.js';
 
+// Parameter descriptions - single source of truth
+const PARAM_DESCRIPTIONS = {
+  incidentNumber: 'The unique number of the exception incident',
+  offset: 'Sample index to retrieve (0 for most recent, 1 for second most recent, etc.)',
+} as const;
+
 export function getExceptionIncidentSampleTool(
-  server: McpServer,
+  _server: McpServer,
   clientFactory: () => IAppsignalClient
 ) {
-  return server.tool(
-    'get_exception_incident_sample',
-    `Retrieve sample data for a specific occurrence of an exception incident. While exception incidents group similar errors together, this tool provides context of a single occurrence, including request parameters, session data, and environment details. Note: Due to API limitations, the actual exception message and backtrace are not available.
+  const GetExceptionIncidentSampleShape = {
+    incidentNumber: z.string().describe(PARAM_DESCRIPTIONS.incidentNumber),
+    offset: z.number().int().min(0).default(0).describe(PARAM_DESCRIPTIONS.offset),
+  };
+
+  const GetExceptionIncidentSampleSchema = z.object(GetExceptionIncidentSampleShape);
+
+  return {
+    name: 'get_exception_incident_sample',
+    description: `Retrieve sample data for a specific occurrence of an exception incident. While exception incidents group similar errors together, this tool provides context of a single occurrence, including request parameters, session data, and environment details. Note: Due to API limitations, the actual exception message and backtrace are not available.
 
 💡 Recommended follow-up: After retrieving the sample, use the search_logs tool with:
 - Time range around the sample's timestamp (-10 seconds through +3 seconds)
@@ -46,22 +59,15 @@ Use cases:
 - Understanding the context where errors occurred
 - Investigating user-specific error conditions
 - Tracking error occurrences across different app versions`,
-    {
-      incidentNumber: z.string().describe('The unique number of the exception incident'),
-      offset: z
-        .number()
-        .int()
-        .min(0)
-        .default(0)
-        .describe('Sample index to retrieve (0 for most recent, 1 for second most recent, etc.)'),
-    },
-    async ({ incidentNumber, offset }) => {
+    inputSchema: GetExceptionIncidentSampleShape,
+    handler: async (args: unknown) => {
+      const { incidentNumber, offset } = GetExceptionIncidentSampleSchema.parse(args);
       const appId = getEffectiveAppId();
       if (!appId) {
         return {
           content: [
             {
-              type: 'text',
+              type: 'text' as const,
               text: 'Error: No app ID configured. Please use select_app_id tool first or set APPSIGNAL_APP_ID environment variable.',
             },
           ],
@@ -75,7 +81,7 @@ Use cases:
         return {
           content: [
             {
-              type: 'text',
+              type: 'text' as const,
               text: JSON.stringify(sample, null, 2),
             },
           ],
@@ -84,12 +90,12 @@ Use cases:
         return {
           content: [
             {
-              type: 'text',
+              type: 'text' as const,
               text: `Error fetching exception incident sample: ${error instanceof Error ? error.message : 'Unknown error'}`,
             },
           ],
         };
       }
-    }
-  );
+    },
+  };
 }

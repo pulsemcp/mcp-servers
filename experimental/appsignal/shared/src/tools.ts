@@ -41,6 +41,7 @@ export function createRegisterTools(clientFactory: ClientFactory) {
       getPerformanceIncident?: RegisteredTool;
       getPerformanceIncidentSample?: RegisteredTool;
       getPerformanceIncidentSampleTimeline?: RegisteredTool;
+      [key: string]: RegisteredTool | undefined;
     } = {};
 
     // Store references to app selection tools
@@ -77,32 +78,69 @@ export function createRegisterTools(clientFactory: ClientFactory) {
 
     // Register tools that are always available (unless locked)
     if (!locked) {
-      getAppsTool(server, clientFactory);
+      const appsTool = getAppsTool(server, clientFactory);
+      server.tool(appsTool.name, appsTool.description, appsTool.inputSchema, appsTool.handler);
 
       // Register both select and change tools, but only enable the appropriate one
-      selectAppTool = selectAppIdTool(server, 'select_app_id', enableMainTools, clientFactory);
-      changeAppTool = selectAppIdTool(server, 'change_app_id', enableMainTools, clientFactory);
+      const selectToolDef = selectAppIdTool(
+        server,
+        'select_app_id',
+        enableMainTools,
+        clientFactory
+      );
+      const changeToolDef = selectAppIdTool(
+        server,
+        'change_app_id',
+        enableMainTools,
+        clientFactory
+      );
+      selectAppTool = server.tool(
+        selectToolDef.name,
+        selectToolDef.description,
+        selectToolDef.inputSchema,
+        selectToolDef.handler
+      );
+      changeAppTool = server.tool(
+        changeToolDef.name,
+        changeToolDef.description,
+        changeToolDef.inputSchema,
+        changeToolDef.handler
+      );
     }
 
     // Register main tools
-    mainTools.getExceptionIncident = getExceptionIncidentTool(server, clientFactory);
-    mainTools.getExceptionIncidentSample = getExceptionIncidentSampleTool(server, clientFactory);
-    mainTools.getLogIncident = getLogIncidentTool(server, clientFactory);
-    mainTools.searchLogs = searchLogsTool(server, clientFactory);
-    mainTools.getAnomalyIncident = getAnomalyIncidentTool(server, clientFactory);
-    mainTools.getLogIncidents = getLogIncidentsTool(server, clientFactory);
-    mainTools.getExceptionIncidents = getExceptionIncidentsTool(server, clientFactory);
-    mainTools.getAnomalyIncidents = getAnomalyIncidentsTool(server, clientFactory);
-    mainTools.getPerformanceIncidents = getPerformanceIncidentsTool(server, clientFactory);
-    mainTools.getPerformanceIncident = getPerformanceIncidentTool(server, clientFactory);
-    mainTools.getPerformanceIncidentSample = getPerformanceIncidentSampleTool(
-      server,
-      clientFactory
-    );
-    mainTools.getPerformanceIncidentSampleTimeline = getPerformanceIncidentSampleTimelineTool(
-      server,
-      clientFactory
-    );
+    const toolDefs = [
+      { def: getExceptionIncidentTool(server, clientFactory), key: 'getExceptionIncident' },
+      {
+        def: getExceptionIncidentSampleTool(server, clientFactory),
+        key: 'getExceptionIncidentSample',
+      },
+      { def: getLogIncidentTool(server, clientFactory), key: 'getLogIncident' },
+      { def: searchLogsTool(server, clientFactory), key: 'searchLogs' },
+      { def: getAnomalyIncidentTool(server, clientFactory), key: 'getAnomalyIncident' },
+      { def: getLogIncidentsTool(server, clientFactory), key: 'getLogIncidents' },
+      { def: getExceptionIncidentsTool(server, clientFactory), key: 'getExceptionIncidents' },
+      { def: getAnomalyIncidentsTool(server, clientFactory), key: 'getAnomalyIncidents' },
+      { def: getPerformanceIncidentsTool(server, clientFactory), key: 'getPerformanceIncidents' },
+      { def: getPerformanceIncidentTool(server, clientFactory), key: 'getPerformanceIncident' },
+      {
+        def: getPerformanceIncidentSampleTool(server, clientFactory),
+        key: 'getPerformanceIncidentSample',
+      },
+      {
+        def: getPerformanceIncidentSampleTimelineTool(server, clientFactory),
+        key: 'getPerformanceIncidentSampleTimeline',
+      },
+    ];
+
+    toolDefs.forEach(({ def, key }) => {
+      mainTools[key as keyof typeof mainTools] = server.tool(
+        def.name,
+        def.description,
+        def.inputSchema,
+        def.handler
+      );
+    });
 
     // Configure initial state based on whether an app ID is already set
     const hasAppId = getEffectiveAppId();
@@ -112,18 +150,19 @@ export function createRegisterTools(clientFactory: ClientFactory) {
     } else if (!hasAppId) {
       // No app ID set - show select_app_id, hide change_app_id and main tools
       if (changeAppTool) changeAppTool.disable();
-      mainTools.getExceptionIncident.disable();
-      mainTools.getExceptionIncidentSample.disable();
-      mainTools.getLogIncident.disable();
-      mainTools.searchLogs.disable();
-      mainTools.getAnomalyIncident.disable();
-      mainTools.getLogIncidents.disable();
-      mainTools.getExceptionIncidents.disable();
-      mainTools.getAnomalyIncidents.disable();
-      mainTools.getPerformanceIncidents.disable();
-      mainTools.getPerformanceIncident.disable();
-      mainTools.getPerformanceIncidentSample.disable();
-      mainTools.getPerformanceIncidentSampleTimeline.disable();
+      if (mainTools.getExceptionIncident) mainTools.getExceptionIncident.disable();
+      if (mainTools.getExceptionIncidentSample) mainTools.getExceptionIncidentSample.disable();
+      if (mainTools.getLogIncident) mainTools.getLogIncident.disable();
+      if (mainTools.searchLogs) mainTools.searchLogs.disable();
+      if (mainTools.getAnomalyIncident) mainTools.getAnomalyIncident.disable();
+      if (mainTools.getLogIncidents) mainTools.getLogIncidents.disable();
+      if (mainTools.getExceptionIncidents) mainTools.getExceptionIncidents.disable();
+      if (mainTools.getAnomalyIncidents) mainTools.getAnomalyIncidents.disable();
+      if (mainTools.getPerformanceIncidents) mainTools.getPerformanceIncidents.disable();
+      if (mainTools.getPerformanceIncident) mainTools.getPerformanceIncident.disable();
+      if (mainTools.getPerformanceIncidentSample) mainTools.getPerformanceIncidentSample.disable();
+      if (mainTools.getPerformanceIncidentSampleTimeline)
+        mainTools.getPerformanceIncidentSampleTimeline.disable();
     } else {
       // App ID already set - show change_app_id, hide select_app_id
       if (selectAppTool) selectAppTool.disable();

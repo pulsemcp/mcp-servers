@@ -3,13 +3,32 @@ import { z } from 'zod';
 import { getEffectiveAppId } from '../state.js';
 import { IAppsignalClient } from '../appsignal-client/appsignal-client.js';
 
+// Parameter descriptions - single source of truth
+const PARAM_DESCRIPTIONS = {
+  states:
+    'Filter incidents by state(s). OPEN = active errors, WIP = being investigated, CLOSED = resolved. Defaults to ["OPEN"] if not provided',
+  limit: 'Maximum number of incidents to return for pagination. Defaults to 50',
+  offset: 'Number of incidents to skip for pagination. Defaults to 0',
+} as const;
+
 export function getExceptionIncidentsTool(
-  server: McpServer,
+  _server: McpServer,
   clientFactory: () => IAppsignalClient
 ) {
-  return server.tool(
-    'get_exception_incidents',
-    `Retrieve a list of exception incidents from your AppSignal application. Exception incidents group similar errors together, showing patterns of application crashes, errors, and unhandled exceptions. This tool provides an overview of all exception types affecting your application, with filtering and pagination capabilities.
+  const GetExceptionIncidentsShape = {
+    states: z
+      .array(z.enum(['OPEN', 'CLOSED', 'WIP']))
+      .optional()
+      .describe(PARAM_DESCRIPTIONS.states),
+    limit: z.number().optional().describe(PARAM_DESCRIPTIONS.limit),
+    offset: z.number().optional().describe(PARAM_DESCRIPTIONS.offset),
+  };
+
+  const GetExceptionIncidentsSchema = z.object(GetExceptionIncidentsShape);
+
+  return {
+    name: 'get_exception_incidents',
+    description: `Retrieve a list of exception incidents from your AppSignal application. Exception incidents group similar errors together, showing patterns of application crashes, errors, and unhandled exceptions. This tool provides an overview of all exception types affecting your application, with filtering and pagination capabilities.
 
 Example response:
 {
@@ -52,31 +71,16 @@ Use cases:
 - Monitoring error trends and patterns
 - Tracking the status of error resolution efforts
 - Identifying the most frequent or critical exceptions`,
-    {
-      states: z
-        .array(z.enum(['OPEN', 'CLOSED', 'WIP']))
-        .optional()
-        .describe(
-          'Filter incidents by state(s). OPEN = active errors, WIP = being investigated, CLOSED = resolved. Defaults to ["OPEN"] if not provided'
-        ),
-      limit: z
-        .number()
-        .optional()
-        .describe('Maximum number of incidents to return for pagination. Defaults to 50'),
-      offset: z
-        .number()
-        .optional()
-        .describe('Number of incidents to skip for pagination. Defaults to 0'),
-    },
-    async (args) => {
+    inputSchema: GetExceptionIncidentsShape,
+    handler: async (args: unknown) => {
       // Handle all parameter scenarios: {}, undefined, or missing entirely
-      const { states, limit, offset } = args || {};
+      const { states, limit, offset } = GetExceptionIncidentsSchema.parse(args || {});
       const appId = getEffectiveAppId();
       if (!appId) {
         return {
           content: [
             {
-              type: 'text',
+              type: 'text' as const,
               text: 'Error: No app ID configured. Please use select_app_id tool first or set APPSIGNAL_APP_ID environment variable.',
             },
           ],
@@ -95,7 +99,7 @@ Use cases:
         return {
           content: [
             {
-              type: 'text',
+              type: 'text' as const,
               text: JSON.stringify(result, null, 2),
             },
           ],
@@ -104,12 +108,12 @@ Use cases:
         return {
           content: [
             {
-              type: 'text',
+              type: 'text' as const,
               text: `Error fetching exception incidents: ${error instanceof Error ? error.message : 'Unknown error'}`,
             },
           ],
         };
       }
-    }
-  );
+    },
+  };
 }

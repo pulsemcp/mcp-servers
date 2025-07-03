@@ -3,10 +3,24 @@ import { z } from 'zod';
 import { getEffectiveAppId } from '../state.js';
 import { IAppsignalClient } from '../appsignal-client/appsignal-client.js';
 
-export function getExceptionIncidentTool(server: McpServer, clientFactory: () => IAppsignalClient) {
-  return server.tool(
-    'get_exception_incident',
-    `Retrieve detailed information about a specific exception incident in your AppSignal application. Exception incidents represent errors, crashes, or unhandled exceptions that occurred in your application. This tool provides comprehensive details about a single exception, including the error message, stack trace, occurrence count, affected users, and environment context.
+// Parameter descriptions - single source of truth
+const PARAM_DESCRIPTIONS = {
+  incidentNumber: 'The unique number of the exception incident to retrieve',
+} as const;
+
+export function getExceptionIncidentTool(
+  _server: McpServer,
+  clientFactory: () => IAppsignalClient
+) {
+  const GetExceptionIncidentShape = {
+    incidentNumber: z.string().describe(PARAM_DESCRIPTIONS.incidentNumber),
+  };
+
+  const GetExceptionIncidentSchema = z.object(GetExceptionIncidentShape);
+
+  return {
+    name: 'get_exception_incident',
+    description: `Retrieve detailed information about a specific exception incident in your AppSignal application. Exception incidents represent errors, crashes, or unhandled exceptions that occurred in your application. This tool provides comprehensive details about a single exception, including the error message, stack trace, occurrence count, affected users, and environment context.
 
 Example response:
 {
@@ -39,18 +53,15 @@ Use cases:
 - Analyzing stack traces to identify root causes
 - Tracking which users are affected by specific errors
 - Monitoring the resolution status of known issues`,
-    {
-      incidentNumber: z
-        .string()
-        .describe('The unique number of the exception incident to retrieve'),
-    },
-    async ({ incidentNumber }) => {
+    inputSchema: GetExceptionIncidentShape,
+    handler: async (args: unknown) => {
+      const { incidentNumber } = GetExceptionIncidentSchema.parse(args);
       const appId = getEffectiveAppId();
       if (!appId) {
         return {
           content: [
             {
-              type: 'text',
+              type: 'text' as const,
               text: 'Error: No app ID configured. Please use select_app_id tool first or set APPSIGNAL_APP_ID environment variable.',
             },
           ],
@@ -64,7 +75,7 @@ Use cases:
         return {
           content: [
             {
-              type: 'text',
+              type: 'text' as const,
               text: JSON.stringify(incident, null, 2),
             },
           ],
@@ -73,12 +84,12 @@ Use cases:
         return {
           content: [
             {
-              type: 'text',
+              type: 'text' as const,
               text: `Error fetching exception incident details: ${error instanceof Error ? error.message : 'Unknown error'}`,
             },
           ],
         };
       }
-    }
-  );
+    },
+  };
 }
