@@ -293,6 +293,50 @@ import { createMCPServer } from '../shared/dist/index.js'; // Direct dist path
 
 This setup was established in commits #89, #91, #92 to resolve TypeScript build and npm publish issues. Modifying these import paths will break the publishing workflow.
 
+## Logging Best Practices
+
+**CRITICAL**: All MCP servers must use proper logging to maintain protocol compliance.
+
+### The Problem
+
+The MCP protocol requires that stdout contains only JSON messages. Any `console.log()` statements in server code will break the protocol and cause errors like:
+
+```
+Error from MCP server: SyntaxError: Unexpected token 'C', "Configured"... is not valid JSON
+```
+
+### The Solution
+
+All servers should implement a centralized logging module (`shared/src/logging.ts`) that outputs to stderr:
+
+```typescript
+import { logServerStart, logError, logWarning, logDebug } from '../shared/logging.js';
+
+// ✅ CORRECT - Logs to stderr
+logServerStart('MyServer');
+logError('functionName', error);
+logWarning('functionName', 'Something unexpected happened');
+logDebug('functionName', 'Debug information');
+
+// ❌ WRONG - Outputs to stdout, breaks MCP protocol
+console.log('Server started');
+```
+
+### Logging Functions
+
+- `logServerStart(serverName)` - Log server startup
+- `logError(context, error)` - Log errors with context and stack traces
+- `logWarning(context, message)` - Log warnings
+- `logDebug(context, message)` - Log debug info (only when NODE_ENV=development or DEBUG=true)
+
+### Where This Applies
+
+- All runtime server code (index.ts, tools, resources, etc.)
+- Does NOT apply to:
+  - Build scripts (prepare-publish.js, setup-dev.js)
+  - Test files
+  - Scripts that don't run during MCP server operation
+
 ## Additional Documentation
 
 Each server directory contains its own CLAUDE.md with specific implementation details.

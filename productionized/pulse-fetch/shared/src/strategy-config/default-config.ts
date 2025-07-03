@@ -3,6 +3,7 @@ import { join } from 'path';
 import { tmpdir } from 'os';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
+import { logDebug } from '../logging.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -42,7 +43,7 @@ export async function getStrategyConfigPath(): Promise<string> {
     try {
       const defaultContent = await fs.readFile(defaultConfigPath, 'utf-8');
       await fs.writeFile(tempConfigPath, defaultContent, 'utf-8');
-      console.log(`Initialized strategy config at: ${tempConfigPath}`);
+      logDebug('getStrategyConfigPath', `Initialized strategy config at: ${tempConfigPath}`);
     } catch {
       // If we can't find the default config, create a minimal one
       const minimalConfig = `# Scraping Strategy Configuration
@@ -54,7 +55,7 @@ This file defines which scraping strategy to use for different URL prefixes (fir
 | yelp.com/biz/ | brightdata       | Yelp business pages need anti-bot measures |
 `;
       await fs.writeFile(tempConfigPath, minimalConfig, 'utf-8');
-      console.log(`Created minimal strategy config at: ${tempConfigPath}`);
+      logDebug('getStrategyConfigPath', `Created minimal strategy config at: ${tempConfigPath}`);
     }
 
     return tempConfigPath;

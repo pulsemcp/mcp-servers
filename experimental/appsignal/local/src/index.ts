@@ -2,6 +2,7 @@
 import 'dotenv/config';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { createMCPServer } from '../shared/index.js';
+import { logServerStart, logError, logDebug } from '../shared/logging.js';
 
 // Validate required environment variables before starting
 function validateEnvironment(): void {
@@ -19,7 +20,7 @@ function validateEnvironment(): void {
   const missing = required.filter(({ name }) => !process.env[name]);
 
   if (missing.length > 0) {
-    console.error('Error: Missing required environment variables:');
+    logError('validateEnvironment', 'Missing required environment variables:');
     missing.forEach(({ name, description }) => {
       console.error(`  - ${name}: ${description}`);
     });
@@ -36,7 +37,10 @@ function validateEnvironment(): void {
 
   // Log if optional variables are set
   if (process.env.APPSIGNAL_APP_ID) {
-    console.error('Note: APPSIGNAL_APP_ID is set, app selection will be locked to this ID');
+    logDebug(
+      'validateEnvironment',
+      'APPSIGNAL_APP_ID is set, app selection will be locked to this ID'
+    );
   }
 }
 
@@ -51,11 +55,11 @@ async function main() {
   await registerHandlers(server);
   await server.connect(transport);
 
-  console.error('AppSignal MCP server running on stdio');
+  logServerStart('AppSignal');
 }
 
 // Run the server
 main().catch((error) => {
-  console.error('Fatal error:', error);
+  logError('main', error);
   process.exit(1);
 });
