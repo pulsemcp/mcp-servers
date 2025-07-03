@@ -44,6 +44,18 @@ After staging the publication, update the server's CHANGELOG.md file:
 4. Add the version number and date
 5. Follow the [Keep a Changelog](https://keepachangelog.com) format
 
+### 2a. Run Manual Tests (If Applicable)
+
+For servers with manual tests (that require real API credentials):
+
+1. Run the manual tests (automatically builds and tests):
+   ```bash
+   npm run test:manual
+   ```
+2. Update `MANUAL_TESTING.md` with the test results (overwrite previous results)
+3. Include commit hash, test date/time in PT, and results summary
+4. Use real API credentials from .env for proper testing
+
 Example:
 
 ```markdown
@@ -78,6 +90,7 @@ gh pr create --title "Publish appsignal-mcp-server@0.1.1" \
 - [x] Version bumped in package.json
 - [x] CHANGELOG.md updated
 - [x] All tests passing
+- [x] Manual tests run and MANUAL_TESTING.md updated (if applicable)
 - [x] Git tag created"
 ```
 
@@ -141,6 +154,7 @@ Before creating a PR:
 - [ ] Version bumped using `npm run stage-publish`
 - [ ] CHANGELOG.md updated with new version section
 - [ ] All tests pass (`npm test`, `npm run test:integration`)
+- [ ] Manual tests run and results updated in MANUAL_TESTING.md (if applicable)
 - [ ] Build succeeds (`npm run build`)
 - [ ] No sensitive information in code
 - [ ] Git tag created and pushed

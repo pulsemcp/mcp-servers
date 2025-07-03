@@ -13,6 +13,7 @@ import {
   TEST_PAGES,
   ENV_CONFIGS,
   getExpectedOutcome,
+  getExpectedStrategy,
   type PageTestCase,
   type EnvVarConfig,
 } from './test-config.js';
@@ -24,13 +25,14 @@ import type {
   IScrapingClients,
 } from '../../../shared/src/server.js';
 import { NativeFetcher, FirecrawlClient, BrightDataClient } from '../../../shared/src/server.js';
-import { FilesystemStrategyConfigClient } from '../../../shared/src/strategy-config/index.js';
 
 interface TestResult {
   page: PageTestCase;
   config: EnvVarConfig;
   expected: 'pass' | 'fail';
   actual: 'pass' | 'fail';
+  actualStrategy?: 'native' | 'firecrawl' | 'brightdata' | 'none';
+  strategiesAttempted?: string[];
   details?: string;
   duration: number;
 }
@@ -51,16 +53,21 @@ async function testPageWithConfig(page: PageTestCase, config: EnvVarConfig): Pro
 
   try {
     // Apply config environment variables
-    if (config.FIRECRAWL_API_KEY === 'from_env') {
-      // Keep the original env var
+    // Note: config here has already been resolved, so 'from_env' has been replaced with actual values
+    if (config.FIRECRAWL_API_KEY) {
+      process.env.FIRECRAWL_API_KEY = config.FIRECRAWL_API_KEY;
+      // FIRECRAWL_API_KEY is set for this config
     } else {
       delete process.env.FIRECRAWL_API_KEY;
+      // FIRECRAWL_API_KEY is not set for this config
     }
 
-    if (config.BRIGHTDATA_API_KEY === 'from_env') {
-      // Keep the original env var
+    if (config.BRIGHTDATA_API_KEY) {
+      process.env.BRIGHTDATA_API_KEY = config.BRIGHTDATA_API_KEY;
+      // BRIGHTDATA_API_KEY is set for this config
     } else {
       delete process.env.BRIGHTDATA_API_KEY;
+      // BRIGHTDATA_API_KEY is not set for this config
     }
 
     if (config.OPTIMIZE_FOR) {
@@ -80,6 +87,8 @@ async function testPageWithConfig(page: PageTestCase, config: EnvVarConfig): Pro
       const firecrawlApiKey = process.env.FIRECRAWL_API_KEY;
       const brightDataToken = process.env.BRIGHTDATA_API_KEY;
 
+      // Create clients based on available API keys
+
       const clients: IScrapingClients = {
         native: new NativeFetcher(),
       };
@@ -95,8 +104,13 @@ async function testPageWithConfig(page: PageTestCase, config: EnvVarConfig): Pro
       return clients;
     };
 
-    // Create strategy config factory
-    const strategyConfigFactory: StrategyConfigFactory = () => new FilesystemStrategyConfigClient();
+    // Create strategy config factory that returns a mock client (no persistence)
+    const strategyConfigFactory: StrategyConfigFactory = () => ({
+      getStrategyForUrl: async () => null, // Always return null (no stored strategy)
+      upsertEntry: async () => {}, // No-op
+      getAllEntries: async () => [], // Empty array
+      deleteEntry: async () => false, // No-op
+    });
 
     // Get the scrape tool
     const tool = scrapeTool(server, clientFactory, strategyConfigFactory);
@@ -107,17 +121,40 @@ async function testPageWithConfig(page: PageTestCase, config: EnvVarConfig): Pro
         url: page.url,
         saveResult: false, // Don't save test results
         timeout: 10000, // Short timeout for tests
+        forceRescrape: true, // Force fresh scrape to test strategies
       });
 
       const duration = Date.now() - startTime;
       const expected = getExpectedOutcome(page, config);
       const actual = 'isError' in result && result.isError ? 'fail' : 'pass';
 
+      // Extract strategy information from the result text
+      let actualStrategy: 'native' | 'firecrawl' | 'brightdata' | 'none' = 'none';
+      let strategiesAttempted: string[] = [];
+
+      if (!('isError' in result) || !result.isError) {
+        // Success case - extract strategy from result text
+        const resultText = result.content?.[0]?.text || '';
+        const strategyMatch = resultText.match(/Scraped using: (\w+)/);
+        if (strategyMatch) {
+          actualStrategy = strategyMatch[1] as 'native' | 'firecrawl' | 'brightdata';
+        }
+      } else {
+        // Error case - extract diagnostics from error text
+        const errorText = result.content?.[0]?.text || '';
+        const strategiesMatch = errorText.match(/Strategies attempted: ([^\n]+)/);
+        if (strategiesMatch) {
+          strategiesAttempted = strategiesMatch[1].split(', ').map((s) => s.trim());
+        }
+      }
+
       return {
         page,
         config,
         expected,
         actual,
+        actualStrategy: actual === 'pass' ? actualStrategy : 'none',
+        strategiesAttempted: strategiesAttempted.length > 0 ? strategiesAttempted : undefined,
         details:
           'isError' in result && result.isError
             ? result.content?.[0]?.text || 'Unknown error'
@@ -133,6 +170,7 @@ async function testPageWithConfig(page: PageTestCase, config: EnvVarConfig): Pro
         config,
         expected,
         actual: 'fail',
+        actualStrategy: 'none',
         details: error instanceof Error ? error.message : 'Unknown error',
         duration,
       };
@@ -154,6 +192,7 @@ async function runPagesTestSuite() {
   console.log('='.repeat(80));
   console.log(`Testing ${TEST_PAGES.length} pages across ${ENV_CONFIGS.length} configurations`);
   console.log(`Mode: ${continueOnFailure ? 'Continue on failure' : 'Fail fast'}`);
+  // Environment variables loaded from .env file
   console.log('='.repeat(80));
 
   // Store actual env values
@@ -163,17 +202,21 @@ async function runPagesTestSuite() {
   };
 
   // Update configs with actual values
-  const resolvedConfigs = ENV_CONFIGS.map((config) => ({
-    ...config,
-    FIRECRAWL_API_KEY:
-      config.FIRECRAWL_API_KEY === 'from_env'
-        ? actualEnvValues.FIRECRAWL_API_KEY
-        : config.FIRECRAWL_API_KEY,
-    BRIGHTDATA_API_KEY:
-      config.BRIGHTDATA_API_KEY === 'from_env'
-        ? actualEnvValues.BRIGHTDATA_API_KEY
-        : config.BRIGHTDATA_API_KEY,
-  }));
+  const resolvedConfigs = ENV_CONFIGS.map((config) => {
+    const resolved = {
+      ...config,
+      FIRECRAWL_API_KEY:
+        config.FIRECRAWL_API_KEY === 'from_env'
+          ? actualEnvValues.FIRECRAWL_API_KEY
+          : config.FIRECRAWL_API_KEY,
+      BRIGHTDATA_API_KEY:
+        config.BRIGHTDATA_API_KEY === 'from_env'
+          ? actualEnvValues.BRIGHTDATA_API_KEY
+          : config.BRIGHTDATA_API_KEY,
+    };
+    // Config resolved with appropriate API keys
+    return resolved;
+  });
 
   const results: TestResult[] = [];
   const totalTests = TEST_PAGES.length * resolvedConfigs.length;
@@ -197,17 +240,47 @@ async function runPagesTestSuite() {
       console.log(
         `${statusIcon} Result: ${statusText} (Expected: ${result.expected}, Actual: ${result.actual})`
       );
-      console.log(`⏱️  Duration: ${result.duration}ms`);
-      if (result.details && result.details !== 'Success') {
-        console.log(`📝 Details: ${result.details}`);
+
+      // Check strategy expectations if available
+      const expectedStrategy = getExpectedStrategy(page, config);
+      if (result.actual === 'pass' && expectedStrategy) {
+        const strategyMatch = result.actualStrategy === expectedStrategy;
+        const strategyIcon = strategyMatch ? '✅' : '⚠️';
+        console.log(
+          `${strategyIcon} Strategy: ${result.actualStrategy} (Expected: ${expectedStrategy})`
+        );
+      } else if (result.actual === 'pass') {
+        console.log(`🔧 Strategy: ${result.actualStrategy}`);
       }
 
-      // Check for failure
-      if (result.actual !== result.expected && !continueOnFailure) {
+      if (result.strategiesAttempted && result.strategiesAttempted.length > 0) {
+        console.log(`🔄 Strategies attempted: ${result.strategiesAttempted.join(' → ')}`);
+      }
+
+      console.log(`⏱️  Duration: ${result.duration}ms`);
+      if (
+        result.details &&
+        result.details !== 'Success' &&
+        !result.details.includes('Diagnostics:')
+      ) {
+        console.log(`📝 Details: ${result.details.split('\n')[0]}`); // Show first line only
+      }
+
+      // Check for failure or strategy mismatch
+      const expectedStrat = getExpectedStrategy(page, config);
+      const strategyMismatch =
+        expectedStrat && result.actual === 'pass' && result.actualStrategy !== expectedStrat;
+
+      if ((result.actual !== result.expected || strategyMismatch) && !continueOnFailure) {
         console.error('\n❌ Test failed! Stopping execution.');
         console.error(`Page: ${page.url}`);
         console.error(`Config: ${config.name}`);
-        console.error(`Expected: ${result.expected}, Actual: ${result.actual}`);
+        if (result.actual !== result.expected) {
+          console.error(`Expected result: ${result.expected}, Actual: ${result.actual}`);
+        }
+        if (strategyMismatch) {
+          console.error(`Expected strategy: ${expectedStrat}, Actual: ${result.actualStrategy}`);
+        }
         break;
       }
 
@@ -228,12 +301,22 @@ async function runPagesTestSuite() {
 
   const passedTests = results.filter((r) => r.actual === r.expected).length;
   const failedTests = results.filter((r) => r.actual !== r.expected).length;
+
+  // Count strategy mismatches
+  const strategyMismatches = results.filter((r) => {
+    const expectedStrat = getExpectedStrategy(r.page, r.config);
+    return expectedStrat && r.actual === 'pass' && r.actualStrategy !== expectedStrat;
+  }).length;
+
   const successRate = Math.round((passedTests / results.length) * 100);
 
   console.log(`\n📈 Overall Results:`);
   console.log(`  Total tests run: ${results.length}/${totalTests}`);
   console.log(`  Passed: ${passedTests} (${successRate}%)`);
   console.log(`  Failed: ${failedTests}`);
+  if (strategyMismatches > 0) {
+    console.log(`  ⚠️  Strategy mismatches: ${strategyMismatches}`);
+  }
 
   // Group results by configuration
   console.log(`\n📦 Results by Configuration:`);
@@ -253,25 +336,55 @@ async function runPagesTestSuite() {
     console.log(`  ${page.description}: ${pagePassed}/${pageTotal} passed`);
   }
 
-  // Show failed tests
-  if (failedTests > 0) {
-    console.log(`\n❌ Failed Tests:`);
-    results
-      .filter((r) => r.actual !== r.expected)
-      .forEach((result, index) => {
-        console.log(`  ${index + 1}. ${result.page.description} with ${result.config.name}`);
-        console.log(`     Expected: ${result.expected}, Actual: ${result.actual}`);
-        if (result.details && result.details !== 'Success') {
-          console.log(`     Details: ${result.details}`);
-        }
-      });
+  // Show failed tests and strategy mismatches
+  const failedOrMismatchedTests = results.filter((r) => {
+    const expectedStrat = getExpectedStrategy(r.page, r.config);
+    const strategyMismatch =
+      expectedStrat && r.actual === 'pass' && r.actualStrategy !== expectedStrat;
+    return r.actual !== r.expected || strategyMismatch;
+  });
+
+  if (failedOrMismatchedTests.length > 0) {
+    console.log(`\n❌ Failed Tests & Strategy Mismatches:`);
+    failedOrMismatchedTests.forEach((result, index) => {
+      console.log(`  ${index + 1}. ${result.page.description} with ${result.config.name}`);
+
+      if (result.actual !== result.expected) {
+        console.log(`     Expected result: ${result.expected}, Actual: ${result.actual}`);
+      }
+
+      const expectedStrat = getExpectedStrategy(result.page, result.config);
+      if (expectedStrat && result.actual === 'pass' && result.actualStrategy !== expectedStrat) {
+        console.log(
+          `     ⚠️  Strategy mismatch - Expected: ${expectedStrat}, Actual: ${result.actualStrategy}`
+        );
+      }
+
+      if (result.strategiesAttempted && result.strategiesAttempted.length > 0) {
+        console.log(`     Strategies tried: ${result.strategiesAttempted.join(' → ')}`);
+      }
+
+      if (
+        result.details &&
+        result.details !== 'Success' &&
+        !result.details.includes('Diagnostics:')
+      ) {
+        console.log(`     Details: ${result.details.split('\n')[0]}`);
+      }
+    });
   }
 
   console.log('\n' + '='.repeat(80));
-  console.log(failedTests === 0 ? '✅ All tests passed!' : `⚠️  ${failedTests} test(s) failed`);
+  if (failedTests === 0 && strategyMismatches === 0) {
+    console.log('✅ All tests passed with expected strategies!');
+  } else if (failedTests === 0 && strategyMismatches > 0) {
+    console.log(`⚠️  All tests passed but ${strategyMismatches} had unexpected strategies`);
+  } else {
+    console.log(`⚠️  ${failedTests} test(s) failed`);
+  }
   console.log('='.repeat(80));
 
-  process.exit(failedTests > 0 ? 1 : 0);
+  process.exit(failedTests > 0 || strategyMismatches > 0 ? 1 : 0);
 }
 
 // CLI usage

@@ -11,6 +11,9 @@ export interface PageTestCase {
   expectedResults: {
     [configName: string]: 'pass' | 'fail';
   };
+  expectedStrategies?: {
+    [configName: string]: 'native' | 'firecrawl' | 'brightdata' | 'none';
+  };
 }
 
 export interface EnvVarConfig {
@@ -33,6 +36,13 @@ export const TEST_PAGES: PageTestCase[] = [
       'All Services (Cost Optimized)': 'pass',
       'All Services (Speed Optimized)': 'pass',
     },
+    expectedStrategies: {
+      'Native Only': 'native',
+      'Firecrawl Only': 'firecrawl',
+      'BrightData Only': 'brightdata',
+      'All Services (Cost Optimized)': 'native', // Cost optimized tries native first
+      'All Services (Speed Optimized)': 'firecrawl', // Speed optimized skips native
+    },
   },
   {
     url: 'https://example.com',
@@ -43,6 +53,13 @@ export const TEST_PAGES: PageTestCase[] = [
       'BrightData Only': 'pass',
       'All Services (Cost Optimized)': 'pass',
       'All Services (Speed Optimized)': 'pass',
+    },
+    expectedStrategies: {
+      'Native Only': 'native',
+      'Firecrawl Only': 'firecrawl',
+      'BrightData Only': 'brightdata',
+      'All Services (Cost Optimized)': 'native', // Simple page should work with native
+      'All Services (Speed Optimized)': 'firecrawl', // Speed mode starts with firecrawl
     },
   },
   {
@@ -55,6 +72,13 @@ export const TEST_PAGES: PageTestCase[] = [
       'All Services (Cost Optimized)': 'fail',
       'All Services (Speed Optimized)': 'fail',
     },
+    expectedStrategies: {
+      'Native Only': 'none',
+      'Firecrawl Only': 'none',
+      'BrightData Only': 'none',
+      'All Services (Cost Optimized)': 'none',
+      'All Services (Speed Optimized)': 'none',
+    },
   },
   {
     url: 'https://httpstat.us/500',
@@ -65,6 +89,13 @@ export const TEST_PAGES: PageTestCase[] = [
       'BrightData Only': 'fail',
       'All Services (Cost Optimized)': 'fail',
       'All Services (Speed Optimized)': 'fail',
+    },
+    expectedStrategies: {
+      'Native Only': 'none',
+      'Firecrawl Only': 'none',
+      'BrightData Only': 'none',
+      'All Services (Cost Optimized)': 'none',
+      'All Services (Speed Optimized)': 'none',
     },
   },
 ];
@@ -116,4 +147,12 @@ export function resolveEnvValue(value: string | undefined): string | undefined {
 // Function to determine expected outcome based on config and page
 export function getExpectedOutcome(page: PageTestCase, config: EnvVarConfig): 'pass' | 'fail' {
   return page.expectedResults[config.name] || 'pass'; // Default to pass if not specified
+}
+
+// Function to determine expected strategy based on config and page
+export function getExpectedStrategy(
+  page: PageTestCase,
+  config: EnvVarConfig
+): 'native' | 'firecrawl' | 'brightdata' | 'none' | undefined {
+  return page.expectedStrategies?.[config.name];
 }
