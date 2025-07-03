@@ -114,6 +114,28 @@ export class MemoryResourceStorage implements ResourceStorage {
     return matchingResources;
   }
 
+  async findByUrlAndExtract(url: string, extractPrompt?: string): Promise<ResourceData[]> {
+    const matchingResources = Array.from(this.resources.values())
+      .filter((r) => {
+        const matchesUrl = r.data.metadata.url === url;
+        if (!extractPrompt) {
+          // If no extract prompt specified, only return resources without extraction
+          return matchesUrl && !r.data.metadata.extractionPrompt;
+        }
+        // If extract prompt specified, match both URL and extraction prompt
+        return matchesUrl && r.data.metadata.extractionPrompt === extractPrompt;
+      })
+      .sort((a, b) => {
+        // Sort by timestamp descending (most recent first)
+        const timeA = new Date(a.data.metadata.timestamp).getTime();
+        const timeB = new Date(b.data.metadata.timestamp).getTime();
+        return timeB - timeA;
+      })
+      .map((r) => r.data);
+
+    return matchingResources;
+  }
+
   private generateUri(url: string, timestamp: string, resourceType: ResourceType = 'raw'): string {
     const sanitizedUrl = url.replace(/^https?:\/\//, '').replace(/[^a-zA-Z0-9.-]/g, '_');
     const timestampPart = timestamp.replace(/[^0-9]/g, '');

@@ -13,6 +13,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Resources now properly detect content type based on actual content (text/html, application/json, application/xml, text/plain)
   - Previously all resources were incorrectly marked as text/plain regardless of content
   - Added comprehensive functional tests for MIME type detection
+- Fixed overly aggressive caching that ignored the `extract` parameter
+  - Cache lookups now consider both URL and extract prompt when finding cached resources
+  - Different extraction queries on the same URL will no longer return incorrect cached results
+  - Added new `findByUrlAndExtract` method to storage interfaces for proper cache key generation
+  - Added comprehensive test coverage for extract field cache busting functionality
 
 ## [0.2.7] - 2025-07-03
 

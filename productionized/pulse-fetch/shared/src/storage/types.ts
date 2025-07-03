@@ -48,4 +48,5 @@ export interface ResourceStorage {
   exists(uri: string): Promise<boolean>;
   delete(uri: string): Promise<void>;
   findByUrl(url: string): Promise<ResourceData[]>;
+  findByUrlAndExtract(url: string, extractPrompt?: string): Promise<ResourceData[]>;
 }
