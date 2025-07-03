@@ -357,6 +357,12 @@ Don't add: basic TypeScript fixes, standard npm troubleshooting, obvious file op
 - **CI Installation**: All MCP servers now have a `ci:install` script that ensures dependencies are installed in all subdirectories - this prevents `ERR_MODULE_NOT_FOUND` errors in published packages that occur when CI only runs `npm install` at the root level
 - **Published Package Dependencies**: When adding new dependencies to shared/, they MUST also be added to local/package.json to ensure they're included in the published npm package - the prepare-publish.js script only copies built JS files, not node_modules
 
+### Monorepo Reorganization
+
+- **Directory Moves and ESLint Configs**: When moving directories deeper in the project structure (e.g., from root to a subdirectory), ESLint configs that extend parent configs need their relative paths updated. For example, moving from root to `libs/` requires changing `"extends": "../.eslintrc.json"` to `"extends": "../../.eslintrc.json"`
+- **Comprehensive Reference Updates**: When reorganizing directories, search for references in all file types including .json, .md, .ts, .js, .yml files. Common places to check: import paths in test files, build scripts in package.json, CI workflow paths, documentation references, and tool guides
+- **Pre-commit Hook Failures**: ESLint config path issues will cause pre-commit hooks to fail. Always test commits locally before pushing to catch these issues early
+
 ### Changelog management
 
 Whenever you make any sort of code change to an MCP server, make sure to update the unreleased section of its corresponding `CHANGELOG.md`.
