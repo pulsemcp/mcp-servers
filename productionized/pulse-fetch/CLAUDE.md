@@ -170,3 +170,10 @@ Key insights gathered during implementation and CI troubleshooting:
 - **Multi-dimensional Cache Keys**: When implementing caching, consider all parameters that affect the output. For scraped content with extraction, both URL and extract prompt must be part of the cache key - using only URL leads to incorrect cache hits
 - **Storage Interface Evolution**: When adding new lookup methods to storage interfaces (like `findByUrlAndExtract`), implement them in all concrete implementations (Memory, FileSystem) to maintain interface consistency
 - **Test-Driven Cache Fixes**: Cache bugs can be subtle - write comprehensive tests that verify different parameter combinations create separate cache entries before implementing the fix
+
+### Error Diagnostics and User Experience
+
+- **Detailed Error Reporting**: When implementing fallback strategies, collect and preserve errors from each attempt. Users need to know not just that something failed, but which specific strategies were tried and why each failed
+- **Diagnostics Object Pattern**: Include a diagnostics object in error responses with: strategiesAttempted (array), strategyErrors (map), and timing (map). This provides actionable debugging information without cluttering the main error message
+- **Test Coverage for Error Cases**: Error handling paths need explicit functional test coverage. Create dedicated test files for diagnostics features to ensure error messages remain helpful as code evolves
+- **Environment Variable Consistency**: When renaming environment variables, search the entire codebase including tests, CI workflows, and documentation. Inconsistent naming leads to silent failures where health checks pass incorrectly

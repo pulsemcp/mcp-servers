@@ -43,7 +43,7 @@ jobs:
         run: npm run test:run -- --reporter=json --reporter=default --outputFile=test-results.json
         env:
           FIRECRAWL_API_KEY: test-api-key
-          BRIGHTDATA_BEARER_TOKEN: test-bearer-token
+          BRIGHTDATA_API_KEY: test-api-key
 
       - name: Upload test results
         if: always()
@@ -83,4 +83,4 @@ jobs:
         run: npm run test:integration
         env:
           FIRECRAWL_API_KEY: test-api-key
-          BRIGHTDATA_BEARER_TOKEN: test-bearer-token
+          BRIGHTDATA_API_KEY: test-api-key

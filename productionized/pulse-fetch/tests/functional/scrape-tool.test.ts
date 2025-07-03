@@ -793,5 +793,128 @@ describe('Scrape Tool', () => {
         });
       });
     });
+
+    describe('error diagnostics', () => {
+      it('should display detailed diagnostics when all strategies fail', async () => {
+        // Set up mocks for all failures with specific errors
+        mockNative.setMockResponse({
+          success: false,
+          status: 403,
+          error: 'Forbidden by server',
+        });
+
+        mockFirecrawl.setMockResponse({
+          success: false,
+          error: 'Rate limit exceeded',
+        });
+
+        mockBrightData.setMockResponse({
+          success: false,
+          error: 'Proxy connection failed',
+        });
+
+        const tool = scrapeTool(
+          mockServer,
+          () => mockClients,
+          () => mockStrategyConfigClient
+        );
+        const result = await tool.handler({
+          url: 'https://example.com/protected',
+          saveResult: false,
+        });
+
+        expect(result.isError).toBe(true);
+        const errorText = result.content[0].text;
+
+        // Check for main error message
+        expect(errorText).toContain('Failed to scrape https://example.com/protected');
+
+        // Check for diagnostics section
+        expect(errorText).toContain('Diagnostics:');
+        expect(errorText).toContain('- Strategies attempted: native, firecrawl, brightdata');
+
+        // Check for strategy errors
+        expect(errorText).toContain('- Strategy errors:');
+        expect(errorText).toContain('  - native: Forbidden by server');
+        expect(errorText).toContain('  - firecrawl: Rate limit exceeded');
+        expect(errorText).toContain('  - brightdata: Proxy connection failed');
+
+        // Check for timing information
+        expect(errorText).toContain('- Timing:');
+        expect(errorText).toMatch(/- native: \d+ms/);
+        expect(errorText).toMatch(/- firecrawl: \d+ms/);
+        expect(errorText).toMatch(/- brightdata: \d+ms/);
+      });
+
+      it('should show authentication error diagnostics without trying other strategies', async () => {
+        mockNative.setMockResponse({
+          success: false,
+          status: 403,
+        });
+
+        mockFirecrawl.setMockResponse({
+          success: false,
+          error: 'Unauthorized: Invalid API key',
+        });
+
+        const tool = scrapeTool(
+          mockServer,
+          () => mockClients,
+          () => mockStrategyConfigClient
+        );
+        const result = await tool.handler({
+          url: 'https://example.com',
+          saveResult: false,
+        });
+
+        expect(result.isError).toBe(true);
+        const errorText = result.content[0].text;
+
+        // Should show authentication error prominently
+        expect(errorText).toContain('Failed to scrape https://example.com');
+        expect(errorText).toContain('Diagnostics:');
+        expect(errorText).toContain('- Strategies attempted: native, firecrawl');
+
+        // BrightData should not be attempted after auth error
+        expect(errorText).not.toContain('brightdata:');
+
+        // Should show the auth error
+        expect(errorText).toContain(
+          '  - firecrawl: Authentication failed: Unauthorized: Invalid API key'
+        );
+      });
+
+      it('should show when clients are not configured', async () => {
+        // Create clients without firecrawl and brightdata
+        const limitedClients = {
+          native: mockNative,
+        };
+
+        mockNative.setMockResponse({
+          success: false,
+          status: 503,
+          error: 'Service unavailable',
+        });
+
+        const tool = scrapeTool(
+          mockServer,
+          () => limitedClients as IScrapingClients,
+          () => mockStrategyConfigClient
+        );
+        const result = await tool.handler({
+          url: 'https://example.com',
+          saveResult: false,
+        });
+
+        expect(result.isError).toBe(true);
+        const errorText = result.content[0].text;
+
+        expect(errorText).toContain('Diagnostics:');
+        expect(errorText).toContain('- Strategies attempted: native');
+        expect(errorText).toContain('  - native: Service unavailable');
+        expect(errorText).toContain('  - firecrawl: Firecrawl client not configured');
+        expect(errorText).toContain('  - brightdata: BrightData client not configured');
+      });
+    });
   });
 });

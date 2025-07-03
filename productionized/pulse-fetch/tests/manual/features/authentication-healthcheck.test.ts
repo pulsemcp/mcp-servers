@@ -14,7 +14,7 @@ describe('Authentication Health Checks', () => {
 
       if (results.length === 0) {
         console.log(
-          '⚠️  No scraping services configured - set FIRECRAWL_API_KEY or BRIGHTDATA_BEARER_TOKEN'
+          '⚠️  No scraping services configured - set FIRECRAWL_API_KEY or BRIGHTDATA_API_KEY'
         );
         return;
       }
@@ -35,7 +35,7 @@ describe('Authentication Health Checks', () => {
           );
         } else if (result.service === 'BrightData') {
           console.log(
-            `  🔑 Using BRIGHTDATA_BEARER_TOKEN: ${process.env.BRIGHTDATA_BEARER_TOKEN?.substring(0, 20)}...`
+            `  🔑 Using BRIGHTDATA_API_KEY: ${process.env.BRIGHTDATA_API_KEY?.substring(0, 20)}...`
           );
         }
       }
@@ -209,7 +209,7 @@ describe('Authentication Health Checks', () => {
       }
 
       console.log('\n💡 To configure services, set the following environment variables:');
-      console.log('  - Scraping: FIRECRAWL_API_KEY, BRIGHTDATA_BEARER_TOKEN');
+      console.log('  - Scraping: FIRECRAWL_API_KEY, BRIGHTDATA_API_KEY');
       console.log('  - Extract: ANTHROPIC_API_KEY, OPENAI_API_KEY');
       console.log('  - OpenAI-Compatible: OPENAI_COMPATIBLE_API_KEY + OPENAI_COMPATIBLE_BASE_URL');
     });

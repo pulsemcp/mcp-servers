@@ -72,14 +72,14 @@ async function checkFirecrawlAuth(apiKey: string): Promise<HealthCheckResult> {
  * Performs a minimal health check for BrightData API
  * Tests authentication without consuming credits
  */
-async function checkBrightDataAuth(bearerToken: string): Promise<HealthCheckResult> {
+async function checkBrightDataAuth(apiKey: string): Promise<HealthCheckResult> {
   return new Promise((resolve) => {
     const options = {
       hostname: 'api.brightdata.com',
       path: '/request',
       method: 'POST',
       headers: {
-        Authorization: `Bearer ${bearerToken}`,
+        Authorization: `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
       },
     };
@@ -90,7 +90,7 @@ async function checkBrightDataAuth(bearerToken: string): Promise<HealthCheckResu
         resolve({
           service: 'BrightData',
           success: false,
-          error: 'Invalid bearer token - authentication failed',
+          error: 'Invalid API key - authentication failed',
         });
       } else if (res.statusCode === 400) {
         // 400 means auth passed but request was invalid (expected without zone/url)
@@ -140,8 +140,8 @@ export async function runHealthChecks(): Promise<HealthCheckResult[]> {
     checks.push(checkFirecrawlAuth(process.env.FIRECRAWL_API_KEY));
   }
 
-  if (process.env.BRIGHTDATA_BEARER_TOKEN) {
-    checks.push(checkBrightDataAuth(process.env.BRIGHTDATA_BEARER_TOKEN));
+  if (process.env.BRIGHTDATA_API_KEY) {
+    checks.push(checkBrightDataAuth(process.env.BRIGHTDATA_API_KEY));
   }
 
   if (checks.length === 0) {
