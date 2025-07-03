@@ -359,10 +359,3 @@ Don't add: basic TypeScript fixes, standard npm troubleshooting, obvious file op
 ### Changelog management
 
 Whenever you make any sort of code change to an MCP server, make sure to update the unreleased section of its corresponding `CHANGELOG.md`.
-
-### Authentication Health Checks
-
-- **Early Validation Pattern**: Implement health checks at server startup to validate API credentials before accepting connections - this prevents confusing runtime errors and provides immediate feedback about configuration issues
-- **Credit-Free Validation**: Design health check requests that trigger authentication validation without consuming API credits - typically by making requests with missing required parameters that fail with 400 (expected) vs 401 (auth failure)
-- **Optional Bypass**: Always provide an environment variable (e.g., `SKIP_HEALTH_CHECKS=true`) to disable health checks for testing scenarios or when credentials are intentionally omitted
-- **Manual Test Coverage**: When implementing features that interact with external APIs, create comprehensive manual tests that verify authentication across all supported services - this helps catch integration issues early
