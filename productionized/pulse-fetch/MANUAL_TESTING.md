@@ -41,9 +41,9 @@ npm run test:manual:features     # Features test suite
 
 ## Latest Test Results
 
-**Test Date:** 2025-07-03 19:06 PT  
+**Test Date:** 2025-07-03 19:22 PT  
 **Branch:** tadasant/fix-invalid-union  
-**Commit:** 580c388  
+**Commit:** 21b0271  
 **Tested By:** Claude  
 **Environment:** Local development with API keys from .env (FIRECRAWL_API_KEY, BRIGHTDATA_API_KEY, LLM_API_KEY)
 
