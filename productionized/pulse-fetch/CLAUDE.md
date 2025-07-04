@@ -159,6 +159,12 @@ Key insights gathered during implementation and CI troubleshooting:
 
 - **Git and JavaScript Files**: When creating JavaScript utility scripts in a TypeScript project, remember that .gitignore often excludes all .js files. Use `git add -f` to force-add necessary scripts or add specific exceptions to .gitignore to ensure CI has access to required files
 
+### MCP Protocol Compliance
+
+- **Embedded Resource Structure**: When returning embedded resources in tool results, the MCP protocol requires wrapping the resource data in a `resource` property. The correct structure is `{ type: "resource", resource: { uri: "...", name: "...", ... } }`, not `{ type: "resource", uri: "...", name: "...", ... }`. This applies to both fresh responses and cached data
+- **Testing Protocol Compliance**: Always validate tool responses against the MCP SDK's `CallToolResultSchema` to ensure protocol compliance. The MCP inspector will reject improperly formatted responses, even if they work in some clients
+- **Resource Types in Tool Results**: Valid content types for MCP tool results are: `text`, `image`, `audio`, `resource_link`, and `resource` (with embedded data). Each has specific required fields per the protocol specification
+
 ### Authentication Error Handling
 
 - **Silent Failure Prevention**: When implementing API integrations, always check for authentication errors explicitly and return them immediately to users. Silent failures that swallow authentication errors lead to confusing generic error messages
