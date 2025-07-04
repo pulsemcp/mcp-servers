@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.13] - 2025-07-04
+
+### Fixed
+
+- Fixed npm package permissions issue where `npx appsignal-mcp-server` would fail with "Permission denied" error by updating the `files` field in package.json to match the pattern used by twist-mcp-server
+
 ## [0.2.12] - 2025-07-03
 
 ### Added

@@ -39,11 +39,13 @@ The tests will:
 
 ## Latest Test Results
 
-**Test Date:** 2025-07-04 00:19 PT  
-**Branch:** tadasant/bump-all-versions  
-**Commit:** e6e16a4  
+**Test Date:** 2025-07-04 07:20 PT  
+**Branch:** tadasant/fix-perms-on-appsignal  
+**Commit:** b610c4a  
 **Tested By:** Claude  
 **Environment:** Local development with API keys from .env
+
+**Note:** Manual tests were not re-run as this PR only modifies the npm package `files` field for permissions fix. No functional code changes were made. The test results from commit e6e16a4 remain valid for the functionality.
 
 ### Test Suite Results
 

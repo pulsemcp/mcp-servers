@@ -1,6 +1,6 @@
 {
   "name": "appsignal-mcp-server",
-  "version": "0.2.12",
+  "version": "0.2.13",
   "description": "Local implementation of AppSignal MCP server",
   "main": "build/index.js",
   "type": "module",
@@ -48,10 +48,10 @@
     "access": "public"
   },
   "files": [
-    "build/",
-    "shared/",
-    "README.md",
-    "package.json"
+    "build/**/*.js",
+    "shared/**/*.js",
+    "shared/**/*.d.ts",
+    "README.md"
   ],
   "repository": {
     "type": "git",
