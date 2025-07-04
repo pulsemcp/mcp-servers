@@ -30,13 +30,20 @@ Located in `manual/`, these tests hit real external APIs and require actual API 
 To run manual tests:
 
 ```bash
-# Set up environment variables first
-export FIRECRAWL_API_KEY="your-real-firecrawl-key"
-export BRIGHTDATA_API_KEY="your-real-brightdata-api-key"
+# IMPORTANT: Use .env files in the MCP server's source root for API keys
+# Copy .env.example to .env if it doesn't exist
+cp .env.example .env
+# Edit .env to add your real API keys:
+# FIRECRAWL_API_KEY=your-real-firecrawl-key
+# BRIGHTDATA_API_KEY=your-real-brightdata-api-key
+# LLM_PROVIDER=anthropic
+# LLM_API_KEY=your-llm-api-key
 
 # Run manual tests
 npm run test:manual
 ```
+
+**Note**: The `.env` file is automatically loaded when running manual tests. Never export API keys directly in your shell or commit them to version control.
 
 ## Running Tests
 

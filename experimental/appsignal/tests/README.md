@@ -53,8 +53,11 @@ npm run test:all
 ### Manual Tests
 
 ```bash
-# Set environment variables
-export APPSIGNAL_API_KEY="your-real-api-key"
+# IMPORTANT: Use .env files in the MCP server's source root for API keys
+# Copy .env.example to .env if it doesn't exist
+cp .env.example .env
+# Edit .env to add your real AppSignal API key:
+# APPSIGNAL_API_KEY=your-real-api-key
 
 # Run manual tests (hits real AppSignal API)
 npm run test:manual
@@ -65,6 +68,7 @@ npm run test:manual:watch
 
 **Important:**
 
+- Manual tests MUST use API keys from the `.env` file in the MCP server's source root
 - Manual tests require a valid APPSIGNAL_API_KEY and hit the real production API
 - Tests automatically discover and use your AppSignal apps - no manual ID configuration needed
 - These are end-to-end system tests that chain together real API calls

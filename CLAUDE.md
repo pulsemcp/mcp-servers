@@ -240,13 +240,16 @@ Manual tests are particularly important when:
 To run manual tests (when available):
 
 ```bash
-# Set required environment variables (check specific server docs for exact names)
-export API_KEY="your-real-api-key"
-# Additional env vars may be optional or required depending on the server
+# IMPORTANT: Use .env files in the MCP server's source root for API keys
+# Copy .env.example to .env and add your real API credentials
+cp .env.example .env
+# Edit .env to add your API keys (check specific server docs for exact names)
 
 # Run manual tests
 npm run test:manual
 ```
+
+**Note**: Always use `.env` files in the MCP server's source root to store API keys and credentials. Never commit these files to version control.
 
 ## Creating New Servers
 

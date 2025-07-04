@@ -41,52 +41,64 @@ npm run test:manual:features     # Features test suite
 
 ## Latest Test Results
 
-**Test Date:** 2025-07-03 16:42 PT  
+**Test Date:** 2025-07-04 00:09 PT  
 **Branch:** tadasant/bump-all-versions  
-**Commit:** 785d94f  
+**Commit:** c52f53a  
 **Tested By:** Claude  
-**Environment:** Local development without API keys (testing core functionality only)
+**Environment:** Local development with API keys from .env (FIRECRAWL_API_KEY, BRIGHTDATA_API_KEY, LLM_API_KEY)
 
 ### Pages Test Results
 
-**Overall:** Not fully run (stopped after API key failures)
+**Overall:** 20/20 tests passed (100%)
 
-**Tests Run:** 3/20 tests attempted
+**Tests Run:** 20/20 tests completed
 
 **By Configuration:**
 
-- ⚠️ Native Only: 1/1 passed (but strategy mismatch - expected native, got none)
-- ⚠️ Firecrawl Only: 1/1 passed (but strategy mismatch - expected firecrawl, got none)
-- ❌ BrightData Only: 0/1 passed
-- ⏭️ All Services (Cost Optimized): Not tested
-- ⏭️ All Services (Speed Optimized): Not tested
+- ✅ Native Only: 4/4 passed
+- ✅ Firecrawl Only: 4/4 passed
+- ✅ BrightData Only: 4/4 passed
+- ✅ All Services (Cost Optimized): 4/4 passed
+- ✅ All Services (Speed Optimized): 4/4 passed
+
+**By Page:**
+
+- ✅ GitHub homepage: 5/5 passed (all strategies working correctly)
+- ✅ Simple HTML example page: 5/5 passed
+- ✅ HTTP 403 error page: 5/5 passed (correctly failed with all strategies)
+- ✅ HTTP 500 error page: 5/5 passed (correctly failed with all strategies)
 
 **Details:**
 
-- Tests require API keys to properly validate strategy selection
-- Without API keys, the server falls back to "none" strategy
-- This is expected behavior when running without credentials
+- All tests passed with expected strategies
+- Strategy isolation working correctly after fixing parameter name (saveResult → resultHandling)
+- BrightData working after fixing environment variable name (BRIGHTDATA_BEARER_TOKEN → BRIGHTDATA_API_KEY)
 
 ### Features Test Results
 
 **Overall:** 16/16 tests passed (100%)
 
-**All Passed (with limited scope due to no API keys):**
+**All Passed (with full API key coverage):**
 
 - ✅ authentication-healthcheck.test.ts: All 5 tests passed
-  - No API keys configured, so auth checks were skipped
-  - Test framework correctly handles missing credentials
+  - Firecrawl authentication successful with API key
+  - BrightData authentication successful with API key
+  - Test framework correctly validated all credentials
 - ✅ scrape-tool.test.ts: All 3 tests passed
   - Basic scraping with automatic strategy selection working
-  - Error handling working correctly
-  - Content extraction skipped (no LLM configured)
-- ✅ brightdata-scraping.test.ts: 1 test passed (skipped - no API key)
-- ✅ firecrawl-scraping.test.ts: 1 test passed (skipped - no API key)
+  - Error handling working correctly (19s timeout test)
+  - Content extraction with Anthropic LLM successful
+- ✅ brightdata-scraping.test.ts: 1 test passed
+  - BrightData client successfully scraped example.com (14s)
+- ✅ firecrawl-scraping.test.ts: 1 test passed
+  - Firecrawl client successfully scraped and converted to markdown (6s)
 - ✅ native-scraping.test.ts: 2 tests passed
   - Native HTTP client working correctly
   - Successfully scraped example.com
-- ✅ extract.test.ts: 3 tests passed (all skipped - no LLM keys)
+- ✅ extract.test.ts: 3 tests passed
+  - Anthropic extraction working with real API
+  - Successfully extracted structured data from HTML
 - ✅ test-filtering.test.ts: 1 test passed
   - HTML filtering working (78% content reduction achieved)
 
-**Summary:** All tests passed. Core functionality (native scraping, error handling, filtering) verified. API-dependent features were appropriately skipped due to missing credentials. The test suite handles missing API keys gracefully.
+**Summary:** All tests passed with full API key coverage. All scraping strategies (Native, Firecrawl, BrightData) and LLM extraction (Anthropic) verified working correctly with real external APIs.
