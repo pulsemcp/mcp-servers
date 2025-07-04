@@ -39,7 +39,7 @@ export class TestMCPClient {
     });
 
     if (this.options.debug) {
-      this.transport.onerror = (error) => {
+      this.transport.onerror = (error: Error) => {
         console.error('[TestMCPClient] Transport error:', error);
       };
     }
@@ -47,11 +47,14 @@ export class TestMCPClient {
     await this.client.connect(this.transport);
 
     // Set up notification handler for list changed notifications
-    this.client.setNotificationHandler(ToolListChangedNotificationSchema, (notification) => {
-      if (this.listChangedHandler) {
-        this.listChangedHandler(notification);
+    this.client.setNotificationHandler(
+      ToolListChangedNotificationSchema,
+      (notification: unknown) => {
+        if (this.listChangedHandler) {
+          this.listChangedHandler(notification);
+        }
       }
-    });
+    );
 
     this.connected = true;
   }

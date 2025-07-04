@@ -236,10 +236,11 @@ jobs:
             fi
             
             # Run tests (if they exist)
-            if npm test 2>/dev/null; then
+            if npm test; then
               echo "✅ Tests passed"
             else
-              echo "⚠️  WARNING: Tests failed or no tests found"
+              echo "❌ ERROR: Tests failed or no tests found"
+              VERIFICATION_FAILED=true
             fi
             
             cd - > /dev/null
