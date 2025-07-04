@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.17] - 2025-07-03
+
+### Added
+
+- Manual testing infrastructure with MANUAL_TESTING.md tracking
+- Scripts for running manual tests against built code
+- Comprehensive test coverage for real Twist API integration
+
+### Improved
+
+- Test suite now includes manual API integration tests
+- CI workflow verifies manual test execution before version bumps
+
 ## [0.1.16] - 2025-07-03
 
 ### Changed

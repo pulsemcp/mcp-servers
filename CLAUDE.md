@@ -240,13 +240,15 @@ Manual tests are particularly important when:
 To run manual tests (when available):
 
 ```bash
-# Set required environment variables (check specific server docs for exact names)
-export API_KEY="your-real-api-key"
-# Additional env vars may be optional or required depending on the server
+# IMPORTANT: Use .env files in the MCP server's source root for API keys
+cd /to/mcp-server
+less .env # Confirm it's there
 
 # Run manual tests
 npm run test:manual
 ```
+
+**Note**: Always use `.env` files in the MCP server's source root to store API keys and credentials. Never commit these files to version control.
 
 ## Creating New Servers
 
@@ -348,11 +350,14 @@ Don't add: basic TypeScript fixes, standard npm troubleshooting, obvious file op
 - When using `set -e` in shell scripts with npm commands, be aware that `npm view` returns exit code 1 when a package doesn't exist yet - use `|| true` to prevent premature script termination during npm registry propagation checks
 - **For `/publish_and_pr` command**: This means "stage for publishing and update PR" - it does NOT mean actually publish to npm. The workflow is: bump version → update changelog → commit → push → update PR. NPM publishing happens automatically via CI when PR is merged
 - **Manual Testing Before Publishing**: Always run manual tests (with real API credentials) before staging a version bump to ensure the server works correctly with external APIs
+- **Git Tag Format for Version Bumps**: When creating git tags for version bumps, use the format `package-name@version` (e.g., `appsignal-mcp-server@0.2.12`, `@pulsemcp/pulse-fetch@0.2.10`). The CI verify-publications workflow expects this exact format, not `server-name-vX.Y.Z`
+- **Manual Testing and CI**: The verify-publications CI check requires that MANUAL_TESTING.md references a commit that's in the PR's history. If you make any commits after running manual tests (even just test fixes), the CI will fail. For test-only fixes, this is a known limitation that doesn't require re-running manual tests
 
 ### Manual Testing Infrastructure
 
 - All MCP servers should have a `MANUAL_TESTING.md` file to track manual test results
 - Manual test files typically live in `tests/manual/` and use `.manual.test.ts` extension
+- **Always use `npm run test:manual` to run manual tests** - this script handles building, vitest configuration, and proper ESM support automatically. Don't try to run vitest directly or manually build the project first
 - To run manual tests with proper ESM support, create a `scripts/run-vitest.js` wrapper that imports vitest's CLI directly
 - The CI workflow `verify-mcp-server-publication.yml` checks for manual test results when version bumps occur - it verifies tests were run on a commit in the PR's history and checks for passing results
 - When setting up manual tests for servers with workspace structures (local/shared), ensure dependencies are properly installed in all subdirectories before running tests

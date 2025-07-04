@@ -119,7 +119,7 @@ async function testPageWithConfig(page: PageTestCase, config: EnvVarConfig): Pro
     try {
       const result = await tool.handler({
         url: page.url,
-        saveResult: false, // Don't save test results
+        resultHandling: 'returnOnly', // Don't save test results, just return content
         timeout: 10000, // Short timeout for tests
         forceRescrape: true, // Force fresh scrape to test strategies
       });

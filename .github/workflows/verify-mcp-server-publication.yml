@@ -181,9 +181,9 @@ jobs:
                 PR_COMMIT_SHORT="${PR_COMMIT:0:7}"
                 
                 # Check if MANUAL_TESTING.md contains test results for a recent commit
-                if grep -q "^**Commit:**" "$MANUAL_TESTING_FILE"; then
+                if grep -q "^\*\*Commit:" "$MANUAL_TESTING_FILE"; then
                   # Extract the commit hash from the file
-                  TESTED_COMMIT=$(grep "^**Commit:**" "$MANUAL_TESTING_FILE" | sed 's/^**Commit:** *//' | cut -d' ' -f1)
+                  TESTED_COMMIT=$(grep "^\*\*Commit:" "$MANUAL_TESTING_FILE" | sed 's/^\*\*Commit:\*\* *//' | cut -d' ' -f1)
                   TESTED_COMMIT_SHORT="${TESTED_COMMIT:0:7}"
                   
                   echo "Manual tests were run on commit: $TESTED_COMMIT_SHORT"
@@ -236,10 +236,11 @@ jobs:
             fi
             
             # Run tests (if they exist)
-            if npm test 2>/dev/null; then
+            if npm test; then
               echo "✅ Tests passed"
             else
-              echo "⚠️  WARNING: Tests failed or no tests found"
+              echo "❌ ERROR: Tests failed or no tests found"
+              VERIFICATION_FAILED=true
             fi
             
             cd - > /dev/null

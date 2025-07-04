@@ -21,7 +21,7 @@ These are PulseMCP-branded servers that we intend to maintain indefinitely as ou
 
 | Name                                         | Description                          | Local Status | Remote Status | Target Audience                                                                                        | Notes                                                                                                  |
 | -------------------------------------------- | ------------------------------------ | ------------ | ------------- | ------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------ |
-| [pulse-fetch](./productionized/pulse-fetch/) | Pull internet resources into context | 0.2.9        | Not Started   | Agent-building frameworks (e.g. fast-agent, Mastra, PydanticAI) and MCP clients without built-in fetch | Supports Firecrawl and BrightData integrations; HTML noise stripping; Resource caching; LLM extraction |
+| [pulse-fetch](./productionized/pulse-fetch/) | Pull internet resources into context | 0.2.10       | Not Started   | Agent-building frameworks (e.g. fast-agent, Mastra, PydanticAI) and MCP clients without built-in fetch | Supports Firecrawl and BrightData integrations; HTML noise stripping; Resource caching; LLM extraction |
 
 ### Experimental Servers
 
@@ -29,8 +29,8 @@ These are high-quality servers that we may discontinue if the official provider 
 
 | Name                                   | Description                                                     | Local Status | Remote Status | Target Audience                                       | Notes                                                                |
 | -------------------------------------- | --------------------------------------------------------------- | ------------ | ------------- | ----------------------------------------------------- | -------------------------------------------------------------------- |
-| [appsignal](./experimental/appsignal/) | AppSignal application performance monitoring and error tracking | 0.2.11       | Not Started   | Developers using AppSignal for application monitoring | Requires AppSignal API key; NOT officially affiliated with AppSignal |
-| [twist](./experimental/twist/)         | Twist team messaging and collaboration platform integration     | 0.1.16       | Not Started   | Teams using Twist for asynchronous communication      | Requires Twist API bearer token and workspace ID                     |
+| [appsignal](./experimental/appsignal/) | AppSignal application performance monitoring and error tracking | 0.2.12       | Not Started   | Developers using AppSignal for application monitoring | Requires AppSignal API key; NOT officially affiliated with AppSignal |
+| [twist](./experimental/twist/)         | Twist team messaging and collaboration platform integration     | 0.1.17       | Not Started   | Teams using Twist for asynchronous communication      | Requires Twist API bearer token and workspace ID                     |
 
 ## Contributing
 

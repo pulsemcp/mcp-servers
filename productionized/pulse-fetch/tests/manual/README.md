@@ -12,23 +12,30 @@ Tests are organized into two main categories:
 
 ## Prerequisites
 
-Before running manual tests, ensure you have the necessary API keys set in your environment variables:
+Before running manual tests, you MUST use API keys from the `.env` file in the MCP server's source root:
 
 ```bash
+# IMPORTANT: Use .env files for all API credentials
+# Copy .env.example to .env if it doesn't exist
+cp .env.example .env
+
+# Edit .env to add your API keys:
 # For Firecrawl tests
-export FIRECRAWL_API_KEY="your-firecrawl-api-key"
+# FIRECRAWL_API_KEY=your-firecrawl-api-key
 
 # For BrightData tests
-export BRIGHTDATA_API_KEY="your-brightdata-api-key"
+# BRIGHTDATA_API_KEY=your-brightdata-api-key
 
 # For LLM/Extract tests
-export LLM_PROVIDER="anthropic"  # or "openai", "openai-compatible"
-export LLM_API_KEY="your-llm-api-key"
+# LLM_PROVIDER=anthropic  # or "openai", "openai-compatible"
+# LLM_API_KEY=your-llm-api-key
 
 # For OpenAI-compatible providers
-export LLM_BASE_URL="https://your-provider-api.com/v1"
-export LLM_MODEL="your-model-name"
+# LLM_BASE_URL=https://your-provider-api.com/v1
+# LLM_MODEL=your-model-name
 ```
+
+**Note**: The `.env` file is automatically loaded when running manual tests. Never export API keys directly in your shell or commit them to version control.
 
 Also ensure you've built the project:
 

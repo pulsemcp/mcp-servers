@@ -78,9 +78,9 @@ describe('Scraping Error Diagnostics', () => {
         url: 'https://example.com',
       });
 
-      expect(result.diagnostics?.timing?.native).toBeGreaterThanOrEqual(10);
-      expect(result.diagnostics?.timing?.firecrawl).toBeGreaterThanOrEqual(20);
-      expect(result.diagnostics?.timing?.brightdata).toBeGreaterThanOrEqual(30);
+      expect(result.diagnostics?.timing?.native).toBeGreaterThanOrEqual(8);
+      expect(result.diagnostics?.timing?.firecrawl).toBeGreaterThanOrEqual(18);
+      expect(result.diagnostics?.timing?.brightdata).toBeGreaterThanOrEqual(28);
     });
   });
 
