@@ -43,7 +43,7 @@ npm run test:manual:features     # Features test suite
 
 **Test Date:** 2025-07-04 00:09 PT  
 **Branch:** tadasant/bump-all-versions  
-**Commit:** c52f53a  
+**Commit:** 1f639ba  
 **Tested By:** Claude  
 **Environment:** Local development with API keys from .env (FIRECRAWL_API_KEY, BRIGHTDATA_API_KEY, LLM_API_KEY)
 
