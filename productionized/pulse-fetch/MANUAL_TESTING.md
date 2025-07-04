@@ -41,9 +41,9 @@ npm run test:manual:features     # Features test suite
 
 ## Latest Test Results
 
-**Test Date:** 2025-07-04 00:09 PT  
-**Branch:** tadasant/bump-all-versions  
-**Commit:** 35cd9db  
+**Test Date:** 2025-07-03 19:06 PT  
+**Branch:** tadasant/fix-invalid-union  
+**Commit:** 580c388  
 **Tested By:** Claude  
 **Environment:** Local development with API keys from .env (FIRECRAWL_API_KEY, BRIGHTDATA_API_KEY, LLM_API_KEY)
 
@@ -71,8 +71,8 @@ npm run test:manual:features     # Features test suite
 **Details:**
 
 - All tests passed with expected strategies
-- Strategy isolation working correctly after fixing parameter name (saveResult → resultHandling)
-- BrightData working after fixing environment variable name (BRIGHTDATA_BEARER_TOKEN → BRIGHTDATA_API_KEY)
+- Strategy isolation working correctly
+- All scraping services (Native, Firecrawl, BrightData) functioning properly
 
 ### Features Test Results
 
@@ -86,12 +86,12 @@ npm run test:manual:features     # Features test suite
   - Test framework correctly validated all credentials
 - ✅ scrape-tool.test.ts: All 3 tests passed
   - Basic scraping with automatic strategy selection working
-  - Error handling working correctly (19s timeout test)
+  - Error handling working correctly (22s timeout test)
   - Content extraction with Anthropic LLM successful
 - ✅ brightdata-scraping.test.ts: 1 test passed
-  - BrightData client successfully scraped example.com (14s)
+  - BrightData client successfully scraped example.com (2.7s)
 - ✅ firecrawl-scraping.test.ts: 1 test passed
-  - Firecrawl client successfully scraped and converted to markdown (6s)
+  - Firecrawl client successfully scraped and converted to markdown (1.9s)
 - ✅ native-scraping.test.ts: 2 tests passed
   - Native HTTP client working correctly
   - Successfully scraped example.com

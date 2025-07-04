@@ -154,9 +154,11 @@ saveAndReturn (embedded resource):
   "content": [
     {
       "type": "resource",
-      "uri": "scraped://example.com/article_2024-01-15T10:30:00Z",
-      "name": "https://example.com/article",
-      "text": "Full article content..."
+      "resource": {
+        "uri": "scraped://example.com/article_2024-01-15T10:30:00Z",
+        "name": "https://example.com/article",
+        "text": "Full article content..."
+      }
     }
   ]
 }
@@ -314,11 +316,13 @@ The tool automatically:
                   content: [
                     {
                       type: 'resource' as const,
-                      uri: cachedResource.uri,
-                      name: cachedResource.name,
-                      mimeType: cachedResource.mimeType,
-                      description: cachedResource.description,
-                      text: processedContent, // Original content without metadata
+                      resource: {
+                        uri: cachedResource.uri,
+                        name: cachedResource.name,
+                        mimeType: cachedResource.mimeType,
+                        description: cachedResource.description,
+                        text: processedContent, // Original content without metadata
+                      },
                     },
                   ],
                 };
@@ -451,6 +455,13 @@ The tool automatically:
             name?: string;
             mimeType?: string;
             description?: string;
+            resource?: {
+              uri: string;
+              name?: string;
+              mimeType?: string;
+              description?: string;
+              text?: string;
+            };
           }>;
         } = {
           content: [],
@@ -516,11 +527,13 @@ The tool automatically:
               // For saveAndReturn, return embedded resource with content
               response.content.push({
                 type: 'resource',
-                uri: primaryUri!,
-                name: url,
-                mimeType: contentMimeType,
-                description: resourceDescription,
-                text: displayContent,
+                resource: {
+                  uri: primaryUri!,
+                  name: url,
+                  mimeType: contentMimeType,
+                  description: resourceDescription,
+                  text: displayContent,
+                },
               });
             }
           } catch (error) {
