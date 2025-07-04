@@ -306,10 +306,12 @@ describe('Scrape Tool', () => {
           content: [
             {
               type: 'resource',
-              uri: expect.stringMatching(/^memory:\/\//),
-              name: expect.stringMatching(/^https:\/\/example\.com\/save-and-return-test-.*$/),
-              mimeType: 'text/markdown',
-              text: expect.stringContaining('Content to save and return'),
+              resource: {
+                uri: expect.stringMatching(/^memory:\/\//),
+                name: expect.stringMatching(/^https:\/\/example\.com\/save-and-return-test-.*$/),
+                mimeType: 'text/markdown',
+                text: expect.stringContaining('Content to save and return'),
+              },
             },
           ],
         });
@@ -379,7 +381,7 @@ describe('Scrape Tool', () => {
 
         // For saveAndReturn, content is in the embedded resource's text field
         expect(firstResult.content[0].type).toBe('resource');
-        expect(firstResult.content[0].text).toContain(firstContent);
+        expect(firstResult.content[0].resource.text).toContain(firstContent);
         // The embedded resource text doesn't contain metadata like "Scraped using:"
 
         // Change the mock response to verify we're getting cached content
@@ -397,8 +399,8 @@ describe('Scrape Tool', () => {
 
         // Should get the first content from cache, not the second
         expect(secondResult.content[0].type).toBe('resource');
-        expect(secondResult.content[0].text).toContain(firstContent);
-        expect(secondResult.content[0].text).not.toContain(secondContent);
+        expect(secondResult.content[0].resource.text).toContain(firstContent);
+        expect(secondResult.content[0].resource.text).not.toContain(secondContent);
         // Embedded resources don't contain cache metadata
       });
 
@@ -632,7 +634,7 @@ describe('Scrape Tool', () => {
         });
 
         expect(firstResult.content[0].type).toBe('resource');
-        expect(firstResult.content[0].text).toContain('Contact us at contact@example.com');
+        expect(firstResult.content[0].resource.text).toContain('Contact us at contact@example.com');
 
         // Change the mock response to verify we're getting cached content
         mockNative.setMockResponse({
@@ -648,8 +650,10 @@ describe('Scrape Tool', () => {
         });
 
         expect(secondResult.content[0].type).toBe('resource');
-        expect(secondResult.content[0].text).toContain('Contact us at contact@example.com');
-        expect(secondResult.content[0].text).not.toContain('Different content here');
+        expect(secondResult.content[0].resource.text).toContain(
+          'Contact us at contact@example.com'
+        );
+        expect(secondResult.content[0].resource.text).not.toContain('Different content here');
 
         // Third request - different URL with the second content
         const testUrl2 = 'https://example.com/extract-cache-test-2-' + Date.now();
@@ -661,8 +665,10 @@ describe('Scrape Tool', () => {
 
         // Should get the second content (not cached)
         expect(thirdResult.content[0].type).toBe('resource');
-        expect(thirdResult.content[0].text).toContain('Different content here');
-        expect(thirdResult.content[0].text).not.toContain('Contact us at contact@example.com');
+        expect(thirdResult.content[0].resource.text).toContain('Different content here');
+        expect(thirdResult.content[0].resource.text).not.toContain(
+          'Contact us at contact@example.com'
+        );
 
         // Fourth request - use returnOnly to see cache metadata
         const fourthResult = await tool.handler({
@@ -708,7 +714,9 @@ describe('Scrape Tool', () => {
         // Check that the embedded resource has text/markdown MIME type (cleaned content)
         expect(result.content[0]).toMatchObject({
           type: 'resource',
-          mimeType: 'text/markdown',
+          resource: {
+            mimeType: 'text/markdown',
+          },
         });
       });
 
@@ -740,7 +748,9 @@ describe('Scrape Tool', () => {
         // Check that the embedded resource has application/json MIME type
         expect(result.content[0]).toMatchObject({
           type: 'resource',
-          mimeType: 'application/json',
+          resource: {
+            mimeType: 'application/json',
+          },
         });
       });
 
@@ -772,7 +782,9 @@ describe('Scrape Tool', () => {
         // Check that the embedded resource has application/xml MIME type
         expect(result.content[0]).toMatchObject({
           type: 'resource',
-          mimeType: 'application/xml',
+          resource: {
+            mimeType: 'application/xml',
+          },
         });
       });
 
@@ -800,7 +812,9 @@ describe('Scrape Tool', () => {
         // Check that the embedded resource has text/plain MIME type
         expect(result.content[0]).toMatchObject({
           type: 'resource',
-          mimeType: 'text/plain',
+          resource: {
+            mimeType: 'text/plain',
+          },
         });
       });
 
@@ -837,7 +851,9 @@ describe('Scrape Tool', () => {
         // Check that cleaned HTML is detected as text/markdown (default behavior cleans HTML to markdown)
         expect(result.content[0]).toMatchObject({
           type: 'resource',
-          mimeType: 'text/markdown',
+          resource: {
+            mimeType: 'text/markdown',
+          },
         });
       });
     });
