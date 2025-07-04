@@ -118,6 +118,9 @@ Key insights gathered during implementation and CI troubleshooting:
 - **Publication Process**: Follow the detailed guidelines in `/docs/PUBLISHING_SERVERS.md` for version bumping, changelog updates, and automated publishing
 - **Merge Conflict Resolution**: When rebasing onto main during publication, combine changelog entries from both branches preserving the intent of all changes (e.g., merge README fixes with feature additions)
 - **CI Monitoring**: Use `gh run list --branch <branch-name>` to check workflow runs when `gh pr checks` doesn't show results - CI may complete successfully even if checks aren't visible in PR view
+- **CI Failure Debugging**: When CI fails, use `gh run view <run-id> --log-failed --repo <owner>/<repo>` to see detailed failure logs. Common issues include: tests expecting old behavior after code changes, and manual test results referencing commits outside the PR's history
+- **MANUAL_TESTING.md Updates**: When CI's verify-publications check fails due to manual test commit mismatch, update the commit reference in MANUAL_TESTING.md to a commit within the current PR. The CI validates that manual tests were run on a commit that's part of the PR being verified
+- **Test Updates After Protocol Changes**: When fixing protocol compliance issues (like embedded resource structures), remember to update all related functional tests that verify the output format. Tests often check specific properties on response objects and need to be updated to match the new structure
 
 ### Environment Variable Management and UX
 
