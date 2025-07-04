@@ -241,9 +241,8 @@ To run manual tests (when available):
 
 ```bash
 # IMPORTANT: Use .env files in the MCP server's source root for API keys
-# Copy .env.example to .env and add your real API credentials
-cp .env.example .env
-# Edit .env to add your API keys (check specific server docs for exact names)
+cd /to/mcp-server
+less .env # Confirm it's there
 
 # Run manual tests
 npm run test:manual
