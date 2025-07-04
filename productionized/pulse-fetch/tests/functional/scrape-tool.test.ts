@@ -604,6 +604,9 @@ describe('Scrape Tool', () => {
         expect(paginatedResult.content[0].text).toContain('continue reading from character 150');
       });
 
+      // TODO: This test is skipped because the mocked extract client is not being invoked correctly
+      // The test expects extracted content but receives raw HTML instead
+      // This needs investigation of the module mocking setup with vi.doMock
       it.skip('should cache separately for different extract prompts', async () => {
         const testUrl = 'https://example.com/extract-cache-test-' + Date.now();
 
