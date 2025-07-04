@@ -352,6 +352,7 @@ Don't add: basic TypeScript fixes, standard npm troubleshooting, obvious file op
 - **Manual Testing Before Publishing**: Always run manual tests (with real API credentials) before staging a version bump to ensure the server works correctly with external APIs
 - **Git Tag Format for Version Bumps**: When creating git tags for version bumps, use the format `package-name@version` (e.g., `appsignal-mcp-server@0.2.12`, `@pulsemcp/pulse-fetch@0.2.10`). The CI verify-publications workflow expects this exact format, not `server-name-vX.Y.Z`
 - **Manual Testing and CI**: The verify-publications CI check requires that MANUAL_TESTING.md references a commit that's in the PR's history. If you make any commits after running manual tests (even just test fixes), the CI will fail. For test-only fixes, this is a known limitation that doesn't require re-running manual tests
+- **npm Package Files Field**: When specifying files to include in npm packages, use specific glob patterns (e.g., `"build/**/*.js"`) rather than entire directories (e.g., `"build/"`) to ensure proper file permissions and avoid including non-executable files. This prevents "Permission denied" errors when users run the package with npx
 
 ### Manual Testing Infrastructure
 

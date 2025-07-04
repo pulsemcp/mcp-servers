@@ -45,6 +45,8 @@ The tests will:
 **Tested By:** Claude  
 **Environment:** Local development with API keys from .env
 
+**Note:** The test results above remain valid for the current changes in tadasant/fix-perms-on-appsignal branch, which only modifies the npm package `files` field for permissions fix. No functional code changes were made.
+
 ### Test Suite Results
 
 **Overall:** 8/8 tests passed (100%)
