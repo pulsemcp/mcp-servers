@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Updated functional tests to expect the correct resource shape with embedded resources wrapped in a 'resource' property
+  - Fixed tests for `saveAndReturn` mode to access properties via `content[0].resource.*` instead of `content[0].*`
+  - This ensures tests accurately validate the MCP protocol-compliant resource structure
+
 ## [0.2.11] - 2025-07-03
 
 ### Fixed
