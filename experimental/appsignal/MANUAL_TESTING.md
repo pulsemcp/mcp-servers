@@ -62,9 +62,9 @@ The tests will:
 
 ## Latest Test Results
 
-**Test Date:** 2025-07-07 13:12 PT  
-**Branch:** tadasant/appsignal-400-error  
-**Commit:** 38eff1c  
+**Test Date:** 2025-07-07 13:48 PT  
+**Branch:** tadasant/bump-appsignal  
+**Commit:** 39202f6  
 **Tested By:** Claude  
 **Environment:** Local development with API keys from .env
 
@@ -81,7 +81,7 @@ The tests will:
 - ✅ appsignal.manual.test.ts: 1/1 tests passed
   - Core workflow tested successfully with pulsemcp app
   - Found 10 log entries in search test
-  - Log search now works correctly (no more 400 errors)
+  - Log search works correctly
 - ✅ performance-tools.manual.test.ts: 4/4 tests passed
   - Error handling verified
   - No performance incidents found in test app (warning state)
@@ -90,16 +90,14 @@ The tests will:
   - Found 4 OPEN performance incidents
   - State handling verified (empty states defaults to OPEN)
 - ✅ search-logs-400.manual.test.ts: 1/1 tests passed
-  - **VERIFIED FIX**: All parameter combinations work without 400 errors
+  - All parameter combinations work without errors
   - Tested with empty severities, explicit severities, and empty query
 
 **Notable Findings:**
 
-- **FIXED**: Log search API no longer returns 400 errors
-  - Root cause: AppSignal GraphQL API doesn't accept `start` and `end` parameters in the `lines` field
-  - Solution: Removed these parameters from the GraphQL query while keeping them in function signature
+- Log search API working correctly with all parameter combinations
 - AppSignal doesn't provide incident listing endpoints
 - Performance incident data available in production app (pulsemcp)
 - Empty states array correctly defaults to OPEN state
 
-**Summary:** All manual tests passed successfully. The search_logs 400 error has been fixed by removing the unsupported `start` and `end` parameters from the GraphQL query. The AppSignal MCP server is now working correctly with all features functional.
+**Summary:** All manual tests passed successfully. The AppSignal MCP server is working correctly with all features functional.
