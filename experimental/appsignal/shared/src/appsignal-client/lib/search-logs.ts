@@ -43,18 +43,19 @@ export async function searchLogs(
   query: string,
   limit = 100,
   severities?: Array<'debug' | 'info' | 'warn' | 'error' | 'fatal'>,
-  _start?: string,
-  _end?: string
+  start?: string,
+  end?: string
 ): Promise<LogSearchResult> {
   // NOTE: AppSignal GraphQL API limitation - we have to query all apps and filter
   // This can cause 500 errors with large datasets. Future improvement would be
   // to find a more targeted query approach if AppSignal adds support for it.
 
-  // NOTE: The start/end parameters are accepted but not used in the GraphQL query
-  // due to an AppSignal API limitation. The API returns 400 errors when start/end
-  // are passed as GraphQL variables (even with valid values), though they work fine
-  // when hardcoded in the query string. This appears to be a bug in their GraphQL
-  // variable handling for these specific parameters.
+  // NOTE: AppSignal API has a bug where start/end parameters cause 400 errors when
+  // passed as GraphQL variables, but work fine when hardcoded in the query string.
+  // As a workaround, we build the query string dynamically with these values.
+  const startParam = start ? `, start: "${start}"` : '';
+  const endParam = end ? `, end: "${end}"` : '';
+
   const gqlQuery = gql`
     query SearchLogs($query: String!, $limit: Int!, $severities: [SeverityEnum!]) {
       viewer {
@@ -63,7 +64,7 @@ export async function searchLogs(
             id
             logs {
               queryWindow
-              lines(query: $query, limit: $limit, severities: $severities) {
+              lines(query: $query, limit: $limit, severities: $severities${startParam}${endParam}) {
                 id
                 timestamp
                 message

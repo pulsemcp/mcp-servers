@@ -153,5 +153,31 @@ describe('AppSignal search_logs 400 Error - Manual Test', () => {
     } catch (error) {
       console.error('❌ Exception:', error);
     }
+
+    // Test 4: With start/end parameters (testing the workaround)
+    console.log('\nTest 4: With start/end parameters');
+    try {
+      const now = new Date();
+      const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000);
+
+      const result = await client.callTool('search_logs', {
+        query: 'test',
+        limit: 1,
+        severities: ['error', 'warn'],
+        start: oneHourAgo.toISOString(),
+        end: now.toISOString(),
+      });
+
+      if (result.content[0].text.startsWith('Error')) {
+        console.log('❌ Error with start/end:', result.content[0].text.substring(0, 100) + '...');
+      } else {
+        console.log('✅ Works with start/end parameters!');
+        const data = JSON.parse(result.content[0].text);
+        console.log(`   Time window: ${oneHourAgo.toISOString()} to ${now.toISOString()}`);
+        console.log(`   Query window from API: ${data.queryWindow}s`);
+      }
+    } catch (error) {
+      console.error('❌ Exception:', error);
+    }
   });
 });
