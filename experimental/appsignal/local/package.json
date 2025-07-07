@@ -1,6 +1,6 @@
 {
   "name": "appsignal-mcp-server",
-  "version": "0.2.13",
+  "version": "0.2.14",
   "description": "Local implementation of AppSignal MCP server",
   "main": "build/index.js",
   "type": "module",
