@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Fixed search_logs returning 400 errors by removing unsupported `start` and `end` parameters from the GraphQL query. The AppSignal API doesn't accept these fields in the lines query, causing all search requests to fail.
+- Fixed search_logs returning 400 errors when using `start` and `end` parameters. Implemented a workaround for an AppSignal API bug where these parameters cause 400 errors when passed as GraphQL variables. The parameters now work correctly by being hardcoded in the query string, allowing users to filter logs by time range.
 
 ### Added
 
