@@ -20,7 +20,7 @@ console.log('🔧 Setting up manual test environment...\n');
 const envPath = path.join(rootDir, '.env');
 if (!existsSync(envPath)) {
   console.log('ℹ️  No .env file found');
-  console.log('   This is OK for the template - it doesn\'t require API keys');
+  console.log("   This is OK for the template - it doesn't require API keys");
   console.log('   When implementing your server, create .env from .env.example if needed\n');
 } else {
   console.log('✅ .env file found\n');
