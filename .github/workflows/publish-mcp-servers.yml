@@ -262,12 +262,12 @@ jobs:
                   
                   if [ -z "$CHANGELOG_ENTRY" ]; then
                     echo "Warning: No changelog entry found for version $PACKAGE_VERSION"
-                    RELEASE_NOTES="# $PACKAGE_NAME v$PACKAGE_VERSION"$'\n\n'"Published to npm: https://www.npmjs.com/package/$PACKAGE_NAME"
+                    RELEASE_NOTES="Published to npm: https://www.npmjs.com/package/$PACKAGE_NAME"
                   else
-                    RELEASE_NOTES="# $PACKAGE_NAME v$PACKAGE_VERSION"$'\n\n'"$CHANGELOG_ENTRY"$'\n\n'"---"$'\n'"Published to npm: https://www.npmjs.com/package/$PACKAGE_NAME"
+                    RELEASE_NOTES="$CHANGELOG_ENTRY"$'\n\n'"---"$'\n'"Published to npm: https://www.npmjs.com/package/$PACKAGE_NAME"
                   fi
                 else
-                  RELEASE_NOTES="# $PACKAGE_NAME v$PACKAGE_VERSION"$'\n\n'"Published to npm: https://www.npmjs.com/package/$PACKAGE_NAME"
+                  RELEASE_NOTES="Published to npm: https://www.npmjs.com/package/$PACKAGE_NAME"
                 fi
                 
                 # Create release using GitHub CLI
