@@ -219,10 +219,61 @@ if [ $? -eq 0 ]; then
       fi
     }
     
+    # Function to robustly install dependencies with cleanup if needed
+    install_deps_robust() {
+      local dir="$1"
+      local name="$2"
+      
+      cd "$dir"
+      
+      # First attempt: try normal installation
+      if [ -f "package-lock.json" ]; then
+        echo "  📦 Installing dependencies in $name..."
+        if npm ci --no-audit --no-fund >/dev/null 2>&1; then
+          echo "  ✓ $name dependencies installed"
+          return 0
+        fi
+      else
+        echo "  📦 Installing dependencies in $name..."
+        if npm install --no-audit --no-fund >/dev/null 2>&1; then
+          echo "  ✓ $name dependencies installed"
+          return 0
+        fi
+      fi
+      
+      # If first attempt failed, clean and retry
+      echo "  ⚠️  Initial install failed, cleaning node_modules and retrying..."
+      rm -rf node_modules
+      
+      if [ -f "package-lock.json" ]; then
+        if npm ci --no-audit --no-fund >/dev/null 2>&1; then
+          echo "  ✓ $name dependencies installed after cleanup"
+          return 0
+        fi
+      else
+        if npm install --no-audit --no-fund >/dev/null 2>&1; then
+          echo "  ✓ $name dependencies installed after cleanup"
+          return 0
+        fi
+      fi
+      
+      echo "  ❌ Failed to install dependencies in $name even after cleanup"
+      return 1
+    }
+    
     # Check if it's a monorepo by looking for workspaces in package.json
     cd "$NEW_WORKTREE_PATH"
     if grep -q '"workspaces"' package.json 2>/dev/null; then
       echo "  🔍 Detected monorepo with workspaces"
+      
+      # For monorepos, we need to be extra careful about module resolution
+      # Clean install from root to avoid module resolution issues
+      echo "  🧹 Performing clean installation for monorepo..."
+      echo "     (This ensures proper module resolution across workspaces)"
+      
+      # Remove all node_modules directories to ensure clean state
+      echo "  📦 Cleaning existing node_modules..."
+      find . -name "node_modules" -type d -prune -exec rm -rf {} \; 2>/dev/null || true
       
       # Use the dedicated monorepo install script
       # First try the main worktree, then try the current worktree
@@ -246,12 +297,12 @@ if [ $? -eq 0 ]; then
         echo "  💡 Tip: Run 'tail -f .gw-install.log' in the new worktree to monitor progress"
       else
         echo "  ⚠️  Monorepo install script not found at: $INSTALL_SCRIPT"
-        echo "     Running standard npm install instead..."
-        install_deps "$NEW_WORKTREE_PATH" "root"
+        echo "     Running robust npm install instead..."
+        install_deps_robust "$NEW_WORKTREE_PATH" "root"
       fi
     else
-      # Not a monorepo, install normally
-      install_deps "$NEW_WORKTREE_PATH" "root"
+      # Not a monorepo, install normally with robust fallback
+      install_deps_robust "$NEW_WORKTREE_PATH" "root"
     fi
     
     cd "$CURRENT_ROOT"
