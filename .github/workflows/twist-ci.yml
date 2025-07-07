@@ -37,6 +37,8 @@ jobs:
         run: npm run build
 
       - name: Install and build test-mcp-client
+        # Note: --ignore-scripts prevents workspace root's husky prepare script from running
+        # This is needed because test-mcp-client is a workspace member but husky isn't installed in CI
         run: cd ../../libs/test-mcp-client && npm ci --ignore-scripts && npm run build
 
       - name: Run functional tests
@@ -74,6 +76,7 @@ jobs:
         run: npm ci && npm run ci:install
 
       - name: Install test-mcp-client dependencies
+        # Note: --ignore-scripts prevents workspace root's husky prepare script from running
         run: cd ../../libs/test-mcp-client && npm ci --ignore-scripts
 
       - name: Build test-mcp-client
