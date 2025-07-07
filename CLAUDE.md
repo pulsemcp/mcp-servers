@@ -358,12 +358,14 @@ Don't add: basic TypeScript fixes, standard npm troubleshooting, obvious file op
 
 - All MCP servers should have a `MANUAL_TESTING.md` file to track manual test results
 - Manual test files typically live in `tests/manual/` and use `.manual.test.ts` extension
+- **First-time setup for new worktrees**: Always run `npm run test:manual:setup` before running manual tests in a fresh checkout or new worktree. This ensures all dependencies are installed, the project is built, and test-mcp-client is available
 - **Always use `npm run test:manual` to run manual tests** - this script handles building, vitest configuration, and proper ESM support automatically. Don't try to run vitest directly or manually build the project first
 - To run manual tests with proper ESM support, create a `scripts/run-vitest.js` wrapper that imports vitest's CLI directly
 - The CI workflow `verify-mcp-server-publication.yml` checks for manual test results when version bumps occur - it verifies tests were run on a commit in the PR's history and checks for passing results
 - When setting up manual tests for servers with workspace structures (local/shared), ensure dependencies are properly installed in all subdirectories before running tests
 - Manual tests should run against built code (not source) - create a `run-manual-built.js` script that builds the project first, then runs tests against the compiled JavaScript
 - CI should fail when MANUAL_TESTING.md isn't updated for the current PR, but NOT when tests fail (some failures might be expected due to API limitations)
+- **Manual test setup checklist**: Verify .env exists with real API keys, run `ci:install` to install all workspace dependencies, run `build:test` to build everything including test-mcp-client
 
 ### Monorepo Dependency Management
 

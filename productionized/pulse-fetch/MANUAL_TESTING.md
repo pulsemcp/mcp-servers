@@ -23,13 +23,30 @@ This file tracks the **most recent** manual test results for the Pulse Fetch MCP
    FIRECRAWL_API_KEY=your-key-here
    BRIGHTDATA_API_KEY=your-key-here
    ```
+   Note: Pulse-fetch works without API keys for basic web fetching functionality.
+
+### First-Time Setup (or after clean checkout)
+
+If you're running manual tests for the first time or in a fresh worktree:
+
+```bash
+# This will verify environment, install dependencies, and build everything
+npm run test:manual:setup
+```
+
+This setup script will:
+
+- Check that .env file exists (optional for pulse-fetch)
+- Install all dependencies (including test-mcp-client)
+- Build the project and all test dependencies
+- Verify everything is ready for manual testing
 
 ### Running Tests
 
-Run manual tests (automatically builds and tests against built code):
+Once setup is complete, run manual tests:
 
 ```bash
-npm run test:manual
+npm run test:manual              # Run all manual tests
 ```
 
 Or run specific test suites:

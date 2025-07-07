@@ -22,13 +22,36 @@ This file tracks the **most recent** manual test results for the NAME MCP server
    # Copy from .env.example if available and add your real API keys
    # Add any required environment variables here
    ```
+   Note: The template doesn't require API keys by default.
+
+### First-Time Setup (or after clean checkout)
+
+If you're running manual tests for the first time or in a fresh worktree:
+
+```bash
+# This will verify environment, install dependencies, and build everything
+npm run test:manual:setup
+```
+
+This setup script will:
+
+- Check environment setup (optional .env file)
+- Install all dependencies (including test-mcp-client)
+- Build the project and all test dependencies
+- Verify everything is ready for manual testing
 
 ### Running Tests
 
-Run manual tests (automatically builds project and tests against built code):
+Once setup is complete, run manual tests:
 
 ```bash
 npm run test:manual
+```
+
+To run a specific test file:
+
+```bash
+npm run test:manual -- tests/manual/your-test.manual.test.ts
 ```
 
 The tests will:

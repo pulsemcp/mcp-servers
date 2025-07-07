@@ -4,6 +4,9 @@ node_modules
 .pnp.*
 .pnp/
 
+# Git worktree helper files
+.gw-install.log
+
 # Build outputs
 build/
 *.tsbuildinfo

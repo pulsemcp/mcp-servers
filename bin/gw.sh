@@ -195,20 +195,65 @@ if [ $? -eq 0 ]; then
   # Install dependencies in the new worktree if it's a Node.js project
   if [ -f "$NEW_WORKTREE_PATH/package.json" ]; then
     echo "Installing dependencies in new worktree..."
-    cd "$NEW_WORKTREE_PATH"
-    if [ -f "package-lock.json" ]; then
-      if npm ci --no-audit --no-fund; then
-        echo "  ✓ Dependencies installed successfully"
+    
+    # Function to install dependencies in a directory
+    install_deps() {
+      local dir="$1"
+      local name="$2"
+      
+      cd "$dir"
+      if [ -f "package-lock.json" ]; then
+        echo "  📦 Installing dependencies in $name..."
+        if npm ci --no-audit --no-fund >/dev/null 2>&1; then
+          echo "  ✓ $name dependencies installed"
+        else
+          echo "  ⚠️  Failed to install dependencies in $name"
+        fi
       else
-        echo "  ⚠️  Failed to install dependencies - you may need to run 'npm ci' manually"
+        echo "  📦 Installing dependencies in $name..."
+        if npm install --no-audit --no-fund >/dev/null 2>&1; then
+          echo "  ✓ $name dependencies installed"
+        else
+          echo "  ⚠️  Failed to install dependencies in $name"
+        fi
+      fi
+    }
+    
+    # Check if it's a monorepo by looking for workspaces in package.json
+    cd "$NEW_WORKTREE_PATH"
+    if grep -q '"workspaces"' package.json 2>/dev/null; then
+      echo "  🔍 Detected monorepo with workspaces"
+      
+      # Use the dedicated monorepo install script
+      # First try the main worktree, then try the current worktree
+      INSTALL_SCRIPT="$MAIN_WORKTREE/scripts/install-monorepo-deps.sh"
+      if [ ! -f "$INSTALL_SCRIPT" ]; then
+        INSTALL_SCRIPT="$CURRENT_ROOT/scripts/install-monorepo-deps.sh"
+      fi
+      
+      # Run the install script in background and log output
+      echo "  🚀 Starting background installation of all workspace dependencies..."
+      echo "     (This will continue in the background - you can start coding immediately)"
+      echo "     Log file: $NEW_WORKTREE_PATH/.gw-install.log"
+      
+      if [ -f "$INSTALL_SCRIPT" ]; then
+        nohup "$INSTALL_SCRIPT" "$NEW_WORKTREE_PATH" > "$NEW_WORKTREE_PATH/.gw-install.log" 2>&1 &
+        
+        # Give a moment for the background process to start
+        sleep 2
+      
+        echo "  ✓ Background installation started (PID: $!)"
+        echo "  💡 Tip: Run 'tail -f .gw-install.log' in the new worktree to monitor progress"
+      else
+        echo "  ⚠️  Monorepo install script not found at: $INSTALL_SCRIPT"
+        echo "     Running standard npm install instead..."
+        install_deps "$NEW_WORKTREE_PATH" "root"
       fi
     else
-      if npm install --no-audit --no-fund; then
-        echo "  ✓ Dependencies installed successfully"
-      else
-        echo "  ⚠️  Failed to install dependencies - you may need to run 'npm install' manually"
-      fi
+      # Not a monorepo, install normally
+      install_deps "$NEW_WORKTREE_PATH" "root"
     fi
+    
     cd "$CURRENT_ROOT"
   else
     echo "Skipping npm install - no package.json found"

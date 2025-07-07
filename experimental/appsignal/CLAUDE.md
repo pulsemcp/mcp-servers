@@ -66,16 +66,30 @@ Manual tests are critical when modifying the AppsignalClient or any code that in
 - When updating GraphQL queries or API interactions
 - Before releasing changes that affect external API calls
 - When debugging issues that only appear with real API responses
+- After creating a new worktree or fresh checkout
+
+**First-time setup (REQUIRED for new worktrees):**
+
+```bash
+# This ensures everything is properly installed and built
+npm run test:manual:setup
+```
+
+This setup script will:
+
+- Verify .env file exists with a real API key
+- Install all dependencies (root + workspaces + test-mcp-client)
+- Build everything needed for manual tests
+- Prevent common errors like missing vitest or test-mcp-client
 
 **Running manual tests:**
 
 ```bash
-# Copy .env.example to .env and add your API key
-cp .env.example .env
-# Edit .env to add your real API key
-
-# Run manual tests
+# After setup is complete, run all manual tests
 npm run test:manual
+
+# Or run a specific test file
+npm run test:manual -- tests/manual/search-logs-400.manual.test.ts
 ```
 
 Manual tests follow a complete end-to-end workflow:

@@ -11,7 +11,7 @@
   "type": "module",
   "scripts": {
     "install-all": "npm install && cd local && npm install && cd ../shared && npm install",
-    "ci:install": "npm ci && cd shared && npm ci && cd ../local && npm ci && cd ../../../libs/test-mcp-client && npm ci",
+    "ci:install": "npm ci && cd shared && npm ci && cd ../local && npm ci && cd ../../../libs/test-mcp-client && npm ci --ignore-scripts",
     "build": "cd shared && npm run build && cd ../local && npm run build",
     "build:test": "cd shared && npm run build && cd ../local && npm run build && cd ../../../libs/test-mcp-client && npm run build",
     "clean": "find . -name '*.js' -not -path './node_modules/*' -not -path './*/node_modules/*' -not -path './local/build/*' -not -path './shared/build/*' -not -path './*/build/*' -delete && find . -name '*.js.map' -not -path './node_modules/*' -not -path './*/node_modules/*' -not -path './local/build/*' -not -path './shared/build/*' -not -path './*/build/*' -delete",
@@ -20,6 +20,7 @@
     "test:run": "node scripts/run-vitest.js run",
     "test:integration": "npm run build:test && node scripts/run-vitest.js run -c vitest.config.integration.ts && npm run clean",
     "test:integration:watch": "node scripts/run-vitest.js -c vitest.config.integration.ts",
+    "test:manual:setup": "node scripts/setup-manual-tests.js",
     "test:manual": "node scripts/run-manual-built.js",
     "test:all": "npm run test:run && npm run test:integration",
     "lint": "cd ../.. && npm run lint",
