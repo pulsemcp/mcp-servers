@@ -62,13 +62,11 @@ The tests will:
 
 ## Latest Test Results
 
-**Test Date:** 2025-07-07  
+**Test Date:** 2025-07-07 13:12 PT  
 **Branch:** tadasant/appsignal-400-error  
-**Commit:** 61bab6b (plus uncommitted fix)  
+**Commit:** 38eff1c  
 **Tested By:** Claude  
 **Environment:** Local development with API keys from .env
-
-**Note:** This test run includes the fix for the search_logs 400 error issue.
 
 ### Test Suite Results
 
@@ -78,24 +76,30 @@ The tests will:
 
 - ✅ appsignal-new-tools.manual.test.ts: 1/1 tests passed
   - All new incident tools working correctly with GraphQL queries
+  - List operations for log, exception, and anomaly incidents functional
+  - State filtering and pagination working as expected
 - ✅ appsignal.manual.test.ts: 1/1 tests passed
-  - Core workflow tested successfully
-  - **FIXED**: Log search now works correctly (no more 400 errors)
+  - Core workflow tested successfully with pulsemcp app
+  - Found 10 log entries in search test
+  - Log search now works correctly (no more 400 errors)
 - ✅ performance-tools.manual.test.ts: 4/4 tests passed
-  - Error handling works, but no performance data available for full testing
+  - Error handling verified
+  - No performance incidents found in test app (warning state)
 - ✅ production-app.manual.test.ts: 2/2 tests passed
-  - Bug fixes verified, production app returns proper results
+  - Production app (pulsemcp) returns results correctly
+  - Found 4 OPEN performance incidents
+  - State handling verified (empty states defaults to OPEN)
 - ✅ search-logs-400.manual.test.ts: 1/1 tests passed
-  - **NEW TEST**: Specifically tests the 400 error fix
-  - All parameter combinations now work correctly
+  - **VERIFIED FIX**: All parameter combinations work without 400 errors
+  - Tested with empty severities, explicit severities, and empty query
 
 **Notable Findings:**
 
 - **FIXED**: Log search API no longer returns 400 errors
   - Root cause: AppSignal GraphQL API doesn't accept `start` and `end` parameters in the `lines` field
-  - Solution: Removed these parameters from the GraphQL query
+  - Solution: Removed these parameters from the GraphQL query while keeping them in function signature
 - AppSignal doesn't provide incident listing endpoints
-- Performance incident testing limited by lack of data in test app
-- All GraphQL queries working correctly
+- Performance incident data available in production app (pulsemcp)
+- Empty states array correctly defaults to OPEN state
 
 **Summary:** All manual tests passed successfully. The search_logs 400 error has been fixed by removing the unsupported `start` and `end` parameters from the GraphQL query. The AppSignal MCP server is now working correctly with all features functional.
