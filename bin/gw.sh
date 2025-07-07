@@ -225,7 +225,11 @@ if [ $? -eq 0 ]; then
       echo "  🔍 Detected monorepo with workspaces"
       
       # Use the dedicated monorepo install script
+      # First try the main worktree, then try the current worktree
       INSTALL_SCRIPT="$MAIN_WORKTREE/scripts/install-monorepo-deps.sh"
+      if [ ! -f "$INSTALL_SCRIPT" ]; then
+        INSTALL_SCRIPT="$CURRENT_ROOT/scripts/install-monorepo-deps.sh"
+      fi
       
       # Run the install script in background and log output
       echo "  🚀 Starting background installation of all workspace dependencies..."

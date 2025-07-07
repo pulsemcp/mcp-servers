@@ -28,7 +28,8 @@ install_in_subdirs() {
   # Find all package.json files (excluding node_modules)
   find "$search_dir" -name "package.json" -not -path "*/node_modules/*" -not -path "$search_dir/package.json" | while read -r pkg_file; do
     local pkg_dir=$(dirname "$pkg_file")
-    local rel_path=$(realpath --relative-to="$WORKTREE_PATH" "$pkg_dir")
+    # Get relative path (macOS compatible)
+    local rel_path="${pkg_dir#$WORKTREE_PATH/}"
     
     echo "[Background Install] Installing in $rel_path..."
     cd "$pkg_dir"
