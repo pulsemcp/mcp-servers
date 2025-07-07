@@ -22,6 +22,7 @@
     "test:integration": "npm run build:test && node scripts/run-vitest.js run -c vitest.config.integration.ts && npm run clean",
     "test:integration:watch": "node scripts/run-vitest.js -c vitest.config.integration.ts",
     "test:all": "npm run test:run && npm run test:integration",
+    "test:manual:setup": "node scripts/setup-manual-tests.js",
     "test:manual": "node scripts/run-manual-built.js",
     "test:manual:watch": "node scripts/run-vitest.js -c vitest.config.manual.ts",
     "lint": "cd ../.. && npm run lint",

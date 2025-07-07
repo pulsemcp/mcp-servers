@@ -4,6 +4,17 @@
   "description": "Monorepo for MCP servers built by PulseMCP",
   "private": true,
   "type": "module",
+  "workspaces": [
+    "experimental/*/",
+    "experimental/*/local",
+    "experimental/*/shared",
+    "productionized/*/",
+    "productionized/*/local",
+    "productionized/*/shared",
+    "libs/*",
+    "libs/*/local",
+    "libs/*/shared"
+  ],
   "scripts": {
     "prepare": "husky install",
     "lint": "eslint . --ext .ts,.tsx --max-warnings 0",

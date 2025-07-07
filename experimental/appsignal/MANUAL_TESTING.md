@@ -20,15 +20,38 @@ This file tracks the **most recent** manual test results for the AppSignal MCP s
 2. **Set up API credentials** - Ensure you have the necessary API credentials in your `.env` file:
    ```bash
    # Copy from .env.example and add your real API key
-   APPSIGNAL_API_KEY=your-api-key-here
+   cp .env.example .env
+   # Edit .env and add your real APPSIGNAL_API_KEY
    ```
+
+### First-Time Setup (or after clean checkout)
+
+If you're running manual tests for the first time or in a fresh worktree:
+
+```bash
+# This will verify environment, install dependencies, and build everything
+npm run test:manual:setup
+```
+
+This setup script will:
+
+- Check that .env file exists and has a real API key
+- Install all dependencies (including test-mcp-client)
+- Build the project and all test dependencies
+- Verify everything is ready for manual testing
 
 ### Running Tests
 
-Run manual tests (automatically builds project and tests against built code):
+Once setup is complete, run manual tests:
 
 ```bash
 npm run test:manual
+```
+
+To run a specific test file:
+
+```bash
+npm run test:manual -- tests/manual/search-logs-400.manual.test.ts
 ```
 
 The tests will:
