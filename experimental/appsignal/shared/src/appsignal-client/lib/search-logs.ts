@@ -43,33 +43,25 @@ export async function searchLogs(
   query: string,
   limit = 100,
   severities?: Array<'debug' | 'info' | 'warn' | 'error' | 'fatal'>,
-  start?: string,
-  end?: string
+  _start?: string,
+  _end?: string
 ): Promise<LogSearchResult> {
   // NOTE: AppSignal GraphQL API limitation - we have to query all apps and filter
   // This can cause 500 errors with large datasets. Future improvement would be
   // to find a more targeted query approach if AppSignal adds support for it.
+
+  // NOTE: The start/end parameters are accepted but not used in the GraphQL query
+  // because the AppSignal API returns 400 errors when these fields are included
+  // in the lines field parameters, even when the values are undefined.
   const gqlQuery = gql`
-    query SearchLogs(
-      $query: String!
-      $limit: Int!
-      $severities: [SeverityEnum!]
-      $start: String
-      $end: String
-    ) {
+    query SearchLogs($query: String!, $limit: Int!, $severities: [SeverityEnum!]) {
       viewer {
         organizations {
           apps {
             id
             logs {
               queryWindow
-              lines(
-                query: $query
-                limit: $limit
-                severities: $severities
-                start: $start
-                end: $end
-              ) {
+              lines(query: $query, limit: $limit, severities: $severities) {
                 id
                 timestamp
                 message
@@ -85,14 +77,14 @@ export async function searchLogs(
   `;
 
   // Map our severity strings to GraphQL enum values
-  const severityEnums = severities?.map((sev) => sev.toUpperCase());
+  // Note: If severities is an empty array, we should pass undefined to avoid 400 errors
+  const severityEnums =
+    severities && severities.length > 0 ? severities.map((sev) => sev.toUpperCase()) : undefined;
 
   const data = await graphqlClient.request<SearchLogsResponse>(gqlQuery, {
     query,
     limit,
     severities: severityEnums,
-    start,
-    end,
   });
 
   // Find the app with the matching ID

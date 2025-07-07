@@ -5,15 +5,13 @@
   "private": true,
   "type": "module",
   "workspaces": [
-    "experimental/*/",
     "experimental/*/local",
     "experimental/*/shared",
-    "productionized/*/",
     "productionized/*/local",
     "productionized/*/shared",
-    "libs/*",
-    "libs/*/local",
-    "libs/*/shared"
+    "libs/test-mcp-client",
+    "libs/mcp-server-template/local",
+    "libs/mcp-server-template/shared"
   ],
   "scripts": {
     "prepare": "husky install",

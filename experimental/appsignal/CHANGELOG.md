@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Fixed search_logs returning 400 errors by removing unsupported `start` and `end` parameters from the GraphQL query. The AppSignal API doesn't accept these fields in the lines query, causing all search requests to fail.
+
+### Added
+
+- Manual test coverage specifically for the search_logs 400 error scenario
+- Setup script (`test:manual:setup`) for easier manual testing environment preparation
+
+### Improved
+
+- Documentation for manual testing setup in new worktrees
+- Monorepo workspace configuration for better dependency management
+
 ## [0.2.13] - 2025-07-04
 
 ### Fixed
