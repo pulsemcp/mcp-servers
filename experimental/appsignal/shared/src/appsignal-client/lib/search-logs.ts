@@ -51,8 +51,10 @@ export async function searchLogs(
   // to find a more targeted query approach if AppSignal adds support for it.
 
   // NOTE: The start/end parameters are accepted but not used in the GraphQL query
-  // because the AppSignal API returns 400 errors when these fields are included
-  // in the lines field parameters, even when the values are undefined.
+  // due to an AppSignal API limitation. The API returns 400 errors when start/end
+  // are passed as GraphQL variables (even with valid values), though they work fine
+  // when hardcoded in the query string. This appears to be a bug in their GraphQL
+  // variable handling for these specific parameters.
   const gqlQuery = gql`
     query SearchLogs($query: String!, $limit: Int!, $severities: [SeverityEnum!]) {
       viewer {
