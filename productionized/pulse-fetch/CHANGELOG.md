@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.12] - 2025-07-22
+
+### Added
+
+- PDF parsing support in native scraping strategy
+  - Implemented content-type based parsing architecture with dedicated parsers for PDF, HTML, and other formats
+  - PDF files are now properly parsed using `pdf-parse` library to extract text content
+  - Native strategy uses `arrayBuffer()` for binary content instead of `text()`
+  - Converts extracted PDF text to clean markdown format with headers, lists, and paragraphs
+  - Successfully tested with ArXiv PDFs (10MB+ files parse in ~1.4 seconds)
+
 ### Fixed
 
 - Updated functional tests to expect the correct resource shape with embedded resources wrapped in a 'resource' property

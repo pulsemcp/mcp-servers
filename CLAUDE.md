@@ -384,3 +384,22 @@ Don't add: basic TypeScript fixes, standard npm troubleshooting, obvious file op
 ### Changelog management
 
 Whenever you make any sort of code change to an MCP server, make sure to update the unreleased section of its corresponding `CHANGELOG.md`.
+
+### Content-Type Based Architecture for MCP Servers
+
+- **Binary Content Detection**: When implementing content parsing for MCP servers, always use `arrayBuffer()` for binary content types (PDFs, images, etc.) and `text()` for text-based content. Reading binary data as text results in massive Unicode replacement character corruption
+- **Parser Factory Pattern**: Implement a factory pattern for content type routing (e.g., PDFParser, HTMLParser, PassthroughParser) to handle different content types appropriately. This makes the system extensible for future content types
+- **Library Selection for Node.js**: When choosing PDF parsing libraries, prefer `pdf-parse` over `pdfjs-dist` for Node.js environments - pdfjs-dist has DOM dependencies that cause "DOMMatrix is not defined" errors in server environments
+- **Content Type Integration**: Binary parsing (like PDFs) works seamlessly with existing HTML cleaning infrastructure - PDFs get parsed to text, then can be cleaned/processed by the same pipeline as HTML content
+
+### Test Infrastructure Patterns
+
+- **Memory Storage URI Collisions**: Memory storage implementations that generate URIs using timestamp-based schemes must account for rapid test execution. Using millisecond timestamps with stripped characters can cause collisions in fast CI environments - use 10ms+ delays between writes in tests
+- **External Service Timeouts**: When manual tests encounter external service timeouts (like Firecrawl API), prioritize testing core functionality (native strategies, content parsing) over external service reliability. Network timeouts don't indicate code problems
+- **Manual Test Result Documentation**: Always update MANUAL_TESTING.md with specific test results including: commit hash, test percentages, key functionality verified, and known external service issues. This provides CI verification and historical context
+
+### Version Bump and Publication Workflow
+
+- **File Staging for Version Bumps**: The `npm run stage-publish` command modifies multiple files that MUST be committed together: local/package.json, parent/package-lock.json, CHANGELOG.md, README.md, and MANUAL_TESTING.md. Never commit these files separately or CI will fail
+- **Changelog Language Precision**: Avoid language like "restored" or "fixed" in changelogs when describing functionality that was developed within the same PR. Use accurate language like "added" or "implemented" to reflect what actually happened
+- **Dependency Consistency in Monorepos**: When adding production dependencies, ensure they exist in both shared/package.json AND local/package.json for proper publishing. Dependencies only in the root package.json won't be available in published packages
