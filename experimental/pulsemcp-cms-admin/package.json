@@ -10,6 +10,7 @@
   ],
   "type": "module",
   "scripts": {
+    "ci:install": "npm install && cd shared && npm install && cd ../local && npm install",
     "install-all": "npm install && cd local && npm install && cd ../shared && npm install",
     "build": "cd shared && npm run build && cd ../local && npm run build",
     "build:test": "cd shared && npm run build && cd ../local && npm run build && cd ../../../libs/test-mcp-client && npm run build",
