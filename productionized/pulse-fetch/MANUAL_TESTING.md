@@ -60,7 +60,7 @@ npm run test:manual:features     # Features test suite
 
 **Test Date:** 2025-07-22 09:14 PT  
 **Branch:** tadasant/fix-pdf-choking  
-**Commit:** 4d0f61b  
+**Commit:** f3c42b9  
 **Tested By:** Claude  
 **Environment:** Local development with API keys from .env (FIRECRAWL_API_KEY, BRIGHTDATA_API_KEY, LLM_API_KEY)
 
