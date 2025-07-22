@@ -168,15 +168,13 @@ describe('Newsletter Tools', () => {
         updatePost: vi.fn(),
         uploadImage: vi.fn(),
         getAuthors: vi.fn(),
-        getAuthorBySlug: vi
-          .fn()
-          .mockResolvedValue({
-            id: 1,
-            name: 'Author Name',
-            slug: 'author-name',
-            created_at: '2024-01-01T00:00:00Z',
-            updated_at: '2024-01-01T00:00:00Z',
-          }),
+        getAuthorBySlug: vi.fn().mockResolvedValue({
+          id: 1,
+          name: 'Author Name',
+          slug: 'author-name',
+          created_at: '2024-01-01T00:00:00Z',
+          updated_at: '2024-01-01T00:00:00Z',
+        }),
         getMCPServerBySlug: vi.fn(),
         getMCPClientBySlug: vi.fn(),
       };
