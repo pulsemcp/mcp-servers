@@ -309,7 +309,7 @@ describe('Scrape Tool', () => {
               resource: {
                 uri: expect.stringMatching(/^memory:\/\//),
                 name: expect.stringMatching(/^https:\/\/example\.com\/save-and-return-test-.*$/),
-                mimeType: 'text/html',
+                mimeType: 'text/markdown',
                 text: expect.stringContaining('Content to save and return'),
               },
             },
@@ -342,7 +342,7 @@ describe('Scrape Tool', () => {
               type: 'resource_link',
               uri: expect.stringMatching(/^memory:\/\//),
               name: expect.stringMatching(/^https:\/\/example\.com\/save-only-test-.*$/),
-              mimeType: 'text/html',
+              mimeType: 'text/markdown',
               description: expect.stringMatching(
                 /^Scraped content from https:\/\/example\.com\/save-only-test-.*/
               ),
@@ -715,7 +715,7 @@ describe('Scrape Tool', () => {
         expect(result.content[0]).toMatchObject({
           type: 'resource',
           resource: {
-            mimeType: 'text/html',
+            mimeType: 'text/markdown',
           },
         });
       });
@@ -852,7 +852,7 @@ describe('Scrape Tool', () => {
         expect(result.content[0]).toMatchObject({
           type: 'resource',
           resource: {
-            mimeType: 'text/html',
+            mimeType: 'text/markdown',
           },
         });
       });
