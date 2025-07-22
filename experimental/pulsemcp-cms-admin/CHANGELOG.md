@@ -6,6 +6,27 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [0.0.2] - 2025-01-22
+
+### Added
+
+- Added missing npm publishing scripts (prepare-publish.js and prepare-npm-readme.js)
+
+### Fixed
+
+- Updated API client to handle Rails JSON responses with data/meta structure
+- Fixed individual post retrieval using supervisor endpoint (`GET /supervisor/posts/:slug`)
+- Fixed TypeScript types to properly handle all post fields
+- Fixed ESLint and Prettier violations for CI compliance
+- All manual tests now passing (9/9)
+
+### Changed
+
+- Individual post retrieval now uses `/supervisor/posts/:slug` endpoint which returns full post content including body
+- Removed workaround that was using list endpoint for individual posts
+- Authors, MCP servers, and MCP clients now use real API calls instead of mock data
+- All resources are fetched from supervisor endpoints with full JSON support
+
 ## [0.0.1] - 2025-01-22
 
 ### Added

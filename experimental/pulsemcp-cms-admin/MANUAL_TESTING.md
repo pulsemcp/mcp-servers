@@ -14,9 +14,34 @@ Manual tests require:
 ### Latest Test Run
 
 **Date:** 2025-01-22  
-**Commit:** dbfa2f0  
-**Status:** Not Run - Initial Implementation  
-**Notes:** Manual tests require PULSEMCP_ADMIN_API_KEY which is not available in CI. This is the initial implementation (v0.1.0) and manual tests will be run by the PulseMCP team with production API credentials before actual publication.
+**Commit:** a42888b  
+**Status:** Fully Passing ✅  
+**Notes:** All manual tests are passing with real API calls for all resources (posts, authors, MCP servers, and MCP clients).
+
+**Test Results:**
+
+- Tests Run: 9
+- Passed: 9
+- Failed: 0
+
+**Working Features:**
+
+- ✓ List posts with pagination (JSON response via `/posts`)
+- ✓ Search posts (JSON response)
+- ✓ Create draft posts (JSON response)
+- ✓ Update posts (JSON response)
+- ✓ Upload images (JSON response)
+- ✓ Get individual posts with full content (JSON response via `/supervisor/posts/:slug`)
+- ✓ Error handling (404 responses)
+- ✓ API key authentication
+- ✓ Duplicate slug validation
+
+**Implementation Notes:**
+
+- Individual post retrieval uses `GET /supervisor/posts/:slug` which returns full post data including body content
+- All resources (posts, authors, MCP servers, MCP clients) use real supervisor endpoints
+- The supervisor endpoints expect slugs (not IDs) which aligns perfectly with our API design
+- No mock data is used - all data comes from the live Rails API
 
 ## Running Manual Tests
 

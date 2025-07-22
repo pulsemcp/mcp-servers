@@ -5,7 +5,11 @@ export async function getAuthorBySlug(
   baseUrl: string,
   slug: string
 ): Promise<Author> {
-  const response = await fetch(`${baseUrl}/authors/${slug}`, {
+  // Use the supervisor endpoint which supports JSON
+  const url = new URL(`/supervisor/authors/${slug}`, baseUrl);
+
+  const response = await fetch(url.toString(), {
+    method: 'GET',
     headers: {
       'X-API-Key': apiKey,
       Accept: 'application/json',
@@ -13,8 +17,20 @@ export async function getAuthorBySlug(
   });
 
   if (!response.ok) {
+    if (response.status === 401) {
+      throw new Error('Invalid API key');
+    }
+    if (response.status === 403) {
+      throw new Error('User lacks admin privileges');
+    }
+    if (response.status === 404) {
+      throw new Error(`Author not found: ${slug}`);
+    }
     throw new Error(`Failed to fetch author: ${response.status} ${response.statusText}`);
   }
 
-  return response.json() as Promise<Author>;
+  const data = await response.json();
+
+  // The supervisor endpoint returns the author object directly
+  return data as Author;
 }

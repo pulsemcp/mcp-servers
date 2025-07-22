@@ -4,13 +4,26 @@ This client provides integration with the PulseMCP Admin API for managing newsle
 
 ## API Endpoints
 
-The client interacts with the following endpoints:
+The client currently uses the following endpoints:
 
-- `GET /posts` - List posts with search and pagination
-- `GET /posts/:slug` - Get a specific post by slug
-- `POST /posts` - Create a new post
-- `PUT /posts/:slug` - Update an existing post
-- `POST /upload_image` - Upload an image file
+### Posts
+
+- `GET /posts` - List posts with search and pagination (returns JSON with data/meta structure)
+- `GET /supervisor/posts/:slug` - Get a specific post by slug (returns JSON with full content including body)
+- `POST /posts` - Create a new post (returns JSON)
+- `PUT /posts/:slug` - Update an existing post (returns JSON)
+- `POST /upload_image` - Upload an image file (returns JSON)
+
+### Other Resources
+
+- `GET /supervisor/authors` - List authors (returns JSON with data/meta structure)
+- `GET /supervisor/authors/:slug` - Get author by slug (returns JSON)
+- `GET /supervisor/mcp_servers` - List MCP servers (returns JSON with data/meta structure)
+- `GET /supervisor/mcp_servers/:slug` - Get MCP server by slug (returns JSON)
+- `GET /supervisor/mcp_clients` - List MCP clients (returns JSON with data/meta structure)
+- `GET /supervisor/mcp_clients/:slug` - Get MCP client by slug (returns JSON)
+
+All endpoints use real API calls and return live data from the Rails application.
 
 ## Authentication
 
@@ -18,9 +31,9 @@ All requests include the `X-API-Key` header for authentication.
 
 ## Response Handling
 
-- The API primarily returns HTML for web interface usage
-- We request JSON responses by setting the `Accept: application/json` header
-- Error responses include appropriate HTTP status codes
+- The API returns JSON responses when the `Accept: application/json` header is included
+- All endpoints listed above support JSON format
+- Error responses include appropriate HTTP status codes with JSON error messages
 
 ## Form Data
 

@@ -1,7 +1,8 @@
 import type { Post } from '../../types.js';
 
 export async function getPost(apiKey: string, baseUrl: string, slug: string): Promise<Post> {
-  const url = new URL(`/posts/${slug}`, baseUrl);
+  // Use the supervisor endpoint which supports JSON and returns full post data including body
+  const url = new URL(`/supervisor/posts/${slug}`, baseUrl);
 
   const response = await fetch(url.toString(), {
     method: 'GET',
@@ -24,6 +25,8 @@ export async function getPost(apiKey: string, baseUrl: string, slug: string): Pr
     throw new Error(`Failed to fetch post: ${response.status} ${response.statusText}`);
   }
 
-  const data = (await response.json()) as Post;
-  return data;
+  const data = await response.json();
+
+  // The supervisor endpoint returns the full post object with all fields including body
+  return data as Post;
 }

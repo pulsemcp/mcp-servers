@@ -54,7 +54,7 @@ export function createMockPulseMCPAdminClient(mockData: MockData): IPulseMCPAdmi
         posts = posts.filter(
           (post) =>
             post.title.toLowerCase().includes(params.search!.toLowerCase()) ||
-            post.body.toLowerCase().includes(params.search!.toLowerCase())
+            (post.body && post.body.toLowerCase().includes(params.search!.toLowerCase()))
         );
       }
 

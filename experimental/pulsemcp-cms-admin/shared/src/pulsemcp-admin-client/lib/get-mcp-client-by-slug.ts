@@ -5,7 +5,11 @@ export async function getMCPClientBySlug(
   baseUrl: string,
   slug: string
 ): Promise<MCPClient> {
-  const response = await fetch(`${baseUrl}/mcp_clients/${slug}`, {
+  // Use the supervisor endpoint which supports JSON
+  const url = new URL(`/supervisor/mcp_clients/${slug}`, baseUrl);
+
+  const response = await fetch(url.toString(), {
+    method: 'GET',
     headers: {
       'X-API-Key': apiKey,
       Accept: 'application/json',
@@ -13,8 +17,20 @@ export async function getMCPClientBySlug(
   });
 
   if (!response.ok) {
+    if (response.status === 401) {
+      throw new Error('Invalid API key');
+    }
+    if (response.status === 403) {
+      throw new Error('User lacks admin privileges');
+    }
+    if (response.status === 404) {
+      throw new Error(`MCP client not found: ${slug}`);
+    }
     throw new Error(`Failed to fetch MCP client: ${response.status} ${response.statusText}`);
   }
 
-  return response.json() as Promise<MCPClient>;
+  const data = await response.json();
+
+  // The supervisor endpoint returns the MCP client object directly
+  return data as MCPClient;
 }
