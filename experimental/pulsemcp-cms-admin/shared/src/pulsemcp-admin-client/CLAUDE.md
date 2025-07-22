@@ -31,9 +31,9 @@ All requests include the `X-API-Key` header for authentication.
 
 ## Response Handling
 
-- The API currently returns HTML for web interface usage
-- We request JSON responses by setting the `Accept: application/json` header but this is not honored
-- Error responses include appropriate HTTP status codes
+- The API returns JSON responses when the `Accept: application/json` header is included
+- All endpoints listed above support JSON format
+- Error responses include appropriate HTTP status codes with JSON error messages
 
 ## Form Data
 
