@@ -14,9 +14,9 @@ Manual tests require:
 ### Latest Test Run
 
 **Date:** 2025-01-22  
-**Commit:** dbfa2f0  
-**Status:** Not Run - Initial Implementation  
-**Notes:** Manual tests require PULSEMCP_ADMIN_API_KEY which is not available in CI. This is the initial implementation (v0.1.0) and manual tests will be run by the PulseMCP team with production API credentials before actual publication.
+**Commit:** 582e80f  
+**Status:** Not Run - Version Bump  
+**Notes:** Manual tests require PULSEMCP_ADMIN_API_KEY which is not available in CI. This is a version bump (v0.0.2) to trigger npm publication with fixed scripts. Manual tests will be run by the PulseMCP team with production API credentials before actual usage.
 
 ## Running Manual Tests
 
