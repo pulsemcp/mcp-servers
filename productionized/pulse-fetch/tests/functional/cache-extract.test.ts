@@ -28,7 +28,7 @@ describe('Storage findByUrlAndExtract', () => {
       });
 
       // Add delay to ensure different timestamps
-      await new Promise((resolve) => setTimeout(resolve, 2));
+      await new Promise((resolve) => setTimeout(resolve, 10));
 
       await storage.writeMulti({
         url,
@@ -41,7 +41,7 @@ describe('Storage findByUrlAndExtract', () => {
       });
 
       // Add delay to ensure different timestamps
-      await new Promise((resolve) => setTimeout(resolve, 2));
+      await new Promise((resolve) => setTimeout(resolve, 10));
 
       await storage.writeMulti({
         url,
@@ -80,7 +80,7 @@ describe('Storage findByUrlAndExtract', () => {
         metadata: { extract: 'test query' },
       });
 
-      await new Promise((resolve) => setTimeout(resolve, 1));
+      await new Promise((resolve) => setTimeout(resolve, 10));
 
       await storage.writeMulti({
         url,
@@ -125,7 +125,7 @@ describe('Storage findByUrlAndExtract', () => {
       });
 
       // Add delay to ensure different timestamps
-      await new Promise((resolve) => setTimeout(resolve, 2));
+      await new Promise((resolve) => setTimeout(resolve, 10));
 
       await storage.writeMulti({
         url,
@@ -138,7 +138,7 @@ describe('Storage findByUrlAndExtract', () => {
       });
 
       // Add delay to ensure different timestamps
-      await new Promise((resolve) => setTimeout(resolve, 2));
+      await new Promise((resolve) => setTimeout(resolve, 10));
 
       await storage.writeMulti({
         url,
