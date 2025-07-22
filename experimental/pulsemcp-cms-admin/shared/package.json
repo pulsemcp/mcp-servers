@@ -1,6 +1,6 @@
 {
   "name": "pulsemcp-cms-admin-mcp-server-shared",
-  "version": "0.1.0",
+  "version": "0.0.1",
   "description": "Shared code for PulseMCP CMS Admin MCP server implementations",
   "main": "build/index.js",
   "type": "module",
