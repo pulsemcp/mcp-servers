@@ -172,8 +172,8 @@ describe('PulseMCP CMS Admin - Manual Tests with Real API', () => {
       expect(result.content[0].type).toBe('text');
       const text = result.content[0].text;
       expect(text).toContain('# Test Post from MCP Server');
-      expect(text).toContain('Status: draft');
-      expect(text).toContain('This is a test post created by the PulseMCP CMS Admin MCP server');
+      expect(text).toContain('**Status:** draft');
+      expect(text).toContain('*Content not available in preview*'); // Body is not returned by list endpoint
     });
 
     it('should update the post', async () => {

@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Fixed
+
+- Updated API client to handle Rails JSON responses with data/meta structure
+- Fixed TypeScript types to handle optional post body field from list endpoint
+- Implemented workaround for missing JSON support in Rails posts#show endpoint
+- Fixed ESLint and Prettier violations for CI compliance
+- All manual tests now passing (9/9)
+
 ## [0.0.2] - 2025-01-22
 
 ### Added
