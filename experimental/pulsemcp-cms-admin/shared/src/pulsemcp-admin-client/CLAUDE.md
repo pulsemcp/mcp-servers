@@ -7,17 +7,12 @@ This client provides integration with the PulseMCP Admin API for managing newsle
 The client interacts with the following endpoints:
 
 - `GET /posts` - List posts with search and pagination (returns JSON with data/meta structure)
+- `GET /supervisor/posts/:slug` - Get a specific post by slug (returns JSON with full content including body)
 - `POST /posts` - Create a new post (returns JSON)
 - `PUT /posts/:slug` - Update an existing post (returns JSON)
 - `POST /upload_image` - Upload an image file (returns JSON)
 
 Note: The `/authors`, `/mcp_servers`, and `/mcp_clients` endpoints are not currently available in the admin API.
-
-For retrieving individual posts:
-
-- We use `GET /posts?search=<slug>` and filter the results to find the exact match
-- This is a workaround since `GET /posts/:slug` doesn't support JSON responses yet
-- The list endpoint returns all fields except the post body content
 
 ## Authentication
 

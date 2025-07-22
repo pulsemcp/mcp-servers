@@ -14,9 +14,9 @@ Manual tests require:
 ### Latest Test Run
 
 **Date:** 2025-01-22  
-**Commit:** 4dd9172  
+**Commit:** c5d6511  
 **Status:** Fully Passing ✅  
-**Notes:** All manual tests are now passing after implementing a workaround for the missing JSON support in Rails posts#show action.
+**Notes:** All manual tests are passing using the supervisor endpoint for individual post retrieval.
 
 **Test Results:**
 
@@ -26,23 +26,21 @@ Manual tests require:
 
 **Working Features:**
 
-- ✓ List posts with pagination (JSON response)
+- ✓ List posts with pagination (JSON response via `/posts`)
 - ✓ Search posts (JSON response)
 - ✓ Create draft posts (JSON response)
 - ✓ Update posts (JSON response)
 - ✓ Upload images (JSON response)
-- ✓ Get individual posts (using list endpoint workaround)
+- ✓ Get individual posts with full content (JSON response via `/supervisor/posts/:slug`)
 - ✓ Error handling (404 responses)
 - ✓ API key authentication
 - ✓ Duplicate slug validation
 
 **Implementation Notes:**
 
-- For individual post retrieval, we use `GET /posts?search=<slug>` and filter results to find exact matches
-- This workaround means the post body content is not available when retrieving individual posts
+- Individual post retrieval uses `GET /supervisor/posts/:slug` which returns full post data including body content
+- The supervisor endpoint expects slugs (not IDs) which aligns perfectly with our API design
 - Authors, MCP servers, and MCP clients endpoints are not available - using mock data
-
-**Recommendation:** When Rails adds JSON support to posts#show, update the getPost function to use the proper endpoint.
 
 ## Running Manual Tests
 
