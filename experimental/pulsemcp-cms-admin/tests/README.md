@@ -187,8 +187,7 @@ Manual tests are designed to test the MCP server against real external APIs. The
 1. Create a `.env` file in the server root:
 
    ```bash
-   YOUR_API_KEY=your-actual-api-key
-   OTHER_ENV_VAR=value
+   PULSEMCP_ADMIN_API_KEY=your-actual-api-key
    ```
 
 2. Run manual tests:

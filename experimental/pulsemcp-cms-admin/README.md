@@ -48,9 +48,9 @@ This server is built and tested on macOS with Claude Desktop. It should work wit
 - When uploading images, both `post_slug` and `file_name` are required
 - Draft posts allow you to prepare content without immediately publishing
 - Search functionality supports finding posts by title, content, or metadata
-- The update tool allows modifying all post metadata except status (which remains as set)
-- Use author slugs instead of IDs when creating posts (e.g., "john-doe" instead of 1)
-- Use MCP server/client slugs instead of IDs for featured content
+- The update tool allows modifying all post metadata except status
+- Use author slugs when creating posts (e.g., "sarah-chen", "john-doe")
+- Use MCP server/client slugs for featured content (e.g., "github-mcp", "claude-desktop")
 
 # Examples
 
