@@ -84,7 +84,7 @@ describe('Resource Shape Validation', () => {
     expect(result.content[0].resource).toMatchObject({
       uri: expect.stringContaining('scraped://'),
       name: 'https://test.com/page',
-      mimeType: 'text/markdown',
+      mimeType: 'text/html',
       description: expect.stringContaining('Scraped content from'),
       text: expect.stringContaining('Test Content'),
     });
@@ -110,7 +110,7 @@ describe('Resource Shape Validation', () => {
       type: 'resource_link',
       uri: expect.stringContaining('scraped://'),
       name: 'https://test.com/page',
-      mimeType: 'text/markdown',
+      mimeType: 'text/html',
       description: expect.stringContaining('Scraped content from'),
     });
   });
