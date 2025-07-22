@@ -4,7 +4,9 @@ This client provides integration with the PulseMCP Admin API for managing newsle
 
 ## API Endpoints
 
-The client interacts with the following endpoints:
+The client currently uses the following endpoints:
+
+### Posts
 
 - `GET /posts` - List posts with search and pagination (returns JSON with data/meta structure)
 - `GET /supervisor/posts/:slug` - Get a specific post by slug (returns JSON with full content including body)
@@ -12,7 +14,16 @@ The client interacts with the following endpoints:
 - `PUT /posts/:slug` - Update an existing post (returns JSON)
 - `POST /upload_image` - Upload an image file (returns JSON)
 
-Note: The `/authors`, `/mcp_servers`, and `/mcp_clients` endpoints are not currently available in the admin API.
+### Available via Supervisor (not yet implemented in this client)
+
+- `GET /supervisor/authors` - List authors
+- `GET /supervisor/authors/:slug` - Get author by slug
+- `GET /supervisor/mcp_servers` - List MCP servers
+- `GET /supervisor/mcp_servers/:slug` - Get MCP server by slug
+- `GET /supervisor/mcp_clients` - List MCP clients
+- `GET /supervisor/mcp_clients/:slug` - Get MCP client by slug
+
+Note: While the supervisor endpoints for authors, MCP servers, and MCP clients are available in the Rails API, this client currently uses mock data for these resources. Future updates could implement real API calls to these endpoints.
 
 ## Authentication
 
