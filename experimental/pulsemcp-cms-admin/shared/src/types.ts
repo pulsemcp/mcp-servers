@@ -66,7 +66,7 @@ export interface Author {
   name: string;
   slug: string;
   bio?: string;
-  avatar_url?: string;
+  image_url?: string; // API returns image_url, not avatar_url
   created_at: string;
   updated_at: string;
 }
@@ -82,14 +82,27 @@ export interface AuthorsResponse {
 
 export interface MCPServer {
   id: number;
-  name: string;
+  name?: string; // Not always present in API response
   slug: string;
   description?: string;
+  created_at?: string;
+  updated_at?: string;
+  classification?: string;
+  implementation_language?: string;
+  registry_package_id?: number | null;
+  registry_package_soft_verified?: boolean;
+  downloads_estimate_last_7_days?: number;
+  downloads_estimate_last_30_days?: number;
+  downloads_estimate_total?: number;
 }
 
 export interface MCPClient {
   id: number;
-  name: string;
+  name?: string; // Not always present in API response
   slug: string;
   description?: string;
+  created_at?: string;
+  updated_at?: string;
+  featured?: boolean;
+  logo_url?: string | null;
 }

@@ -14,9 +14,9 @@ Manual tests require:
 ### Latest Test Run
 
 **Date:** 2025-01-22  
-**Commit:** c5d6511  
+**Commit:** a42888b  
 **Status:** Fully Passing ✅  
-**Notes:** All manual tests are passing using the supervisor endpoint for individual post retrieval.
+**Notes:** All manual tests are passing with real API calls for all resources (posts, authors, MCP servers, and MCP clients).
 
 **Test Results:**
 
@@ -39,8 +39,9 @@ Manual tests require:
 **Implementation Notes:**
 
 - Individual post retrieval uses `GET /supervisor/posts/:slug` which returns full post data including body content
-- The supervisor endpoint expects slugs (not IDs) which aligns perfectly with our API design
-- Authors, MCP servers, and MCP clients endpoints are not available - using mock data
+- All resources (posts, authors, MCP servers, MCP clients) use real supervisor endpoints
+- The supervisor endpoints expect slugs (not IDs) which aligns perfectly with our API design
+- No mock data is used - all data comes from the live Rails API
 
 ## Running Manual Tests
 

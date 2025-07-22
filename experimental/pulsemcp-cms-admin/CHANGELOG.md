@@ -24,6 +24,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 - Individual post retrieval now uses `/supervisor/posts/:slug` endpoint which returns full post content including body
 - Removed workaround that was using list endpoint for individual posts
+- Authors, MCP servers, and MCP clients now use real API calls instead of mock data
+- All resources are fetched from supervisor endpoints with full JSON support
 
 ## [0.0.1] - 2025-01-22
 

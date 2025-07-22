@@ -95,8 +95,8 @@ Use cases:
               content += `**Bio:** ${author.bio}\n`;
             }
 
-            if (author.avatar_url) {
-              content += `**Avatar:** ${author.avatar_url}\n`;
+            if (author.image_url) {
+              content += `**Avatar:** ${author.image_url}\n`;
             }
 
             content += `**Created:** ${new Date(author.created_at).toLocaleDateString()}\n\n`;

@@ -153,7 +153,7 @@ describe('PulseMCP CMS Admin - Manual Tests with Real API', () => {
         title: 'Test Post from MCP Server',
         body: '<p>This is a test post created by the PulseMCP CMS Admin MCP server during manual testing.</p>',
         slug: testSlug,
-        author_slug: 'pulsemcp-team', // Using the mock author slug
+        author_slug: 'tadas-antanavicius', // Using a real author slug
         short_description: 'A test post created during manual testing',
         category: 'newsletter',
       });
@@ -230,7 +230,7 @@ describe('PulseMCP CMS Admin - Manual Tests with Real API', () => {
         title: 'Duplicate Post',
         body: '<p>This should fail</p>',
         slug: testSlug, // Using the same slug as before
-        author_slug: 'pulsemcp-team',
+        author_slug: 'tadas-antanavicius',
       });
 
       // This should fail with a validation error

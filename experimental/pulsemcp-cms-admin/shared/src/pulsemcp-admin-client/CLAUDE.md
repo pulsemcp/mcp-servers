@@ -14,16 +14,16 @@ The client currently uses the following endpoints:
 - `PUT /posts/:slug` - Update an existing post (returns JSON)
 - `POST /upload_image` - Upload an image file (returns JSON)
 
-### Available via Supervisor (not yet implemented in this client)
+### Other Resources
 
-- `GET /supervisor/authors` - List authors
-- `GET /supervisor/authors/:slug` - Get author by slug
-- `GET /supervisor/mcp_servers` - List MCP servers
-- `GET /supervisor/mcp_servers/:slug` - Get MCP server by slug
-- `GET /supervisor/mcp_clients` - List MCP clients
-- `GET /supervisor/mcp_clients/:slug` - Get MCP client by slug
+- `GET /supervisor/authors` - List authors (returns JSON with data/meta structure)
+- `GET /supervisor/authors/:slug` - Get author by slug (returns JSON)
+- `GET /supervisor/mcp_servers` - List MCP servers (returns JSON with data/meta structure)
+- `GET /supervisor/mcp_servers/:slug` - Get MCP server by slug (returns JSON)
+- `GET /supervisor/mcp_clients` - List MCP clients (returns JSON with data/meta structure)
+- `GET /supervisor/mcp_clients/:slug` - Get MCP client by slug (returns JSON)
 
-Note: While the supervisor endpoints for authors, MCP servers, and MCP clients are available in the Rails API, this client currently uses mock data for these resources. Future updates could implement real API calls to these endpoints.
+All endpoints use real API calls and return live data from the Rails application.
 
 ## Authentication
 
