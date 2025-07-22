@@ -6,6 +6,25 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Added
+
+- `get_newsletter_post_by_id` tool to retrieve posts by numeric ID via supervisor endpoints
+- `supervisor_get_newsletter_posts` tool for advanced listing with ID support and status filtering
+- Supervisor API endpoints for enhanced administrative access:
+  - `/supervisor/posts/:id` for fetching posts by numeric ID
+  - `/supervisor/posts` for listing posts with additional filtering options
+  - Support for create and update operations via supervisor endpoints
+- API client functions for all supervisor endpoints:
+  - `getPostById()` for fetching posts by numeric ID
+  - `getSupervisorPosts()` for advanced post listing
+  - `createSupervisorPost()` for creating posts via supervisor
+  - `updateSupervisorPost()` for updating posts via supervisor
+
+### Changed
+
+- Exposed all missing supervisor capabilities to enable ID-based operations
+- Enhanced API client exports to include both regular and supervisor functions
+
 ## [0.0.1] - 2025-01-22
 
 ### Added

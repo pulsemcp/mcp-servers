@@ -33,14 +33,16 @@ This is an MCP ([Model Context Protocol](https://modelcontextprotocol.io/)) Serv
 
 This server is built and tested on macOS with Claude Desktop. It should work with other MCP clients as well.
 
-| Tool Name                | Description                                                                |
-| ------------------------ | -------------------------------------------------------------------------- |
-| `get_newsletter_posts`   | List newsletter posts with search, sorting, and pagination options.        |
-| `get_newsletter_post`    | Retrieve a specific newsletter post by its unique slug.                    |
-| `draft_newsletter_post`  | Create a new draft newsletter post with title, body, and metadata.         |
-| `update_newsletter_post` | Update an existing newsletter post's content and metadata (except status). |
-| `upload_image`           | Upload an image and attach it to a specific newsletter post.               |
-| `get_authors`            | Get a list of authors with optional search and pagination.                 |
+| Tool Name                         | Description                                                                    |
+| --------------------------------- | ------------------------------------------------------------------------------ |
+| `get_newsletter_posts`            | List newsletter posts with search, sorting, and pagination options.            |
+| `get_newsletter_post`             | Retrieve a specific newsletter post by its unique slug.                        |
+| `get_newsletter_post_by_id`       | Retrieve a specific newsletter post by its numeric ID via supervisor endpoint. |
+| `supervisor_get_newsletter_posts` | List posts via supervisor endpoint with ID support and advanced filtering.     |
+| `draft_newsletter_post`           | Create a new draft newsletter post with title, body, and metadata.             |
+| `update_newsletter_post`          | Update an existing newsletter post's content and metadata (except status).     |
+| `upload_image`                    | Upload an image and attach it to a specific newsletter post.                   |
+| `get_authors`                     | Get a list of authors with optional search and pagination.                     |
 
 # Usage Tips
 
@@ -96,6 +98,30 @@ Assistant: I'll upload the screenshot and attach it to your weather server post.
 [Calls upload_image with post_slug="weather-mcp-server-launch" and file_name="weather-dashboard.png"]
 
 The screenshot has been successfully uploaded and attached to the "weather-mcp-server-launch" post. The image is now available at: https://storage.pulsemcp.com/images/newsletter/weather-dashboard.png
+```
+
+## Get Post by ID
+
+```
+User: Get the newsletter post with ID 123
+
+Assistant: I'll retrieve the newsletter post with ID 123.
+
+[Calls get_newsletter_post_by_id with id=123]
+
+I found the post:
+
+**Title**: "Building Advanced MCP Integrations"
+**ID**: 123
+**Slug**: building-advanced-mcp-integrations
+**Status**: published
+**Author**: Sarah Chen
+
+The post covers advanced techniques for building MCP integrations, including:
+- Custom tool development
+- Resource management patterns
+- Error handling best practices
+- Performance optimization strategies
 ```
 
 ## Update an Existing Post

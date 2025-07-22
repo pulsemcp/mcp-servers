@@ -7,6 +7,8 @@ import { draftNewsletterPost } from './tools/draft-newsletter-post.js';
 import { updateNewsletterPost } from './tools/update-newsletter-post.js';
 import { uploadImage } from './tools/upload-image.js';
 import { getAuthors } from './tools/get-authors.js';
+import { getNewsletterPostById } from './tools/get-newsletter-post-by-id.js';
+import { supervisorGetNewsletterPosts } from './tools/supervisor-get-newsletter-posts.js';
 
 /**
  * Creates a function to register all tools with the server.
@@ -28,6 +30,8 @@ export function createRegisterTools(clientFactory: ClientFactory) {
       updateNewsletterPost(server, clientFactory),
       uploadImage(server, clientFactory),
       getAuthors(server, clientFactory),
+      getNewsletterPostById(server, clientFactory),
+      supervisorGetNewsletterPosts(server, clientFactory),
     ];
 
     // List available tools
