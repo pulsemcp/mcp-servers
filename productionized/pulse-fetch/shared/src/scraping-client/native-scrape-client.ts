@@ -3,6 +3,8 @@
  * Provides basic HTTP fetching without external services
  */
 
+import { ContentParserFactory } from '../content-parsers/index.js';
+
 export interface INativeScrapingClient {
   scrape(url: string, options?: NativeScrapingOptions): Promise<NativeScrapingResult>;
 }
@@ -22,6 +24,7 @@ export interface NativeScrapingResult {
   headers?: Record<string, string>;
   contentType?: string;
   contentLength?: number;
+  metadata?: Record<string, unknown>;
 }
 
 export class NativeScrapingClient implements INativeScrapingClient {
@@ -32,6 +35,8 @@ export class NativeScrapingClient implements INativeScrapingClient {
     'Accept-Encoding': 'gzip, deflate',
     'Cache-Control': 'no-cache',
   };
+
+  private parserFactory = new ContentParserFactory();
 
   async scrape(url: string, options: NativeScrapingOptions = {}): Promise<NativeScrapingResult> {
     try {
@@ -68,15 +73,26 @@ export class NativeScrapingClient implements INativeScrapingClient {
         };
       }
 
-      const data = await response.text();
+      // Get content type for routing to appropriate parser
+      const contentType = response.headers.get('content-type') || 'text/plain';
+
+      // Determine if we need binary handling
+      const isBinary = this.parserFactory.requiresBinaryHandling(contentType);
+
+      // Fetch content as ArrayBuffer or text based on content type
+      const rawData = isBinary ? await response.arrayBuffer() : await response.text();
+
+      // Parse content through appropriate parser
+      const parsed = await this.parserFactory.parse(rawData, contentType);
 
       return {
         success: true,
-        data,
+        data: parsed.content,
         statusCode: response.status,
         headers: responseHeaders,
-        contentType: response.headers.get('content-type') || undefined,
-        contentLength: data.length,
+        contentType,
+        contentLength: rawData instanceof ArrayBuffer ? rawData.byteLength : rawData.length,
+        metadata: parsed.metadata,
       };
     } catch (error) {
       if (error instanceof Error && error.name === 'AbortError') {

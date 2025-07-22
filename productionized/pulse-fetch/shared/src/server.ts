@@ -3,6 +3,7 @@ import { registerResources } from './resources.js';
 import { createRegisterTools } from './tools.js';
 import type { IStrategyConfigClient } from './strategy-config/index.js';
 import { FilesystemStrategyConfigClient } from './strategy-config/index.js';
+import { NativeScrapingClient } from './scraping-client/native-scrape-client.js';
 
 // Scraping client interfaces for external services
 export interface IFirecrawlClient {
@@ -44,8 +45,10 @@ export interface INativeFetcher {
   }>;
 }
 
-// Native fetcher implementation
+// Native fetcher implementation that uses the enhanced NativeScrapingClient
 export class NativeFetcher implements INativeFetcher {
+  private client = new NativeScrapingClient();
+
   async scrape(
     url: string,
     options?: { timeout?: number } & RequestInit
@@ -55,48 +58,19 @@ export class NativeFetcher implements INativeFetcher {
     data?: string;
     error?: string;
   }> {
-    try {
-      const { timeout, ...fetchOptions } = options || {};
+    const result = await this.client.scrape(url, {
+      timeout: options?.timeout,
+      headers: options?.headers as Record<string, string>,
+      method: options?.method as 'GET' | 'POST',
+      body: options?.body as string,
+    });
 
-      let timeoutId: NodeJS.Timeout | undefined;
-      const controller = new AbortController();
-
-      if (timeout) {
-        timeoutId = setTimeout(() => controller.abort(), timeout);
-      }
-
-      const response = await fetch(url, {
-        ...fetchOptions,
-        headers: {
-          'User-Agent': 'PulseMCP-Fetch/0.0.1',
-          ...fetchOptions?.headers,
-        },
-        signal: controller.signal,
-      });
-
-      if (timeoutId) {
-        clearTimeout(timeoutId);
-      }
-
-      const data = await response.text();
-
-      return {
-        success: response.ok,
-        status: response.status,
-        data,
-      };
-    } catch (error) {
-      if (error instanceof Error && error.name === 'AbortError') {
-        return {
-          success: false,
-          error: `Request timed out. The server did not respond within the timeout period. Consider increasing the timeout parameter if this URL typically takes longer to load.`,
-        };
-      }
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : 'Unknown error',
-      };
-    }
+    return {
+      success: result.success,
+      status: result.statusCode,
+      data: result.data,
+      error: result.error,
+    };
   }
 }
 

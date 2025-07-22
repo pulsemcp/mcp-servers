@@ -4,7 +4,6 @@ import type { IScrapingClients, StrategyConfigFactory } from '../server.js';
 import { scrapeWithStrategy } from '../scraping-strategies.js';
 import { ResourceStorageFactory } from '../storage/index.js';
 import { ExtractClientFactory } from '../extract/index.js';
-import { createCleaner } from '../clean/index.js';
 
 // Detect content type based on content
 function detectContentType(content: string): string {
@@ -257,8 +256,7 @@ The tool automatically:
         const clients = clientsFactory();
         const configClient = strategyConfigFactory();
 
-        const { url, maxChars, startIndex, timeout, forceRescrape, cleanScrape, resultHandling } =
-          validatedArgs;
+        const { url, maxChars, startIndex, timeout, forceRescrape, resultHandling } = validatedArgs;
 
         // Type-safe extraction of optional extract parameter
         let extract: string | undefined;
@@ -383,20 +381,6 @@ The tool automatically:
         let cleanedContent: string | undefined;
         let extractedContent: string | undefined;
         let displayContent = rawContent;
-
-        // Apply cleaning if cleanScrape is true (default)
-        // This converts HTML to semantic Markdown and removes ads, navigation, etc.
-        if (cleanScrape) {
-          try {
-            const cleaner = createCleaner(rawContent, url);
-            cleanedContent = await cleaner.clean(rawContent, url);
-            displayContent = cleanedContent;
-          } catch (cleanError) {
-            console.warn('Content cleaning failed, proceeding with raw content:', cleanError);
-            // Continue with raw content if cleaning fails
-            displayContent = rawContent;
-          }
-        }
 
         // If extract parameter is provided and extraction is available, perform extraction
         if (extract && ExtractClientFactory.isAvailable()) {
