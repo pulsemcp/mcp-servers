@@ -28,7 +28,10 @@ if (!existsSync(envPath)) {
 
 // Check if API key is set
 const envContent = readFileSync(envPath, 'utf8');
-if (!envContent.includes('PULSEMCP_ADMIN_API_KEY=') || envContent.includes('PULSEMCP_ADMIN_API_KEY=your-')) {
+if (
+  !envContent.includes('PULSEMCP_ADMIN_API_KEY=') ||
+  envContent.includes('PULSEMCP_ADMIN_API_KEY=your-')
+) {
   console.error('❌ PULSEMCP_ADMIN_API_KEY not configured in .env!');
   console.log('   Please edit .env and add your real API key');
   process.exit(1);
