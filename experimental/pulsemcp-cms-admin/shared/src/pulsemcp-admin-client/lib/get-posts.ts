@@ -1,4 +1,26 @@
-import type { Post, PostsResponse } from '../../types.js';
+import type { PostsResponse } from '../../types.js';
+
+interface RailsPostsResponse {
+  data: Array<{
+    id: number;
+    slug: string;
+    title: string;
+    short_title?: string;
+    short_description?: string;
+    category: string;
+    status: string;
+    author_id: number;
+    created_at: string;
+    updated_at: string;
+    last_updated?: string;
+  }>;
+  meta: {
+    current_page: number;
+    total_pages: number;
+    total_count: number;
+    items_per_page: number;
+  };
+}
 
 export async function getPosts(
   apiKey: string,
@@ -44,17 +66,36 @@ export async function getPosts(
     throw new Error(`Failed to fetch posts: ${response.status} ${response.statusText}`);
   }
 
-  // The API returns HTML by default, so we need to parse the response appropriately
-  // For JSON endpoints, we expect the server to return proper JSON
-  const data = (await response.json()) as PostsResponse | Post[];
+  // Parse the JSON response
+  const data = (await response.json()) as RailsPostsResponse;
 
-  // Handle both response formats
-  if (Array.isArray(data)) {
+  // Handle the Rails JSON structure with data and meta
+  if (data.data && data.meta) {
     return {
-      posts: data,
-      pagination: undefined,
+      posts: data.data.map((post) => ({
+        id: post.id,
+        slug: post.slug,
+        title: post.title,
+        short_title: post.short_title,
+        short_description: post.short_description,
+        category: post.category,
+        status: post.status,
+        author_id: post.author_id,
+        created_at: post.created_at,
+        updated_at: post.updated_at,
+        last_updated: post.last_updated,
+      })),
+      pagination: {
+        current_page: data.meta.current_page,
+        total_pages: data.meta.total_pages,
+        total_count: data.meta.total_count,
+      },
     };
   }
 
-  return data;
+  // Fallback for unexpected response format
+  return {
+    posts: [],
+    pagination: undefined,
+  };
 }

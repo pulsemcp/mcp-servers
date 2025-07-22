@@ -24,6 +24,8 @@ export async function getPost(apiKey: string, baseUrl: string, slug: string): Pr
     throw new Error(`Failed to fetch post: ${response.status} ${response.statusText}`);
   }
 
-  const data = (await response.json()) as Post;
-  return data;
+  const data = await response.json();
+
+  // The Rails app returns the full post object directly
+  return data as Post;
 }

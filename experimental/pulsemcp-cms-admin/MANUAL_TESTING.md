@@ -15,8 +15,31 @@ Manual tests require:
 
 **Date:** 2025-01-22  
 **Commit:** 582e80f  
-**Status:** Not Run - Version Bump  
-**Notes:** Manual tests require PULSEMCP_ADMIN_API_KEY which is not available in CI. This is a version bump (v0.0.2) to trigger npm publication with fixed scripts. Manual tests will be run by the PulseMCP team with production API credentials before actual usage.
+**Status:** Mostly Passing  
+**Notes:** Manual tests were run with a valid PULSEMCP_ADMIN_API_KEY after the Rails application was updated to support JSON responses.
+
+**Test Results:**
+
+- Tests Run: 9
+- Passed: 6
+- Failed: 3 (get individual post - missing JSON support in Rails show action)
+
+**Working Features:**
+
+- ✓ List posts with pagination (JSON response)
+- ✓ Search posts (JSON response)
+- ✓ Create draft posts (JSON response)
+- ✓ Update posts (JSON response)
+- ✓ Upload images (JSON response)
+- ✓ Error handling (404 responses)
+- ✓ API key authentication
+
+**Known Issues:**
+
+- The Rails `GET /posts/:slug` endpoint (show action) doesn't have JSON support yet, only returns HTML
+- Authors, MCP servers, and MCP clients endpoints are not available - using mock data
+
+**Recommendation:** Add JSON support to the Rails posts#show action for full functionality.
 
 ## Running Manual Tests
 

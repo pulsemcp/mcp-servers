@@ -153,15 +153,15 @@ describe('PulseMCP CMS Admin - Manual Tests with Real API', () => {
         title: 'Test Post from MCP Server',
         body: '<p>This is a test post created by the PulseMCP CMS Admin MCP server during manual testing.</p>',
         slug: testSlug,
-        author_id: 1, // Assuming author ID 1 exists
+        author_slug: 'pulsemcp-team', // Using the mock author slug
         short_description: 'A test post created during manual testing',
         category: 'newsletter',
       });
 
       expect(result.content[0].text).toContain('Successfully created draft newsletter post!');
       expect(result.content[0].text).toContain('Test Post from MCP Server');
-      expect(result.content[0].text).toContain('Status: draft');
-      expect(result.content[0].text).toContain('Category: newsletter');
+      expect(result.content[0].text).toContain('**Status:** draft');
+      expect(result.content[0].text).toContain('**Category:** newsletter');
     });
 
     it('should retrieve the created post', async () => {
@@ -230,7 +230,7 @@ describe('PulseMCP CMS Admin - Manual Tests with Real API', () => {
         title: 'Duplicate Post',
         body: '<p>This should fail</p>',
         slug: testSlug, // Using the same slug as before
-        author_id: 1,
+        author_slug: 'pulsemcp-team',
       });
 
       // This should fail with a validation error

@@ -62,12 +62,13 @@ export async function createPost(
       throw new Error('User lacks admin privileges');
     }
     if (response.status === 422) {
-      const errorData = await response.text();
-      throw new Error(`Validation failed: ${errorData}`);
+      const errorData = (await response.json()) as { errors?: string[] };
+      const errors = errorData.errors || ['Validation failed'];
+      throw new Error(`Validation failed: ${errors.join(', ')}`);
     }
     throw new Error(`Failed to create post: ${response.status} ${response.statusText}`);
   }
 
-  const data = (await response.json()) as Post;
-  return data;
+  const data = await response.json();
+  return data as Post;
 }
