@@ -25,8 +25,6 @@ export class HTMLParser extends BaseContentParser {
       content: htmlContent,
       metadata: {
         originalType: contentType,
-        // HTML will be cleaned later by the existing cleaner
-        requiresCleaning: true,
       },
     };
   }

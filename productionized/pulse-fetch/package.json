@@ -54,9 +54,5 @@
     "@rollup/rollup-linux-x64-musl": "^4.9.5",
     "@rollup/rollup-win32-arm64-msvc": "^4.9.5",
     "@rollup/rollup-win32-x64-msvc": "^4.9.5"
-  },
-  "dependencies": {
-    "dom-to-semantic-markdown": "^1.5.0",
-    "jsdom": "^26.1.0"
   }
 }

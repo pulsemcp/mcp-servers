@@ -16,6 +16,8 @@
   "dependencies": {
     "@anthropic-ai/sdk": "^0.36.3",
     "@modelcontextprotocol/sdk": "^1.13.2",
+    "dom-to-semantic-markdown": "^1.5.0",
+    "jsdom": "^26.1.0",
     "openai": "^4.104.0",
     "pdf-parse": "^1.1.1",
     "zod": "^3.24.1"
