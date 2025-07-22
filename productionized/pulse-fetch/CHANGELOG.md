@@ -21,6 +21,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Updated functional tests to expect the correct resource shape with embedded resources wrapped in a 'resource' property
   - Fixed tests for `saveAndReturn` mode to access properties via `content[0].resource.*` instead of `content[0].*`
   - This ensures tests accurately validate the MCP protocol-compliant resource structure
+- Restored accidentally removed `cleanScrape` functionality
+  - The entire clean module (base-cleaner, cleaner-factory, html-cleaner, etc.) was inadvertently deleted during PDF implementation
+  - Restored all clean module files from main branch
+  - Re-integrated cleanScrape parameter usage in scrape.ts tool
+  - Added back dom-to-semantic-markdown and jsdom dependencies
+  - Fixed test expectations to expect text/markdown for cleaned content
 
 ## [0.2.11] - 2025-07-03
 
