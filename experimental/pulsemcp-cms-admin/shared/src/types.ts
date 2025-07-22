@@ -2,11 +2,11 @@
 export interface Post {
   id: number;
   title: string;
-  body: string;
+  body?: string; // Optional because list endpoint doesn't return it
   slug: string;
   author_id: number;
-  status: 'draft' | 'live';
-  category: 'newsletter' | 'other';
+  status: 'draft' | 'live' | string; // Allow string for flexibility
+  category: 'newsletter' | 'other' | string; // Allow string for flexibility
   image_url?: string;
   preview_image_url?: string;
   share_image?: string;

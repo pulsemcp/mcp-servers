@@ -84,7 +84,11 @@ Use cases:
           content += `**Summary:** ${post.short_description}\n\n`;
         }
 
-        content += `## Content\n\n${post.body}\n\n`;
+        if (post.body) {
+          content += `## Content\n\n${post.body}\n\n`;
+        } else {
+          content += `## Content\n\n*Content not available in preview*\n\n`;
+        }
 
         // Add metadata section
         content += `## Metadata\n\n`;
