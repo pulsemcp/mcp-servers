@@ -1,37 +1,27 @@
-/**
- * Content cleaning module
- * Converts HTML to clean markdown format
- */
-
-import { convertHtmlToMarkdown } from 'dom-to-semantic-markdown';
-
-interface Cleaner {
+export interface ContentCleaner {
+  /**
+   * Clean raw content to extract the most relevant parts
+   * @param content The raw content to clean
+   * @param url The source URL (can help with context)
+   * @returns The cleaned content
+   */
   clean(content: string, url: string): Promise<string>;
+
+  /**
+   * Check if this cleaner can handle the given content type
+   * @param contentType The detected content type
+   * @returns Whether this cleaner should be used
+   */
+  canHandle(contentType: string): boolean;
 }
 
-export function createCleaner(_content: string, _url: string): Cleaner {
-  return {
-    async clean(content: string, _url: string): Promise<string> {
-      try {
-        // Check if content is HTML
-        const htmlRegex =
-          /<(!DOCTYPE\s+)?html[^>]*>|<head[^>]*>|<body[^>]*>|<div[^>]*>|<p[^>]*>|<h[1-6][^>]*>/i;
-        if (!htmlRegex.test(content.substring(0, 1000))) {
-          // Not HTML, return as-is
-          return content;
-        }
-
-        // Convert to markdown with semantic extraction
-        const markdown = await convertHtmlToMarkdown(content, {
-          extractMainContent: true,
-        });
-
-        return markdown || content;
-      } catch (error) {
-        console.error('Failed to clean content:', error);
-        // Return original content if cleaning fails
-        return content;
-      }
-    },
-  };
+export interface CleanerOptions {
+  /**
+   * Maximum length of cleaned content (optional)
+   * If not specified, the cleaner will use its own judgment
+   */
+  maxLength?: number;
 }
+
+export { detectContentType } from './content-type-detector.js';
+export { createCleaner } from './cleaner-factory.js';
