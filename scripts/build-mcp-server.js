@@ -2,17 +2,17 @@
 
 /**
  * Robust build script for MCP servers that properly propagates TypeScript errors
- * 
+ *
  * This script replaces the error-prone shell command pattern:
  * "cd shared && npm run build && cd ../local && npm run build"
- * 
+ *
  * The problem with the shell pattern is that it doesn't properly propagate
  * build failures. If TypeScript compilation fails in 'shared', the script
  * continues to build 'local', resulting in silent failures.
  */
 
 import { spawn } from 'child_process';
-import { existsSync } from 'fs';
+import { existsSync, readFileSync } from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -55,7 +55,7 @@ function logStep(message) {
 function runCommand(command, args, cwd, description) {
   return new Promise((resolve, reject) => {
     logStep(`${description} in ${path.relative(process.cwd(), cwd)}`);
-    
+
     const proc = spawn(command, args, {
       cwd,
       stdio: 'inherit',
@@ -82,15 +82,16 @@ function runCommand(command, args, cwd, description) {
  */
 async function buildDirectory(dirPath, dirName) {
   const packageJsonPath = path.join(dirPath, 'package.json');
-  
+
   if (!existsSync(packageJsonPath)) {
     log(`${colors.dim}Skipping ${dirName} - no package.json found${colors.reset}`);
     return;
   }
 
   try {
-    const packageJson = await import(packageJsonPath, { assert: { type: 'json' } });
-    if (!packageJson.default.scripts?.build) {
+    const packageJsonContent = readFileSync(packageJsonPath, 'utf8');
+    const packageJson = JSON.parse(packageJsonContent);
+    if (!packageJson.scripts?.build) {
       log(`${colors.dim}Skipping ${dirName} - no build script found${colors.reset}`);
       return;
     }
@@ -107,11 +108,11 @@ async function buildDirectory(dirPath, dirName) {
  */
 async function build() {
   const startTime = Date.now();
-  
+
   // Determine the root directory of the MCP server
   // This script can be called from either the monorepo root or an MCP server directory
   let serverRoot = process.cwd();
-  
+
   // If we're in the monorepo scripts directory, we need a server path argument
   if (serverRoot.includes('/scripts') && serverRoot.endsWith('mcp-servers/scripts')) {
     if (process.argv.length < 3) {
@@ -155,17 +156,16 @@ async function build() {
     const duration = ((Date.now() - startTime) / 1000).toFixed(2);
     logSuccess(`\nBuild completed successfully in ${duration}s`);
     logInfo(`Built directories: ${builtDirs.join(', ')}`);
-    
   } catch (error) {
     logError(`\nBuild failed: ${error.message}`);
-    
+
     // Provide helpful error messages for common issues
     if (error.message.includes('Cannot find module')) {
       logInfo('Tip: Try running "npm install" in the failing directory');
     } else if (error.message.includes('error TS')) {
       logInfo('TypeScript compilation errors detected - please fix them and try again');
     }
-    
+
     process.exit(1);
   }
 }
