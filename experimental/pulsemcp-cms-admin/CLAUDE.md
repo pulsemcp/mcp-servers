@@ -13,7 +13,7 @@ Internal MCP server for managing PulseMCP's newsletter content. Requires `PULSEM
 - See `shared/src/types.ts` for field definitions
 - See tool implementations in `shared/src/tools/` for API endpoints
 
-The Rails application now supports JSON responses for posts operations. However, authors, MCP servers, and MCP clients endpoints are not yet available via the admin API.
+The Rails application supports JSON responses for posts operations via both the admin and supervisor namespaces. Authors, MCP servers, and MCP clients endpoints are not yet available via the API, so the MCP server provides mock data for these resources.
 
 ## Key Implementation Details
 
