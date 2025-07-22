@@ -51,3 +51,33 @@ npm run test:all
 - The monorepo CI will automatically pick up new servers in most cases
 - If CI fails, check that all your dependencies are properly installed
 - Ensure your server follows the same patterns as other servers in the repo
+
+## Required Files for NPM Publishing
+
+When adding a new server that will be published to npm, ensure these files exist:
+
+### 1. `local/prepare-publish.js`
+
+This script prepares the package for npm publication by:
+
+- Installing TypeScript for the build
+- Building the shared directory
+- Setting up symlinks for the build process
+- Building the local package
+- Copying shared files into the local package
+
+### 2. `scripts/prepare-npm-readme.js`
+
+This script prepares the README for npm by:
+
+- Combining the main README with local configuration sections
+- Adding a GitHub repository reference
+- Ensuring published packages have comprehensive documentation
+
+If these files are missing, the CI publish workflow will fail with errors like:
+
+```
+Error: Cannot find module '/path/to/local/prepare-publish.js'
+```
+
+You can copy these files from existing servers like `experimental/appsignal/` or `experimental/twist/` and update the server name references.
