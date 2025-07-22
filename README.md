@@ -27,10 +27,11 @@ These are PulseMCP-branded servers that we intend to maintain indefinitely as ou
 
 These are high-quality servers that we may discontinue if the official provider creates and maintains a better MCP server.
 
-| Name                                   | Description                                                     | Local Status | Remote Status | Target Audience                                       | Notes                                                                |
-| -------------------------------------- | --------------------------------------------------------------- | ------------ | ------------- | ----------------------------------------------------- | -------------------------------------------------------------------- |
-| [appsignal](./experimental/appsignal/) | AppSignal application performance monitoring and error tracking | 0.2.14       | Not Started   | Developers using AppSignal for application monitoring | Requires AppSignal API key; NOT officially affiliated with AppSignal |
-| [twist](./experimental/twist/)         | Twist team messaging and collaboration platform integration     | 0.1.17       | Not Started   | Teams using Twist for asynchronous communication      | Requires Twist API bearer token and workspace ID                     |
+| Name                                                     | Description                                                     | Local Status | Remote Status     | Target Audience                                       | Notes                                                                |
+| -------------------------------------------------------- | --------------------------------------------------------------- | ------------ | ----------------- | ----------------------------------------------------- | -------------------------------------------------------------------- |
+| [appsignal](./experimental/appsignal/)                   | AppSignal application performance monitoring and error tracking | 0.2.14       | Not Started       | Developers using AppSignal for application monitoring | Requires AppSignal API key; NOT officially affiliated with AppSignal |
+| [twist](./experimental/twist/)                           | Twist team messaging and collaboration platform integration     | 0.1.17       | Not Started       | Teams using Twist for asynchronous communication      | Requires Twist API bearer token and workspace ID                     |
+| [pulsemcp-cms-admin](./experimental/pulsemcp-cms-admin/) | Internal API for managing PulseMCP newsletter content           | 0.0.1        | Not Yet Published | PulseMCP team for content management                  | Requires PULSEMCP_ADMIN_API_KEY; Internal use only                   |
 
 ## Contributing
 
