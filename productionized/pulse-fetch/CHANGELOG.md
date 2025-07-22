@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.13] - 2025-07-22
+
+### Fixed
+
+- Added missing @types/jsdom dependency to fix TypeScript build error in production
+  - The jsdom library was added for HTML cleaning but the type definitions were missing
+  - This caused build failures during npm publish with "Could not find a declaration file for module 'jsdom'"
+  - Now properly included in shared/devDependencies
+
+### Changed
+
+- Improved build error propagation in CI/CD pipeline
+  - Created robust build script that properly propagates TypeScript compilation errors
+  - Updated all MCP servers to use consistent build error handling
+  - This prevents silent build failures that were allowing TypeScript errors to pass undetected in CI
+
 ## [0.2.12] - 2025-07-22
 
 ### Added
