@@ -403,3 +403,9 @@ Whenever you make any sort of code change to an MCP server, make sure to update 
 - **File Staging for Version Bumps**: The `npm run stage-publish` command modifies multiple files that MUST be committed together: local/package.json, parent/package-lock.json, CHANGELOG.md, README.md, and MANUAL_TESTING.md. Never commit these files separately or CI will fail
 - **Changelog Language Precision**: Avoid language like "restored" or "fixed" in changelogs when describing functionality that was developed within the same PR. Use accurate language like "added" or "implemented" to reflect what actually happened
 - **Dependency Consistency in Monorepos**: When adding production dependencies, ensure they exist in both shared/package.json AND local/package.json for proper publishing. Dependencies only in the root package.json won't be available in published packages
+
+### Build Script Robustness
+
+- **TypeScript Build Error Propagation**: The traditional `cd shared && npm run build && cd ../local && npm run build` pattern fails silently because shell commands check only if `cd` succeeded, not if the build failed. This allowed TypeScript compilation errors to pass undetected in CI
+- **Dynamic Import Compatibility**: Avoid using dynamic imports with JSON files in build scripts. The `import(file, { assert: { type: 'json' } })` syntax is not consistently supported across Node.js versions. Use `readFileSync` + `JSON.parse` for better compatibility
+- **CI/CD TypeScript Dependency Checks**: Always ensure @types packages are included as devDependencies when using libraries that don't ship with their own types (like jsdom). The build may work locally with cached types but fail in CI/CD's clean environment
