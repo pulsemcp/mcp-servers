@@ -103,17 +103,17 @@ export const TEST_PAGES: PageTestCase[] = [
     description: 'ArXiv PDF - Binary content properly parsed with native strategy',
     expectedResults: {
       'Native Only': 'pass', // Native now handles PDFs correctly
-      'Firecrawl Only': 'pass', // Firecrawl might handle PDFs
+      'Firecrawl Only': 'fail', // Firecrawl doesn't support PDFs
       'BrightData Only': 'pass', // BrightData might handle PDFs
       'All Services (Cost Optimized)': 'pass', // Native should succeed
-      'All Services (Speed Optimized)': 'pass', // Should use Firecrawl
+      'All Services (Speed Optimized)': 'pass', // Should fallback to native after Firecrawl fails
     },
     expectedStrategies: {
       'Native Only': 'native', // Native can now parse PDFs
-      'Firecrawl Only': 'firecrawl',
+      'Firecrawl Only': 'none', // Firecrawl fails on PDFs
       'BrightData Only': 'brightdata',
       'All Services (Cost Optimized)': 'native', // Native should succeed on first try
-      'All Services (Speed Optimized)': 'firecrawl',
+      'All Services (Speed Optimized)': 'native', // Falls back to native after Firecrawl fails
     },
   },
 ];
