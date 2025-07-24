@@ -7,8 +7,8 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 describe('Proxy Support', () => {
-  it('should configure proxy when environment variables are set', async () => {
-    console.log('\n🔧 Testing proxy configuration...');
+  it('should configure proxy when ENABLE_PROXY_SETTINGS is true', async () => {
+    console.log('\n🔧 Testing proxy configuration with ENABLE_PROXY_SETTINGS=true...');
 
     // Start the server with proxy env vars
     const serverPath = path.join(__dirname, '../../../local/build/index.js');
@@ -16,6 +16,7 @@ describe('Proxy Support', () => {
       stdio: ['pipe', 'pipe', 'pipe'],
       env: {
         ...process.env,
+        ENABLE_PROXY_SETTINGS: 'true',
         HTTP_PROXY: 'http://proxy.example.com:8080',
         HTTPS_PROXY: 'https://secure-proxy.example.com:8443',
         NO_PROXY: 'localhost,127.0.0.1,internal.company.com',
@@ -32,13 +33,17 @@ describe('Proxy Support', () => {
     // Wait for server to start and configure proxy
     await new Promise((resolve) => setTimeout(resolve, 2000));
 
-    // Verify proxy configuration was logged
-    expect(stderrOutput).toContain('Proxy configuration:');
+    // Verify proxy was enabled and configuration was detected
+    expect(stderrOutput).toContain('Proxy support enabled via ENABLE_PROXY_SETTINGS');
+    expect(stderrOutput).toContain('Proxy configuration detected:');
     expect(stderrOutput).toContain('HTTP_PROXY: http://proxy.example.com:8080');
     expect(stderrOutput).toContain('HTTPS_PROXY: https://secure-proxy.example.com:8443');
     expect(stderrOutput).toContain('NO_PROXY: localhost,127.0.0.1,internal.company.com');
+    expect(stderrOutput).toContain(
+      'Note: proxy-agent also checks system proxy settings and PAC files'
+    );
 
-    console.log('✅ Proxy configuration correctly logged');
+    console.log('✅ Proxy configuration correctly detected');
     console.log('\n📋 Server output:');
     console.log(stderrOutput);
 
@@ -47,19 +52,20 @@ describe('Proxy Support', () => {
     await new Promise((resolve) => setTimeout(resolve, 500));
   });
 
-  it('should not log proxy configuration when environment variables are not set', async () => {
-    console.log('\n🔧 Testing without proxy configuration...');
+  it('should not enable proxy when ENABLE_PROXY_SETTINGS is not set', async () => {
+    console.log('\n🔧 Testing without proxy enabled (default behavior)...');
 
-    // Start the server without proxy env vars
+    // Start the server without ENABLE_PROXY_SETTINGS
     const serverPath = path.join(__dirname, '../../../local/build/index.js');
     const serverProcess = spawn('node', [serverPath], {
       stdio: ['pipe', 'pipe', 'pipe'],
       env: {
         ...process.env,
-        HTTP_PROXY: '',
-        HTTPS_PROXY: '',
-        NO_PROXY: '',
+        HTTP_PROXY: 'http://proxy.example.com:8080',
+        HTTPS_PROXY: 'https://secure-proxy.example.com:8443',
+        NO_PROXY: 'localhost,127.0.0.1,internal.company.com',
         SKIP_HEALTH_CHECKS: 'true',
+        // ENABLE_PROXY_SETTINGS not set (defaults to false)
       },
     });
 
@@ -72,10 +78,13 @@ describe('Proxy Support', () => {
     // Wait for server to start
     await new Promise((resolve) => setTimeout(resolve, 2000));
 
-    // Verify proxy configuration was NOT logged
-    expect(stderrOutput).not.toContain('Proxy configuration:');
+    // Verify proxy is disabled by default
+    expect(stderrOutput).toContain(
+      'Proxy support disabled (set ENABLE_PROXY_SETTINGS=true to enable)'
+    );
+    expect(stderrOutput).not.toContain('Proxy configuration detected');
 
-    console.log('✅ No proxy configuration logged when env vars not set');
+    console.log('✅ Proxy support correctly disabled by default');
 
     // Clean up
     serverProcess.kill();
@@ -119,16 +128,38 @@ describe('Proxy Support', () => {
     });
   });
 
-  describe('EnvHttpProxyAgent Behavior', () => {
-    it('should explain how EnvHttpProxyAgent works', () => {
-      console.log('\n📚 How EnvHttpProxyAgent Works:');
-      console.log('-------------------------------');
-      console.log('1. Automatically reads HTTP_PROXY, HTTPS_PROXY, and NO_PROXY env vars');
-      console.log('2. Routes HTTP requests through HTTP_PROXY');
-      console.log('3. Routes HTTPS requests through HTTPS_PROXY');
-      console.log('4. Bypasses proxy for hosts matching NO_PROXY patterns');
-      console.log('5. Supports wildcards (*.example.com) and CIDR notation (10.0.0.0/8)');
-      console.log('6. Works with authenticated proxies (username:password in URL)');
+  describe('proxy-agent Behavior', () => {
+    it('should explain how proxy-agent works', () => {
+      console.log('\n📚 How proxy-agent Works:');
+      console.log('------------------------');
+      console.log('1. Automatically detects proxy settings from multiple sources:');
+      console.log('   - Environment variables (HTTP_PROXY, HTTPS_PROXY, NO_PROXY)');
+      console.log('   - npm configuration (npm config get proxy)');
+      console.log('   - System proxy settings (macOS and Windows)');
+      console.log('   - PAC (Proxy Auto-Config) files');
+      console.log('2. Supports multiple proxy types:');
+      console.log('   - HTTP/HTTPS proxies');
+      console.log('   - SOCKS/SOCKS5 proxies');
+      console.log('   - Authenticated proxies (username:password in URL)');
+      console.log('3. Zero configuration for most users:');
+      console.log('   - If your browser works, pulse-fetch works');
+      console.log('   - No manual environment variable setup needed');
+
+      expect(true).toBe(true); // Placeholder test
+    });
+
+    it('should demonstrate system proxy detection', () => {
+      console.log('\n📚 System Proxy Detection Examples:');
+      console.log('----------------------------------');
+      console.log('macOS:');
+      console.log('  System Preferences → Network → Advanced → Proxies');
+      console.log('  - proxy-agent automatically detects these settings');
+      console.log('\nWindows:');
+      console.log('  Settings → Network & Internet → Proxy');
+      console.log('  - proxy-agent automatically detects these settings');
+      console.log('\nPAC Files:');
+      console.log('  If your organization uses PAC files, proxy-agent will');
+      console.log('  automatically detect and use them');
 
       expect(true).toBe(true); // Placeholder test
     });

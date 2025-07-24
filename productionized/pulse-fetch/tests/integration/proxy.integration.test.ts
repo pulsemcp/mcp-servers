@@ -71,12 +71,13 @@ describe('Proxy Integration Tests', () => {
     }
   });
 
-  it('should use different proxies for HTTP and HTTPS requests', async () => {
+  it('should use proxy-agent when ENABLE_PROXY_SETTINGS is true', async () => {
     const serverPath = path.join(__dirname, '../../local/build/index.js');
 
     client = new TestMCPClient({
       serverPath,
       env: {
+        ENABLE_PROXY_SETTINGS: 'true',
         HTTP_PROXY: `http://localhost:${HTTP_PROXY_PORT}`,
         HTTPS_PROXY: `http://localhost:${HTTPS_PROXY_PORT}`,
         SKIP_HEALTH_CHECKS: 'true',
@@ -86,7 +87,7 @@ describe('Proxy Integration Tests', () => {
 
     await client.connect();
 
-    // The proxy configuration happens at startup
+    // The proxy configuration happens at startup with proxy-agent
     // Server should be connected successfully with proxy configured
     expect(client).toBeDefined();
 
@@ -103,6 +104,7 @@ describe('Proxy Integration Tests', () => {
     client = new TestMCPClient({
       serverPath,
       env: {
+        ENABLE_PROXY_SETTINGS: 'true',
         HTTP_PROXY: `http://localhost:${HTTP_PROXY_PORT}`,
         HTTPS_PROXY: `http://localhost:${HTTPS_PROXY_PORT}`,
         NO_PROXY: 'localhost,127.0.0.1,*.internal.com',
@@ -131,6 +133,7 @@ describe('Proxy Integration Tests', () => {
     client = new TestMCPClient({
       serverPath,
       env: {
+        ENABLE_PROXY_SETTINGS: 'true',
         HTTP_PROXY: `http://localhost:${HTTP_PROXY_PORT}`,
         // No HTTPS_PROXY set
         SKIP_HEALTH_CHECKS: 'true',

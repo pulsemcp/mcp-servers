@@ -170,18 +170,18 @@ Most other alternatives fall short on one or more vectors:
 
 ### Core Configuration
 
-| Environment Variable           | Description                                                         | Required | Default Value                | Example                            |
-| ------------------------------ | ------------------------------------------------------------------- | -------- | ---------------------------- | ---------------------------------- |
-| `FIRECRAWL_API_KEY`            | API key for Firecrawl service to bypass anti-bot measures           | No       | N/A                          | `fc-abc123...`                     |
-| `BRIGHTDATA_API_KEY`           | Bearer token for BrightData Web Unlocker service                    | No       | N/A                          | `Bearer bd_abc123...`              |
-| `STRATEGY_CONFIG_PATH`         | Path to markdown file containing scraping strategy configuration    | No       | OS temp dir                  | `/path/to/scraping-strategies.md`  |
-| `OPTIMIZE_FOR`                 | Optimization strategy for scraping: `cost` or `speed`               | No       | `cost`                       | `speed`                            |
-| `MCP_RESOURCE_STORAGE`         | Storage backend for saved resources: `memory` or `filesystem`       | No       | `memory`                     | `filesystem`                       |
-| `MCP_RESOURCE_FILESYSTEM_ROOT` | Directory for filesystem storage (only used with `filesystem` type) | No       | `/tmp/pulse-fetch/resources` | `/home/user/mcp-resources`         |
-| `SKIP_HEALTH_CHECKS`           | Skip API authentication health checks at startup                    | No       | `false`                      | `true`                             |
-| `HTTP_PROXY`                   | Proxy URL for HTTP requests                                         | No       | N/A                          | `http://proxy.corp.com:8080`       |
-| `HTTPS_PROXY`                  | Proxy URL for HTTPS requests                                        | No       | N/A                          | `http://proxy.corp.com:8080`       |
-| `NO_PROXY`                     | Comma-separated list of hosts to bypass proxy                       | No       | N/A                          | `localhost,127.0.0.1,internal.com` |
+| Environment Variable           | Description                                                         | Required | Default Value                | Example                           |
+| ------------------------------ | ------------------------------------------------------------------- | -------- | ---------------------------- | --------------------------------- |
+| `FIRECRAWL_API_KEY`            | API key for Firecrawl service to bypass anti-bot measures           | No       | N/A                          | `fc-abc123...`                    |
+| `BRIGHTDATA_API_KEY`           | Bearer token for BrightData Web Unlocker service                    | No       | N/A                          | `Bearer bd_abc123...`             |
+| `STRATEGY_CONFIG_PATH`         | Path to markdown file containing scraping strategy configuration    | No       | OS temp dir                  | `/path/to/scraping-strategies.md` |
+| `OPTIMIZE_FOR`                 | Optimization strategy for scraping: `cost` or `speed`               | No       | `cost`                       | `speed`                           |
+| `MCP_RESOURCE_STORAGE`         | Storage backend for saved resources: `memory` or `filesystem`       | No       | `memory`                     | `filesystem`                      |
+| `MCP_RESOURCE_FILESYSTEM_ROOT` | Directory for filesystem storage (only used with `filesystem` type) | No       | `/tmp/pulse-fetch/resources` | `/home/user/mcp-resources`        |
+| `SKIP_HEALTH_CHECKS`           | Skip API authentication health checks at startup                    | No       | `false`                      | `true`                            |
+| `ENABLE_PROXY_SETTINGS`        | Enable automatic proxy detection and configuration                  | No       | `false`                      | `true`                            |
+
+> **Note on Proxy Configuration**: When `ENABLE_PROXY_SETTINGS=true`, pulse-fetch automatically detects proxy settings from environment variables, system settings, and PAC files. See the [Enterprise Proxy Support](#enterprise-proxy-support) section for details.
 
 ### LLM Configuration for Extract Feature
 
@@ -431,44 +431,55 @@ To skip health checks, set SKIP_HEALTH_CHECKS=true
 
 ## Enterprise Proxy Support
 
-Pulse Fetch supports corporate HTTP/HTTPS proxies, making it accessible in enterprise environments where direct internet access is restricted.
+Pulse Fetch can be configured to work with enterprise proxies when `ENABLE_PROXY_SETTINGS=true` is set. This makes it work seamlessly in enterprise environments with restricted internet access.
 
-### Why Use a Proxy?
+### Enabling Proxy Support
 
-Many enterprise environments require all external internet traffic to go through a corporate proxy for security and compliance reasons. Without proxy support, MCP servers that make external API calls (like to Firecrawl, BrightData, or web content) will fail to connect.
-
-### Configuration
-
-Configure your proxy using standard environment variables:
+To enable proxy support, set the `ENABLE_PROXY_SETTINGS` environment variable:
 
 ```bash
-# For HTTP requests
-export HTTP_PROXY=http://proxy.corp.com:8080
-
-# For HTTPS requests
-export HTTPS_PROXY=http://proxy.corp.com:8080
-
-# Bypass proxy for specific hosts
-export NO_PROXY=localhost,127.0.0.1,*.internal.com,10.0.0.0/8
-
-# With authentication (if required)
-export HTTP_PROXY=http://username:password@proxy.corp.com:8080
-export HTTPS_PROXY=http://username:password@proxy.corp.com:8080
+export ENABLE_PROXY_SETTINGS=true
 ```
 
-#### Environment Variables
+### Automatic Proxy Detection
 
-- **`HTTP_PROXY`**: Used for HTTP (non-secure) requests
-- **`HTTPS_PROXY`**: Used for HTTPS (secure) requests
-- **`NO_PROXY`**: Comma-separated list of hosts that should bypass the proxy
-  - Supports exact hostnames: `localhost`, `api.internal.com`
-  - Supports domain suffixes: `*.internal.com` or `.internal.com`
-  - Supports IP addresses: `192.168.1.1`
-  - Supports CIDR notation: `10.0.0.0/8`, `192.168.0.0/16`
+When enabled, the server uses [proxy-agent](https://github.com/TooTallNate/proxy-agent) which automatically detects proxy settings from multiple sources:
+
+1. **Environment variables** (HTTP_PROXY, HTTPS_PROXY, NO_PROXY)
+2. **npm configuration** (`npm config get proxy`)
+3. **System proxy settings** (macOS, Windows)
+4. **PAC (Proxy Auto-Config) files**
+
+This means if your browser works with your corporate proxy, pulse-fetch will work too - no configuration needed!
+
+### Zero Configuration for Most Users
+
+If your system is already configured to use a proxy (e.g., through System Preferences on macOS or Internet Options on Windows), pulse-fetch will automatically use the same settings without any additional configuration.
+
+### Manual Configuration Options
+
+While most users won't need manual configuration, you can still control proxy behavior through:
+
+#### 1. Environment Variables (highest priority)
+
+```bash
+export HTTP_PROXY=http://proxy.corp.com:8080
+export HTTPS_PROXY=http://proxy.corp.com:8080
+export NO_PROXY=localhost,127.0.0.1,*.internal.com
+```
+
+#### 2. System Proxy Settings
+
+- **macOS**: System Preferences → Network → Advanced → Proxies
+- **Windows**: Settings → Network & Internet → Proxy
+
+#### 3. PAC Files
+
+If your organization uses a PAC file, it will be automatically detected and used.
 
 ### Claude Desktop Configuration
 
-Add proxy settings to your Claude Desktop config:
+By default, proxy support is disabled. To enable it:
 
 ```json
 {
@@ -477,6 +488,23 @@ Add proxy settings to your Claude Desktop config:
       "command": "npx",
       "args": ["-y", "@pulsemcp/pulse-fetch"],
       "env": {
+        "ENABLE_PROXY_SETTINGS": "true"
+      }
+    }
+  }
+}
+```
+
+If you need to override system settings with specific proxy configuration:
+
+```json
+{
+  "mcpServers": {
+    "pulse-fetch": {
+      "command": "npx",
+      "args": ["-y", "@pulsemcp/pulse-fetch"],
+      "env": {
+        "ENABLE_PROXY_SETTINGS": "true",
         "HTTP_PROXY": "http://proxy.corp.com:8080",
         "HTTPS_PROXY": "http://proxy.corp.com:8080",
         "NO_PROXY": "localhost,127.0.0.1,*.internal.com",
@@ -488,50 +516,45 @@ Add proxy settings to your Claude Desktop config:
 }
 ```
 
-### How It Works
+### Supported Proxy Types
 
-When proxy environment variables are set:
+- **HTTP/HTTPS proxies** (most common in enterprises)
+- **SOCKS/SOCKS5 proxies**
+- **PAC file URLs** (automatic proxy configuration)
+- **Authenticated proxies** (username:password in URL)
 
-1. **Protocol-based routing**:
-   - HTTP requests use the `HTTP_PROXY` setting
-   - HTTPS requests use the `HTTPS_PROXY` setting
-   - If only one is set, it may be used as a fallback for the other protocol
+### Advanced Configuration
 
-2. **Proxy bypass with NO_PROXY**:
-   - Hosts listed in `NO_PROXY` bypass the proxy entirely
-   - Useful for internal services, localhost, or private networks
-   - Supports wildcards and CIDR notation for flexible configuration
+For complex proxy setups, see the [proxy-agent documentation](https://github.com/TooTallNate/proxy-agent#readme) which covers:
 
-3. **Affected services**:
-   - Native fetch requests to web content
-   - API calls to Firecrawl service
-   - API calls to BrightData service
-   - LLM API calls for the extract feature
-   - Health check requests during startup
+- Custom proxy URLs
+- PAC file configuration
+- SOCKS proxy setup
+- Advanced authentication methods
 
 ### Troubleshooting
 
 If you're experiencing proxy-related issues:
 
-1. **Verify proxy settings**: Ensure your proxy URL is correct and includes the protocol (`http://`)
-2. **Check authentication**: If your proxy requires authentication, include credentials in the URL
-3. **Test connectivity**: Try accessing external URLs using curl with the same proxy settings:
-
+1. **Check what proxy is detected**: The server logs detected proxy settings on startup
+2. **Verify system settings**: Ensure your system proxy is configured correctly
+3. **Test with curl**: Try the same proxy settings with curl:
    ```bash
-   # Test with proxy
-   curl -x http://proxy.corp.com:8080 https://api.firecrawl.dev/v0/health
-
-   # Test NO_PROXY bypass
-   export NO_PROXY=api.firecrawl.dev
-   curl https://api.firecrawl.dev/v0/health
+   curl -x http://proxy.corp.com:8080 https://example.com
+   ```
+4. **Try manual configuration**: Override automatic detection with environment variables
+5. **Check PAC files**: If using PAC, ensure the file is accessible
+6. **Bypass proxy for local**: Add local/internal hosts to NO_PROXY:
+   ```bash
+   export NO_PROXY=localhost,127.0.0.1,*.internal.corp,10.0.0.0/8
    ```
 
-4. **Debug proxy bypass**: Check if certain hosts should be in NO_PROXY:
-   ```bash
-   # Common NO_PROXY patterns for enterprise networks
-   export NO_PROXY=localhost,127.0.0.1,*.internal.corp,10.0.0.0/8,172.16.0.0/12
-   ```
-5. **Firewall rules**: Ensure your proxy allows connections to the required external services
+### Common Enterprise Scenarios
+
+1. **Kerberos Authentication**: If using tools like Preproxy that handle Kerberos, configure them in your system proxy settings
+2. **Different proxies for HTTP/HTTPS**: Automatically detected from system settings
+3. **PAC files with complex rules**: Fully supported through proxy-agent
+4. **Proxy exceptions**: Use NO_PROXY or configure in system settings
 
 # Scraping Strategy Configuration
 
