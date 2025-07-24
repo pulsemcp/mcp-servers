@@ -1,6 +1,6 @@
 {
   "name": "@pulsemcp/pulse-fetch",
-  "version": "0.2.13",
+  "version": "0.2.14",
   "description": "Local implementation of pulse-fetch MCP server",
   "main": "build/index.js",
   "type": "module",
@@ -35,6 +35,7 @@
     "jsdom": "^26.1.0",
     "openai": "^4.104.0",
     "pdf-parse": "^1.1.1",
+    "proxy-agent": "^6.5.0",
     "zod": "^3.24.1"
   },
   "devDependencies": {

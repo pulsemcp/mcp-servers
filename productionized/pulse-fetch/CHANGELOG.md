@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.14] - 2025-07-24
+
+### Added
+
+- Enterprise proxy support with opt-in configuration via ENABLE_PROXY_SETTINGS environment variable
+  - Disabled by default to avoid unexpected behavior in non-enterprise environments
+  - When enabled, automatically detects proxy settings using proxy-agent library:
+    - Environment variables (HTTP_PROXY, HTTPS_PROXY, NO_PROXY)
+    - npm configuration
+    - System proxy settings (macOS and Windows)
+    - PAC (Proxy Auto-Config) files
+  - Supports HTTP, HTTPS, SOCKS proxies and authenticated proxies
+  - All HTTP/HTTPS requests (native fetch, Firecrawl API, BrightData API, LLM APIs) respect proxy settings when enabled
+  - Zero configuration for users with system proxy settings (when ENABLE_PROXY_SETTINGS=true)
+  - Enables pulse-fetch to work seamlessly in corporate environments with restricted internet access
+  - Added comprehensive documentation section on enterprise proxy usage
+
 ## [0.2.13] - 2025-07-22
 
 ### Fixed
