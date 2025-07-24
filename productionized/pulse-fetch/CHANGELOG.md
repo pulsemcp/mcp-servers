@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Enterprise proxy support via standard environment variables
+  - HTTP_PROXY for HTTP requests, HTTPS_PROXY for HTTPS requests
+  - NO_PROXY support for bypassing proxy on specific hosts (supports wildcards and CIDR notation)
+  - All HTTP/HTTPS requests (native fetch, Firecrawl API, BrightData API, LLM APIs) now respect proxy settings
+  - Protocol-based routing ensures proper proxy usage based on request type
+  - Enables pulse-fetch to work in corporate environments with restricted internet access
+  - Supports authenticated proxies with username:password in the URL
+  - Uses Node.js's built-in undici EnvHttpProxyAgent for standards-compliant proxy behavior
+  - Added comprehensive documentation section on enterprise proxy usage
+
 ## [0.2.13] - 2025-07-22
 
 ### Fixed

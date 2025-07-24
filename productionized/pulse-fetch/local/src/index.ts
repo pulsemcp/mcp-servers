@@ -3,6 +3,29 @@
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { createMCPServer } from '../shared/index.js';
 import { runHealthChecks } from '../shared/healthcheck.js';
+import { setGlobalDispatcher, EnvHttpProxyAgent } from 'undici';
+
+// Configure proxy settings based on standard environment variables
+function configureProxy() {
+  // EnvHttpProxyAgent automatically reads and respects:
+  // - HTTP_PROXY/http_proxy for HTTP requests
+  // - HTTPS_PROXY/https_proxy for HTTPS requests
+  // - NO_PROXY/no_proxy for proxy exclusions
+  const proxyAgent = new EnvHttpProxyAgent();
+  setGlobalDispatcher(proxyAgent);
+
+  // Log proxy configuration for debugging
+  const httpProxy = process.env.HTTP_PROXY || process.env.http_proxy;
+  const httpsProxy = process.env.HTTPS_PROXY || process.env.https_proxy;
+  const noProxy = process.env.NO_PROXY || process.env.no_proxy;
+
+  if (httpProxy || httpsProxy) {
+    console.error('Proxy configuration:');
+    if (httpProxy) console.error(`  HTTP_PROXY: ${httpProxy}`);
+    if (httpsProxy) console.error(`  HTTPS_PROXY: ${httpsProxy}`);
+    if (noProxy) console.error(`  NO_PROXY: ${noProxy}`);
+  }
+}
 
 // Validate environment variables
 function validateEnvironment() {
@@ -41,6 +64,9 @@ function validateEnvironment() {
 }
 
 async function main() {
+  // Configure proxy before any HTTP requests
+  configureProxy();
+
   validateEnvironment();
 
   // Run health checks if SKIP_HEALTH_CHECKS is not set

@@ -23,6 +23,8 @@ This project is built and maintained by [PulseMCP](https://www.pulsemcp.com/).
     - [Local Setup](#local-setup)
     - [Remote Setup](#remote-setup)
 - [Development](#development)
+- [Authentication Health Checks](#authentication-health-checks)
+- [Enterprise Proxy Support](#enterprise-proxy-support)
 - [Scraping Strategy Configuration](#scraping-strategy-configuration)
 - [Extract Feature](#extract-feature)
 
@@ -168,15 +170,18 @@ Most other alternatives fall short on one or more vectors:
 
 ### Core Configuration
 
-| Environment Variable           | Description                                                         | Required | Default Value                | Example                           |
-| ------------------------------ | ------------------------------------------------------------------- | -------- | ---------------------------- | --------------------------------- |
-| `FIRECRAWL_API_KEY`            | API key for Firecrawl service to bypass anti-bot measures           | No       | N/A                          | `fc-abc123...`                    |
-| `BRIGHTDATA_API_KEY`           | Bearer token for BrightData Web Unlocker service                    | No       | N/A                          | `Bearer bd_abc123...`             |
-| `STRATEGY_CONFIG_PATH`         | Path to markdown file containing scraping strategy configuration    | No       | OS temp dir                  | `/path/to/scraping-strategies.md` |
-| `OPTIMIZE_FOR`                 | Optimization strategy for scraping: `cost` or `speed`               | No       | `cost`                       | `speed`                           |
-| `MCP_RESOURCE_STORAGE`         | Storage backend for saved resources: `memory` or `filesystem`       | No       | `memory`                     | `filesystem`                      |
-| `MCP_RESOURCE_FILESYSTEM_ROOT` | Directory for filesystem storage (only used with `filesystem` type) | No       | `/tmp/pulse-fetch/resources` | `/home/user/mcp-resources`        |
-| `SKIP_HEALTH_CHECKS`           | Skip API authentication health checks at startup                    | No       | `false`                      | `true`                            |
+| Environment Variable           | Description                                                         | Required | Default Value                | Example                            |
+| ------------------------------ | ------------------------------------------------------------------- | -------- | ---------------------------- | ---------------------------------- |
+| `FIRECRAWL_API_KEY`            | API key for Firecrawl service to bypass anti-bot measures           | No       | N/A                          | `fc-abc123...`                     |
+| `BRIGHTDATA_API_KEY`           | Bearer token for BrightData Web Unlocker service                    | No       | N/A                          | `Bearer bd_abc123...`              |
+| `STRATEGY_CONFIG_PATH`         | Path to markdown file containing scraping strategy configuration    | No       | OS temp dir                  | `/path/to/scraping-strategies.md`  |
+| `OPTIMIZE_FOR`                 | Optimization strategy for scraping: `cost` or `speed`               | No       | `cost`                       | `speed`                            |
+| `MCP_RESOURCE_STORAGE`         | Storage backend for saved resources: `memory` or `filesystem`       | No       | `memory`                     | `filesystem`                       |
+| `MCP_RESOURCE_FILESYSTEM_ROOT` | Directory for filesystem storage (only used with `filesystem` type) | No       | `/tmp/pulse-fetch/resources` | `/home/user/mcp-resources`         |
+| `SKIP_HEALTH_CHECKS`           | Skip API authentication health checks at startup                    | No       | `false`                      | `true`                             |
+| `HTTP_PROXY`                   | Proxy URL for HTTP requests                                         | No       | N/A                          | `http://proxy.corp.com:8080`       |
+| `HTTPS_PROXY`                  | Proxy URL for HTTPS requests                                        | No       | N/A                          | `http://proxy.corp.com:8080`       |
+| `NO_PROXY`                     | Comma-separated list of hosts to bypass proxy                       | No       | N/A                          | `localhost,127.0.0.1,internal.com` |
 
 ### LLM Configuration for Extract Feature
 
@@ -423,6 +428,110 @@ Authentication health check failures:
 
 To skip health checks, set SKIP_HEALTH_CHECKS=true
 ```
+
+## Enterprise Proxy Support
+
+Pulse Fetch supports corporate HTTP/HTTPS proxies, making it accessible in enterprise environments where direct internet access is restricted.
+
+### Why Use a Proxy?
+
+Many enterprise environments require all external internet traffic to go through a corporate proxy for security and compliance reasons. Without proxy support, MCP servers that make external API calls (like to Firecrawl, BrightData, or web content) will fail to connect.
+
+### Configuration
+
+Configure your proxy using standard environment variables:
+
+```bash
+# For HTTP requests
+export HTTP_PROXY=http://proxy.corp.com:8080
+
+# For HTTPS requests
+export HTTPS_PROXY=http://proxy.corp.com:8080
+
+# Bypass proxy for specific hosts
+export NO_PROXY=localhost,127.0.0.1,*.internal.com,10.0.0.0/8
+
+# With authentication (if required)
+export HTTP_PROXY=http://username:password@proxy.corp.com:8080
+export HTTPS_PROXY=http://username:password@proxy.corp.com:8080
+```
+
+#### Environment Variables
+
+- **`HTTP_PROXY`**: Used for HTTP (non-secure) requests
+- **`HTTPS_PROXY`**: Used for HTTPS (secure) requests
+- **`NO_PROXY`**: Comma-separated list of hosts that should bypass the proxy
+  - Supports exact hostnames: `localhost`, `api.internal.com`
+  - Supports domain suffixes: `*.internal.com` or `.internal.com`
+  - Supports IP addresses: `192.168.1.1`
+  - Supports CIDR notation: `10.0.0.0/8`, `192.168.0.0/16`
+
+### Claude Desktop Configuration
+
+Add proxy settings to your Claude Desktop config:
+
+```json
+{
+  "mcpServers": {
+    "pulse-fetch": {
+      "command": "npx",
+      "args": ["-y", "@pulsemcp/pulse-fetch"],
+      "env": {
+        "HTTP_PROXY": "http://proxy.corp.com:8080",
+        "HTTPS_PROXY": "http://proxy.corp.com:8080",
+        "NO_PROXY": "localhost,127.0.0.1,*.internal.com",
+        "FIRECRAWL_API_KEY": "your-api-key",
+        "BRIGHTDATA_API_KEY": "your-bearer-token"
+      }
+    }
+  }
+}
+```
+
+### How It Works
+
+When proxy environment variables are set:
+
+1. **Protocol-based routing**:
+   - HTTP requests use the `HTTP_PROXY` setting
+   - HTTPS requests use the `HTTPS_PROXY` setting
+   - If only one is set, it may be used as a fallback for the other protocol
+
+2. **Proxy bypass with NO_PROXY**:
+   - Hosts listed in `NO_PROXY` bypass the proxy entirely
+   - Useful for internal services, localhost, or private networks
+   - Supports wildcards and CIDR notation for flexible configuration
+
+3. **Affected services**:
+   - Native fetch requests to web content
+   - API calls to Firecrawl service
+   - API calls to BrightData service
+   - LLM API calls for the extract feature
+   - Health check requests during startup
+
+### Troubleshooting
+
+If you're experiencing proxy-related issues:
+
+1. **Verify proxy settings**: Ensure your proxy URL is correct and includes the protocol (`http://`)
+2. **Check authentication**: If your proxy requires authentication, include credentials in the URL
+3. **Test connectivity**: Try accessing external URLs using curl with the same proxy settings:
+
+   ```bash
+   # Test with proxy
+   curl -x http://proxy.corp.com:8080 https://api.firecrawl.dev/v0/health
+
+   # Test NO_PROXY bypass
+   export NO_PROXY=api.firecrawl.dev
+   curl https://api.firecrawl.dev/v0/health
+   ```
+
+4. **Debug proxy bypass**: Check if certain hosts should be in NO_PROXY:
+   ```bash
+   # Common NO_PROXY patterns for enterprise networks
+   export NO_PROXY=localhost,127.0.0.1,*.internal.corp,10.0.0.0/8,172.16.0.0/12
+   ```
+5. **Firewall rules**: Ensure your proxy allows connections to the required external services
 
 # Scraping Strategy Configuration
 
