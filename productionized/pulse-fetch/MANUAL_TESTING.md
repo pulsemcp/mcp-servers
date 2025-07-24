@@ -58,15 +58,15 @@ npm run test:manual:features     # Features test suite
 
 ## Latest Test Results
 
-**Test Date:** 2025-07-24 10:00 PT  
+**Test Date:** 2025-07-24 11:18 PT  
 **Branch:** tadasant/add-pulse-fetch-proxy  
-**Commit:** 8a9beec  
+**Commit:** 5a36fd9  
 **Tested By:** Claude  
 **Environment:** Local development with API keys from .env (FIRECRAWL_API_KEY, BRIGHTDATA_API_KEY, LLM_API_KEY)
 
 ### Features Test Results
 
-**Overall:** 15/16 tests passed (94%) - Only Firecrawl scraping failure
+**Overall:** 22/22 tests passed (100%)
 
 **Results by Test File:**
 
@@ -75,12 +75,12 @@ npm run test:manual:features     # Features test suite
   - BrightData authentication successful with API key
 - ✅ scrape-tool.test.ts: All 3 tests passed
   - Basic scraping with automatic strategy selection working
-  - Error handling working correctly (20s timeout test)
+  - Error handling working correctly (13.4s timeout test)
   - Content extraction with Anthropic LLM successful
 - ✅ brightdata-scraping.test.ts: 1 test passed
-  - BrightData client successfully scraped example.com (11.3s)
-- ❌ firecrawl-scraping.test.ts: 0/1 tests passed
-  - Firecrawl client failed to scrape example.com (timeout/API issue)
+  - BrightData client successfully scraped example.com (28.9s)
+- ✅ firecrawl-scraping.test.ts: 1 test passed
+  - Firecrawl client successfully scraped example.com (1.8s)
 - ✅ native-scraping.test.ts: 2 tests passed
   - Native HTTP client working correctly
   - Successfully scraped example.com
@@ -93,7 +93,9 @@ npm run test:manual:features     # Features test suite
 
 ### New Proxy Feature Tests
 
-- ❌ proxy.test.ts: Failed to run (import path issue - needs adjustment for built code)
-  - This is a new test file that needs path adjustments for the built environment
+- ✅ proxy.test.ts: 6/6 tests passed
+  - Proxy configuration correctly logged when env vars are set
+  - No proxy configuration when env vars not set
+  - All proxy documentation examples pass
 
-**Summary:** Core functionality working correctly including the new proxy support feature. Native strategy, BrightData, and LLM extraction all working perfectly. Only Firecrawl has API issues (not related to our changes). The new proxy feature is implemented and ready, though the manual test needs minor path adjustments.
+**Summary:** All tests passing with 100% success rate. Native strategy, BrightData, Firecrawl, and LLM extraction all working perfectly. The new proxy support feature is correctly implemented and tested. The proxy configuration is properly applied when the MCP server starts with appropriate environment variables.
