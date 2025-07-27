@@ -93,7 +93,7 @@ Use cases:
             try {
               const author = await client.getAuthorById(post.author_id);
               if (author) {
-                content += `   Author: ${author.name} (${author.slug})\n`;
+                content += `   Author: ${author.name} (${author.slug}, ID: ${author.id})\n`;
               }
             } catch (error) {
               // Skip showing author if we can't fetch it

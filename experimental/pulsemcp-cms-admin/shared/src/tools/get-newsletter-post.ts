@@ -85,7 +85,7 @@ Use cases:
         content += `**Status:** ${post.status} | **Category:** ${post.category}\n`;
 
         if (authorSlug && authorName) {
-          content += `**Author:** ${authorName} (${authorSlug})\n`;
+          content += `**Author:** ${authorName} (${authorSlug}, ID: ${post.author_id})\n`;
         }
 
         content += `**Created:** ${new Date(post.created_at).toLocaleDateString()}\n`;
@@ -135,36 +135,36 @@ Use cases:
         }
 
         if (post.featured_mcp_server_ids && post.featured_mcp_server_ids.length > 0) {
-          const serverSlugs: string[] = [];
+          const serverInfo: string[] = [];
           for (const serverId of post.featured_mcp_server_ids) {
             try {
               const server = await client.getMCPServerById(serverId);
               if (server) {
-                serverSlugs.push(server.slug);
+                serverInfo.push(`${server.slug} (ID: ${server.id})`);
               }
             } catch (error) {
               console.error(`Failed to fetch MCP server ${serverId}:`, error);
             }
           }
-          if (serverSlugs.length > 0) {
-            content += `- **Featured MCP Servers:** ${serverSlugs.join(', ')}\n`;
+          if (serverInfo.length > 0) {
+            content += `- **Featured MCP Servers:** ${serverInfo.join(', ')}\n`;
           }
         }
 
         if (post.featured_mcp_client_ids && post.featured_mcp_client_ids.length > 0) {
-          const clientSlugs: string[] = [];
+          const clientInfo: string[] = [];
           for (const clientId of post.featured_mcp_client_ids) {
             try {
               const mcpClient = await client.getMCPClientById(clientId);
               if (mcpClient) {
-                clientSlugs.push(mcpClient.slug);
+                clientInfo.push(`${mcpClient.slug} (ID: ${mcpClient.id})`);
               }
             } catch (error) {
               console.error(`Failed to fetch MCP client ${clientId}:`, error);
             }
           }
-          if (clientSlugs.length > 0) {
-            content += `- **Featured MCP Clients:** ${clientSlugs.join(', ')}\n`;
+          if (clientInfo.length > 0) {
+            content += `- **Featured MCP Clients:** ${clientInfo.join(', ')}\n`;
           }
         }
 

@@ -98,7 +98,7 @@ describe('Newsletter Tools', () => {
       expect(result.content[0].type).toBe('text');
       expect(result.content[0].text).toContain('Found 2 newsletter posts (page 1 of 2)');
       expect(result.content[0].text).toContain('First Post');
-      expect(result.content[0].text).toContain('John Doe (john-doe)'); // Now includes slug
+      expect(result.content[0].text).toContain('John Doe (john-doe, ID: 1)'); // Now includes slug and ID
       expect(result.content[0].text).toContain('A brief summary');
     });
 
@@ -178,10 +178,12 @@ describe('Newsletter Tools', () => {
       expect(result.content[0].type).toBe('text');
       const text = result.content[0].text;
       expect(text).toContain('# Test Post');
-      expect(text).toContain('Jane Smith (jane-smith)'); // Now includes slug
+      expect(text).toContain('Jane Smith (jane-smith, ID: 1)'); // Now includes slug and ID
       expect(text).toContain('This is the content');
       expect(text).toContain('- **Image URL:** https://example.com/image.jpg');
-      expect(text).toContain('- **Featured MCP Servers:** server-one, server-two, server-three'); // Now shows slugs
+      expect(text).toContain(
+        '- **Featured MCP Servers:** server-one (ID: 1), server-two (ID: 2), server-three (ID: 3)'
+      ); // Now shows slugs and IDs
     });
   });
 
@@ -427,7 +429,7 @@ describe('Newsletter Tools', () => {
       expect(result.content[0].type).toBe('text');
       expect(result.content[0].text).toContain('Found 2 authors (page 1 of 1)');
       expect(result.content[0].text).toContain('John Doe');
-      expect(result.content[0].text).toContain('**Slug:** john-doe');
+      expect(result.content[0].text).toContain('**Slug:** john-doe (ID: 1)');
       expect(result.content[0].text).toContain('A prolific writer');
       expect(result.content[0].text).toContain('Jane Smith');
     });

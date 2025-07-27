@@ -70,7 +70,7 @@ Use cases:
         } else {
           response.authors.forEach((author) => {
             content += `## ${author.name}\n`;
-            content += `**Slug:** ${author.slug}\n`;
+            content += `**Slug:** ${author.slug} (ID: ${author.id})\n`;
 
             if (author.bio) {
               content += `**Bio:** ${author.bio}\n`;
