@@ -33,9 +33,15 @@ export interface IPulseMCPAdminClient {
 
   getAuthorBySlug(slug: string): Promise<Author>;
 
+  getAuthorById(id: number): Promise<Author | null>;
+
   getMCPServerBySlug(slug: string): Promise<MCPServer>;
 
+  getMCPServerById(id: number): Promise<MCPServer | null>;
+
   getMCPClientBySlug(slug: string): Promise<MCPClient>;
+
+  getMCPClientById(id: number): Promise<MCPClient | null>;
 }
 
 // PulseMCP Admin API client implementation
@@ -88,6 +94,11 @@ export class PulseMCPAdminClient implements IPulseMCPAdminClient {
     return getAuthorBySlug(this.apiKey, this.baseUrl, slug);
   }
 
+  async getAuthorById(id: number): Promise<Author | null> {
+    const { getAuthorById } = await import('./pulsemcp-admin-client/lib/get-author-by-id.js');
+    return getAuthorById(this.apiKey, this.baseUrl, id);
+  }
+
   async getMCPServerBySlug(slug: string): Promise<MCPServer> {
     const { getMCPServerBySlug } = await import(
       './pulsemcp-admin-client/lib/get-mcp-server-by-slug.js'
@@ -95,11 +106,25 @@ export class PulseMCPAdminClient implements IPulseMCPAdminClient {
     return getMCPServerBySlug(this.apiKey, this.baseUrl, slug);
   }
 
+  async getMCPServerById(id: number): Promise<MCPServer | null> {
+    const { getMCPServerById } = await import(
+      './pulsemcp-admin-client/lib/get-mcp-server-by-id.js'
+    );
+    return getMCPServerById(this.apiKey, this.baseUrl, id);
+  }
+
   async getMCPClientBySlug(slug: string): Promise<MCPClient> {
     const { getMCPClientBySlug } = await import(
       './pulsemcp-admin-client/lib/get-mcp-client-by-slug.js'
     );
     return getMCPClientBySlug(this.apiKey, this.baseUrl, slug);
+  }
+
+  async getMCPClientById(id: number): Promise<MCPClient | null> {
+    const { getMCPClientById } = await import(
+      './pulsemcp-admin-client/lib/get-mcp-client-by-id.js'
+    );
+    return getMCPClientById(this.apiKey, this.baseUrl, id);
   }
 }
 

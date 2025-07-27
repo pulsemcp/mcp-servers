@@ -22,36 +22,18 @@ const GetNewsletterPostsSchema = z.object({
 export function getNewsletterPosts(_server: Server, clientFactory: ClientFactory) {
   return {
     name: 'get_newsletter_posts',
-    description: `Retrieve a paginated list of newsletter posts from the PulseMCP CMS. This tool provides comprehensive search and filtering capabilities to find existing content, check post statuses, and browse the newsletter archive.
+    description: `Retrieve a paginated list of newsletter posts from the PulseMCP CMS. Returns formatted markdown with post summaries and metadata.
 
-Example response:
-{
-  "posts": [
-    {
-      "title": "Introducing the Claude MCP Protocol",
-      "slug": "introducing-claude-mcp-protocol",
-      "status": "live",
-      "category": "newsletter",
-      "author": { "name": "Sarah Chen" },
-      "created_at": "2024-01-15T10:30:00Z",
-      "short_description": "Learn about the new Model Context Protocol and how it enables powerful AI integrations"
-    },
-    {
-      "title": "Best Practices for MCP Server Development",
-      "slug": "mcp-server-best-practices",
-      "status": "draft",
-      "category": "newsletter",
-      "author": { "name": "John Smith" },
-      "created_at": "2024-01-12T14:20:00Z",
-      "short_description": "A comprehensive guide to building production-ready MCP servers"
-    }
-  ],
-  "pagination": {
-    "current_page": 1,
-    "total_pages": 5,
-    "total_count": 47
-  }
-}
+The response is formatted as markdown with:
+- Total count and pagination info
+- Numbered list of posts, each showing:
+  - Title and slug
+  - Status and category
+  - Author name (if available)
+  - Created date
+  - Short description (if available)
+
+Note: The list view does NOT include post body content. Use get_newsletter_post to retrieve full post details.
 
 Status meanings:
 - draft: Unpublished posts that are being written or edited
@@ -102,18 +84,29 @@ Use cases:
 
         content += ':\n\n';
 
-        response.posts.forEach((post, index) => {
+        for (const [index, post] of response.posts.entries()) {
           content += `${index + 1}. **${post.title}** (${post.slug})\n`;
           content += `   Status: ${post.status} | Category: ${post.category}\n`;
-          if (post.author) {
-            content += `   Author: ${post.author.name}\n`;
+
+          // Fetch author details if we have an author_id
+          if (post.author_id) {
+            try {
+              const author = await client.getAuthorById(post.author_id);
+              if (author) {
+                content += `   Author: ${author.name} (${author.slug}, ID: ${author.id})\n`;
+              }
+            } catch (error) {
+              // Skip showing author if we can't fetch it
+              console.error(`Failed to fetch author ${post.author_id}:`, error);
+            }
           }
+
           content += `   Created: ${new Date(post.created_at).toLocaleDateString()}\n`;
           if (post.short_description) {
             content += `   ${post.short_description}\n`;
           }
           content += '\n';
-        });
+        }
 
         return {
           content: [

@@ -16,36 +16,17 @@ const GetAuthorsSchema = z.object({
 export function getAuthors(_server: Server, clientFactory: ClientFactory) {
   return {
     name: 'get_authors',
-    description: `Retrieve a list of authors from the PulseMCP CMS who can create newsletter posts. This tool is essential for finding the correct author_slug to use when creating new posts with the draft_newsletter_post tool.
+    description: `Retrieve a list of authors from the PulseMCP CMS who can create newsletter posts. Returns formatted markdown with author details.
 
-Example response:
-{
-  "authors": [
-    {
-      "id": 1,
-      "name": "Sarah Chen",
-      "slug": "sarah-chen",
-      "bio": "Senior Developer Advocate specializing in AI integrations and MCP",
-      "avatar_url": "https://cdn.pulsemcp.com/authors/sarah-chen.jpg",
-      "created_at": "2023-06-15T08:00:00Z",
-      "updated_at": "2024-01-10T12:30:00Z"
-    },
-    {
-      "id": 2,
-      "name": "John Smith",
-      "slug": "john-smith",
-      "bio": "Technical Writer focused on developer documentation",
-      "avatar_url": "https://cdn.pulsemcp.com/authors/john-smith.jpg",
-      "created_at": "2023-07-20T10:00:00Z",
-      "updated_at": "2024-01-08T15:45:00Z"
-    }
-  ],
-  "pagination": {
-    "current_page": 1,
-    "total_pages": 3,
-    "total_count": 12
-  }
-}
+The response is formatted as markdown with:
+- Total count and pagination info
+- Author entries, each showing:
+  - Name (as section header)
+  - Slug (required for creating/updating posts)
+  - Bio (if available)
+  - Avatar image URL (if available)
+  - Created date
+
 
 Use cases:
 - Find available authors before creating a new newsletter post
@@ -89,7 +70,7 @@ Use cases:
         } else {
           response.authors.forEach((author) => {
             content += `## ${author.name}\n`;
-            content += `**Slug:** ${author.slug}\n`;
+            content += `**Slug:** ${author.slug} (ID: ${author.id})\n`;
 
             if (author.bio) {
               content += `**Bio:** ${author.bio}\n`;

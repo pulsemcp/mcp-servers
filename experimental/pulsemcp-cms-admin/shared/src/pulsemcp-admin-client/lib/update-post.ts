@@ -30,8 +30,15 @@ export async function updatePost(
   if (params.description_tag !== undefined)
     formData.append('post[description_tag]', params.description_tag);
   if (params.last_updated !== undefined) formData.append('post[last_updated]', params.last_updated);
-  if (params.table_of_contents !== undefined)
-    formData.append('post[table_of_contents]', JSON.stringify(params.table_of_contents));
+  if (params.table_of_contents !== undefined) {
+    // If table_of_contents is already a string (HTML), send it as-is
+    // If it's an object/array, stringify it
+    const tocValue =
+      typeof params.table_of_contents === 'string'
+        ? params.table_of_contents
+        : JSON.stringify(params.table_of_contents);
+    formData.append('post[table_of_contents]', tocValue);
+  }
 
   // Handle arrays for featured servers/clients
   if (params.featured_mcp_server_ids !== undefined) {

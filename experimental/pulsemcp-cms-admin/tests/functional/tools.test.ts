@@ -53,7 +53,7 @@ describe('Newsletter Tools', () => {
 
       const mockClient: IPulseMCPAdminClient = {
         getPosts: vi.fn().mockResolvedValue({
-          posts: mockPosts,
+          posts: mockPosts.map((p) => ({ ...p, author: undefined })), // Remove author objects
           pagination: {
             current_page: 1,
             total_pages: 2,
@@ -66,8 +66,29 @@ describe('Newsletter Tools', () => {
         uploadImage: vi.fn(),
         getAuthors: vi.fn(),
         getAuthorBySlug: vi.fn(),
+        getAuthorById: vi.fn().mockImplementation((id: number) => {
+          const authors = [
+            {
+              id: 1,
+              slug: 'john-doe',
+              name: 'John Doe',
+              created_at: '2024-01-01T00:00:00Z',
+              updated_at: '2024-01-01T00:00:00Z',
+            },
+            {
+              id: 2,
+              slug: 'jane-smith',
+              name: 'Jane Smith',
+              created_at: '2024-01-01T00:00:00Z',
+              updated_at: '2024-01-01T00:00:00Z',
+            },
+          ];
+          return Promise.resolve(authors.find((a) => a.id === id) || null);
+        }),
         getMCPServerBySlug: vi.fn(),
+        getMCPServerById: vi.fn(),
         getMCPClientBySlug: vi.fn(),
+        getMCPClientById: vi.fn(),
       };
 
       const tool = getNewsletterPosts(mockServer, () => mockClient);
@@ -77,7 +98,7 @@ describe('Newsletter Tools', () => {
       expect(result.content[0].type).toBe('text');
       expect(result.content[0].text).toContain('Found 2 newsletter posts (page 1 of 2)');
       expect(result.content[0].text).toContain('First Post');
-      expect(result.content[0].text).toContain('John Doe');
+      expect(result.content[0].text).toContain('John Doe (john-doe, ID: 1)'); // Now includes slug and ID
       expect(result.content[0].text).toContain('A brief summary');
     });
 
@@ -90,8 +111,11 @@ describe('Newsletter Tools', () => {
         uploadImage: vi.fn(),
         getAuthors: vi.fn(),
         getAuthorBySlug: vi.fn(),
+        getAuthorById: vi.fn(),
         getMCPServerBySlug: vi.fn(),
+        getMCPServerById: vi.fn(),
         getMCPClientBySlug: vi.fn(),
+        getMCPClientById: vi.fn(),
       };
 
       const tool = getNewsletterPosts(mockServer, () => mockClient);
@@ -114,7 +138,6 @@ describe('Newsletter Tools', () => {
         category: 'newsletter',
         created_at: '2024-01-15T00:00:00Z',
         updated_at: '2024-01-16T00:00:00Z',
-        author: { id: 1, name: 'Jane Smith' },
         short_description: 'Test summary',
         image_url: 'https://example.com/image.jpg',
         featured_mcp_server_ids: [1, 2, 3],
@@ -128,8 +151,24 @@ describe('Newsletter Tools', () => {
         uploadImage: vi.fn(),
         getAuthors: vi.fn(),
         getAuthorBySlug: vi.fn(),
+        getAuthorById: vi.fn().mockResolvedValue({
+          id: 1,
+          slug: 'jane-smith',
+          name: 'Jane Smith',
+          created_at: '2024-01-01T00:00:00Z',
+          updated_at: '2024-01-01T00:00:00Z',
+        }),
         getMCPServerBySlug: vi.fn(),
+        getMCPServerById: vi.fn().mockImplementation((id: number) => {
+          const servers = [
+            { id: 1, slug: 'server-one', name: 'Server One' },
+            { id: 2, slug: 'server-two', name: 'Server Two' },
+            { id: 3, slug: 'server-three', name: 'Server Three' },
+          ];
+          return Promise.resolve(servers.find((s) => s.id === id) || null);
+        }),
         getMCPClientBySlug: vi.fn(),
+        getMCPClientById: vi.fn(),
       };
 
       const tool = getNewsletterPost(mockServer, () => mockClient);
@@ -139,10 +178,12 @@ describe('Newsletter Tools', () => {
       expect(result.content[0].type).toBe('text');
       const text = result.content[0].text;
       expect(text).toContain('# Test Post');
-      expect(text).toContain('Jane Smith');
+      expect(text).toContain('Jane Smith (jane-smith, ID: 1)'); // Now includes slug and ID
       expect(text).toContain('This is the content');
       expect(text).toContain('- **Image URL:** https://example.com/image.jpg');
-      expect(text).toContain('- **Featured MCP Servers:** 1, 2, 3');
+      expect(text).toContain(
+        '- **Featured MCP Servers:** server-one (ID: 1), server-two (ID: 2), server-three (ID: 3)'
+      ); // Now shows slugs and IDs
     });
   });
 
@@ -388,7 +429,7 @@ describe('Newsletter Tools', () => {
       expect(result.content[0].type).toBe('text');
       expect(result.content[0].text).toContain('Found 2 authors (page 1 of 1)');
       expect(result.content[0].text).toContain('John Doe');
-      expect(result.content[0].text).toContain('**Slug:** john-doe');
+      expect(result.content[0].text).toContain('**Slug:** john-doe (ID: 1)');
       expect(result.content[0].text).toContain('A prolific writer');
       expect(result.content[0].text).toContain('Jane Smith');
     });

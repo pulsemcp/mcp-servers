@@ -13,10 +13,10 @@ Manual tests require:
 
 ### Latest Test Run
 
-**Date:** 2025-01-22  
-**Commit:** a42888b  
+**Date:** 2025-01-27  
+**Commit:** 9f81630  
 **Status:** Fully Passing ✅  
-**Notes:** All manual tests are passing with real API calls for all resources (posts, authors, MCP servers, and MCP clients).
+**Notes:** All manual tests passing with enhanced output format showing both slugs and IDs (e.g., "slug-name (ID: 123)"). Fixed double-escaping of table_of_contents HTML strings.
 
 **Test Results:**
 

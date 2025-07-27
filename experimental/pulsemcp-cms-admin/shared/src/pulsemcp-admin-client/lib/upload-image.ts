@@ -18,11 +18,9 @@ export async function uploadImage(
   // Add file to form data
   formData.append('file', blob, fileName);
 
-  // Add folder path that includes the post slug
-  formData.append('folder', `newsletter/${postSlug}`);
-
-  // Add the full filepath
-  formData.append('filepath', `newsletter/${postSlug}/${fileName}`);
+  // Add folder and filepath as documented in the API
+  formData.append('folder', `posts/${postSlug}`);
+  formData.append('filepath', fileName);
 
   const response = await fetch(url.toString(), {
     method: 'POST',

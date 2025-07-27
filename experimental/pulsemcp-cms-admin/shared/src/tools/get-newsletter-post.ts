@@ -14,31 +14,25 @@ const GetNewsletterPostSchema = z.object({
 export function getNewsletterPost(_server: Server, clientFactory: ClientFactory) {
   return {
     name: 'get_newsletter_post',
-    description: `Retrieve complete details for a specific newsletter post by its unique slug identifier. This tool returns the full HTML content, metadata, SEO fields, and all associated information for a single post.
+    description: `Retrieve complete details for a specific newsletter post by its unique slug identifier. Returns formatted markdown with all post metadata and content.
 
-Example response:
-{
-  "id": 42,
-  "title": "Introducing the Claude MCP Protocol",
-  "slug": "introducing-claude-mcp-protocol",
-  "body": "<h2>What is MCP?</h2><p>The Model Context Protocol (MCP) is a new standard...</p>",
-  "status": "live",
-  "category": "newsletter",
-  "author": {
-    "id": 1,
-    "name": "Sarah Chen"
-  },
-  "created_at": "2024-01-15T10:30:00Z",
-  "updated_at": "2024-01-16T14:20:00Z",
-  "short_description": "Learn about the new Model Context Protocol and how it enables powerful AI integrations",
-  "image_url": "https://cdn.pulsemcp.com/posts/mcp-intro/hero.png",
-  "preview_image_url": "https://cdn.pulsemcp.com/posts/mcp-intro/preview.png",
-  "share_image": "https://cdn.pulsemcp.com/posts/mcp-intro/social.png",
-  "title_tag": "Introducing Claude MCP Protocol - PulseMCP Newsletter",
-  "description_tag": "Discover the Model Context Protocol (MCP) and learn how to build powerful AI integrations with Claude",
-  "featured_mcp_server_ids": [12, 15, 18],
-  "featured_mcp_client_ids": [3, 7]
-}
+The response is formatted as markdown with sections for:
+- Post title and basic metadata (slug, status, category, author, dates)
+- Summary/short description
+- Full HTML content (body field) as raw HTML
+- Complete metadata including all URLs, SEO tags, and featured items
+- Table of contents (if available) as raw HTML
+
+All available fields from the post are included:
+- title, slug, status, category
+- author (id and name)
+- created_at, updated_at, last_updated
+- short_title, short_description
+- body (raw HTML content)
+- table_of_contents (raw HTML)
+- image_url, preview_image_url, share_image
+- title_tag, description_tag
+- featured_mcp_server_ids, featured_mcp_client_ids
 
 Status meanings:
 - draft: Unpublished posts that are being written or edited
@@ -68,17 +62,44 @@ Use cases:
       try {
         const post = await client.getPost(validatedArgs.slug);
 
+        // Fetch author details if we have an author_id
+        let authorSlug: string | undefined;
+        let authorName: string | undefined;
+
+        if (post.author_id) {
+          try {
+            const author = await client.getAuthorById(post.author_id);
+            if (author) {
+              authorSlug = author.slug;
+              authorName = author.name;
+            }
+          } catch (error) {
+            // If we can't fetch author, we'll just skip showing author info
+            console.error('Failed to fetch author details:', error);
+          }
+        }
+
         // Format the response for MCP
         let content = `# ${post.title}\n\n`;
         content += `**Slug:** ${post.slug}\n`;
         content += `**Status:** ${post.status} | **Category:** ${post.category}\n`;
 
-        if (post.author) {
-          content += `**Author:** ${post.author.name}\n`;
+        if (authorSlug && authorName) {
+          content += `**Author:** ${authorName} (${authorSlug}, ID: ${post.author_id})\n`;
         }
 
         content += `**Created:** ${new Date(post.created_at).toLocaleDateString()}\n`;
-        content += `**Updated:** ${new Date(post.updated_at).toLocaleDateString()}\n\n`;
+        content += `**Updated:** ${new Date(post.updated_at).toLocaleDateString()}\n`;
+
+        if (post.last_updated) {
+          content += `**Last Updated:** ${post.last_updated}\n`;
+        }
+
+        content += '\n';
+
+        if (post.short_title) {
+          content += `**Short Title:** ${post.short_title}\n`;
+        }
 
         if (post.short_description) {
           content += `**Summary:** ${post.short_description}\n\n`;
@@ -87,7 +108,11 @@ Use cases:
         if (post.body) {
           content += `## Content\n\n${post.body}\n\n`;
         } else {
-          content += `## Content\n\n*Content not available in preview*\n\n`;
+          content += `## Content\n\n*Content not available*\n\n`;
+        }
+
+        if (post.table_of_contents) {
+          content += `## Table of Contents\n\n${post.table_of_contents}\n\n`;
         }
 
         // Add metadata section
@@ -110,10 +135,37 @@ Use cases:
         }
 
         if (post.featured_mcp_server_ids && post.featured_mcp_server_ids.length > 0) {
-          content += `- **Featured MCP Servers:** ${post.featured_mcp_server_ids.join(', ')}\n`;
+          const serverInfo: string[] = [];
+          for (const serverId of post.featured_mcp_server_ids) {
+            try {
+              const server = await client.getMCPServerById(serverId);
+              if (server) {
+                serverInfo.push(`${server.slug} (ID: ${server.id})`);
+              }
+            } catch (error) {
+              console.error(`Failed to fetch MCP server ${serverId}:`, error);
+            }
+          }
+          if (serverInfo.length > 0) {
+            content += `- **Featured MCP Servers:** ${serverInfo.join(', ')}\n`;
+          }
         }
+
         if (post.featured_mcp_client_ids && post.featured_mcp_client_ids.length > 0) {
-          content += `- **Featured MCP Clients:** ${post.featured_mcp_client_ids.join(', ')}\n`;
+          const clientInfo: string[] = [];
+          for (const clientId of post.featured_mcp_client_ids) {
+            try {
+              const mcpClient = await client.getMCPClientById(clientId);
+              if (mcpClient) {
+                clientInfo.push(`${mcpClient.slug} (ID: ${mcpClient.id})`);
+              }
+            } catch (error) {
+              console.error(`Failed to fetch MCP client ${clientId}:`, error);
+            }
+          }
+          if (clientInfo.length > 0) {
+            content += `- **Featured MCP Clients:** ${clientInfo.join(', ')}\n`;
+          }
         }
 
         return {

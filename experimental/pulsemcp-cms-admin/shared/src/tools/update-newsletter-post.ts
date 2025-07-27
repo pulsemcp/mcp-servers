@@ -17,7 +17,7 @@ const PARAM_DESCRIPTIONS = {
   short_description: 'Updated brief summary for listings and search results',
   description_tag: 'Updated SEO meta description (keep under 160 characters)',
   last_updated: 'ISO 8601 date string for content revision timestamp',
-  table_of_contents: 'Updated JSON structure for table of contents',
+  table_of_contents: 'Updated table of contents - can be HTML string or JSON structure',
   featured_mcp_server_slugs: 'Updated array of MCP server slugs to feature (replaces existing)',
   featured_mcp_client_slugs: 'Updated array of MCP client slugs to feature (replaces existing)',
 } as const;
