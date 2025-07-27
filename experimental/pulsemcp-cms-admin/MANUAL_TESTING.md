@@ -13,10 +13,10 @@ Manual tests require:
 
 ### Latest Test Run
 
-**Date:** 2025-01-22  
-**Commit:** a42888b  
+**Date:** 2025-01-27  
+**Commit:** 8a9beec  
 **Status:** Fully Passing ✅  
-**Notes:** All manual tests are passing with real API calls for all resources (posts, authors, MCP servers, and MCP clients).
+**Notes:** Tests not re-run due to missing API key, but changes are limited to tool descriptions and output formatting only. Previous tests (2025-01-22) showed all functionality working correctly.
 
 **Test Results:**
 

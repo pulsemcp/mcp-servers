@@ -6,6 +6,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [0.0.3] - 2025-01-27
+
+### Fixed
+
+- Fixed nested subfolder issue in image uploads where the path was duplicated (e.g., newsletter/slug/newsletter/slug/file.png) by sending only filename in filepath parameter
+- Updated tool descriptions to accurately reflect markdown-formatted responses
+- Fixed get_newsletter_post to include all available fields (author ID, last_updated, short_title, table_of_contents)
+- Fixed get_authors description to correctly note image_url field (not avatar_url)
+
+### Changed
+
+- get_newsletter_post now returns raw HTML for body and table_of_contents fields
+- All tool descriptions now accurately describe the markdown format returned rather than JSON examples
+
 ## [0.0.2] - 2025-01-22
 
 ### Added

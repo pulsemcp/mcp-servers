@@ -22,36 +22,18 @@ const GetNewsletterPostsSchema = z.object({
 export function getNewsletterPosts(_server: Server, clientFactory: ClientFactory) {
   return {
     name: 'get_newsletter_posts',
-    description: `Retrieve a paginated list of newsletter posts from the PulseMCP CMS. This tool provides comprehensive search and filtering capabilities to find existing content, check post statuses, and browse the newsletter archive.
+    description: `Retrieve a paginated list of newsletter posts from the PulseMCP CMS. Returns formatted markdown with post summaries and metadata.
 
-Example response:
-{
-  "posts": [
-    {
-      "title": "Introducing the Claude MCP Protocol",
-      "slug": "introducing-claude-mcp-protocol",
-      "status": "live",
-      "category": "newsletter",
-      "author": { "name": "Sarah Chen" },
-      "created_at": "2024-01-15T10:30:00Z",
-      "short_description": "Learn about the new Model Context Protocol and how it enables powerful AI integrations"
-    },
-    {
-      "title": "Best Practices for MCP Server Development",
-      "slug": "mcp-server-best-practices",
-      "status": "draft",
-      "category": "newsletter",
-      "author": { "name": "John Smith" },
-      "created_at": "2024-01-12T14:20:00Z",
-      "short_description": "A comprehensive guide to building production-ready MCP servers"
-    }
-  ],
-  "pagination": {
-    "current_page": 1,
-    "total_pages": 5,
-    "total_count": 47
-  }
-}
+The response is formatted as markdown with:
+- Total count and pagination info
+- Numbered list of posts, each showing:
+  - Title and slug
+  - Status and category
+  - Author name (if available)
+  - Created date
+  - Short description (if available)
+
+Note: The list view does NOT include post body content. Use get_newsletter_post to retrieve full post details.
 
 Status meanings:
 - draft: Unpublished posts that are being written or edited
