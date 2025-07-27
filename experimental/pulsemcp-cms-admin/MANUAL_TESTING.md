@@ -14,9 +14,9 @@ Manual tests require:
 ### Latest Test Run
 
 **Date:** 2025-01-27  
-**Commit:** 883a6a8  
+**Commit:** 9f81630  
 **Status:** Fully Passing ✅  
-**Notes:** All manual tests passing with slug-based output. Tools now return slugs instead of IDs for authors, MCP servers, and MCP clients.
+**Notes:** All manual tests passing with enhanced output format showing both slugs and IDs (e.g., "slug-name (ID: 123)"). Fixed double-escaping of table_of_contents HTML strings.
 
 **Test Results:**
 
