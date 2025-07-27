@@ -414,4 +414,3 @@ Whenever you make any sort of code change to an MCP server, make sure to update 
 
 - **Lint-staged Automatic Stash Behavior**: When pre-commit hooks fail, lint-staged automatically stashes your changes. These can be recovered using `git stash list` and looking for "lint-staged automatic backup" entries. Apply with `git stash apply stash@{n}`
 - **Version Bump Recovery**: If `npm run stage-publish` fails or gets interrupted, changes may be partially applied. Check all expected files (local/package.json, CHANGELOG.md, MANUAL_TESTING.md, README.md) and re-run the version bump with `npm version patch --no-git-tag-version` if needed
-- **Pre-commit Hook Workarounds**: When ESLint errors are from unrelated files in the monorepo, you can temporarily use `git commit --no-verify` but ensure to run `npm run lint:fix` from the repo root before pushing to avoid CI failures
