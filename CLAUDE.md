@@ -409,3 +409,9 @@ Whenever you make any sort of code change to an MCP server, make sure to update 
 - **TypeScript Build Error Propagation**: The traditional `cd shared && npm run build && cd ../local && npm run build` pattern fails silently because shell commands check only if `cd` succeeded, not if the build failed. This allowed TypeScript compilation errors to pass undetected in CI
 - **Dynamic Import Compatibility**: Avoid using dynamic imports with JSON files in build scripts. The `import(file, { assert: { type: 'json' } })` syntax is not consistently supported across Node.js versions. Use `readFileSync` + `JSON.parse` for better compatibility
 - **CI/CD TypeScript Dependency Checks**: Always ensure @types packages are included as devDependencies when using libraries that don't ship with their own types (like jsdom). The build may work locally with cached types but fail in CI/CD's clean environment
+
+### Pre-commit Hook and Version Bump Workflow
+
+- **Lint-staged Automatic Stash Behavior**: When pre-commit hooks fail, lint-staged automatically stashes your changes. These can be recovered using `git stash list` and looking for "lint-staged automatic backup" entries. Apply with `git stash apply stash@{n}`
+- **Version Bump Recovery**: If `npm run stage-publish` fails or gets interrupted, changes may be partially applied. Check all expected files (local/package.json, CHANGELOG.md, MANUAL_TESTING.md, README.md) and re-run the version bump with `npm version patch --no-git-tag-version` if needed
+- **Pre-commit Hook Workarounds**: When ESLint errors are from unrelated files in the monorepo, you can temporarily use `git commit --no-verify` but ensure to run `npm run lint:fix` from the repo root before pushing to avoid CI failures
