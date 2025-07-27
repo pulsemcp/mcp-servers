@@ -220,5 +220,60 @@ export function createMockPulseMCPAdminClient(mockData: MockData): IPulseMCPAdmi
         description: 'A test MCP client',
       };
     },
+
+    async getAuthorById(id) {
+      // Find author in the mock data
+      const authors = mockData.authors || [
+        {
+          id: 1,
+          name: 'Test Author',
+          slug: 'test-author',
+          created_at: '2024-01-01T00:00:00Z',
+          updated_at: '2024-01-01T00:00:00Z',
+        },
+      ];
+
+      return authors.find((a) => a.id === id) || null;
+    },
+
+    async getMCPServerById(id) {
+      // Find server in mock data by ID
+      const servers = Object.values(mockData.mcpServersBySlug || {});
+      const found = servers.find((s) => s.id === id);
+
+      if (found) return found;
+
+      // Return default if ID matches
+      if (id === 1) {
+        return {
+          id: 1,
+          name: 'Test MCP Server',
+          slug: 'test-mcp-server',
+          description: 'A test MCP server',
+        };
+      }
+
+      return null;
+    },
+
+    async getMCPClientById(id) {
+      // Find client in mock data by ID
+      const clients = Object.values(mockData.mcpClientsBySlug || {});
+      const found = clients.find((c) => c.id === id);
+
+      if (found) return found;
+
+      // Return default if ID matches
+      if (id === 1) {
+        return {
+          id: 1,
+          name: 'Test MCP Client',
+          slug: 'test-mcp-client',
+          description: 'A test MCP client',
+        };
+      }
+
+      return null;
+    },
   };
 }

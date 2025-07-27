@@ -62,15 +62,30 @@ Use cases:
       try {
         const post = await client.getPost(validatedArgs.slug);
 
+        // Fetch author details if we have an author_id
+        let authorSlug: string | undefined;
+        let authorName: string | undefined;
+
+        if (post.author_id) {
+          try {
+            const author = await client.getAuthorById(post.author_id);
+            if (author) {
+              authorSlug = author.slug;
+              authorName = author.name;
+            }
+          } catch (error) {
+            // If we can't fetch author, we'll just skip showing author info
+            console.error('Failed to fetch author details:', error);
+          }
+        }
+
         // Format the response for MCP
         let content = `# ${post.title}\n\n`;
         content += `**Slug:** ${post.slug}\n`;
         content += `**Status:** ${post.status} | **Category:** ${post.category}\n`;
 
-        if (post.author) {
-          content += `**Author:** ${post.author.name} (ID: ${post.author.id})\n`;
-        } else if (post.author_id) {
-          content += `**Author ID:** ${post.author_id}\n`;
+        if (authorSlug && authorName) {
+          content += `**Author:** ${authorName} (${authorSlug})\n`;
         }
 
         content += `**Created:** ${new Date(post.created_at).toLocaleDateString()}\n`;
@@ -120,10 +135,37 @@ Use cases:
         }
 
         if (post.featured_mcp_server_ids && post.featured_mcp_server_ids.length > 0) {
-          content += `- **Featured MCP Servers:** ${post.featured_mcp_server_ids.join(', ')}\n`;
+          const serverSlugs: string[] = [];
+          for (const serverId of post.featured_mcp_server_ids) {
+            try {
+              const server = await client.getMCPServerById(serverId);
+              if (server) {
+                serverSlugs.push(server.slug);
+              }
+            } catch (error) {
+              console.error(`Failed to fetch MCP server ${serverId}:`, error);
+            }
+          }
+          if (serverSlugs.length > 0) {
+            content += `- **Featured MCP Servers:** ${serverSlugs.join(', ')}\n`;
+          }
         }
+
         if (post.featured_mcp_client_ids && post.featured_mcp_client_ids.length > 0) {
-          content += `- **Featured MCP Clients:** ${post.featured_mcp_client_ids.join(', ')}\n`;
+          const clientSlugs: string[] = [];
+          for (const clientId of post.featured_mcp_client_ids) {
+            try {
+              const mcpClient = await client.getMCPClientById(clientId);
+              if (mcpClient) {
+                clientSlugs.push(mcpClient.slug);
+              }
+            } catch (error) {
+              console.error(`Failed to fetch MCP client ${clientId}:`, error);
+            }
+          }
+          if (clientSlugs.length > 0) {
+            content += `- **Featured MCP Clients:** ${clientSlugs.join(', ')}\n`;
+          }
         }
 
         return {

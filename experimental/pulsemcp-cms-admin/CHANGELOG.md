@@ -6,6 +6,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Changed
+
+- **BREAKING**: All tools now return slugs instead of IDs for better API consistency
+  - `get_newsletter_post` now shows author slug instead of author ID
+  - `get_newsletter_post` now shows MCP server/client slugs instead of IDs
+  - `get_newsletter_posts` now shows author slug with name
+
+### Added
+
+- Added `getAuthorById`, `getMCPServerById`, and `getMCPClientById` methods to the API client
+- Added comprehensive test coverage for slug-based outputs
+
 ## [0.0.3] - 2025-01-27
 
 ### Fixed

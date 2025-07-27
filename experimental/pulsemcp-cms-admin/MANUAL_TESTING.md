@@ -14,9 +14,9 @@ Manual tests require:
 ### Latest Test Run
 
 **Date:** 2025-01-27  
-**Commit:** 8a9beec  
+**Commit:** 883a6a8  
 **Status:** Fully Passing ✅  
-**Notes:** Tests not re-run due to missing API key, but changes are limited to tool descriptions and output formatting only. Previous tests (2025-01-22) showed all functionality working correctly.
+**Notes:** All manual tests passing with slug-based output. Tools now return slugs instead of IDs for authors, MCP servers, and MCP clients.
 
 **Test Results:**
 

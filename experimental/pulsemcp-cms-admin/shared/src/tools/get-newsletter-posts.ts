@@ -84,18 +84,29 @@ Use cases:
 
         content += ':\n\n';
 
-        response.posts.forEach((post, index) => {
+        for (const [index, post] of response.posts.entries()) {
           content += `${index + 1}. **${post.title}** (${post.slug})\n`;
           content += `   Status: ${post.status} | Category: ${post.category}\n`;
-          if (post.author) {
-            content += `   Author: ${post.author.name}\n`;
+
+          // Fetch author details if we have an author_id
+          if (post.author_id) {
+            try {
+              const author = await client.getAuthorById(post.author_id);
+              if (author) {
+                content += `   Author: ${author.name} (${author.slug})\n`;
+              }
+            } catch (error) {
+              // Skip showing author if we can't fetch it
+              console.error(`Failed to fetch author ${post.author_id}:`, error);
+            }
           }
+
           content += `   Created: ${new Date(post.created_at).toLocaleDateString()}\n`;
           if (post.short_description) {
             content += `   ${post.short_description}\n`;
           }
           content += '\n';
-        });
+        }
 
         return {
           content: [
