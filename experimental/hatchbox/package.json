@@ -11,6 +11,7 @@
   "type": "module",
   "scripts": {
     "install-all": "npm install && cd local && npm install && cd ../shared && npm install",
+    "ci:install": "npm ci && cd local && npm ci && cd ../shared && npm ci",
     "build": "cd shared && node ../node_modules/typescript/lib/tsc.js && cd ../local && node ../node_modules/typescript/lib/tsc.js",
     "build:test": "cd shared && node ../node_modules/typescript/lib/tsc.js && cd ../local && node ../node_modules/typescript/lib/tsc.js && cd ../../../libs/test-mcp-client && npm run build",
     "clean": "find . -name '*.js' -not -path './node_modules/*' -not -path './*/node_modules/*' -not -path './local/build/*' -not -path './shared/build/*' -not -path './*/build/*' -delete && find . -name '*.js.map' -not -path './node_modules/*' -not -path './*/node_modules/*' -not -path './local/build/*' -not -path './shared/build/*' -not -path './*/build/*' -delete",
