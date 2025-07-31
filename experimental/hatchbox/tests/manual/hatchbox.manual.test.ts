@@ -145,7 +145,7 @@ describe('Hatchbox Client Manual Tests', () => {
     it('should handle invalid credentials gracefully', async () => {
       const badClient = new HatchboxClient('invalid_key', accountId!, appId!, deployKey!);
 
-      await expect(badClient.getEnvVars()).rejects.toThrow('Invalid API key');
+      await expect(badClient.getEnvVars()).rejects.toThrow('Account or app not found');
     });
 
     it('should handle invalid account/app IDs', async () => {
