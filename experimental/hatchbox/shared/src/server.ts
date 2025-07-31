@@ -5,7 +5,6 @@ import { createRegisterTools } from './tools.js';
 // Hatchbox API client interface
 export interface IHatchboxClient {
   // Environment variable operations
-  getEnvVars(): Promise<Array<{ name: string; value: string }>>;
   setEnvVar(name: string, value: string): Promise<Array<{ name: string; value: string }>>;
   deleteEnvVars(names: string[]): Promise<Array<{ name: string; value: string }>>;
 
@@ -24,11 +23,6 @@ export class HatchboxClient implements IHatchboxClient {
     private appId: string,
     private deployKey: string
   ) {}
-
-  async getEnvVars(): Promise<Array<{ name: string; value: string }>> {
-    const { getEnvVars } = await import('./hatchbox-client/lib/get-env-vars.js');
-    return getEnvVars(this.baseUrl, this.apiKey, this.accountId, this.appId);
-  }
 
   async setEnvVar(name: string, value: string): Promise<Array<{ name: string; value: string }>> {
     const { setEnvVar } = await import('./hatchbox-client/lib/set-env-var.js');

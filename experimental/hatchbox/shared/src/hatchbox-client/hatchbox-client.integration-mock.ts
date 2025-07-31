@@ -13,13 +13,6 @@ export function createIntegrationMockClient(mockData?: {
   const currentEnvVars = [...defaultEnvVars];
 
   return {
-    async getEnvVars() {
-      throw new Error(
-        'Retrieving environment variables is not supported by the Hatchbox API. ' +
-          'The API only allows setting and deleting environment variables.'
-      );
-    },
-
     async setEnvVar(name: string, value: string) {
       // Update existing or add new
       const index = currentEnvVars.findIndex((env) => env.name === name);

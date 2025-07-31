@@ -3,22 +3,12 @@ import type { IHatchboxClient } from '../../shared/src/server.js';
 
 export function createMockHatchboxClient(): IHatchboxClient & {
   // Add mock function references for easy access in tests
-  getEnvVars: ReturnType<typeof vi.fn>;
   setEnvVar: ReturnType<typeof vi.fn>;
   deleteEnvVars: ReturnType<typeof vi.fn>;
   triggerDeploy: ReturnType<typeof vi.fn>;
   checkDeploy: ReturnType<typeof vi.fn>;
 } {
   return {
-    getEnvVars: vi
-      .fn()
-      .mockRejectedValue(
-        new Error(
-          'Retrieving environment variables is not supported by the Hatchbox API. ' +
-            'The API only allows setting and deleting environment variables.'
-        )
-      ),
-
     setEnvVar: vi.fn().mockImplementation(async (name: string, value: string) => {
       return [
         { name: 'RAILS_ENV', value: 'production' },

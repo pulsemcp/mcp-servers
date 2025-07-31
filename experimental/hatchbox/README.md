@@ -83,24 +83,6 @@ Add the server to your Claude Desktop configuration file:
 
 ### Environment Variables
 
-#### `getEnvVars`
-
-**Note:** This operation is not supported by the Hatchbox API. The API only allows setting and deleting environment variables, not retrieving them. To view your environment variables, please use the Hatchbox web dashboard.
-
-**Parameters:** None
-
-**Returns:** An error message indicating this operation is not supported
-
-#### `getEnvVar`
-
-**Note:** This operation is not supported by the Hatchbox API. The API only allows setting and deleting environment variables, not retrieving them. To view your environment variables, please use the Hatchbox web dashboard.
-
-**Parameters:**
-
-- `name` (string, required): The environment variable name
-
-**Returns:** An error message indicating this operation is not supported
-
 #### `setEnvVar`
 
 Set or update an environment variable.

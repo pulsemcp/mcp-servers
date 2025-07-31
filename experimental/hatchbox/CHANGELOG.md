@@ -14,9 +14,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- **BREAKING**: `getEnvVars` and `getEnvVar` tools now return an error message indicating these operations are not supported by the Hatchbox API
 - Updated `setEnvVar` to always report "Successfully set" instead of distinguishing between create/update since we cannot check existing values
 - Documentation updated to clarify that retrieving environment variables is only possible through the Hatchbox web dashboard
+
+### Removed
+
+- **BREAKING**: Removed `getEnvVars` and `getEnvVar` tools as these operations are not supported by the Hatchbox API
 
 ### Fixed
 
@@ -28,8 +31,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Initial release of Hatchbox MCP Server
 - Environment variable management tools:
-  - `getEnvVars` - Retrieve all environment variables for an application
-  - `getEnvVar` - Get a specific environment variable value
   - `setEnvVar` - Set or update an environment variable
   - `deleteEnvVars` - Delete one or more environment variables
 - Deployment management tools:

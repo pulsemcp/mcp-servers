@@ -37,36 +37,12 @@ describe('Hatchbox MCP Server Integration', () => {
       client = await createMockedClient();
       const result = await client.listTools();
 
-      expect(result.tools).toHaveLength(6);
+      expect(result.tools).toHaveLength(4);
       const toolNames = result.tools.map((t) => t.name);
-      expect(toolNames).toContain('getEnvVars');
-      expect(toolNames).toContain('getEnvVar');
       expect(toolNames).toContain('setEnvVar');
       expect(toolNames).toContain('deleteEnvVars');
       expect(toolNames).toContain('triggerDeploy');
       expect(toolNames).toContain('checkDeploy');
-    });
-
-    it('should return error for getEnvVars as it is not supported', async () => {
-      client = await createMockedClient();
-
-      const result = await client.callTool('getEnvVars', {});
-
-      expect(result.isError).toBe(true);
-      expect(result.content[0].text).toContain(
-        'Retrieving environment variables is not supported by the Hatchbox API'
-      );
-    });
-
-    it('should return error for getEnvVar as it is not supported', async () => {
-      client = await createMockedClient();
-
-      const result = await client.callTool('getEnvVar', { name: 'NODE_ENV' });
-
-      expect(result.isError).toBe(true);
-      expect(result.content[0].text).toContain(
-        "Retrieving the value of 'NODE_ENV' is not supported"
-      );
     });
 
     it('should set an environment variable', async () => {
@@ -138,7 +114,6 @@ describe('Hatchbox MCP Server Integration', () => {
     it('should handle missing required parameters', async () => {
       client = await createMockedClient();
 
-      await expect(client.callTool('getEnvVar', {})).rejects.toThrow();
       await expect(client.callTool('setEnvVar', { name: 'TEST' })).rejects.toThrow();
       await expect(client.callTool('checkDeploy', {})).rejects.toThrow();
     });

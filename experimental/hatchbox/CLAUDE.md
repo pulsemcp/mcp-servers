@@ -21,9 +21,9 @@ This server follows the standard MCP server template architecture with:
 The server integrates with the following Hatchbox API endpoints:
 
 1. **Environment Variables API**
-   - GET `https://app.hatchbox.io/api/v1/accounts/{accountId}/apps/{appId}/env_vars`
    - PUT `https://app.hatchbox.io/api/v1/accounts/{accountId}/apps/{appId}/env_vars`
    - DELETE `https://app.hatchbox.io/api/v1/accounts/{accountId}/apps/{appId}/env_vars`
+   - Note: GET endpoint is not available in the Hatchbox API
 
 2. **Deployment Webhooks**
    - POST `https://app.hatchbox.io/webhooks/deployments/{deployKey}?latest=true`
@@ -48,19 +48,19 @@ The server uses environment variables to avoid repetitive parameters:
 
 ### Tools
 
-The server implements 5 tools:
+The server implements 4 tools:
 
-1. **getEnvVars** - Retrieves all environment variables (no params needed)
-2. **getEnvVar** - Gets a specific environment variable value (name param only)
-3. **setEnvVar** - Creates or updates an environment variable (name and value params)
-4. **triggerDeploy** - Triggers a deployment (optional SHA param)
-5. **checkDeploy** - Checks deployment status (activityId param)
+1. **setEnvVar** - Creates or updates an environment variable (name and value params)
+2. **deleteEnvVars** - Deletes one or more environment variables (names array param)
+3. **triggerDeploy** - Triggers a deployment (optional SHA param)
+4. **checkDeploy** - Checks deployment status (activityId param)
 
 ### Environment Variable Management
 
 - The `setEnvVar` tool handles both create and update operations
-- Deleting env vars could be added in a future version if needed
+- The `deleteEnvVars` tool allows batch deletion of environment variables
 - The API returns the full list of env vars after updates
+- Retrieving env vars is not supported by the API - users must use the Hatchbox web dashboard
 
 ### Deployment Management
 
