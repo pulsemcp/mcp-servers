@@ -30,7 +30,10 @@ export function createRegisterTools(clientFactory: ClientFactory) {
       name: string;
       description: string;
       inputSchema: unknown;
-      handler: (args: unknown) => Promise<unknown>;
+      handler: (args: unknown) => Promise<{
+        content: Array<{ type: string; text: string }>;
+        isError?: boolean;
+      }>;
     }> = [];
 
     // SSH-based read tools (only if WEB_SERVER_IP_ADDRESS is configured)
