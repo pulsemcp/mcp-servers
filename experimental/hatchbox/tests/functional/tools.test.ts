@@ -1,5 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
+import { getEnvVarsTool } from '../../shared/src/tools/get-env-vars.js';
+import { getEnvVarTool } from '../../shared/src/tools/get-env-var.js';
 import { setEnvVarTool } from '../../shared/src/tools/set-env-var.js';
 import { deleteEnvVarsTool } from '../../shared/src/tools/delete-env-vars.js';
 import { triggerDeployTool } from '../../shared/src/tools/trigger-deploy.js';
@@ -8,6 +10,55 @@ import { createMockHatchboxClient } from '../mocks/hatchbox-client.functional-mo
 
 describe('Hatchbox Tools', () => {
   const mockServer = new Server({ name: 'test', version: '1.0' }, { capabilities: { tools: {} } });
+
+  describe('getEnvVars', () => {
+    it('should retrieve all environment variables', async () => {
+      const mockClient = createMockHatchboxClient();
+      const tool = getEnvVarsTool(mockServer, () => mockClient);
+
+      const response = await tool.handler({});
+
+      expect(mockClient.getEnvVars).toHaveBeenCalled();
+      expect(response.content[0].text).toContain('Environment variables (3 total)');
+      expect(response.content[0].text).toContain('RAILS_ENV=production');
+      expect(response.content[0].text).toContain('DATABASE_URL=postgres://localhost/myapp');
+    });
+
+    it('should handle errors when retrieving env vars', async () => {
+      const mockClient = createMockHatchboxClient();
+      mockClient.getEnvVars!.mockRejectedValue(new Error('SSH connection failed'));
+      const tool = getEnvVarsTool(mockServer, () => mockClient);
+
+      const response = await tool.handler({});
+
+      expect(response.isError).toBe(true);
+      expect(response.content[0].text).toContain(
+        'Error retrieving environment variables: SSH connection failed'
+      );
+    });
+  });
+
+  describe('getEnvVar', () => {
+    it('should retrieve a specific environment variable', async () => {
+      const mockClient = createMockHatchboxClient();
+      const tool = getEnvVarTool(mockServer, () => mockClient);
+
+      const response = await tool.handler({ name: 'RAILS_ENV' });
+
+      expect(mockClient.getEnvVar).toHaveBeenCalledWith('RAILS_ENV');
+      expect(response.content[0].text).toBe('RAILS_ENV=production');
+    });
+
+    it('should handle non-existent environment variables', async () => {
+      const mockClient = createMockHatchboxClient();
+      const tool = getEnvVarTool(mockServer, () => mockClient);
+
+      const response = await tool.handler({ name: 'NONEXISTENT' });
+
+      expect(mockClient.getEnvVar).toHaveBeenCalledWith('NONEXISTENT');
+      expect(response.content[0].text).toBe("Environment variable 'NONEXISTENT' not found");
+    });
+  });
 
   describe('setEnvVar', () => {
     it('should set an environment variable', async () => {

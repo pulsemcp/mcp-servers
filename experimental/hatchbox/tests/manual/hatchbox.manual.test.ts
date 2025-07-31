@@ -14,6 +14,9 @@ describe('Hatchbox Client Manual Tests', () => {
   const accountId = process.env.HATCHBOX_ACCOUNT_ID;
   const appId = process.env.HATCHBOX_APP_ID;
   const deployKey = process.env.HATCHBOX_DEPLOY_KEY;
+  const serverIP = process.env.WEB_SERVER_IP_ADDRESS;
+  const sshKeyPath = process.env.SSH_KEY_PATH;
+  const appName = process.env.HATCHBOX_APP_NAME;
 
   let client: HatchboxClient | null = null;
 
@@ -25,7 +28,7 @@ describe('Hatchbox Client Manual Tests', () => {
       console.warn('   Please create a .env file with your Hatchbox credentials');
       return null;
     }
-    return new HatchboxClient(apiKey, accountId, appId, deployKey);
+    return new HatchboxClient(apiKey, accountId, appId, deployKey, serverIP, sshKeyPath, appName);
   };
 
   beforeAll(() => {
@@ -36,10 +39,48 @@ describe('Hatchbox Client Manual Tests', () => {
   });
 
   describe('Environment Variables', () => {
-    it.skip('should get all environment variables - not supported by API', async () => {
-      // The Hatchbox API does not support retrieving environment variables
-      // This test is skipped as the operation will always fail
-      expect(true).toBe(true);
+    it('should get all environment variables via SSH', async () => {
+      if (!client || !serverIP) {
+        console.log('Skipping SSH test - no WEB_SERVER_IP_ADDRESS configured');
+        return;
+      }
+
+      const envVars = await client.getEnvVars!();
+
+      expect(Array.isArray(envVars)).toBe(true);
+      expect(envVars.length).toBeGreaterThan(0);
+
+      // Check for common Rails env vars
+      const railsEnv = envVars.find((env) => env.name === 'RAILS_ENV');
+      expect(railsEnv).toBeDefined();
+
+      console.log(`Retrieved ${envVars.length} environment variables via SSH`);
+    });
+
+    it('should get a specific environment variable via SSH', async () => {
+      if (!client || !serverIP) {
+        console.log('Skipping SSH test - no WEB_SERVER_IP_ADDRESS configured');
+        return;
+      }
+
+      const envVar = await client.getEnvVar!('RAILS_ENV');
+
+      expect(envVar).toBeDefined();
+      expect(envVar?.name).toBe('RAILS_ENV');
+      expect(envVar?.value).toBeTruthy();
+
+      console.log(`RAILS_ENV=${envVar?.value}`);
+    });
+
+    it('should return null for non-existent environment variable', async () => {
+      if (!client || !serverIP) {
+        console.log('Skipping SSH test - no WEB_SERVER_IP_ADDRESS configured');
+        return;
+      }
+
+      const envVar = await client.getEnvVar!('NONEXISTENT_VAR_12345');
+
+      expect(envVar).toBeNull();
     });
 
     it('should set a test environment variable', async () => {

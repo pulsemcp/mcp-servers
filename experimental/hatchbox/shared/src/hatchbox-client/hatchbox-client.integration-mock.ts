@@ -13,6 +13,15 @@ export function createIntegrationMockClient(mockData?: {
   const currentEnvVars = [...defaultEnvVars];
 
   return {
+    async getEnvVars() {
+      return [...currentEnvVars];
+    },
+
+    async getEnvVar(name: string) {
+      const envVar = currentEnvVars.find((env) => env.name === name);
+      return envVar ? { ...envVar } : null;
+    },
+
     async setEnvVar(name: string, value: string) {
       // Update existing or add new
       const index = currentEnvVars.findIndex((env) => env.name === name);

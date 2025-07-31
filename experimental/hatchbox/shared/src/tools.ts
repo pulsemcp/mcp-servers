@@ -1,6 +1,8 @@
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { ListToolsRequestSchema, CallToolRequestSchema } from '@modelcontextprotocol/sdk/types.js';
 import { ClientFactory } from './server.js';
+import { getEnvVarsTool } from './tools/get-env-vars.js';
+import { getEnvVarTool } from './tools/get-env-var.js';
 import { setEnvVarTool } from './tools/set-env-var.js';
 import { deleteEnvVarsTool } from './tools/delete-env-vars.js';
 import { triggerDeployTool } from './tools/trigger-deploy.js';
@@ -18,13 +20,36 @@ import { checkDeployTool } from './tools/check-deploy.js';
  */
 export function createRegisterTools(clientFactory: ClientFactory) {
   return (server: Server) => {
-    // Create tool instances
-    const tools = [
-      setEnvVarTool(server, clientFactory),
-      deleteEnvVarsTool(server, clientFactory),
-      triggerDeployTool(server, clientFactory),
-      checkDeployTool(server, clientFactory),
-    ];
+    // Check configuration
+    const hasServerIP = !!process.env.WEB_SERVER_IP_ADDRESS;
+    const isReadonly = process.env.READONLY !== 'false'; // Default true
+    const allowDeploys = process.env.ALLOW_DEPLOYS !== 'false'; // Default true
+
+    // Create tool instances conditionally
+    const tools: Array<{
+      name: string;
+      description: string;
+      inputSchema: unknown;
+      handler: (args: unknown) => Promise<unknown>;
+    }> = [];
+
+    // SSH-based read tools (only if WEB_SERVER_IP_ADDRESS is configured)
+    if (hasServerIP) {
+      tools.push(getEnvVarsTool(server, clientFactory));
+      tools.push(getEnvVarTool(server, clientFactory));
+    }
+
+    // Write tools (only if not in readonly mode)
+    if (!isReadonly) {
+      tools.push(setEnvVarTool(server, clientFactory));
+      tools.push(deleteEnvVarsTool(server, clientFactory));
+    }
+
+    // Deployment tools (only if deployments are allowed)
+    if (allowDeploys) {
+      tools.push(triggerDeployTool(server, clientFactory));
+      tools.push(checkDeployTool(server, clientFactory));
+    }
 
     // List available tools
     server.setRequestHandler(ListToolsRequestSchema, async () => {
