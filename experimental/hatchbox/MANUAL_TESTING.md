@@ -66,7 +66,7 @@ The tests will:
 
 **Test Date:** 2025-07-31  
 **Branch:** tadasant/create-hatchbox-mcp-server-2  
-**Commit:** eae33b0e9db5fcc1b893e95a7f88c37de088c0c8  
+**Commit:** 4b6eb33b4fe89d26a5cc72bb10c417752a303551  
 **Tested By:** Claude  
 **Environment:** Hatchbox staging environment with real API credentials
 
