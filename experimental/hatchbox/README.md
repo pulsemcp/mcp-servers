@@ -26,16 +26,6 @@ This MCP server provides tools to interact with Hatchbox's API, allowing you to 
 
 ## Installation
 
-### Installing via Smithery
-
-To install Hatchbox MCP Server for Claude Desktop automatically via [Smithery](https://smithery.ai/):
-
-```bash
-npx -y @smithery/cli install hatchbox-mcp-server --client claude
-```
-
-### Manual Installation
-
 ```bash
 npm install hatchbox-mcp-server
 ```

@@ -7,31 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Added
-
-- SSH-based `getEnvVars` tool to retrieve all environment variables from the server
-- SSH-based `getEnvVar` tool to retrieve specific environment variables from the server
-- `deleteEnvVars` tool to delete one or more environment variables via the API
-- `READONLY` mode (default: true) to prevent accidental modifications
-- `ALLOW_DEPLOYS` permission (default: true) to control deployment access
-- Conditional tool surfacing based on configuration:
-  - `getEnvVars` and `getEnvVar` only available when `WEB_SERVER_IP_ADDRESS` is configured
-  - `setEnvVar` and `deleteEnvVars` only available when `READONLY=false`
-  - `triggerDeploy` and `checkDeploy` only available when `ALLOW_DEPLOYS=true`
-- Support for SSH key authentication with configurable key path
-- Comprehensive security documentation
-
-### Changed
-
-- Updated `setEnvVar` to always report "Successfully set" instead of distinguishing between create/update
-- Enhanced documentation with SSH setup instructions and security best practices
-- Improved error messages for missing configuration
-
-### Fixed
-
-- API compatibility: The Hatchbox API only supports PUT and DELETE for env vars, not GET
-
-## [0.0.1] - TBD
+## [0.0.1] - 2025-07-31
 
 ### Added
 
@@ -39,8 +15,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Environment variable management tools:
   - `setEnvVar` - Set or update an environment variable
   - `deleteEnvVars` - Delete one or more environment variables
+  - `getEnvVars` - SSH-based tool to retrieve all environment variables from the server
+  - `getEnvVar` - SSH-based tool to retrieve specific environment variables from the server
 - Deployment management tools:
   - `triggerDeploy` - Trigger a deployment (latest or specific commit)
   - `checkDeploy` - Check the status of a deployment
+- Security features:
+  - `READONLY` mode (default: true) to prevent accidental modifications
+  - `ALLOW_DEPLOYS` permission (default: true) to control deployment access
+  - Conditional tool surfacing based on configuration:
+    - `getEnvVars` and `getEnvVar` only available when `WEB_SERVER_IP_ADDRESS` is configured
+    - `setEnvVar` and `deleteEnvVars` only available when `READONLY=false`
+    - `triggerDeploy` and `checkDeploy` only available when `ALLOW_DEPLOYS=true`
+- Support for SSH key authentication with configurable key path
+- Support for filtering processes by app name with `HATCHBOX_APP_NAME`
 - Comprehensive test suite (functional, integration, and manual tests)
-- Full documentation and usage examples
+- Full documentation with SSH setup instructions and security best practices
