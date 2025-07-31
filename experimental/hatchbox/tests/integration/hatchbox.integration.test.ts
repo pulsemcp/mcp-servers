@@ -15,7 +15,7 @@ describe('Hatchbox MCP Server Integration', () => {
       client = null;
     }
   });
-  const createMockedClient = async (mockData = {}) => {
+  const createMockedClient = async (mockData = {}, extraEnv = {}) => {
     const client = new TestMCPClient({
       serverPath,
       env: {
@@ -24,6 +24,7 @@ describe('Hatchbox MCP Server Integration', () => {
         HATCHBOX_APP_ID: 'test-app',
         HATCHBOX_DEPLOY_KEY: 'test-deploy-key',
         HATCHBOX_MOCK_DATA: JSON.stringify(mockData),
+        ...extraEnv,
       },
       debug: false,
     });
@@ -34,7 +35,7 @@ describe('Hatchbox MCP Server Integration', () => {
 
   describe('Environment Variables', () => {
     it('should list all available tools', async () => {
-      client = await createMockedClient();
+      client = await createMockedClient({}, { READONLY: 'false' });
       const result = await client.listTools();
 
       expect(result.tools).toHaveLength(4);
@@ -46,7 +47,7 @@ describe('Hatchbox MCP Server Integration', () => {
     });
 
     it('should set an environment variable', async () => {
-      client = await createMockedClient();
+      client = await createMockedClient({}, { READONLY: 'false' });
 
       const result = await client.callTool('setEnvVar', {
         name: 'NEW_VAR',
@@ -56,6 +57,40 @@ describe('Hatchbox MCP Server Integration', () => {
       expect(result.content[0].text).toBe(
         'Successfully set environment variable: NEW_VAR=new_value'
       );
+    });
+  });
+
+  describe('Tool Conditional Visibility', () => {
+    it('should show only deployment tools by default', async () => {
+      client = await createMockedClient();
+      const result = await client.listTools();
+
+      expect(result.tools).toHaveLength(2);
+      const toolNames = result.tools.map((t) => t.name);
+      expect(toolNames).toContain('triggerDeploy');
+      expect(toolNames).toContain('checkDeploy');
+      expect(toolNames).not.toContain('setEnvVar');
+      expect(toolNames).not.toContain('deleteEnvVars');
+    });
+
+    it('should show all tools when SSH is configured and READONLY is false', async () => {
+      client = await createMockedClient(
+        {},
+        {
+          WEB_SERVER_IP_ADDRESS: '192.168.1.1',
+          READONLY: 'false',
+        }
+      );
+      const result = await client.listTools();
+
+      expect(result.tools).toHaveLength(6);
+      const toolNames = result.tools.map((t) => t.name);
+      expect(toolNames).toContain('getEnvVars');
+      expect(toolNames).toContain('getEnvVar');
+      expect(toolNames).toContain('setEnvVar');
+      expect(toolNames).toContain('deleteEnvVars');
+      expect(toolNames).toContain('triggerDeploy');
+      expect(toolNames).toContain('checkDeploy');
     });
   });
 
