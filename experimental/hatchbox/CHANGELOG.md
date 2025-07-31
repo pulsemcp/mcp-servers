@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `deleteEnvVars` tool to delete one or more environment variables
+- Support for batch deletion of environment variables via the Hatchbox API
+
+### Changed
+
+- **BREAKING**: `getEnvVars` and `getEnvVar` tools now return an error message indicating these operations are not supported by the Hatchbox API
+- Updated `setEnvVar` to always report "Successfully set" instead of distinguishing between create/update since we cannot check existing values
+- Documentation updated to clarify that retrieving environment variables is only possible through the Hatchbox web dashboard
+
+### Fixed
+
+- API compatibility: The Hatchbox API does not provide a GET endpoint for environment variables, only PUT and DELETE
+
 ## [0.0.1] - TBD
 
 ### Added
@@ -16,6 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `getEnvVars` - Retrieve all environment variables for an application
   - `getEnvVar` - Get a specific environment variable value
   - `setEnvVar` - Set or update an environment variable
+  - `deleteEnvVars` - Delete one or more environment variables
 - Deployment management tools:
   - `triggerDeploy` - Trigger a deployment (latest or specific commit)
   - `checkDeploy` - Check the status of a deployment

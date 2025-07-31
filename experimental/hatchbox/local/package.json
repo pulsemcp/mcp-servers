@@ -15,8 +15,8 @@
     "README.md"
   ],
   "scripts": {
-    "build": "tsc && npm run build:integration",
-    "build:integration": "tsc -p tsconfig.integration.json",
+    "build": "node ../node_modules/typescript/lib/tsc.js && npm run build:integration",
+    "build:integration": "node ../node_modules/typescript/lib/tsc.js -p tsconfig.integration.json",
     "start": "node build/index.js",
     "dev": "tsx src/index.ts",
     "predev": "cd ../shared && npm run build && cd ../local && node setup-dev.js",
@@ -33,7 +33,7 @@
     "zod": "^3.24.1"
   },
   "devDependencies": {
-    "@types/node": "^22.10.6",
+    "@types/node": "^24.0.0",
     "tsx": "^4.19.4",
     "typescript": "^5.7.3"
   },

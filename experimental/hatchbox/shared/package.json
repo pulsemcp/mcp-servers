@@ -5,7 +5,7 @@
   "main": "build/index.js",
   "type": "module",
   "scripts": {
-    "build": "tsc",
+    "build": "node ../node_modules/typescript/lib/tsc.js",
     "lint": "eslint . --ext .ts,.tsx",
     "lint:fix": "eslint . --ext .ts,.tsx --fix",
     "format": "prettier --write .",
@@ -16,8 +16,8 @@
     "zod": "^3.24.1"
   },
   "devDependencies": {
-    "@types/node": "^22.10.6",
-    "typescript": "^5.8.3"
+    "@types/node": "^24.0.0",
+    "typescript": "^5.7.3"
   },
   "keywords": [],
   "author": "PulseMCP",

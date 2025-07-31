@@ -10,11 +10,11 @@
   ],
   "type": "module",
   "scripts": {
-    "install-all": "npm install && cd shared && npm install && cd ../local && npm install",
-    "ci:install": "npm ci && cd shared && npm ci && cd ../local && npm ci",
-    "build": "cd shared && node ../node_modules/typescript/lib/tsc.js && cd ../local && node setup-dev.js && node ../node_modules/typescript/lib/tsc.js",
-    "build:test": "cd shared && node ../node_modules/typescript/lib/tsc.js && cd ../local && node setup-dev.js && node ../node_modules/typescript/lib/tsc.js && npx tsc -p tsconfig.integration.json && cd ../../../libs/test-mcp-client && npm run build",
-    "clean": "find . -name '*.js' -not -path './node_modules/*' -not -path './*/node_modules/*' -not -path './local/build/*' -not -path './shared/build/*' -not -path './*/build/*' -delete && find . -name '*.js.map' -not -path './node_modules/*' -not -path './*/node_modules/*' -not -path './local/build/*' -not -path './shared/build/*' -not -path './*/build/*' -delete",
+    "install-all": "npm install && cd local && npm install && cd ../shared && npm install",
+    "ci:install": "npm ci && cd shared && npm ci && cd ../local && npm ci && cd ../../../libs/test-mcp-client && npm ci --ignore-scripts",
+    "build": "node ../../scripts/build-mcp-server.js",
+    "build:test": "node ../../scripts/build-mcp-server.js && cd ../../libs/test-mcp-client && npm run build",
+    "clean": "find . -name '*.js' -not -path './node_modules/*' -not -path './*/node_modules/*' -not -path './local/build/*' -not -path './shared/build/*' -not -path './*/build/*' -not -path './scripts/*' -not -path './local/*.js' -delete && find . -name '*.js.map' -not -path './node_modules/*' -not -path './*/node_modules/*' -not -path './local/build/*' -not -path './shared/build/*' -not -path './*/build/*' -delete",
     "dev": "cd local && npm run dev",
     "test": "node scripts/run-vitest.js",
     "test:ui": "node scripts/run-vitest.js --ui",
@@ -37,6 +37,7 @@
     "@types/node": "^24.0.0",
     "@vitest/ui": "^3.2.3",
     "dotenv": "^16.4.5",
+    "typescript": "^5.7.3",
     "vitest": "^3.2.3"
   },
   "optionalDependencies": {

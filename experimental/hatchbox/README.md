@@ -12,7 +12,7 @@ This MCP server provides tools to interact with Hatchbox's API, allowing you to 
 
 ### Key Features
 
-- **Environment Variable Management**: Get, set, and update environment variables
+- **Environment Variable Management**: Set and delete environment variables (Note: retrieving env vars is not supported by the Hatchbox API)
 - **Deployment Control**: Trigger deployments and check their status
 - **Secure Authentication**: Uses API keys for secure access to your Hatchbox account
 
@@ -85,31 +85,21 @@ Add the server to your Claude Desktop configuration file:
 
 #### `getEnvVars`
 
-Retrieve all environment variables for the configured application.
+**Note:** This operation is not supported by the Hatchbox API. The API only allows setting and deleting environment variables, not retrieving them. To view your environment variables, please use the Hatchbox web dashboard.
 
-**Parameters:** None (uses configured HATCHBOX_ACCOUNT_ID and HATCHBOX_APP_ID)
+**Parameters:** None
 
-**Example:**
-
-```json
-{}
-```
+**Returns:** An error message indicating this operation is not supported
 
 #### `getEnvVar`
 
-Get a specific environment variable value.
+**Note:** This operation is not supported by the Hatchbox API. The API only allows setting and deleting environment variables, not retrieving them. To view your environment variables, please use the Hatchbox web dashboard.
 
 **Parameters:**
 
 - `name` (string, required): The environment variable name
 
-**Example:**
-
-```json
-{
-  "name": "RAILS_ENV"
-}
-```
+**Returns:** An error message indicating this operation is not supported
 
 #### `setEnvVar`
 
@@ -126,6 +116,22 @@ Set or update an environment variable.
 {
   "name": "DATABASE_URL",
   "value": "postgres://user:pass@host:5432/dbname"
+}
+```
+
+#### `deleteEnvVars`
+
+Delete one or more environment variables.
+
+**Parameters:**
+
+- `names` (array of strings, required): Array of environment variable names to delete
+
+**Example:**
+
+```json
+{
+  "names": ["OLD_VAR", "UNUSED_VAR"]
 }
 ```
 
@@ -169,19 +175,22 @@ Check the status of a deployment.
 
 Here are some example queries you can use with Claude:
 
-1. **Get all environment variables:**
-   "Show me all environment variables for my Hatchbox app"
+1. **Set an environment variable:**
+   "Set the RAILS_ENV to production"
 
 2. **Update an environment variable:**
    "Set the RAILS_ENV to production"
 
-3. **Deploy the latest code:**
+3. **Delete environment variables:**
+   "Delete the OLD_VAR and UNUSED_VAR environment variables"
+
+4. **Deploy the latest code:**
    "Deploy the latest commit to Hatchbox"
 
-4. **Deploy a specific commit:**
+5. **Deploy a specific commit:**
    "Deploy commit abc123def456 to Hatchbox"
 
-5. **Check deployment status:**
+6. **Check deployment status:**
    "Check the status of deployment activity 12345"
 
 ## Security Notes

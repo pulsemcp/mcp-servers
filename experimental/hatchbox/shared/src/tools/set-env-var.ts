@@ -33,15 +33,13 @@ export function setEnvVarTool(server: Server, clientFactory: ClientFactory) {
       try {
         await client.setEnvVar(validatedArgs.name, validatedArgs.value);
 
-        // Find if this was an update or create
-        const previousVars = await client.getEnvVars().catch(() => []);
-        const wasUpdate = previousVars.some((env) => env.name === validatedArgs.name);
-
+        // Since we can't retrieve env vars to check if it was an update or create,
+        // we'll just say "set" which covers both cases
         return {
           content: [
             {
               type: 'text',
-              text: `Successfully ${wasUpdate ? 'updated' : 'created'} environment variable: ${validatedArgs.name}=${validatedArgs.value}`,
+              text: `Successfully set environment variable: ${validatedArgs.name}=${validatedArgs.value}`,
             },
           ],
         };

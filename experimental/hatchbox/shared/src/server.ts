@@ -7,6 +7,7 @@ export interface IHatchboxClient {
   // Environment variable operations
   getEnvVars(): Promise<Array<{ name: string; value: string }>>;
   setEnvVar(name: string, value: string): Promise<Array<{ name: string; value: string }>>;
+  deleteEnvVars(names: string[]): Promise<Array<{ name: string; value: string }>>;
 
   // Deployment operations
   triggerDeploy(sha?: string): Promise<{ id: string; status: string }>;
@@ -32,6 +33,11 @@ export class HatchboxClient implements IHatchboxClient {
   async setEnvVar(name: string, value: string): Promise<Array<{ name: string; value: string }>> {
     const { setEnvVar } = await import('./hatchbox-client/lib/set-env-var.js');
     return setEnvVar(this.baseUrl, this.apiKey, this.accountId, this.appId, name, value);
+  }
+
+  async deleteEnvVars(names: string[]): Promise<Array<{ name: string; value: string }>> {
+    const { deleteEnvVars } = await import('./hatchbox-client/lib/delete-env-vars.js');
+    return deleteEnvVars(this.baseUrl, this.apiKey, this.accountId, this.appId, names);
   }
 
   async triggerDeploy(sha?: string): Promise<{ id: string; status: string }> {

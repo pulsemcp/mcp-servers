@@ -4,6 +4,7 @@ import { ClientFactory } from './server.js';
 import { getEnvVarsTool } from './tools/get-env-vars.js';
 import { getEnvVarTool } from './tools/get-env-var.js';
 import { setEnvVarTool } from './tools/set-env-var.js';
+import { deleteEnvVarsTool } from './tools/delete-env-vars.js';
 import { triggerDeployTool } from './tools/trigger-deploy.js';
 import { checkDeployTool } from './tools/check-deploy.js';
 
@@ -24,6 +25,7 @@ export function createRegisterTools(clientFactory: ClientFactory) {
       getEnvVarsTool(server, clientFactory),
       getEnvVarTool(server, clientFactory),
       setEnvVarTool(server, clientFactory),
+      deleteEnvVarsTool(server, clientFactory),
       triggerDeployTool(server, clientFactory),
       checkDeployTool(server, clientFactory),
     ];
