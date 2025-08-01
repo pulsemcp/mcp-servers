@@ -66,7 +66,7 @@ The tests will:
 
 **Test Date:** 2025-08-01  
 **Branch:** tadasant/create-hatchbox-mcp-server-2  
-**Commit:** e060e2b  
+**Commit:** cb20c15  
 **Tested By:** Claude  
 **Environment:** Hatchbox production environment with real API credentials
 
@@ -107,7 +107,7 @@ The Hatchbox API only supports write operations for environment variables (PUT/D
 
 **Test Date:** 2025-08-01  
 **Branch:** tadasant/create-hatchbox-mcp-server-2  
-**Commit:** e060e2b  
+**Commit:** cb20c15  
 **Tested By:** Claude  
 **Environment:** Hatchbox production environment with SSH access
 
