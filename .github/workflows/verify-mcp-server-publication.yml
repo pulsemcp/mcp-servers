@@ -18,6 +18,12 @@ jobs:
         with:
           fetch-depth: 0 # Need full history to check for version changes
 
+      - name: Fetch PR branch
+        run: |
+          git fetch origin pull/${{ github.event.pull_request.number }}/head:pr-branch
+          echo "PR branch commits:"
+          git log --oneline pr-branch | head -20
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -192,28 +198,23 @@ jobs:
                   # First, try to check if the commit exists in the current git history
                   COMMIT_FOUND_IN_PR=false
                   
-                  if git rev-parse "$TESTED_COMMIT" >/dev/null 2>&1; then
-                    # The commit exists, now check if it's part of this PR
-                    # Use git log to check if the commit is reachable from the PR head
-                    if git log --format=%H "$PR_COMMIT" | grep -q "^${TESTED_COMMIT}"; then
+                  # Check if the tested commit exists and is in the PR branch
+                  if git rev-list pr-branch | grep -q "^${TESTED_COMMIT}"; then
+                    echo "✅ Manual tests were run on a commit in this PR's history"
+                    COMMIT_FOUND_IN_PR=true
+                  else
+                    # Fallback: check with short SHA
+                    if git rev-list pr-branch | grep -q "^${TESTED_COMMIT_SHORT}"; then
                       echo "✅ Manual tests were run on a commit in this PR's history"
                       COMMIT_FOUND_IN_PR=true
                     else
-                      # Fallback: check if it's an ancestor (handles merge commit scenarios)
-                      if git merge-base --is-ancestor "$TESTED_COMMIT" "$PR_COMMIT" 2>/dev/null; then
-                        echo "✅ Manual tests were run on a commit in this PR's history"
-                        COMMIT_FOUND_IN_PR=true
-                      else
-                        echo "❌ ERROR: Manual tests were run on commit $TESTED_COMMIT_SHORT"
-                        echo "   This commit is not in the current PR's history"
-                        echo "   Please re-run manual tests on a commit in this PR"
-                        VERIFICATION_FAILED=true
-                      fi
+                      echo "❌ ERROR: Manual tests were run on commit $TESTED_COMMIT_SHORT"
+                      echo "   This commit is not in the current PR's history"
+                      echo "   Available commits in PR:"
+                      git log --oneline pr-branch | head -10
+                      echo "   Please re-run manual tests on a commit in this PR"
+                      VERIFICATION_FAILED=true
                     fi
-                  else
-                    echo "❌ ERROR: Commit $TESTED_COMMIT_SHORT referenced in MANUAL_TESTING.md not found"
-                    echo "   Please update MANUAL_TESTING.md with a valid commit from this PR"
-                    VERIFICATION_FAILED=true
                   fi
                   
                   # Check test results if commit was found
