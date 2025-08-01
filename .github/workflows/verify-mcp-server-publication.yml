@@ -18,6 +18,12 @@ jobs:
         with:
           fetch-depth: 0 # Need full history to check for version changes
 
+      - name: Fetch PR branch
+        run: |
+          git fetch origin pull/${{ github.event.pull_request.number }}/head:pr-branch
+          echo "PR branch commits:"
+          git log --oneline pr-branch | head -20
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -189,9 +195,30 @@ jobs:
                   echo "Manual tests were run on commit: $TESTED_COMMIT_SHORT"
                   
                   # Check if the tested commit is in the PR's commit history
-                  if git merge-base --is-ancestor "$TESTED_COMMIT" "$PR_COMMIT" 2>/dev/null; then
+                  # First, try to check if the commit exists in the current git history
+                  COMMIT_FOUND_IN_PR=false
+                  
+                  # Check if the tested commit exists and is in the PR branch
+                  if git rev-list pr-branch | grep -q "^${TESTED_COMMIT}"; then
                     echo "✅ Manual tests were run on a commit in this PR's history"
-                    
+                    COMMIT_FOUND_IN_PR=true
+                  else
+                    # Fallback: check with short SHA
+                    if git rev-list pr-branch | grep -q "^${TESTED_COMMIT_SHORT}"; then
+                      echo "✅ Manual tests were run on a commit in this PR's history"
+                      COMMIT_FOUND_IN_PR=true
+                    else
+                      echo "❌ ERROR: Manual tests were run on commit $TESTED_COMMIT_SHORT"
+                      echo "   This commit is not in the current PR's history"
+                      echo "   Available commits in PR:"
+                      git log --oneline pr-branch | head -10
+                      echo "   Please re-run manual tests on a commit in this PR"
+                      VERIFICATION_FAILED=true
+                    fi
+                  fi
+                  
+                  # Check test results if commit was found
+                  if [ "$COMMIT_FOUND_IN_PR" = true ]; then
                     # Check test results (but don't fail if tests didn't pass)
                     if grep -q "**Overall:**.* 100%" "$MANUAL_TESTING_FILE" || grep -q "All manual tests passed" "$MANUAL_TESTING_FILE"; then
                       echo "✅ Manual tests passed"
@@ -199,11 +226,6 @@ jobs:
                       echo "ℹ️  Manual tests did not achieve 100% pass rate"
                       echo "   Review MANUAL_TESTING.md for details"
                     fi
-                  else
-                    echo "❌ ERROR: Manual tests were run on commit $TESTED_COMMIT_SHORT"
-                    echo "   This commit is not in the current PR's history"
-                    echo "   Please re-run manual tests on a commit in this PR"
-                    VERIFICATION_FAILED=true
                   fi
                 else
                   echo "❌ ERROR: MANUAL_TESTING.md exists but doesn't contain test results"
