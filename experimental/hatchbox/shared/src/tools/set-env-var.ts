@@ -2,25 +2,48 @@ import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { z } from 'zod';
 import { ClientFactory } from '../server.js';
 
+const PARAM_DESCRIPTIONS = {
+  name: 'The environment variable name (e.g., "FEATURE_FLAG_ENABLED", "API_ENDPOINT", "CACHE_TTL")',
+  value:
+    'The value to set for the environment variable. Can be strings, numbers, URLs, or any text value',
+} as const;
+
 const SetEnvVarSchema = z.object({
-  name: z.string().describe('The environment variable name'),
-  value: z.string().describe('The environment variable value'),
+  name: z.string().describe(PARAM_DESCRIPTIONS.name),
+  value: z.string().describe(PARAM_DESCRIPTIONS.value),
 });
 
 export function setEnvVarTool(server: Server, clientFactory: ClientFactory) {
   return {
     name: 'setEnvVar',
-    description: 'Set or update an environment variable for the Hatchbox application',
+    description: `Set or update an environment variable for your Rails application on Hatchbox. This tool uses the Hatchbox API to modify environment variables, which will be applied on the next deployment. Changes do not take effect immediately - you must trigger a deployment after setting variables.
+
+Example response:
+Successfully set environment variable: FEATURE_FLAG_ENABLED=true
+
+Use cases:
+- Enabling or disabling feature flags
+- Updating API endpoints or external service URLs
+- Changing application configuration values
+- Setting new API keys or credentials
+- Adjusting performance tuning parameters
+- Configuring third-party service integrations
+
+Important notes:
+- Changes require a deployment to take effect
+- Use getEnvVars to verify current values before changes
+- Requires READONLY=false in configuration
+- Some variables like RAILS_ENV should be changed with caution`,
     inputSchema: {
       type: 'object',
       properties: {
         name: {
           type: 'string',
-          description: 'The environment variable name',
+          description: PARAM_DESCRIPTIONS.name,
         },
         value: {
           type: 'string',
-          description: 'The environment variable value',
+          description: PARAM_DESCRIPTIONS.value,
         },
       },
       required: ['name', 'value'],

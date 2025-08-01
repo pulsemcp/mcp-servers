@@ -4,7 +4,28 @@ import { ClientFactory } from '../server.js';
 export function getEnvVarsTool(server: Server, clientFactory: ClientFactory) {
   return {
     name: 'getEnvVars',
-    description: 'Get all environment variables from the Hatchbox server via SSH',
+    description: `Retrieve all environment variables from your Rails application running on Hatchbox via SSH. This tool connects to your server and reads environment variables directly from the running puma process, providing a complete view of your application's runtime configuration.
+
+Example response:
+Environment variables (85 total):
+
+RAILS_ENV=production
+DATABASE_URL=postgres://user:password@localhost/myapp_production
+REDIS_URL=redis://localhost:6379/0
+SECRET_KEY_BASE=abc123...
+RAILS_MASTER_KEY=def456...
+AWS_ACCESS_KEY_ID=AKIA...
+SENDGRID_API_KEY=SG...
+...
+
+Use cases:
+- Auditing all environment variables in production
+- Verifying configuration after deployments
+- Debugging environment-specific issues
+- Checking which services are configured
+- Comparing environments between servers
+
+Note: Requires WEB_SERVER_IP_ADDRESS to be configured`,
     inputSchema: {
       type: 'object',
       properties: {},
