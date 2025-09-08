@@ -64,40 +64,26 @@ The tests will:
 
 ## Latest Test Results
 
-**Test Date:** 2025-08-01  
-**Branch:** tadasant/create-hatchbox-mcp-server-2  
-**Commit:** cb20c155474175005dd7e6af91e639c55e3cd56e  
+**Test Date:** 2025-09-08 15:56 PDT  
+**Branch:** tadasant/setup-packages-for-mcp-registry  
+**Commit:** 38c0ba3  
 **Tested By:** Claude  
-**Environment:** Hatchbox production environment with real API credentials
+**Environment:** Build verification only - no API keys available
 
-### Test Suite Results
+### Test Results
 
-**Overall:** 7/7 tests passed (100%)
+**Type:** Build verification only
+**Status:** ✅ Build successful
 
-**Test Files:**
+**Details:**
 
-- ✅ hatchbox.manual.test.ts: 7 passed | 1 skipped (getEnvVars removed as unsupported)
+- Successfully built shared module
+- Successfully built local module with integration tests
+- TypeScript compilation completed without errors
+- Package ready for version bump
 
-**Test Details:**
+**Note:** Full manual testing with API keys was not performed. This is a metadata-only change (adding mcpName field) that does not affect functionality.
 
-- Environment Variables
-  - ⏭️ Get all environment variables - Skipped (tool removed - API does not support GET)
-  - ✅ Set a test environment variable - Successfully set TEST_VAR_1753992979461=test_value_from_manual_test
-  - ✅ Update an existing environment variable - Successfully updated TEST_UPDATE_VAR to updated_1753992980407
-- Deployments
-  - ✅ Trigger deployment with latest commit - Successfully triggered deployment 2454241
-  - ✅ Check deployment status - Retrieved status: processing
-  - ✅ Trigger deployment with specific SHA - Successfully triggered deployment 2454243 with SHA ff28bd55fb6a3e8d97711a98b843d60248db2578
-- Error Handling
-  - ✅ Handle invalid credentials - Correctly throws "Invalid API key" error
-  - ✅ Handle invalid account/app IDs - Correctly throws error
-
-**Summary:**
-
-All operations are working perfectly:
-
-- Environment variable setting and deletion work as expected
-- Deployment triggering works for both latest commit and specific SHA
 - Deployment status checking works properly
 - Error handling correctly identifies authentication and resource errors
 

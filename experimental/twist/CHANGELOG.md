@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.18] - 2025-09-09
+
+### Added
+
+- Added `mcpName` field to package.json with value `com.pulsemcp/twist` for MCP registry compatibility
+
 ## [0.1.17] - 2025-07-03
 
 ### Added

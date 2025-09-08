@@ -62,22 +62,25 @@ The tests will:
 
 ## Latest Test Results
 
-**Test Date:** 2025-07-04 00:20 PT  
-**Branch:** tadasant/bump-all-versions  
-**Commit:** 251c4b0  
+**Test Date:** 2025-09-08 16:00 PDT  
+**Branch:** tadasant/setup-packages-for-mcp-registry  
+**Commit:** 38c0ba3  
 **Tested By:** Claude  
-**Environment:** Local development with API keys from .env
+**Environment:** Build verification only - no API keys available
 
-### Test Suite Results
+### Test Results
 
-**Overall:** 12/12 tests passed (100%)
+**Type:** Build verification only
+**Status:** ✅ Build successful
 
-**Test Files:**
+**Details:**
 
-- ✅ twist-client.test.ts: 12/12 tests passed
-  - Real API Integration: All 8 tests passed
-  - Error Handling: All 2 tests passed
-  - Performance: All 2 tests passed
+- Successfully built shared module
+- Successfully built local module with integration tests
+- TypeScript compilation completed without errors
+- Package ready for version bump
+
+**Note:** Full manual testing with API keys was not performed. This is a metadata-only change (adding mcpName field) that does not affect functionality.
 
 **Notable Test Activities:**
 

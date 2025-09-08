@@ -13,35 +13,18 @@ Manual tests require:
 
 ### Latest Test Run
 
-**Date:** 2025-01-27  
-**Commit:** 9f81630  
-**Status:** Fully Passing ✅  
-**Notes:** All manual tests passing with enhanced output format showing both slugs and IDs (e.g., "slug-name (ID: 123)"). Fixed double-escaping of table_of_contents HTML strings.
+**Date:** 2025-09-08 15:58 PDT  
+**Commit:** 38c0ba3  
+**Status:** Build verification only  
+**Notes:** Build verification completed successfully. This is a metadata-only change (adding mcpName field) that does not affect functionality.
 
 **Test Results:**
 
-- Tests Run: 9
-- Passed: 9
-- Failed: 0
+- Build: ✅ Successful
+- TypeScript compilation: ✅ No errors
+- Integration tests: ✅ Built successfully
 
-**Working Features:**
-
-- ✓ List posts with pagination (JSON response via `/posts`)
-- ✓ Search posts (JSON response)
-- ✓ Create draft posts (JSON response)
-- ✓ Update posts (JSON response)
-- ✓ Upload images (JSON response)
-- ✓ Get individual posts with full content (JSON response via `/supervisor/posts/:slug`)
-- ✓ Error handling (404 responses)
-- ✓ API key authentication
-- ✓ Duplicate slug validation
-
-**Implementation Notes:**
-
-- Individual post retrieval uses `GET /supervisor/posts/:slug` which returns full post data including body content
-- All resources (posts, authors, MCP servers, MCP clients) use real supervisor endpoints
-- The supervisor endpoints expect slugs (not IDs) which aligns perfectly with our API design
-- No mock data is used - all data comes from the live Rails API
+**Note:** Full manual API testing was not performed as no API key was available. Since this change only adds a metadata field and does not modify functionality, build verification is sufficient.
 
 ## Running Manual Tests
 
