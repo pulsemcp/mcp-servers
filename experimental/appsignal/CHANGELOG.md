@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.15] - 2025-09-09
+
+### Added
+
+- Added `mcpName` field to package.json with value `com.pulsemcp.servers/appsignal` for MCP registry compatibility
+
 ## [0.2.14] - 2025-07-07
 
 ### Fixed

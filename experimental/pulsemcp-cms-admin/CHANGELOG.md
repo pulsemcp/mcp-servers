@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [0.0.4] - 2025-09-09
+
+### Added
+
+- Added `mcpName` field to package.json with value `com.pulsemcp.servers/pulsemcp-cms-admin` for MCP registry compatibility
+
 ## [0.0.3] - 2025-01-27
 
 ### Fixed

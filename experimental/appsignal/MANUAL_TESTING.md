@@ -62,41 +62,26 @@ The tests will:
 
 ## Latest Test Results
 
-**Test Date:** 2025-07-07 13:48 PT  
-**Branch:** tadasant/bump-appsignal  
-**Commit:** 39202f6  
+**Test Date:** 2025-09-08 15:54 PDT  
+**Branch:** tadasant/setup-packages-for-mcp-registry  
+**Commit:** 38c0ba3  
 **Tested By:** Claude  
-**Environment:** Local development with API keys from .env
+**Environment:** Build verification only - no API key available
 
-### Test Suite Results
+### Test Results
 
-**Overall:** 9/9 tests passed (100%)
+**Type:** Build verification only
+**Status:** ✅ Build successful
 
-**Test Files:**
+**Details:**
 
-- ✅ appsignal-new-tools.manual.test.ts: 1/1 tests passed
-  - All new incident tools working correctly with GraphQL queries
-  - List operations for log, exception, and anomaly incidents functional
-  - State filtering and pagination working as expected
-- ✅ appsignal.manual.test.ts: 1/1 tests passed
-  - Core workflow tested successfully with pulsemcp app
-  - Found 10 log entries in search test
-  - Log search works correctly
-- ✅ performance-tools.manual.test.ts: 4/4 tests passed
-  - Error handling verified
-  - No performance incidents found in test app (warning state)
-- ✅ production-app.manual.test.ts: 2/2 tests passed
-  - Production app (pulsemcp) returns results correctly
-  - Found 4 OPEN performance incidents
-  - State handling verified (empty states defaults to OPEN)
-- ✅ search-logs-400.manual.test.ts: 1/1 tests passed
-  - All parameter combinations work without errors
-  - Tested with empty severities, explicit severities, and empty query
+- Successfully built shared module
+- Successfully built local module with integration tests
+- TypeScript compilation completed without errors
+- Package ready for version bump
 
-**Notable Findings:**
+**Note:** Full manual testing with API key was not performed. This is a metadata-only change (adding mcpName field) that does not affect functionality.
 
-- Log search API working correctly with all parameter combinations
-- AppSignal doesn't provide incident listing endpoints
 - Performance incident data available in production app (pulsemcp)
 - Empty states array correctly defaults to OPEN state
 
