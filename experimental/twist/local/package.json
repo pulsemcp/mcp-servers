@@ -2,7 +2,7 @@
   "name": "twist-mcp-server",
   "version": "0.1.18",
   "description": "Local implementation of Twist MCP Server",
-  "mcpName": "com.pulsemcp/twist",
+  "mcpName": "com.pulsemcp.servers/twist",
   "main": "build/index.js",
   "type": "module",
   "bin": {

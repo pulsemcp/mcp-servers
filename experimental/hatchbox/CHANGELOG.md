@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Added `mcpName` field to package.json with value `com.pulsemcp/hatchbox` for MCP registry compatibility
+- Added `mcpName` field to package.json with value `com.pulsemcp.servers/hatchbox` for MCP registry compatibility
 
 ## [0.0.1] - 2025-07-31
 
