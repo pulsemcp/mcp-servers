@@ -1,0 +1,66 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-09-29/server.schema.json",
+  "name": "com.pulsemcp/claude-code-agent",
+  "description": "Claude Code Agent MCP Server - enables agentic MCP configuration to solve tool overload",
+  "version": "0.1.0",
+  "repository": {
+    "url": "https://github.com/pulsemcp/mcp-servers",
+    "source": "github",
+    "subfolder": "experimental/claude-code-agent"
+  },
+  "packages": [
+    {
+      "registryType": "npm",
+      "registryBaseUrl": "https://registry.npmjs.org",
+      "identifier": "claude-code-agent-mcp-server",
+      "version": "0.1.0",
+      "runtimeHint": "npx",
+      "transport": {
+        "type": "stdio"
+      },
+      "runtimeArguments": [
+        {
+          "type": "positional",
+          "value": "-y"
+        }
+      ],
+      "environmentVariables": [
+        {
+          "name": "TRUSTED_SERVERS_PATH",
+          "description": "Path to your servers.md file containing trusted server descriptions",
+          "default": "./servers.md",
+          "isRequired": false
+        },
+        {
+          "name": "SERVER_CONFIGS_PATH",
+          "description": "Path to your servers.json file containing server installation configurations",
+          "default": "./servers.json",
+          "isRequired": false
+        },
+        {
+          "name": "CLAUDE_CODE_PATH",
+          "description": "Path to Claude CLI executable",
+          "default": "claude",
+          "isRequired": false
+        },
+        {
+          "name": "SERVER_SECRETS_PATH",
+          "description": "Path to your .secrets file containing server API keys and credentials",
+          "isRequired": false
+        },
+        {
+          "name": "CLAUDE_AGENT_BASE_DIR",
+          "description": "Directory to store agent workspaces",
+          "default": "/tmp/claude-agents",
+          "isRequired": false
+        },
+        {
+          "name": "CLAUDE_AGENT_LOG_LEVEL",
+          "description": "Log level: debug, info, warn, error",
+          "default": "info",
+          "isRequired": false
+        }
+      ]
+    }
+  ]
+}

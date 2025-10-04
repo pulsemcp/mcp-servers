@@ -1,18 +1,8 @@
 {
   "mcpServers": {
-    "context7": {
-      "type": "stdio",
-      "command": "npx",
-      "args": ["-y", "@upstash/context7-mcp"],
-      "env": {}
-    },
-    "exa": {
-      "type": "stdio",
-      "command": "npx",
-      "args": ["-y", "exa-mcp-server"],
-      "env": {
-        "EXA_API_KEY": "{{EXA_API_KEY}}"
-      }
+    "ref": {
+      "type": "http",
+      "url": "https://api.ref.tools/mcp?apiKey={{REF_API_KEY}}"
     }
   }
 }

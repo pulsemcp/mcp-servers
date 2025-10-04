@@ -1,0 +1,61 @@
+[
+  {
+    "name": "io.github.crystaldba/postgres",
+    "description": "PostgreSQL database integration for MCP",
+    "capabilities": {
+      "tools": ["query", "list_tables", "describe_table", "execute_sql"],
+      "resources": ["database_schema", "connection_status"],
+      "prompts": ["generate_query", "optimize_query"]
+    },
+    "packages": [
+      {
+        "type": "npm",
+        "command": "npx",
+        "args": ["@crystaldba/postgres-mcp-server"],
+        "env": {
+          "DB_HOST": "localhost",
+          "DB_PORT": "5432",
+          "DB_NAME": "mydb",
+          "DB_USER": "user"
+        }
+      }
+    ]
+  },
+  {
+    "name": "com.pulsemcp/fetch",
+    "description": "Web fetch capabilities for MCP",
+    "capabilities": {
+      "tools": ["fetch", "crawl", "extract"],
+      "resources": ["page_content"],
+      "prompts": ["extract_data"]
+    },
+    "packages": [
+      {
+        "type": "npm",
+        "command": "npx",
+        "args": ["@pulsemcp/pulse-fetch"],
+        "env": {}
+      }
+    ]
+  },
+  {
+    "name": "com.pulsemcp/appsignal",
+    "description": "AppSignal monitoring integration",
+    "capabilities": {
+      "tools": ["get_metrics", "list_errors", "get_traces"],
+      "resources": ["app_status", "error_logs"],
+      "prompts": []
+    },
+    "packages": [
+      {
+        "type": "npm",
+        "command": "npx",
+        "args": ["appsignal-mcp-server"],
+        "env": {
+          "APPSIGNAL_API_KEY": "your-api-key",
+          "APPSIGNAL_APP_ID": "your-app-id"
+        }
+      }
+    ]
+  }
+]

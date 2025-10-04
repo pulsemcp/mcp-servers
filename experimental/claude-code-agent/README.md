@@ -2,7 +2,22 @@
 
 An MCP server that solves the "tool overload" problem by enabling agentic MCP configuration. Instead of having all your MCP servers active at once (bloating your context window), this server lets you dynamically spin up a Claude Code subagent with only the relevant MCP servers for the task at hand.
 
-## Overview
+# Table of Contents
+
+- [Overview](#overview)
+- [Capabilities](#capabilities)
+- [Usage Tips](#usage-tips)
+- [Setup](#setup)
+  - [Prerequisites](#prerequisites)
+  - [Environment Variables](#environment-variables)
+  - [Claude Desktop](#claude-desktop)
+- [Development](#development)
+- [Configuration Requirements](#configuration-requirements)
+- [Tools](#tools)
+- [Resources](#resources)
+- [Example Workflow](#example-workflow)
+
+# Overview
 
 The Claude Code Agent MCP Server implements the agentic MCP configuration pattern, allowing you to:
 
@@ -16,62 +31,55 @@ This approach scales to hundreds of trusted servers without any tool overload, a
 
 > **Note**: This server demonstrates the agentic MCP configuration pattern. In the future, we expect MCP clients like Claude Code to have this functionality built-in natively.
 
-## Installation
+# Capabilities
 
-### NPM Package (when published)
+| Tool                      | Description                                                 |
+| ------------------------- | ----------------------------------------------------------- |
+| `init_agent`              | Initialize a Claude Code subagent with custom system prompt |
+| `find_servers`            | Discover relevant MCP servers based on task description     |
+| `install_servers`         | Install selected MCP servers in the subagent                |
+| `chat`                    | Send prompts to subagent and receive responses              |
+| `inspect_transcript`      | View conversation history for debugging                     |
+| `stop_agent`              | Gracefully shut down the subagent                           |
+| `get_server_capabilities` | Query capabilities of available MCP servers                 |
 
-```bash
-# Global installation
-npm install -g claude-code-agent-mcp-server
+| Resource            | Description                                          |
+| ------------------- | ---------------------------------------------------- |
+| Subagent State      | Current status, configuration, and installed servers |
+| Subagent Transcript | Full conversation history in JSON format             |
 
-# Or use with npx
-npx claude-code-agent-mcp-server
-```
+# Usage Tips
 
-### From Source
+- **One agent per server**: Each Claude Code Agent MCP Server instance manages a single subagent
+- **Automatic server discovery**: The `find_servers` tool analyzes your task and suggests only relevant servers
+- **Stateful management**: The server maintains agent state across tool calls within the same session
+- **Resource inspection**: Use MCP resources to inspect agent state and transcripts for debugging
+- **Clean shutdown**: Always use `stop_agent` when done to free resources
 
-```bash
-# Clone the repository
-git clone https://github.com/pulsemcp/mcp-servers
-cd mcp-servers/experimental/claude-code-agent
+## Setup
 
-# Install dependencies
-npm install
+### Prerequisites
 
-# Build the project
-npm run build
+- Node.js 18+
+- Claude CLI installed (for production use)
+- Your own `servers.md` and `servers.json` files with your trusted MCP servers
 
-# Run the server
-npm start
-```
+### Environment Variables
 
-## Configuration
+| Variable                 | Description                    | Required | Default              |
+| ------------------------ | ------------------------------ | -------- | -------------------- |
+| `TRUSTED_SERVERS_PATH`   | Path to your servers.md file   | No       | `./servers.md`       |
+| `SERVER_CONFIGS_PATH`    | Path to your servers.json file | No       | `./servers.json`     |
+| `CLAUDE_CODE_PATH`       | Path to Claude CLI executable  | No       | `claude`             |
+| `SERVER_SECRETS_PATH`    | Path to .secrets file          | No       | -                    |
+| `CLAUDE_AGENT_BASE_DIR`  | Agent workspace directory      | No       | `/tmp/claude-agents` |
+| `CLAUDE_AGENT_LOG_LEVEL` | Logging level                  | No       | `info`               |
 
-### Step 1: Set up your trusted servers
+### Claude Desktop
 
-Create two files in your configuration directory:
+#### Using NPM (when published)
 
-1. **servers.md** - Your personal list of trusted servers with descriptions:
-
-```markdown
-## com.microsoft/playwright
-
-Used when making nontrivial UI changes. Only install when you need to interact with staging UI.
-
-## com.pulsemcp/appsignal
-
-Used when triaging production issues. Gives access to logs and metrics.
-
-## com.postgres/mcp
-
-Used for database queries. Only install when debugging database issues.
-```
-
-2. **servers.json** - Installation instructions for each server (following the server.json standard)
-
-### Step 2: Configure the MCP server
-
-Add to your Claude desktop app configuration:
+Add this to your `claude_desktop_config.json`:
 
 ```json
 {
@@ -80,15 +88,95 @@ Add to your Claude desktop app configuration:
       "command": "npx",
       "args": ["claude-code-agent-mcp-server"],
       "env": {
-        "CLAUDE_CODE_PATH": "/path/to/claude", // Optional: path to Claude CLI
-        "TRUSTED_SERVERS_PATH": "/path/to/servers.md", // Path to your trusted servers list
-        "SERVER_CONFIGS_PATH": "/path/to/servers.json", // Path to server configurations
-        "CLAUDE_AGENT_BASE_DIR": "/path/to/agents", // Optional: where to store agent data
-        "CLAUDE_AGENT_LOG_LEVEL": "info" // Optional: debug, info, warn, error
+        "TRUSTED_SERVERS_PATH": "/path/to/your/servers.md",
+        "SERVER_CONFIGS_PATH": "/path/to/your/servers.json"
       }
     }
   }
 }
+```
+
+#### Using Local Build
+
+For development or before the package is published:
+
+```json
+{
+  "mcpServers": {
+    "claude-code-agent": {
+      "command": "node",
+      "args": ["/path/to/claude-code-agent/local/build/index.js"],
+      "env": {
+        "TRUSTED_SERVERS_PATH": "/path/to/your/servers.md",
+        "SERVER_CONFIGS_PATH": "/path/to/your/servers.json"
+      }
+    }
+  }
+}
+```
+
+## Development
+
+See [CONTRIBUTING.md](../../CONTRIBUTING.md) for development setup and guidelines.
+
+### Quick Start
+
+```bash
+# Clone and navigate to the project
+git clone https://github.com/pulsemcp/mcp-servers
+cd mcp-servers/experimental/claude-code-agent
+
+# Install dependencies
+npm run install-all
+
+# Build
+npm run build
+
+# Run tests
+npm test
+```
+
+## Configuration Requirements
+
+This server requires two configuration files that you must create:
+
+### 1. servers.md
+
+Your trusted servers list with descriptions. Example format:
+
+```markdown
+## com.microsoft/playwright
+
+Used for UI automation and testing. Only install when working with web interfaces.
+
+## com.pulsemcp/appsignal
+
+Monitoring and error tracking. Install when debugging production issues.
+
+## io.github.crystaldba/postgres
+
+PostgreSQL integration. Install for database operations.
+```
+
+### 2. servers.json
+
+Your server installation configurations following the MCP server.json format:
+
+```json
+[
+  {
+    "$schema": "https://static.modelcontextprotocol.io/schemas/2025-09-29/server.schema.json",
+    "name": "com.microsoft/playwright",
+    "description": "Browser automation",
+    "packages": [
+      {
+        "registryType": "npm",
+        "identifier": "@playwright/mcp",
+        "version": "latest"
+      }
+    ]
+  }
+]
 ```
 
 ## Tools

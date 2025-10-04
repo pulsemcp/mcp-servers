@@ -1,39 +1,9 @@
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
-import { registerResources } from './resources.js';
+import { createRegisterResources } from './resources.js';
 import { createRegisterTools } from './tools.js';
+import { IClaudeCodeClient, ClaudeCodeClient } from './claude-code-client/claude-code-client.js';
 
-// Example external API client interface - replace with your actual external API client
-// This is for external services (REST APIs, databases, etc.) - NOT for MCP clients!
-export interface IExampleClient {
-  // Define your external API client methods here
-  getItem(itemId: string): Promise<{ id: string; name: string; value: string }>;
-  searchItems(
-    query: string,
-    options?: { limit?: number; offset?: number; sortBy?: 'name' | 'created' | 'updated' }
-  ): Promise<Array<{ id: string; name: string; score: number }>>;
-}
-
-// Example external API client implementation - replace with your actual implementation
-export class ExampleClient implements IExampleClient {
-  constructor(private apiKey: string) {}
-
-  async getItem(itemId: string): Promise<{ id: string; name: string; value: string }> {
-    // Import from lib/ for better organization
-    const { getItem } = await import('./example-client/lib/get-item.js');
-    return getItem(this.apiKey, itemId);
-  }
-
-  async searchItems(
-    query: string,
-    options?: { limit?: number; offset?: number; sortBy?: 'name' | 'created' | 'updated' }
-  ): Promise<Array<{ id: string; name: string; score: number }>> {
-    // Import from lib/ for better organization
-    const { searchItems } = await import('./example-client/lib/search-items.js');
-    return searchItems(this.apiKey, query, options);
-  }
-}
-
-export type ClientFactory = () => IExampleClient;
+export type ClientFactory = () => IClaudeCodeClient;
 
 export function createMCPServer() {
   const server = new Server(
@@ -50,22 +20,45 @@ export function createMCPServer() {
   );
 
   const registerHandlers = async (server: Server, clientFactory?: ClientFactory) => {
-    // Use provided factory or create default client
-    const factory =
-      clientFactory ||
-      (() => {
-        // Example: Get configuration from environment variables
-        const apiKey = process.env.YOUR_API_KEY;
+    // Create a single client instance that persists across tool calls
+    let clientInstance: IClaudeCodeClient | null = null;
 
-        if (!apiKey) {
-          throw new Error('YOUR_API_KEY environment variable must be configured');
+    const getClient = (): IClaudeCodeClient => {
+      if (!clientInstance) {
+        if (clientFactory) {
+          clientInstance = clientFactory();
+        } else {
+          // Get configuration from environment variables
+          const claudeCodePath = process.env.CLAUDE_CODE_PATH || 'claude';
+          const trustedServersPath = process.env.TRUSTED_SERVERS_PATH;
+          const serverConfigsPath = process.env.SERVER_CONFIGS_PATH;
+          const serverSecretsPath = process.env.SERVER_SECRETS_PATH;
+          const agentBaseDir = process.env.CLAUDE_AGENT_BASE_DIR || '/tmp/claude-agents';
+
+          if (!trustedServersPath) {
+            throw new Error('TRUSTED_SERVERS_PATH environment variable must be configured');
+          }
+
+          if (!serverConfigsPath) {
+            throw new Error('SERVER_CONFIGS_PATH environment variable must be configured');
+          }
+
+          clientInstance = new ClaudeCodeClient(
+            claudeCodePath,
+            trustedServersPath,
+            serverConfigsPath,
+            agentBaseDir,
+            serverSecretsPath
+          );
         }
+      }
+      return clientInstance;
+    };
 
-        return new ExampleClient(apiKey);
-      });
-
+    const registerResources = createRegisterResources(getClient);
     registerResources(server);
-    const registerTools = createRegisterTools(factory);
+
+    const registerTools = createRegisterTools(getClient, process.env.SERVER_CONFIGS_PATH || '');
     registerTools(server);
   };
 

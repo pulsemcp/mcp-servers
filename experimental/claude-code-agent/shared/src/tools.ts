@@ -1,7 +1,13 @@
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { ListToolsRequestSchema, CallToolRequestSchema } from '@modelcontextprotocol/sdk/types.js';
 import { ClientFactory } from './server.js';
-import { exampleTool } from './tools/example-tool.js';
+import { initAgentTool } from './tools/init-agent.js';
+import { findServersTool } from './tools/find-servers.js';
+import { installServersTool } from './tools/install-servers.js';
+import { chatTool } from './tools/chat.js';
+import { inspectTranscriptTool } from './tools/inspect-transcript.js';
+import { stopAgentTool } from './tools/stop-agent.js';
+import { getServerCapabilitiesTool } from './tools/get-server-capabilities.js';
 
 /**
  * Creates a function to register all tools with the server.
@@ -11,15 +17,20 @@ import { exampleTool } from './tools/example-tool.js';
  * a factory pattern that accepts the server and clientFactory as parameters.
  *
  * @param clientFactory - Factory function that creates client instances
+ * @param serverConfigsPath - Path to servers.json configuration file
  * @returns Function that registers all tools with a server
  */
-export function createRegisterTools(clientFactory: ClientFactory) {
+export function createRegisterTools(clientFactory: ClientFactory, serverConfigsPath: string) {
   return (server: Server) => {
     // Create tool instances
     const tools = [
-      exampleTool(server, clientFactory),
-      // Add more tools here as you create them:
-      // anotherTool(server, clientFactory),
+      initAgentTool(server, clientFactory),
+      findServersTool(server, clientFactory),
+      installServersTool(server, clientFactory),
+      chatTool(server, clientFactory),
+      inspectTranscriptTool(server, clientFactory),
+      stopAgentTool(server, clientFactory),
+      getServerCapabilitiesTool(server, serverConfigsPath),
     ];
 
     // List available tools
@@ -55,6 +66,6 @@ export function registerTools(server: Server) {
       'No client factory provided - use createRegisterTools for dependency injection'
     );
   };
-  const register = createRegisterTools(factory);
+  const register = createRegisterTools(factory, '');
   register(server);
 }

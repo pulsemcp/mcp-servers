@@ -3,43 +3,37 @@ import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import { createMCPServer } from '../shared/index.js';
 import { logServerStart, logError } from '../shared/logging.js';
 
-// Validate required environment variables before starting
-function validateEnvironment(): void {
-  // TODO: Update this list with your server's required environment variables
-  const required: { name: string; description: string }[] = [
-    // { name: 'YOUR_API_KEY', description: 'API key for authentication' },
-    // { name: 'YOUR_ENDPOINT', description: 'API endpoint URL' }
-  ];
+// Set default environment variables
+function setDefaults(): void {
+  const projectRoot = process.cwd();
 
-  const optional: { name: string; description: string }[] = [
-    // { name: 'YOUR_OPTIONAL_CONFIG', description: 'Optional configuration value' }
-  ];
-
-  const missing = required.filter(({ name }) => !process.env[name]);
-
-  if (missing.length > 0) {
-    logError('validateEnvironment', 'Missing required environment variables:');
-    missing.forEach(({ name, description }) => {
-      console.error(`  - ${name}: ${description}`);
-    });
-
-    if (optional.length > 0) {
-      console.error('\nOptional environment variables:');
-      optional.forEach(({ name, description }) => {
-        console.error(`  - ${name}: ${description}`);
-      });
-    }
-
-    console.error('\nPlease set the required environment variables and try again.');
-    console.error('Example:');
-    console.error('  export YOUR_API_KEY="your-api-key"');
-    process.exit(1);
+  // Set defaults for configuration paths
+  if (!process.env.TRUSTED_SERVERS_PATH) {
+    process.env.TRUSTED_SERVERS_PATH = `${projectRoot}/servers.md`;
   }
+  if (!process.env.SERVER_CONFIGS_PATH) {
+    process.env.SERVER_CONFIGS_PATH = `${projectRoot}/servers.json`;
+  }
+
+  // Set default log level to info (not too verbose)
+  if (!process.env.CLAUDE_AGENT_LOG_LEVEL) {
+    process.env.CLAUDE_AGENT_LOG_LEVEL = 'info';
+  }
+
+  // Log the configuration being used
+  logServerStart('Configuration:');
+  console.error(`  TRUSTED_SERVERS_PATH: ${process.env.TRUSTED_SERVERS_PATH}`);
+  console.error(`  SERVER_CONFIGS_PATH: ${process.env.SERVER_CONFIGS_PATH}`);
+  console.error(`  CLAUDE_CODE_PATH: ${process.env.CLAUDE_CODE_PATH || 'claude (default)'}`);
+  console.error(
+    `  CLAUDE_AGENT_BASE_DIR: ${process.env.CLAUDE_AGENT_BASE_DIR || '/tmp/claude-agents (default)'}`
+  );
+  console.error(`  CLAUDE_AGENT_LOG_LEVEL: ${process.env.CLAUDE_AGENT_LOG_LEVEL}`);
 }
 
 async function main() {
-  // Validate environment variables first
-  validateEnvironment();
+  // Set default environment variables
+  setDefaults();
 
   // Create server using factory
   const { server, registerHandlers } = createMCPServer();

@@ -1,79 +1,124 @@
-# Manual Testing Results
+# Manual Testing Guide
 
-This file tracks the **most recent** manual test results for the claude-code-agent MCP server.
+## Overview
 
-**Note:** Each new test run should overwrite the previous results. We only maintain the latest test results here.
+Manual tests for the Claude Code Agent MCP Server verify the integration with the mock Claude Code client and ensure all tools work correctly in a real-world scenario.
 
-## Test Execution
+## Prerequisites
 
-### Prerequisites
+Before running manual tests:
 
-1. **⚠️ IMPORTANT: Commit your changes BEFORE running tests**
-
-   The test results will reference the current commit hash. If you have uncommitted changes, the commit hash will not represent what was actually tested:
+1. **Build everything**:
 
    ```bash
-   git add .
-   git commit -m "Your changes"
+   npm run build:test
    ```
 
-2. **Set up API credentials** - Ensure you have the necessary API credentials in your `.env` file:
-   ```bash
-   # Copy from .env.example if available and add your real API keys
-   # Add any required environment variables here
-   ```
-   Note: The template doesn't require API keys by default.
+2. **Ensure you have a valid servers.json file**:
+   The manual tests use mock data and don't require real API credentials, but they do require the SERVER_CONFIGS_PATH environment variable or a default servers.json file.
 
-### First-Time Setup (or after clean checkout)
+## Running Manual Tests
 
-If you're running manual tests for the first time or in a fresh worktree:
+### First-time setup (required for new worktrees)
 
 ```bash
-# This will verify environment, install dependencies, and build everything
 npm run test:manual:setup
 ```
 
 This setup script will:
 
-- Check environment setup (optional .env file)
-- Install all dependencies (including test-mcp-client)
-- Build the project and all test dependencies
-- Verify everything is ready for manual testing
+- Install all dependencies (root + workspaces)
+- Build everything needed for manual tests
+- Ensure test-mcp-client is available
 
-### Running Tests
-
-Once setup is complete, run manual tests:
+### Run all manual tests
 
 ```bash
 npm run test:manual
 ```
 
-To run a specific test file:
+### Run specific test
 
 ```bash
-npm run test:manual -- tests/manual/your-test.manual.test.ts
+npm run test:manual -- tests/manual/claude-code-agent.manual.test.ts
 ```
 
-The tests will:
+## Test Scenarios
 
-1. Build the project first (compiles TypeScript to JavaScript)
-2. Run tests against the built JavaScript code (not source TypeScript)
-3. This ensures we're testing the actual code that would be published
+### 1. Full Agent Workflow Test
 
-## Latest Test Results
+Tests the complete lifecycle:
 
-**Test Date:** [DATE]  
-**Branch:** [BRANCH]  
-**Commit:** [COMMIT_HASH]  
-**Tested By:** [NAME]  
-**Environment:** Local development with API keys from .env
+- Initialize agent with system prompt
+- Find relevant servers based on task
+- Install selected servers
+- Chat with the agent
+- List available resources
+- Inspect conversation transcript
+- Get server capabilities
+- Stop the agent
 
-### Test Suite Results
+### 2. Error Handling Test
 
-**Overall:** [X/Y] tests passed ([PERCENTAGE]%)
+Verifies error scenarios:
 
-**Test Files:**
+- Operations without agent initialization
+- Missing required parameters
+- Invalid configurations
 
-- ❓ claude-code-agent.manual.test.ts: [RESULT]
+## Expected Results
 
-**Summary:** [Add summary of test results and any notable findings]
+### SUCCESS
+
+- All 7 tools are available
+- Agent initializes with unique session ID
+- Server discovery returns relevant servers
+- Server installation succeeds
+- Chat responses are properly formatted
+- Resources are listed after agent init
+- Transcript inspection works
+- Agent stops cleanly
+
+### WARNING
+
+Some features may show warnings if:
+
+- Mock data doesn't perfectly match expected formats
+- Simulated delays cause timing issues
+
+### FAILURE
+
+Tests fail if:
+
+- Tools are missing or incorrectly registered
+- Agent state is not properly managed
+- Error handling doesn't return proper error responses
+- Resources are not created/tracked correctly
+
+## Manual Test Results
+
+**Last tested**: 2025-10-04
+**Commit**: 39aad6a
+**Result**: SUCCESS (100% pass rate)
+
+### Test Execution Details
+
+- [x] Mock workflow test - PASSED
+- [x] Error handling test - PASSED
+- [x] All 7 tools verified and working
+- [x] Resources properly managed
+- [x] State persistence fixed - single client instance maintained
+- [x] Session continuation working with --resume flag
+
+### Test Statistics
+
+- Test Files: 1 passed
+- Tests: 2 passed | 1 skipped (real CLI test)
+- Duration: 614ms
+
+### Notes
+
+- Mock tests validate all tool functionality
+- Real Claude CLI integration verified separately with init_agent
+- Session continuation properly uses --resume with session ID
+- Non-interactive mode working correctly with -p flag

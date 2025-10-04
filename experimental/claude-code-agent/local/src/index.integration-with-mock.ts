@@ -2,10 +2,8 @@
 /**
  * Integration Test Server Entry Point with Mock Client Factory
  *
- * This file is used for integration testing with a mocked ExampleClient.
+ * This file is used for integration testing with a mocked ClaudeCodeClient.
  * It uses the real MCP server but injects a mock client factory.
- *
- * Mock data is passed via the EXAMPLE_MOCK_DATA environment variable.
  */
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 // IMPORTANT: This uses the package name pattern, not a relative path
@@ -14,25 +12,26 @@ import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import { createMCPServer } from '../shared/index.js';
 // Import the mock client factory from the shared module
 // Note: This import path assumes the shared module is built and the integration mock is exported
-import { createIntegrationMockExampleClient } from '../../shared/src/example-client/example-client.integration-mock.js';
+import { MockClaudeCodeClient } from '../../shared/build/claude-code-client/claude-code-client.integration-mock.js';
 
 async function main() {
   const transport = new StdioServerTransport();
 
-  // Parse mock data from environment variable
-  let mockData = {};
-  if (process.env.EXAMPLE_MOCK_DATA) {
-    try {
-      mockData = JSON.parse(process.env.EXAMPLE_MOCK_DATA);
-    } catch (e) {
-      console.error('Failed to parse EXAMPLE_MOCK_DATA:', e);
-    }
-  }
+  // Create a single mock client instance that will be reused
+  const mockClient = new MockClaudeCodeClient();
 
-  // Create client factory that returns our mock
-  const clientFactory = () => createIntegrationMockExampleClient(mockData);
+  // Create client factory that returns our singleton mock
+  const clientFactory = () => mockClient;
 
   const { server, registerHandlers } = createMCPServer();
+
+  // Set required env vars for tests if not already set
+  const projectRoot = process.cwd();
+  process.env.TRUSTED_SERVERS_PATH =
+    process.env.TRUSTED_SERVERS_PATH || `${projectRoot}/servers.md`;
+  process.env.SERVER_CONFIGS_PATH =
+    process.env.SERVER_CONFIGS_PATH || `${projectRoot}/servers.json`;
+
   await registerHandlers(server, clientFactory);
 
   await server.connect(transport);

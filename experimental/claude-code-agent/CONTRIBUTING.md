@@ -40,12 +40,14 @@ Create a `.env` file for any required configuration:
 Using local build:
 
 ```bash
-cd your-server-directory
-npm install
-npm run build
-npx @modelcontextprotocol/inspector node local/build/index.js \
-  -e YOUR_ENV_VAR=<your-value> \
-  -e ANOTHER_ENV_VAR=<another-value>
+# Basic usage
+npx @modelcontextprotocol/inspector node local/build/index.js
+
+# With debug logging and test configuration
+TRUSTED_SERVERS_PATH=/Users/admin/github-projects/tadasant-introduce-claude-code-agent-mcp/experimental/claude-code-agent/servers.md \
+SERVER_CONFIGS_PATH=/Users/admin/github-projects/tadasant-introduce-claude-code-agent-mcp/experimental/claude-code-agent/servers.json \
+CLAUDE_AGENT_LOG_LEVEL=debug \
+npx @modelcontextprotocol/inspector node local/build/index.js
 ```
 
 Using published package (after publishing):

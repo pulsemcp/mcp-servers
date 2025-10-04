@@ -10,3 +10,6 @@ coverage/
 
 # Shared directory symlink/copy in local package
 local/shared
+
+# Test files
+test-session.*

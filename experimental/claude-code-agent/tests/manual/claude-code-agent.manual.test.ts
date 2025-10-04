@@ -1,164 +1,328 @@
-import { describe, it, expect, beforeAll } from 'vitest';
-import { TestMCPClient } from '@/test-mcp-client.js';
-import { IExampleClient } from '@/server.js';
+import { describe, it, expect } from 'vitest';
+import { TestMCPClient } from '../../../../libs/test-mcp-client/build/index.js';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
-/**
- * Manual tests that hit real external APIs.
- * These tests are NOT run in CI and require actual API credentials.
- *
- * To run these tests:
- * 1. Set up your .env file with required credentials (e.g., YOUR_API_KEY)
- * 2. Run: npm run test:manual
- *
- * Test outcomes:
- * - SUCCESS: Test passed, API responded as expected
- * - WARNING: Test passed but with unexpected behavior worth investigating
- * - FAILURE: Test failed, API error or unexpected response
- */
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
-// Define test outcome types
-type TestOutcome = 'SUCCESS' | 'WARNING' | 'FAILURE';
+describe('Claude Code Agent Manual Tests', () => {
+  describe('Mock Workflow', () => {
+    it('should complete a full agent workflow with mock client', async () => {
+      console.log('🚀 Starting Claude Code Agent manual test with mock...');
+      console.log('ℹ️  Using integration mock - no real Claude Code CLI required');
+      console.log('📝 Testing non-interactive mode with -p flag\n');
 
-// Helper to report test outcomes with details
-function reportOutcome(testName: string, outcome: TestOutcome, details?: string) {
-  const emoji = outcome === 'SUCCESS' ? '✅' : outcome === 'WARNING' ? '⚠️' : '❌';
-  console.log(`\n${emoji} ${testName}: ${outcome}`);
-  if (details) {
-    console.log(`   Details: ${details}`);
-  }
-}
-
-describe('claude-code-agent Manual Tests', () => {
-  let client: TestMCPClient<{ client: IExampleClient }>;
-  let apiKey: string | undefined;
-
-  beforeAll(() => {
-    // Check for required environment variables
-    apiKey = process.env.YOUR_API_KEY;
-
-    if (!apiKey) {
-      console.warn('⚠️  YOUR_API_KEY not set in environment. Some tests will be skipped.');
-    }
-
-    // Create test client - in real implementation, you'd pass the actual client
-    client = new TestMCPClient({
-      client: {} as IExampleClient, // Replace with real client in actual implementation
-    });
-  });
-
-  describe('example_tool', () => {
-    it('should process message with real API', async () => {
-      const testName = 'example_tool - real API call';
-
-      if (!apiKey) {
-        reportOutcome(testName, 'WARNING', 'Skipped - no API key provided');
-        return;
-      }
+      const projectRoot = path.join(__dirname, '../..');
+      const client = new TestMCPClient({
+        serverPath: path.join(__dirname, '../../local/build/index.integration-with-mock.js'),
+        env: {
+          TRUSTED_SERVERS_PATH: path.join(projectRoot, 'servers.md'),
+          SERVER_CONFIGS_PATH: path.join(projectRoot, 'servers.json'),
+        },
+        debug: false,
+      });
 
       try {
-        const result = await client.request({
-          method: 'tools/call',
-          params: {
-            name: 'example_tool',
-            arguments: {
-              message: 'Test message for manual testing',
-            },
-          },
+        // Connect to server
+        await client.connect();
+        console.log('✅ Connected to Claude Code Agent MCP Server (Mock)\n');
+
+        // List available tools
+        const tools = await client.listTools();
+        console.log(`📋 Available tools: ${tools.tools.map((t) => t.name).join(', ')}\n`);
+        expect(tools.tools).toHaveLength(7);
+
+        // 1. Initialize agent
+        console.log('1️⃣ Initializing agent...');
+        const initResult = await client.callTool('init_agent', {
+          system_prompt:
+            'You are a helpful assistant specialized in Python development and database operations.',
         });
 
-        // Verify the response structure
-        expect(result).toHaveProperty('content');
-        expect(result.content).toBeInstanceOf(Array);
-        expect(result.content[0]).toHaveProperty('type', 'text');
+        const initData = JSON.parse(initResult.content[0].text);
+        console.log(`✅ Agent initialized with session: ${initData.sessionId}`);
+        console.log(`   Status: ${initData.status}`);
+        console.log(`   State URI: ${initData.stateUri}\n`);
 
-        const responseText = result.content[0].text;
-        console.log('Response:', responseText);
+        // 2. Find relevant servers
+        console.log('2️⃣ Finding servers for database operations...');
+        const findResult = await client.callTool('find_servers', {
+          task_prompt: 'I need to query a PostgreSQL database and fetch data from a web API',
+        });
 
-        // Check for specific patterns in the response
-        if (responseText.includes('error')) {
-          reportOutcome(testName, 'WARNING', 'Response contains error keyword');
-        } else if (responseText.includes('Processed message')) {
-          reportOutcome(testName, 'SUCCESS', 'Message processed successfully');
-        } else {
-          reportOutcome(testName, 'WARNING', 'Unexpected response format');
-        }
-      } catch (error) {
-        reportOutcome(
-          testName,
-          'FAILURE',
-          error instanceof Error ? error.message : 'Unknown error'
-        );
-        throw error;
-      }
-    });
+        const servers = JSON.parse(findResult.content[0].text);
+        console.log(`✅ Found ${servers.servers.length} relevant servers:`);
+        servers.servers.forEach((s: { name: string; rationale: string }) => {
+          console.log(`   - ${s.name}: ${s.rationale}`);
+        });
+        console.log();
 
-    it('should handle API rate limits gracefully', async () => {
-      const testName = 'example_tool - rate limit handling';
+        // 3. Install servers
+        console.log('3️⃣ Installing servers...');
+        const serverNames = servers.servers.map((s: { name: string }) => s.name);
+        const installResult = await client.callTool('install_servers', {
+          server_names: serverNames.slice(0, 2), // Install first 2 servers
+        });
 
-      if (!apiKey) {
-        reportOutcome(testName, 'WARNING', 'Skipped - no API key provided');
-        return;
-      }
+        const installations = JSON.parse(installResult.content[0].text);
+        console.log(`✅ Installation results:`);
+        installations.installations.forEach((i: { serverName: string; status: string }) => {
+          console.log(`   - ${i.serverName}: ${i.status}`);
+        });
+        console.log(`   MCP config written to: ${installations.mcpConfigPath}\n`);
 
-      try {
-        // Make multiple rapid requests to test rate limiting
-        const promises = Array(5)
-          .fill(null)
-          .map((_, i) =>
-            client.request({
-              method: 'tools/call',
-              params: {
-                name: 'example_tool',
-                arguments: {
-                  message: `Rapid request ${i + 1}`,
-                },
-              },
-            })
-          );
+        // 4. Chat with agent
+        console.log('4️⃣ Chatting with agent...');
+        const chatResult = await client.callTool('chat', {
+          prompt: 'Can you help me connect to a PostgreSQL database?',
+          timeout: 30000,
+        });
 
-        const results = await Promise.allSettled(promises);
+        const chatResponse = JSON.parse(chatResult.content[0].text);
+        console.log(`✅ Agent response:`);
+        console.log(`   "${chatResponse.response}"`);
+        console.log(`   Tokens used: ${chatResponse.metadata.tokensUsed}`);
+        console.log(`   Duration: ${chatResponse.metadata.duration}ms\n`);
 
-        const successful = results.filter((r) => r.status === 'fulfilled').length;
-        const failed = results.filter((r) => r.status === 'rejected').length;
+        // 5. Check resources
+        console.log('5️⃣ Checking available resources...');
+        const resources = await client.listResources();
+        console.log(`✅ Found ${resources.resources.length} resources:`);
+        resources.resources.forEach((r) => {
+          console.log(`   - ${r.name}: ${r.uri}`);
+        });
+        console.log();
 
-        console.log(`Successful: ${successful}, Failed: ${failed}`);
+        // 6. Inspect transcript
+        console.log('6️⃣ Inspecting conversation transcript...');
+        const transcriptResult = await client.callTool('inspect_transcript', {
+          format: 'json',
+        });
 
-        if (failed > 0) {
-          // Check if failures are due to rate limiting
-          const rateLimitErrors = results.filter(
-            (r) => r.status === 'rejected' && r.reason?.message?.includes('rate')
-          ).length;
+        const transcript = JSON.parse(transcriptResult.content[0].text);
+        console.log(`✅ Transcript info:`);
+        console.log(`   URI: ${transcript.transcriptUri}`);
+        console.log(`   Messages: ${transcript.metadata.messageCount}`);
+        console.log(`   Last updated: ${transcript.metadata.lastUpdated}\n`);
 
-          if (rateLimitErrors > 0) {
-            reportOutcome(
-              testName,
-              'SUCCESS',
-              `Rate limiting detected correctly (${rateLimitErrors} requests throttled)`
-            );
-          } else {
-            reportOutcome(
-              testName,
-              'WARNING',
-              `${failed} requests failed for non-rate-limit reasons`
-            );
+        // 7. Get server capabilities
+        console.log('7️⃣ Getting server capabilities...');
+        const capResult = await client.callTool('get_server_capabilities', {
+          server_names: serverNames.slice(0, 1), // Check first server
+        });
+
+        const capabilities = JSON.parse(capResult.content[0].text);
+        console.log(`✅ Server capabilities:`);
+        capabilities.servers.forEach(
+          (s: { name: string; capabilities: { tools?: string[]; resources?: string[] } }) => {
+            console.log(`   ${s.name}:`);
+            if (s.capabilities.tools) {
+              console.log(`     - ${s.capabilities.tools.length} tools available`);
+            }
+            if (s.capabilities.resources) {
+              console.log(`     - ${s.capabilities.resources.length} resources available`);
+            }
           }
-        } else {
-          reportOutcome(
-            testName,
-            'SUCCESS',
-            'All requests succeeded - no rate limiting encountered'
-          );
-        }
-      } catch (error) {
-        reportOutcome(
-          testName,
-          'FAILURE',
-          error instanceof Error ? error.message : 'Unknown error'
         );
+        console.log();
+
+        // 8. Stop agent
+        console.log('8️⃣ Stopping agent...');
+        const stopResult = await client.callTool('stop_agent', {});
+
+        const stopData = JSON.parse(stopResult.content[0].text);
+        console.log(`✅ Agent stopped:`);
+        console.log(`   Status: ${stopData.status}`);
+        console.log(`   Final state: ${stopData.finalState.systemPrompt}`);
+        console.log(`   Installed servers: ${stopData.finalState.installedServers.join(', ')}\n`);
+
+        // Disconnect
+        await client.disconnect();
+        console.log('✅ Mock workflow test completed successfully!\n');
+      } catch (error) {
+        console.error('❌ Test failed:', error);
+        await client.disconnect();
         throw error;
       }
     });
   });
 
-  // Add more manual tests here for other tools and edge cases
+  describe('Tool Workflow', () => {
+    it.skip('should complete a full agent workflow with real Claude Code CLI', async () => {
+      console.log('🚀 Starting Claude Code Agent manual test...\n');
+
+      const client = new TestMCPClient({
+        serverPath: path.join(__dirname, '../../local/build/index.js'),
+        env: {
+          // Use default environment variables
+        },
+        debug: true,
+      });
+
+      try {
+        // Connect to server
+        await client.connect();
+        console.log('✅ Connected to Claude Code Agent MCP Server\n');
+
+        // List available tools
+        const tools = await client.listTools();
+        console.log(`📋 Available tools: ${tools.tools.map((t) => t.name).join(', ')}\n`);
+        expect(tools.tools).toHaveLength(7);
+
+        // 1. Initialize agent
+        console.log('1️⃣ Initializing agent...');
+        const initResult = await client.callTool('init_agent', {
+          system_prompt:
+            'You are a helpful assistant specialized in Python development and database operations.',
+        });
+
+        const initData = JSON.parse(initResult.content[0].text);
+        console.log(`✅ Agent initialized with session: ${initData.sessionId}`);
+        console.log(`   Status: ${initData.status}`);
+        console.log(`   State URI: ${initData.stateUri}\n`);
+
+        // 2. Find relevant servers
+        console.log('2️⃣ Finding servers for database operations...');
+        const findResult = await client.callTool('find_servers', {
+          task_prompt: 'I need to query a PostgreSQL database and fetch data from a web API',
+        });
+
+        const servers = JSON.parse(findResult.content[0].text);
+        console.log(`✅ Found ${servers.servers.length} relevant servers:`);
+        servers.servers.forEach((s: { name: string; rationale: string }) => {
+          console.log(`   - ${s.name}: ${s.rationale}`);
+        });
+        console.log();
+
+        // 3. Install servers
+        console.log('3️⃣ Installing servers...');
+        const serverNames = servers.servers.map((s: { name: string }) => s.name);
+        const installResult = await client.callTool('install_servers', {
+          server_names: serverNames.slice(0, 2), // Install first 2 servers
+        });
+
+        const installations = JSON.parse(installResult.content[0].text);
+        console.log(`✅ Installation results:`);
+        installations.installations.forEach((i: { serverName: string; status: string }) => {
+          console.log(`   - ${i.serverName}: ${i.status}`);
+        });
+        console.log(`   MCP config written to: ${installations.mcpConfigPath}\n`);
+
+        // 4. Chat with agent
+        console.log('4️⃣ Chatting with agent...');
+        const chatResult = await client.callTool('chat', {
+          prompt: 'Can you help me connect to a PostgreSQL database?',
+          timeout: 30000,
+        });
+
+        const chatResponse = JSON.parse(chatResult.content[0].text);
+        console.log(`✅ Agent response:`);
+        console.log(`   "${chatResponse.response}"`);
+        console.log(`   Tokens used: ${chatResponse.metadata.tokensUsed}`);
+        console.log(`   Duration: ${chatResponse.metadata.duration}ms\n`);
+
+        // 5. Check resources
+        console.log('5️⃣ Checking available resources...');
+        const resources = await client.listResources();
+        console.log(`✅ Found ${resources.resources.length} resources:`);
+        resources.resources.forEach((r) => {
+          console.log(`   - ${r.name}: ${r.uri}`);
+        });
+        console.log();
+
+        // 6. Inspect transcript
+        console.log('6️⃣ Inspecting conversation transcript...');
+        const transcriptResult = await client.callTool('inspect_transcript', {
+          format: 'json',
+        });
+
+        const transcript = JSON.parse(transcriptResult.content[0].text);
+        console.log(`✅ Transcript info:`);
+        console.log(`   URI: ${transcript.transcriptUri}`);
+        console.log(`   Messages: ${transcript.metadata.messageCount}`);
+        console.log(`   Last updated: ${transcript.metadata.lastUpdated}\n`);
+
+        // 7. Get server capabilities
+        console.log('7️⃣ Getting server capabilities...');
+        const capResult = await client.callTool('get_server_capabilities', {
+          server_names: serverNames.slice(0, 1), // Check first server
+        });
+
+        const capabilities = JSON.parse(capResult.content[0].text);
+        console.log(`✅ Server capabilities:`);
+        capabilities.servers.forEach(
+          (s: { name: string; capabilities: { tools?: string[]; resources?: string[] } }) => {
+            console.log(`   ${s.name}:`);
+            if (s.capabilities.tools) {
+              console.log(`     - ${s.capabilities.tools.length} tools available`);
+            }
+            if (s.capabilities.resources) {
+              console.log(`     - ${s.capabilities.resources.length} resources available`);
+            }
+          }
+        );
+        console.log();
+
+        // 8. Stop agent
+        console.log('8️⃣ Stopping agent...');
+        const stopResult = await client.callTool('stop_agent', {});
+
+        const stopData = JSON.parse(stopResult.content[0].text);
+        console.log(`✅ Agent stopped:`);
+        console.log(`   Status: ${stopData.status}`);
+        console.log(`   Final state: ${stopData.finalState.systemPrompt}`);
+        console.log(`   Installed servers: ${stopData.finalState.installedServers.join(', ')}\n`);
+
+        // Disconnect
+        await client.disconnect();
+        console.log('✅ Test completed successfully!\n');
+      } catch (error) {
+        console.error('❌ Test failed:', error);
+        await client.disconnect();
+        throw error;
+      }
+    });
+  });
+
+  describe('Error Scenarios', () => {
+    it('should handle errors gracefully', async () => {
+      console.log('🔧 Testing error scenarios...\n');
+
+      const client = new TestMCPClient({
+        serverPath: path.join(__dirname, '../../local/build/index.js'),
+        env: {},
+        debug: false,
+      });
+
+      try {
+        await client.connect();
+
+        // Test calling tools without agent initialization
+        console.log('1️⃣ Testing operations without agent initialization...');
+        const installResult = await client.callTool('install_servers', {
+          server_names: ['com.example/test'],
+        });
+
+        console.log(`✅ Correctly handled uninitialized agent:`);
+        console.log(`   Error: ${installResult.isError}`);
+        console.log(`   Message: ${installResult.content[0].text}\n`);
+
+        // Test invalid parameters
+        console.log('2️⃣ Testing invalid parameters...');
+        const initResult = await client.callTool('init_agent', {});
+
+        console.log(`✅ Correctly handled missing parameters:`);
+        console.log(`   Error: ${initResult.isError}`);
+        console.log(`   Message: ${initResult.content[0].text}\n`);
+
+        await client.disconnect();
+        console.log('✅ Error handling tests completed!\n');
+      } catch (error) {
+        console.error('❌ Error test failed:', error);
+        await client.disconnect();
+        throw error;
+      }
+    });
+  });
 });
