@@ -22,7 +22,7 @@
     "build:integration": "tsc -p tsconfig.integration.json",
     "start": "node build/index.js",
     "dev": "tsx src/index.ts",
-    "prebuild": "cd ../shared && npm run build",
+    "prebuild": "cd ../shared && npm run build && cd ../local && node setup-dev.js",
     "prepublishOnly": "node ../scripts/prepare-npm-readme.js",
     "lint": "eslint . --ext .ts,.tsx",
     "lint:fix": "eslint . --ext .ts,.tsx --fix",
