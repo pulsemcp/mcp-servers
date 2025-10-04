@@ -29,6 +29,9 @@ function setDefaults(): void {
     `  CLAUDE_AGENT_BASE_DIR: ${process.env.CLAUDE_AGENT_BASE_DIR || '/tmp/claude-agents (default)'}`
   );
   console.error(`  CLAUDE_AGENT_LOG_LEVEL: ${process.env.CLAUDE_AGENT_LOG_LEVEL}`);
+  console.error(
+    `  CLAUDE_SKIP_PERMISSIONS: ${process.env.CLAUDE_SKIP_PERMISSIONS || 'true (default)'}`
+  );
 }
 
 async function main() {
@@ -40,6 +43,15 @@ async function main() {
 
   // Register all handlers (resources and tools)
   await registerHandlers(server);
+
+  // Set up process cleanup handlers to prevent orphaned child processes
+  const cleanup = async () => {
+    console.error('Received shutdown signal, cleaning up...');
+    process.exit(0);
+  };
+
+  process.on('SIGINT', cleanup);
+  process.on('SIGTERM', cleanup);
 
   // Start server
   const transport = new StdioServerTransport();

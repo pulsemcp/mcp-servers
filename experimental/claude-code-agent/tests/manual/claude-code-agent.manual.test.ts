@@ -300,21 +300,25 @@ describe('Claude Code Agent Manual Tests', () => {
 
         // Test calling tools without agent initialization
         console.log('1️⃣ Testing operations without agent initialization...');
-        const installResult = await client.callTool('install_servers', {
-          server_names: ['com.example/test'],
-        });
-
-        console.log(`✅ Correctly handled uninitialized agent:`);
-        console.log(`   Error: ${installResult.isError}`);
-        console.log(`   Message: ${installResult.content[0].text}\n`);
+        try {
+          await client.callTool('install_servers', {
+            server_names: ['com.example/test'],
+          });
+          throw new Error('Expected an error to be thrown');
+        } catch (error: unknown) {
+          expect(error).toBeDefined();
+          console.log(`✅ Correctly handled uninitialized agent (error thrown)\n`);
+        }
 
         // Test invalid parameters
         console.log('2️⃣ Testing invalid parameters...');
-        const initResult = await client.callTool('init_agent', {});
-
-        console.log(`✅ Correctly handled missing parameters:`);
-        console.log(`   Error: ${initResult.isError}`);
-        console.log(`   Message: ${initResult.content[0].text}\n`);
+        try {
+          await client.callTool('init_agent', {});
+          throw new Error('Expected an error to be thrown');
+        } catch (error: unknown) {
+          expect(error).toBeDefined();
+          console.log(`✅ Correctly handled missing parameters (error thrown)\n`);
+        }
 
         await client.disconnect();
         console.log('✅ Error handling tests completed!\n');

@@ -7,6 +7,15 @@ import { createLogger } from '../logging.js';
 
 const logger = createLogger('claude-code-client');
 
+// Timeout constants (in milliseconds)
+const INIT_TIMEOUT_MS = 30000; // 30 seconds for agent initialization
+const DEFAULT_COMMAND_TIMEOUT_MS = 60000; // 60 seconds for general commands
+const DEFAULT_CHAT_TIMEOUT_MS = 300000; // 5 minutes for chat operations
+const GRACEFUL_SHUTDOWN_DELAY_MS = 5000; // 5 seconds to wait for graceful shutdown
+
+// Max turns constant
+const INIT_MAX_TURNS = 1; // Single turn for initialization
+
 export interface IClaudeCodeClient {
   initAgent(systemPrompt: string): Promise<{
     sessionId: string;
@@ -64,6 +73,7 @@ export class ClaudeCodeClient implements IClaudeCodeClient {
   private serverConfigsPath: string;
   private serverSecretsPath?: string;
   private agentBaseDir: string;
+  private skipPermissions: boolean;
   private currentAgent: {
     process?: ChildProcess;
     workingDir?: string;
@@ -76,13 +86,15 @@ export class ClaudeCodeClient implements IClaudeCodeClient {
     trustedServersPath: string,
     serverConfigsPath: string,
     agentBaseDir: string,
-    serverSecretsPath?: string
+    serverSecretsPath?: string,
+    skipPermissions?: boolean
   ) {
     this.claudeCodePath = claudeCodePath;
     this.trustedServersPath = trustedServersPath;
     this.serverConfigsPath = serverConfigsPath;
     this.agentBaseDir = agentBaseDir;
     this.serverSecretsPath = serverSecretsPath;
+    this.skipPermissions = skipPermissions ?? true; // Default to true for backward compatibility
   }
 
   async initAgent(systemPrompt: string): Promise<{
@@ -123,14 +135,20 @@ export class ClaudeCodeClient implements IClaudeCodeClient {
       const args = [
         '-p',
         initMessage, // -p flag must come early for non-interactive mode
-        '--dangerously-skip-permissions',
+      ];
+
+      if (this.skipPermissions) {
+        args.push('--dangerously-skip-permissions');
+      }
+
+      args.push(
         '--output-format',
         'json',
         '--append-system-prompt',
         systemPrompt,
         '--max-turns',
-        '1', // Just one turn for initialization
-      ];
+        INIT_MAX_TURNS.toString()
+      );
 
       logger.debug('Spawning Claude process:', {
         command: this.claudeCodePath,
@@ -168,10 +186,10 @@ export class ClaudeCodeClient implements IClaudeCodeClient {
           initProcess.kill();
           reject(
             new Error(
-              `Claude Code init timed out after 30s. stdout: ${output}, stderr: ${errorOutput}`
+              `Claude Code init timed out after ${INIT_TIMEOUT_MS}ms. stdout: ${output}, stderr: ${errorOutput}`
             )
           );
-        }, 30000);
+        }, INIT_TIMEOUT_MS);
 
         initProcess.on('exit', (code) => {
           clearTimeout(timeout);
@@ -383,7 +401,7 @@ Format: [{"name": "server.name", "rationale": "why this server is needed"}]`;
 
   async chat(
     prompt: string,
-    timeout = 300000
+    timeout = DEFAULT_CHAT_TIMEOUT_MS
   ): Promise<{
     response: string;
     metadata: {
@@ -539,7 +557,7 @@ Format: [{"name": "server.name", "rationale": "why this server is needed"}]`;
           this.currentAgent.process.kill('SIGTERM');
 
           // Wait for graceful shutdown
-          await new Promise((resolve) => setTimeout(resolve, 5000));
+          await new Promise((resolve) => setTimeout(resolve, GRACEFUL_SHUTDOWN_DELAY_MS));
 
           if (this.currentAgent.process && !this.currentAgent.process.killed) {
             this.currentAgent.process.kill('SIGKILL');
@@ -568,9 +586,14 @@ Format: [{"name": "server.name", "rationale": "why this server is needed"}]`;
     return this.currentAgent.state || null;
   }
 
-  private async runClaudeCodeCommand(args: string[], timeout = 60000): Promise<string> {
+  private async runClaudeCodeCommand(
+    args: string[],
+    timeout = DEFAULT_COMMAND_TIMEOUT_MS
+  ): Promise<string> {
     return new Promise((resolve, reject) => {
-      const process = spawn(this.claudeCodePath, ['--dangerously-skip-permissions', ...args], {
+      const commandArgs = this.skipPermissions ? ['--dangerously-skip-permissions', ...args] : args;
+
+      const process = spawn(this.claudeCodePath, commandArgs, {
         cwd: this.currentAgent.workingDir || this.agentBaseDir,
         stdio: ['pipe', 'pipe', 'pipe'],
       });

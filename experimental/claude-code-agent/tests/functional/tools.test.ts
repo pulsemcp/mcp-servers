@@ -69,10 +69,7 @@ describe('Tools', () => {
     it('should validate required system_prompt', async () => {
       const tool = initAgentTool(mockServer, clientFactory);
 
-      const result = await tool.handler({});
-
-      expect(result.isError).toBe(true);
-      expect(result.content[0].text).toContain('Invalid arguments');
+      await expect(tool.handler({})).rejects.toThrow();
     });
   });
 
@@ -137,12 +134,11 @@ describe('Tools', () => {
     it('should fail if no agent is initialized', async () => {
       const tool = installServersTool(mockServer, clientFactory);
 
-      const result = await tool.handler({
-        server_names: ['com.postgres/mcp'],
-      });
-
-      expect(result.isError).toBe(true);
-      expect(result.content[0].text).toContain('No agent initialized');
+      await expect(
+        tool.handler({
+          server_names: ['com.postgres/mcp'],
+        })
+      ).rejects.toThrow('No agent initialized');
     });
   });
 

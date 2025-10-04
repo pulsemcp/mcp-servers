@@ -9,7 +9,7 @@ export function createMCPServer() {
   const server = new Server(
     {
       name: 'claude-code-agent-mcp-server',
-      version: '0.1.0',
+      version: '0.0.1',
     },
     {
       capabilities: {
@@ -21,6 +21,7 @@ export function createMCPServer() {
 
   const registerHandlers = async (server: Server, clientFactory?: ClientFactory) => {
     // Create a single client instance that persists across tool calls
+    // Using a simple lazy initialization pattern - client creation is synchronous
     let clientInstance: IClaudeCodeClient | null = null;
 
     const getClient = (): IClaudeCodeClient => {
@@ -34,6 +35,10 @@ export function createMCPServer() {
           const serverConfigsPath = process.env.SERVER_CONFIGS_PATH;
           const serverSecretsPath = process.env.SERVER_SECRETS_PATH;
           const agentBaseDir = process.env.CLAUDE_AGENT_BASE_DIR || '/tmp/claude-agents';
+          const skipPermissions =
+            process.env.CLAUDE_SKIP_PERMISSIONS === undefined
+              ? true
+              : process.env.CLAUDE_SKIP_PERMISSIONS === 'true';
 
           if (!trustedServersPath) {
             throw new Error('TRUSTED_SERVERS_PATH environment variable must be configured');
@@ -48,7 +53,8 @@ export function createMCPServer() {
             trustedServersPath,
             serverConfigsPath,
             agentBaseDir,
-            serverSecretsPath
+            serverSecretsPath,
+            skipPermissions
           );
         }
       }

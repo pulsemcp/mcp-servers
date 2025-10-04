@@ -1,5 +1,6 @@
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { promises as fs } from 'fs';
+import { resolve, normalize } from 'path';
 import {
   ListResourcesRequestSchema,
   ReadResourceRequestSchema,
@@ -47,6 +48,22 @@ export function createRegisterResources(clientFactory: ClientFactory) {
       }
 
       const filePath = uri.slice(7); // Remove 'file://' prefix
+      const client = clientFactory();
+      const agentState = await client.getAgentState();
+
+      if (!agentState) {
+        throw new Error('No agent initialized - cannot read resources');
+      }
+
+      // Security: Prevent path traversal attacks
+      // Ensure the requested file is within the agent's working directory
+      const normalizedPath = normalize(resolve(filePath));
+      const normalizedWorkingDir = normalize(resolve(agentState.workingDirectory));
+
+      if (!normalizedPath.startsWith(normalizedWorkingDir)) {
+        logger.error(`Path traversal attempt detected: ${filePath}`);
+        throw new Error(`Access denied: path is outside agent working directory`);
+      }
 
       try {
         const content = await fs.readFile(filePath, 'utf-8');
@@ -63,7 +80,17 @@ export function createRegisterResources(clientFactory: ClientFactory) {
         };
       } catch (error) {
         logger.error(`Failed to read resource ${uri}:`, error);
-        throw new Error(`Resource not found: ${uri}`);
+
+        // Provide more specific error messages
+        if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
+          throw new Error(`Resource not found: ${uri}`);
+        } else if ((error as NodeJS.ErrnoException).code === 'EACCES') {
+          throw new Error(`Permission denied reading resource: ${uri}`);
+        } else if ((error as NodeJS.ErrnoException).code === 'EISDIR') {
+          throw new Error(`Cannot read directory as resource: ${uri}`);
+        } else {
+          throw new Error(`Failed to read resource: ${uri}`);
+        }
       }
     });
   };

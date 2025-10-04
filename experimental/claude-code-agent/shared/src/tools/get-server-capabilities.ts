@@ -80,8 +80,10 @@ Use cases:
             };
           }
 
-          // In a real implementation, we might query the actual servers
-          // For now, return mock capabilities based on known servers
+          // TODO: In a production implementation, this should query actual MCP servers
+          // to retrieve their real capabilities via the MCP protocol.
+          // For now, we return hardcoded capabilities for known servers as a reference.
+          // This is a temporary solution until dynamic server capability discovery is implemented.
           const mockCapabilities: Record<
             string,
             { tools?: string[]; resources?: string[]; prompts?: string[] }

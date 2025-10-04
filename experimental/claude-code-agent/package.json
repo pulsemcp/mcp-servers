@@ -1,6 +1,6 @@
 {
   "name": "claude-code-agent-mcp-server",
-  "version": "0.1.0",
+  "version": "0.0.1",
   "description": "Claude Code Agent MCP Server - enables agentic MCP configuration",
   "author": "Tadas Antanavicius",
   "license": "MIT",

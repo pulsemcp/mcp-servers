@@ -69,9 +69,20 @@ export const FindServersSchema = z.object({
   task_prompt: z.string().describe('Description of the task to accomplish'),
 });
 
+// Server name validation: prevent injection attacks and ensure valid naming
+const SERVER_NAME_REGEX = /^[a-zA-Z0-9._@/-]+$/;
+const validateServerName = (name: string) => {
+  if (!SERVER_NAME_REGEX.test(name)) {
+    throw new Error(
+      `Invalid server name "${name}": must contain only alphanumeric characters, dots, underscores, @, forward slashes, and hyphens`
+    );
+  }
+  return name;
+};
+
 export const InstallServersSchema = z.object({
   server_names: z
-    .array(z.string())
+    .array(z.string().refine(validateServerName, { message: 'Invalid server name format' }))
     .describe('Names of servers to install (from find_servers output)'),
   server_configs: z
     .record(z.any())
@@ -105,7 +116,9 @@ export const StopAgentSchema = z.object({
 });
 
 export const GetServerCapabilitiesSchema = z.object({
-  server_names: z.array(z.string()).describe('Names of servers to query'),
+  server_names: z
+    .array(z.string().refine(validateServerName, { message: 'Invalid server name format' }))
+    .describe('Names of servers to query'),
 });
 
 // Response types

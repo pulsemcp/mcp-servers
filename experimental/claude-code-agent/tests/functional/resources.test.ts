@@ -92,6 +92,9 @@ describe('Resources', () => {
 
   describe('read resource', () => {
     it('should read agent state file', async () => {
+      // Initialize agent first so path traversal validation has working directory
+      await mockClient.initAgent('Test prompt');
+
       const mockState = {
         sessionId: 'test-123',
         status: 'idle',
@@ -122,6 +125,9 @@ describe('Resources', () => {
     });
 
     it('should read transcript file', async () => {
+      // Initialize agent first so path traversal validation has working directory
+      await mockClient.initAgent('Test prompt');
+
       const mockTranscript = [
         {
           role: 'user',
@@ -153,6 +159,9 @@ describe('Resources', () => {
     });
 
     it('should handle non-JSON files', async () => {
+      // Initialize agent first so path traversal validation has working directory
+      await mockClient.initAgent('Test prompt');
+
       vi.mocked(fs.readFile).mockResolvedValue('This is a plain text file');
 
       const handler = mockHandlers['resources/read'];
@@ -182,14 +191,19 @@ describe('Resources', () => {
     });
 
     it('should handle missing files', async () => {
-      vi.mocked(fs.readFile).mockRejectedValue(new Error('ENOENT: no such file or directory'));
+      // Initialize agent first so path traversal validation has working directory
+      await mockClient.initAgent('Test prompt');
+
+      const error = new Error('ENOENT: no such file or directory');
+      (error as NodeJS.ErrnoException).code = 'ENOENT';
+      vi.mocked(fs.readFile).mockRejectedValue(error);
 
       const handler = mockHandlers['resources/read'];
 
       await expect(
         handler({
           params: {
-            uri: 'file:///tmp/missing.json',
+            uri: 'file:///tmp/test-agent/missing.json',
           },
         })
       ).rejects.toThrow('Resource not found');
