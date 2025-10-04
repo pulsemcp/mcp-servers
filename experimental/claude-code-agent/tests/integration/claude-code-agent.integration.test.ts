@@ -194,11 +194,8 @@ describe('claude-code-agent MCP Server Integration Tests', () => {
     it('should validate input schemas', async () => {
       client = await createTestMCPClient();
 
-      // Try calling init_agent without required field - should throw error
-      const result = await client.callTool('init_agent', {});
-
-      // MCP wraps thrown errors in isError field
-      expect(result.isError).toBe(true);
+      // Try calling init_agent without required field - should throw McpError
+      await expect(client.callTool('init_agent', {})).rejects.toThrow('system_prompt');
     });
   });
 
@@ -255,18 +252,19 @@ describe('claude-code-agent MCP Server Integration Tests', () => {
     it('should handle missing required parameters', async () => {
       client = await createTestMCPClient();
 
+      // MCP SDK throws McpError when server throws
       await expect(client.callTool('find_servers', {})).rejects.toThrow('task_prompt');
     });
 
     it('should handle operations on uninitialized agent', async () => {
       client = await createTestMCPClient();
 
-      const result = await client.callTool('install_servers', {
-        server_names: ['com.postgres/mcp'],
-      });
-
-      // MCP wraps thrown errors in isError field
-      expect(result.isError).toBe(true);
+      // MCP SDK throws McpError when server throws
+      await expect(
+        client.callTool('install_servers', {
+          server_names: ['com.postgres/mcp'],
+        })
+      ).rejects.toThrow('No agent initialized');
     });
   });
 });

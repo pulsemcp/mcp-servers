@@ -1,6 +1,6 @@
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { promises as fs } from 'fs';
-import { resolve, normalize } from 'path';
+import { resolve, normalize, relative } from 'path';
 import {
   ListResourcesRequestSchema,
   ReadResourceRequestSchema,
@@ -60,7 +60,13 @@ export function createRegisterResources(clientFactory: ClientFactory) {
       const normalizedPath = normalize(resolve(filePath));
       const normalizedWorkingDir = normalize(resolve(agentState.workingDirectory));
 
-      if (!normalizedPath.startsWith(normalizedWorkingDir)) {
+      // Use path.relative to check if the path escapes the working directory
+      const relativePath = relative(normalizedWorkingDir, normalizedPath);
+      const isOutside =
+        relativePath.startsWith('..') ||
+        resolve(normalizedWorkingDir, relativePath) !== normalizedPath;
+
+      if (isOutside) {
         logger.error(`Path traversal attempt detected: ${filePath}`);
         throw new Error(`Access denied: path is outside agent working directory`);
       }

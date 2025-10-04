@@ -1,5 +1,4 @@
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
-import { z } from 'zod';
 import { IClaudeCodeClient } from '../claude-code-client/claude-code-client.js';
 import { FindServersSchema } from '../types.js';
 import { createLogger } from '../logging.js';
@@ -73,28 +72,7 @@ Use cases:
         };
       } catch (error) {
         logger.error('Failed to find servers:', error);
-
-        if (error instanceof z.ZodError) {
-          return {
-            content: [
-              {
-                type: 'text',
-                text: `Invalid arguments: ${error.errors.map((e) => e.message).join(', ')}`,
-              },
-            ],
-            isError: true,
-          };
-        }
-
-        return {
-          content: [
-            {
-              type: 'text',
-              text: `Error finding servers: ${error instanceof Error ? error.message : 'Unknown error'}`,
-            },
-          ],
-          isError: true,
-        };
+        throw error;
       }
     },
   };

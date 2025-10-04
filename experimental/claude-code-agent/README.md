@@ -243,7 +243,7 @@ Sends a message to the subagent and waits for the response.
 ```typescript
 {
   prompt: string;      // Message/task to send to the subagent
-  timeout?: number;    // Optional: timeout in milliseconds (default: 300000)
+  timeout?: number;    // Optional: timeout in milliseconds (default: 300000 - 5 minutes)
 }
 ```
 
@@ -251,6 +251,12 @@ Sends a message to the subagent and waits for the response.
 
 - Subagent's response message
 - Conversation metadata (tokens used, duration, etc.)
+
+**Timeout Values:**
+
+- Default: 300000ms (5 minutes) for chat operations
+- Agent initialization: 30000ms (30 seconds)
+- General commands: 60000ms (1 minute)
 
 ### `inspect_transcript`
 

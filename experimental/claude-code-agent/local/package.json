@@ -13,7 +13,9 @@
     "build/**/*.d.ts",
     "shared/**/*.js",
     "shared/**/*.d.ts",
-    "README.md"
+    "README.md",
+    "!**/*.test.js",
+    "!**/*.test.d.ts"
   ],
   "scripts": {
     "build": "tsc && npm run build:integration",

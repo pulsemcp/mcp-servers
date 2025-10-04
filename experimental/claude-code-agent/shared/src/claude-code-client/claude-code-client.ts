@@ -250,8 +250,10 @@ export class ClaudeCodeClient implements IClaudeCodeClient {
         stateUri: `file://${stateFile}`,
       };
     } catch (error) {
-      logger.error('Failed to initialize agent', error);
-      throw error;
+      logger.error('Failed to initialize agent:', error);
+      throw new Error(
+        `Failed to initialize agent: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -281,14 +283,16 @@ Format: [{"name": "server.name", "rationale": "why this server is needed"}]`;
       try {
         const response = JSON.parse(result);
         return { servers: response };
-      } catch {
+      } catch (parseError) {
         // Fallback parsing if response isn't perfect JSON
-        logger.warn('Could not parse JSON response, attempting fallback parsing');
+        logger.warn('Could not parse JSON response, attempting fallback parsing:', parseError);
         return { servers: [] };
       }
     } catch (error) {
-      logger.error('Failed to find servers', error);
-      throw error;
+      logger.error('Failed to find servers:', error);
+      throw new Error(
+        `Failed to find servers: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -394,8 +398,10 @@ Format: [{"name": "server.name", "rationale": "why this server is needed"}]`;
         mcpConfigPath,
       };
     } catch (error) {
-      logger.error('Failed to install servers', error);
-      throw error;
+      logger.error('Failed to install servers:', error);
+      throw new Error(
+        `Failed to install servers: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -478,8 +484,8 @@ Format: [{"name": "server.name", "rationale": "why this server is needed"}]`;
         await this.saveAgentState();
       }
 
-      logger.error('Chat failed', error);
-      throw error;
+      logger.error('Chat failed:', error);
+      throw new Error(`Chat failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
@@ -532,8 +538,10 @@ Format: [{"name": "server.name", "rationale": "why this server is needed"}]`;
         },
       };
     } catch (error) {
-      logger.error('Failed to inspect transcript', error);
-      throw error;
+      logger.error('Failed to inspect transcript:', error);
+      throw new Error(
+        `Failed to inspect transcript: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
