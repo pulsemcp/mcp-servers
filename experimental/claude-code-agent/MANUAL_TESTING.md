@@ -6,7 +6,7 @@ Manual tests for the Claude Code Agent MCP Server verify the integration with th
 
 ## Latest Test Results
 
-**Commit:** 8da2724
+**Commit:** 3d64360
 **Date:** 2025-10-04
 **Overall:** 100% passing (3/3 test suites)
 
