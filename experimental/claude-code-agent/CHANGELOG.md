@@ -4,6 +4,8 @@ All notable changes to the Claude Code Agent MCP Server will be documented in th
 
 ## [Unreleased]
 
+## [0.0.1] - 2025-10-04
+
 ### Fixed
 
 - Claude CLI integration now properly uses non-interactive mode with `-p` flag
