@@ -1,6 +1,6 @@
 {
   "name": "claude-code-agent-mcp-server",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Local implementation of claude-code-agent MCP server",
   "mcpName": "claude-code-agent",
   "main": "build/index.js",
