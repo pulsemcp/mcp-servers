@@ -48,8 +48,8 @@ export const TranscriptEntrySchema = z.object({
         .array(
           z.object({
             name: z.string(),
-            arguments: z.any(),
-            result: z.any(),
+            arguments: z.unknown(),
+            result: z.unknown(),
           })
         )
         .optional(),
@@ -85,7 +85,11 @@ export const InstallServersSchema = z.object({
     .array(z.string().refine(validateServerName, { message: 'Invalid server name format' }))
     .describe('Names of servers to install (from find_servers output)'),
   server_configs: z
-    .record(z.any())
+    .record(
+      z.object({
+        env: z.record(z.string()).optional(),
+      })
+    )
     .optional()
     .describe('Optional: custom configurations for servers'),
 });

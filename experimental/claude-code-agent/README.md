@@ -68,8 +68,8 @@ This approach scales to hundreds of trusted servers without any tool overload, a
 
 | Variable                 | Description                    | Required | Default              |
 | ------------------------ | ------------------------------ | -------- | -------------------- |
-| `TRUSTED_SERVERS_PATH`   | Path to your servers.md file   | No       | `./servers.md`       |
-| `SERVER_CONFIGS_PATH`    | Path to your servers.json file | No       | `./servers.json`     |
+| `TRUSTED_SERVERS_PATH`   | Path to your servers.md file   | Yes      | `./servers.md`       |
+| `SERVER_CONFIGS_PATH`    | Path to your servers.json file | Yes      | `./servers.json`     |
 | `CLAUDE_CODE_PATH`       | Path to Claude CLI executable  | No       | `claude`             |
 | `SERVER_SECRETS_PATH`    | Path to .secrets file          | No       | -                    |
 | `CLAUDE_AGENT_BASE_DIR`  | Agent workspace directory      | No       | `/tmp/claude-agents` |

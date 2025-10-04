@@ -14,7 +14,7 @@
     "ci:install": "npm ci && cd local && npm ci && cd ../shared && npm ci",
     "build": "cd shared && npm run build && cd ../local && npm run build",
     "build:test": "cd shared && npm run build && cd ../local && npm run build && cd ../../../libs/test-mcp-client && npm run build",
-    "clean": "find . -name '*.js' -not -path './node_modules/*' -not -path './*/node_modules/*' -not -path './local/build/*' -not -path './shared/build/*' -not -path './*/build/*' -delete && find . -name '*.js.map' -not -path './node_modules/*' -not -path './*/node_modules/*' -not -path './local/build/*' -not -path './shared/build/*' -not -path './*/build/*' -delete",
+    "clean": "find . -name '*.js' -not -path './node_modules/*' -not -path './*/node_modules/*' -not -path './local/build/*' -not -path './shared/build/*' -not -path './*/build/*' -not -path './scripts/*' -delete && find . -name '*.js.map' -not -path './node_modules/*' -not -path './*/node_modules/*' -not -path './local/build/*' -not -path './shared/build/*' -not -path './*/build/*' -not -path './scripts/*' -delete",
     "dev": "cd local && npm run dev",
     "test": "echo '⚠️  Tests require manual setup - skipping in CI' && exit 0",
     "test:local": "node scripts/run-vitest.js",
