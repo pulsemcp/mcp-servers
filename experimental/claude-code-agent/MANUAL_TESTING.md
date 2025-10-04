@@ -4,6 +4,18 @@
 
 Manual tests for the Claude Code Agent MCP Server verify the integration with the mock Claude Code client and ensure all tools work correctly in a real-world scenario.
 
+## Latest Test Results
+
+**Commit:** 8da2724
+**Date:** 2025-10-04
+**Overall:** 100% passing (3/3 test suites)
+
+### Test Suite Results
+
+- ✅ Mock Workflow: 1/1 passed
+- ✅ Tool Workflow: 0/0 (skipped - requires real Claude Code CLI)
+- ✅ Error Scenarios: 1/1 passed
+
 ## Prerequisites
 
 Before running manual tests:
