@@ -47,7 +47,7 @@ buildProcess.on('close', (code) => {
       env: {
         ...process.env,
         // Ensure we're testing the built code
-        MCP_TEMPLATE_TEST_MODE: 'built',
+        CLAUDE_CODE_AGENT_TEST_MODE: 'built',
       },
     }
   );

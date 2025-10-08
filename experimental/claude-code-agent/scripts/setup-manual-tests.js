@@ -20,8 +20,8 @@ console.log('🔧 Setting up manual test environment...\n');
 const envPath = path.join(rootDir, '.env');
 if (!existsSync(envPath)) {
   console.log('ℹ️  No .env file found');
-  console.log("   This is OK for the template - it doesn't require API keys");
-  console.log('   When implementing your server, create .env from .env.example if needed\n');
+  console.log("   This is OK for claude-code-agent - it doesn't require API keys");
+  console.log('   Create .env from .env.example if you need custom configurations\n');
 } else {
   console.log('✅ .env file found\n');
 }
@@ -59,5 +59,5 @@ console.log('\nYou can now run manual tests with:');
 console.log('  npm run test:manual');
 console.log('\nTo run a specific test file:');
 console.log('  npm run test:manual -- tests/manual/your-test.manual.test.ts');
-console.log('\nNote: The template includes example manual tests.');
-console.log('      Update them when implementing your server.');
+console.log('\nNote: These are the claude-code-agent manual tests.');
+console.log('      They verify the agent workflow with mock and real Claude Code.');
