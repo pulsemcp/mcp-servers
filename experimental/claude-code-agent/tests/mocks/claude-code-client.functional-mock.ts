@@ -12,6 +12,16 @@ export class FunctionalMockClaudeCodeClient implements IClaudeCodeClient {
     }
   }
 
+  async verifyCliTools() {
+    // Mock successful CLI tool verification
+    return {
+      status: 'success' as const,
+      availableTools: ['npx', 'uvx', 'uv', 'docker', 'node', 'claude'],
+      missingTools: [],
+      errors: [],
+    };
+  }
+
   async initAgent(systemPrompt: string) {
     // Simulate the non-interactive mode behavior
     console.log('[Mock] Simulating claude -p "Agent initialized" with system prompt');

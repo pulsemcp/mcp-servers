@@ -4,6 +4,10 @@ import { join } from 'path';
 import { v4 as uuidv4 } from 'uuid';
 import { AgentState, ServerConfig } from '../types.js';
 import { createLogger } from '../logging.js';
+import { promisify } from 'util';
+import { exec as execCallback } from 'child_process';
+
+const exec = promisify(execCallback);
 
 const logger = createLogger('claude-code-client');
 
@@ -17,6 +21,13 @@ const GRACEFUL_SHUTDOWN_DELAY_MS = 5000; // 5 seconds to wait for graceful shutd
 const INIT_MAX_TURNS = 1; // Single turn for initialization
 
 export interface IClaudeCodeClient {
+  verifyCliTools(): Promise<{
+    status: 'success' | 'failed';
+    availableTools: string[];
+    missingTools: string[];
+    errors: string[];
+  }>;
+
   initAgent(systemPrompt: string): Promise<{
     sessionId: string;
     status: 'idle' | 'working';
@@ -74,6 +85,7 @@ export class ClaudeCodeClient implements IClaudeCodeClient {
   private serverSecretsPath?: string;
   private agentBaseDir: string;
   private skipPermissions: boolean;
+  private availableTools: Map<string, boolean> = new Map();
   private currentAgent: {
     process?: ChildProcess;
     workingDir?: string;
@@ -95,6 +107,60 @@ export class ClaudeCodeClient implements IClaudeCodeClient {
     this.agentBaseDir = agentBaseDir;
     this.serverSecretsPath = serverSecretsPath;
     this.skipPermissions = skipPermissions ?? true; // Default to true for backward compatibility
+  }
+
+  /**
+   * Verifies that required CLI tools are available.
+   * Should be called at startup to ensure all necessary tools are installed.
+   */
+  async verifyCliTools(): Promise<{
+    status: 'success' | 'failed';
+    availableTools: string[];
+    missingTools: string[];
+    errors: string[];
+  }> {
+    const tools = [
+      { name: 'npx', command: 'npx --version' },
+      { name: 'uvx', command: '/Users/admin/.local/bin/uvx --version' },
+      { name: 'uv', command: '/Users/admin/.local/bin/uv --version' },
+      { name: 'docker', command: 'docker --version' },
+      { name: 'node', command: 'node --version' },
+      { name: 'claude', command: this.claudeCodePath + ' --version' },
+    ];
+
+    const availableTools: string[] = [];
+    const missingTools: string[] = [];
+    const errors: string[] = [];
+
+    for (const tool of tools) {
+      try {
+        await exec(tool.command);
+        this.availableTools.set(tool.name, true);
+        availableTools.push(tool.name);
+        logger.debug(`✓ ${tool.name} is available`);
+      } catch (error) {
+        this.availableTools.set(tool.name, false);
+        missingTools.push(tool.name);
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        errors.push(`${tool.name}: ${errorMessage}`);
+        logger.warn(`✗ ${tool.name} is not available: ${errorMessage}`);
+      }
+    }
+
+    const status = missingTools.length === 0 ? 'success' : 'failed';
+
+    if (status === 'failed') {
+      logger.error('Some CLI tools are missing. This may limit server installation capabilities.');
+    } else {
+      logger.info('All CLI tools verified successfully.');
+    }
+
+    return {
+      status,
+      availableTools,
+      missingTools,
+      errors,
+    };
   }
 
   async initAgent(systemPrompt: string): Promise<{
@@ -802,21 +868,26 @@ Format: [{"name": "server.name", "rationale": "why this server is needed"}]`;
 
   /**
    * Selects the best package configuration from available packages.
-   * Prioritizes based on compatibility with Claude Code MCP support.
+   * Prioritizes based on user-specified precedence: remote first, then npx, uvx, docker.
    */
   private selectBestPackage(packages: unknown[]): unknown | null {
-    // Priority order for server types
+    // Priority order for server types (as specified by user)
     const priority = [
-      // New schema types (server.json format)
-      'npm', // npm packages
-      'github', // GitHub repositories
-      'git', // Git repositories
-      'filesystem', // Local filesystem paths
-      'http', // HTTP servers
+      // Remote servers (highest precedence)
+      'http', // HTTP servers (streamable)
       'sse', // Server-Sent Events
-      // Old schema types (servers.json format)
+      // Local package managers (second priority)
+      'npm', // npm packages via npx
+      'github', // GitHub repositories via npx
+      // Python packages (third priority)
+      'python', // Python packages via uvx/uv
+      // Docker containers (fourth priority)
+      'docker', // Docker containers
+      // Local filesystem and git (lowest priority)
+      'filesystem', // Local filesystem paths
+      'git', // Git repositories
+      // Legacy types
       'binary', // Binary executables
-      'python', // Python packages
     ];
 
     for (const preferredType of priority) {
@@ -940,40 +1011,85 @@ Format: [{"name": "server.name", "rationale": "why this server is needed"}]`;
 
   /**
    * Converts old schema (servers.json) format to MCP configuration.
+   * Supports all modern MCP server types including remote, stdio, docker, etc.
    */
   private convertOldSchemaToMcp(
     packageConfig: unknown,
     customEnv: Record<string, string>,
     secrets: Record<string, string>
   ): unknown {
-    const {
-      command,
-      args,
-      env: packageEnv,
-    } = packageConfig as {
-      type: string;
-      command: string;
+    const config = packageConfig as {
+      type?: string;
+      command?: string;
       args?: string[];
       env?: Record<string, string>;
+      url?: string;
+      headers?: Record<string, string>;
     };
 
     // Merge environment variables
     const env = {
-      ...packageEnv,
+      ...config.env,
       ...customEnv,
       ...secrets,
     };
 
-    // All old schema types use stdio transport
+    // Handle remote server types first (highest precedence)
+    if (config.type === 'http') {
+      if (!config.url) {
+        throw new Error('HTTP server configuration requires URL');
+      }
+      return {
+        type: 'http',
+        url: config.url,
+        headers: { ...config.headers, ...env },
+      };
+    }
+
+    if (config.type === 'sse') {
+      if (!config.url) {
+        throw new Error('SSE server configuration requires URL');
+      }
+      return {
+        type: 'sse',
+        url: config.url,
+        headers: { ...config.headers, ...env },
+      };
+    }
+
+    // Handle stdio transport types
+    if (!config.command) {
+      throw new Error('Stdio server configuration requires command');
+    }
+
+    // Intelligent command selection based on available tools
+    let finalCommand = config.command;
+    const finalArgs = config.args || [];
+
+    // If command is a known tool name, use the best available version
+    if (config.command === 'npx' && !this.availableTools.get('npx')) {
+      throw new Error('npx is required but not available');
+    }
+    if (config.command === 'uvx') {
+      finalCommand = this.selectBestTool(['/Users/admin/.local/bin/uvx', 'uvx']) || config.command;
+    }
+    if (config.command === 'uv') {
+      finalCommand = this.selectBestTool(['/Users/admin/.local/bin/uv', 'uv']) || config.command;
+    }
+    if (config.command === 'docker' && !this.availableTools.get('docker')) {
+      throw new Error('Docker is required but not available');
+    }
+
     return {
-      command,
-      args: args || [],
+      command: finalCommand,
+      args: finalArgs,
       env,
     };
   }
 
   /**
    * Creates stdio configuration for various registry types.
+   * Uses intelligent tool selection based on availability and precedence.
    */
   private createStdioConfig(
     registryType: string,
@@ -997,8 +1113,8 @@ Format: [{"name": "server.name", "rationale": "why this server is needed"}]`;
 
     switch (registryType) {
       case 'npm': {
-        // npm packages via npx
-        const command = runtimeHint || 'npx';
+        // npm packages via npx (preferred) or fallback to runtime hint
+        const command = runtimeHint || this.selectBestTool(['npx', 'node']) || 'npx';
         return {
           command,
           args: [...args, identifier],
@@ -1006,10 +1122,57 @@ Format: [{"name": "server.name", "rationale": "why this server is needed"}]`;
         };
       }
 
+      case 'python': {
+        // Python packages - priority: uvx, uv, then fallback
+        const command =
+          this.selectBestTool(['/Users/admin/.local/bin/uvx', '/Users/admin/.local/bin/uv']) ||
+          runtimeHint ||
+          'python';
+        if (command.includes('uvx')) {
+          return {
+            command,
+            args: [...args, identifier],
+            env,
+          };
+        } else if (command.includes('uv')) {
+          return {
+            command,
+            args: ['run', ...args, identifier],
+            env,
+          };
+        } else {
+          // Fallback to pip install + run
+          return {
+            command,
+            args: ['-m', 'pip', 'install', identifier, '&&', 'python', '-m', identifier, ...args],
+            env,
+          };
+        }
+      }
+
+      case 'docker': {
+        // Docker containers
+        if (!this.availableTools.get('docker')) {
+          throw new Error('Docker is not available but required for this server type');
+        }
+        return {
+          command: 'docker',
+          args: [
+            'run',
+            '--rm',
+            '-i',
+            ...Object.entries(env).flatMap(([k, v]) => ['-e', `${k}=${v}`]),
+            identifier,
+            ...args,
+          ],
+          env,
+        };
+      }
+
       case 'github':
         // GitHub repositories via npx
         return {
-          command: 'npx',
+          command: this.selectBestTool(['npx']) || 'npx',
           args: [...args, identifier],
           env,
         };
@@ -1029,5 +1192,18 @@ Format: [{"name": "server.name", "rationale": "why this server is needed"}]`;
       default:
         throw new Error(`Unsupported registry type for stdio transport: ${registryType}`);
     }
+  }
+
+  /**
+   * Selects the best available tool from a list of preferences.
+   */
+  private selectBestTool(preferences: string[]): string | null {
+    for (const tool of preferences) {
+      const toolName = tool.split('/').pop() || tool; // Extract tool name from path
+      if (this.availableTools.get(toolName) || this.availableTools.get(tool)) {
+        return tool;
+      }
+    }
+    return null;
   }
 }

@@ -48,7 +48,7 @@ export function createMCPServer() {
             throw new Error('SERVER_CONFIGS_PATH environment variable must be configured');
           }
 
-          clientInstance = new ClaudeCodeClient(
+          const client = new ClaudeCodeClient(
             claudeCodePath,
             trustedServersPath,
             serverConfigsPath,
@@ -56,6 +56,13 @@ export function createMCPServer() {
             serverSecretsPath,
             skipPermissions
           );
+
+          // Verify CLI tools at startup (async operation, but fire-and-forget for startup performance)
+          client.verifyCliTools().catch((error) => {
+            console.error('Warning: CLI tool verification failed during startup:', error);
+          });
+
+          clientInstance = client;
         }
       }
       return clientInstance;

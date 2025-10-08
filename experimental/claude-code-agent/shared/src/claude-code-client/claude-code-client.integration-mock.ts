@@ -10,6 +10,16 @@ export class MockClaudeCodeClient implements IClaudeCodeClient {
     timestamp: string;
   }> = [];
 
+  async verifyCliTools() {
+    // Mock CLI tool verification with some tools missing to test handling
+    return {
+      status: 'success' as const,
+      availableTools: ['npx', 'node', 'claude'],
+      missingTools: ['uvx', 'uv', 'docker'],
+      errors: ['uvx: command not found', 'uv: command not found', 'docker: command not found'],
+    };
+  }
+
   async initAgent(systemPrompt: string) {
     this.mockState = {
       sessionId: 'mock-session-' + Math.random().toString(36).substr(2, 9),
