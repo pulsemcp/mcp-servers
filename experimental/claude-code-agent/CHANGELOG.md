@@ -6,22 +6,6 @@ All notable changes to the Claude Code Agent MCP Server will be documented in th
 
 ## [0.0.1] - 2025-10-04
 
-### Fixed
-
-- Claude CLI integration now properly uses non-interactive mode with `-p` flag
-- Session continuation now uses `--resume <session_id>` for proper context maintenance
-- Process spawning now closes stdin immediately to prevent hanging
-- State persistence fixed by maintaining single client instance across tool calls
-- Session ID parsing updated to handle Claude's `session_id` field format
-
-### Changed
-
-- Default log level set to 'info' instead of 'debug' for cleaner output
-- `find_servers` tool now optionally uses session context when available
-- Updated `@modelcontextprotocol/sdk` to v1.19.1
-- Added Inspector debugging command to CONTRIBUTING.md
-- Updated .gitignore to exclude test session files and temp directories
-
 ### Added
 
 - Initial implementation of Claude Code Agent MCP Server
@@ -44,6 +28,19 @@ All notable changes to the Claude Code Agent MCP Server will be documented in th
 - Environment variable validation
 - Proper error handling with user-friendly messages
 - Logging infrastructure using stderr
+- Claude CLI integration using non-interactive mode with `-p` flag
+- Session continuation support using `--resume <session_id>` for context maintenance
+- Process spawning that closes stdin immediately to prevent hanging
+- State persistence through single client instance across tool calls
+- Session ID parsing for Claude's `session_id` field format
+
+### Changed
+
+- Default log level set to 'info' instead of 'debug' for cleaner output
+- `find_servers` tool now optionally uses session context when available
+- Updated `@modelcontextprotocol/sdk` to v1.19.1
+- Added Inspector debugging command to CONTRIBUTING.md
+- Updated .gitignore to exclude test session files and temp directories
 
 ### Technical Details
 
