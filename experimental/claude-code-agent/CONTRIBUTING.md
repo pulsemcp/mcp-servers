@@ -1,16 +1,12 @@
-# Contributing
+# Contributing to Claude Code Agent MCP Server
 
 This document provides guidelines for contributing to the claude-code-agent MCP server.
 
-## Getting Started
+For general contribution guidelines, please see the [main repository CONTRIBUTING.md](../../CONTRIBUTING.md).
 
-1. Copy this entire directory to your desired location
-2. Rename the directory to your server name
-3. Update all instances of:
-   - `NAME` → claude-code-agent
-   - `DESCRIPTION` → Claude Code Agent MCP Server - enables agentic MCP configuration
-   - Package names in `package.json` files
-4. Update this CONTRIBUTING.md with your server-specific information
+## About This Server
+
+The Claude Code Agent MCP Server enables agentic MCP configuration management, allowing Claude to dynamically configure and manage MCP servers.
 
 ## Running the server locally
 
@@ -68,7 +64,7 @@ tail -n 20 -f ~/Library/Logs/Claude/mcp*.log
 
 ## Testing
 
-This template includes placeholders for three types of tests:
+This server supports three types of tests:
 
 1. **Functional Tests** (`npm test`) - Unit tests with mocked dependencies
 2. **Integration Tests** (`npm run test:integration`) - Tests the full MCP server
@@ -137,12 +133,12 @@ Quick summary:
 - Document all resources and tools in your README.md
 - Consider adding TypeScript JSDoc comments for better IDE support
 
-## Template Structure
+## Server Structure
 
-This template follows the standard MCP server structure:
+This server follows the standard MCP server structure:
 
 ```
-your-server/
+claude-code-agent/
 ├── shared/           # Core business logic
 │   ├── src/
 │   │   ├── resources.ts  # MCP resources
