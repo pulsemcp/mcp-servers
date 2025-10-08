@@ -1,8 +1,16 @@
 {
-  "extends": "./tsconfig.json",
   "compilerOptions": {
-    "rootDir": "../",
-    "outDir": "./build"
+    "target": "es2022",
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "outDir": "./build",
+    "rootDir": "./src",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "lib": ["es2022"],
+    "types": ["node"]
   },
-  "include": ["src/index.integration-with-mock.ts", "../shared/src/**/*"]
+  "include": ["src/index.integration-with-mock.ts"]
 }
