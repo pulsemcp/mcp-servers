@@ -1,0 +1,276 @@
+{
+  "numTotalTestSuites": 19,
+  "numPassedTestSuites": 16,
+  "numFailedTestSuites": 3,
+  "numPendingTestSuites": 0,
+  "numTotalTests": 24,
+  "numPassedTests": 23,
+  "numFailedTests": 1,
+  "numPendingTests": 0,
+  "numTodoTests": 0,
+  "snapshot": {
+    "added": 0,
+    "failure": false,
+    "filesAdded": 0,
+    "filesRemoved": 0,
+    "filesRemovedList": [],
+    "filesUnmatched": 0,
+    "filesUpdated": 0,
+    "matched": 0,
+    "total": 0,
+    "unchecked": 0,
+    "uncheckedKeysByFile": [],
+    "unmatched": 0,
+    "updated": 0,
+    "didUpdate": false
+  },
+  "startTime": 1759942252565,
+  "success": false,
+  "testResults": [
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": ["Resources", "list resources"],
+          "fullName": "Resources list resources should return empty list when no agent is initialized",
+          "status": "passed",
+          "title": "should return empty list when no agent is initialized",
+          "duration": 1.038499999999999,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": ["Resources", "list resources"],
+          "fullName": "Resources list resources should list agent state and transcript after initialization",
+          "status": "passed",
+          "title": "should list agent state and transcript after initialization",
+          "duration": 1.4190830000000005,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": ["Resources", "read resource"],
+          "fullName": "Resources read resource should read agent state file",
+          "status": "passed",
+          "title": "should read agent state file",
+          "duration": 0.5143330000000219,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": ["Resources", "read resource"],
+          "fullName": "Resources read resource should read transcript file",
+          "status": "passed",
+          "title": "should read transcript file",
+          "duration": 0.22762499999998909,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": ["Resources", "read resource"],
+          "fullName": "Resources read resource should handle non-JSON files",
+          "status": "passed",
+          "title": "should handle non-JSON files",
+          "duration": 0.18274999999999864,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": ["Resources", "read resource"],
+          "fullName": "Resources read resource should reject non-file URIs",
+          "status": "passed",
+          "title": "should reject non-file URIs",
+          "duration": 0.5371660000000134,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": ["Resources", "read resource"],
+          "fullName": "Resources read resource should handle missing files",
+          "status": "passed",
+          "title": "should handle missing files",
+          "duration": 2.4341249999999945,
+          "failureMessages": [],
+          "meta": {}
+        }
+      ],
+      "startTime": 1759942252956,
+      "endTime": 1759942252962.434,
+      "status": "passed",
+      "message": "",
+      "name": "/Users/admin/github-projects/tadasant-introduce-claude-code-agent-mcp/experimental/claude-code-agent/tests/functional/resources.test.ts"
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": ["Tools", "init_agent"],
+          "fullName": "Tools init_agent should initialize an agent with system prompt",
+          "status": "passed",
+          "title": "should initialize an agent with system prompt",
+          "duration": 2.228457999999989,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": ["Tools", "init_agent"],
+          "fullName": "Tools init_agent should validate required system_prompt",
+          "status": "passed",
+          "title": "should validate required system_prompt",
+          "duration": 4.029917000000012,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": ["Tools", "find_servers"],
+          "fullName": "Tools find_servers should find relevant servers for database task",
+          "status": "passed",
+          "title": "should find relevant servers for database task",
+          "duration": 0.5640419999999722,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": ["Tools", "find_servers"],
+          "fullName": "Tools find_servers should find monitoring servers for log analysis",
+          "status": "passed",
+          "title": "should find monitoring servers for log analysis",
+          "duration": 0.33191599999997834,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": ["Tools", "install_servers"],
+          "fullName": "Tools install_servers should install servers after agent is initialized",
+          "status": "passed",
+          "title": "should install servers after agent is initialized",
+          "duration": 1.0266670000000317,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": ["Tools", "install_servers"],
+          "fullName": "Tools install_servers should fail if no agent is initialized",
+          "status": "passed",
+          "title": "should fail if no agent is initialized",
+          "duration": 1.825540999999987,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": ["Tools", "chat"],
+          "fullName": "Tools chat should send message to initialized agent",
+          "status": "passed",
+          "title": "should send message to initialized agent",
+          "duration": 11.685292000000004,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": ["Tools", "chat"],
+          "fullName": "Tools chat should support custom timeout",
+          "status": "passed",
+          "title": "should support custom timeout",
+          "duration": 16.623167000000024,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": ["Tools", "inspect_transcript"],
+          "fullName": "Tools inspect_transcript should return transcript URI after chat",
+          "status": "passed",
+          "title": "should return transcript URI after chat",
+          "duration": 12.275082999999995,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": ["Tools", "inspect_transcript"],
+          "fullName": "Tools inspect_transcript should support json format",
+          "status": "passed",
+          "title": "should support json format",
+          "duration": 1.041417000000024,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": ["Tools", "stop_agent"],
+          "fullName": "Tools stop_agent should stop initialized agent gracefully",
+          "status": "passed",
+          "title": "should stop initialized agent gracefully",
+          "duration": 1.9694170000000213,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": ["Tools", "stop_agent"],
+          "fullName": "Tools stop_agent should support force kill",
+          "status": "passed",
+          "title": "should support force kill",
+          "duration": 0.6392920000000117,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": ["Tools", "get_server_capabilities"],
+          "fullName": "Tools get_server_capabilities should return capabilities for requested servers",
+          "status": "passed",
+          "title": "should return capabilities for requested servers",
+          "duration": 1.0178750000000036,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": ["Tools", "tool definitions"],
+          "fullName": "Tools tool definitions should have correct tool definitions",
+          "status": "passed",
+          "title": "should have correct tool definitions",
+          "duration": 0.8736670000000117,
+          "failureMessages": [],
+          "meta": {}
+        }
+      ],
+      "startTime": 1759942252985,
+      "endTime": 1759942253041.8738,
+      "status": "passed",
+      "message": "",
+      "name": "/Users/admin/github-projects/tadasant-introduce-claude-code-agent-mcp/experimental/claude-code-agent/tests/functional/tools.test.ts"
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": ["Claude Code Agent Manual Tests", "Mock Workflow"],
+          "fullName": "Claude Code Agent Manual Tests Mock Workflow should complete a full agent workflow with mock client",
+          "status": "passed",
+          "title": "should complete a full agent workflow with mock client",
+          "duration": 279.97999999999996,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": ["Claude Code Agent Manual Tests", "Tool Workflow"],
+          "fullName": "Claude Code Agent Manual Tests Tool Workflow should complete a full agent workflow with real Claude Code CLI",
+          "status": "failed",
+          "title": "should complete a full agent workflow with real Claude Code CLI",
+          "duration": 5006.3367499999995,
+          "failureMessages": [
+            "Error: STACK_TRACE_ERROR\n    at task (file:///Users/admin/github-projects/tadasant-introduce-claude-code-agent-mcp/experimental/claude-code-agent/node_modules/@vitest/runner/dist/chunk-hooks.js:638:27)\n    at Object.<anonymous> (file:///Users/admin/github-projects/tadasant-introduce-claude-code-agent-mcp/experimental/claude-code-agent/node_modules/@vitest/runner/dist/chunk-hooks.js:662:16)\n    at Object.<anonymous> (file:///Users/admin/github-projects/tadasant-introduce-claude-code-agent-mcp/experimental/claude-code-agent/node_modules/@vitest/runner/dist/chunk-hooks.js:458:28)\n    at chain (file:///Users/admin/github-projects/tadasant-introduce-claude-code-agent-mcp/experimental/claude-code-agent/node_modules/@vitest/runner/dist/chunk-hooks.js:369:14)\n    at /Users/admin/github-projects/tadasant-introduce-claude-code-agent-mcp/experimental/claude-code-agent/tests/manual/claude-code-agent.manual.test.ts:152:5\n    at file:///Users/admin/github-projects/tadasant-introduce-claude-code-agent-mcp/experimental/claude-code-agent/node_modules/@vitest/runner/dist/chunk-hooks.js:734:40\n    at runWithSuite (file:///Users/admin/github-projects/tadasant-introduce-claude-code-agent-mcp/experimental/claude-code-agent/node_modules/@vitest/runner/dist/chunk-hooks.js:1849:8)\n    at Object.collect (file:///Users/admin/github-projects/tadasant-introduce-claude-code-agent-mcp/experimental/claude-code-agent/node_modules/@vitest/runner/dist/chunk-hooks.js:734:10)\n    at Object.collect (file:///Users/admin/github-projects/tadasant-introduce-claude-code-agent-mcp/experimental/claude-code-agent/node_modules/@vitest/runner/dist/chunk-hooks.js:738:54)\n    at processTicksAndRejections (node:internal/process/task_queues:95:5)\n    at Object.collect (file:///Users/admin/github-projects/tadasant-introduce-claude-code-agent-mcp/experimental/claude-code-agent/node_modules/@vitest/runner/dist/chunk-hooks.js:738:46)\n    at collectTests (file:///Users/admin/github-projects/tadasant-introduce-claude-code-agent-mcp/experimental/claude-code-agent/node_modules/@vitest/runner/dist/chunk-hooks.js:1179:25)\n    at startTests (file:///Users/admin/github-projects/tadasant-introduce-claude-code-agent-mcp/experimental/claude-code-agent/node_modules/@vitest/runner/dist/chunk-hooks.js:1817:17)\n    at file:///Users/admin/github-projects/tadasant-introduce-claude-code-agent-mcp/experimental/claude-code-agent/node_modules/vitest/dist/chunks/runBaseTests.9Ij9_de-.js:117:26\n    at withEnv (file:///Users/admin/github-projects/tadasant-introduce-claude-code-agent-mcp/experimental/claude-code-agent/node_modules/vitest/dist/chunks/runBaseTests.9Ij9_de-.js:84:3)"
+          ],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": ["Claude Code Agent Manual Tests", "Error Scenarios"],
+          "fullName": "Claude Code Agent Manual Tests Error Scenarios should handle errors gracefully",
+          "status": "passed",
+          "title": "should handle errors gracefully",
+          "duration": 72.88487499999974,
+          "failureMessages": [],
+          "meta": {}
+        }
+      ],
+      "startTime": 1759942252984,
+      "endTime": 1759942258343.8848,
+      "status": "failed",
+      "message": "",
+      "name": "/Users/admin/github-projects/tadasant-introduce-claude-code-agent-mcp/experimental/claude-code-agent/tests/manual/claude-code-agent.manual.test.ts"
+    }
+  ]
+}
