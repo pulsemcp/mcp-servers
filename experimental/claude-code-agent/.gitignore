@@ -1,0 +1,15 @@
+node_modules/
+build/
+.env
+.env.local
+.DS_Store
+*.log
+coverage/
+.vscode/
+.idea/
+
+# Shared directory symlink/copy in local package
+local/shared
+
+# Test files
+test-session.*
