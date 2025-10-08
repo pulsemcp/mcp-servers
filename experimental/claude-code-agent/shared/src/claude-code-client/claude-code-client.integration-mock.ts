@@ -29,6 +29,7 @@ export class MockClaudeCodeClient implements IClaudeCodeClient {
       createdAt: new Date().toISOString(),
       lastActiveAt: new Date().toISOString(),
       workingDirectory: '/tmp/mock-agent',
+      claudeProjectPath: '/tmp/mock-claude-projects/integration-test',
     };
 
     // Clear transcript on new agent init

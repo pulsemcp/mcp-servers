@@ -9,6 +9,7 @@ export const AgentStateSchema = z.object({
   createdAt: z.string(),
   lastActiveAt: z.string(),
   workingDirectory: z.string(),
+  claudeProjectPath: z.string().optional(), // Path to Claude Code project directory for transcript access
 });
 
 export type AgentState = z.infer<typeof AgentStateSchema>;

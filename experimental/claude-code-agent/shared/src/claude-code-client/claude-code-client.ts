@@ -287,6 +287,9 @@ export class ClaudeCodeClient implements IClaudeCodeClient {
         });
       });
 
+      // Try to detect Claude Code project path for native transcript access
+      const claudeProjectPath = await this.detectClaudeProjectPath(sessionId);
+
       // Create initial state
       const state: AgentState = {
         sessionId,
@@ -296,6 +299,7 @@ export class ClaudeCodeClient implements IClaudeCodeClient {
         createdAt: new Date().toISOString(),
         lastActiveAt: new Date().toISOString(),
         workingDirectory: workingDir,
+        claudeProjectPath,
       };
 
       const stateFile = join(workingDir, 'state.json');
@@ -575,6 +579,87 @@ Format: [{"name": "server.name", "rationale": "why this server is needed"}]`;
   }
 
   /**
+   * Attempts to detect the Claude Code project directory where transcript files are stored.
+   */
+  private async detectClaudeProjectPath(_sessionId: string): Promise<string | undefined> {
+    const homeDir = process.env.HOME || process.env.USERPROFILE;
+    if (!homeDir) {
+      return undefined;
+    }
+
+    // Generate the project directory name based on current working directory
+    const cwd = this.currentAgent.workingDir || process.cwd();
+    const projectDirName = cwd.replace(/[^a-zA-Z0-9]/g, '-').replace(/^-+|-+$/g, '');
+    const claudeProjectDir = join(homeDir, '.claude', 'projects', projectDirName);
+
+    try {
+      await fs.access(claudeProjectDir);
+      return claudeProjectDir;
+    } catch {
+      // Project directory doesn't exist yet or isn't accessible
+      // This is normal during initialization
+      return undefined;
+    }
+  }
+
+  /**
+   * Finds the path to Claude Code's native transcript file for the given session.
+   * Returns null if the file cannot be found.
+   */
+  private async findNativeTranscriptPath(sessionId: string): Promise<string | null> {
+    const homeDir = process.env.HOME || process.env.USERPROFILE;
+    if (!homeDir) {
+      return null;
+    }
+
+    // Try using the stored Claude project path first if available
+    if (this.currentAgent.state?.claudeProjectPath) {
+      const sessionFilePath = join(this.currentAgent.state.claudeProjectPath, `${sessionId}.jsonl`);
+      try {
+        await fs.access(sessionFilePath);
+        return sessionFilePath;
+      } catch {
+        // File doesn't exist in the stored path, fallback to searching
+      }
+    }
+
+    // Generate the project directory name based on current working directory
+    const cwd = this.currentAgent.workingDir || process.cwd();
+    const projectDirName = cwd.replace(/[^a-zA-Z0-9]/g, '-').replace(/^-+|-+$/g, '');
+    const sessionFilePath = join(
+      homeDir,
+      '.claude',
+      'projects',
+      projectDirName,
+      `${sessionId}.jsonl`
+    );
+
+    try {
+      await fs.access(sessionFilePath);
+      return sessionFilePath;
+    } catch {
+      // Fallback: try to find the session file in any project directory
+      const projectsDir = join(homeDir, '.claude', 'projects');
+      try {
+        const projects = await fs.readdir(projectsDir);
+        for (const project of projects) {
+          const sessionFile = join(projectsDir, project, `${sessionId}.jsonl`);
+          try {
+            await fs.access(sessionFile);
+            return sessionFile;
+          } catch {
+            // Continue searching
+          }
+        }
+      } catch {
+        // Projects directory doesn't exist or isn't accessible
+      }
+    }
+
+    return null;
+  }
+
+  /**
    * Reads Claude Code's native session transcript from the .claude/projects directory
    */
   private async readNativeTranscript(sessionId: string): Promise<unknown[]> {
@@ -715,10 +800,13 @@ Format: [{"name": "server.name", "rationale": "why this server is needed"}]`;
         throw new Error('No agent initialized');
       }
 
+      // Find the native Claude Code transcript file path
+      const nativeTranscriptPath = await this.findNativeTranscriptPath(this.currentAgent.sessionId);
+
       let nativeTranscript: unknown[] = [];
 
       try {
-        // Try to read Claude Code's native session transcript
+        // Read Claude Code's native session transcript directly
         nativeTranscript = await this.readNativeTranscript(this.currentAgent.sessionId);
       } catch (error) {
         logger.warn('Could not read native Claude Code transcript, using empty transcript:', error);
@@ -727,32 +815,58 @@ Format: [{"name": "server.name", "rationale": "why this server is needed"}]`;
         nativeTranscript = [];
       }
 
-      const outputPath = join(
-        this.currentAgent.workingDir,
-        format === 'markdown' ? 'transcript.md' : 'transcript.json'
-      );
-
       if (format === 'markdown') {
+        // For markdown format, we need to create a processed file since the native format is JSONL
+        const outputPath = join(this.currentAgent.workingDir, 'transcript.md');
         const markdown =
           nativeTranscript.length > 0
             ? this.convertTranscriptToMarkdown(nativeTranscript)
             : '# Conversation Transcript\n\nNo conversation data available yet.';
         await fs.writeFile(outputPath, markdown);
-      } else {
-        await fs.writeFile(outputPath, JSON.stringify(nativeTranscript, null, 2));
-      }
 
-      return {
-        transcriptUri: `file://${outputPath}`,
-        metadata: {
-          messageCount: nativeTranscript.length,
-          lastUpdated:
-            nativeTranscript.length > 0
-              ? (nativeTranscript[nativeTranscript.length - 1] as { timestamp?: string })
-                  ?.timestamp || new Date().toISOString()
-              : new Date().toISOString(),
-        },
-      };
+        return {
+          transcriptUri: `file://${outputPath}`,
+          metadata: {
+            messageCount: nativeTranscript.length,
+            lastUpdated:
+              nativeTranscript.length > 0
+                ? (nativeTranscript[nativeTranscript.length - 1] as { timestamp?: string })
+                    ?.timestamp || new Date().toISOString()
+                : new Date().toISOString(),
+          },
+        };
+      } else {
+        // For JSON format, return the path to the native file directly if available
+        if (nativeTranscriptPath) {
+          return {
+            transcriptUri: `file://${nativeTranscriptPath}`,
+            metadata: {
+              messageCount: nativeTranscript.length,
+              lastUpdated:
+                nativeTranscript.length > 0
+                  ? (nativeTranscript[nativeTranscript.length - 1] as { timestamp?: string })
+                      ?.timestamp || new Date().toISOString()
+                  : new Date().toISOString(),
+            },
+          };
+        } else {
+          // Fallback: create a local copy if native file isn't available (e.g., in tests)
+          const outputPath = join(this.currentAgent.workingDir, 'transcript.json');
+          await fs.writeFile(outputPath, JSON.stringify(nativeTranscript, null, 2));
+
+          return {
+            transcriptUri: `file://${outputPath}`,
+            metadata: {
+              messageCount: nativeTranscript.length,
+              lastUpdated:
+                nativeTranscript.length > 0
+                  ? (nativeTranscript[nativeTranscript.length - 1] as { timestamp?: string })
+                      ?.timestamp || new Date().toISOString()
+                  : new Date().toISOString(),
+            },
+          };
+        }
+      }
     } catch (error) {
       logger.error('Failed to inspect transcript:', error);
       throw new Error(

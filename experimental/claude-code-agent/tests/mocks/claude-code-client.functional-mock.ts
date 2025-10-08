@@ -34,6 +34,7 @@ export class FunctionalMockClaudeCodeClient implements IClaudeCodeClient {
       createdAt: new Date().toISOString(),
       lastActiveAt: new Date().toISOString(),
       workingDirectory: '/tmp/test-agent',
+      claudeProjectPath: '/tmp/mock-claude-projects/test-project',
     };
 
     return {
