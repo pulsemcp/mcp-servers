@@ -8,7 +8,7 @@ const logger = createLogger('chat-tool');
 // Parameter descriptions for consistency
 const PARAM_DESCRIPTIONS = {
   prompt: 'Message/task to send to the subagent',
-  timeout: 'Optional: timeout in milliseconds (default: 300000)',
+  timeout: 'Optional: timeout in milliseconds (default: 300000 = 5 minutes). Increase for complex operations.',
 } as const;
 
 export function chatTool(server: Server, clientFactory: () => IClaudeCodeClient) {
@@ -25,6 +25,20 @@ Example response:
     "timestamp": "2024-01-15T10:30:45.123Z"
   }
 }
+
+Timeout Configuration:
+- Default: 300000ms (5 minutes) - suitable for most tasks
+- Quick operations: 30000-60000ms (30s-1min) for simple queries or single-tool tasks
+- Standard operations: 300000ms (5min) for multi-step analysis, code changes, or database operations
+- Complex operations: 600000-1200000ms (10-20min) for large codebase analysis, extensive data processing, or multi-server workflows
+- Heavy operations: 1800000ms+ (30min+) for comprehensive system analysis, large file operations, or complex automation
+
+Examples of operations requiring longer timeouts:
+- Analyzing large codebases (10+ min)
+- Processing multiple API calls in sequence (5-15 min)
+- Complex database migrations or large query results (10-30 min)
+- Multi-step workflows involving file operations, web scraping, and analysis (15-30 min)
+- System monitoring and log analysis across multiple sources (5-20 min)
 
 Use cases:
 - Executing tasks with the properly configured subagent

@@ -33,6 +33,12 @@ Example response:
   ]
 }
 
+Timeout Behavior:
+- Fixed timeout: 60 seconds (not configurable for this tool)
+- Typical duration: 3-10 seconds for most server lists
+- This is a fast analysis operation that doesn't need customization
+- If timeout occurs, it indicates an issue with Claude Code or the trusted servers file
+
 Use cases:
 - Automatically selecting relevant MCP servers based on task description
 - Avoiding tool overload by only choosing necessary servers
