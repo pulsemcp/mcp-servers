@@ -281,11 +281,32 @@ Format: [{"name": "server.name", "rationale": "why this server is needed"}]`;
       const result = await this.runClaudeCodeCommand(args);
 
       try {
-        const response = JSON.parse(result);
-        return { servers: response };
+        const claudeResponse = JSON.parse(result);
+
+        // Extract the actual result from Claude's response format
+        let serversArray: Array<{ name: string; rationale: string }> = [];
+
+        if (claudeResponse.result) {
+          // Claude wraps JSON in markdown, so extract it
+          const resultText = claudeResponse.result.toString();
+          const jsonMatch = resultText.match(/```json\s*(.*?)\s*```/s);
+
+          if (jsonMatch) {
+            serversArray = JSON.parse(jsonMatch[1]);
+          } else {
+            // Try parsing the result directly
+            serversArray = JSON.parse(resultText);
+          }
+        } else if (Array.isArray(claudeResponse)) {
+          // Direct array response
+          serversArray = claudeResponse;
+        }
+
+        return { servers: serversArray };
       } catch (parseError) {
         // Fallback parsing if response isn't perfect JSON
         logger.warn('Could not parse JSON response, attempting fallback parsing:', parseError);
+        logger.debug('Raw result was:', result);
         return { servers: [] };
       }
     } catch (error) {
@@ -450,8 +471,9 @@ Format: [{"name": "server.name", "rationale": "why this server is needed"}]`;
 
       try {
         const jsonOutput = JSON.parse(result);
-        response = jsonOutput.content || jsonOutput.message || result;
-        tokensUsed = jsonOutput.tokensUsed;
+        // Extract the actual result from Claude's response format
+        response = jsonOutput.result || jsonOutput.content || jsonOutput.message || result;
+        tokensUsed = jsonOutput.usage?.output_tokens || jsonOutput.tokensUsed;
       } catch {
         // Use raw output if not JSON
       }
