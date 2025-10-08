@@ -1,35 +1,26 @@
 #!/usr/bin/env node
-
-/**
- * Sets up development environment by creating symlink to shared module
- */
-
-import { symlinkSync, existsSync, unlinkSync } from 'fs';
-import { join } from 'path';
+import { symlink, unlink } from 'fs/promises';
+import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
-import { dirname } from 'path';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
-const localDir = __dirname;
-const sharedBuildDir = join(localDir, '..', 'shared', 'build');
-const symlinkPath = join(localDir, 'shared');
+async function setupDev() {
+  const linkPath = join(__dirname, 'shared');
+  const targetPath = join(__dirname, '../shared/build');
 
-// Remove existing symlink if it exists
-if (existsSync(symlinkPath)) {
   try {
-    unlinkSync(symlinkPath);
-  } catch (error) {
-    console.log('Could not remove existing symlink:', error.message);
+    await unlink(linkPath);
+  } catch (e) {
+    // Ignore if doesn't exist
+  }
+
+  try {
+    await symlink(targetPath, linkPath, 'dir');
+    console.log('Created symlink for development');
+  } catch (e) {
+    console.error('Failed to create symlink:', e.message);
   }
 }
 
-// Create symlink to shared/build
-try {
-  symlinkSync(sharedBuildDir, symlinkPath, 'dir');
-  console.log('✅ Created symlink: shared -> ../shared/build');
-} catch (error) {
-  console.error('Failed to create symlink:', error.message);
-  process.exit(1);
-}
+setupDev().catch(console.error);
