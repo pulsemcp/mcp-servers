@@ -2,7 +2,7 @@ import { ChildProcess, spawn } from 'child_process';
 import { promises as fs } from 'fs';
 import { join } from 'path';
 import { v4 as uuidv4 } from 'uuid';
-import { AgentState, ServerConfig, TranscriptEntry } from '../types.js';
+import { AgentState, ServerConfig } from '../types.js';
 import { createLogger } from '../logging.js';
 
 const logger = createLogger('claude-code-client');
@@ -128,7 +128,10 @@ export class ClaudeCodeClient implements IClaudeCodeClient {
       await fs.writeFile(join(claudeDir, 'settings.json'), JSON.stringify(settings, null, 2));
 
       // Create empty .mcp.json to start
-      await fs.writeFile(join(workingDir, '.mcp.json'), JSON.stringify({ servers: {} }, null, 2));
+      await fs.writeFile(
+        join(workingDir, '.mcp.json'),
+        JSON.stringify({ mcpServers: {} }, null, 2)
+      );
 
       // Start Claude Code in non-interactive mode with -p flag
       const initMessage = 'Agent initialized successfully. Ready to assist.';
@@ -232,9 +235,8 @@ export class ClaudeCodeClient implements IClaudeCodeClient {
       const stateFile = join(workingDir, 'state.json');
       await fs.writeFile(stateFile, JSON.stringify(state, null, 2));
 
-      // Create empty transcript
-      const transcriptFile = join(workingDir, 'transcript.json');
-      await fs.writeFile(transcriptFile, JSON.stringify([], null, 2));
+      // Note: No longer creating manual transcript files since Claude Code
+      // automatically tracks conversations in ~/.claude/projects/
 
       this.currentAgent = {
         workingDir,
@@ -354,8 +356,8 @@ Format: [{"name": "server.name", "rationale": "why this server is needed"}]`;
 
       // Build MCP configuration
       const mcpConfig: {
-        servers: Record<string, { command: string; args: string[]; env: Record<string, string> }>;
-      } = { servers: {} };
+        mcpServers: Record<string, unknown>;
+      } = { mcpServers: {} };
 
       for (const serverName of serverNames) {
         const serverConfig = allServersConfig.find((s: ServerConfig) => s.name === serverName);
@@ -369,31 +371,37 @@ Format: [{"name": "server.name", "rationale": "why this server is needed"}]`;
           continue;
         }
 
-        // For now, assume npm packages
-        const npmPackage = serverConfig.packages.find((p: { type: string }) => p.type === 'npm');
-        if (npmPackage) {
-          // Merge with custom configs and secrets
-          const env = {
-            ...npmPackage.env,
-            ...(serverConfigs?.[serverName]?.env || {}),
-            ...(secrets[serverName] || {}),
-          };
+        try {
+          // Find the best package for this server
+          const packageConfig = this.selectBestPackage(serverConfig.packages);
 
-          mcpConfig.servers[serverName] = {
-            command: npmPackage.command,
-            args: npmPackage.args || [],
-            env,
-          };
+          if (!packageConfig) {
+            installations.push({
+              serverName,
+              status: 'failed',
+              error: 'No supported package configuration found',
+            });
+            continue;
+          }
+
+          // Convert package config to MCP format
+          const mcpServerConfig = this.convertToMcpConfig(
+            packageConfig,
+            serverConfigs?.[serverName]?.env || {},
+            secrets[serverName] || {}
+          );
+
+          mcpConfig.mcpServers[serverName] = mcpServerConfig;
 
           installations.push({
             serverName,
             status: 'success',
           });
-        } else {
+        } catch (error) {
           installations.push({
             serverName,
             status: 'failed',
-            error: 'No npm package found for server',
+            error: `Configuration error: ${error instanceof Error ? error.message : 'Unknown error'}`,
           });
         }
       }
@@ -459,12 +467,8 @@ Format: [{"name": "server.name", "rationale": "why this server is needed"}]`;
 
       const duration = Date.now() - startTime;
 
-      // Update transcript
-      await this.appendToTranscript({
-        role: 'user',
-        content: prompt,
-        timestamp: new Date(startTime).toISOString(),
-      });
+      // Note: Claude Code automatically tracks all conversation interactions,
+      // so we don't need to manually maintain transcript files anymore
 
       let response = result;
       let tokensUsed: number | undefined;
@@ -477,13 +481,6 @@ Format: [{"name": "server.name", "rationale": "why this server is needed"}]`;
       } catch {
         // Use raw output if not JSON
       }
-
-      await this.appendToTranscript({
-        role: 'assistant',
-        content: response,
-        timestamp: new Date().toISOString(),
-        metadata: { tokensUsed },
-      });
 
       // Update agent status back to idle
       if (this.currentAgent.state) {
@@ -511,6 +508,110 @@ Format: [{"name": "server.name", "rationale": "why this server is needed"}]`;
     }
   }
 
+  /**
+   * Reads Claude Code's native session transcript from the .claude/projects directory
+   */
+  private async readNativeTranscript(sessionId: string): Promise<unknown[]> {
+    const homeDir = process.env.HOME || process.env.USERPROFILE;
+    if (!homeDir) {
+      throw new Error('Could not determine home directory for Claude Code session files');
+    }
+
+    // Generate the project directory name based on current working directory
+    const cwd = process.cwd();
+    const projectDirName = cwd.replace(/[^a-zA-Z0-9]/g, '-').replace(/^-+|-+$/g, '');
+    const sessionFilePath = join(
+      homeDir,
+      '.claude',
+      'projects',
+      projectDirName,
+      `${sessionId}.jsonl`
+    );
+
+    try {
+      const content = await fs.readFile(sessionFilePath, 'utf-8');
+      const lines = content
+        .trim()
+        .split('\n')
+        .filter((line) => line.trim());
+      return lines.map((line) => JSON.parse(line));
+    } catch {
+      // Fallback: try to find the session file in any project directory
+      const projectsDir = join(homeDir, '.claude', 'projects');
+      try {
+        const projects = await fs.readdir(projectsDir);
+        for (const project of projects) {
+          const sessionFile = join(projectsDir, project, `${sessionId}.jsonl`);
+          try {
+            const content = await fs.readFile(sessionFile, 'utf-8');
+            const lines = content
+              .trim()
+              .split('\n')
+              .filter((line) => line.trim());
+            return lines.map((line) => JSON.parse(line));
+          } catch {
+            // Continue searching
+          }
+        }
+      } catch {
+        // Projects directory doesn't exist or isn't accessible
+      }
+
+      throw new Error(`Could not find Claude Code session file for session ID: ${sessionId}`);
+    }
+  }
+
+  /**
+   * Converts Claude Code's native transcript format to markdown
+   */
+  private convertTranscriptToMarkdown(nativeTranscript: unknown[]): string {
+    const relevantEntries = nativeTranscript.filter(
+      (entry) => entry.type === 'user' || entry.type === 'assistant'
+    );
+
+    return relevantEntries
+      .map((entry) => {
+        const role = entry.type === 'user' ? 'User' : 'Assistant';
+        const timestamp = entry.timestamp || new Date().toISOString();
+
+        let content = `## ${role} - ${timestamp}\n\n`;
+
+        if (entry.type === 'user') {
+          content += entry.message?.content || entry.content || '';
+        } else if (entry.type === 'assistant') {
+          const message = entry.message;
+          if (message?.content) {
+            if (Array.isArray(message.content)) {
+              // Handle structured content (tool calls, text blocks)
+              message.content.forEach((block: unknown) => {
+                if (block.type === 'text') {
+                  content += block.text + '\n\n';
+                } else if (block.type === 'tool_use') {
+                  content += `### Tool Call: ${block.name}\n\n`;
+                  content += `**Arguments:**\n\`\`\`json\n${JSON.stringify(block.input, null, 2)}\n\`\`\`\n\n`;
+                }
+              });
+            } else {
+              content += message.content;
+            }
+          }
+
+          // Add usage information if available
+          if (message?.usage) {
+            content += '\n\n### Usage Statistics\n';
+            content += `- Input tokens: ${message.usage.input_tokens || 0}\n`;
+            content += `- Output tokens: ${message.usage.output_tokens || 0}\n`;
+            if (message.usage.cache_read_input_tokens) {
+              content += `- Cache read tokens: ${message.usage.cache_read_input_tokens}\n`;
+            }
+          }
+        }
+
+        return content.trim();
+      })
+      .join('\n\n---\n\n');
+  }
+
   async inspectTranscript(format: 'markdown' | 'json' = 'markdown'): Promise<{
     transcriptUri: string;
     metadata: {
@@ -519,12 +620,21 @@ Format: [{"name": "server.name", "rationale": "why this server is needed"}]`;
     };
   }> {
     try {
-      if (!this.currentAgent.workingDir) {
+      if (!this.currentAgent.sessionId || !this.currentAgent.workingDir) {
         throw new Error('No agent initialized');
       }
 
-      const transcriptPath = join(this.currentAgent.workingDir, 'transcript.json');
-      const transcript: TranscriptEntry[] = JSON.parse(await fs.readFile(transcriptPath, 'utf-8'));
+      let nativeTranscript: unknown[] = [];
+
+      try {
+        // Try to read Claude Code's native session transcript
+        nativeTranscript = await this.readNativeTranscript(this.currentAgent.sessionId);
+      } catch (error) {
+        logger.warn('Could not read native Claude Code transcript, using empty transcript:', error);
+        // Use empty transcript if Claude Code session file is not available
+        // This can happen in test environments or if the session hasn't been persisted yet
+        nativeTranscript = [];
+      }
 
       const outputPath = join(
         this.currentAgent.workingDir,
@@ -532,31 +642,21 @@ Format: [{"name": "server.name", "rationale": "why this server is needed"}]`;
       );
 
       if (format === 'markdown') {
-        const markdown = transcript
-          .map((entry) => {
-            let content = `## ${entry.role.charAt(0).toUpperCase() + entry.role.slice(1)} - ${entry.timestamp}\n\n${entry.content}`;
-
-            if (entry.metadata?.toolCalls) {
-              content += '\n\n### Tool Calls:\n';
-              entry.metadata.toolCalls.forEach((call) => {
-                content += `- **${call.name}**: ${JSON.stringify(call.arguments)}\n`;
-              });
-            }
-
-            return content;
-          })
-          .join('\n\n---\n\n');
-
+        const markdown =
+          nativeTranscript.length > 0
+            ? this.convertTranscriptToMarkdown(nativeTranscript)
+            : '# Conversation Transcript\n\nNo conversation data available yet.';
         await fs.writeFile(outputPath, markdown);
       } else {
-        await fs.writeFile(outputPath, JSON.stringify(transcript, null, 2));
+        await fs.writeFile(outputPath, JSON.stringify(nativeTranscript, null, 2));
       }
 
       return {
         transcriptUri: `file://${outputPath}`,
         metadata: {
-          messageCount: transcript.length,
-          lastUpdated: transcript[transcript.length - 1]?.timestamp || new Date().toISOString(),
+          messageCount: nativeTranscript.length,
+          lastUpdated:
+            nativeTranscript[nativeTranscript.length - 1]?.timestamp || new Date().toISOString(),
         },
       };
     } catch (error) {
@@ -672,20 +772,214 @@ Format: [{"name": "server.name", "rationale": "why this server is needed"}]`;
     await fs.writeFile(stateFile, JSON.stringify(this.currentAgent.state, null, 2));
   }
 
-  private async appendToTranscript(entry: TranscriptEntry): Promise<void> {
-    if (!this.currentAgent.workingDir) {
-      return;
+  /**
+   * Selects the best package configuration from available packages.
+   * Prioritizes based on compatibility with Claude Code MCP support.
+   */
+  private selectBestPackage(packages: unknown[]): unknown | null {
+    // Priority order for server types
+    const priority = [
+      // New schema types (server.json format)
+      'npm', // npm packages
+      'github', // GitHub repositories
+      'git', // Git repositories
+      'filesystem', // Local filesystem paths
+      'http', // HTTP servers
+      'sse', // Server-Sent Events
+      // Old schema types (servers.json format)
+      'binary', // Binary executables
+      'python', // Python packages
+    ];
+
+    for (const preferredType of priority) {
+      // Check new schema format first
+      const newFormatPackage = packages.find(
+        (p) => p.registryType === preferredType && p.transport
+      );
+      if (newFormatPackage) {
+        return newFormatPackage;
+      }
+
+      // Check old schema format
+      const oldFormatPackage = packages.find((p) => p.type === preferredType);
+      if (oldFormatPackage) {
+        return oldFormatPackage;
+      }
     }
 
-    const transcriptFile = join(this.currentAgent.workingDir, 'transcript.json');
+    return null;
+  }
 
-    try {
-      const transcript: TranscriptEntry[] = JSON.parse(await fs.readFile(transcriptFile, 'utf-8'));
-      transcript.push(entry);
-      await fs.writeFile(transcriptFile, JSON.stringify(transcript, null, 2));
-    } catch {
-      // Create new transcript if it doesn't exist
-      await fs.writeFile(transcriptFile, JSON.stringify([entry], null, 2));
+  /**
+   * Converts a package configuration to Claude Code MCP .mcp.json format.
+   * Supports both old schema (servers.json) and new schema (server.json) formats.
+   */
+  private convertToMcpConfig(
+    packageConfig: unknown,
+    customEnv: Record<string, string>,
+    secrets: Record<string, string>
+  ): unknown {
+    // Handle new schema format (server.json)
+    if (packageConfig.registryType && packageConfig.transport) {
+      return this.convertNewSchemaToMcp(packageConfig, customEnv, secrets);
+    }
+
+    // Handle old schema format (servers.json)
+    if (packageConfig.type) {
+      return this.convertOldSchemaToMcp(packageConfig, customEnv, secrets);
+    }
+
+    throw new Error('Unsupported package configuration format');
+  }
+
+  /**
+   * Converts new schema (server.json) format to MCP configuration.
+   */
+  private convertNewSchemaToMcp(
+    packageConfig: unknown,
+    customEnv: Record<string, string>,
+    secrets: Record<string, string>
+  ): unknown {
+    const {
+      registryType,
+      identifier,
+      transport,
+      runtimeHint,
+      runtimeArguments,
+      environmentVariables,
+    } = packageConfig;
+
+    // Merge environment variables
+    const env = { ...customEnv, ...secrets };
+
+    // Add default environment variables from package config
+    if (environmentVariables) {
+      for (const envVar of environmentVariables) {
+        if (envVar.default && !env[envVar.name]) {
+          env[envVar.name] = envVar.default;
+        }
+      }
+    }
+
+    switch (transport.type) {
+      case 'stdio':
+        return this.createStdioConfig(registryType, identifier, runtimeHint, runtimeArguments, env);
+
+      case 'http':
+        if (!transport.url) {
+          throw new Error('HTTP transport requires URL');
+        }
+        return {
+          type: 'http',
+          url: transport.url,
+          headers: { ...transport.headers, ...env },
+        };
+
+      case 'sse':
+        if (!transport.url) {
+          throw new Error('SSE transport requires URL');
+        }
+        return {
+          type: 'sse',
+          url: transport.url,
+          headers: { ...transport.headers, ...env },
+        };
+
+      default:
+        throw new Error(`Unsupported transport type: ${transport.type}`);
+    }
+  }
+
+  /**
+   * Converts old schema (servers.json) format to MCP configuration.
+   */
+  private convertOldSchemaToMcp(
+    packageConfig: unknown,
+    customEnv: Record<string, string>,
+    secrets: Record<string, string>
+  ): unknown {
+    const {
+      command,
+      args,
+      env: packageEnv,
+    } = packageConfig as {
+      type: string;
+      command: string;
+      args?: string[];
+      env?: Record<string, string>;
+    };
+
+    // Merge environment variables
+    const env = {
+      ...packageEnv,
+      ...customEnv,
+      ...secrets,
+    };
+
+    // All old schema types use stdio transport
+    return {
+      command,
+      args: args || [],
+      env,
+    };
+  }
+
+  /**
+   * Creates stdio configuration for various registry types.
+   */
+  private createStdioConfig(
+    registryType: string,
+    identifier: string,
+    runtimeHint?: string,
+    runtimeArguments?: Array<{ type: string; value: string; name?: string }>,
+    env: Record<string, string> = {}
+  ): unknown {
+    const args: string[] = [];
+
+    // Add runtime arguments
+    if (runtimeArguments) {
+      for (const arg of runtimeArguments) {
+        if (arg.type === 'positional') {
+          args.push(arg.value);
+        } else if (arg.type === 'named' && arg.name) {
+          args.push(`--${arg.name}=${arg.value}`);
+        }
+      }
+    }
+
+    switch (registryType) {
+      case 'npm': {
+        // npm packages via npx
+        const command = runtimeHint || 'npx';
+        return {
+          command,
+          args: [...args, identifier],
+          env,
+        };
+      }
+
+      case 'github':
+        // GitHub repositories via npx
+        return {
+          command: 'npx',
+          args: [...args, identifier],
+          env,
+        };
+
+      case 'git':
+        // Git repositories - clone and run
+        throw new Error('Git registry type not yet implemented - requires git clone logic');
+
+      case 'filesystem':
+        // Local filesystem paths
+        return {
+          command: identifier, // Direct path to executable
+          args,
+          env,
+        };
+
+      default:
+        throw new Error(`Unsupported registry type for stdio transport: ${registryType}`);
     }
   }
 }

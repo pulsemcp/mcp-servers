@@ -419,13 +419,6 @@ npm run build
 npm run dev
 ```
 
-## Security Considerations
-
-- Each subagent runs in isolation with its own MCP configuration
-- Server credentials are managed through Claude Code's standard security model
-- The main agent cannot access the subagent's secrets or credentials
-- Transcripts are stored locally and can be inspected for audit purposes
-
 ## Contributing
 
 See [CONTRIBUTING.md](../../../CONTRIBUTING.md) for general contribution guidelines.

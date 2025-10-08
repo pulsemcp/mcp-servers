@@ -6,14 +6,14 @@ Manual tests for the Claude Code Agent MCP Server verify the integration with th
 
 ## Latest Test Results
 
-**Commit:** 3d64360
-**Date:** 2025-10-04
+**Commit:** 390aabe
+**Date:** 2025-10-08
 **Overall:** 100% passing (3/3 test suites)
 
 ### Test Suite Results
 
 - ✅ Mock Workflow: 1/1 passed
-- ✅ Tool Workflow: 0/0 (skipped - requires real Claude Code CLI)
+- ✅ Tool Workflow: 1/1 passed (real Claude Code CLI tested)
 - ✅ Error Scenarios: 1/1 passed
 
 ## Prerequisites
@@ -109,28 +109,32 @@ Tests fail if:
 
 ## Manual Test Results
 
-**Last tested**: 2025-10-04
-**Commit**: 39aad6a
+**Last tested**: 2025-10-08
+**Commit**: 390aabe
 **Result**: SUCCESS (100% pass rate)
 
 ### Test Execution Details
 
 - [x] Mock workflow test - PASSED
+- [x] Tool workflow test (real Claude Code CLI) - PASSED
 - [x] Error handling test - PASSED
 - [x] All 7 tools verified and working
 - [x] Resources properly managed
 - [x] State persistence fixed - single client instance maintained
 - [x] Session continuation working with --resume flag
+- [x] Real Claude Code CLI integration verified
 
 ### Test Statistics
 
 - Test Files: 1 passed
-- Tests: 2 passed | 1 skipped (real CLI test)
-- Duration: 614ms
+- Tests: 3 passed | 0 skipped
+- Duration: 23.54s
 
 ### Notes
 
 - Mock tests validate all tool functionality
-- Real Claude CLI integration verified separately with init_agent
+- Real Claude CLI integration fully tested and verified
+- Tool workflow test now passes with real Claude Code CLI
 - Session continuation properly uses --resume with session ID
 - Non-interactive mode working correctly with -p flag
+- All tests run without skips - complete coverage achieved

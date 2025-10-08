@@ -8,7 +8,8 @@ const logger = createLogger('chat-tool');
 // Parameter descriptions for consistency
 const PARAM_DESCRIPTIONS = {
   prompt: 'Message/task to send to the subagent',
-  timeout: 'Optional: timeout in milliseconds (default: 300000 = 5 minutes). Increase for complex operations.',
+  timeout:
+    'Optional: timeout in milliseconds (default: 300000 = 5 minutes). Increase for complex operations.',
 } as const;
 
 export function chatTool(server: Server, clientFactory: () => IClaudeCodeClient) {

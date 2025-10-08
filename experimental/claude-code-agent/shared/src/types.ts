@@ -13,11 +13,11 @@ export const AgentStateSchema = z.object({
 
 export type AgentState = z.infer<typeof AgentStateSchema>;
 
-// Server info from servers.json
+// Server info from servers.json - supports both old and new schemas
 export const ServerConfigSchema = z.object({
   name: z.string(),
   description: z.string(),
-  version: z.string(),
+  version: z.string().optional(),
   repository: z
     .object({
       url: z.string(),
@@ -25,13 +25,48 @@ export const ServerConfigSchema = z.object({
     })
     .optional(),
   packages: z.array(
-    z.object({
-      type: z.enum(['npm', 'python', 'binary']),
-      name: z.string(),
-      command: z.string(),
-      args: z.array(z.string()).optional(),
-      env: z.record(z.string()).optional(),
-    })
+    z.union([
+      // Old schema (servers.json format)
+      z.object({
+        type: z.enum(['npm', 'python', 'binary']),
+        name: z.string().optional(),
+        command: z.string(),
+        args: z.array(z.string()).optional(),
+        env: z.record(z.string()).optional(),
+      }),
+      // New schema (server.json format)
+      z.object({
+        registryType: z.enum(['npm', 'github', 'git', 'filesystem', 'http', 'sse']),
+        registryBaseUrl: z.string().optional(),
+        identifier: z.string(),
+        version: z.string().optional(),
+        runtimeHint: z.string().optional(),
+        transport: z.object({
+          type: z.enum(['stdio', 'http', 'sse']),
+          url: z.string().optional(),
+          headers: z.record(z.string()).optional(),
+        }),
+        runtimeArguments: z
+          .array(
+            z.object({
+              type: z.enum(['positional', 'named']),
+              value: z.string(),
+              name: z.string().optional(),
+            })
+          )
+          .optional(),
+        environmentVariables: z
+          .array(
+            z.object({
+              name: z.string(),
+              description: z.string().optional(),
+              default: z.string().optional(),
+              isRequired: z.boolean().optional(),
+            })
+          )
+          .optional(),
+      }),
+    ])
   ),
 });
 

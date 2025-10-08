@@ -13,7 +13,7 @@ const PARAM_DESCRIPTIONS = {
 export function inspectTranscriptTool(server: Server, clientFactory: () => IClaudeCodeClient) {
   return {
     name: 'inspect_transcript',
-    description: `Retrieves the subagent's conversation transcript for debugging when things go astray. This tool provides access to the full conversation history, including all messages, tool calls, and responses.
+    description: `Retrieves the subagent's conversation transcript from Claude Code's native session storage for debugging when things go astray. This tool provides access to the full conversation history, including all messages, tool calls, and responses with rich metadata.
 
 Example response:
 {
