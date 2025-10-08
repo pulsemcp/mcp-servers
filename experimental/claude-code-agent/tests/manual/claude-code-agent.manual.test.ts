@@ -149,7 +149,7 @@ describe('Claude Code Agent Manual Tests', () => {
   });
 
   describe('Tool Workflow', () => {
-    it.skip('should complete a full agent workflow with real Claude Code CLI', async () => {
+    it('should complete a full agent workflow with real Claude Code CLI', async () => {
       console.log('🚀 Starting Claude Code Agent manual test...\n');
 
       const client = new TestMCPClient({
@@ -189,7 +189,18 @@ describe('Claude Code Agent Manual Tests', () => {
         });
 
         const servers = JSON.parse(findResult.content[0].text);
-        console.log(`✅ Found ${servers.servers.length} relevant servers:`);
+        console.log(`✅ Find servers result:`, servers);
+
+        // Handle case where servers may not be in expected format
+        if (!servers.servers || !Array.isArray(servers.servers)) {
+          console.warn(`⚠️  Unexpected server list format. Got:`, servers);
+          console.log(`   Expected format: { servers: [{ name: string, rationale: string }] }`);
+
+          // Skip remaining tests if we can't get servers
+          throw new Error('find_servers returned unexpected format - unable to continue test');
+        }
+
+        console.log(`   Found ${servers.servers.length} relevant servers:`);
         servers.servers.forEach((s: { name: string; rationale: string }) => {
           console.log(`   - ${s.name}: ${s.rationale}`);
         });
