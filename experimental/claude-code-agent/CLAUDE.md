@@ -1,222 +1,223 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with the MCP server template.
+This file provides guidance to Claude Code (claude.ai/code) when working with the Claude Code Agent MCP Server.
+
+See the main repository's [CONTRIBUTING.md](../../CONTRIBUTING.md) for general contribution guidelines.
 
 ## Overview
 
-This is a comprehensive template for creating new MCP servers with TypeScript, testing infrastructure, and CI/CD setup guidance. It follows a monorepo structure with local/shared separation and includes full testing capabilities.
+The Claude Code Agent MCP Server implements the "agentic MCP configuration" pattern to solve the tool overload problem. Instead of having all MCP servers active at once (which bloats the context window), this server enables you to dynamically spin up Claude Code subagents with only the relevant MCP servers for specific tasks.
 
-## Using This Template
+This server acts as a meta-orchestrator that:
 
-1. **Copy the entire directory** to your desired location:
-   - For experimental: `cp -r mcp-server-template experimental/myname`
-   - For production: `cp -r mcp-server-template myname`
+- Analyzes your trusted servers list to find task-relevant servers
+- Initializes Claude Code subagents with custom system prompts
+- Dynamically installs only the needed MCP servers on each subagent
+- Manages subagent lifecycle and conversation state
+- Provides debugging capabilities through transcript inspection
 
-2. **Replace placeholders** throughout all files:
-   - `NAME` → your server name
-   - `DESCRIPTION` → your server description
-   - `YOUR_NAME` → author name
-   - `YOUR_API_KEY` → actual environment variable names
-   - `IExampleClient`/`ExampleClient` → your client interface/class names
-
-3. **Choose appropriate naming**:
-   - **Experimental servers** (in `experimental/`): Use simple names like `my-server-mcp-server`
-   - **Productionized servers** (in `productionized/`): Use scoped npm names like `@pulsemcp/pulse-servername`
-   - Update package.json names, bin entries, and server name in server.ts accordingly
-
-4. **Set up CI/CD** (optional):
-   - Follow the checklist in `CI_SETUP.md`
-   - Delete `CI_SETUP.md` after completing setup
-
-5. **Update README preparation script**:
-   - Edit `scripts/prepare-npm-readme.js` to match your server's title pattern
-   - Update the GitHub repository URL path
-   - Customize the repository notice text as needed
-
-6. **Install and build**:
-   ```bash
-   npm run install-all
-   npm run build
-   npm test
-   ```
-
-## Template Structure
-
-```
-mcp-server-template/
-├── scripts/                    # Build and publication scripts
-│   └── prepare-npm-readme.js  # README concatenation for npm
-├── local/                      # Local server implementation
-│   ├── src/
-│   │   ├── index.ts           # Main entry point
-│   │   └── index.integration-with-mock.ts # Integration test entry
-│   └── package.json
-├── shared/                     # Shared business logic
-│   ├── src/
-│   │   ├── server.ts          # Server factory with DI
-│   │   ├── tools.ts           # Tool registration
-│   │   ├── tools/             # Individual tool implementations
-│   │   │   └── example-tool.ts
-│   │   ├── example-client/    # External API client (NOT MCP client!)
-│   │   │   ├── CLAUDE.md      # Client documentation
-│   │   │   ├── example-client.ts
-│   │   │   ├── example-client.integration-mock.ts
-│   │   │   └── lib/           # Modular API methods
-│   │   │       ├── get-item.ts
-│   │   │       └── search-items.ts
-│   │   ├── resources.ts       # Resource implementations
-│   │   └── types.ts           # Shared TypeScript types
-│   └── package.json
-├── tests/                      # Test suite
-│   ├── functional/            # Unit/functional tests
-│   ├── integration/           # Full MCP protocol tests
-│   ├── mocks/                 # Mock implementations
-│   └── README.md              # Testing documentation
-├── vitest.config.ts           # Vitest configuration
-├── vitest.config.integration.ts # Integration test config
-├── CI_SETUP.md                # CI/CD setup checklist
-└── package.json               # Root monorepo config
-```
-
-## Key Features
+## Key Architecture Components
 
 ### Server Factory Pattern
 
-The template uses a factory pattern in `shared/src/server.ts`:
+The server uses dependency injection with a factory pattern in `shared/src/server.ts`:
 
-- Enables dependency injection for better testability
+- Enables testing with mock Claude Code clients
+- Separates subagent management from MCP protocol handling
 - Supports both production and test configurations
-- Separates server creation from handler registration
 
-### Testing Infrastructure
+### Claude Code Client Integration
 
-Full testing setup with Vitest:
+The core functionality is implemented through the `IClaudeCodeClient` interface:
 
-- Functional tests for isolated unit testing
-- Integration tests using TestMCPClient
-- Manual tests for real API validation
-- Mock patterns for external dependencies
-- Separate test configurations for different test types
+- **Production**: Uses real Claude CLI via stdio communication
+- **Testing**: Uses mocks for predictable test behavior
+- **Location**: `shared/src/claude-code-client/`
 
-#### Integration Mock Entry Point
+### State Management
 
-The template includes `index.integration-with-mock.ts` which:
+The server maintains subagent state through:
 
-- Allows integration tests to inject mock data via environment variables
-- Uses the real MCP server with mocked external dependencies
-- Demonstrates clear separation between MCP protocol and external API mocking
-- Enables testing various scenarios without hitting real APIs
+- **Agent State**: JSON files tracking session UUID, status, installed servers
+- **Transcripts**: Full conversation history for debugging
+- **Resource URIs**: Accessible via MCP resources for inspection
 
-### README Preparation for npm Publication
+## Tool Implementation Details
 
-The template includes automatic README preparation for npm publication:
+### Core Tools
 
-- **Script**: `scripts/prepare-npm-readme.js` runs during `prepublishOnly`
-- **Combines READMEs**: Merges main README with local configuration sections
-- **Adds repository reference**: Links to GitHub monorepo for context
-- **Customizable**: Update server name pattern and repository URL when copying template
+- **`init_agent`**: Creates new Claude Code subagent with custom system prompt
+- **`find_servers`**: Analyzes trusted servers list for task relevance
+- **`install_servers`**: Configures MCP servers on the subagent
+- **`chat`**: Sends prompts to subagent and returns responses
+- **`inspect_transcript`**: Retrieves conversation history for debugging
+- **`stop_agent`**: Gracefully shuts down the subagent
+- **`get_server_capabilities`**: Queries available server capabilities
 
-This ensures published npm packages have comprehensive documentation with proper repository references.
+### Tool Design Principles
 
-### Development Scripts
-
-- `npm run dev` - Development mode with auto-reload
-- `npm test` - Run tests in watch mode
-- `npm run test:all` - Run all tests (functional + integration)
-- `npm run lint` - Check code quality
-- `npm run format` - Format code
-
-## Implementation Guide
-
-### Environment Variable Validation
-
-The template includes built-in environment variable validation that runs before server startup. This ensures:
-
-- Users get clear error messages when required variables are missing
-- The server fails fast with helpful guidance
-- Optional variables are documented
-
-Update the `validateEnvironment()` function in `local/src/index.ts` with your requirements:
+Each tool follows the factory pattern:
 
 ```typescript
-const required = [{ name: 'YOUR_API_KEY', description: 'API key for authentication' }];
-
-const optional = [{ name: 'YOUR_OPTIONAL_CONFIG', description: 'Optional configuration' }];
+export function toolName(server: Server, clientFactory: () => IClaudeCodeClient) {
+  return {
+    name: 'tool_name',
+    description: '...',
+    inputSchema: {
+      /* JSON Schema */
+    },
+    handler: async (args: unknown) => {
+      /* implementation */
+    },
+  };
+}
 ```
 
-### Adding Tools
+Tools use:
 
-The template uses a modular tool pattern where each tool is defined in its own file:
+- Zod schemas for input validation (defined in `types.ts`)
+- Dependency injection for Claude Code client access
+- Structured error handling with logging
+- Detailed descriptions following the Tool Descriptions Guide
 
-1. Create a new file in `shared/src/tools/` (e.g., `my-tool.ts`)
-2. Define the tool using the factory pattern:
-   ```typescript
-   export function myTool(server: Server, clientFactory: () => IClient) {
-     return {
-       name: 'my_tool',
-       description: 'Tool description',
-       inputSchema: {
-         /* JSON Schema */
-       },
-       handler: async (args: unknown) => {
-         /* implementation */
-       },
-     };
-   }
-   ```
-3. Add the tool to the tools array in `shared/src/tools.ts`
-4. Use Zod for input validation within the handler
-5. Access external APIs via the injected client factory
-6. **IMPORTANT**: Follow the comprehensive [Tool Descriptions Guide](shared/src/tools/TOOL_DESCRIPTIONS_GUIDE.md) to write user-friendly tool descriptions that include examples, use cases, and detailed parameter explanations
+## Configuration Requirements
 
-### Adding External API Clients
+This server requires two configuration files that users must provide:
 
-The template uses a modular client pattern with a lib subdirectory for external API clients (e.g., REST APIs, GraphQL, databases - NOT MCP clients):
+### 1. servers.md (TRUSTED_SERVERS_PATH)
 
-1. Define the interface in `shared/src/server.ts`
-2. Create client directory structure:
-   ```
-   shared/src/your-client/
-   ├── CLAUDE.md                    # Client-specific documentation
-   ├── your-client.ts               # Interface exports
-   ├── your-client.integration-mock.ts  # Integration test mock
-   └── lib/                         # Individual API methods
-       ├── method-one.ts
-       └── method-two.ts
-   ```
-3. Implement each API method in its own file under `lib/`
-4. Create the concrete client class that delegates to lib methods
-5. Update the factory in server.ts to instantiate the client
-6. Use via dependency injection in tools
+Markdown file listing trusted MCP servers with descriptions for AI analysis:
 
-### Writing Tests
+```markdown
+## com.microsoft/playwright
 
-- Functional: Test individual functions with mocked dependencies
-- Integration: Test full MCP protocol with mocked external services
+Used for UI automation and testing. Only install when working with web interfaces.
 
-## Best Practices
+## com.pulsemcp/appsignal
 
-- Use dependency injection for all external dependencies
-- Write tests for all new functionality
-- Follow TypeScript strict mode
-- Use Zod for runtime validation
-- Handle errors gracefully
-- Keep business logic in shared module
-- Document all tools and resources
+Monitoring and error tracking. Install when debugging production issues.
+```
+
+### 2. servers.json (SERVER_CONFIGS_PATH)
+
+JSON file with MCP server installation configurations:
+
+```json
+[
+  {
+    "name": "com.microsoft/playwright",
+    "description": "Browser automation",
+    "packages": [
+      {
+        "registryType": "npm",
+        "identifier": "@playwright/mcp",
+        "version": "latest"
+      }
+    ]
+  }
+]
+```
+
+## Environment Variables
+
+| Variable                 | Description                   | Required | Default              |
+| ------------------------ | ----------------------------- | -------- | -------------------- |
+| `TRUSTED_SERVERS_PATH`   | Path to servers.md file       | Yes      | `./servers.md`       |
+| `SERVER_CONFIGS_PATH`    | Path to servers.json file     | Yes      | `./servers.json`     |
+| `CLAUDE_CODE_PATH`       | Path to Claude CLI executable | No       | `claude`             |
+| `SERVER_SECRETS_PATH`    | Path to .secrets file         | No       | -                    |
+| `CLAUDE_AGENT_BASE_DIR`  | Agent workspace directory     | No       | `/tmp/claude-agents` |
+| `CLAUDE_AGENT_LOG_LEVEL` | Logging level                 | No       | `info`               |
+
+## Testing Strategy
+
+### Test Types
+
+1. **Functional Tests**: Unit tests with mocked Claude Code client
+2. **Integration Tests**: Full MCP protocol tests using TestMCPClient
+3. **Manual Tests**: Tests with real Claude CLI for end-to-end validation
+
+### Mock Infrastructure
+
+- **Functional Mock**: `claude-code-client.functional-mock.ts` - Simple return values
+- **Integration Mock**: `claude-code-client.integration-mock.ts` - Stateful simulation
+
+### Manual Testing
+
+Manual tests are critical for this server because:
+
+- They verify real Claude CLI integration works correctly
+- They test the actual subagent lifecycle management
+- They validate MCP server installation on real subagents
+
+Run manual tests with:
+
+```bash
+npm run test:manual
+```
 
 ## Development Workflow
 
-- **Changelog Updates**: Always update the CHANGELOG.md file when making changes to this MCP server to track improvements and maintain version history
+### Adding New Tools
+
+1. Create tool file in `shared/src/tools/`
+2. Follow the factory pattern with dependency injection
+3. Add Zod schema to `types.ts`
+4. Register in `tools.ts`
+5. Add comprehensive tests (functional + integration)
+6. Update CHANGELOG.md
+
+### Modifying Claude Code Integration
+
+1. Update interface in `claude-code-client.ts`
+2. Implement in both production and mock clients
+3. Add integration tests for new functionality
+4. Run manual tests to verify real CLI integration
+
+### Error Handling
+
+- All tools use structured error handling
+- Logging goes to stderr to maintain MCP protocol compliance
+- Client errors are wrapped and re-thrown with context
+- Timeout handling for long-running subagent operations
 
 ## Logging
 
-This server uses a centralized logging module (`shared/src/logging.ts`) for all output. **IMPORTANT**: Never use `console.log` directly in server code as it interferes with the MCP protocol (stdout must only contain JSON messages).
+This server uses centralized logging (`shared/src/logging.ts`):
 
-Instead, use the logging functions:
+- **IMPORTANT**: Never use `console.log` directly - it breaks MCP protocol
+- Use logging functions that output to stderr
+- Debug logging only when `NODE_ENV=development` or `DEBUG=true`
 
-- `logServerStart(serverName)` - Log server startup
-- `logError(context, error)` - Log errors with context
-- `logWarning(context, message)` - Log warnings
-- `logDebug(context, message)` - Log debug info (only when NODE_ENV=development or DEBUG=true)
+## Claude Learnings
 
-All logging functions output to stderr to maintain MCP protocol compliance.
+### Agentic MCP Configuration Pattern
+
+- **Problem**: Tool overload when all MCP servers are active at once
+- **Solution**: Dynamic subagent creation with task-specific server sets
+- **Benefit**: Scales to hundreds of trusted servers without context window bloat
+- **Pattern**: Main agent → analyze task → find relevant servers → create equipped subagent → delegate task
+
+### Subagent Management
+
+- Each server instance manages exactly one subagent at a time
+- Subagents run in isolated workspaces with their own .mcp.json configs
+- State persistence allows inspection and debugging through MCP resources
+- Graceful shutdown prevents resource leaks and orphaned processes
+
+### Real-world Usage
+
+Example workflow for "Triage bug from Twist":
+
+1. `init_agent` with bug triage system prompt
+2. `find_servers` discovers: appsignal, twist-mcp, postgres-mcp, fetch
+3. `install_servers` configures only those 4 servers on subagent
+4. `chat` delegates bug investigation to properly-equipped subagent
+5. Subagent uses only relevant tools, no context window bloat
+
+### Development Considerations
+
+- Mock clients must maintain state to simulate real subagent behavior
+- Integration tests should verify the full MCP protocol flow
+- Manual tests are essential due to complex Claude CLI integration
+- Timeout handling is critical for long-running subagent operations
