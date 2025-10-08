@@ -566,7 +566,26 @@ Format: [{"name": "server.name", "rationale": "why this server is needed"}]`;
    */
   private convertTranscriptToMarkdown(nativeTranscript: unknown[]): string {
     const relevantEntries = nativeTranscript.filter(
-      (entry) => entry.type === 'user' || entry.type === 'assistant'
+      (
+        entry: unknown
+      ): entry is {
+        type: string;
+        timestamp?: string;
+        content?: string;
+        message?: {
+          content?: unknown;
+          usage?: {
+            input_tokens?: number;
+            output_tokens?: number;
+            cache_read_input_tokens?: number;
+          };
+        };
+      } =>
+        typeof entry === 'object' &&
+        entry !== null &&
+        'type' in entry &&
+        ((entry as { type: string }).type === 'user' ||
+          (entry as { type: string }).type === 'assistant')
     );
 
     return relevantEntries
@@ -584,11 +603,17 @@ Format: [{"name": "server.name", "rationale": "why this server is needed"}]`;
             if (Array.isArray(message.content)) {
               // Handle structured content (tool calls, text blocks)
               message.content.forEach((block: unknown) => {
-                if (block.type === 'text') {
-                  content += block.text + '\n\n';
-                } else if (block.type === 'tool_use') {
-                  content += `### Tool Call: ${block.name}\n\n`;
-                  content += `**Arguments:**\n\`\`\`json\n${JSON.stringify(block.input, null, 2)}\n\`\`\`\n\n`;
+                const typedBlock = block as {
+                  type?: string;
+                  text?: string;
+                  name?: string;
+                  input?: unknown;
+                };
+                if (typedBlock.type === 'text') {
+                  content += (typedBlock.text || '') + '\n\n';
+                } else if (typedBlock.type === 'tool_use') {
+                  content += `### Tool Call: ${typedBlock.name || 'Unknown'}\n\n`;
+                  content += `**Arguments:**\n\`\`\`json\n${JSON.stringify(typedBlock.input || {}, null, 2)}\n\`\`\`\n\n`;
                 }
               });
             } else {
@@ -656,7 +681,10 @@ Format: [{"name": "server.name", "rationale": "why this server is needed"}]`;
         metadata: {
           messageCount: nativeTranscript.length,
           lastUpdated:
-            nativeTranscript[nativeTranscript.length - 1]?.timestamp || new Date().toISOString(),
+            nativeTranscript.length > 0
+              ? (nativeTranscript[nativeTranscript.length - 1] as { timestamp?: string })
+                  ?.timestamp || new Date().toISOString()
+              : new Date().toISOString(),
         },
       };
     } catch (error) {
@@ -794,14 +822,25 @@ Format: [{"name": "server.name", "rationale": "why this server is needed"}]`;
     for (const preferredType of priority) {
       // Check new schema format first
       const newFormatPackage = packages.find(
-        (p) => p.registryType === preferredType && p.transport
+        (p: unknown): p is { registryType: string; transport: unknown } =>
+          typeof p === 'object' &&
+          p !== null &&
+          'registryType' in p &&
+          'transport' in p &&
+          (p as { registryType: string }).registryType === preferredType
       );
       if (newFormatPackage) {
         return newFormatPackage;
       }
 
       // Check old schema format
-      const oldFormatPackage = packages.find((p) => p.type === preferredType);
+      const oldFormatPackage = packages.find(
+        (p: unknown): p is { type: string } =>
+          typeof p === 'object' &&
+          p !== null &&
+          'type' in p &&
+          (p as { type: string }).type === preferredType
+      );
       if (oldFormatPackage) {
         return oldFormatPackage;
       }
@@ -819,13 +858,15 @@ Format: [{"name": "server.name", "rationale": "why this server is needed"}]`;
     customEnv: Record<string, string>,
     secrets: Record<string, string>
   ): unknown {
+    const config = packageConfig as { registryType?: string; transport?: unknown; type?: string };
+
     // Handle new schema format (server.json)
-    if (packageConfig.registryType && packageConfig.transport) {
+    if (config.registryType && config.transport) {
       return this.convertNewSchemaToMcp(packageConfig, customEnv, secrets);
     }
 
     // Handle old schema format (servers.json)
-    if (packageConfig.type) {
+    if (config.type) {
       return this.convertOldSchemaToMcp(packageConfig, customEnv, secrets);
     }
 
@@ -847,7 +888,14 @@ Format: [{"name": "server.name", "rationale": "why this server is needed"}]`;
       runtimeHint,
       runtimeArguments,
       environmentVariables,
-    } = packageConfig;
+    } = packageConfig as {
+      registryType: string;
+      identifier: string;
+      transport: { type: string; url?: string; headers?: Record<string, string> };
+      runtimeHint?: string;
+      runtimeArguments?: Array<{ type: string; value: string; name?: string }>;
+      environmentVariables?: Array<{ name: string; default?: string }>;
+    };
 
     // Merge environment variables
     const env = { ...customEnv, ...secrets };
