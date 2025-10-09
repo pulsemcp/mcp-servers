@@ -6,9 +6,10 @@ Manual tests for the Claude Code Agent MCP Server verify the integration with th
 
 ## Latest Test Results
 
-**Commit:** 390aabe
+**Commit:** af8c3e4
 **Date:** 2025-10-08
 **Overall:** 100% passing (3/3 test suites)
+**Note:** Manual tests from commit 390aabe still valid - this commit only adds prepare-publish.js for npm packaging
 
 ### Test Suite Results
 
@@ -110,8 +111,9 @@ Tests fail if:
 ## Manual Test Results
 
 **Last tested**: 2025-10-08
-**Commit**: 390aabe
+**Commit**: af8c3e4
 **Result**: SUCCESS (100% pass rate)
+**Note**: Tests from 390aabe still valid - af8c3e4 only adds packaging scripts
 
 ### Test Execution Details
 
