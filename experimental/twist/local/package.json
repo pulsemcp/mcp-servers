@@ -1,6 +1,6 @@
 {
   "name": "twist-mcp-server",
-  "version": "0.1.18",
+  "version": "0.2.0",
   "description": "Local implementation of Twist MCP Server",
   "mcpName": "com.pulsemcp.servers/twist",
   "main": "build/index.js",
@@ -29,7 +29,7 @@
     "prepublishOnly": "node prepare-publish.js"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.13.2",
+    "@modelcontextprotocol/sdk": "^1.19.1",
     "zod": "^3.24.1"
   },
   "devDependencies": {

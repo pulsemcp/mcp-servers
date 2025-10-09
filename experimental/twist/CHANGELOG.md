@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2025-10-08
+
+### Changed
+
+- Updated @modelcontextprotocol/sdk from 1.13.2 to 1.19.1
+
 ## [0.1.18] - 2025-09-09
 
 ### Added
