@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [0.1.0] - 2025-10-08
+
+### Changed
+
+- Updated @modelcontextprotocol/sdk from 1.13.2 to 1.19.1
+
 ## [0.0.4] - 2025-09-09
 
 ### Added

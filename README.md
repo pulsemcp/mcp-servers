@@ -21,7 +21,7 @@ These are PulseMCP-branded servers that we intend to maintain indefinitely as ou
 
 | Name                                         | Description                          | Local Status | Remote Status | Target Audience                                                                                        | Notes                                                                                                  |
 | -------------------------------------------- | ------------------------------------ | ------------ | ------------- | ------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------ |
-| [pulse-fetch](./productionized/pulse-fetch/) | Pull internet resources into context | 0.2.14       | Not Started   | Agent-building frameworks (e.g. fast-agent, Mastra, PydanticAI) and MCP clients without built-in fetch | Supports Firecrawl and BrightData integrations; HTML noise stripping; Resource caching; LLM extraction |
+| [pulse-fetch](./productionized/pulse-fetch/) | Pull internet resources into context | 0.3.0        | Not Started   | Agent-building frameworks (e.g. fast-agent, Mastra, PydanticAI) and MCP clients without built-in fetch | Supports Firecrawl and BrightData integrations; HTML noise stripping; Resource caching; LLM extraction |
 
 ### Experimental Servers
 
@@ -29,11 +29,11 @@ These are high-quality servers that we may discontinue if the official provider 
 
 | Name                                                     | Description                                                        | Local Status      | Remote Status | Target Audience                                       | Notes                                                                |
 | -------------------------------------------------------- | ------------------------------------------------------------------ | ----------------- | ------------- | ----------------------------------------------------- | -------------------------------------------------------------------- |
-| [appsignal](./experimental/appsignal/)                   | AppSignal application performance monitoring and error tracking    | 0.2.15            | Not Started   | Developers using AppSignal for application monitoring | Requires AppSignal API key; NOT officially affiliated with AppSignal |
+| [appsignal](./experimental/appsignal/)                   | AppSignal application performance monitoring and error tracking    | 0.3.0             | Not Started   | Developers using AppSignal for application monitoring | Requires AppSignal API key; NOT officially affiliated with AppSignal |
 | [claude-code-agent](./experimental/claude-code-agent/)   | Claude Code Agent MCP Server for managing Claude Code CLI sessions | Not Yet Published | Not Started   | Developers building AI-powered automation workflows   | Requires Claude Code CLI installed locally                           |
-| [twist](./experimental/twist/)                           | Twist team messaging and collaboration platform integration        | 0.1.18            | Not Started   | Teams using Twist for asynchronous communication      | Requires Twist API bearer token and workspace ID                     |
-| [pulsemcp-cms-admin](./experimental/pulsemcp-cms-admin/) | Internal API for managing PulseMCP newsletter content              | 0.0.4             | Not Started   | PulseMCP team for content management                  | Requires PULSEMCP_ADMIN_API_KEY; Internal use only                   |
-| [hatchbox](./experimental/hatchbox/)                     | Hatchbox Rails hosting platform management                         | 0.0.2             | Not Started   | Rails developers using Hatchbox for hosting           | Requires Hatchbox API key and deploy key                             |
+| [twist](./experimental/twist/)                           | Twist team messaging and collaboration platform integration        | 0.2.0             | Not Started   | Teams using Twist for asynchronous communication      | Requires Twist API bearer token and workspace ID                     |
+| [pulsemcp-cms-admin](./experimental/pulsemcp-cms-admin/) | Internal API for managing PulseMCP newsletter content              | 0.1.0             | Not Started   | PulseMCP team for content management                  | Requires PULSEMCP_ADMIN_API_KEY; Internal use only                   |
+| [hatchbox](./experimental/hatchbox/)                     | Hatchbox Rails hosting platform management                         | 0.1.0             | Not Started   | Rails developers using Hatchbox for hosting           | Requires Hatchbox API key and deploy key                             |
 
 ## Contributing
 
