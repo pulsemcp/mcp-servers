@@ -1,6 +1,6 @@
 {
   "name": "@pulsemcp/pulse-fetch",
-  "version": "0.2.14",
+  "version": "0.3.0",
   "description": "Local implementation of pulse-fetch MCP server",
   "mcpName": "com.pulsemcp.servers/pulse-fetch",
   "main": "build/index.js",
@@ -31,7 +31,7 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.36.3",
-    "@modelcontextprotocol/sdk": "^1.13.2",
+    "@modelcontextprotocol/sdk": "^1.19.1",
     "dom-to-semantic-markdown": "^1.5.0",
     "jsdom": "^26.1.0",
     "openai": "^4.104.0",
