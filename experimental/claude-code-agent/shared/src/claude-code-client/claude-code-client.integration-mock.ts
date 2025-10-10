@@ -23,9 +23,10 @@ export class MockClaudeCodeClient implements IClaudeCodeClient {
 
   async initAgent(systemPrompt: string, workingDirectory: string, agentId?: string) {
     const stateId = agentId || Math.random().toString(36).substr(2, 9);
+    const sessionId = 'mock-session-' + Math.random().toString(36).substr(2, 9);
     this.mockStateDirectory = `/tmp/mock-state/${stateId}`;
     this.mockState = {
-      sessionId: 'mock-session-' + Math.random().toString(36).substr(2, 9),
+      sessionId,
       status: 'idle',
       systemPrompt,
       installedServers: [],
@@ -33,6 +34,7 @@ export class MockClaudeCodeClient implements IClaudeCodeClient {
       lastActiveAt: new Date().toISOString(),
       workingDirectory: workingDirectory,
       claudeProjectPath: '/tmp/mock-claude-projects/integration-test',
+      transcriptPath: `/tmp/mock-claude-projects/integration-test/${sessionId}.jsonl`,
     };
 
     // Clear transcript on new agent init

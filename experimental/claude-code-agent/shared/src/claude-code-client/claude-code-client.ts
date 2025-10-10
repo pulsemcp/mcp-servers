@@ -306,6 +306,11 @@ export class ClaudeCodeClient implements IClaudeCodeClient {
       // Try to detect Claude Code project path for native transcript access
       const claudeProjectPath = await this.detectClaudeProjectPath(sessionId, workingDirectory);
 
+      // Generate transcript path if we have the Claude project path
+      const transcriptPath = claudeProjectPath
+        ? join(claudeProjectPath, `${sessionId}.jsonl`)
+        : undefined;
+
       // Create initial state
       const state: AgentState = {
         sessionId,
@@ -316,6 +321,7 @@ export class ClaudeCodeClient implements IClaudeCodeClient {
         lastActiveAt: new Date().toISOString(),
         workingDirectory: workingDirectory,
         claudeProjectPath,
+        transcriptPath,
       };
 
       const stateFile = join(stateDir, 'state.json');

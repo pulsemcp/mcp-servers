@@ -28,9 +28,10 @@ export class FunctionalMockClaudeCodeClient implements IClaudeCodeClient {
     console.log('[Mock] Simulating claude -p "Agent initialized" with system prompt');
 
     const stateId = agentId || Date.now().toString();
+    const sessionId = 'test-session-' + Date.now();
     this.mockStateDirectory = `/tmp/mock-state/${stateId}`;
     this.mockState = {
-      sessionId: 'test-session-' + Date.now(),
+      sessionId,
       status: 'idle' as const,
       systemPrompt,
       installedServers: [],
@@ -38,6 +39,7 @@ export class FunctionalMockClaudeCodeClient implements IClaudeCodeClient {
       lastActiveAt: new Date().toISOString(),
       workingDirectory: workingDirectory,
       claudeProjectPath: '/tmp/mock-claude-projects/test-project',
+      transcriptPath: `/tmp/mock-claude-projects/test-project/${sessionId}.jsonl`,
     };
 
     return {
