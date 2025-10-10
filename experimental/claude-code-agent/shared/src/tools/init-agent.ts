@@ -50,7 +50,7 @@ Use cases:
           description: PARAM_DESCRIPTIONS.agent_id,
         },
       },
-      required: ['system_prompt', 'working_directory', 'agent_id'],
+      required: ['system_prompt', 'working_directory'],
     },
 
     handler: async (args: unknown) => {
