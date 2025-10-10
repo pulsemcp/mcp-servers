@@ -6,4 +6,5 @@ export {
   ClaudeCodeClient,
 } from './claude-code-client/claude-code-client.js';
 export { MockClaudeCodeClient } from './claude-code-client/claude-code-client.integration-mock.js';
+export * from './llm/index.js';
 export * from './types.js';

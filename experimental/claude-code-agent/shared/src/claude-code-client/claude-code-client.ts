@@ -6,6 +6,8 @@ import { AgentState, ServerConfig } from '../types.js';
 import { createLogger } from '../logging.js';
 import { promisify } from 'util';
 import { exec as execCallback } from 'child_process';
+import { ServerConfigGeneratorFactory } from '../llm/factory.js';
+import type { ServerConfigInput, IServerConfigGenerator } from '../llm/types.js';
 
 const exec = promisify(execCallback);
 
@@ -428,12 +430,6 @@ Format: [{"name": "server.name", "rationale": "why this server is needed"}]`;
         throw new Error('No agent initialized');
       }
 
-      const installations: Array<{
-        serverName: string;
-        status: 'success' | 'failed';
-        error?: string;
-      }> = [];
-
       // Read server configurations
       const allServersConfig = JSON.parse(await fs.readFile(this.serverConfigsPath, 'utf-8'));
 
@@ -447,78 +443,27 @@ Format: [{"name": "server.name", "rationale": "why this server is needed"}]`;
         }
       }
 
-      // Build MCP configuration
-      const mcpConfig: {
-        mcpServers: Record<string, unknown>;
-      } = { mcpServers: {} };
+      // Try to get LLM-based configuration generator
+      const llmGenerator = ServerConfigGeneratorFactory.createFromEnv();
 
-      for (const serverName of serverNames) {
-        const serverConfig = allServersConfig.find((s: ServerConfig) => s.name === serverName);
-
-        if (!serverConfig) {
-          installations.push({
-            serverName,
-            status: 'failed',
-            error: 'Server configuration not found',
-          });
-          continue;
-        }
-
-        try {
-          // Find the best package for this server
-          const packageConfig = this.selectBestPackage(serverConfig.packages);
-
-          if (!packageConfig) {
-            installations.push({
-              serverName,
-              status: 'failed',
-              error: 'No supported package configuration found',
-            });
-            continue;
-          }
-
-          // Convert package config to MCP format
-          const mcpServerConfig = this.convertToMcpConfig(
-            packageConfig,
-            serverConfigs?.[serverName]?.env || {},
-            secrets[serverName] || {}
-          );
-
-          mcpConfig.mcpServers[serverName] = mcpServerConfig;
-
-          installations.push({
-            serverName,
-            status: 'success',
-          });
-        } catch (error) {
-          installations.push({
-            serverName,
-            status: 'failed',
-            error: `Configuration error: ${error instanceof Error ? error.message : 'Unknown error'}`,
-          });
-        }
-      }
-
-      // Write MCP configuration to working directory
-      const mcpConfigPath = join(this.currentAgent.workingDir, '.mcp.json');
-      await fs.writeFile(mcpConfigPath, JSON.stringify(mcpConfig, null, 2));
-
-      // Update agent state
-      if (this.currentAgent.state) {
-        this.currentAgent.state.installedServers = serverNames.filter((name) =>
-          installations.find((i) => i.serverName === name && i.status === 'success')
+      if (llmGenerator) {
+        logger.debug('Using LLM-based configuration generation');
+        return await this.installServersWithLLM(
+          serverNames,
+          allServersConfig,
+          secrets,
+          llmGenerator,
+          serverConfigs
         );
-        await this.saveAgentState();
+      } else {
+        logger.warn('LLM configuration not available, falling back to legacy approach');
+        return await this.installServersLegacy(
+          serverNames,
+          allServersConfig,
+          secrets,
+          serverConfigs
+        );
       }
-
-      logger.debug(
-        `Installed ${installations.filter((i) => i.status === 'success').length} servers`
-      );
-
-      return {
-        installations,
-        mcpConfigPath,
-      };
     } catch (error) {
       logger.error('Failed to install servers:', error);
       throw new Error(
@@ -1013,343 +958,169 @@ Format: [{"name": "server.name", "rationale": "why this server is needed"}]`;
   }
 
   /**
-   * Selects the best package configuration from available packages.
-   * Prioritizes based on user-specified precedence: remote first, then npx, uvx, docker.
+   * Install servers using LLM-based configuration generation
    */
-  private selectBestPackage(packages: unknown[]): unknown | null {
-    // Priority order for server types (as specified by user)
-    const priority = [
-      // Remote servers (highest precedence)
-      'http', // HTTP servers (streamable)
-      'sse', // Server-Sent Events
-      // Local package managers (second priority)
-      'npm', // npm packages via npx
-      'github', // GitHub repositories via npx
-      // Python packages (third priority)
-      'python', // Python packages via uvx/uv
-      // Docker containers (fourth priority)
-      'docker', // Docker containers
-      // Local filesystem and git (lowest priority)
-      'filesystem', // Local filesystem paths
-      'git', // Git repositories
-      // Legacy types
-      'binary', // Binary executables
-    ];
+  private async installServersWithLLM(
+    serverNames: string[],
+    allServersConfig: ServerConfig[],
+    secrets: Record<string, Record<string, string>>,
+    llmGenerator: IServerConfigGenerator,
+    serverConfigs?: Record<string, { env?: Record<string, string> }>
+  ): Promise<{
+    installations: Array<{
+      serverName: string;
+      status: 'success' | 'failed';
+      error?: string;
+    }>;
+    mcpConfigPath: string;
+  }> {
+    const installations: Array<{
+      serverName: string;
+      status: 'success' | 'failed';
+      error?: string;
+    }> = [];
 
-    for (const preferredType of priority) {
-      // Check new schema format first
-      const newFormatPackage = packages.find(
-        (p: unknown): p is { registryType: string; transport: unknown } =>
-          typeof p === 'object' &&
-          p !== null &&
-          'registryType' in p &&
-          'transport' in p &&
-          (p as { registryType: string }).registryType === preferredType
-      );
-      if (newFormatPackage) {
-        return newFormatPackage;
+    // Build MCP configuration
+    const mcpConfig: {
+      mcpServers: Record<string, unknown>;
+    } = { mcpServers: {} };
+
+    for (const serverName of serverNames) {
+      const serverConfig = allServersConfig.find((s: ServerConfig) => s.name === serverName);
+
+      if (!serverConfig) {
+        installations.push({
+          serverName,
+          status: 'failed',
+          error: 'Server configuration not found',
+        });
+        continue;
       }
 
-      // Check old schema format
-      const oldFormatPackage = packages.find(
-        (p: unknown): p is { type: string } =>
-          typeof p === 'object' &&
-          p !== null &&
-          'type' in p &&
-          (p as { type: string }).type === preferredType
-      );
-      if (oldFormatPackage) {
-        return oldFormatPackage;
-      }
-    }
-
-    return null;
-  }
-
-  /**
-   * Converts a package configuration to Claude Code MCP .mcp.json format.
-   * Supports both old schema (servers.json) and new schema (server.json) formats.
-   */
-  private convertToMcpConfig(
-    packageConfig: unknown,
-    customEnv: Record<string, string>,
-    secrets: Record<string, string>
-  ): unknown {
-    const config = packageConfig as { registryType?: string; transport?: unknown; type?: string };
-
-    // Handle new schema format (server.json)
-    if (config.registryType && config.transport) {
-      return this.convertNewSchemaToMcp(packageConfig, customEnv, secrets);
-    }
-
-    // Handle old schema format (servers.json)
-    if (config.type) {
-      return this.convertOldSchemaToMcp(packageConfig, customEnv, secrets);
-    }
-
-    throw new Error('Unsupported package configuration format');
-  }
-
-  /**
-   * Converts new schema (server.json) format to MCP configuration.
-   */
-  private convertNewSchemaToMcp(
-    packageConfig: unknown,
-    customEnv: Record<string, string>,
-    secrets: Record<string, string>
-  ): unknown {
-    const {
-      registryType,
-      identifier,
-      transport,
-      runtimeHint,
-      runtimeArguments,
-      environmentVariables,
-    } = packageConfig as {
-      registryType: string;
-      identifier: string;
-      transport: { type: string; url?: string; headers?: Record<string, string> };
-      runtimeHint?: string;
-      runtimeArguments?: Array<{ type: string; value: string; name?: string }>;
-      environmentVariables?: Array<{ name: string; default?: string }>;
-    };
-
-    // Merge environment variables
-    const env = { ...customEnv, ...secrets };
-
-    // Add default environment variables from package config
-    if (environmentVariables) {
-      for (const envVar of environmentVariables) {
-        if (envVar.default && !env[envVar.name]) {
-          env[envVar.name] = envVar.default;
-        }
-      }
-    }
-
-    switch (transport.type) {
-      case 'stdio':
-        return this.createStdioConfig(registryType, identifier, runtimeHint, runtimeArguments, env);
-
-      case 'http':
-        if (!transport.url) {
-          throw new Error('HTTP transport requires URL');
-        }
-        return {
-          type: 'http',
-          url: transport.url,
-          headers: { ...transport.headers, ...env },
+      try {
+        // Prepare input for LLM
+        const input: ServerConfigInput = {
+          serverConfig: serverConfig as Record<string, unknown>,
+          userPreferences: {
+            serverName,
+            includeEnvironmentVariables: true,
+            workingDirectory: this.currentAgent.workingDir,
+            ...serverConfigs?.[serverName],
+          },
         };
 
-      case 'sse':
-        if (!transport.url) {
-          throw new Error('SSE transport requires URL');
+        // Generate configuration using LLM
+        const result = await llmGenerator.generateServerConfig(input);
+
+        if (!result.success || !result.mcpConfig) {
+          installations.push({
+            serverName,
+            status: 'failed',
+            error: result.error || 'LLM configuration generation failed',
+          });
+          continue;
         }
-        return {
-          type: 'sse',
-          url: transport.url,
-          headers: { ...transport.headers, ...env },
-        };
 
-      default:
-        throw new Error(`Unsupported transport type: ${transport.type}`);
-    }
-  }
+        // Extract the server configuration from the generated MCP config
+        const generatedConfig = result.mcpConfig as { mcpServers?: Record<string, unknown> };
+        const serverSpecificConfig =
+          generatedConfig.mcpServers?.[serverName] ||
+          Object.values(generatedConfig.mcpServers || {})[0]; // Fallback to first server if name doesn't match
 
-  /**
-   * Converts old schema (servers.json) format to MCP configuration.
-   * Supports all modern MCP server types including remote, stdio, docker, etc.
-   */
-  private convertOldSchemaToMcp(
-    packageConfig: unknown,
-    customEnv: Record<string, string>,
-    secrets: Record<string, string>
-  ): unknown {
-    const config = packageConfig as {
-      type?: string;
-      command?: string;
-      args?: string[];
-      env?: Record<string, string>;
-      url?: string;
-      headers?: Record<string, string>;
-    };
+        if (!serverSpecificConfig) {
+          installations.push({
+            serverName,
+            status: 'failed',
+            error: 'Generated configuration is empty',
+          });
+          continue;
+        }
 
-    // Merge environment variables
-    const env = {
-      ...config.env,
-      ...customEnv,
-      ...secrets,
-    };
+        // Inject secrets from secrets file
+        const finalConfig = this.injectSecrets(serverSpecificConfig, secrets[serverName] || {});
 
-    // Handle remote server types first (highest precedence)
-    if (config.type === 'http') {
-      if (!config.url) {
-        throw new Error('HTTP server configuration requires URL');
+        mcpConfig.mcpServers[serverName] = finalConfig;
+
+        installations.push({
+          serverName,
+          status: 'success',
+        });
+
+        logger.debug(`Successfully generated config for ${serverName} using LLM`);
+      } catch (error) {
+        installations.push({
+          serverName,
+          status: 'failed',
+          error: `LLM generation error: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        });
       }
-      return {
-        type: 'http',
-        url: config.url,
-        headers: { ...config.headers, ...env },
-      };
     }
 
-    if (config.type === 'sse') {
-      if (!config.url) {
-        throw new Error('SSE server configuration requires URL');
-      }
-      return {
-        type: 'sse',
-        url: config.url,
-        headers: { ...config.headers, ...env },
-      };
+    // Write MCP configuration to working directory
+    const mcpConfigPath = join(this.currentAgent.workingDir!, '.mcp.json');
+    await fs.writeFile(mcpConfigPath, JSON.stringify(mcpConfig, null, 2));
+
+    // Update agent state
+    if (this.currentAgent.state) {
+      this.currentAgent.state.installedServers = serverNames.filter((name) =>
+        installations.find((i) => i.serverName === name && i.status === 'success')
+      );
+      await this.saveAgentState();
     }
 
-    // Handle stdio transport types
-    if (!config.command) {
-      throw new Error('Stdio server configuration requires command');
-    }
-
-    // Intelligent command selection based on available tools
-    let finalCommand = config.command;
-    const finalArgs = config.args || [];
-
-    // If command is a known tool name, use the best available version
-    if (config.command === 'npx' && !this.availableTools.get('npx')) {
-      throw new Error('npx is required but not available');
-    }
-    if (config.command === 'uvx') {
-      finalCommand = this.selectBestTool(['/Users/admin/.local/bin/uvx', 'uvx']) || config.command;
-    }
-    if (config.command === 'uv') {
-      finalCommand = this.selectBestTool(['/Users/admin/.local/bin/uv', 'uv']) || config.command;
-    }
-    if (config.command === 'docker' && !this.availableTools.get('docker')) {
-      throw new Error('Docker is required but not available');
-    }
+    logger.debug(
+      `Installed ${installations.filter((i) => i.status === 'success').length} servers using LLM`
+    );
 
     return {
-      command: finalCommand,
-      args: finalArgs,
-      env,
+      installations,
+      mcpConfigPath,
     };
   }
 
   /**
-   * Creates stdio configuration for various registry types.
-   * Uses intelligent tool selection based on availability and precedence.
+   * Install servers using legacy parsing approach (fallback when LLM is not available)
    */
-  private createStdioConfig(
-    registryType: string,
-    identifier: string,
-    runtimeHint?: string,
-    runtimeArguments?: Array<{ type: string; value: string; name?: string }>,
-    env: Record<string, string> = {}
-  ): unknown {
-    const args: string[] = [];
-
-    // Add runtime arguments
-    if (runtimeArguments) {
-      for (const arg of runtimeArguments) {
-        if (arg.type === 'positional') {
-          args.push(arg.value);
-        } else if (arg.type === 'named' && arg.name) {
-          args.push(`--${arg.name}=${arg.value}`);
-        }
-      }
-    }
-
-    switch (registryType) {
-      case 'npm': {
-        // npm packages via npx (preferred) or fallback to runtime hint
-        const command = runtimeHint || this.selectBestTool(['npx', 'node']) || 'npx';
-        return {
-          command,
-          args: [...args, identifier],
-          env,
-        };
-      }
-
-      case 'python': {
-        // Python packages - priority: uvx, uv, then fallback
-        const command =
-          this.selectBestTool(['/Users/admin/.local/bin/uvx', '/Users/admin/.local/bin/uv']) ||
-          runtimeHint ||
-          'python';
-        if (command.includes('uvx')) {
-          return {
-            command,
-            args: [...args, identifier],
-            env,
-          };
-        } else if (command.includes('uv')) {
-          return {
-            command,
-            args: ['run', ...args, identifier],
-            env,
-          };
-        } else {
-          // Fallback to pip install + run
-          return {
-            command,
-            args: ['-m', 'pip', 'install', identifier, '&&', 'python', '-m', identifier, ...args],
-            env,
-          };
-        }
-      }
-
-      case 'docker': {
-        // Docker containers
-        if (!this.availableTools.get('docker')) {
-          throw new Error('Docker is not available but required for this server type');
-        }
-        return {
-          command: 'docker',
-          args: [
-            'run',
-            '--rm',
-            '-i',
-            ...Object.entries(env).flatMap(([k, v]) => ['-e', `${k}=${v}`]),
-            identifier,
-            ...args,
-          ],
-          env,
-        };
-      }
-
-      case 'github':
-        // GitHub repositories via npx
-        return {
-          command: this.selectBestTool(['npx']) || 'npx',
-          args: [...args, identifier],
-          env,
-        };
-
-      case 'git':
-        // Git repositories - clone and run
-        throw new Error('Git registry type not yet implemented - requires git clone logic');
-
-      case 'filesystem':
-        // Local filesystem paths
-        return {
-          command: identifier, // Direct path to executable
-          args,
-          env,
-        };
-
-      default:
-        throw new Error(`Unsupported registry type for stdio transport: ${registryType}`);
-    }
+  private async installServersLegacy(
+    _serverNames: string[],
+    _allServersConfig: ServerConfig[],
+    _secrets: Record<string, Record<string, string>>,
+    _serverConfigs?: Record<string, { env?: Record<string, string> }>
+  ): Promise<{
+    installations: Array<{
+      serverName: string;
+      status: 'success' | 'failed';
+      error?: string;
+    }>;
+    mcpConfigPath: string;
+  }> {
+    throw new Error(
+      'Legacy server installation not implemented. Please configure LLM_PROVIDER and LLM_API_KEY environment variables to use LLM-based configuration generation.'
+    );
   }
 
   /**
-   * Selects the best available tool from a list of preferences.
+   * Inject secrets into a server configuration
    */
-  private selectBestTool(preferences: string[]): string | null {
-    for (const tool of preferences) {
-      const toolName = tool.split('/').pop() || tool; // Extract tool name from path
-      if (this.availableTools.get(toolName) || this.availableTools.get(tool)) {
-        return tool;
-      }
+  private injectSecrets(serverConfig: unknown, secrets: Record<string, string>): unknown {
+    if (!secrets || Object.keys(secrets).length === 0) {
+      return serverConfig;
     }
-    return null;
+
+    const config = serverConfig as Record<string, unknown>;
+
+    // Inject secrets into environment variables
+    if (config.env && typeof config.env === 'object') {
+      config.env = { ...config.env, ...secrets };
+    } else if (Object.keys(secrets).length > 0) {
+      config.env = secrets;
+    }
+
+    // Inject secrets into headers for HTTP/SSE servers
+    if (config.headers && typeof config.headers === 'object') {
+      config.headers = { ...config.headers, ...secrets };
+    }
+
+    return config;
   }
 }
