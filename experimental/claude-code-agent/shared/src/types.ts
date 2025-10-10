@@ -101,7 +101,7 @@ export type TranscriptEntry = z.infer<typeof TranscriptEntrySchema>;
 export const InitAgentSchema = z.object({
   system_prompt: z.string().describe('Custom system prompt for the subagent'),
   working_directory: z.string().describe('Absolute path where the agent should operate'),
-  agent_id: z.string().describe('Identifier for state directory naming'),
+  agent_id: z.string().optional().describe('Optional identifier for state directory naming'),
 });
 
 export const FindServersSchema = z.object({
