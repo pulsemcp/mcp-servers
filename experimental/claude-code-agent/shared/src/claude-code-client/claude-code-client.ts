@@ -28,7 +28,7 @@ export interface IClaudeCodeClient {
     errors: string[];
   }>;
 
-  initAgent(systemPrompt: string, workingDirectory: string, agentId: string): Promise<{
+  initAgent(systemPrompt: string, workingDirectory: string, agentId?: string): Promise<{
     sessionId: string;
     status: 'idle' | 'working';
     stateUri: string;
@@ -166,7 +166,7 @@ export class ClaudeCodeClient implements IClaudeCodeClient {
     };
   }
 
-  async initAgent(systemPrompt: string, workingDirectory: string, agentId: string): Promise<{
+  async initAgent(systemPrompt: string, workingDirectory: string, agentId?: string): Promise<{
     sessionId: string;
     status: 'idle' | 'working';
     stateUri: string;
@@ -177,8 +177,11 @@ export class ClaudeCodeClient implements IClaudeCodeClient {
         await this.stopAgent();
       }
 
+      // Generate agentId if not provided
+      const finalAgentId = agentId || uuidv4();
+      
       // Create state directory (separate from working directory)
-      const stateDir = join(this.agentBaseDir, agentId);
+      const stateDir = join(this.agentBaseDir, finalAgentId);
       await fs.mkdir(stateDir, { recursive: true });
 
       // Ensure working directory exists
