@@ -4,6 +4,24 @@ All notable changes to the Claude Code Agent MCP Server will be documented in th
 
 ## [Unreleased]
 
+## [0.0.5] - 2025-10-10
+
+### Changed
+
+- Updated LLM model defaults across the monorepo
+  - Anthropic: claude-sonnet-4-5-20250929 (latest Sonnet 4)
+  - OpenAI: gpt-5-2025-08-07 (latest GPT-5)
+- Simplified install-servers tool using LLM-based configuration generation
+  - Replaced complex server.json parsing logic with structured LLM prompts
+  - Reduced installServers function from ~350 to ~50 lines
+  - Added comprehensive LLM infrastructure with factory patterns
+  - Supports Anthropic, OpenAI, and OpenAI-compatible providers
+  - Prefers HTTP transport over SSE for better compatibility
+- Added comprehensive test suite for LLM functionality
+  - Factory pattern tests for client creation
+  - Input validation and error handling tests
+  - Integration tests with mocked LLM responses
+
 ## [0.0.4] - 2025-10-10
 
 **CRITICAL FIX:**
