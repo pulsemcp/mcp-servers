@@ -16,33 +16,9 @@ vi.mock('@anthropic-ai/sdk', () => {
   };
 });
 
-interface MockAnthropicConstructor {
-  new (): {
-    messages: {
-      create: ReturnType<typeof vi.fn>;
-    };
-  };
-  mockCreate: ReturnType<typeof vi.fn>;
-  mock: {
-    instances: unknown[];
-  };
-}
-
 describe('AnthropicServerConfigGenerator', () => {
   beforeEach(async () => {
     vi.clearAllMocks();
-
-    // Get the mocked Anthropic class and its create method
-    const AnthropicClass = vi.mocked(await import('@anthropic-ai/sdk'))
-      .default as unknown as MockAnthropicConstructor;
-    mockCreate = AnthropicClass.mockCreate;
-
-    const config: LLMConfig = {
-      provider: 'anthropic',
-      apiKey: 'test-api-key',
-    };
-
-    generator = new AnthropicServerConfigGenerator(config);
   });
 
   describe('constructor', () => {
