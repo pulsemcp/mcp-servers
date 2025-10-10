@@ -603,6 +603,7 @@ Format: [{"name": "server.name", "rationale": "why this server is needed"}]`;
 
   /**
    * Attempts to detect the Claude Code project directory where transcript files are stored.
+   * Note: The directory may not exist yet at init time, but we can predict where it will be.
    */
   private async detectClaudeProjectPath(
     _sessionId: string,
@@ -610,21 +611,19 @@ Format: [{"name": "server.name", "rationale": "why this server is needed"}]`;
   ): Promise<string | undefined> {
     const homeDir = process.env.HOME || process.env.USERPROFILE;
     if (!homeDir) {
+      logger.debug('No home directory found for detectClaudeProjectPath');
       return undefined;
     }
 
     // Generate the project directory name based on working directory
-    const projectDirName = workingDirectory.replace(/[^a-zA-Z0-9]/g, '-').replace(/^-+|-+$/g, '');
+    // Claude Code converts the absolute path: /foo/bar/baz -> -foo-bar-baz
+    const projectDirName = workingDirectory.replace(/\//g, '-');
     const claudeProjectDir = join(homeDir, '.claude', 'projects', projectDirName);
 
-    try {
-      await fs.access(claudeProjectDir);
-      return claudeProjectDir;
-    } catch {
-      // Project directory doesn't exist yet or isn't accessible
-      // This is normal during initialization
-      return undefined;
-    }
+    // Always return the path - even if it doesn't exist yet
+    // Claude Code will create it after the first conversation
+    logger.debug(`Predicted Claude project directory: ${claudeProjectDir}`);
+    return claudeProjectDir;
   }
 
   /**
@@ -650,7 +649,7 @@ Format: [{"name": "server.name", "rationale": "why this server is needed"}]`;
 
     // Generate the project directory name based on current working directory
     const cwd = this.currentAgent.workingDir || process.cwd();
-    const projectDirName = cwd.replace(/[^a-zA-Z0-9]/g, '-').replace(/^-+|-+$/g, '');
+    const projectDirName = cwd.replace(/\//g, '-');
     const sessionFilePath = join(
       homeDir,
       '.claude',
@@ -695,7 +694,7 @@ Format: [{"name": "server.name", "rationale": "why this server is needed"}]`;
 
     // Generate the project directory name based on current working directory
     const cwd = this.currentAgent.workingDir || process.cwd();
-    const projectDirName = cwd.replace(/[^a-zA-Z0-9]/g, '-').replace(/^-+|-+$/g, '');
+    const projectDirName = cwd.replace(/\//g, '-');
     const sessionFilePath = join(
       homeDir,
       '.claude',
