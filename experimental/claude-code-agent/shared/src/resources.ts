@@ -16,22 +16,16 @@ export function createRegisterResources(clientFactory: ClientFactory) {
     server.setRequestHandler(ListResourcesRequestSchema, async () => {
       const client = clientFactory();
       const agentState = await client.getAgentState();
+      const stateDirectory = await client.getStateDirectory();
 
       const resources = [];
 
-      if (agentState) {
+      if (agentState && stateDirectory) {
         resources.push({
-          uri: `file://${agentState.workingDirectory}/state.json`,
+          uri: `file://${stateDirectory}/state.json`,
           name: 'Subagent State',
           description:
             'Current state of the Claude Code subagent including status, installed servers, and metadata',
-          mimeType: 'application/json',
-        });
-
-        resources.push({
-          uri: `file://${agentState.workingDirectory}/transcript.json`,
-          name: 'Subagent Transcript',
-          description: 'Full conversation history with the subagent for debugging purposes',
           mimeType: 'application/json',
         });
       }
@@ -50,25 +44,33 @@ export function createRegisterResources(clientFactory: ClientFactory) {
       const filePath = uri.slice(7); // Remove 'file://' prefix
       const client = clientFactory();
       const agentState = await client.getAgentState();
+      const stateDirectory = await client.getStateDirectory();
 
-      if (!agentState) {
+      if (!agentState || !stateDirectory) {
         throw new Error('No agent initialized - cannot read resources');
       }
 
       // Security: Prevent path traversal attacks
-      // Ensure the requested file is within the agent's working directory
+      // Ensure the requested file is within either the agent's working directory or state directory
       const normalizedPath = normalize(resolve(filePath));
       const normalizedWorkingDir = normalize(resolve(agentState.workingDirectory));
+      const normalizedStateDir = normalize(resolve(stateDirectory));
 
-      // Use path.relative to check if the path escapes the working directory
-      const relativePath = relative(normalizedWorkingDir, normalizedPath);
-      const isOutside =
-        relativePath.startsWith('..') ||
-        resolve(normalizedWorkingDir, relativePath) !== normalizedPath;
+      // Check if the path is within the working directory
+      const relativeToWorkingDir = relative(normalizedWorkingDir, normalizedPath);
+      const isOutsideWorkingDir =
+        relativeToWorkingDir.startsWith('..') ||
+        resolve(normalizedWorkingDir, relativeToWorkingDir) !== normalizedPath;
 
-      if (isOutside) {
+      // Check if the path is within the state directory
+      const relativeToStateDir = relative(normalizedStateDir, normalizedPath);
+      const isOutsideStateDir =
+        relativeToStateDir.startsWith('..') ||
+        resolve(normalizedStateDir, relativeToStateDir) !== normalizedPath;
+
+      if (isOutsideWorkingDir && isOutsideStateDir) {
         logger.error(`Path traversal attempt detected: ${filePath}`);
-        throw new Error(`Access denied: path is outside agent working directory`);
+        throw new Error(`Access denied: path is outside agent working and state directories`);
       }
 
       try {

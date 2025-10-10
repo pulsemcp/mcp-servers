@@ -4,6 +4,33 @@ All notable changes to the Claude Code Agent MCP Server will be documented in th
 
 ## [Unreleased]
 
+## [0.0.3] - 2025-10-10
+
+**BREAKING CHANGES:**
+
+- **BREAKING:** `init_agent` tool now requires `working_directory` parameter (absolute path)
+- **BREAKING:** `init_agent` tool now accepts optional `agent_id` parameter for state directory naming
+- **BREAKING:** Removed transcript resource (state resource now contains transcript path reference)
+
+**Improvements:**
+
+- Implemented directory separation: working directory (where agent operates) vs state directory (where state is stored)
+- Fixed transcript path to point to Claude Code's native transcript files (`~/.claude/projects/{project-dir}/{session-id}.jsonl`)
+- Enhanced path transformation logic to match Claude Code's naming convention for project directories
+- Updated all tests to use new parameter structure and verify directory separation
+- State storage now uses `CLAUDE_AGENT_BASE_DIR` exclusively with agent_id-based folder naming
+- Improved security validation to allow both working and state directories
+
+**Technical Details:**
+
+This release addresses the fundamental directory structure issue where `/tmp/claude-agents` was being used for both agent operations and state storage. The new architecture cleanly separates:
+
+- **Working Directory**: Where the Claude Code agent operates (user-specified via `working_directory` parameter)
+- **State Directory**: Where state.json and other metadata are stored (`${CLAUDE_AGENT_BASE_DIR}/${agent_id}/`)
+- **Transcript Path**: Points to Claude Code's native transcript files for seamless integration
+
+Users upgrading from previous versions must update their `init_agent` calls to include the `working_directory` parameter.
+
 ## [0.0.2] - 2025-10-08
 
 **CRITICAL FIX:**

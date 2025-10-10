@@ -38,6 +38,7 @@ describe('Claude Code Agent Manual Tests', () => {
         const initResult = await client.callTool('init_agent', {
           system_prompt:
             'You are a helpful assistant specialized in Python development and database operations.',
+          working_directory: '/tmp/test-manual',
         });
 
         const initData = JSON.parse(initResult.content[0].text);
@@ -175,6 +176,7 @@ describe('Claude Code Agent Manual Tests', () => {
         const initResult = await client.callTool('init_agent', {
           system_prompt:
             'You are a helpful assistant specialized in Python development and database operations.',
+          working_directory: '/tmp/test-manual',
         });
 
         const initData = JSON.parse(initResult.content[0].text);

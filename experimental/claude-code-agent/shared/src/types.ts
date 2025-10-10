@@ -10,6 +10,7 @@ export const AgentStateSchema = z.object({
   lastActiveAt: z.string(),
   workingDirectory: z.string(),
   claudeProjectPath: z.string().optional(), // Path to Claude Code project directory for transcript access
+  transcriptPath: z.string().optional(), // Path to Claude Code's native transcript file
 });
 
 export type AgentState = z.infer<typeof AgentStateSchema>;
@@ -99,6 +100,8 @@ export type TranscriptEntry = z.infer<typeof TranscriptEntrySchema>;
 // Tool schemas
 export const InitAgentSchema = z.object({
   system_prompt: z.string().describe('Custom system prompt for the subagent'),
+  working_directory: z.string().describe('Absolute path where the agent should operate'),
+  agent_id: z.string().optional().describe('Optional identifier for state directory naming'),
 });
 
 export const FindServersSchema = z.object({

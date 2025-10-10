@@ -56,18 +56,17 @@ describe('Resources', () => {
       expect(response.resources).toHaveLength(0);
     });
 
-    it('should list agent state and transcript after initialization', async () => {
+    it('should list agent state after initialization', async () => {
       // Initialize agent first
-      await mockClient.initAgent('Test agent');
+      await mockClient.initAgent('Test agent', '/tmp/test-working', 'test-agent');
 
       const handler = mockHandlers['resources/list'];
       const response = await handler({ params: {} });
 
-      expect(response.resources).toHaveLength(2);
+      expect(response.resources).toHaveLength(1);
 
       const resourceUris = response.resources.map((r: { uri: string }) => r.uri);
-      expect(resourceUris).toContain('file:///tmp/test-agent/state.json');
-      expect(resourceUris).toContain('file:///tmp/test-agent/transcript.json');
+      expect(resourceUris).toContain('file:///tmp/mock-state/test-agent/state.json');
 
       const stateResource = response.resources.find(
         (r: { name: string }) => r.name === 'Subagent State'
@@ -78,22 +77,13 @@ describe('Resources', () => {
           'Current state of the Claude Code subagent including status, installed servers, and metadata',
         mimeType: 'application/json',
       });
-
-      const transcriptResource = response.resources.find(
-        (r: { name: string }) => r.name === 'Subagent Transcript'
-      );
-      expect(transcriptResource).toMatchObject({
-        name: 'Subagent Transcript',
-        description: 'Full conversation history with the subagent for debugging purposes',
-        mimeType: 'application/json',
-      });
     });
   });
 
   describe('read resource', () => {
     it('should read agent state file', async () => {
       // Initialize agent first so path traversal validation has working directory
-      await mockClient.initAgent('Test prompt');
+      await mockClient.initAgent('Test prompt', '/tmp/test-working', 'test-agent');
 
       const mockState = {
         sessionId: 'test-123',
@@ -102,7 +92,7 @@ describe('Resources', () => {
         installedServers: ['com.postgres/mcp'],
         createdAt: '2024-01-01T00:00:00Z',
         lastActiveAt: '2024-01-01T01:00:00Z',
-        workingDirectory: '/tmp/test-agent',
+        workingDirectory: '/tmp/test-working',
       };
 
       vi.mocked(fs.readFile).mockResolvedValue(JSON.stringify(mockState, null, 2));
@@ -112,67 +102,56 @@ describe('Resources', () => {
 
       const response = await handler({
         params: {
-          uri: 'file:///tmp/test-agent/state.json',
+          uri: 'file:///tmp/mock-state/test-agent/state.json',
         },
       });
 
       expect(response.contents).toHaveLength(1);
       expect(response.contents[0]).toMatchObject({
-        uri: 'file:///tmp/test-agent/state.json',
+        uri: 'file:///tmp/mock-state/test-agent/state.json',
         mimeType: 'application/json',
         text: JSON.stringify(mockState, null, 2),
       });
     });
 
-    it('should read transcript file', async () => {
+    it('should read files from working directory', async () => {
       // Initialize agent first so path traversal validation has working directory
-      await mockClient.initAgent('Test prompt');
+      await mockClient.initAgent('Test prompt', '/tmp/test-working', 'test-agent');
 
-      const mockTranscript = [
-        {
-          role: 'user',
-          content: 'Hello',
-          timestamp: '2024-01-01T00:00:00Z',
-        },
-        {
-          role: 'assistant',
-          content: 'Hi there!',
-          timestamp: '2024-01-01T00:00:01Z',
-        },
-      ];
+      const mockFile = 'This is a working directory file';
 
-      vi.mocked(fs.readFile).mockResolvedValue(JSON.stringify(mockTranscript, null, 2));
+      vi.mocked(fs.readFile).mockResolvedValue(mockFile);
 
       const handler = mockHandlers['resources/read'];
       const response = await handler({
         params: {
-          uri: 'file:///tmp/test-agent/transcript.json',
+          uri: 'file:///tmp/test-working/notes.txt',
         },
       });
 
       expect(response.contents).toHaveLength(1);
       expect(response.contents[0]).toMatchObject({
-        uri: 'file:///tmp/test-agent/transcript.json',
-        mimeType: 'application/json',
-        text: JSON.stringify(mockTranscript, null, 2),
+        uri: 'file:///tmp/test-working/notes.txt',
+        mimeType: 'text/plain',
+        text: mockFile,
       });
     });
 
     it('should handle non-JSON files', async () => {
       // Initialize agent first so path traversal validation has working directory
-      await mockClient.initAgent('Test prompt');
+      await mockClient.initAgent('Test prompt', '/tmp/test-working', 'test-agent');
 
       vi.mocked(fs.readFile).mockResolvedValue('This is a plain text file');
 
       const handler = mockHandlers['resources/read'];
       const response = await handler({
         params: {
-          uri: 'file:///tmp/test-agent/notes.txt',
+          uri: 'file:///tmp/test-working/notes.txt',
         },
       });
 
       expect(response.contents[0]).toMatchObject({
-        uri: 'file:///tmp/test-agent/notes.txt',
+        uri: 'file:///tmp/test-working/notes.txt',
         mimeType: 'text/plain',
         text: 'This is a plain text file',
       });
@@ -192,7 +171,7 @@ describe('Resources', () => {
 
     it('should handle missing files', async () => {
       // Initialize agent first so path traversal validation has working directory
-      await mockClient.initAgent('Test prompt');
+      await mockClient.initAgent('Test prompt', '/tmp/test-working', 'test-agent');
 
       const error = new Error('ENOENT: no such file or directory');
       (error as NodeJS.ErrnoException).code = 'ENOENT';
@@ -203,7 +182,7 @@ describe('Resources', () => {
       await expect(
         handler({
           params: {
-            uri: 'file:///tmp/test-agent/missing.json',
+            uri: 'file:///tmp/test-working/missing.json',
           },
         })
       ).rejects.toThrow('Resource not found');

@@ -28,7 +28,11 @@ export interface IClaudeCodeClient {
     errors: string[];
   }>;
 
-  initAgent(systemPrompt: string): Promise<{
+  initAgent(
+    systemPrompt: string,
+    workingDirectory: string,
+    agentId?: string
+  ): Promise<{
     sessionId: string;
     status: 'idle' | 'working';
     stateUri: string;
@@ -76,6 +80,8 @@ export interface IClaudeCodeClient {
   }>;
 
   getAgentState(): Promise<AgentState | null>;
+
+  getStateDirectory(): Promise<string | null>;
 }
 
 export class ClaudeCodeClient implements IClaudeCodeClient {
@@ -89,6 +95,7 @@ export class ClaudeCodeClient implements IClaudeCodeClient {
   private currentAgent: {
     process?: ChildProcess;
     workingDir?: string;
+    stateDir?: string;
     sessionId?: string;
     state?: AgentState;
   } = {};
@@ -163,7 +170,11 @@ export class ClaudeCodeClient implements IClaudeCodeClient {
     };
   }
 
-  async initAgent(systemPrompt: string): Promise<{
+  async initAgent(
+    systemPrompt: string,
+    workingDirectory: string,
+    agentId?: string
+  ): Promise<{
     sessionId: string;
     status: 'idle' | 'working';
     stateUri: string;
@@ -174,13 +185,18 @@ export class ClaudeCodeClient implements IClaudeCodeClient {
         await this.stopAgent();
       }
 
-      // Create agent directory
-      const agentId = uuidv4();
-      const workingDir = join(this.agentBaseDir, agentId);
-      await fs.mkdir(workingDir, { recursive: true });
+      // Generate agentId if not provided
+      const finalAgentId = agentId || uuidv4();
 
-      // Create .claude directory structure
-      const claudeDir = join(workingDir, '.claude');
+      // Create state directory (separate from working directory)
+      const stateDir = join(this.agentBaseDir, finalAgentId);
+      await fs.mkdir(stateDir, { recursive: true });
+
+      // Ensure working directory exists
+      await fs.mkdir(workingDirectory, { recursive: true });
+
+      // Create .claude directory structure in working directory
+      const claudeDir = join(workingDirectory, '.claude');
       await fs.mkdir(claudeDir, { recursive: true });
 
       // Create settings.json
@@ -193,9 +209,9 @@ export class ClaudeCodeClient implements IClaudeCodeClient {
       };
       await fs.writeFile(join(claudeDir, 'settings.json'), JSON.stringify(settings, null, 2));
 
-      // Create empty .mcp.json to start
+      // Create empty .mcp.json to start in working directory
       await fs.writeFile(
-        join(workingDir, '.mcp.json'),
+        join(workingDirectory, '.mcp.json'),
         JSON.stringify({ mcpServers: {} }, null, 2)
       );
 
@@ -222,11 +238,11 @@ export class ClaudeCodeClient implements IClaudeCodeClient {
       logger.debug('Spawning Claude process:', {
         command: this.claudeCodePath,
         args,
-        cwd: workingDir,
+        cwd: workingDirectory,
       });
 
       const initProcess = spawn(this.claudeCodePath, args, {
-        cwd: workingDir,
+        cwd: workingDirectory,
         stdio: ['pipe', 'pipe', 'pipe'],
       });
 
@@ -266,13 +282,13 @@ export class ClaudeCodeClient implements IClaudeCodeClient {
             try {
               const jsonOutput = JSON.parse(output);
               // Claude returns session_id (with underscore)
-              sessionId = jsonOutput.session_id || jsonOutput.sessionId || agentId;
+              sessionId = jsonOutput.session_id || jsonOutput.sessionId || finalAgentId;
               logger.debug('Claude init successful, session:', sessionId);
               resolve();
             } catch {
               // Fallback to agent ID if we can't parse
               logger.warn('Could not parse Claude output as JSON, using fallback ID:', output);
-              sessionId = agentId;
+              sessionId = finalAgentId;
               resolve();
             }
           } else {
@@ -288,7 +304,12 @@ export class ClaudeCodeClient implements IClaudeCodeClient {
       });
 
       // Try to detect Claude Code project path for native transcript access
-      const claudeProjectPath = await this.detectClaudeProjectPath(sessionId);
+      const claudeProjectPath = await this.detectClaudeProjectPath(sessionId, workingDirectory);
+
+      // Generate transcript path if we have the Claude project path
+      const transcriptPath = claudeProjectPath
+        ? join(claudeProjectPath, `${sessionId}.jsonl`)
+        : undefined;
 
       // Create initial state
       const state: AgentState = {
@@ -298,18 +319,20 @@ export class ClaudeCodeClient implements IClaudeCodeClient {
         installedServers: [],
         createdAt: new Date().toISOString(),
         lastActiveAt: new Date().toISOString(),
-        workingDirectory: workingDir,
+        workingDirectory: workingDirectory,
         claudeProjectPath,
+        transcriptPath,
       };
 
-      const stateFile = join(workingDir, 'state.json');
+      const stateFile = join(stateDir, 'state.json');
       await fs.writeFile(stateFile, JSON.stringify(state, null, 2));
 
       // Note: No longer creating manual transcript files since Claude Code
       // automatically tracks conversations in ~/.claude/projects/
 
       this.currentAgent = {
-        workingDir,
+        workingDir: workingDirectory,
+        stateDir,
         sessionId,
         state,
       };
@@ -476,7 +499,7 @@ Format: [{"name": "server.name", "rationale": "why this server is needed"}]`;
         }
       }
 
-      // Write MCP configuration
+      // Write MCP configuration to working directory
       const mcpConfigPath = join(this.currentAgent.workingDir, '.mcp.json');
       await fs.writeFile(mcpConfigPath, JSON.stringify(mcpConfig, null, 2));
 
@@ -580,26 +603,27 @@ Format: [{"name": "server.name", "rationale": "why this server is needed"}]`;
 
   /**
    * Attempts to detect the Claude Code project directory where transcript files are stored.
+   * Note: The directory may not exist yet at init time, but we can predict where it will be.
    */
-  private async detectClaudeProjectPath(_sessionId: string): Promise<string | undefined> {
+  private async detectClaudeProjectPath(
+    _sessionId: string,
+    workingDirectory: string
+  ): Promise<string | undefined> {
     const homeDir = process.env.HOME || process.env.USERPROFILE;
     if (!homeDir) {
+      logger.debug('No home directory found for detectClaudeProjectPath');
       return undefined;
     }
 
-    // Generate the project directory name based on current working directory
-    const cwd = this.currentAgent.workingDir || process.cwd();
-    const projectDirName = cwd.replace(/[^a-zA-Z0-9]/g, '-').replace(/^-+|-+$/g, '');
+    // Generate the project directory name based on working directory
+    // Claude Code converts the absolute path: /foo/bar/baz -> -foo-bar-baz
+    const projectDirName = workingDirectory.replace(/\//g, '-');
     const claudeProjectDir = join(homeDir, '.claude', 'projects', projectDirName);
 
-    try {
-      await fs.access(claudeProjectDir);
-      return claudeProjectDir;
-    } catch {
-      // Project directory doesn't exist yet or isn't accessible
-      // This is normal during initialization
-      return undefined;
-    }
+    // Always return the path - even if it doesn't exist yet
+    // Claude Code will create it after the first conversation
+    logger.debug(`Predicted Claude project directory: ${claudeProjectDir}`);
+    return claudeProjectDir;
   }
 
   /**
@@ -625,7 +649,7 @@ Format: [{"name": "server.name", "rationale": "why this server is needed"}]`;
 
     // Generate the project directory name based on current working directory
     const cwd = this.currentAgent.workingDir || process.cwd();
-    const projectDirName = cwd.replace(/[^a-zA-Z0-9]/g, '-').replace(/^-+|-+$/g, '');
+    const projectDirName = cwd.replace(/\//g, '-');
     const sessionFilePath = join(
       homeDir,
       '.claude',
@@ -669,8 +693,8 @@ Format: [{"name": "server.name", "rationale": "why this server is needed"}]`;
     }
 
     // Generate the project directory name based on current working directory
-    const cwd = process.cwd();
-    const projectDirName = cwd.replace(/[^a-zA-Z0-9]/g, '-').replace(/^-+|-+$/g, '');
+    const cwd = this.currentAgent.workingDir || process.cwd();
+    const projectDirName = cwd.replace(/\//g, '-');
     const sessionFilePath = join(
       homeDir,
       '.claude',
@@ -796,7 +820,11 @@ Format: [{"name": "server.name", "rationale": "why this server is needed"}]`;
     };
   }> {
     try {
-      if (!this.currentAgent.sessionId || !this.currentAgent.workingDir) {
+      if (
+        !this.currentAgent.sessionId ||
+        !this.currentAgent.workingDir ||
+        !this.currentAgent.stateDir
+      ) {
         throw new Error('No agent initialized');
       }
 
@@ -817,7 +845,7 @@ Format: [{"name": "server.name", "rationale": "why this server is needed"}]`;
 
       if (format === 'markdown') {
         // For markdown format, we need to create a processed file since the native format is JSONL
-        const outputPath = join(this.currentAgent.workingDir, 'transcript.md');
+        const outputPath = join(this.currentAgent.stateDir!, 'transcript.md');
         const markdown =
           nativeTranscript.length > 0
             ? this.convertTranscriptToMarkdown(nativeTranscript)
@@ -851,7 +879,7 @@ Format: [{"name": "server.name", "rationale": "why this server is needed"}]`;
           };
         } else {
           // Fallback: create a local copy if native file isn't available (e.g., in tests)
-          const outputPath = join(this.currentAgent.workingDir, 'transcript.json');
+          const outputPath = join(this.currentAgent.stateDir!, 'transcript.json');
           await fs.writeFile(outputPath, JSON.stringify(nativeTranscript, null, 2));
 
           return {
@@ -924,6 +952,10 @@ Format: [{"name": "server.name", "rationale": "why this server is needed"}]`;
     return this.currentAgent.state || null;
   }
 
+  async getStateDirectory(): Promise<string | null> {
+    return this.currentAgent.stateDir || null;
+  }
+
   private async runClaudeCodeCommand(
     args: string[],
     timeout = DEFAULT_COMMAND_TIMEOUT_MS
@@ -972,11 +1004,11 @@ Format: [{"name": "server.name", "rationale": "why this server is needed"}]`;
   }
 
   private async saveAgentState(): Promise<void> {
-    if (!this.currentAgent.workingDir || !this.currentAgent.state) {
+    if (!this.currentAgent.stateDir || !this.currentAgent.state) {
       return;
     }
 
-    const stateFile = join(this.currentAgent.workingDir, 'state.json');
+    const stateFile = join(this.currentAgent.stateDir, 'state.json');
     await fs.writeFile(stateFile, JSON.stringify(this.currentAgent.state, null, 2));
   }
 

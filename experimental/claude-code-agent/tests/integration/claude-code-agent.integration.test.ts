@@ -50,6 +50,7 @@ describe('claude-code-agent MCP Server Integration Tests', () => {
 
       const result = await client.callTool('init_agent', {
         system_prompt: 'You are a helpful assistant',
+        working_directory: '/tmp/test-integration',
       });
 
       expect(result.content[0].text).toContain('sessionId');
@@ -80,6 +81,7 @@ describe('claude-code-agent MCP Server Integration Tests', () => {
       // Initialize agent
       const initResult = await client.callTool('init_agent', {
         system_prompt: 'You are a test assistant',
+        working_directory: '/tmp/test-integration',
       });
 
       // Verify init succeeded
@@ -111,6 +113,7 @@ describe('claude-code-agent MCP Server Integration Tests', () => {
       // Initialize agent first
       const initResult = await client.callTool('init_agent', {
         system_prompt: 'Test',
+        working_directory: '/tmp/test-integration',
       });
 
       // Verify init succeeded
@@ -140,6 +143,7 @@ describe('claude-code-agent MCP Server Integration Tests', () => {
       // Initialize first
       const initResult = await client.callTool('init_agent', {
         system_prompt: 'Test',
+        working_directory: '/tmp/test-integration',
       });
 
       // Verify init succeeded
@@ -195,7 +199,7 @@ describe('claude-code-agent MCP Server Integration Tests', () => {
       client = await createTestMCPClient();
 
       // Try calling init_agent without required field - should throw McpError
-      await expect(client.callTool('init_agent', {})).rejects.toThrow('system_prompt');
+      await expect(client.callTool('init_agent', {})).rejects.toThrow();
     });
   });
 
@@ -213,17 +217,17 @@ describe('claude-code-agent MCP Server Integration Tests', () => {
       // Initialize agent first
       const initResult = await client.callTool('init_agent', {
         system_prompt: 'Test agent',
+        working_directory: '/tmp/test-integration',
       });
 
       // Verify init succeeded
       expect(initResult.isError).toBeFalsy();
 
       const result = await client.listResources();
-      expect(result.resources).toHaveLength(2);
+      expect(result.resources).toHaveLength(1);
 
       const resourceUris = result.resources.map((r) => r.uri);
       expect(resourceUris.some((uri) => uri.includes('state.json'))).toBe(true);
-      expect(resourceUris.some((uri) => uri.includes('transcript.json'))).toBe(true);
     });
 
     it('should read state resource', async () => {
@@ -232,6 +236,7 @@ describe('claude-code-agent MCP Server Integration Tests', () => {
       // Initialize agent
       const initResult = await client.callTool('init_agent', {
         system_prompt: 'Test agent for resources',
+        working_directory: '/tmp/test-integration',
       });
 
       // Verify init succeeded

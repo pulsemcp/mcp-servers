@@ -55,6 +55,8 @@ describe('Tools', () => {
 
       const result = await tool.handler({
         system_prompt: 'You are a helpful assistant',
+        working_directory: '/tmp/test-working',
+        agent_id: 'test-agent-123',
       });
 
       const parsedResult = JSON.parse(result.content[0].text);
@@ -62,7 +64,7 @@ describe('Tools', () => {
       expect(parsedResult).toMatchObject({
         sessionId: expect.stringMatching(/^test-session-\d+$/),
         status: 'idle',
-        stateUri: 'file:///tmp/test-agent/state.json',
+        stateUri: 'file:///tmp/mock-state/test-agent-123/state.json',
       });
     });
 
@@ -112,7 +114,7 @@ describe('Tools', () => {
   describe('install_servers', () => {
     it('should install servers after agent is initialized', async () => {
       // First initialize agent
-      await mockClient.initAgent('Test');
+      await mockClient.initAgent('Test', '/tmp/test-working', 'test-agent');
 
       // Then install servers
       const tool = installServersTool(mockServer, clientFactory);
@@ -128,7 +130,7 @@ describe('Tools', () => {
         serverName: 'com.postgres/mcp',
         status: 'success',
       });
-      expect(parsedResult.mcpConfigPath).toBe('/tmp/test-agent/.mcp.json');
+      expect(parsedResult.mcpConfigPath).toBe('/tmp/test-working/.mcp.json');
     });
 
     it('should fail if no agent is initialized', async () => {
@@ -145,7 +147,7 @@ describe('Tools', () => {
   describe('chat', () => {
     it('should send message to initialized agent', async () => {
       // Initialize agent
-      await mockClient.initAgent('Test assistant');
+      await mockClient.initAgent('Test assistant', '/tmp/test-working', 'test-agent');
 
       // Send chat message
       const tool = chatTool(mockServer, clientFactory);
@@ -165,7 +167,7 @@ describe('Tools', () => {
     });
 
     it('should support custom timeout', async () => {
-      await mockClient.initAgent('Test');
+      await mockClient.initAgent('Test', '/tmp/test-working', 'test-agent');
 
       const tool = chatTool(mockServer, clientFactory);
 
@@ -181,7 +183,7 @@ describe('Tools', () => {
   describe('inspect_transcript', () => {
     it('should return transcript URI after chat', async () => {
       // Initialize and chat
-      await mockClient.initAgent('Test');
+      await mockClient.initAgent('Test', '/tmp/test-working', 'test-agent');
       await mockClient.chat('Test message');
 
       // Inspect transcript
@@ -191,12 +193,14 @@ describe('Tools', () => {
 
       const parsedResult = JSON.parse(result.content[0].text);
 
-      expect(parsedResult.transcriptUri).toBe('file:///tmp/test-agent/transcript.markdown');
+      expect(parsedResult.transcriptUri).toBe(
+        'file:///tmp/mock-state/test-agent/transcript.markdown'
+      );
       expect(parsedResult.metadata.messageCount).toBe(2);
     });
 
     it('should support json format', async () => {
-      await mockClient.initAgent('Test');
+      await mockClient.initAgent('Test', '/tmp/test-working', 'test-agent');
 
       const tool = inspectTranscriptTool(mockServer, clientFactory);
 
@@ -206,14 +210,14 @@ describe('Tools', () => {
 
       const parsedResult = JSON.parse(result.content[0].text);
 
-      expect(parsedResult.transcriptUri).toBe('file:///tmp/test-agent/transcript.json');
+      expect(parsedResult.transcriptUri).toBe('file:///tmp/mock-state/test-agent/transcript.json');
     });
   });
 
   describe('stop_agent', () => {
     it('should stop initialized agent gracefully', async () => {
       // Initialize agent
-      await mockClient.initAgent('Test');
+      await mockClient.initAgent('Test', '/tmp/test-working', 'test-agent');
 
       // Stop agent
       const tool = stopAgentTool(mockServer, clientFactory);
@@ -231,7 +235,7 @@ describe('Tools', () => {
     });
 
     it('should support force kill', async () => {
-      await mockClient.initAgent('Test');
+      await mockClient.initAgent('Test', '/tmp/test-working', 'test-agent');
 
       const tool = stopAgentTool(mockServer, clientFactory);
 
