@@ -4,6 +4,18 @@ All notable changes to the Claude Code Agent MCP Server will be documented in th
 
 ## [Unreleased]
 
+## [0.0.4] - 2025-10-10
+
+**CRITICAL FIX:**
+
+- Restored missing `prepare-publish.js` file that was accidentally deleted during the directory architecture refactoring
+- The prepare-publish.js script is essential for building and bundling the package correctly for npm publication
+- Without this file, the `prepublishOnly` script fails and prevents proper package releases
+
+**Technical Details:**
+
+This restores the prepare-publish.js file that was accidentally removed in the directory architecture refactoring commit (1a5f484). The script handles TypeScript compilation, shared directory setup, and file copying for npm publishing. This fix ensures the claude-code-agent server can be properly built and published.
+
 ## [0.0.3] - 2025-10-10
 
 **BREAKING CHANGES:**
