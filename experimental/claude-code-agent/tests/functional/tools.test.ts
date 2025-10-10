@@ -193,7 +193,9 @@ describe('Tools', () => {
 
       const parsedResult = JSON.parse(result.content[0].text);
 
-      expect(parsedResult.transcriptUri).toBe('file:///tmp/mock-state/test-agent/transcript.markdown');
+      expect(parsedResult.transcriptUri).toBe(
+        'file:///tmp/mock-state/test-agent/transcript.markdown'
+      );
       expect(parsedResult.metadata.messageCount).toBe(2);
     });
 

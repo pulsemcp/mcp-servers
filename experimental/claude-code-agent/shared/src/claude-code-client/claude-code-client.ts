@@ -28,7 +28,11 @@ export interface IClaudeCodeClient {
     errors: string[];
   }>;
 
-  initAgent(systemPrompt: string, workingDirectory: string, agentId?: string): Promise<{
+  initAgent(
+    systemPrompt: string,
+    workingDirectory: string,
+    agentId?: string
+  ): Promise<{
     sessionId: string;
     status: 'idle' | 'working';
     stateUri: string;
@@ -166,7 +170,11 @@ export class ClaudeCodeClient implements IClaudeCodeClient {
     };
   }
 
-  async initAgent(systemPrompt: string, workingDirectory: string, agentId?: string): Promise<{
+  async initAgent(
+    systemPrompt: string,
+    workingDirectory: string,
+    agentId?: string
+  ): Promise<{
     sessionId: string;
     status: 'idle' | 'working';
     stateUri: string;
@@ -179,7 +187,7 @@ export class ClaudeCodeClient implements IClaudeCodeClient {
 
       // Generate agentId if not provided
       const finalAgentId = agentId || uuidv4();
-      
+
       // Create state directory (separate from working directory)
       const stateDir = join(this.agentBaseDir, finalAgentId);
       await fs.mkdir(stateDir, { recursive: true });
@@ -590,7 +598,10 @@ Format: [{"name": "server.name", "rationale": "why this server is needed"}]`;
   /**
    * Attempts to detect the Claude Code project directory where transcript files are stored.
    */
-  private async detectClaudeProjectPath(_sessionId: string, workingDirectory: string): Promise<string | undefined> {
+  private async detectClaudeProjectPath(
+    _sessionId: string,
+    workingDirectory: string
+  ): Promise<string | undefined> {
     const homeDir = process.env.HOME || process.env.USERPROFILE;
     if (!homeDir) {
       return undefined;
@@ -804,7 +815,11 @@ Format: [{"name": "server.name", "rationale": "why this server is needed"}]`;
     };
   }> {
     try {
-      if (!this.currentAgent.sessionId || !this.currentAgent.workingDir || !this.currentAgent.stateDir) {
+      if (
+        !this.currentAgent.sessionId ||
+        !this.currentAgent.workingDir ||
+        !this.currentAgent.stateDir
+      ) {
         throw new Error('No agent initialized');
       }
 
