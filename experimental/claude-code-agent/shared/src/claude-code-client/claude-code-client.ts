@@ -274,13 +274,13 @@ export class ClaudeCodeClient implements IClaudeCodeClient {
             try {
               const jsonOutput = JSON.parse(output);
               // Claude returns session_id (with underscore)
-              sessionId = jsonOutput.session_id || jsonOutput.sessionId || agentId;
+              sessionId = jsonOutput.session_id || jsonOutput.sessionId || finalAgentId;
               logger.debug('Claude init successful, session:', sessionId);
               resolve();
             } catch {
               // Fallback to agent ID if we can't parse
               logger.warn('Could not parse Claude output as JSON, using fallback ID:', output);
-              sessionId = agentId;
+              sessionId = finalAgentId;
               resolve();
             }
           } else {
