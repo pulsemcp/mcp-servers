@@ -6,10 +6,10 @@ Manual tests for the Claude Code Agent MCP Server verify the integration with th
 
 ## Latest Test Results
 
-**Commit:** af8c3e4
-**Date:** 2025-10-08
+**Commit:** a35b31b
+**Date:** 2025-10-10
 **Overall:** 100% passing (3/3 test suites)
-**Note:** Manual tests from commit 390aabe still valid - this commit only adds prepare-publish.js for npm packaging
+**Note:** Verified new working_directory parameter and directory separation functionality
 
 ### Test Suite Results
 
@@ -110,10 +110,10 @@ Tests fail if:
 
 ## Manual Test Results
 
-**Last tested**: 2025-10-08
-**Commit**: af8c3e4
+**Last tested**: 2025-10-10
+**Commit**: a35b31b
 **Result**: SUCCESS (100% pass rate)
-**Note**: Tests from 390aabe still valid - af8c3e4 only adds packaging scripts
+**Note**: Verified new required working_directory parameter and directory separation functionality
 
 ### Test Execution Details
 
@@ -121,9 +121,9 @@ Tests fail if:
 - [x] Tool workflow test (real Claude Code CLI) - PASSED
 - [x] Error handling test - PASSED
 - [x] All 7 tools verified and working
-- [x] Resources properly managed
-- [x] State persistence fixed - single client instance maintained
-- [x] Session continuation working with --resume flag
+- [x] Required working_directory parameter validated
+- [x] Directory separation working (state vs working dirs)
+- [x] Native Claude Code transcript path detection verified
 - [x] Real Claude Code CLI integration verified
 
 ### Test Statistics
@@ -134,9 +134,10 @@ Tests fail if:
 
 ### Notes
 
-- Mock tests validate all tool functionality
+- Mock tests validate all tool functionality including new required parameters
 - Real Claude CLI integration fully tested and verified
-- Tool workflow test now passes with real Claude Code CLI
-- Session continuation properly uses --resume with session ID
-- Non-interactive mode working correctly with -p flag
+- Working directory separation correctly implemented (state vs working dirs)
+- Native Claude Code transcript path detection working (/Users/admin/.claude/projects/)
+- Required working_directory parameter validation working properly
+- Directory separation architecture verified with both mock and real implementations
 - All tests run without skips - complete coverage achieved
