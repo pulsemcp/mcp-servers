@@ -3,6 +3,7 @@ import { AgentState } from '../../shared/src/types.js';
 
 export class FunctionalMockClaudeCodeClient implements IClaudeCodeClient {
   private mockState: AgentState | null = null;
+  private mockStateDirectory: string | null = null;
   private mockTranscript: Array<{ role: string; content: string; timestamp: string }> = [];
   private mockServerConfigs: Array<{ name: string; description?: string }> = [];
 
@@ -22,10 +23,11 @@ export class FunctionalMockClaudeCodeClient implements IClaudeCodeClient {
     };
   }
 
-  async initAgent(systemPrompt: string) {
+  async initAgent(systemPrompt: string, workingDirectory: string, agentId: string) {
     // Simulate the non-interactive mode behavior
     console.log('[Mock] Simulating claude -p "Agent initialized" with system prompt');
 
+    this.mockStateDirectory = `/tmp/mock-state/${agentId}`;
     this.mockState = {
       sessionId: 'test-session-' + Date.now(),
       status: 'idle' as const,
@@ -33,14 +35,14 @@ export class FunctionalMockClaudeCodeClient implements IClaudeCodeClient {
       installedServers: [],
       createdAt: new Date().toISOString(),
       lastActiveAt: new Date().toISOString(),
-      workingDirectory: '/tmp/test-agent',
+      workingDirectory: workingDirectory,
       claudeProjectPath: '/tmp/mock-claude-projects/test-project',
     };
 
     return {
       sessionId: this.mockState.sessionId,
       status: this.mockState.status,
-      stateUri: 'file:///tmp/test-agent/state.json',
+      stateUri: `file://${this.mockStateDirectory}/state.json`,
     };
   }
 
@@ -88,7 +90,7 @@ export class FunctionalMockClaudeCodeClient implements IClaudeCodeClient {
 
     return {
       installations,
-      mcpConfigPath: '/tmp/test-agent/.mcp.json',
+      mcpConfigPath: `${this.mockState.workingDirectory}/.mcp.json`,
     };
   }
 
@@ -133,7 +135,7 @@ export class FunctionalMockClaudeCodeClient implements IClaudeCodeClient {
 
   async inspectTranscript(format?: 'markdown' | 'json') {
     return {
-      transcriptUri: `file:///tmp/test-agent/transcript.${format || 'markdown'}`,
+      transcriptUri: `file://${this.mockStateDirectory}/transcript.${format || 'markdown'}`,
       metadata: {
         messageCount: this.mockTranscript.length,
         lastUpdated: new Date().toISOString(),
@@ -148,6 +150,7 @@ export class FunctionalMockClaudeCodeClient implements IClaudeCodeClient {
 
     const finalState = { ...this.mockState };
     this.mockState = null;
+    this.mockStateDirectory = null;
 
     return {
       status: force ? ('force_killed' as const) : ('stopped' as const),
@@ -157,5 +160,9 @@ export class FunctionalMockClaudeCodeClient implements IClaudeCodeClient {
 
   async getAgentState() {
     return this.mockState;
+  }
+
+  async getStateDirectory() {
+    return this.mockStateDirectory;
   }
 }

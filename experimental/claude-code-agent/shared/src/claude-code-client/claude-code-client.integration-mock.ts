@@ -3,6 +3,7 @@ import { AgentState } from '../types.js';
 
 export class MockClaudeCodeClient implements IClaudeCodeClient {
   private mockState: AgentState | null = null;
+  private mockStateDirectory: string | null = null;
 
   private mockTranscript: Array<{
     role: string;
@@ -20,7 +21,8 @@ export class MockClaudeCodeClient implements IClaudeCodeClient {
     };
   }
 
-  async initAgent(systemPrompt: string) {
+  async initAgent(systemPrompt: string, workingDirectory: string, agentId: string) {
+    this.mockStateDirectory = `/tmp/mock-state/${agentId}`;
     this.mockState = {
       sessionId: 'mock-session-' + Math.random().toString(36).substr(2, 9),
       status: 'idle',
@@ -28,7 +30,7 @@ export class MockClaudeCodeClient implements IClaudeCodeClient {
       installedServers: [],
       createdAt: new Date().toISOString(),
       lastActiveAt: new Date().toISOString(),
-      workingDirectory: '/tmp/mock-agent',
+      workingDirectory: workingDirectory,
       claudeProjectPath: '/tmp/mock-claude-projects/integration-test',
     };
 
@@ -38,7 +40,7 @@ export class MockClaudeCodeClient implements IClaudeCodeClient {
     return {
       sessionId: this.mockState.sessionId,
       status: 'idle' as const,
-      stateUri: 'file:///tmp/mock-agent/state.json',
+      stateUri: `file://${this.mockStateDirectory}/state.json`,
     };
   }
 
@@ -170,5 +172,9 @@ export class MockClaudeCodeClient implements IClaudeCodeClient {
 
   async getAgentState() {
     return this.mockState;
+  }
+
+  async getStateDirectory() {
+    return this.mockStateDirectory;
   }
 }
