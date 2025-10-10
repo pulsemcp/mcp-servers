@@ -1,6 +1,6 @@
 {
   "name": "claude-code-agent-mcp-server-shared",
-  "version": "0.0.1",
+  "version": "0.0.5",
   "description": "Shared code for claude-code-agent MCP server implementations",
   "main": "build/index.js",
   "type": "module",
