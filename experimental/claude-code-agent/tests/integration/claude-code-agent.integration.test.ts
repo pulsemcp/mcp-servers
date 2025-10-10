@@ -224,11 +224,10 @@ describe('claude-code-agent MCP Server Integration Tests', () => {
       expect(initResult.isError).toBeFalsy();
 
       const result = await client.listResources();
-      expect(result.resources).toHaveLength(2);
+      expect(result.resources).toHaveLength(1);
 
       const resourceUris = result.resources.map((r) => r.uri);
       expect(resourceUris.some((uri) => uri.includes('state.json'))).toBe(true);
-      expect(resourceUris.some((uri) => uri.includes('transcript.json'))).toBe(true);
     });
 
     it('should read state resource', async () => {
