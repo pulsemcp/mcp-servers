@@ -6,7 +6,7 @@ Manual tests for the Claude Code Agent MCP Server verify the integration with th
 
 ## Latest Test Results
 
-**Commit:** 3303b24
+**Commit:** 4e5eb01
 **Date:** 2025-10-10
 **Overall:** 100% passing (3/3 test suites)
 **Note:** Verified new working_directory parameter and directory separation functionality
@@ -111,7 +111,7 @@ Tests fail if:
 ## Manual Test Results
 
 **Last tested**: 2025-10-10
-**Commit**: 3303b24
+**Commit**: 4e5eb01
 **Result**: SUCCESS (100% pass rate)
 **Note**: Verified new required working_directory parameter and directory separation functionality
 
