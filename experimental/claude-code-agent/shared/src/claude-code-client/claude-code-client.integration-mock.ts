@@ -21,8 +21,9 @@ export class MockClaudeCodeClient implements IClaudeCodeClient {
     };
   }
 
-  async initAgent(systemPrompt: string, workingDirectory: string, agentId: string) {
-    this.mockStateDirectory = `/tmp/mock-state/${agentId}`;
+  async initAgent(systemPrompt: string, workingDirectory: string, agentId?: string) {
+    const stateId = agentId || Math.random().toString(36).substr(2, 9);
+    this.mockStateDirectory = `/tmp/mock-state/${stateId}`;
     this.mockState = {
       sessionId: 'mock-session-' + Math.random().toString(36).substr(2, 9),
       status: 'idle',

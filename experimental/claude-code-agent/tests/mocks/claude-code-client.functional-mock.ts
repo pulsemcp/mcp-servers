@@ -23,11 +23,12 @@ export class FunctionalMockClaudeCodeClient implements IClaudeCodeClient {
     };
   }
 
-  async initAgent(systemPrompt: string, workingDirectory: string, agentId: string) {
+  async initAgent(systemPrompt: string, workingDirectory: string, agentId?: string) {
     // Simulate the non-interactive mode behavior
     console.log('[Mock] Simulating claude -p "Agent initialized" with system prompt');
 
-    this.mockStateDirectory = `/tmp/mock-state/${agentId}`;
+    const stateId = agentId || Date.now().toString();
+    this.mockStateDirectory = `/tmp/mock-state/${stateId}`;
     this.mockState = {
       sessionId: 'test-session-' + Date.now(),
       status: 'idle' as const,
