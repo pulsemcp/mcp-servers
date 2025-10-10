@@ -1,7 +1,7 @@
 import OpenAI from 'openai';
 import type { IExtractClient, ExtractOptions, ExtractResult, LLMConfig } from './types.js';
 
-const DEFAULT_MODEL = 'gpt-4.1-mini';
+const DEFAULT_MODEL = 'gpt-5-2025-08-07';
 const MAX_TOKENS = 4096; // OpenAI models support max 4096 completion tokens
 
 export class OpenAIExtractClient implements IExtractClient {

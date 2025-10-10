@@ -60,7 +60,7 @@ describe('Extract Clients', () => {
       expect(result.success).toBe(true);
       expect(result.content).toBe('Test Article');
       expect(mockCreate).toHaveBeenCalledWith({
-        model: 'claude-sonnet-4-20250514',
+        model: 'claude-sonnet-4-5-20250929',
         max_tokens: 8192,
         temperature: 0,
         system: expect.stringContaining('expert at extracting'),
@@ -114,7 +114,7 @@ describe('Extract Clients', () => {
       const config: LLMConfig = {
         provider: 'anthropic',
         apiKey: 'test-api-key',
-        model: 'claude-3-opus-20240229',
+        model: 'claude-sonnet-4-5-20250929',
       };
 
       const client = new AnthropicExtractClient(config);
@@ -122,7 +122,7 @@ describe('Extract Clients', () => {
 
       expect(mockCreate).toHaveBeenCalledWith(
         expect.objectContaining({
-          model: 'claude-3-opus-20240229',
+          model: 'claude-sonnet-4-5-20250929',
         })
       );
     });
@@ -156,7 +156,7 @@ describe('Extract Clients', () => {
       expect(result.success).toBe(true);
       expect(result.content).toBe('Test Article');
       expect(mockCreate).toHaveBeenCalledWith({
-        model: 'gpt-4.1-mini',
+        model: 'gpt-5-2025-08-07',
         max_tokens: 4096,
         temperature: 0,
         messages: [
