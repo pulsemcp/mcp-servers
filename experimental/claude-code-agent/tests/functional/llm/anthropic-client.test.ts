@@ -46,7 +46,7 @@ describe('AnthropicServerConfigGenerator', () => {
       const config: LLMConfig = {
         provider: 'anthropic',
         apiKey: 'test-key',
-        model: 'claude-sonnet-3-5-20241022',
+        model: 'claude-sonnet-4-5-20250929',
       };
 
       expect(() => new AnthropicServerConfigGenerator(config)).not.toThrow();
@@ -60,7 +60,7 @@ describe('AnthropicServerConfigGenerator', () => {
       const config: LLMConfig = {
         provider: 'anthropic',
         apiKey: 'test-api-key',
-        model: 'claude-sonnet-3-5-20241022',
+        model: 'claude-sonnet-4-5-20250929',
       };
 
       // Constructor should complete without throwing
@@ -167,7 +167,7 @@ describe('AnthropicServerConfigGenerator', () => {
       const customModelConfig: LLMConfig = {
         provider: 'anthropic',
         apiKey: 'test-key',
-        model: 'claude-sonnet-3-5-20241022',
+        model: 'claude-sonnet-4-5-20250929',
       };
 
       // Both configurations should be valid

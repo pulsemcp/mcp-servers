@@ -7,7 +7,7 @@ import type {
   LLMConfig,
 } from './types.js';
 
-const DEFAULT_MODEL = 'gpt-4o-mini';
+const DEFAULT_MODEL = 'gpt-5-2025-08-07';
 const MAX_TOKENS = 4096; // OpenAI models support max 4096 completion tokens
 
 export class OpenAIServerConfigGenerator implements IServerConfigGenerator {

@@ -7,7 +7,7 @@ import type {
   LLMConfig,
 } from './types.js';
 
-const DEFAULT_MODEL = 'claude-sonnet-4-20250514';
+const DEFAULT_MODEL = 'claude-sonnet-4-5-20250929';
 const MAX_TOKENS = 8192; // Maximum we'll use
 
 export class AnthropicServerConfigGenerator implements IServerConfigGenerator {

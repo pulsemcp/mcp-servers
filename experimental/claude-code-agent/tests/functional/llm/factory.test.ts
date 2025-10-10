@@ -61,7 +61,7 @@ describe('ServerConfigGeneratorFactory', () => {
     it('should pass LLM_MODEL to the generator config', () => {
       process.env.LLM_PROVIDER = 'anthropic';
       process.env.LLM_API_KEY = 'test-key';
-      process.env.LLM_MODEL = 'claude-sonnet-4-20250514';
+      process.env.LLM_MODEL = 'claude-sonnet-4-5-20250929';
 
       const generator = ServerConfigGeneratorFactory.createFromEnv();
       expect(generator).toBeInstanceOf(AnthropicServerConfigGenerator);

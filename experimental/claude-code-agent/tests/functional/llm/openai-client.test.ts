@@ -75,7 +75,7 @@ describe('OpenAIServerConfigGenerator', () => {
       const config: LLMConfig = {
         provider: 'openai',
         apiKey: 'test-key',
-        model: 'gpt-4',
+        model: 'gpt-5-2025-08-07',
       };
 
       expect(() => new OpenAIServerConfigGenerator(config)).not.toThrow();
@@ -264,7 +264,7 @@ Generated configuration for npm package test-package
       await generator.generateServerConfig(input);
 
       expect(mockCreate).toHaveBeenCalledWith({
-        model: 'gpt-4o-mini',
+        model: 'gpt-5-2025-08-07',
         max_tokens: 4096,
         temperature: 0,
         messages: [

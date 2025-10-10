@@ -73,7 +73,7 @@ describe('LLM Environment Configuration', () => {
       it('should create Anthropic generator with custom model', () => {
         process.env.LLM_PROVIDER = 'anthropic';
         process.env.LLM_API_KEY = 'sk-ant-test-key';
-        process.env.LLM_MODEL = 'claude-sonnet-3-5-20241022';
+        process.env.LLM_MODEL = 'claude-sonnet-4-5-20250929';
 
         const generator = ServerConfigGeneratorFactory.createFromEnv();
         expect(generator).toBeInstanceOf(AnthropicServerConfigGenerator);
@@ -107,7 +107,7 @@ describe('LLM Environment Configuration', () => {
       it('should create OpenAI generator with custom model', () => {
         process.env.LLM_PROVIDER = 'openai';
         process.env.LLM_API_KEY = 'sk-test-key';
-        process.env.LLM_MODEL = 'gpt-4';
+        process.env.LLM_MODEL = 'gpt-5-2025-08-07';
 
         const generator = ServerConfigGeneratorFactory.createFromEnv();
         expect(generator).toBeInstanceOf(OpenAIServerConfigGenerator);
@@ -180,7 +180,7 @@ describe('LLM Environment Configuration', () => {
       // Common development setup
       process.env.LLM_PROVIDER = 'openai';
       process.env.LLM_API_KEY = 'sk-dev-test-key';
-      process.env.LLM_MODEL = 'gpt-4o-mini';
+      process.env.LLM_MODEL = 'gpt-5-2025-08-07';
       process.env.NODE_ENV = 'development';
 
       expect(ServerConfigGeneratorFactory.isAvailable()).toBe(true);
