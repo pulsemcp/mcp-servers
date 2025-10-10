@@ -69,18 +69,18 @@ The .mcp.json format is used by Claude Code for MCP configuration. Here are comp
 ### HTTP/SSE Servers (Remote servers with network communication)
 {
   "mcpServers": {
+    "http-service": {
+      "type": "http",
+      "url": "https://api.example.com/mcp",
+      "headers": {
+        "X-API-Key": "\${API_KEY}"
+      }
+    },
     "remote-sse": {
       "type": "sse",
       "url": "https://api.example.com/mcp/sse",
       "headers": {
         "Authorization": "Bearer \${API_TOKEN}",
-        "X-API-Key": "\${API_KEY}"
-      }
-    },
-    "http-service": {
-      "type": "http",
-      "url": "https://api.example.com/mcp",
-      "headers": {
         "X-API-Key": "\${API_KEY}"
       }
     }
@@ -91,7 +91,7 @@ The .mcp.json format is used by Claude Code for MCP configuration. Here are comp
 {
   "mcpServers": {
     "secure-api": {
-      "type": "sse",
+      "type": "http",
       "url": "https://api.example.com/mcp",
       "headers": {
         "Authorization": "Bearer \${API_TOKEN}",
@@ -119,7 +119,7 @@ The .mcp.json format is used by Claude Code for MCP configuration. Here are comp
    - Include any runtimeArguments as additional args
    - Handle positional and named arguments appropriately
 3. Convert environmentVariables to env object with appropriate defaults using \${VAR:-default} syntax
-4. For remote servers, prefer "sse" type over "http" when possible
+4. For remote servers, prefer "http" type over "sse" when possible
 5. Always use environment variable substitution for sensitive values like API keys
 6. Ensure the output is valid JSON that can be used directly in Claude Code
 
