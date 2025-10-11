@@ -123,14 +123,23 @@ export const InstallServersSchema = z.object({
   server_names: z
     .array(z.string().refine(validateServerName, { message: 'Invalid server name format' }))
     .describe('Names of servers to install (from find_servers output)'),
-  server_configs: z
-    .record(
-      z.object({
-        env: z.record(z.string()).optional(),
-      })
-    )
+  context: z
+    .object({
+      purpose: z
+        .string()
+        .optional()
+        .describe('Description of the task purpose for better server configuration'),
+      environment: z
+        .enum(['development', 'production', 'testing'])
+        .optional()
+        .describe('Target environment for the installation'),
+      preferRemote: z
+        .boolean()
+        .optional()
+        .describe('Whether to prefer remote servers over local packages'),
+    })
     .optional()
-    .describe('Optional: custom configurations for servers'),
+    .describe('Optional: installation context for inference (purpose, environment, preferences)'),
 });
 
 export const ChatSchema = z.object({
