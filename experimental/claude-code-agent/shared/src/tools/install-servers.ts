@@ -8,7 +8,6 @@ const logger = createLogger('install-servers-tool');
 // Parameter descriptions for consistency
 const PARAM_DESCRIPTIONS = {
   server_names: 'Names of servers to install (from find_servers output)',
-  server_configs: 'Optional: custom configurations for servers',
   context: 'Optional: installation context for inference (purpose, environment, preferences)',
 } as const;
 
@@ -58,11 +57,6 @@ Use cases:
           },
           description: PARAM_DESCRIPTIONS.server_names,
         },
-        server_configs: {
-          type: 'object',
-          additionalProperties: true,
-          description: PARAM_DESCRIPTIONS.server_configs,
-        },
         context: {
           type: 'object',
           properties: {
@@ -95,7 +89,6 @@ Use cases:
 
         const result = await client.installServers(
           validatedArgs.server_names,
-          validatedArgs.server_configs,
           validatedArgs.context
         );
 

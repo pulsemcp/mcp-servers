@@ -53,7 +53,6 @@ export interface IClaudeCodeClient {
 
   installServers(
     serverNames: string[],
-    serverConfigs?: Record<string, { env?: Record<string, string> }>,
     context?: InstallationContext
   ): Promise<{
     installations: Array<{
@@ -424,7 +423,6 @@ Format: [{"name": "server.name", "rationale": "why this server is needed"}]`;
 
   async installServers(
     serverNames: string[],
-    serverConfigs?: Record<string, { env?: Record<string, string> }>,
     context?: InstallationContext
   ): Promise<{
     installations: Array<{
@@ -449,7 +447,7 @@ Format: [{"name": "server.name", "rationale": "why this server is needed"}]`;
       const secretsProvider = new FileSecretsProvider(this.serverSecretsPath);
 
       // Convert context
-      const installationContext = convertLegacyContext(serverConfigs, context);
+      const installationContext = convertLegacyContext(context);
 
       // Use the new server installer module
       const result = await installServersNew(serverNames, this.serverConfigsPath, inferenceClient, {

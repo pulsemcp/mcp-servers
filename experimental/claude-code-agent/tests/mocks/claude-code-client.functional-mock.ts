@@ -76,10 +76,7 @@ export class FunctionalMockClaudeCodeClient implements IClaudeCodeClient {
     return { servers };
   }
 
-  async installServers(
-    serverNames: string[],
-    _serverConfigs?: Record<string, { env?: Record<string, string> }>
-  ) {
+  async installServers(serverNames: string[]) {
     if (!this.mockState) {
       throw new Error('No agent initialized');
     }

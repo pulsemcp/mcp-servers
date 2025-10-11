@@ -123,14 +123,6 @@ export const InstallServersSchema = z.object({
   server_names: z
     .array(z.string().refine(validateServerName, { message: 'Invalid server name format' }))
     .describe('Names of servers to install (from find_servers output)'),
-  server_configs: z
-    .record(
-      z.object({
-        env: z.record(z.string()).optional(),
-      })
-    )
-    .optional()
-    .describe('Optional: custom configurations for servers'),
   context: z
     .object({
       purpose: z
