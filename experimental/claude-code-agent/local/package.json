@@ -23,7 +23,6 @@
     "start": "node build/index.js",
     "dev": "tsx src/index.ts",
     "prebuild": "cd ../shared && npm run build && cd ../local && node setup-dev.js",
-    "prepublishOnly": "node prepare-publish.js && node ../scripts/prepare-npm-readme.js",
     "lint": "eslint . --ext .ts,.tsx",
     "lint:fix": "eslint . --ext .ts,.tsx --fix",
     "format": "prettier --write .",
