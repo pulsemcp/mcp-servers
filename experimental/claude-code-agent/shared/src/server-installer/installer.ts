@@ -8,7 +8,6 @@ import {
   McpServerEntry,
   InferenceRequest,
 } from './types.js';
-import { RUNTIME_TO_COMMAND_MAP } from './config.js';
 import { runServerConfigInference, FileSecretsProvider } from './inference.js';
 import { createLogger } from '../logging.js';
 
@@ -84,11 +83,8 @@ export async function installServers(
 
       const mcpEntry = await generateMcpEntry(serverConfig, originalConfig, secretsProvider);
 
-      // Use simplified server name for domain-style names, otherwise keep original
-      const serverKey = shouldUseSimplifiedName(serverConfig.serverName)
-        ? generateSimplifiedServerName(serverConfig.serverName)
-        : serverConfig.serverName;
-      mcpConfig.mcpServers[serverKey] = mcpEntry;
+      // Use full server name
+      mcpConfig.mcpServers[serverConfig.serverName] = mcpEntry;
 
       installations.push({
         serverName: serverConfig.serverName,
@@ -132,35 +128,6 @@ async function loadServerConfigs(configPath: string): Promise<ServerConfig[]> {
 }
 
 /**
- * Determines whether to use a simplified name for a server
- * Use simplified names for real domain-style names like "io.github.user/project"
- * But not for test patterns like "com.example/server"
- */
-function shouldUseSimplifiedName(serverName: string): boolean {
-  // Use simplified names for domain-style patterns with dots and slashes
-  // but exclude test patterns like com.example
-  return (
-    serverName.includes('.') && serverName.includes('/') && !serverName.startsWith('com.example/')
-  );
-}
-
-/**
- * Generates a simplified server name for MCP configuration
- * Examples:
- * - "io.github.lucashild/bigquery" -> "bigquery"
- * - "com.microsoft/playwright" -> "playwright"
- * - "simple-name" -> "simple-name"
- */
-function generateSimplifiedServerName(fullName: string): string {
-  // If it contains a slash, take the part after the last slash
-  if (fullName.includes('/')) {
-    return fullName.split('/').pop() || fullName;
-  }
-  // Otherwise use the full name as is
-  return fullName;
-}
-
-/**
  * Generates an MCP server entry from inference response
  */
 async function generateMcpEntry(
@@ -184,21 +151,9 @@ async function generateMcpEntry(
   const { selectedPackage, selectedTransport, environmentVariables, runtimeArguments } =
     serverConfig;
 
-  // Determine command - check if runtimeHint is a path or a standard hint
-  const runtimeHint =
+  // Use runtimeHint directly as command, or infer from registry type
+  const command =
     selectedPackage.runtimeHint || inferRuntimeFromRegistry(selectedPackage.registryType);
-  let command: string;
-
-  if (runtimeHint.startsWith('/') || runtimeHint.includes('/')) {
-    // Custom path like "/Users/admin/.local/bin/uv"
-    command = runtimeHint;
-  } else {
-    // Standard runtime hint like "uvx", "npx", etc.
-    command = RUNTIME_TO_COMMAND_MAP[runtimeHint as keyof typeof RUNTIME_TO_COMMAND_MAP];
-    if (!command) {
-      throw new Error(`Unsupported runtime hint: ${runtimeHint}`);
-    }
-  }
 
   // Build command arguments by finding the matching package in original config
   const args: string[] = [];
@@ -249,19 +204,29 @@ async function generateMcpEntry(
     }
   }
 
-  // Resolve environment variables
+  // Only include environment variables if we have secrets available
   const env: Record<string, string> = {};
   if (environmentVariables) {
+    const availableSecrets = await secretsProvider.listAvailableSecrets();
     for (const [key, value] of Object.entries(environmentVariables)) {
       if (typeof value === 'string') {
-        // Try to resolve from secrets first
-        const secretValue = await secretsProvider.getSecret(key);
-        env[key] = secretValue || value;
+        // Only include env vars if the secret is actually available
+        if (availableSecrets.includes(key)) {
+          const secretValue = await secretsProvider.getSecret(key);
+          if (secretValue) {
+            env[key] = secretValue;
+          } else {
+            // Keep templated value if secret exists but is empty
+            env[key] = value;
+          }
+        }
+        // Skip env vars for which we don't have secrets
       }
     }
   }
 
   const mcpEntry: McpServerEntry = {
+    type: 'stdio',
     command,
     args: args.length > 0 ? args : undefined,
     env: Object.keys(env).length > 0 ? env : undefined,
@@ -282,16 +247,11 @@ async function generateMcpEntry(
  * Infers runtime hint from registry type
  */
 function inferRuntimeFromRegistry(registryType: string): string {
-  switch (registryType) {
-    case 'npm':
-      return 'npx';
-    case 'pypi':
-      return 'uvx';
-    case 'oci':
-      return 'docker';
-    case 'nuget':
-      return 'dnx';
-    default:
-      return 'npx'; // Default fallback
-  }
+  const runtimeMap: Record<string, string> = {
+    npm: 'npx',
+    pypi: 'uvx',
+    oci: 'docker',
+    nuget: 'dnx',
+  };
+  return runtimeMap[registryType] || 'npx';
 }

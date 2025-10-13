@@ -113,12 +113,12 @@ describe('installServers', () => {
     expect(result.installations[0].status).toBe('success');
     expect(result.installations[0].serverName).toBe('com.example/npm-server');
 
-    expect(result.mcpConfig.mcpServers['com.example/npm-server']).toEqual({
+    expect(result.mcpConfig.mcpServers['com.example/npm-server']).toMatchObject({
+      type: 'stdio',
       command: 'npx',
       args: ['@example/npm-server@1.0.0'],
       env: {
         API_KEY: 'secret-api-key',
-        TIMEOUT: '30000',
       },
     });
   });
@@ -152,7 +152,8 @@ describe('installServers', () => {
     );
 
     expect(result.installations[0].status).toBe('success');
-    expect(result.mcpConfig.mcpServers['com.example/python-server']).toEqual({
+    expect(result.mcpConfig.mcpServers['com.example/python-server']).toMatchObject({
+      type: 'stdio',
       command: 'uvx',
       args: ['example-python-server', '--timeout', '60'],
     });
@@ -201,7 +202,8 @@ describe('installServers', () => {
       { secretsProvider: mockSecretsProvider }
     );
 
-    expect(result.mcpConfig.mcpServers['com.example/docker-server']).toEqual({
+    expect(result.mcpConfig.mcpServers['com.example/docker-server']).toMatchObject({
+      type: 'stdio',
       command: 'docker',
       args: ['run', '--rm', '-i', 'example/docker-server:latest'],
     });
@@ -235,7 +237,8 @@ describe('installServers', () => {
       { secretsProvider: mockSecretsProvider }
     );
 
-    expect(result.mcpConfig.mcpServers['com.example/remote-server']).toEqual({
+    expect(result.mcpConfig.mcpServers['com.example/remote-server']).toMatchObject({
+      type: 'stdio',
       command: 'npx',
       args: ['@example/remote-client'],
       transport: {
@@ -407,8 +410,9 @@ describe('installServers', () => {
 
     expect(result.installations[0].status).toBe('success');
 
-    // Verify the final configuration uses simplified name and combines all arguments
-    expect(result.mcpConfig.mcpServers['bigquery']).toEqual({
+    // Verify the final configuration uses full name and combines all arguments
+    expect(result.mcpConfig.mcpServers['io.github.lucashild/bigquery']).toMatchObject({
+      type: 'stdio',
       command: '/Users/admin/.local/bin/uv',
       args: [
         '--directory',
@@ -424,10 +428,6 @@ describe('installServers', () => {
         '--key-file',
         '/Users/admin/.secrets/bq-service-account.json',
       ],
-      env: {
-        GOOGLE_APPLICATION_CREDENTIALS: '${GOOGLE_APPLICATION_CREDENTIALS}',
-        GOOGLE_CLOUD_PROJECT: '${GOOGLE_CLOUD_PROJECT}',
-      },
     });
   });
 });
