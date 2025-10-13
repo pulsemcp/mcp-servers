@@ -34,12 +34,18 @@ For each server, make decisions about:
 2. **Transport Type**: Select stdio, streamable-http, or sse 
 3. **Runtime Selection**: Choose from runtime priorities: ${DEFAULT_CONFIG.runtimePriorities.join(' > ')}
 4. **Environment Variables**: Set required and optional environment variables
-   - Use available secrets for sensitive values
+   - For secrets that are available: use the actual secret value
+   - For secrets that are NOT available: use template format \`\${SECRET_NAME}\` (e.g., \`\${API_KEY}\`)
    - Set reasonable defaults for non-sensitive configuration
-   - Leave sensitive variables unset if no secret is available
+   - Template variables will be resolved later during installation
 
 ## Response Format
 Return a JSON object matching this exact structure:
+
+**CRITICAL: Use these exact enum values:**
+- **registryType**: Must be one of: "npm" (for Node.js), "pypi" (for Python), "oci" (for Docker), "nuget" (for .NET), "mcpb" (for MCP binaries)
+- **runtimeHint**: Must be one of: "npx", "uvx", "docker", "dnx"
+- **transport type**: Must be one of: "stdio", "streamable-http", "sse"
 
 \`\`\`json
 {
@@ -56,7 +62,7 @@ Return a JSON object matching this exact structure:
         "type": "stdio"
       },
       "environmentVariables": {
-        "API_KEY": "secret_api_key_value_or_placeholder",
+        "API_KEY": "\${API_KEY}",
         "BASE_URL": "https://api.example.com",
         "TIMEOUT": "30000"
       },
@@ -72,8 +78,9 @@ Return a JSON object matching this exact structure:
 
 ## Important Guidelines
 - Prefer local packages (stdio transport) over remote servers unless context suggests otherwise
-- Use secrets when available, otherwise provide placeholder values and add warnings
-- Set reasonable defaults for timeouts, URLs, and other configuration
+- For environment variables that need secrets: use template format \`\${SECRET_NAME}\` if secret is not available
+- Use actual secret values only when they are listed in "Available Secrets"
+- Set reasonable defaults for timeouts, URLs, and other non-sensitive configuration
 - Explain your reasoning in the rationale field
 - Include warnings for missing required configuration`;
 
