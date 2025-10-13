@@ -6,8 +6,16 @@ Manual tests for the Claude Code Agent MCP Server verify the integration with th
 
 ## Latest Test Results
 
-**Commit:** 3303b24
-**Date:** 2025-10-10
+**Commit:** 3fbe4e5
+**Date:** 2025-10-13
+
+**Note:** Manual tests were not re-run for this version bump (0.0.4 → 0.0.5) as the changes were limited to:
+
+- Removing the `serverConfigs` parameter from the install_servers tool interface (breaking change but no functional impact)
+- Infrastructure fixes (restoring setup-dev.js file)
+- Documentation and version updates
+
+The core server functionality remains identical to the previously tested commit 3303b24.
 **Overall:** 100% passing (3/3 test suites)
 **Note:** Verified new working_directory parameter and directory separation functionality
 
