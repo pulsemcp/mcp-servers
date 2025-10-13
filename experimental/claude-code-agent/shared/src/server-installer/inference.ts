@@ -51,7 +51,24 @@ Return a JSON object matching this exact structure:
 {
   "serverConfigurations": [
     {
-      "serverName": "com.example/server",
+      "serverName": "com.example/local-server",
+      "selectedPackage": {
+        "registryType": "local",
+        "identifier": "mcp-server-example",
+        "version": "dev",
+        "runtimeHint": "/usr/local/bin/uv"
+      },
+      "selectedTransport": {
+        "type": "stdio"
+      },
+      "environmentVariables": {
+        "API_KEY": "\${API_KEY}",
+        "PROJECT_ID": "my-project"
+      },
+      "rationale": "Selected local package to preserve complex runtime/package arguments configuration."
+    },
+    {
+      "serverName": "com.example/npm-server",
       "selectedPackage": {
         "registryType": "npm",
         "identifier": "@example/mcp-server",
@@ -62,12 +79,10 @@ Return a JSON object matching this exact structure:
         "type": "stdio"
       },
       "environmentVariables": {
-        "API_KEY": "\${API_KEY}",
-        "BASE_URL": "https://api.example.com",
-        "TIMEOUT": "30000"
+        "API_KEY": "\${API_KEY}"
       },
       "runtimeArguments": ["--timeout", "30"],
-      "rationale": "Selected npm package with stdio transport for best performance. Using npx runtime for Node.js compatibility."
+      "rationale": "Selected npm package with stdio transport for best performance."
     }
   ],
   "warnings": [
@@ -77,6 +92,7 @@ Return a JSON object matching this exact structure:
 \`\`\`
 
 ## Important Guidelines
+- **For local packages with runtime/package arguments**: ALWAYS set registryType to "local" to preserve the detailed argument configuration
 - Prefer local packages (stdio transport) over remote servers unless context suggests otherwise
 - For environment variables that need secrets: use template format \`\${SECRET_NAME}\` if secret is not available
 - Use actual secret values only when they are listed in "Available Secrets"
@@ -100,6 +116,30 @@ Description: ${config.description}`;
       output += `\n${i + 1}. **${pkg.registryType}**: ${pkg.identifier}${pkg.version ? `@${pkg.version}` : ''}`;
       if (pkg.runtimeHint) output += ` (runtime: ${pkg.runtimeHint})`;
       if (pkg.transport) output += ` (transport: ${pkg.transport.type})`;
+
+      if (pkg.runtimeArguments && pkg.runtimeArguments.length > 0) {
+        output += '\n   Runtime Arguments:';
+        pkg.runtimeArguments.forEach((arg) => {
+          if (arg.type === 'named' && arg.name) {
+            output += `\n   - ${arg.name} ${arg.value}`;
+          } else {
+            output += `\n   - ${arg.value}`;
+          }
+          if (arg.description) output += ` (${arg.description})`;
+        });
+      }
+
+      if (pkg.packageArguments && pkg.packageArguments.length > 0) {
+        output += '\n   Package Arguments:';
+        pkg.packageArguments.forEach((arg) => {
+          if (arg.type === 'named' && arg.name) {
+            output += `\n   - ${arg.name} ${arg.value}`;
+          } else {
+            output += `\n   - ${arg.value}`;
+          }
+          if (arg.description) output += ` (${arg.description})`;
+        });
+      }
 
       if (pkg.environmentVariables && pkg.environmentVariables.length > 0) {
         output += '\n   Environment Variables:';
