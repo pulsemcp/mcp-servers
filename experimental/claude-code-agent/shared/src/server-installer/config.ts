@@ -82,6 +82,7 @@ export const REGISTRY_TO_RUNTIME_MAP: Record<RegistryType, RuntimeHint[]> = {
   oci: ['docker'],
   nuget: ['dnx'],
   mcpb: ['npx', 'uvx', 'docker'], // MCPB can use multiple runtimes
+  local: ['uvx', 'npx'], // Local packages can use multiple runtimes
 };
 
 /**

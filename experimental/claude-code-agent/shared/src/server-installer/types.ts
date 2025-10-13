@@ -15,7 +15,7 @@ export type RuntimeHint = (typeof RUNTIME_PRIORITIES)[number];
 /**
  * Registry types supported by MCP
  */
-export const REGISTRY_TYPES = ['npm', 'pypi', 'oci', 'nuget', 'mcpb'] as const;
+export const REGISTRY_TYPES = ['npm', 'pypi', 'oci', 'nuget', 'mcpb', 'local'] as const;
 export type RegistryType = (typeof REGISTRY_TYPES)[number];
 
 /**
@@ -55,8 +55,26 @@ export const ServerConfigSchema = z.object({
               .optional(),
           })
           .optional(),
-        packageArguments: z.array(z.string()).optional(),
-        runtimeArguments: z.array(z.string()).optional(),
+        packageArguments: z
+          .array(
+            z.object({
+              type: z.enum(['named', 'positional']),
+              name: z.string().optional(),
+              value: z.string(),
+              description: z.string().optional(),
+            })
+          )
+          .optional(),
+        runtimeArguments: z
+          .array(
+            z.object({
+              type: z.enum(['named', 'positional']),
+              name: z.string().optional(),
+              value: z.string(),
+              description: z.string().optional(),
+            })
+          )
+          .optional(),
         environmentVariables: z
           .array(
             z.object({
@@ -125,7 +143,7 @@ export const InferenceResponseSchema = z.object({
         registryType: z.enum(REGISTRY_TYPES),
         identifier: z.string(),
         version: z.string().optional(),
-        runtimeHint: z.enum(RUNTIME_PRIORITIES).optional(),
+        runtimeHint: z.string().optional(), // Allow custom runtime paths, not just enum values
       }),
       selectedTransport: z.object({
         type: z.enum(['stdio', 'streamable-http', 'sse']),

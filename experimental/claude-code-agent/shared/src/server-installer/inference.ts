@@ -43,8 +43,8 @@ For each server, make decisions about:
 Return a JSON object matching this exact structure:
 
 **CRITICAL: Use these exact enum values:**
-- **registryType**: Must be one of: "npm" (for Node.js), "pypi" (for Python), "oci" (for Docker), "nuget" (for .NET), "mcpb" (for MCP binaries)
-- **runtimeHint**: Must be one of: "npx", "uvx", "docker", "dnx"
+- **registryType**: Must be one of: "npm" (for Node.js), "pypi" (for Python), "oci" (for Docker), "nuget" (for .NET), "mcpb" (for MCP binaries), "local" (for local development)
+- **runtimeHint**: Use standard values like "npx", "uvx", "docker", "dnx", OR full paths like "/usr/bin/uv", "/Users/user/.local/bin/uv"
 - **transport type**: Must be one of: "stdio", "streamable-http", "sse"
 
 \`\`\`json

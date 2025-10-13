@@ -306,4 +306,128 @@ describe('installServers', () => {
       expect.stringContaining('Purpose: Development testing')
     );
   });
+
+  it('should handle complex local server with runtime and package arguments', async () => {
+    const localServerConfig = {
+      name: 'io.github.lucashild/bigquery',
+      description: 'Google BigQuery MCP server for data warehouse operations',
+      version: 'dev',
+      repository: {
+        url: 'https://github.com/mcp-bigquery/mcp-server-bigquery',
+        source: 'github',
+      },
+      packages: [
+        {
+          registryType: 'local',
+          identifier: 'mcp-server-bigquery',
+          version: 'dev',
+          runtimeHint: '/Users/admin/.local/bin/uv',
+          transport: {
+            type: 'stdio',
+          },
+          runtimeArguments: [
+            {
+              type: 'named',
+              name: '--directory',
+              value: '/Users/admin/github-projects/mcp-server-bigquery',
+              description: 'Local project directory',
+            },
+            {
+              type: 'positional',
+              value: 'run',
+              description: 'Run command in uv project',
+            },
+            {
+              type: 'positional',
+              value: 'mcp-server-bigquery',
+              description: 'Package entry point',
+            },
+          ],
+          packageArguments: [
+            {
+              type: 'named',
+              name: '--project',
+              value: 'pulse-443819',
+              description: 'Google Cloud project ID',
+            },
+            {
+              type: 'named',
+              name: '--location',
+              value: 'us-west1',
+              description: 'BigQuery dataset location',
+            },
+            {
+              type: 'named',
+              name: '--dataset',
+              value: 'pulse_warehouse',
+              description: 'BigQuery dataset name',
+            },
+            {
+              type: 'named',
+              name: '--key-file',
+              value: '/Users/admin/.secrets/bq-service-account.json',
+              description: 'Path to service account JSON key file',
+            },
+          ],
+        },
+      ],
+    };
+
+    vi.mocked(readFile).mockResolvedValue(JSON.stringify([localServerConfig]));
+
+    const inferenceResponse = {
+      serverConfigurations: [
+        {
+          serverName: 'io.github.lucashild/bigquery',
+          selectedPackage: {
+            registryType: 'local',
+            identifier: 'mcp-server-bigquery',
+            version: 'dev',
+            runtimeHint: '/Users/admin/.local/bin/uv',
+          },
+          selectedTransport: {
+            type: 'stdio',
+          },
+          environmentVariables: {
+            GOOGLE_APPLICATION_CREDENTIALS: '${GOOGLE_APPLICATION_CREDENTIALS}',
+            GOOGLE_CLOUD_PROJECT: '${GOOGLE_CLOUD_PROJECT}',
+          },
+        },
+      ],
+    };
+
+    vi.mocked(mockClaudeClient.runInference).mockResolvedValue(JSON.stringify(inferenceResponse));
+
+    const result = await installServers(
+      ['io.github.lucashild/bigquery'],
+      '/mock/servers.json',
+      mockClaudeClient,
+      { secretsProvider: mockSecretsProvider }
+    );
+
+    expect(result.installations[0].status).toBe('success');
+
+    // Verify the final configuration uses simplified name and combines all arguments
+    expect(result.mcpConfig.mcpServers['bigquery']).toEqual({
+      command: '/Users/admin/.local/bin/uv',
+      args: [
+        '--directory',
+        '/Users/admin/github-projects/mcp-server-bigquery',
+        'run',
+        'mcp-server-bigquery',
+        '--project',
+        'pulse-443819',
+        '--location',
+        'us-west1',
+        '--dataset',
+        'pulse_warehouse',
+        '--key-file',
+        '/Users/admin/.secrets/bq-service-account.json',
+      ],
+      env: {
+        GOOGLE_APPLICATION_CREDENTIALS: '${GOOGLE_APPLICATION_CREDENTIALS}',
+        GOOGLE_CLOUD_PROJECT: '${GOOGLE_CLOUD_PROJECT}',
+      },
+    });
+  });
 });
