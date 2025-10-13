@@ -4,6 +4,15 @@ All notable changes to the Claude Code Agent MCP Server will be documented in th
 
 ## [Unreleased]
 
+### Fixed
+
+- Added comprehensive debug logging to server installation process for better troubleshooting
+  - Added debug logs to installer.ts covering configuration loading, secrets, and inference flow
+  - Added debug logs to inference.ts for prompt generation, Claude calls, and response parsing
+  - Added detailed debug logs to claude-client-adapter.ts including process spawning, stdin/stdout/stderr handling, and JSON parsing
+  - Debug logs now show exact command arguments, working directories, and data flow through the installation pipeline
+  - Fixed argument order in claude-client-adapter.ts to ensure `-p` flag comes before prompt for proper non-interactive mode
+
 ## [0.0.5] - 2025-10-13
 
 **BREAKING: Remove serverConfigs parameter from install_servers tool**
