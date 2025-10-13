@@ -35,6 +35,7 @@ export function createMCPServer() {
           const serverConfigsPath = process.env.SERVER_CONFIGS_PATH;
           const serverSecretsPath = process.env.SERVER_SECRETS_PATH;
           const agentBaseDir = process.env.CLAUDE_AGENT_BASE_DIR || '/tmp/claude-agents';
+          const projectWorkingDirectory = process.env.PROJECT_WORKING_DIRECTORY || process.cwd();
           const skipPermissions =
             process.env.CLAUDE_SKIP_PERMISSIONS === undefined
               ? true
@@ -54,7 +55,8 @@ export function createMCPServer() {
             serverConfigsPath,
             agentBaseDir,
             serverSecretsPath,
-            skipPermissions
+            skipPermissions,
+            projectWorkingDirectory
           );
 
           // Verify CLI tools at startup (async operation, but fire-and-forget for startup performance)

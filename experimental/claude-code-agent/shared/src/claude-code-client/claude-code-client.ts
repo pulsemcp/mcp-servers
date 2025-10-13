@@ -100,6 +100,7 @@ export class ClaudeCodeClient implements IClaudeCodeClient {
   private serverSecretsPath?: string;
   private agentBaseDir: string;
   private skipPermissions: boolean;
+  private projectWorkingDirectory: string;
   private availableTools: Map<string, boolean> = new Map();
   private currentAgent: {
     process?: ChildProcess;
@@ -115,14 +116,21 @@ export class ClaudeCodeClient implements IClaudeCodeClient {
     serverConfigsPath: string,
     agentBaseDir: string,
     serverSecretsPath?: string,
-    skipPermissions?: boolean
+    skipPermissions?: boolean,
+    projectWorkingDirectory?: string
   ) {
     this.claudeCodePath = claudeCodePath;
     this.trustedServersPath = trustedServersPath;
     this.serverConfigsPath = serverConfigsPath;
     this.agentBaseDir = agentBaseDir;
+    this.projectWorkingDirectory = projectWorkingDirectory || process.cwd();
     this.serverSecretsPath = serverSecretsPath;
     this.skipPermissions = skipPermissions ?? true; // Default to true for backward compatibility
+
+    // Try to restore existing agent state on startup
+    this.tryRestoreExistingState().catch((error) => {
+      logger.debug('No existing agent state to restore:', error.message);
+    });
   }
 
   /**
@@ -333,7 +341,8 @@ export class ClaudeCodeClient implements IClaudeCodeClient {
         transcriptPath,
       };
 
-      const stateFile = join(stateDir, 'state.json');
+      // Store state.json in project working directory instead of agent state directory
+      const stateFile = join(this.projectWorkingDirectory, 'state.json');
       await fs.writeFile(stateFile, JSON.stringify(state, null, 2));
 
       // Note: No longer creating manual transcript files since Claude Code
@@ -914,7 +923,8 @@ Format: [{"name": "server.name", "rationale": "why this server is needed"}]`;
   }
 
   async getStateDirectory(): Promise<string | null> {
-    return this.currentAgent.stateDir || null;
+    // Return project working directory where state.json is stored
+    return this.currentAgent.state ? this.projectWorkingDirectory : null;
   }
 
   private async runClaudeCodeCommand(
@@ -965,11 +975,44 @@ Format: [{"name": "server.name", "rationale": "why this server is needed"}]`;
   }
 
   private async saveAgentState(): Promise<void> {
-    if (!this.currentAgent.stateDir || !this.currentAgent.state) {
+    if (!this.currentAgent.state) {
       return;
     }
 
-    const stateFile = join(this.currentAgent.stateDir, 'state.json');
+    const stateFile = join(this.projectWorkingDirectory, 'state.json');
     await fs.writeFile(stateFile, JSON.stringify(this.currentAgent.state, null, 2));
+  }
+
+  private async tryRestoreExistingState(): Promise<void> {
+    const stateFile = join(this.projectWorkingDirectory, 'state.json');
+
+    try {
+      const stateContent = await fs.readFile(stateFile, 'utf-8');
+      const state: AgentState = JSON.parse(stateContent);
+
+      // Validate that the state has required fields
+      if (!state.sessionId || !state.workingDirectory) {
+        throw new Error('Invalid state file format');
+      }
+
+      // Restore agent state (but not process - that needs to be re-initialized)
+      this.currentAgent = {
+        workingDir: state.workingDirectory,
+        stateDir: join(this.agentBaseDir, state.sessionId), // Keep original stateDir for cleanup
+        sessionId: state.sessionId,
+        state: {
+          ...state,
+          lastActiveAt: new Date().toISOString(), // Update last active time
+          status: 'idle', // Always start as idle since process is not running
+        },
+      };
+
+      logger.info(`Restored existing agent state for session: ${state.sessionId}`);
+    } catch (error) {
+      // This is expected when no state file exists
+      throw new Error(
+        `Cannot restore state: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
+    }
   }
 }

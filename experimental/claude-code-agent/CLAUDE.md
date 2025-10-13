@@ -120,14 +120,15 @@ JSON file with MCP server installation configurations:
 
 ## Environment Variables
 
-| Variable                 | Description                   | Required | Default              |
-| ------------------------ | ----------------------------- | -------- | -------------------- |
-| `TRUSTED_SERVERS_PATH`   | Path to servers.md file       | Yes      | `./servers.md`       |
-| `SERVER_CONFIGS_PATH`    | Path to servers.json file     | Yes      | `./servers.json`     |
-| `CLAUDE_CODE_PATH`       | Path to Claude CLI executable | No       | `claude`             |
-| `SERVER_SECRETS_PATH`    | Path to .secrets file         | No       | -                    |
-| `CLAUDE_AGENT_BASE_DIR`  | Agent workspace directory     | No       | `/tmp/claude-agents` |
-| `CLAUDE_AGENT_LOG_LEVEL` | Logging level                 | No       | `info`               |
+| Variable                    | Description                          | Required | Default              |
+| --------------------------- | ------------------------------------ | -------- | -------------------- |
+| `TRUSTED_SERVERS_PATH`      | Path to servers.md file              | Yes      | `./servers.md`       |
+| `SERVER_CONFIGS_PATH`       | Path to servers.json file            | Yes      | `./servers.json`     |
+| `CLAUDE_CODE_PATH`          | Path to Claude CLI executable        | No       | `claude`             |
+| `SERVER_SECRETS_PATH`       | Path to .secrets file                | No       | -                    |
+| `CLAUDE_AGENT_BASE_DIR`     | Agent workspace directory            | No       | `/tmp/claude-agents` |
+| `PROJECT_WORKING_DIRECTORY` | Directory for state.json persistence | No       | `process.cwd()`      |
+| `CLAUDE_AGENT_LOG_LEVEL`    | Logging level                        | No       | `info`               |
 
 ## Testing Strategy
 
