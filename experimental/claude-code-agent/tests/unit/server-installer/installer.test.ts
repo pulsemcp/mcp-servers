@@ -401,6 +401,19 @@ describe('installServers', () => {
 
     vi.mocked(mockClaudeClient.runInference).mockResolvedValue(JSON.stringify(inferenceResponse));
 
+    // Mock the required secrets for BigQuery
+    vi.mocked(mockSecretsProvider.getSecret).mockImplementation(async (key) => {
+      const secrets: Record<string, string> = {
+        GOOGLE_APPLICATION_CREDENTIALS: '/Users/admin/.secrets/gcp-service-account.json',
+        GOOGLE_CLOUD_PROJECT: 'pulse-443819',
+      };
+      return secrets[key];
+    });
+    vi.mocked(mockSecretsProvider.listAvailableSecrets).mockResolvedValue([
+      'GOOGLE_APPLICATION_CREDENTIALS',
+      'GOOGLE_CLOUD_PROJECT',
+    ]);
+
     const result = await installServers(
       ['io.github.lucashild/bigquery'],
       '/mock/servers.json',
@@ -428,6 +441,10 @@ describe('installServers', () => {
         '--key-file',
         '/Users/admin/.secrets/bq-service-account.json',
       ],
+      env: {
+        GOOGLE_APPLICATION_CREDENTIALS: '/Users/admin/.secrets/gcp-service-account.json',
+        GOOGLE_CLOUD_PROJECT: 'pulse-443819',
+      },
     });
   });
 });
