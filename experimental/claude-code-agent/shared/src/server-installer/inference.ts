@@ -211,7 +211,7 @@ export class FileSecretsProvider implements ISecretsProvider {
     try {
       const { readFile } = await import('fs/promises');
       const content = await readFile(this.secretsPath, 'utf-8');
-      const secrets = JSON.parse(content);
+      const secrets = this.parseSecretsFile(content);
       return secrets[key];
     } catch {
       return undefined;
@@ -224,10 +224,41 @@ export class FileSecretsProvider implements ISecretsProvider {
     try {
       const { readFile } = await import('fs/promises');
       const content = await readFile(this.secretsPath, 'utf-8');
-      const secrets = JSON.parse(content);
+      const secrets = this.parseSecretsFile(content);
       return Object.keys(secrets);
     } catch {
       return [];
+    }
+  }
+
+  private parseSecretsFile(content: string): Record<string, string> {
+    // Try to parse as JSON first (legacy support)
+    try {
+      return JSON.parse(content);
+    } catch {
+      // Fall back to KEY=VALUE format (dotenv style)
+      const secrets: Record<string, string> = {};
+      const lines = content.split('\n');
+
+      for (const line of lines) {
+        const trimmedLine = line.trim();
+        // Skip empty lines and comments
+        if (!trimmedLine || trimmedLine.startsWith('#')) {
+          continue;
+        }
+
+        // Parse KEY=VALUE format
+        const equalIndex = trimmedLine.indexOf('=');
+        if (equalIndex > 0) {
+          const key = trimmedLine.substring(0, equalIndex).trim();
+          const value = trimmedLine.substring(equalIndex + 1).trim();
+          // Remove quotes if present
+          const cleanValue = value.replace(/^["']|["']$/g, '');
+          secrets[key] = cleanValue;
+        }
+      }
+
+      return secrets;
     }
   }
 }
