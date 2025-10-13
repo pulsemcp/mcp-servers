@@ -278,7 +278,7 @@ describe('Server Installer Integration', () => {
     expect(inferenceCall).toContain('Web fetching capabilities for HTTP requests');
   });
 
-  it('should handle warnings from inference', async () => {
+  it('should handle warnings from inference and fail when required secrets missing', async () => {
     const inferenceResponse = {
       serverConfigurations: [
         {
@@ -317,12 +317,88 @@ describe('Server Installer Integration', () => {
       'Consider setting up PostgreSQL connection before using this server',
     ]);
 
-    // Verify that when no secrets are available, env is undefined
-    expect(result.mcpConfig.mcpServers['com.postgres/mcp']).toMatchObject({
+    // Verify that installation fails for missing required secrets
+    expect(result.installations[0].status).toBe('failed');
+    expect(result.installations[0].error).toContain(
+      'Missing required environment variables: DATABASE_URL'
+    );
+  });
+
+  it('should use default values when secrets are not available but defaults exist', async () => {
+    // Test server with default values for missing secrets
+    const testServerConfigs = [
+      {
+        name: 'com.example/with-defaults',
+        description: 'Test server with default values',
+        packages: [
+          {
+            registryType: 'npm',
+            identifier: '@example/test-server',
+            runtimeHint: 'npx',
+            transport: { type: 'stdio' },
+            environmentVariables: [
+              { name: 'API_KEY', required: true }, // No default, should cause error if secret not available
+              { name: 'WORKSPACE_ID', value: '12345', required: true }, // Has default
+              { name: 'TIMEOUT', value: '30000', required: false }, // Optional with default
+            ],
+          },
+        ],
+      },
+    ];
+
+    const testConfigPath = join(testDir, 'test-with-defaults.json');
+    await writeFile(testConfigPath, JSON.stringify(testServerConfigs, null, 2));
+
+    const inferenceResponse = {
+      serverConfigurations: [
+        {
+          serverName: 'com.example/with-defaults',
+          selectedPackage: {
+            registryType: 'npm',
+            identifier: '@example/test-server',
+            runtimeHint: 'npx',
+          },
+          selectedTransport: {
+            type: 'stdio',
+          },
+          environmentVariables: {
+            API_KEY: '${API_KEY}', // Template - should use secret if available
+            WORKSPACE_ID: 'your-workspace-id-here', // Placeholder - should use default instead
+            TIMEOUT: '30000', // Should use from inference or default
+          },
+          rationale: 'Test server with mixed secret/default configuration',
+        },
+      ],
+    };
+
+    vi.mocked(mockClaudeClient.runInference).mockResolvedValue(JSON.stringify(inferenceResponse));
+
+    // Mock only API_KEY as available
+    vi.mocked(mockSecretsProvider.getSecret).mockImplementation(async (key) => {
+      if (key === 'API_KEY') return 'secret-api-key-123';
+      return undefined;
+    });
+    vi.mocked(mockSecretsProvider.listAvailableSecrets).mockResolvedValue(['API_KEY']);
+
+    const result = await installServers(
+      ['com.example/with-defaults'],
+      testConfigPath,
+      mockClaudeClient,
+      { secretsProvider: mockSecretsProvider }
+    );
+
+    expect(result.installations[0].status).toBe('success');
+
+    // Verify that defaults are used when secrets are not available
+    expect(result.mcpConfig.mcpServers['com.example/with-defaults']).toMatchObject({
       type: 'stdio',
       command: 'npx',
-      args: ['@crystaldba/postgres-mcp-server'],
-      env: undefined,
+      args: ['@example/test-server'],
+      env: {
+        API_KEY: 'secret-api-key-123', // From secret
+        WORKSPACE_ID: '12345', // From default value in config
+        TIMEOUT: '30000', // From default value
+      },
     });
   });
 });
