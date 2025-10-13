@@ -80,7 +80,11 @@ export const ServerConfigSchema = z.object({
             z.object({
               name: z.string(),
               value: z.string().optional(),
+              default: z.string().optional(),
               required: z.boolean().optional(),
+              isRequired: z.boolean().optional(),
+              isSecret: z.boolean().optional(),
+              description: z.string().optional(),
             })
           )
           .optional(),

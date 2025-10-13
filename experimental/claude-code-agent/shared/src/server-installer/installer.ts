@@ -217,7 +217,10 @@ async function generateMcpEntry(
         const envConfig = originalConfig.packages
           ?.flatMap((pkg) => pkg.environmentVariables || [])
           .find((envVar) => envVar.name === key);
-        const isRequired = envConfig?.required !== false; // Default to required
+        // A variable is only required if it's explicitly marked as required/isRequired AND has no default value
+        const hasDefault = !!(envConfig?.value || envConfig?.default);
+        const isExplicitlyRequired = envConfig?.required === true || envConfig?.isRequired === true;
+        const isRequired = isExplicitlyRequired && !hasDefault;
 
         if (availableSecrets.includes(key)) {
           // Secret is available, use it
@@ -228,9 +231,12 @@ async function generateMcpEntry(
             // Keep templated value if secret exists but is empty
             env[key] = value;
           }
-        } else if (envConfig?.value) {
+        } else if (envConfig?.value || envConfig?.default) {
           // No secret available, but we have a default value from config
-          env[key] = envConfig.value;
+          const defaultValue = envConfig.value || envConfig.default;
+          if (defaultValue) {
+            env[key] = defaultValue;
+          }
         } else if (isRequired) {
           // Required secret is missing and no default available
           missingRequiredSecrets.push(key);
