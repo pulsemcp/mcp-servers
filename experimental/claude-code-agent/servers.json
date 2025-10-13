@@ -57,5 +57,43 @@
         }
       }
     ]
+  },
+  {
+    "name": "com.pulsemcp/twist",
+    "description": "Twist team communication and collaboration platform integration",
+    "capabilities": {
+      "tools": [
+        "get_channels",
+        "get_channel",
+        "get_threads",
+        "get_thread",
+        "create_thread",
+        "add_message_to_thread",
+        "close_thread"
+      ],
+      "resources": ["channel_info", "thread_messages"],
+      "prompts": ["suggest_thread_title", "format_message"]
+    },
+    "packages": [
+      {
+        "registryType": "npm",
+        "identifier": "twist-mcp-server",
+        "version": "latest",
+        "runtimeHint": "npx",
+        "transport": {
+          "type": "stdio"
+        },
+        "environmentVariables": [
+          {
+            "name": "TWIST_BEARER_TOKEN",
+            "required": true
+          },
+          {
+            "name": "TWIST_WORKSPACE_ID",
+            "required": true
+          }
+        ]
+      }
+    ]
   }
 ]
