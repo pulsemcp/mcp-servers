@@ -4,6 +4,23 @@ All notable changes to the Claude Code Agent MCP Server will be documented in th
 
 ## [Unreleased]
 
+## [0.0.5] - 2025-10-13
+
+**BREAKING: Remove serverConfigs parameter from install_servers tool**
+
+- **BREAKING**: Removed the `server_configs` parameter from the `install_servers` tool
+- Users should now configure servers exclusively via environment variables instead
+- This simplifies the tool interface and encourages proper configuration management
+- No backwards compatibility provided as explicitly requested
+
+**Technical Changes:**
+
+- Updated `IClaudeCodeClient.installServers` interface to remove `serverConfigs` parameter
+- Modified `convertLegacyContext` function to not expect serverConfigs
+- Updated all test mocks and functional tests to match new interface
+- Restored `setup-dev.js` file needed for proper workspace symlink creation during builds
+- All 73 tests still pass after parameter removal
+
 ## [0.0.4] - 2025-10-10
 
 **CRITICAL FIX:**
