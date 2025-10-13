@@ -135,9 +135,19 @@ describe('Server Installer Integration', () => {
     vi.mocked(mockSecretsProvider.getSecret).mockImplementation(async (key) => {
       const secrets: Record<string, string> = {
         DATABASE_URL: 'postgresql://user:pass@localhost:5432/testdb',
+        TIMEOUT: '30000',
+        USER_AGENT: 'MCP-Fetch/1.0',
+        MAX_CONNECTIONS: '10',
       };
       return secrets[key];
     });
+    vi.mocked(mockSecretsProvider.listAvailableSecrets).mockResolvedValue([
+      'API_KEY',
+      'DATABASE_URL',
+      'TIMEOUT',
+      'USER_AGENT',
+      'MAX_CONNECTIONS',
+    ]);
 
     const result = await installServers(
       ['com.pulsemcp/fetch', 'com.postgres/mcp'],
@@ -150,7 +160,8 @@ describe('Server Installer Integration', () => {
     expect(result.installations.every((i) => i.status === 'success')).toBe(true);
 
     // Verify fetch server configuration
-    expect(result.mcpConfig.mcpServers['com.pulsemcp/fetch']).toEqual({
+    expect(result.mcpConfig.mcpServers['com.pulsemcp/fetch']).toMatchObject({
+      type: 'stdio',
       command: 'npx',
       args: ['@pulsemcp/fetch@0.2.10'],
       env: {
@@ -160,7 +171,8 @@ describe('Server Installer Integration', () => {
     });
 
     // Verify PostgreSQL server configuration with secret resolution
-    expect(result.mcpConfig.mcpServers['com.postgres/mcp']).toEqual({
+    expect(result.mcpConfig.mcpServers['com.postgres/mcp']).toMatchObject({
+      type: 'stdio',
       command: 'npx',
       args: ['@crystaldba/postgres-mcp-server'],
       env: {
@@ -200,7 +212,8 @@ describe('Server Installer Integration', () => {
     );
 
     expect(result.installations[0].status).toBe('success');
-    expect(result.mcpConfig.mcpServers['com.example/remote']).toEqual({
+    expect(result.mcpConfig.mcpServers['com.example/remote']).toMatchObject({
+      type: 'stdio',
       command: 'npx',
       args: ['@example/remote-client'],
       transport: {
@@ -293,6 +306,7 @@ describe('Server Installer Integration', () => {
 
     vi.mocked(mockClaudeClient.runInference).mockResolvedValue(JSON.stringify(inferenceResponse));
     vi.mocked(mockSecretsProvider.getSecret).mockResolvedValue(undefined); // No secrets available
+    vi.mocked(mockSecretsProvider.listAvailableSecrets).mockResolvedValue([]); // No secrets available
 
     const result = await installServers(['com.postgres/mcp'], serversConfigPath, mockClaudeClient, {
       secretsProvider: mockSecretsProvider,
@@ -302,5 +316,13 @@ describe('Server Installer Integration', () => {
       'DATABASE_URL secret is required but not available',
       'Consider setting up PostgreSQL connection before using this server',
     ]);
+
+    // Verify that when no secrets are available, env is undefined
+    expect(result.mcpConfig.mcpServers['com.postgres/mcp']).toMatchObject({
+      type: 'stdio',
+      command: 'npx',
+      args: ['@crystaldba/postgres-mcp-server'],
+      env: undefined,
+    });
   });
 });
