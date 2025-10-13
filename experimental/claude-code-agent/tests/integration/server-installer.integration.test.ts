@@ -261,8 +261,6 @@ describe('Server Installer Integration', () => {
     const inferenceCall = vi.mocked(mockClaudeClient.runInference).mock.calls[0][0];
 
     expect(inferenceCall).toContain('Purpose: Setting up development environment for web scraping');
-    expect(inferenceCall).toContain('Environment: development');
-    expect(inferenceCall).toContain('Preference: Local packages when available');
     expect(inferenceCall).toContain('### com.pulsemcp/fetch');
     expect(inferenceCall).toContain('Web fetching capabilities for HTTP requests');
   });

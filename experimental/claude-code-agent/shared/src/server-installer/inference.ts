@@ -7,6 +7,9 @@ import {
   ServerConfig,
 } from './types.js';
 import { DEFAULT_CONFIG } from './config.js';
+import { createLogger } from '../logging.js';
+
+const logger = createLogger('server-installer-inference');
 
 /**
  * Generates an inference prompt for Claude to configure MCP servers
@@ -119,19 +122,29 @@ export async function runServerConfigInference(
   request: InferenceRequest,
   claudeClient: IClaudeCodeInferenceClient
 ): Promise<InferenceResponse> {
+  logger.debug('Generating inference prompt...');
   const prompt = generateInferencePrompt(request);
+  logger.debug(`Prompt generated (${prompt.length} characters)`);
 
+  logger.debug('Calling Claude Code for inference...');
   const response = await claudeClient.runInference(prompt);
+  logger.debug(`Received response from Claude Code (${response.length} characters)`);
 
   // Parse the JSON response from Claude
   try {
+    logger.debug('Parsing inference response...');
     // Extract JSON from markdown code blocks if present
     const jsonMatch = response.match(/```json\s*(.*?)\s*```/s);
     const jsonStr = jsonMatch ? jsonMatch[1] : response;
 
     const parsed = JSON.parse(jsonStr);
-    return InferenceResponseSchema.parse(parsed);
+    logger.debug('JSON parsed successfully, validating with schema...');
+    const validated = InferenceResponseSchema.parse(parsed);
+    logger.debug('Schema validation successful');
+    return validated;
   } catch (error) {
+    logger.error('Failed to parse inference response:', error);
+    logger.error('Raw response:', response);
     throw new Error(
       `Failed to parse inference response: ${error instanceof Error ? error.message : 'Unknown error'}\n\nRaw response: ${response}`
     );

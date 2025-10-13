@@ -10,6 +10,9 @@ import {
 } from './types.js';
 import { RUNTIME_TO_COMMAND_MAP } from './config.js';
 import { runServerConfigInference, FileSecretsProvider } from './inference.js';
+import { createLogger } from '../logging.js';
+
+const logger = createLogger('server-installer');
 
 /**
  * Main server installation function
@@ -24,8 +27,12 @@ export async function installServers(
     secretsProvider?: ISecretsProvider;
   } = {}
 ): Promise<InstallationResult> {
+  logger.debug(`Starting installation for servers: ${serverNames.join(', ')}`);
+
   // Load server configurations
+  logger.debug(`Loading server configs from: ${serversConfigPath}`);
   const serverConfigs = await loadServerConfigs(serversConfigPath);
+  logger.debug(`Loaded ${serverConfigs.length} server configurations`);
 
   // Filter to requested servers
   const requestedConfigs = serverNames.map((name) => {
@@ -35,10 +42,14 @@ export async function installServers(
     }
     return { name, config };
   });
+  logger.debug(`Filtered to ${requestedConfigs.length} requested server configs`);
 
   // Set up secrets provider
   const secretsProvider = options.secretsProvider || new FileSecretsProvider(options.secretsPath);
   const secretsAvailable = await secretsProvider.listAvailableSecrets();
+  logger.debug(
+    `Found ${secretsAvailable.length} available secrets: ${secretsAvailable.join(', ')}`
+  );
 
   // Run inference to get configuration decisions
   const inferenceRequest: InferenceRequest = {
@@ -47,15 +58,21 @@ export async function installServers(
     secretsAvailable,
   };
 
+  logger.debug('Starting inference request to Claude Code...');
   const inferenceResponse = await runServerConfigInference(inferenceRequest, claudeClient);
+  logger.debug(
+    `Inference complete, got ${inferenceResponse.serverConfigurations.length} server configurations`
+  );
 
   // Generate MCP configuration
+  logger.debug('Generating MCP configuration entries...');
   const mcpConfig: McpConfig = { mcpServers: {} };
   const installations = [];
   const warnings = [...(inferenceResponse.warnings || [])];
 
   for (const serverConfig of inferenceResponse.serverConfigurations) {
     try {
+      logger.debug(`Generating MCP entry for: ${serverConfig.serverName}`);
       const mcpEntry = await generateMcpEntry(serverConfig, secretsProvider);
       mcpConfig.mcpServers[serverConfig.serverName] = mcpEntry;
 
@@ -64,7 +81,9 @@ export async function installServers(
         status: 'success' as const,
         mcpEntry,
       });
+      logger.debug(`Successfully generated entry for: ${serverConfig.serverName}`);
     } catch (error) {
+      logger.error(`Failed to generate entry for ${serverConfig.serverName}:`, error);
       installations.push({
         serverName: serverConfig.serverName,
         status: 'failed' as const,
@@ -73,6 +92,9 @@ export async function installServers(
     }
   }
 
+  logger.debug(
+    `Installation complete: ${installations.filter((i) => i.status === 'success').length} succeeded, ${installations.filter((i) => i.status === 'failed').length} failed`
+  );
   return {
     installations,
     mcpConfig,

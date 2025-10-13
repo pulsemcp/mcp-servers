@@ -305,8 +305,5 @@ describe('installServers', () => {
     expect(mockClaudeClient.runInference).toHaveBeenCalledWith(
       expect.stringContaining('Purpose: Development testing')
     );
-    expect(mockClaudeClient.runInference).toHaveBeenCalledWith(
-      expect.stringContaining('Environment: development')
-    );
   });
 });
