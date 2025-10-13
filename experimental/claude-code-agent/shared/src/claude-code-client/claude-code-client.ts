@@ -127,6 +127,7 @@ export class ClaudeCodeClient implements IClaudeCodeClient {
     sessionId?: string;
     state?: AgentState;
   } = {};
+  private stateRestorationPromise: Promise<void>;
 
   constructor(
     claudeCodePath: string,
@@ -145,11 +146,20 @@ export class ClaudeCodeClient implements IClaudeCodeClient {
     this.serverSecretsPath = serverSecretsPath;
     this.skipPermissions = skipPermissions ?? true; // Default to true for backward compatibility
 
-    // Try to restore existing agent state on startup
-    this.tryRestoreExistingState().catch((error) => {
+    // Try to restore existing agent state on startup and track the promise
+    this.stateRestorationPromise = this.tryRestoreExistingState().catch((error) => {
       logger.info('No existing agent state to restore:', error.message);
       logger.debug('Looking for state file at:', join(this.projectWorkingDirectory, 'state.json'));
+      // Don't rethrow - this is expected when no state file exists
     });
+  }
+
+  /**
+   * Waits for state restoration to complete.
+   * This ensures that any existing agent state is loaded before tool operations.
+   */
+  private async ensureStateRestored(): Promise<void> {
+    await this.stateRestorationPromise;
   }
 
   /**
@@ -393,6 +403,9 @@ export class ClaudeCodeClient implements IClaudeCodeClient {
     servers: Array<{ name: string; rationale: string }>;
   }> {
     try {
+      // Wait for state restoration to complete to potentially use session context
+      await this.ensureStateRestored();
+
       // Read trusted servers file
       const serversContent = await fs.readFile(this.trustedServersPath, 'utf-8');
 
@@ -461,6 +474,9 @@ Format: [{"name": "server.name", "rationale": "why this server is needed"}]`;
     mcpConfigPath: string;
   }> {
     try {
+      // Wait for state restoration to complete before checking agent status
+      await this.ensureStateRestored();
+
       if (!this.currentAgent.workingDir) {
         const stateFile = join(this.projectWorkingDirectory, 'state.json');
         logger.debug(`Current agent state:`, {
@@ -494,7 +510,26 @@ Format: [{"name": "server.name", "rationale": "why this server is needed"}]`;
 
       // Write MCP configuration to working directory
       const mcpConfigPath = join(this.currentAgent.workingDir, '.mcp.json');
-      await fs.writeFile(mcpConfigPath, JSON.stringify(result.mcpConfig, null, 2));
+      const mcpConfigContent = JSON.stringify(result.mcpConfig, null, 2);
+
+      logger.debug(`Writing MCP config to: ${mcpConfigPath}`);
+      logger.debug(`MCP config content:`, mcpConfigContent);
+
+      try {
+        await fs.writeFile(mcpConfigPath, mcpConfigContent);
+        logger.debug(`Successfully wrote MCP config file`);
+
+        // Verify the file was written
+        const writtenContent = await fs.readFile(mcpConfigPath, 'utf-8');
+        if (writtenContent !== mcpConfigContent) {
+          throw new Error('File content verification failed after write');
+        }
+      } catch (writeError) {
+        logger.error(`Failed to write MCP config file to ${mcpConfigPath}:`, writeError);
+        throw new Error(
+          `Failed to write MCP configuration file: ${writeError instanceof Error ? writeError.message : 'Unknown error'}`
+        );
+      }
 
       // Update agent state
       if (this.currentAgent.state) {
@@ -537,6 +572,9 @@ Format: [{"name": "server.name", "rationale": "why this server is needed"}]`;
     };
   }> {
     try {
+      // Wait for state restoration to complete before checking agent status
+      await this.ensureStateRestored();
+
       if (!this.currentAgent.workingDir || !this.currentAgent.sessionId) {
         const stateFile = join(this.projectWorkingDirectory, 'state.json');
         logger.debug(`Current agent state:`, {
@@ -827,6 +865,9 @@ Format: [{"name": "server.name", "rationale": "why this server is needed"}]`;
     };
   }> {
     try {
+      // Wait for state restoration to complete before checking agent status
+      await this.ensureStateRestored();
+
       if (
         !this.currentAgent.sessionId ||
         !this.currentAgent.workingDir ||
@@ -915,6 +956,9 @@ Format: [{"name": "server.name", "rationale": "why this server is needed"}]`;
     finalState: AgentState;
   }> {
     try {
+      // Wait for state restoration to complete before checking agent status
+      await this.ensureStateRestored();
+
       if (!this.currentAgent.state) {
         throw new Error('No agent initialized');
       }
@@ -956,10 +1000,14 @@ Format: [{"name": "server.name", "rationale": "why this server is needed"}]`;
   }
 
   async getAgentState(): Promise<AgentState | null> {
+    // Wait for state restoration to complete before returning state
+    await this.ensureStateRestored();
     return this.currentAgent.state || null;
   }
 
   async getStateDirectory(): Promise<string | null> {
+    // Wait for state restoration to complete before checking state
+    await this.ensureStateRestored();
     // Return project working directory where state.json is stored
     return this.currentAgent.state ? this.projectWorkingDirectory : null;
   }
@@ -985,6 +1033,9 @@ Format: [{"name": "server.name", "rationale": "why this server is needed"}]`;
     };
     projectWorkingDirectory: string;
   }> {
+    // Wait for state restoration to complete before providing diagnostics
+    await this.ensureStateRestored();
+
     const stateFilePath = join(this.projectWorkingDirectory, 'state.json');
     let stateFileExists = false;
     let stateFileReadable = false;

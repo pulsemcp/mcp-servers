@@ -35,7 +35,8 @@ For each server, make decisions about:
 3. **Runtime Selection**: Choose from runtime priorities: ${DEFAULT_CONFIG.runtimePriorities.join(' > ')}
 4. **Environment Variables**: Set required and optional environment variables
    - For secrets that are available: use the actual secret value
-   - For secrets that are NOT available: use template format \`\${SECRET_NAME}\` (e.g., \`\${API_KEY}\`)
+   - For secrets that are NOT available but have default values: use the default value shown in brackets
+   - For secrets that are NOT available and have no defaults: use template format \`\${SECRET_NAME}\` (e.g., \`\${API_KEY}\`)
    - Set reasonable defaults for non-sensitive configuration
    - Template variables will be resolved later during installation
 
@@ -145,8 +146,8 @@ Description: ${config.description}`;
         output += '\n   Environment Variables:';
         pkg.environmentVariables.forEach((env) => {
           const required = env.required !== false ? ' (required)' : ' (optional)';
-          output += `\n   - ${env.name}${required}`;
-          if (env.value) output += ` = ${env.value}`;
+          const defaultValue = env.value ? ` [default: ${env.value}]` : '';
+          output += `\n   - ${env.name}${required}${defaultValue}`;
         });
       }
     });

@@ -204,14 +204,23 @@ async function generateMcpEntry(
     }
   }
 
-  // Only include environment variables if we have secrets available
+  // Process environment variables and handle required secrets
   const env: Record<string, string> = {};
+  const missingRequiredSecrets: string[] = [];
+
   if (environmentVariables) {
     const availableSecrets = await secretsProvider.listAvailableSecrets();
+
     for (const [key, value] of Object.entries(environmentVariables)) {
       if (typeof value === 'string') {
-        // Only include env vars if the secret is actually available
+        // Check if this environment variable is required in the original config
+        const envConfig = originalConfig.packages
+          ?.flatMap((pkg) => pkg.environmentVariables || [])
+          .find((envVar) => envVar.name === key);
+        const isRequired = envConfig?.required !== false; // Default to required
+
         if (availableSecrets.includes(key)) {
+          // Secret is available, use it
           const secretValue = await secretsProvider.getSecret(key);
           if (secretValue) {
             env[key] = secretValue;
@@ -219,10 +228,24 @@ async function generateMcpEntry(
             // Keep templated value if secret exists but is empty
             env[key] = value;
           }
+        } else if (envConfig?.value) {
+          // No secret available, but we have a default value from config
+          env[key] = envConfig.value;
+        } else if (isRequired) {
+          // Required secret is missing and no default available
+          missingRequiredSecrets.push(key);
         }
-        // Skip env vars for which we don't have secrets
+        // Skip optional env vars for which we don't have secrets or defaults
       }
     }
+  }
+
+  // Fail if any required secrets are missing
+  if (missingRequiredSecrets.length > 0) {
+    throw new Error(
+      `Missing required environment variables: ${missingRequiredSecrets.join(', ')}. ` +
+        `Please provide these secrets or ensure they have default values in the server configuration.`
+    );
   }
 
   const mcpEntry: McpServerEntry = {
