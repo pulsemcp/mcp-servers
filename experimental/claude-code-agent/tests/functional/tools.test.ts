@@ -142,6 +142,27 @@ describe('Tools', () => {
         })
       ).rejects.toThrow('No agent initialized');
     });
+
+    it('should support purpose field for installation context', async () => {
+      // First initialize agent
+      await mockClient.initAgent('Test', '/tmp/test-working', 'test-agent');
+
+      // Then install servers with purpose
+      const tool = installServersTool(mockServer, clientFactory);
+
+      const result = await tool.handler({
+        server_names: ['com.postgres/mcp'],
+        purpose: 'Development testing for data analysis',
+      });
+
+      const parsedResult = JSON.parse(result.content[0].text);
+
+      expect(parsedResult.installations).toHaveLength(1);
+      expect(parsedResult.installations[0]).toEqual({
+        serverName: 'com.postgres/mcp',
+        status: 'success',
+      });
+    });
   });
 
   describe('chat', () => {

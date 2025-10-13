@@ -8,7 +8,7 @@ const logger = createLogger('install-servers-tool');
 // Parameter descriptions for consistency
 const PARAM_DESCRIPTIONS = {
   server_names: 'Names of servers to install (from find_servers output)',
-  server_configs: 'Optional: custom configurations for servers',
+  purpose: 'Optional: description of the task purpose for better server configuration',
 } as const;
 
 export function installServersTool(server: Server, clientFactory: () => IClaudeCodeClient) {
@@ -57,10 +57,9 @@ Use cases:
           },
           description: PARAM_DESCRIPTIONS.server_names,
         },
-        server_configs: {
-          type: 'object',
-          additionalProperties: true,
-          description: PARAM_DESCRIPTIONS.server_configs,
+        purpose: {
+          type: 'string',
+          description: 'Optional: description of the task purpose for better server configuration',
         },
       },
       required: ['server_names'],
@@ -75,7 +74,7 @@ Use cases:
 
         const result = await client.installServers(
           validatedArgs.server_names,
-          validatedArgs.server_configs
+          validatedArgs.purpose ? { purpose: validatedArgs.purpose } : undefined
         );
 
         const successCount = result.installations.filter((i) => i.status === 'success').length;

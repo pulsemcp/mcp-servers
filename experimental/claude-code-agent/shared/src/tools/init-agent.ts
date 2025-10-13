@@ -15,13 +15,13 @@ const PARAM_DESCRIPTIONS = {
 export function initAgentTool(server: Server, clientFactory: () => IClaudeCodeClient) {
   return {
     name: 'init_agent',
-    description: `Initializes a Claude Code subagent with a custom system prompt and working directory. This tool creates a new Claude Code instance in an isolated environment, separating the working directory (where the agent operates) from the state directory (where state.json is stored).
+    description: `Initializes a Claude Code subagent with a custom system prompt and working directory. This tool creates a new Claude Code instance in an isolated environment. The agent's state (state.json) is persisted in the MCP server's working directory to enable state restoration across server restarts.
 
 Example response:
 {
   "sessionId": "abc123-def456-789",
   "status": "idle",
-  "stateUri": "file:///path/to/state/directory/state.json"
+  "stateUri": "file:///project/working/directory/state.json"
 }
 
 Status meanings:

@@ -2,10 +2,19 @@ import { ChildProcess, spawn } from 'child_process';
 import { promises as fs } from 'fs';
 import { join } from 'path';
 import { v4 as uuidv4 } from 'uuid';
-import { AgentState, ServerConfig } from '../types.js';
+import { AgentState } from '../types.js';
 import { createLogger } from '../logging.js';
 import { promisify } from 'util';
 import { exec as execCallback } from 'child_process';
+import {
+  installServers as installServersNew,
+  InstallationContext,
+} from '../server-installer/index.js';
+import {
+  ClaudeCodeInferenceAdapter,
+  convertLegacyContext,
+} from '../server-installer/claude-client-adapter.js';
+import { FileSecretsProvider } from '../server-installer/inference.js';
 
 const exec = promisify(execCallback);
 
@@ -44,7 +53,7 @@ export interface IClaudeCodeClient {
 
   installServers(
     serverNames: string[],
-    serverConfigs?: Record<string, { env?: Record<string, string> }>
+    context?: InstallationContext
   ): Promise<{
     installations: Array<{
       serverName: string;
@@ -82,6 +91,24 @@ export interface IClaudeCodeClient {
   getAgentState(): Promise<AgentState | null>;
 
   getStateDirectory(): Promise<string | null>;
+
+  getStateDiagnostics(): Promise<{
+    hasAgent: boolean;
+    agentState: {
+      hasWorkingDir: boolean;
+      hasSessionId: boolean;
+      hasStateDir: boolean;
+      hasState: boolean;
+      workingDir?: string;
+      sessionId?: string;
+    };
+    stateFile: {
+      path: string;
+      exists: boolean;
+      readable: boolean;
+    };
+    projectWorkingDirectory: string;
+  }>;
 }
 
 export class ClaudeCodeClient implements IClaudeCodeClient {
@@ -91,6 +118,7 @@ export class ClaudeCodeClient implements IClaudeCodeClient {
   private serverSecretsPath?: string;
   private agentBaseDir: string;
   private skipPermissions: boolean;
+  private projectWorkingDirectory: string;
   private availableTools: Map<string, boolean> = new Map();
   private currentAgent: {
     process?: ChildProcess;
@@ -99,6 +127,7 @@ export class ClaudeCodeClient implements IClaudeCodeClient {
     sessionId?: string;
     state?: AgentState;
   } = {};
+  private stateRestorationPromise: Promise<void>;
 
   constructor(
     claudeCodePath: string,
@@ -106,14 +135,31 @@ export class ClaudeCodeClient implements IClaudeCodeClient {
     serverConfigsPath: string,
     agentBaseDir: string,
     serverSecretsPath?: string,
-    skipPermissions?: boolean
+    skipPermissions?: boolean,
+    projectWorkingDirectory?: string
   ) {
     this.claudeCodePath = claudeCodePath;
     this.trustedServersPath = trustedServersPath;
     this.serverConfigsPath = serverConfigsPath;
     this.agentBaseDir = agentBaseDir;
+    this.projectWorkingDirectory = projectWorkingDirectory || process.cwd();
     this.serverSecretsPath = serverSecretsPath;
     this.skipPermissions = skipPermissions ?? true; // Default to true for backward compatibility
+
+    // Try to restore existing agent state on startup and track the promise
+    this.stateRestorationPromise = this.tryRestoreExistingState().catch((error) => {
+      logger.info('No existing agent state to restore:', error.message);
+      logger.debug('Looking for state file at:', join(this.projectWorkingDirectory, 'state.json'));
+      // Don't rethrow - this is expected when no state file exists
+    });
+  }
+
+  /**
+   * Waits for state restoration to complete.
+   * This ensures that any existing agent state is loaded before tool operations.
+   */
+  private async ensureStateRestored(): Promise<void> {
+    await this.stateRestorationPromise;
   }
 
   /**
@@ -324,7 +370,8 @@ export class ClaudeCodeClient implements IClaudeCodeClient {
         transcriptPath,
       };
 
-      const stateFile = join(stateDir, 'state.json');
+      // Store state.json in project working directory instead of agent state directory
+      const stateFile = join(this.projectWorkingDirectory, 'state.json');
       await fs.writeFile(stateFile, JSON.stringify(state, null, 2));
 
       // Note: No longer creating manual transcript files since Claude Code
@@ -356,6 +403,9 @@ export class ClaudeCodeClient implements IClaudeCodeClient {
     servers: Array<{ name: string; rationale: string }>;
   }> {
     try {
+      // Wait for state restoration to complete to potentially use session context
+      await this.ensureStateRestored();
+
       // Read trusted servers file
       const serversContent = await fs.readFile(this.trustedServersPath, 'utf-8');
 
@@ -414,7 +464,7 @@ Format: [{"name": "server.name", "rationale": "why this server is needed"}]`;
 
   async installServers(
     serverNames: string[],
-    serverConfigs?: Record<string, { env?: Record<string, string> }>
+    context?: InstallationContext
   ): Promise<{
     installations: Array<{
       serverName: string;
@@ -424,99 +474,82 @@ Format: [{"name": "server.name", "rationale": "why this server is needed"}]`;
     mcpConfigPath: string;
   }> {
     try {
+      // Wait for state restoration to complete before checking agent status
+      await this.ensureStateRestored();
+
       if (!this.currentAgent.workingDir) {
-        throw new Error('No agent initialized');
+        const stateFile = join(this.projectWorkingDirectory, 'state.json');
+        logger.debug(`Current agent state:`, {
+          hasWorkingDir: !!this.currentAgent.workingDir,
+          hasSessionId: !!this.currentAgent.sessionId,
+          hasState: !!this.currentAgent.state,
+          stateFileLocation: stateFile,
+        });
+        throw new Error(
+          `No agent initialized. Please run init_agent first or ensure state.json exists at ${stateFile}`
+        );
       }
 
-      const installations: Array<{
-        serverName: string;
-        status: 'success' | 'failed';
-        error?: string;
-      }> = [];
+      // Create Claude Code inference adapter
+      const inferenceClient = new ClaudeCodeInferenceAdapter(
+        this.claudeCodePath,
+        this.currentAgent.workingDir
+      );
 
-      // Read server configurations
-      const allServersConfig = JSON.parse(await fs.readFile(this.serverConfigsPath, 'utf-8'));
+      // Create secrets provider
+      const secretsProvider = new FileSecretsProvider(this.serverSecretsPath);
 
-      // Read secrets if available
-      let secrets: Record<string, Record<string, string>> = {};
-      if (this.serverSecretsPath) {
-        try {
-          secrets = JSON.parse(await fs.readFile(this.serverSecretsPath, 'utf-8'));
-        } catch {
-          logger.warn('Could not read secrets file');
-        }
-      }
+      // Convert context
+      const installationContext = convertLegacyContext(context);
 
-      // Build MCP configuration
-      const mcpConfig: {
-        mcpServers: Record<string, unknown>;
-      } = { mcpServers: {} };
-
-      for (const serverName of serverNames) {
-        const serverConfig = allServersConfig.find((s: ServerConfig) => s.name === serverName);
-
-        if (!serverConfig) {
-          installations.push({
-            serverName,
-            status: 'failed',
-            error: 'Server configuration not found',
-          });
-          continue;
-        }
-
-        try {
-          // Find the best package for this server
-          const packageConfig = this.selectBestPackage(serverConfig.packages);
-
-          if (!packageConfig) {
-            installations.push({
-              serverName,
-              status: 'failed',
-              error: 'No supported package configuration found',
-            });
-            continue;
-          }
-
-          // Convert package config to MCP format
-          const mcpServerConfig = this.convertToMcpConfig(
-            packageConfig,
-            serverConfigs?.[serverName]?.env || {},
-            secrets[serverName] || {}
-          );
-
-          mcpConfig.mcpServers[serverName] = mcpServerConfig;
-
-          installations.push({
-            serverName,
-            status: 'success',
-          });
-        } catch (error) {
-          installations.push({
-            serverName,
-            status: 'failed',
-            error: `Configuration error: ${error instanceof Error ? error.message : 'Unknown error'}`,
-          });
-        }
-      }
+      // Use the new server installer module
+      const result = await installServersNew(serverNames, this.serverConfigsPath, inferenceClient, {
+        secretsProvider,
+        context: installationContext,
+      });
 
       // Write MCP configuration to working directory
       const mcpConfigPath = join(this.currentAgent.workingDir, '.mcp.json');
-      await fs.writeFile(mcpConfigPath, JSON.stringify(mcpConfig, null, 2));
+      const mcpConfigContent = JSON.stringify(result.mcpConfig, null, 2);
+
+      logger.debug(`Writing MCP config to: ${mcpConfigPath}`);
+      logger.debug(`MCP config content:`, mcpConfigContent);
+
+      try {
+        await fs.writeFile(mcpConfigPath, mcpConfigContent);
+        logger.debug(`Successfully wrote MCP config file`);
+
+        // Verify the file was written
+        const writtenContent = await fs.readFile(mcpConfigPath, 'utf-8');
+        if (writtenContent !== mcpConfigContent) {
+          throw new Error('File content verification failed after write');
+        }
+      } catch (writeError) {
+        logger.error(`Failed to write MCP config file to ${mcpConfigPath}:`, writeError);
+        throw new Error(
+          `Failed to write MCP configuration file: ${writeError instanceof Error ? writeError.message : 'Unknown error'}`
+        );
+      }
 
       // Update agent state
       if (this.currentAgent.state) {
         this.currentAgent.state.installedServers = serverNames.filter((name) =>
-          installations.find((i) => i.serverName === name && i.status === 'success')
+          result.installations.find((i) => i.serverName === name && i.status === 'success')
         );
         await this.saveAgentState();
       }
 
       logger.debug(
-        `Installed ${installations.filter((i) => i.status === 'success').length} servers`
+        `Installed ${result.installations.filter((i) => i.status === 'success').length} servers`
       );
 
+      // Log warnings if any
+      if (result.warnings && result.warnings.length > 0) {
+        result.warnings.forEach((warning) => logger.warn(`Installation warning: ${warning}`));
+      }
+
       return {
-        installations,
+        installations: result.installations,
         mcpConfigPath,
       };
     } catch (error) {
@@ -539,8 +572,20 @@ Format: [{"name": "server.name", "rationale": "why this server is needed"}]`;
     };
   }> {
     try {
+      // Wait for state restoration to complete before checking agent status
+      await this.ensureStateRestored();
+
       if (!this.currentAgent.workingDir || !this.currentAgent.sessionId) {
-        throw new Error('No agent initialized');
+        const stateFile = join(this.projectWorkingDirectory, 'state.json');
+        logger.debug(`Current agent state:`, {
+          hasWorkingDir: !!this.currentAgent.workingDir,
+          hasSessionId: !!this.currentAgent.sessionId,
+          hasState: !!this.currentAgent.state,
+          stateFileLocation: stateFile,
+        });
+        throw new Error(
+          `No agent initialized. Please run init_agent first or ensure state.json exists at ${stateFile}`
+        );
       }
 
       const startTime = Date.now();
@@ -820,6 +865,9 @@ Format: [{"name": "server.name", "rationale": "why this server is needed"}]`;
     };
   }> {
     try {
+      // Wait for state restoration to complete before checking agent status
+      await this.ensureStateRestored();
+
       if (
         !this.currentAgent.sessionId ||
         !this.currentAgent.workingDir ||
@@ -908,6 +956,9 @@ Format: [{"name": "server.name", "rationale": "why this server is needed"}]`;
     finalState: AgentState;
   }> {
     try {
+      // Wait for state restoration to complete before checking agent status
+      await this.ensureStateRestored();
+
       if (!this.currentAgent.state) {
         throw new Error('No agent initialized');
       }
@@ -949,11 +1000,78 @@ Format: [{"name": "server.name", "rationale": "why this server is needed"}]`;
   }
 
   async getAgentState(): Promise<AgentState | null> {
+    // Wait for state restoration to complete before returning state
+    await this.ensureStateRestored();
     return this.currentAgent.state || null;
   }
 
   async getStateDirectory(): Promise<string | null> {
-    return this.currentAgent.stateDir || null;
+    // Wait for state restoration to complete before checking state
+    await this.ensureStateRestored();
+    // Return project working directory where state.json is stored
+    return this.currentAgent.state ? this.projectWorkingDirectory : null;
+  }
+
+  /**
+   * Get diagnostic information about the current client state.
+   * Useful for debugging initialization issues.
+   */
+  async getStateDiagnostics(): Promise<{
+    hasAgent: boolean;
+    agentState: {
+      hasWorkingDir: boolean;
+      hasSessionId: boolean;
+      hasStateDir: boolean;
+      hasState: boolean;
+      workingDir?: string;
+      sessionId?: string;
+    };
+    stateFile: {
+      path: string;
+      exists: boolean;
+      readable: boolean;
+    };
+    projectWorkingDirectory: string;
+  }> {
+    // Wait for state restoration to complete before providing diagnostics
+    await this.ensureStateRestored();
+
+    const stateFilePath = join(this.projectWorkingDirectory, 'state.json');
+    let stateFileExists = false;
+    let stateFileReadable = false;
+
+    try {
+      await fs.access(stateFilePath, fs.constants.R_OK);
+      stateFileExists = true;
+      stateFileReadable = true;
+    } catch {
+      try {
+        await fs.access(stateFilePath);
+        stateFileExists = true;
+        stateFileReadable = false;
+      } catch {
+        stateFileExists = false;
+        stateFileReadable = false;
+      }
+    }
+
+    return {
+      hasAgent: !!(this.currentAgent.workingDir && this.currentAgent.sessionId),
+      agentState: {
+        hasWorkingDir: !!this.currentAgent.workingDir,
+        hasSessionId: !!this.currentAgent.sessionId,
+        hasStateDir: !!this.currentAgent.stateDir,
+        hasState: !!this.currentAgent.state,
+        workingDir: this.currentAgent.workingDir,
+        sessionId: this.currentAgent.sessionId,
+      },
+      stateFile: {
+        path: stateFilePath,
+        exists: stateFileExists,
+        readable: stateFileReadable,
+      },
+      projectWorkingDirectory: this.projectWorkingDirectory,
+    };
   }
 
   private async runClaudeCodeCommand(
@@ -1004,352 +1122,60 @@ Format: [{"name": "server.name", "rationale": "why this server is needed"}]`;
   }
 
   private async saveAgentState(): Promise<void> {
-    if (!this.currentAgent.stateDir || !this.currentAgent.state) {
+    if (!this.currentAgent.state) {
       return;
     }
 
-    const stateFile = join(this.currentAgent.stateDir, 'state.json');
+    const stateFile = join(this.projectWorkingDirectory, 'state.json');
     await fs.writeFile(stateFile, JSON.stringify(this.currentAgent.state, null, 2));
   }
 
-  /**
-   * Selects the best package configuration from available packages.
-   * Prioritizes based on user-specified precedence: remote first, then npx, uvx, docker.
-   */
-  private selectBestPackage(packages: unknown[]): unknown | null {
-    // Priority order for server types (as specified by user)
-    const priority = [
-      // Remote servers (highest precedence)
-      'http', // HTTP servers (streamable)
-      'sse', // Server-Sent Events
-      // Local package managers (second priority)
-      'npm', // npm packages via npx
-      'github', // GitHub repositories via npx
-      // Python packages (third priority)
-      'python', // Python packages via uvx/uv
-      // Docker containers (fourth priority)
-      'docker', // Docker containers
-      // Local filesystem and git (lowest priority)
-      'filesystem', // Local filesystem paths
-      'git', // Git repositories
-      // Legacy types
-      'binary', // Binary executables
-    ];
+  private async tryRestoreExistingState(): Promise<void> {
+    const stateFile = join(this.projectWorkingDirectory, 'state.json');
 
-    for (const preferredType of priority) {
-      // Check new schema format first
-      const newFormatPackage = packages.find(
-        (p: unknown): p is { registryType: string; transport: unknown } =>
-          typeof p === 'object' &&
-          p !== null &&
-          'registryType' in p &&
-          'transport' in p &&
-          (p as { registryType: string }).registryType === preferredType
-      );
-      if (newFormatPackage) {
-        return newFormatPackage;
+    logger.debug(`Attempting to restore agent state from: ${stateFile}`);
+
+    try {
+      const stateContent = await fs.readFile(stateFile, 'utf-8');
+      const state: AgentState = JSON.parse(stateContent);
+
+      // Validate that the state has required fields
+      if (!state.sessionId || !state.workingDirectory) {
+        throw new Error(
+          `Invalid state file format - missing required fields: ${!state.sessionId ? 'sessionId ' : ''}${!state.workingDirectory ? 'workingDirectory' : ''}`
+        );
       }
 
-      // Check old schema format
-      const oldFormatPackage = packages.find(
-        (p: unknown): p is { type: string } =>
-          typeof p === 'object' &&
-          p !== null &&
-          'type' in p &&
-          (p as { type: string }).type === preferredType
-      );
-      if (oldFormatPackage) {
-        return oldFormatPackage;
+      // Validate that the working directory still exists
+      try {
+        await fs.access(state.workingDirectory);
+      } catch {
+        logger.warn(
+          `Working directory from state file no longer exists: ${state.workingDirectory}`
+        );
+        // Continue with restoration anyway - working directory might be recreated later
       }
-    }
 
-    return null;
-  }
-
-  /**
-   * Converts a package configuration to Claude Code MCP .mcp.json format.
-   * Supports both old schema (servers.json) and new schema (server.json) formats.
-   */
-  private convertToMcpConfig(
-    packageConfig: unknown,
-    customEnv: Record<string, string>,
-    secrets: Record<string, string>
-  ): unknown {
-    const config = packageConfig as { registryType?: string; transport?: unknown; type?: string };
-
-    // Handle new schema format (server.json)
-    if (config.registryType && config.transport) {
-      return this.convertNewSchemaToMcp(packageConfig, customEnv, secrets);
-    }
-
-    // Handle old schema format (servers.json)
-    if (config.type) {
-      return this.convertOldSchemaToMcp(packageConfig, customEnv, secrets);
-    }
-
-    throw new Error('Unsupported package configuration format');
-  }
-
-  /**
-   * Converts new schema (server.json) format to MCP configuration.
-   */
-  private convertNewSchemaToMcp(
-    packageConfig: unknown,
-    customEnv: Record<string, string>,
-    secrets: Record<string, string>
-  ): unknown {
-    const {
-      registryType,
-      identifier,
-      transport,
-      runtimeHint,
-      runtimeArguments,
-      environmentVariables,
-    } = packageConfig as {
-      registryType: string;
-      identifier: string;
-      transport: { type: string; url?: string; headers?: Record<string, string> };
-      runtimeHint?: string;
-      runtimeArguments?: Array<{ type: string; value: string; name?: string }>;
-      environmentVariables?: Array<{ name: string; default?: string }>;
-    };
-
-    // Merge environment variables
-    const env = { ...customEnv, ...secrets };
-
-    // Add default environment variables from package config
-    if (environmentVariables) {
-      for (const envVar of environmentVariables) {
-        if (envVar.default && !env[envVar.name]) {
-          env[envVar.name] = envVar.default;
-        }
-      }
-    }
-
-    switch (transport.type) {
-      case 'stdio':
-        return this.createStdioConfig(registryType, identifier, runtimeHint, runtimeArguments, env);
-
-      case 'http':
-        if (!transport.url) {
-          throw new Error('HTTP transport requires URL');
-        }
-        return {
-          type: 'http',
-          url: transport.url,
-          headers: { ...transport.headers, ...env },
-        };
-
-      case 'sse':
-        if (!transport.url) {
-          throw new Error('SSE transport requires URL');
-        }
-        return {
-          type: 'sse',
-          url: transport.url,
-          headers: { ...transport.headers, ...env },
-        };
-
-      default:
-        throw new Error(`Unsupported transport type: ${transport.type}`);
-    }
-  }
-
-  /**
-   * Converts old schema (servers.json) format to MCP configuration.
-   * Supports all modern MCP server types including remote, stdio, docker, etc.
-   */
-  private convertOldSchemaToMcp(
-    packageConfig: unknown,
-    customEnv: Record<string, string>,
-    secrets: Record<string, string>
-  ): unknown {
-    const config = packageConfig as {
-      type?: string;
-      command?: string;
-      args?: string[];
-      env?: Record<string, string>;
-      url?: string;
-      headers?: Record<string, string>;
-    };
-
-    // Merge environment variables
-    const env = {
-      ...config.env,
-      ...customEnv,
-      ...secrets,
-    };
-
-    // Handle remote server types first (highest precedence)
-    if (config.type === 'http') {
-      if (!config.url) {
-        throw new Error('HTTP server configuration requires URL');
-      }
-      return {
-        type: 'http',
-        url: config.url,
-        headers: { ...config.headers, ...env },
+      // Restore agent state (but not process - that needs to be re-initialized)
+      this.currentAgent = {
+        workingDir: state.workingDirectory,
+        stateDir: join(this.agentBaseDir, state.sessionId), // Keep original stateDir for cleanup
+        sessionId: state.sessionId,
+        state: {
+          ...state,
+          lastActiveAt: new Date().toISOString(), // Update last active time
+          status: 'idle', // Always start as idle since process is not running
+        },
       };
+
+      logger.info(`Successfully restored agent state for session: ${state.sessionId}`);
+      logger.debug(`Restored working directory: ${state.workingDirectory}`);
+      logger.debug(`Restored ${state.installedServers?.length || 0} installed servers`);
+    } catch (error) {
+      // This is expected when no state file exists
+      throw new Error(
+        `Cannot restore state: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
-
-    if (config.type === 'sse') {
-      if (!config.url) {
-        throw new Error('SSE server configuration requires URL');
-      }
-      return {
-        type: 'sse',
-        url: config.url,
-        headers: { ...config.headers, ...env },
-      };
-    }
-
-    // Handle stdio transport types
-    if (!config.command) {
-      throw new Error('Stdio server configuration requires command');
-    }
-
-    // Intelligent command selection based on available tools
-    let finalCommand = config.command;
-    const finalArgs = config.args || [];
-
-    // If command is a known tool name, use the best available version
-    if (config.command === 'npx' && !this.availableTools.get('npx')) {
-      throw new Error('npx is required but not available');
-    }
-    if (config.command === 'uvx') {
-      finalCommand = this.selectBestTool(['/Users/admin/.local/bin/uvx', 'uvx']) || config.command;
-    }
-    if (config.command === 'uv') {
-      finalCommand = this.selectBestTool(['/Users/admin/.local/bin/uv', 'uv']) || config.command;
-    }
-    if (config.command === 'docker' && !this.availableTools.get('docker')) {
-      throw new Error('Docker is required but not available');
-    }
-
-    return {
-      command: finalCommand,
-      args: finalArgs,
-      env,
-    };
-  }
-
-  /**
-   * Creates stdio configuration for various registry types.
-   * Uses intelligent tool selection based on availability and precedence.
-   */
-  private createStdioConfig(
-    registryType: string,
-    identifier: string,
-    runtimeHint?: string,
-    runtimeArguments?: Array<{ type: string; value: string; name?: string }>,
-    env: Record<string, string> = {}
-  ): unknown {
-    const args: string[] = [];
-
-    // Add runtime arguments
-    if (runtimeArguments) {
-      for (const arg of runtimeArguments) {
-        if (arg.type === 'positional') {
-          args.push(arg.value);
-        } else if (arg.type === 'named' && arg.name) {
-          args.push(`--${arg.name}=${arg.value}`);
-        }
-      }
-    }
-
-    switch (registryType) {
-      case 'npm': {
-        // npm packages via npx (preferred) or fallback to runtime hint
-        const command = runtimeHint || this.selectBestTool(['npx', 'node']) || 'npx';
-        return {
-          command,
-          args: [...args, identifier],
-          env,
-        };
-      }
-
-      case 'python': {
-        // Python packages - priority: uvx, uv, then fallback
-        const command =
-          this.selectBestTool(['/Users/admin/.local/bin/uvx', '/Users/admin/.local/bin/uv']) ||
-          runtimeHint ||
-          'python';
-        if (command.includes('uvx')) {
-          return {
-            command,
-            args: [...args, identifier],
-            env,
-          };
-        } else if (command.includes('uv')) {
-          return {
-            command,
-            args: ['run', ...args, identifier],
-            env,
-          };
-        } else {
-          // Fallback to pip install + run
-          return {
-            command,
-            args: ['-m', 'pip', 'install', identifier, '&&', 'python', '-m', identifier, ...args],
-            env,
-          };
-        }
-      }
-
-      case 'docker': {
-        // Docker containers
-        if (!this.availableTools.get('docker')) {
-          throw new Error('Docker is not available but required for this server type');
-        }
-        return {
-          command: 'docker',
-          args: [
-            'run',
-            '--rm',
-            '-i',
-            ...Object.entries(env).flatMap(([k, v]) => ['-e', `${k}=${v}`]),
-            identifier,
-            ...args,
-          ],
-          env,
-        };
-      }
-
-      case 'github':
-        // GitHub repositories via npx
-        return {
-          command: this.selectBestTool(['npx']) || 'npx',
-          args: [...args, identifier],
-          env,
-        };
-
-      case 'git':
-        // Git repositories - clone and run
-        throw new Error('Git registry type not yet implemented - requires git clone logic');
-
-      case 'filesystem':
-        // Local filesystem paths
-        return {
-          command: identifier, // Direct path to executable
-          args,
-          env,
-        };
-
-      default:
-        throw new Error(`Unsupported registry type for stdio transport: ${registryType}`);
-    }
-  }
-
-  /**
-   * Selects the best available tool from a list of preferences.
-   */
-  private selectBestTool(preferences: string[]): string | null {
-    for (const tool of preferences) {
-      const toolName = tool.split('/').pop() || tool; // Extract tool name from path
-      if (this.availableTools.get(toolName) || this.availableTools.get(tool)) {
-        return tool;
-      }
-    }
-    return null;
   }
 }

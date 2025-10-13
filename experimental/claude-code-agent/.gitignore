@@ -13,3 +13,6 @@ local/shared
 
 # Test files
 test-session.*
+
+# State files
+state.json

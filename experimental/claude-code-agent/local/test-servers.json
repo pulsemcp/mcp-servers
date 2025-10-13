@@ -1,0 +1,28 @@
+[
+  {
+    "name": "twist-mcp-server",
+    "description": "MCP server for Twist workspace management",
+    "packages": [
+      {
+        "registryType": "npm",
+        "identifier": "@pulsemcp/twist-mcp-server",
+        "version": "latest",
+        "runtimeHint": "npx",
+        "transport": {
+          "type": "stdio"
+        },
+        "environmentVariables": [
+          {
+            "name": "TWIST_BEARER_TOKEN",
+            "required": true
+          },
+          {
+            "name": "TWIST_WORKSPACE_ID",
+            "value": "228287",
+            "required": true
+          }
+        ]
+      }
+    ]
+  }
+]

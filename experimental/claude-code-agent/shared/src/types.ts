@@ -123,14 +123,10 @@ export const InstallServersSchema = z.object({
   server_names: z
     .array(z.string().refine(validateServerName, { message: 'Invalid server name format' }))
     .describe('Names of servers to install (from find_servers output)'),
-  server_configs: z
-    .record(
-      z.object({
-        env: z.record(z.string()).optional(),
-      })
-    )
+  purpose: z
+    .string()
     .optional()
-    .describe('Optional: custom configurations for servers'),
+    .describe('Optional: description of the task purpose for better server configuration'),
 });
 
 export const ChatSchema = z.object({
