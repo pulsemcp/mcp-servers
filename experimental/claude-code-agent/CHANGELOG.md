@@ -4,6 +4,15 @@ All notable changes to the Claude Code Agent MCP Server will be documented in th
 
 ## [Unreleased]
 
+## [0.0.6] - 2025-10-13
+
+**CRITICAL FIX: Publishing Script**
+
+- **Fixed missing `prepublishOnly` script**: Added `"prepublishOnly": "node prepare-publish.js"` to package.json
+- **Root Cause**: The prepare-publish.js script was not being executed during npm publish, causing the package to be published without proper build files
+- **Impact**: Resolves `claude-code-agent-mcp-server: command not found` errors when users try to install and run the package
+- **Version Bump**: 0.0.5 → 0.0.6 to trigger new publish with correct build process
+
 ## [0.0.5] - 2025-10-13
 
 **🏗️ Major Architecture Refactoring: Server Installation System**

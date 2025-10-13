@@ -1,6 +1,6 @@
 {
   "name": "claude-code-agent-mcp-server",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "description": "Local implementation of claude-code-agent MCP server",
   "mcpName": "claude-code-agent",
   "main": "build/index.js",
@@ -27,7 +27,8 @@
     "lint:fix": "eslint . --ext .ts,.tsx --fix",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "stage-publish": "npm version"
+    "stage-publish": "npm version",
+    "prepublishOnly": "node prepare-publish.js"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.19.1",
