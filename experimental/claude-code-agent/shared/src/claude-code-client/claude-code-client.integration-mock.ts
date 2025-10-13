@@ -180,4 +180,24 @@ export class MockClaudeCodeClient implements IClaudeCodeClient {
   async getStateDirectory() {
     return this.mockStateDirectory;
   }
+
+  async getStateDiagnostics() {
+    return {
+      hasAgent: !!this.mockState,
+      agentState: {
+        hasWorkingDir: !!this.mockState?.workingDirectory,
+        hasSessionId: !!this.mockState?.sessionId,
+        hasStateDir: !!this.mockStateDirectory,
+        hasState: !!this.mockState,
+        workingDir: this.mockState?.workingDirectory,
+        sessionId: this.mockState?.sessionId,
+      },
+      stateFile: {
+        path: `/tmp/mock-state/state.json`,
+        exists: !!this.mockState,
+        readable: !!this.mockState,
+      },
+      projectWorkingDirectory: process.cwd(),
+    };
+  }
 }

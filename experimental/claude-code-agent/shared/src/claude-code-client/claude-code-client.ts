@@ -91,6 +91,24 @@ export interface IClaudeCodeClient {
   getAgentState(): Promise<AgentState | null>;
 
   getStateDirectory(): Promise<string | null>;
+
+  getStateDiagnostics(): Promise<{
+    hasAgent: boolean;
+    agentState: {
+      hasWorkingDir: boolean;
+      hasSessionId: boolean;
+      hasStateDir: boolean;
+      hasState: boolean;
+      workingDir?: string;
+      sessionId?: string;
+    };
+    stateFile: {
+      path: string;
+      exists: boolean;
+      readable: boolean;
+    };
+    projectWorkingDirectory: string;
+  }>;
 }
 
 export class ClaudeCodeClient implements IClaudeCodeClient {
@@ -129,7 +147,8 @@ export class ClaudeCodeClient implements IClaudeCodeClient {
 
     // Try to restore existing agent state on startup
     this.tryRestoreExistingState().catch((error) => {
-      logger.debug('No existing agent state to restore:', error.message);
+      logger.info('No existing agent state to restore:', error.message);
+      logger.debug('Looking for state file at:', join(this.projectWorkingDirectory, 'state.json'));
     });
   }
 
@@ -443,7 +462,16 @@ Format: [{"name": "server.name", "rationale": "why this server is needed"}]`;
   }> {
     try {
       if (!this.currentAgent.workingDir) {
-        throw new Error('No agent initialized');
+        const stateFile = join(this.projectWorkingDirectory, 'state.json');
+        logger.debug(`Current agent state:`, {
+          hasWorkingDir: !!this.currentAgent.workingDir,
+          hasSessionId: !!this.currentAgent.sessionId,
+          hasState: !!this.currentAgent.state,
+          stateFileLocation: stateFile,
+        });
+        throw new Error(
+          `No agent initialized. Please run init_agent first or ensure state.json exists at ${stateFile}`
+        );
       }
 
       // Create Claude Code inference adapter
@@ -510,7 +538,16 @@ Format: [{"name": "server.name", "rationale": "why this server is needed"}]`;
   }> {
     try {
       if (!this.currentAgent.workingDir || !this.currentAgent.sessionId) {
-        throw new Error('No agent initialized');
+        const stateFile = join(this.projectWorkingDirectory, 'state.json');
+        logger.debug(`Current agent state:`, {
+          hasWorkingDir: !!this.currentAgent.workingDir,
+          hasSessionId: !!this.currentAgent.sessionId,
+          hasState: !!this.currentAgent.state,
+          stateFileLocation: stateFile,
+        });
+        throw new Error(
+          `No agent initialized. Please run init_agent first or ensure state.json exists at ${stateFile}`
+        );
       }
 
       const startTime = Date.now();
@@ -927,6 +964,65 @@ Format: [{"name": "server.name", "rationale": "why this server is needed"}]`;
     return this.currentAgent.state ? this.projectWorkingDirectory : null;
   }
 
+  /**
+   * Get diagnostic information about the current client state.
+   * Useful for debugging initialization issues.
+   */
+  async getStateDiagnostics(): Promise<{
+    hasAgent: boolean;
+    agentState: {
+      hasWorkingDir: boolean;
+      hasSessionId: boolean;
+      hasStateDir: boolean;
+      hasState: boolean;
+      workingDir?: string;
+      sessionId?: string;
+    };
+    stateFile: {
+      path: string;
+      exists: boolean;
+      readable: boolean;
+    };
+    projectWorkingDirectory: string;
+  }> {
+    const stateFilePath = join(this.projectWorkingDirectory, 'state.json');
+    let stateFileExists = false;
+    let stateFileReadable = false;
+
+    try {
+      await fs.access(stateFilePath, fs.constants.R_OK);
+      stateFileExists = true;
+      stateFileReadable = true;
+    } catch {
+      try {
+        await fs.access(stateFilePath);
+        stateFileExists = true;
+        stateFileReadable = false;
+      } catch {
+        stateFileExists = false;
+        stateFileReadable = false;
+      }
+    }
+
+    return {
+      hasAgent: !!(this.currentAgent.workingDir && this.currentAgent.sessionId),
+      agentState: {
+        hasWorkingDir: !!this.currentAgent.workingDir,
+        hasSessionId: !!this.currentAgent.sessionId,
+        hasStateDir: !!this.currentAgent.stateDir,
+        hasState: !!this.currentAgent.state,
+        workingDir: this.currentAgent.workingDir,
+        sessionId: this.currentAgent.sessionId,
+      },
+      stateFile: {
+        path: stateFilePath,
+        exists: stateFileExists,
+        readable: stateFileReadable,
+      },
+      projectWorkingDirectory: this.projectWorkingDirectory,
+    };
+  }
+
   private async runClaudeCodeCommand(
     args: string[],
     timeout = DEFAULT_COMMAND_TIMEOUT_MS
@@ -986,13 +1082,27 @@ Format: [{"name": "server.name", "rationale": "why this server is needed"}]`;
   private async tryRestoreExistingState(): Promise<void> {
     const stateFile = join(this.projectWorkingDirectory, 'state.json');
 
+    logger.debug(`Attempting to restore agent state from: ${stateFile}`);
+
     try {
       const stateContent = await fs.readFile(stateFile, 'utf-8');
       const state: AgentState = JSON.parse(stateContent);
 
       // Validate that the state has required fields
       if (!state.sessionId || !state.workingDirectory) {
-        throw new Error('Invalid state file format');
+        throw new Error(
+          `Invalid state file format - missing required fields: ${!state.sessionId ? 'sessionId ' : ''}${!state.workingDirectory ? 'workingDirectory' : ''}`
+        );
+      }
+
+      // Validate that the working directory still exists
+      try {
+        await fs.access(state.workingDirectory);
+      } catch {
+        logger.warn(
+          `Working directory from state file no longer exists: ${state.workingDirectory}`
+        );
+        // Continue with restoration anyway - working directory might be recreated later
       }
 
       // Restore agent state (but not process - that needs to be re-initialized)
@@ -1007,7 +1117,9 @@ Format: [{"name": "server.name", "rationale": "why this server is needed"}]`;
         },
       };
 
-      logger.info(`Restored existing agent state for session: ${state.sessionId}`);
+      logger.info(`Successfully restored agent state for session: ${state.sessionId}`);
+      logger.debug(`Restored working directory: ${state.workingDirectory}`);
+      logger.debug(`Restored ${state.installedServers?.length || 0} installed servers`);
     } catch (error) {
       // This is expected when no state file exists
       throw new Error(

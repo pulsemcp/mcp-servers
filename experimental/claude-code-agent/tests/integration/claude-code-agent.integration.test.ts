@@ -33,7 +33,7 @@ describe('claude-code-agent MCP Server Integration Tests', () => {
       client = await createTestMCPClient();
 
       const result = await client.listTools();
-      expect(result.tools).toHaveLength(7);
+      expect(result.tools).toHaveLength(8);
 
       const toolNames = result.tools.map((t) => t.name);
       expect(toolNames).toContain('init_agent');
@@ -42,6 +42,7 @@ describe('claude-code-agent MCP Server Integration Tests', () => {
       expect(toolNames).toContain('chat');
       expect(toolNames).toContain('inspect_transcript');
       expect(toolNames).toContain('stop_agent');
+      expect(toolNames).toContain('diagnose_agent');
       expect(toolNames).toContain('get_server_capabilities');
     });
 

@@ -8,6 +8,7 @@ import { chatTool } from './tools/chat.js';
 import { inspectTranscriptTool } from './tools/inspect-transcript.js';
 import { stopAgentTool } from './tools/stop-agent.js';
 import { getServerCapabilitiesTool } from './tools/get-server-capabilities.js';
+import { diagnoseAgentTool } from './tools/diagnose-agent.js';
 
 /**
  * Creates a function to register all tools with the server.
@@ -31,6 +32,7 @@ export function createRegisterTools(clientFactory: ClientFactory, serverConfigsP
       inspectTranscriptTool(server, clientFactory),
       stopAgentTool(server, clientFactory),
       getServerCapabilitiesTool(server, serverConfigsPath),
+      diagnoseAgentTool(server, clientFactory),
     ];
 
     // List available tools
