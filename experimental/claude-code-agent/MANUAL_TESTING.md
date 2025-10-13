@@ -6,24 +6,29 @@ Manual tests for the Claude Code Agent MCP Server verify the integration with th
 
 ## Latest Test Results
 
-**Commit:** 3fbe4e5
+**Commit:** b00eb63
 **Date:** 2025-10-13
 
-**Note:** Manual tests were not re-run for this version bump (0.0.4 → 0.0.5) as the changes were limited to:
-
-- Removing the `serverConfigs` parameter from the install_servers tool interface (breaking change but no functional impact)
-- Infrastructure fixes (restoring setup-dev.js file)
-- Documentation and version updates
-
-The core server functionality remains identical to the previously tested commit 3303b24.
 **Overall:** 100% passing (3/3 test suites)
-**Note:** Verified new working_directory parameter and directory separation functionality
+
+### Major Changes Tested in v0.0.5
+
+This comprehensive test run verified all major architectural improvements including:
+
+- **New diagnose_agent tool**: Added as the 8th tool (updated from 7 to 8 tools)
+- **Modular server installation architecture**: Complete refactoring with server-installer modules
+- **Enhanced secrets management**: KEY=VALUE format support with backward compatibility  
+- **Complex server support**: Local registries, custom runtime paths, complex arguments
+- **State persistence**: MCP server working directory persistence via PROJECT_WORKING_DIRECTORY
+- **Improved error handling**: Hard failure on missing required secrets with clear messages
+- **Inference system**: Claude-powered configuration decisions for server selection
+- **Schema flexibility**: Support for both 'default' and 'value' fields in server configurations
 
 ### Test Suite Results
 
-- ✅ Mock Workflow: 1/1 passed
-- ✅ Tool Workflow: 1/1 passed (real Claude Code CLI tested)
-- ✅ Error Scenarios: 1/1 passed
+- ✅ Mock Workflow: 1/1 passed (with integration mock client)
+- ✅ Tool Workflow: 1/1 passed (real Claude Code CLI tested - 33.2s duration)
+- ✅ Error Scenarios: 1/1 passed (proper error handling verified)
 
 ## Prerequisites
 
@@ -118,34 +123,39 @@ Tests fail if:
 
 ## Manual Test Results
 
-**Last tested**: 2025-10-10
-**Commit**: 3303b24
+**Last tested**: 2025-10-13
+**Commit**: b00eb63
 **Result**: SUCCESS (100% pass rate)
-**Note**: Verified new required working_directory parameter and directory separation functionality
+**Note**: Comprehensive testing of v0.0.5 architectural improvements including server installation refactoring
 
 ### Test Execution Details
 
-- [x] Mock workflow test - PASSED
-- [x] Tool workflow test (real Claude Code CLI) - PASSED
-- [x] Error handling test - PASSED
-- [x] All 7 tools verified and working
-- [x] Required working_directory parameter validated
-- [x] Directory separation working (state vs working dirs)
-- [x] Native Claude Code transcript path detection verified
-- [x] Real Claude Code CLI integration verified
+- [x] Mock workflow test - PASSED (with new diagnose_agent tool)
+- [x] Tool workflow test (real Claude Code CLI) - PASSED (33.2s duration)
+- [x] Error handling test - PASSED (proper validation and error responses)
+- [x] All 8 tools verified and working (added diagnose_agent tool)
+- [x] Server installation architecture fully tested
+- [x] Enhanced secrets management verified (KEY=VALUE format support)
+- [x] Complex server configurations working (local registry, custom paths)
+- [x] State persistence verified (PROJECT_WORKING_DIRECTORY)
+- [x] Inference system tested (Claude-powered server selection)
+- [x] Real Claude Code CLI integration verified with new architecture
 
 ### Test Statistics
 
 - Test Files: 1 passed
-- Tests: 3 passed | 0 skipped
-- Duration: 23.54s
+- Tests: 3 passed | 0 skipped  
+- Duration: 33.65s
+- Real Claude CLI chat response: 386 tokens, 14.3s duration
 
 ### Notes
 
-- Mock tests validate all tool functionality including new required parameters
-- Real Claude CLI integration fully tested and verified
-- Working directory separation correctly implemented (state vs working dirs)
-- Native Claude Code transcript path detection working (/Users/admin/.claude/projects/)
-- Required working_directory parameter validation working properly
-- Directory separation architecture verified with both mock and real implementations
-- All tests run without skips - complete coverage achieved
+- Mock tests validate all tool functionality with new modular architecture
+- Real Claude CLI integration fully tested with server installation refactoring
+- Enhanced secrets management working with both JSON and KEY=VALUE formats
+- Server installation inference system successfully tested with real Claude integration
+- State persistence correctly implemented in MCP server working directory
+- Complex server support verified (postgres with database credentials handling)
+- All 8 tools working correctly including new diagnose_agent tool
+- Installation warnings properly handled for missing credentials
+- Error scenarios correctly validate missing parameters and invalid server configurations

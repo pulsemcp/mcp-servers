@@ -31,7 +31,7 @@ describe('Claude Code Agent Manual Tests', () => {
         // List available tools
         const tools = await client.listTools();
         console.log(`📋 Available tools: ${tools.tools.map((t) => t.name).join(', ')}\n`);
-        expect(tools.tools).toHaveLength(7);
+        expect(tools.tools).toHaveLength(8);
 
         // 1. Initialize agent
         console.log('1️⃣ Initializing agent...');
@@ -169,7 +169,7 @@ describe('Claude Code Agent Manual Tests', () => {
         // List available tools
         const tools = await client.listTools();
         console.log(`📋 Available tools: ${tools.tools.map((t) => t.name).join(', ')}\n`);
-        expect(tools.tools).toHaveLength(7);
+        expect(tools.tools).toHaveLength(8);
 
         // 1. Initialize agent
         console.log('1️⃣ Initializing agent...');
