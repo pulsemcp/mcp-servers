@@ -17,7 +17,7 @@ This comprehensive test run verified all major architectural improvements includ
 
 - **New diagnose_agent tool**: Added as the 8th tool (updated from 7 to 8 tools)
 - **Modular server installation architecture**: Complete refactoring with server-installer modules
-- **Enhanced secrets management**: KEY=VALUE format support with backward compatibility  
+- **Enhanced secrets management**: KEY=VALUE format support with backward compatibility
 - **Complex server support**: Local registries, custom runtime paths, complex arguments
 - **State persistence**: MCP server working directory persistence via PROJECT_WORKING_DIRECTORY
 - **Improved error handling**: Hard failure on missing required secrets with clear messages
@@ -144,7 +144,7 @@ Tests fail if:
 ### Test Statistics
 
 - Test Files: 1 passed
-- Tests: 3 passed | 0 skipped  
+- Tests: 3 passed | 0 skipped
 - Duration: 33.65s
 - Real Claude CLI chat response: 386 tokens, 14.3s duration
 
