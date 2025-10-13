@@ -17,9 +17,7 @@ export function generateInferencePrompt(request: InferenceRequest): string {
   const prompt = `You are helping configure MCP servers for installation. Based on the server configurations and context provided, determine the optimal configuration for each server.
 
 ## Context
-${context?.purpose ? `Purpose: ${context.purpose}` : ''}
-${context?.environment ? `Environment: ${context.environment}` : ''}
-${context?.preferRemote ? 'Preference: Remote servers when available' : 'Preference: Local packages when available'}
+${context?.purpose ? `Purpose: ${context.purpose}` : 'Purpose: Server installation via claude-code-agent'}
 
 ## Available Secrets
 ${secretsAvailable.length > 0 ? secretsAvailable.map((s) => `- ${s}`).join('\n') : 'No secrets available'}

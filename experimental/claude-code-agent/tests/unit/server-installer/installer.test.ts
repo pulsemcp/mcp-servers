@@ -288,8 +288,6 @@ describe('installServers', () => {
   it('should include installation context in inference request', async () => {
     const context = {
       purpose: 'Development testing',
-      environment: 'development' as const,
-      preferRemote: false,
     };
 
     vi.mocked(mockClaudeClient.runInference).mockResolvedValue(

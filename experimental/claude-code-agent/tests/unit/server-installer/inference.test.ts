@@ -34,8 +34,6 @@ describe('generateInferencePrompt', () => {
       ],
       context: {
         purpose: 'Testing MCP servers',
-        environment: 'development',
-        preferRemote: false,
       },
       secretsAvailable: ['API_KEY', 'DATABASE_URL'],
     };
@@ -43,8 +41,6 @@ describe('generateInferencePrompt', () => {
     const prompt = generateInferencePrompt(request);
 
     expect(prompt).toContain('Purpose: Testing MCP servers');
-    expect(prompt).toContain('Environment: development');
-    expect(prompt).toContain('Preference: Local packages when available');
     expect(prompt).toContain('- API_KEY');
     expect(prompt).toContain('- DATABASE_URL');
     expect(prompt).toContain('### com.example/test');

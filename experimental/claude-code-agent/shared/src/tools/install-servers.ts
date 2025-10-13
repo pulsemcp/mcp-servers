@@ -64,15 +64,6 @@ Use cases:
               type: 'string',
               description: 'Description of the task purpose for better server configuration',
             },
-            environment: {
-              type: 'string',
-              enum: ['development', 'production', 'testing'],
-              description: 'Target environment for the installation',
-            },
-            preferRemote: {
-              type: 'boolean',
-              description: 'Whether to prefer remote servers over local packages',
-            },
           },
           description: PARAM_DESCRIPTIONS.context,
         },

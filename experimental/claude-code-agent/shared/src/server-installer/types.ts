@@ -94,9 +94,6 @@ export type ServerConfig = z.infer<typeof ServerConfigSchema>;
  */
 export const InstallationContextSchema = z.object({
   purpose: z.string().optional(),
-  environment: z.enum(['development', 'production', 'testing']).optional(),
-  preferRemote: z.boolean().optional(),
-  timeout: z.number().optional(),
 });
 
 export type InstallationContext = z.infer<typeof InstallationContextSchema>;

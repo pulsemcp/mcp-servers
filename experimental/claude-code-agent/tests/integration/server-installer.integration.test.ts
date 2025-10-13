@@ -245,8 +245,6 @@ describe('Server Installer Integration', () => {
   it('should include installation context in inference', async () => {
     const context = {
       purpose: 'Setting up development environment for web scraping',
-      environment: 'development' as const,
-      preferRemote: false,
     };
 
     vi.mocked(mockClaudeClient.runInference).mockResolvedValue(

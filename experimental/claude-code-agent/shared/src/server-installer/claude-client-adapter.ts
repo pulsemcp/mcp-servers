@@ -64,8 +64,5 @@ export class ClaudeCodeInferenceAdapter implements IClaudeCodeInferenceClient {
 export function convertLegacyContext(context?: InstallationContext): InstallationContext {
   return {
     purpose: context?.purpose || 'Server installation via claude-code-agent',
-    environment: context?.environment || 'development',
-    preferRemote: context?.preferRemote ?? false,
-    ...context,
   };
 }

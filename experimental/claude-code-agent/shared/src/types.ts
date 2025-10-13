@@ -129,17 +129,9 @@ export const InstallServersSchema = z.object({
         .string()
         .optional()
         .describe('Description of the task purpose for better server configuration'),
-      environment: z
-        .enum(['development', 'production', 'testing'])
-        .optional()
-        .describe('Target environment for the installation'),
-      preferRemote: z
-        .boolean()
-        .optional()
-        .describe('Whether to prefer remote servers over local packages'),
     })
     .optional()
-    .describe('Optional: installation context for inference (purpose, environment, preferences)'),
+    .describe('Optional: installation context for inference'),
 });
 
 export const ChatSchema = z.object({
