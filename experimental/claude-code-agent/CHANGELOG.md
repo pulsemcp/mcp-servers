@@ -142,3 +142,5 @@ Initial release of the Claude Code Agent MCP Server - an agentic MCP configurati
 - Comprehensive testing infrastructure (functional, integration, and manual tests)
 - Environment variable validation and error handling
 - Mock Claude Code client for development and testing
+
+# Claude Code Agent v0.0.6
