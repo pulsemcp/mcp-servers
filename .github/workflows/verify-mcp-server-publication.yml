@@ -212,7 +212,13 @@ jobs:
                       echo "   This commit is not in the current PR's history"
                       echo "   Available commits in PR:"
                       git log --oneline pr-branch | head -10
-                      echo "   Please re-run manual tests on a commit in this PR"
+                      echo ""
+                      echo "   🚨 IMPORTANT: Update the commit reference in the 'Latest Test Results' section"
+                      echo "   This script checks the FIRST **Commit:** line in MANUAL_TESTING.md (around line 9)"
+                      echo "   NOT the one in the 'Manual Test Results' section at the bottom of the file"
+                      echo ""
+                      echo "   To fix: Update the **Commit:** field in the 'Latest Test Results' section to reference"
+                      echo "   ANY existing commit from the PR history shown above (pick any commit hash from the list)"
                       VERIFICATION_FAILED=true
                     fi
                   fi
