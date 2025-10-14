@@ -219,8 +219,6 @@ jobs:
                       echo ""
                       echo "   To fix: Update the **Commit:** field in the 'Latest Test Results' section to reference"
                       echo "   ANY existing commit from the PR history shown above (pick any commit hash from the list)"
-                      echo ""
-                      echo "   ⚠️  AVOID INFINITE LOOP: Do NOT use the latest commit hash as this creates a new commit!"
                       VERIFICATION_FAILED=true
                     fi
                   fi
