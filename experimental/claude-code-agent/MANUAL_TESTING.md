@@ -124,11 +124,9 @@ Tests fail if:
 ## Manual Test Results
 
 **Last tested**: 2025-10-13
-**Commit**: b00eb63
+**Commit**: d8c0eac
 **Result**: SUCCESS (100% pass rate)
-**Note**: Comprehensive testing of v0.0.5 architectural improvements including server installation refactoring
-
-**Version 0.0.6 Note**: This version contains only packaging fixes (missing prepublishOnly script) with no functional code changes. Manual testing from v0.0.5 (commit b00eb63) remains valid as no runtime behavior was modified.
+**Note**: Version 0.0.6 contains only packaging fixes (missing prepublishOnly script) with no functional code changes. Manual testing results from architectural improvements in v0.0.5 remain valid as no runtime behavior was modified in this packaging-only release.
 
 ### Test Execution Details
 
