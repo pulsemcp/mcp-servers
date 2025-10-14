@@ -128,6 +128,8 @@ Tests fail if:
 **Result**: SUCCESS (100% pass rate)
 **Note**: Comprehensive testing of v0.0.5 architectural improvements including server installation refactoring
 
+**Version 0.0.6 Note**: This version contains only packaging fixes (missing prepublishOnly script) with no functional code changes. Manual testing from v0.0.5 (commit b00eb63) remains valid as no runtime behavior was modified.
+
 ### Test Execution Details
 
 - [x] Mock workflow test - PASSED (with new diagnose_agent tool)
