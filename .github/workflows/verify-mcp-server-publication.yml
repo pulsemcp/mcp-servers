@@ -213,14 +213,14 @@ jobs:
                       echo "   Available commits in PR:"
                       git log --oneline pr-branch | head -10
                       echo ""
-                      echo "   🚨 IMPORTANT: To fix this issue, you have two options:"
-                      echo "   OPTION 1 (Recommended): Update MANUAL_TESTING.md to reference ANY existing commit from this PR"
-                      echo "   OPTION 2: Re-run manual tests on the current PR and update MANUAL_TESTING.md with those results"
+                      echo "   🚨 IMPORTANT: Update the commit reference in the 'Latest Test Results' section"
+                      echo "   This script checks the FIRST **Commit:** line in MANUAL_TESTING.md (around line 9)"
+                      echo "   NOT the one in the 'Manual Test Results' section at the bottom of the file"
                       echo ""
-                      echo "   ⚠️  AVOID INFINITE LOOP: Do NOT reference the latest commit hash in MANUAL_TESTING.md"
-                      echo "   as this creates a new commit and changes the hash you're trying to reference!"
+                      echo "   To fix: Update the **Commit:** field in the 'Latest Test Results' section to reference"
+                      echo "   ANY existing commit from the PR history shown above (pick any commit hash from the list)"
                       echo ""
-                      echo "   All **Commit:** lines in MANUAL_TESTING.md must reference the same commit from the PR history above."
+                      echo "   ⚠️  AVOID INFINITE LOOP: Do NOT use the latest commit hash as this creates a new commit!"
                       VERIFICATION_FAILED=true
                     fi
                   fi
