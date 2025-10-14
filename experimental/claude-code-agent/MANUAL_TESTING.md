@@ -124,7 +124,7 @@ Tests fail if:
 ## Manual Test Results
 
 **Last tested**: 2025-10-13
-**Commit**: 3bc7d78
+**Commit**: 2824c1b
 **Result**: SUCCESS (100% pass rate)
 **Note**: Version 0.0.6 contains only packaging fixes (missing prepublishOnly script) with no functional code changes. Manual testing results from architectural improvements in v0.0.5 remain valid as no runtime behavior was modified in this packaging-only release.
 
