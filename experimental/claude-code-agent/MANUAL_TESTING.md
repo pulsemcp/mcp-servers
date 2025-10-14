@@ -6,7 +6,7 @@ Manual tests for the Claude Code Agent MCP Server verify the integration with th
 
 ## Latest Test Results
 
-**Commit:** f608e29
+**Commit:** b42dc3d
 **Date:** 2025-10-13
 
 **Overall:** 100% passing (3/3 test suites)
@@ -124,7 +124,7 @@ Tests fail if:
 ## Manual Test Results
 
 **Last tested**: 2025-10-13
-**Commit**: 363818f
+**Commit**: b42dc3d
 **Result**: SUCCESS (100% pass rate)
 **Note**: Version 0.0.6 contains only packaging fixes (missing prepublishOnly script) with no functional code changes. Manual testing results from architectural improvements in v0.0.5 remain valid as no runtime behavior was modified in this packaging-only release.
 
