@@ -28,7 +28,8 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "stage-publish": "npm version",
-    "prepublishOnly": "node prepare-publish.js"
+    "prepublishOnly": "node prepare-publish.js",
+    "test": "echo '⚠️  Tests handled at workspace root - use npm test from parent directory' && exit 0"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.19.1",
