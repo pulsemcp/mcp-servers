@@ -212,7 +212,15 @@ jobs:
                       echo "   This commit is not in the current PR's history"
                       echo "   Available commits in PR:"
                       git log --oneline pr-branch | head -10
-                      echo "   Please re-run manual tests on a commit in this PR"
+                      echo ""
+                      echo "   🚨 IMPORTANT: To fix this issue, you have two options:"
+                      echo "   OPTION 1 (Recommended): Update MANUAL_TESTING.md to reference ANY existing commit from this PR"
+                      echo "   OPTION 2: Re-run manual tests on the current PR and update MANUAL_TESTING.md with those results"
+                      echo ""
+                      echo "   ⚠️  AVOID INFINITE LOOP: Do NOT reference the latest commit hash in MANUAL_TESTING.md"
+                      echo "   as this creates a new commit and changes the hash you're trying to reference!"
+                      echo ""
+                      echo "   All **Commit:** lines in MANUAL_TESTING.md must reference the same commit from the PR history above."
                       VERIFICATION_FAILED=true
                     fi
                   fi
