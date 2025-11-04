@@ -13,7 +13,8 @@ export async function scrapeWithFirecrawl(
   error?: string;
 }> {
   try {
-    const response = await fetch('https://api.firecrawl.dev/v1/scrape', {
+    const baseUrl = process.env.FIRECRAWL_API_BASE_URL || 'https://api.firecrawl.dev';
+    const response = await fetch(`${baseUrl}/v1/scrape`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
