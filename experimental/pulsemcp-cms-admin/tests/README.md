@@ -102,7 +102,7 @@ Integration tests use a real MCP client (`TestMCPClient`) to test the full MCP p
 
    ```typescript
    const mockExampleClient = createIntegrationMockExampleClient({
-     items: { "item-123": { id: "item-123", name: "Test Item" } },
+     items: { 'item-123': { id: 'item-123', name: 'Test Item' } },
    });
    ```
 
@@ -113,7 +113,6 @@ Integration tests use a real MCP client (`TestMCPClient`) to test the full MCP p
    ```
 
 3. The helper function:
-
    - Extracts mock data from the mock client
    - Passes it via environment variable to the server
    - Points to the special integration entry point
@@ -129,9 +128,9 @@ Integration tests use a real MCP client (`TestMCPClient`) to test the full MCP p
 // Create a mock external client with custom data
 const mockExampleClient = createIntegrationMockExampleClient({
   searchResponses: {
-    "user:john": [
-      { id: "1", name: "John Doe", email: "john@example.com" },
-      { id: "2", name: "John Smith", email: "jsmith@example.com" },
+    'user:john': [
+      { id: '1', name: 'John Doe', email: 'john@example.com' },
+      { id: '2', name: 'John Smith', email: 'jsmith@example.com' },
     ],
   },
 });
@@ -140,12 +139,12 @@ const mockExampleClient = createIntegrationMockExampleClient({
 const client = await createTestMCPClientWithMock(mockExampleClient);
 
 // Call the MCP tool (real MCP protocol communication)
-const result = await client.callTool("search_users", { query: "user:john" });
+const result = await client.callTool('search_users', { query: 'user:john' });
 
 // Verify the results
 const users = JSON.parse(result.content[0].text);
 expect(users).toHaveLength(2);
-expect(users[0].name).toBe("John Doe");
+expect(users[0].name).toBe('John Doe');
 ```
 
 ### Key Benefits
