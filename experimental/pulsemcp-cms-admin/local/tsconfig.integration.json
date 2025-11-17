@@ -4,5 +4,6 @@
     "rootDir": "..",
     "outDir": "./build"
   },
-  "include": ["src/index.integration-with-mock.ts", "../shared/src/**/*"]
+  "include": ["src/index.integration-with-mock.ts", "../shared/src/**/*"],
+  "exclude": ["node_modules", "build"]
 }

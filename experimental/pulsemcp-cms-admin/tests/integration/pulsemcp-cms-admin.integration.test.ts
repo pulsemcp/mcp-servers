@@ -192,11 +192,63 @@ describe('PulseMCP CMS Admin MCP Server Integration Tests', () => {
     });
   });
 
+  describe('search_mcp_implementations', () => {
+    it('should search for MCP implementations', async () => {
+      const result = await client.callTool('search_mcp_implementations', {
+        query: 'test',
+      });
+
+      expect(result).toBeDefined();
+      expect(result.content).toHaveLength(1);
+      expect(result.content[0].type).toBe('text');
+      expect(result.content[0].text).toContain('Found');
+      expect(result.content[0].text).toContain('MCP implementation');
+    });
+
+    it('should filter by type', async () => {
+      const result = await client.callTool('search_mcp_implementations', {
+        query: 'test',
+        type: 'server',
+      });
+
+      expect(result.content[0].type).toBe('text');
+      const text = result.content[0].text;
+      expect(text).toContain('MCP implementation');
+    });
+
+    it('should filter by status', async () => {
+      const result = await client.callTool('search_mcp_implementations', {
+        query: 'test',
+        status: 'live',
+      });
+
+      expect(result.content[0].type).toBe('text');
+      expect(result.content[0].text).toContain('MCP implementation');
+    });
+
+    it('should handle pagination', async () => {
+      const result = await client.callTool('search_mcp_implementations', {
+        query: 'test',
+        limit: 10,
+        offset: 0,
+      });
+
+      expect(result.content[0].type).toBe('text');
+      expect(result.content[0].text).toContain('MCP implementation');
+    });
+
+    it('should validate required fields', async () => {
+      const result = await client.callTool('search_mcp_implementations', {} as unknown);
+
+      expect(result.isError).toBe(true);
+    });
+  });
+
   describe('tool listing', () => {
     it('should list all available tools', async () => {
       const tools = await client.listTools();
 
-      expect(tools.tools).toHaveLength(6);
+      expect(tools.tools).toHaveLength(7);
       const toolNames = tools.tools.map((t) => t.name);
       expect(toolNames).toContain('get_newsletter_posts');
       expect(toolNames).toContain('get_newsletter_post');
@@ -204,6 +256,7 @@ describe('PulseMCP CMS Admin MCP Server Integration Tests', () => {
       expect(toolNames).toContain('update_newsletter_post');
       expect(toolNames).toContain('upload_image');
       expect(toolNames).toContain('get_authors');
+      expect(toolNames).toContain('search_mcp_implementations');
     });
   });
 });

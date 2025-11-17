@@ -106,3 +106,33 @@ export interface MCPClient {
   featured?: boolean;
   logo_url?: string | null;
 }
+
+export interface MCPImplementation {
+  id: number;
+  name: string;
+  short_description?: string;
+  description?: string;
+  type: 'server' | 'client';
+  status: 'draft' | 'live' | 'archived';
+  slug: string;
+  url?: string;
+  provider_name?: string;
+  github_stars?: number;
+  classification?: 'official' | 'community' | 'reference';
+  implementation_language?: string;
+  mcp_server_id?: number | null;
+  mcp_client_id?: number | null;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface MCPImplementationsResponse {
+  implementations: MCPImplementation[];
+  pagination?: {
+    current_page: number;
+    total_pages: number;
+    total_count: number;
+    has_next?: boolean;
+    limit?: number;
+  };
+}

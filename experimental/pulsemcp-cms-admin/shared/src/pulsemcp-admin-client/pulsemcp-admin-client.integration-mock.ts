@@ -1,5 +1,13 @@
 import type { IPulseMCPAdminClient } from '../server.js';
-import type { Post, ImageUploadResponse, Author, MCPServer, MCPClient } from '../types.js';
+import type {
+  Post,
+  ImageUploadResponse,
+  Author,
+  MCPServer,
+  MCPClient,
+  MCPImplementation,
+  MCPImplementationsResponse,
+} from '../types.js';
 
 interface MockData {
   posts?: Post[];
@@ -11,6 +19,8 @@ interface MockData {
   authorsBySlug?: Record<string, Author>;
   mcpServersBySlug?: Record<string, MCPServer>;
   mcpClientsBySlug?: Record<string, MCPClient>;
+  implementations?: MCPImplementation[];
+  implementationsResponse?: MCPImplementationsResponse;
   errors?: {
     getPosts?: Error;
     getPost?: Error;
@@ -21,6 +31,7 @@ interface MockData {
     getAuthorBySlug?: Error;
     getMCPServerBySlug?: Error;
     getMCPClientBySlug?: Error;
+    searchMCPImplementations?: Error;
   };
 }
 
@@ -274,6 +285,69 @@ export function createMockPulseMCPAdminClient(mockData: MockData): IPulseMCPAdmi
       }
 
       return null;
+    },
+
+    async searchMCPImplementations(params) {
+      if (mockData.errors?.searchMCPImplementations) {
+        throw mockData.errors.searchMCPImplementations;
+      }
+
+      if (mockData.implementationsResponse) {
+        return mockData.implementationsResponse;
+      }
+
+      let implementations = mockData.implementations || [
+        {
+          id: 1,
+          name: 'Test MCP Server',
+          slug: 'test-mcp-server',
+          type: 'server' as const,
+          status: 'live' as const,
+          short_description: 'A test MCP server implementation',
+          classification: 'community' as const,
+          implementation_language: 'TypeScript',
+        },
+      ];
+
+      // Apply search filter
+      if (params.query) {
+        const query = params.query.toLowerCase();
+        implementations = implementations.filter(
+          (impl) =>
+            impl.name.toLowerCase().includes(query) ||
+            impl.slug.toLowerCase().includes(query) ||
+            (impl.short_description && impl.short_description.toLowerCase().includes(query)) ||
+            (impl.description && impl.description.toLowerCase().includes(query)) ||
+            (impl.provider_name && impl.provider_name.toLowerCase().includes(query))
+        );
+      }
+
+      // Apply type filter
+      if (params.type && params.type !== 'all') {
+        implementations = implementations.filter((impl) => impl.type === params.type);
+      }
+
+      // Apply status filter
+      if (params.status && params.status !== 'all') {
+        implementations = implementations.filter((impl) => impl.status === params.status);
+      }
+
+      // Apply pagination
+      const offset = params.offset || 0;
+      const limit = params.limit || 30;
+      const totalCount = implementations.length;
+      const paginatedImpls = implementations.slice(offset, offset + limit);
+
+      return {
+        implementations: paginatedImpls,
+        pagination: {
+          current_page: Math.floor(offset / limit) + 1,
+          total_pages: Math.ceil(totalCount / limit),
+          total_count: totalCount,
+          has_next: offset + limit < totalCount,
+          limit: limit,
+        },
+      };
     },
   };
 }
