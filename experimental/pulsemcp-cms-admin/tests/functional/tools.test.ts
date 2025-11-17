@@ -5,12 +5,16 @@ import { draftNewsletterPost } from '../../shared/src/tools/draft-newsletter-pos
 import { updateNewsletterPost } from '../../shared/src/tools/update-newsletter-post.js';
 import { uploadImage } from '../../shared/src/tools/upload-image.js';
 import { getAuthors } from '../../shared/src/tools/get-authors.js';
+import { searchMCPImplementations } from '../../shared/src/tools/search-mcp-implementations.js';
+import { parseEnabledToolGroups, createRegisterTools } from '../../shared/src/tools.js';
 import type {
   IPulseMCPAdminClient,
   Post,
   PostsResponse,
   Author,
   AuthorsResponse,
+  MCPImplementation,
+  MCPImplementationsResponse,
 } from '../../shared/src/index.js';
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 
@@ -89,6 +93,7 @@ describe('Newsletter Tools', () => {
         getMCPServerById: vi.fn(),
         getMCPClientBySlug: vi.fn(),
         getMCPClientById: vi.fn(),
+        searchMCPImplementations: vi.fn(),
       };
 
       const tool = getNewsletterPosts(mockServer, () => mockClient);
@@ -116,6 +121,7 @@ describe('Newsletter Tools', () => {
         getMCPServerById: vi.fn(),
         getMCPClientBySlug: vi.fn(),
         getMCPClientById: vi.fn(),
+        searchMCPImplementations: vi.fn(),
       };
 
       const tool = getNewsletterPosts(mockServer, () => mockClient);
@@ -169,6 +175,7 @@ describe('Newsletter Tools', () => {
         }),
         getMCPClientBySlug: vi.fn(),
         getMCPClientById: vi.fn(),
+        searchMCPImplementations: vi.fn(),
       };
 
       const tool = getNewsletterPost(mockServer, () => mockClient);
@@ -445,6 +452,7 @@ describe('Newsletter Tools', () => {
         getAuthorBySlug: vi.fn(),
         getMCPServerBySlug: vi.fn(),
         getMCPClientBySlug: vi.fn(),
+        searchMCPImplementations: vi.fn(),
       };
 
       const tool = getAuthors(mockServer, () => mockClient);
@@ -452,6 +460,349 @@ describe('Newsletter Tools', () => {
 
       expect(result.isError).toBe(true);
       expect(result.content[0].text).toContain('Error fetching authors: API Error');
+    });
+  });
+
+  describe('search_mcp_implementations', () => {
+    it('should search for MCP implementations', async () => {
+      const mockImplementations: MCPImplementation[] = [
+        {
+          id: 1,
+          name: 'Filesystem Server',
+          slug: 'filesystem',
+          type: 'server',
+          status: 'live',
+          short_description: 'Provides access to filesystem operations',
+          classification: 'official',
+          implementation_language: 'TypeScript',
+          github_stars: 150,
+          provider_name: 'Anthropic',
+          url: 'https://github.com/anthropics/mcp-filesystem',
+          mcp_server_id: 10,
+          created_at: '2024-01-01T00:00:00Z',
+          updated_at: '2024-01-15T00:00:00Z',
+        },
+        {
+          id: 2,
+          name: 'Database Server',
+          slug: 'database',
+          type: 'server',
+          status: 'live',
+          short_description: 'Provides database access',
+          classification: 'community',
+          implementation_language: 'Python',
+          github_stars: 80,
+          provider_name: 'Community',
+          mcp_server_id: 11,
+        },
+      ];
+
+      const mockClient: IPulseMCPAdminClient = {
+        getPosts: vi.fn(),
+        getPost: vi.fn(),
+        createPost: vi.fn(),
+        updatePost: vi.fn(),
+        uploadImage: vi.fn(),
+        getAuthors: vi.fn(),
+        getAuthorBySlug: vi.fn(),
+        getAuthorById: vi.fn(),
+        getMCPServerBySlug: vi.fn(),
+        getMCPServerById: vi.fn(),
+        getMCPClientBySlug: vi.fn(),
+        getMCPClientById: vi.fn(),
+        searchMCPImplementations: vi.fn().mockResolvedValue({
+          implementations: mockImplementations,
+          pagination: {
+            current_page: 1,
+            total_pages: 1,
+            total_count: 2,
+          },
+        } as MCPImplementationsResponse),
+      };
+
+      const tool = searchMCPImplementations(mockServer, () => mockClient);
+      const result = await tool.handler({ query: 'filesystem' });
+
+      expect(mockClient.searchMCPImplementations).toHaveBeenCalledWith({
+        query: 'filesystem',
+        type: 'all',
+        status: 'live',
+        limit: undefined,
+        offset: undefined,
+      });
+      expect(result.content[0].type).toBe('text');
+      const text = result.content[0].text;
+      expect(text).toContain('Found 2 MCP implementation(s) matching "filesystem"');
+      expect(text).toContain('Filesystem Server');
+      expect(text).toContain('Slug: filesystem');
+      expect(text).toContain('Status: live');
+      expect(text).toContain('Classification: official');
+      expect(text).toContain('Provider: Anthropic');
+      expect(text).toContain('Language: TypeScript');
+      expect(text).toContain('GitHub Stars: 150');
+      expect(text).toContain('Provides access to filesystem operations');
+      expect(text).toContain('Database Server');
+    });
+
+    it('should support filtering by type and status', async () => {
+      const mockClient: IPulseMCPAdminClient = {
+        getPosts: vi.fn(),
+        getPost: vi.fn(),
+        createPost: vi.fn(),
+        updatePost: vi.fn(),
+        uploadImage: vi.fn(),
+        getAuthors: vi.fn(),
+        getAuthorBySlug: vi.fn(),
+        getAuthorById: vi.fn(),
+        getMCPServerBySlug: vi.fn(),
+        getMCPServerById: vi.fn(),
+        getMCPClientBySlug: vi.fn(),
+        getMCPClientById: vi.fn(),
+        searchMCPImplementations: vi.fn().mockResolvedValue({
+          implementations: [],
+          pagination: { current_page: 1, total_pages: 1, total_count: 0 },
+        } as MCPImplementationsResponse),
+      };
+
+      const tool = searchMCPImplementations(mockServer, () => mockClient);
+      await tool.handler({
+        query: 'test',
+        type: 'server',
+        status: 'draft',
+        limit: 10,
+        offset: 20,
+      });
+
+      expect(mockClient.searchMCPImplementations).toHaveBeenCalledWith({
+        query: 'test',
+        type: 'server',
+        status: 'draft',
+        limit: 10,
+        offset: 20,
+      });
+    });
+
+    it('should handle pagination information', async () => {
+      const mockClient: IPulseMCPAdminClient = {
+        getPosts: vi.fn(),
+        getPost: vi.fn(),
+        createPost: vi.fn(),
+        updatePost: vi.fn(),
+        uploadImage: vi.fn(),
+        getAuthors: vi.fn(),
+        getAuthorBySlug: vi.fn(),
+        getAuthorById: vi.fn(),
+        getMCPServerBySlug: vi.fn(),
+        getMCPServerById: vi.fn(),
+        getMCPClientBySlug: vi.fn(),
+        getMCPClientById: vi.fn(),
+        searchMCPImplementations: vi.fn().mockResolvedValue({
+          implementations: [
+            {
+              id: 1,
+              name: 'Test Server',
+              slug: 'test',
+              type: 'server',
+              status: 'live',
+            },
+          ],
+          pagination: {
+            current_page: 1,
+            total_pages: 3,
+            total_count: 50,
+            has_next: true,
+            limit: 30,
+          },
+        } as MCPImplementationsResponse),
+      };
+
+      const tool = searchMCPImplementations(mockServer, () => mockClient);
+      const result = await tool.handler({ query: 'test', limit: 30, offset: 0 });
+
+      expect(result.content[0].text).toContain('showing 1 of 50 total');
+      expect(result.content[0].text).toContain(
+        'More results available. Use offset=30 to see the next page'
+      );
+    });
+
+    it('should handle errors gracefully', async () => {
+      const mockClient: IPulseMCPAdminClient = {
+        getPosts: vi.fn(),
+        getPost: vi.fn(),
+        createPost: vi.fn(),
+        updatePost: vi.fn(),
+        uploadImage: vi.fn(),
+        getAuthors: vi.fn(),
+        getAuthorBySlug: vi.fn(),
+        getAuthorById: vi.fn(),
+        getMCPServerBySlug: vi.fn(),
+        getMCPServerById: vi.fn(),
+        getMCPClientBySlug: vi.fn(),
+        getMCPClientById: vi.fn(),
+        searchMCPImplementations: vi.fn().mockRejectedValue(new Error('API Error')),
+      };
+
+      const tool = searchMCPImplementations(mockServer, () => mockClient);
+      const result = await tool.handler({ query: 'test' });
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('Error searching MCP implementations: API Error');
+    });
+  });
+
+  describe('parseEnabledToolGroups', () => {
+    it('should parse valid tool groups from parameter', () => {
+      const groups = parseEnabledToolGroups('newsletter,server_queue');
+      expect(groups).toEqual(['newsletter', 'server_queue']);
+    });
+
+    it('should parse single group', () => {
+      const groups = parseEnabledToolGroups('newsletter');
+      expect(groups).toEqual(['newsletter']);
+    });
+
+    it('should handle whitespace in group names', () => {
+      const groups = parseEnabledToolGroups('newsletter , server_queue ');
+      expect(groups).toEqual(['newsletter', 'server_queue']);
+    });
+
+    it('should filter out invalid group names', () => {
+      const groups = parseEnabledToolGroups('newsletter,invalid_group,server_queue');
+      expect(groups).toEqual(['newsletter', 'server_queue']);
+    });
+
+    it('should return all groups when empty string provided', () => {
+      const groups = parseEnabledToolGroups('');
+      expect(groups).toEqual(['newsletter', 'server_queue']);
+    });
+
+    it('should return all groups when no parameter provided', () => {
+      const groups = parseEnabledToolGroups();
+      expect(groups).toEqual(['newsletter', 'server_queue']);
+    });
+
+    it('should prioritize parameter over environment variable', () => {
+      const originalEnv = process.env.PULSEMCP_ADMIN_ENABLED_TOOLGROUPS;
+      process.env.PULSEMCP_ADMIN_ENABLED_TOOLGROUPS = 'server_queue';
+
+      const groups = parseEnabledToolGroups('newsletter');
+      expect(groups).toEqual(['newsletter']);
+
+      // Restore original env
+      if (originalEnv) {
+        process.env.PULSEMCP_ADMIN_ENABLED_TOOLGROUPS = originalEnv;
+      } else {
+        delete process.env.PULSEMCP_ADMIN_ENABLED_TOOLGROUPS;
+      }
+    });
+  });
+
+  describe('createRegisterTools with toolgroups filtering', () => {
+    const createMockClient = (): IPulseMCPAdminClient => ({
+      getPosts: vi.fn(),
+      getPost: vi.fn(),
+      createPost: vi.fn(),
+      updatePost: vi.fn(),
+      uploadImage: vi.fn(),
+      getAuthors: vi.fn(),
+      getAuthorBySlug: vi.fn(),
+      getAuthorById: vi.fn(),
+      getMCPServerBySlug: vi.fn(),
+      getMCPServerById: vi.fn(),
+      getMCPClientBySlug: vi.fn(),
+      getMCPClientById: vi.fn(),
+      searchMCPImplementations: vi.fn(),
+    });
+
+    it('should register only newsletter tools when newsletter group is enabled', async () => {
+      const mockServer = new Server(
+        { name: 'test', version: '1.0.0' },
+        { capabilities: { tools: {} } }
+      );
+      const clientFactory = () => createMockClient();
+
+      const registerTools = createRegisterTools(clientFactory, 'newsletter');
+      registerTools(mockServer);
+
+      // Mock the ListToolsRequestSchema handler
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const handlers = (mockServer as any)._requestHandlers;
+      const listToolsHandler = handlers.get('tools/list');
+      expect(listToolsHandler).toBeDefined();
+
+      const result = await listToolsHandler({ method: 'tools/list', params: {} });
+      expect(result.tools).toHaveLength(6);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const toolNames = result.tools.map((t: any) => t.name);
+      expect(toolNames).toContain('get_newsletter_posts');
+      expect(toolNames).toContain('get_newsletter_post');
+      expect(toolNames).toContain('draft_newsletter_post');
+      expect(toolNames).toContain('update_newsletter_post');
+      expect(toolNames).toContain('upload_image');
+      expect(toolNames).toContain('get_authors');
+      expect(toolNames).not.toContain('search_mcp_implementations');
+    });
+
+    it('should register only server_queue tools when server_queue group is enabled', async () => {
+      const mockServer = new Server(
+        { name: 'test', version: '1.0.0' },
+        { capabilities: { tools: {} } }
+      );
+      const clientFactory = () => createMockClient();
+
+      const registerTools = createRegisterTools(clientFactory, 'server_queue');
+      registerTools(mockServer);
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const handlers = (mockServer as any)._requestHandlers;
+      const listToolsHandler = handlers.get('tools/list');
+      const result = await listToolsHandler({ method: 'tools/list', params: {} });
+
+      expect(result.tools).toHaveLength(1);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const toolNames = result.tools.map((t: any) => t.name);
+      expect(toolNames).toContain('search_mcp_implementations');
+      expect(toolNames).not.toContain('get_newsletter_posts');
+    });
+
+    it('should register all tools when all groups are enabled', async () => {
+      const mockServer = new Server(
+        { name: 'test', version: '1.0.0' },
+        { capabilities: { tools: {} } }
+      );
+      const clientFactory = () => createMockClient();
+
+      const registerTools = createRegisterTools(clientFactory, 'newsletter,server_queue');
+      registerTools(mockServer);
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const handlers = (mockServer as any)._requestHandlers;
+      const listToolsHandler = handlers.get('tools/list');
+      const result = await listToolsHandler({ method: 'tools/list', params: {} });
+
+      expect(result.tools).toHaveLength(7);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const toolNames = result.tools.map((t: any) => t.name);
+      expect(toolNames).toContain('get_newsletter_posts');
+      expect(toolNames).toContain('search_mcp_implementations');
+    });
+
+    it('should register all tools when no groups specified (default)', async () => {
+      const mockServer = new Server(
+        { name: 'test', version: '1.0.0' },
+        { capabilities: { tools: {} } }
+      );
+      const clientFactory = () => createMockClient();
+
+      const registerTools = createRegisterTools(clientFactory);
+      registerTools(mockServer);
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const handlers = (mockServer as any)._requestHandlers;
+      const listToolsHandler = handlers.get('tools/list');
+      const result = await listToolsHandler({ method: 'tools/list', params: {} });
+
+      expect(result.tools).toHaveLength(7);
     });
   });
 });

@@ -10,6 +10,7 @@ import type {
   AuthorsResponse,
   MCPServer,
   MCPClient,
+  MCPImplementationsResponse,
 } from './types.js';
 
 // PulseMCP Admin API client interface
@@ -42,6 +43,14 @@ export interface IPulseMCPAdminClient {
   getMCPClientBySlug(slug: string): Promise<MCPClient>;
 
   getMCPClientById(id: number): Promise<MCPClient | null>;
+
+  searchMCPImplementations(params: {
+    query: string;
+    type?: 'server' | 'client' | 'all';
+    status?: 'draft' | 'live' | 'archived' | 'all';
+    limit?: number;
+    offset?: number;
+  }): Promise<MCPImplementationsResponse>;
 }
 
 // PulseMCP Admin API client implementation
@@ -125,6 +134,19 @@ export class PulseMCPAdminClient implements IPulseMCPAdminClient {
       './pulsemcp-admin-client/lib/get-mcp-client-by-id.js'
     );
     return getMCPClientById(this.apiKey, this.baseUrl, id);
+  }
+
+  async searchMCPImplementations(params: {
+    query: string;
+    type?: 'server' | 'client' | 'all';
+    status?: 'draft' | 'live' | 'archived' | 'all';
+    limit?: number;
+    offset?: number;
+  }): Promise<MCPImplementationsResponse> {
+    const { searchMCPImplementations } = await import(
+      './pulsemcp-admin-client/lib/search-mcp-implementations.js'
+    );
+    return searchMCPImplementations(this.apiKey, this.baseUrl, params);
   }
 }
 
