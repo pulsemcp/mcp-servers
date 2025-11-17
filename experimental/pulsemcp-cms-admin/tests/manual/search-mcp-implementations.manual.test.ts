@@ -15,21 +15,15 @@ dotenv.config({ path: path.join(__dirname, '../../.env') });
  *
  * These tests hit the real PulseMCP API to verify the search_mcp_implementations tool works correctly.
  *
- * IMPORTANT NOTE: As of this writing, the /api/v0/implementations/search endpoint does NOT exist
- * in the PulseMCP backend yet. These tests are written in preparation for when the API is implemented.
- * Until then, these tests will expect 404 errors and document the expected behavior.
+ * API Endpoint: GET https://admin.pulsemcp.com/api/implementations/search
+ * Required Headers: X-API-Key: <admin-api-key>
  *
- * API Endpoint: POST https://admin.pulsemcp.com/api/v0/implementations/search
- * Required Headers: X-API-Key: 345524b1-130d-4e94-a008-90adcb2547c8
- *
- * Request Body:
- * {
- *   "query": "search term",
- *   "type": "server" | "client" | "all",
- *   "status": "draft" | "live" | "archived" | "all",
- *   "limit": number,
- *   "offset": number
- * }
+ * Query Parameters:
+ *   q: Search query string (required)
+ *   type: "server" | "client" (optional, omit for all)
+ *   status: "draft" | "live" | "archived" (optional, omit for live only)
+ *   limit: number (optional, 1-100, default 30)
+ *   offset: number (optional, default 0)
  *
  * Expected Response (when implemented):
  * {

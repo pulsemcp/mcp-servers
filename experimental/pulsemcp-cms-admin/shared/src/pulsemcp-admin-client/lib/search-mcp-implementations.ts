@@ -22,10 +22,9 @@ export async function searchMCPImplementations(
     offset?: number;
   }
 ): Promise<MCPImplementationsResponse> {
-  // NOTE: This endpoint needs to be implemented in the PulseMCP backend
-  // Expected endpoint: /api/v0/implementations/search
-  // This is a placeholder implementation that will work once the backend is ready
-  const url = new URL('/api/v0/implementations/search', baseUrl);
+  // Endpoint implemented at: /api/implementations/search
+  // Requires admin authentication via X-API-Key header
+  const url = new URL('/api/implementations/search', baseUrl);
 
   // Add query parameters
   url.searchParams.append('q', params.query);
@@ -62,9 +61,7 @@ export async function searchMCPImplementations(
       throw new Error('User lacks admin privileges');
     }
     if (response.status === 404) {
-      throw new Error(
-        'Search endpoint not yet implemented. See PR description for implementation requirements.'
-      );
+      throw new Error('MCP implementations search endpoint not found');
     }
     throw new Error(
       `Failed to search MCP implementations: ${response.status} ${response.statusText}`
