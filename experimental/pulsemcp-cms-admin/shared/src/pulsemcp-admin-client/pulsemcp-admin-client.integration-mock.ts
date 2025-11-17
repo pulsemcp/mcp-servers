@@ -21,6 +21,7 @@ interface MockData {
   mcpClientsBySlug?: Record<string, MCPClient>;
   implementations?: MCPImplementation[];
   implementationsResponse?: MCPImplementationsResponse;
+  draftImplementationsResponse?: MCPImplementationsResponse;
   errors?: {
     getPosts?: Error;
     getPost?: Error;
@@ -32,6 +33,8 @@ interface MockData {
     getMCPServerBySlug?: Error;
     getMCPClientBySlug?: Error;
     searchMCPImplementations?: Error;
+    getDraftMCPImplementations?: Error;
+    saveMCPImplementation?: Error;
   };
 }
 
@@ -348,6 +351,71 @@ export function createMockPulseMCPAdminClient(mockData: MockData): IPulseMCPAdmi
           limit: limit,
         },
       };
+    },
+
+    async getDraftMCPImplementations(params) {
+      if (mockData.errors?.getDraftMCPImplementations) {
+        throw mockData.errors.getDraftMCPImplementations;
+      }
+
+      if (mockData.draftImplementationsResponse) {
+        return mockData.draftImplementationsResponse;
+      }
+
+      // Filter to only draft implementations
+      let implementations = (mockData.implementations || []).filter(
+        (impl) => impl.status === 'draft'
+      );
+
+      // Apply search filter if provided
+      if (params?.search) {
+        const searchLower = params.search.toLowerCase();
+        implementations = implementations.filter(
+          (impl) =>
+            impl.name.toLowerCase().includes(searchLower) ||
+            impl.short_description?.toLowerCase().includes(searchLower) ||
+            impl.description?.toLowerCase().includes(searchLower)
+        );
+      }
+
+      // Apply pagination
+      const page = params?.page || 1;
+      const perPage = 20; // Match Rails default
+      const offset = (page - 1) * perPage;
+      const paginatedImpls = implementations.slice(offset, offset + perPage);
+
+      return {
+        implementations: paginatedImpls,
+        pagination: {
+          current_page: page,
+          total_pages: Math.ceil(implementations.length / perPage),
+          total_count: implementations.length,
+        },
+      };
+    },
+
+    async saveMCPImplementation(id, params) {
+      if (mockData.errors?.saveMCPImplementation) {
+        throw mockData.errors.saveMCPImplementation;
+      }
+
+      // Find existing implementation in mock data
+      const implementations = mockData.implementations || [];
+      const existingImpl = implementations.find((impl) => impl.id === id);
+
+      if (!existingImpl) {
+        throw new Error(`MCP implementation not found: ${id}`);
+      }
+
+      // Merge params with existing implementation
+      const updatedImpl = {
+        ...existingImpl,
+        ...params,
+        id: id, // Ensure ID doesn't change
+        updated_at: new Date().toISOString(),
+      };
+
+      return updatedImpl;
     },
   };
 }

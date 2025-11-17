@@ -8,14 +8,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
-- `search_mcp_implementations` tool for searching MCP implementations in the PulseMCP registry
-- Toolgroups feature: organize tools into groups that can be enabled/disabled via `PULSEMCP_ADMIN_ENABLED_TOOLGROUPS` environment variable
-- New types: `MCPImplementation`, `MCPImplementationsResponse` for MCP implementation search
-- Tool groups: `newsletter` (6 tools) and `server_queue` (1 tool)
+- `get_draft_mcp_implementations` tool for retrieving paginated list of draft MCP implementations
+- `save_mcp_implementation` tool for updating MCP implementations (replicates Admin panel "Save Changes" functionality)
+- New types: `SaveMCPImplementationParams` for MCP implementation updates
+- API client methods: `getDraftMCPImplementations` and `saveMCPImplementation`
+- Comprehensive test coverage for new tools (30 new tests)
+- Missing setup scripts: `local/setup-dev.js` and `scripts/run-vitest.js`
 
 ### Changed
 
-- Tools are now organized into toolgroups for better modularity and control
+- Tool groups updated: `server_queue` now contains 3 tools (was 1 tool)
 
 ## [0.1.0] - 2025-10-08
 

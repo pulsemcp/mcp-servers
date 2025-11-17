@@ -8,6 +8,8 @@ import { updateNewsletterPost } from './tools/update-newsletter-post.js';
 import { uploadImage } from './tools/upload-image.js';
 import { getAuthors } from './tools/get-authors.js';
 import { searchMCPImplementations } from './tools/search-mcp-implementations.js';
+import { getDraftMCPImplementations } from './tools/get-draft-mcp-implementations.js';
+import { saveMCPImplementation } from './tools/save-mcp-implementation.js';
 
 /**
  * Tool group definitions - groups of related tools that can be enabled/disabled together
@@ -39,6 +41,8 @@ const ALL_TOOLS: ToolDefinition[] = [
   { factory: uploadImage, groups: ['newsletter'] },
   { factory: getAuthors, groups: ['newsletter'] },
   { factory: searchMCPImplementations, groups: ['server_queue'] },
+  { factory: getDraftMCPImplementations, groups: ['server_queue'] },
+  { factory: saveMCPImplementation, groups: ['server_queue'] },
 ];
 
 /**

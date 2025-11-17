@@ -6,6 +6,8 @@ import { updateNewsletterPost } from '../../shared/src/tools/update-newsletter-p
 import { uploadImage } from '../../shared/src/tools/upload-image.js';
 import { getAuthors } from '../../shared/src/tools/get-authors.js';
 import { searchMCPImplementations } from '../../shared/src/tools/search-mcp-implementations.js';
+import { getDraftMCPImplementations } from '../../shared/src/tools/get-draft-mcp-implementations.js';
+import { saveMCPImplementation } from '../../shared/src/tools/save-mcp-implementation.js';
 import { parseEnabledToolGroups, createRegisterTools } from '../../shared/src/tools.js';
 import type {
   IPulseMCPAdminClient,
@@ -741,6 +743,8 @@ describe('Newsletter Tools', () => {
       expect(toolNames).toContain('upload_image');
       expect(toolNames).toContain('get_authors');
       expect(toolNames).not.toContain('search_mcp_implementations');
+      expect(toolNames).not.toContain('get_draft_mcp_implementations');
+      expect(toolNames).not.toContain('save_mcp_implementation');
     });
 
     it('should register only server_queue tools when server_queue group is enabled', async () => {
@@ -758,10 +762,12 @@ describe('Newsletter Tools', () => {
       const listToolsHandler = handlers.get('tools/list');
       const result = await listToolsHandler({ method: 'tools/list', params: {} });
 
-      expect(result.tools).toHaveLength(1);
+      expect(result.tools).toHaveLength(3);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const toolNames = result.tools.map((t: any) => t.name);
       expect(toolNames).toContain('search_mcp_implementations');
+      expect(toolNames).toContain('get_draft_mcp_implementations');
+      expect(toolNames).toContain('save_mcp_implementation');
       expect(toolNames).not.toContain('get_newsletter_posts');
     });
 
@@ -780,11 +786,13 @@ describe('Newsletter Tools', () => {
       const listToolsHandler = handlers.get('tools/list');
       const result = await listToolsHandler({ method: 'tools/list', params: {} });
 
-      expect(result.tools).toHaveLength(7);
+      expect(result.tools).toHaveLength(9);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const toolNames = result.tools.map((t: any) => t.name);
       expect(toolNames).toContain('get_newsletter_posts');
       expect(toolNames).toContain('search_mcp_implementations');
+      expect(toolNames).toContain('get_draft_mcp_implementations');
+      expect(toolNames).toContain('save_mcp_implementation');
     });
 
     it('should register all tools when no groups specified (default)', async () => {
@@ -802,7 +810,622 @@ describe('Newsletter Tools', () => {
       const listToolsHandler = handlers.get('tools/list');
       const result = await listToolsHandler({ method: 'tools/list', params: {} });
 
-      expect(result.tools).toHaveLength(7);
+      expect(result.tools).toHaveLength(9);
+    });
+  });
+
+  describe('get_draft_mcp_implementations', () => {
+    it('should fetch and format draft implementations', async () => {
+      const mockDraftImplementations = [
+        {
+          id: 100,
+          name: 'GitHub MCP Server',
+          slug: 'github-mcp-server',
+          type: 'server' as const,
+          status: 'draft' as const,
+          short_description: 'Access GitHub repositories',
+          classification: 'official' as const,
+          implementation_language: 'TypeScript',
+          provider_name: 'Anthropic',
+          url: 'https://github.com/anthropics/mcp-github',
+          github_stars: 500,
+          created_at: '2024-01-10T00:00:00Z',
+          updated_at: '2024-01-15T00:00:00Z',
+        },
+        {
+          id: 101,
+          name: 'Database Client',
+          slug: 'database-client',
+          type: 'client' as const,
+          status: 'draft' as const,
+          short_description: 'Query databases',
+          classification: 'community' as const,
+          implementation_language: 'Python',
+          provider_name: 'Community',
+          created_at: '2024-01-12T00:00:00Z',
+          updated_at: '2024-01-14T00:00:00Z',
+        },
+      ];
+
+      const mockClient: IPulseMCPAdminClient = {
+        getPosts: vi.fn(),
+        getPost: vi.fn(),
+        createPost: vi.fn(),
+        updatePost: vi.fn(),
+        uploadImage: vi.fn(),
+        getAuthors: vi.fn(),
+        getAuthorBySlug: vi.fn(),
+        getAuthorById: vi.fn(),
+        getMCPServerBySlug: vi.fn(),
+        getMCPServerById: vi.fn(),
+        getMCPClientBySlug: vi.fn(),
+        getMCPClientById: vi.fn(),
+        searchMCPImplementations: vi.fn(),
+        getDraftMCPImplementations: vi.fn().mockResolvedValue({
+          implementations: mockDraftImplementations,
+          pagination: {
+            current_page: 1,
+            total_pages: 1,
+            total_count: 2,
+          },
+        }),
+      };
+
+      const tool = getDraftMCPImplementations(mockServer, () => mockClient);
+      const result = await tool.handler({ page: 1 });
+
+      expect(mockClient.getDraftMCPImplementations).toHaveBeenCalledWith({ page: 1 });
+      expect(result.content[0].type).toBe('text');
+      const text = result.content[0].text;
+      expect(text).toContain('Found 2 draft MCP implementations');
+      expect(text).toContain('page 1 of 1, total: 2');
+      expect(text).toContain('GitHub MCP Server');
+      expect(text).toContain('github-mcp-server');
+      expect(text).toContain('Type: server');
+      expect(text).toContain('Status: draft');
+      expect(text).toContain('Access GitHub repositories');
+      expect(text).toContain('Classification: official');
+      expect(text).toContain('Language: TypeScript');
+      expect(text).toContain('Provider: Anthropic');
+      expect(text).toContain('GitHub Stars: 500');
+      expect(text).toContain('Database Client');
+    });
+
+    it('should handle empty results', async () => {
+      const mockClient: IPulseMCPAdminClient = {
+        getPosts: vi.fn(),
+        getPost: vi.fn(),
+        createPost: vi.fn(),
+        updatePost: vi.fn(),
+        uploadImage: vi.fn(),
+        getAuthors: vi.fn(),
+        getAuthorBySlug: vi.fn(),
+        getAuthorById: vi.fn(),
+        getMCPServerBySlug: vi.fn(),
+        getMCPServerById: vi.fn(),
+        getMCPClientBySlug: vi.fn(),
+        getMCPClientById: vi.fn(),
+        searchMCPImplementations: vi.fn(),
+        getDraftMCPImplementations: vi.fn().mockResolvedValue({
+          implementations: [],
+          pagination: {
+            current_page: 1,
+            total_pages: 1,
+            total_count: 0,
+          },
+        }),
+      };
+
+      const tool = getDraftMCPImplementations(mockServer, () => mockClient);
+      const result = await tool.handler({});
+
+      expect(result.content[0].text).toContain('Found 0 draft MCP implementations');
+    });
+
+    it('should support search filtering', async () => {
+      const mockClient: IPulseMCPAdminClient = {
+        getPosts: vi.fn(),
+        getPost: vi.fn(),
+        createPost: vi.fn(),
+        updatePost: vi.fn(),
+        uploadImage: vi.fn(),
+        getAuthors: vi.fn(),
+        getAuthorBySlug: vi.fn(),
+        getAuthorById: vi.fn(),
+        getMCPServerBySlug: vi.fn(),
+        getMCPServerById: vi.fn(),
+        getMCPClientBySlug: vi.fn(),
+        getMCPClientById: vi.fn(),
+        searchMCPImplementations: vi.fn(),
+        getDraftMCPImplementations: vi.fn().mockResolvedValue({
+          implementations: [
+            {
+              id: 100,
+              name: 'GitHub MCP Server',
+              slug: 'github-mcp-server',
+              type: 'server' as const,
+              status: 'draft' as const,
+            },
+          ],
+          pagination: {
+            current_page: 1,
+            total_pages: 1,
+            total_count: 1,
+          },
+        }),
+      };
+
+      const tool = getDraftMCPImplementations(mockServer, () => mockClient);
+      await tool.handler({ search: 'github', page: 1 });
+
+      expect(mockClient.getDraftMCPImplementations).toHaveBeenCalledWith({
+        search: 'github',
+        page: 1,
+      });
+    });
+
+    it('should handle pagination correctly', async () => {
+      const mockClient: IPulseMCPAdminClient = {
+        getPosts: vi.fn(),
+        getPost: vi.fn(),
+        createPost: vi.fn(),
+        updatePost: vi.fn(),
+        uploadImage: vi.fn(),
+        getAuthors: vi.fn(),
+        getAuthorBySlug: vi.fn(),
+        getAuthorById: vi.fn(),
+        getMCPServerBySlug: vi.fn(),
+        getMCPServerById: vi.fn(),
+        getMCPClientBySlug: vi.fn(),
+        getMCPClientById: vi.fn(),
+        searchMCPImplementations: vi.fn(),
+        getDraftMCPImplementations: vi.fn().mockResolvedValue({
+          implementations: [
+            {
+              id: 100,
+              name: 'Implementation 1',
+              slug: 'impl-1',
+              type: 'server' as const,
+              status: 'draft' as const,
+            },
+          ],
+          pagination: {
+            current_page: 2,
+            total_pages: 5,
+            total_count: 100,
+          },
+        }),
+      };
+
+      const tool = getDraftMCPImplementations(mockServer, () => mockClient);
+      const result = await tool.handler({ page: 2 });
+
+      expect(result.content[0].text).toContain('page 2 of 5, total: 100');
+    });
+
+    it('should include linked server/client IDs when present', async () => {
+      const mockClient: IPulseMCPAdminClient = {
+        getPosts: vi.fn(),
+        getPost: vi.fn(),
+        createPost: vi.fn(),
+        updatePost: vi.fn(),
+        uploadImage: vi.fn(),
+        getAuthors: vi.fn(),
+        getAuthorBySlug: vi.fn(),
+        getAuthorById: vi.fn(),
+        getMCPServerBySlug: vi.fn(),
+        getMCPServerById: vi.fn(),
+        getMCPClientBySlug: vi.fn(),
+        getMCPClientById: vi.fn(),
+        searchMCPImplementations: vi.fn(),
+        getDraftMCPImplementations: vi.fn().mockResolvedValue({
+          implementations: [
+            {
+              id: 100,
+              name: 'Linked Implementation',
+              slug: 'linked-impl',
+              type: 'server' as const,
+              status: 'draft' as const,
+              mcp_server_id: 42,
+              mcp_client_id: 55,
+            },
+          ],
+          pagination: {
+            current_page: 1,
+            total_pages: 1,
+            total_count: 1,
+          },
+        }),
+      };
+
+      const tool = getDraftMCPImplementations(mockServer, () => mockClient);
+      const result = await tool.handler({});
+
+      expect(result.content[0].text).toContain('Linked MCP Server ID: 42');
+      expect(result.content[0].text).toContain('Linked MCP Client ID: 55');
+    });
+
+    it('should handle errors gracefully', async () => {
+      const mockClient: IPulseMCPAdminClient = {
+        getPosts: vi.fn(),
+        getPost: vi.fn(),
+        createPost: vi.fn(),
+        updatePost: vi.fn(),
+        uploadImage: vi.fn(),
+        getAuthors: vi.fn(),
+        getAuthorBySlug: vi.fn(),
+        getAuthorById: vi.fn(),
+        getMCPServerBySlug: vi.fn(),
+        getMCPServerById: vi.fn(),
+        getMCPClientBySlug: vi.fn(),
+        getMCPClientById: vi.fn(),
+        searchMCPImplementations: vi.fn(),
+        getDraftMCPImplementations: vi.fn().mockRejectedValue(new Error('Invalid API key')),
+      };
+
+      const tool = getDraftMCPImplementations(mockServer, () => mockClient);
+      const result = await tool.handler({});
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('Error fetching draft MCP implementations: Invalid API key');
+    });
+  });
+
+  describe('save_mcp_implementation', () => {
+    it('should save and update MCP implementation with multiple fields', async () => {
+      const mockUpdatedImplementation = {
+        id: 100,
+        name: 'Updated GitHub MCP Server',
+        slug: 'github-mcp-server',
+        type: 'server' as const,
+        status: 'live' as const,
+        short_description: 'Updated description',
+        classification: 'official' as const,
+        implementation_language: 'TypeScript',
+        provider_name: 'Anthropic',
+        url: 'https://github.com/anthropics/mcp-github',
+        github_stars: 600,
+        updated_at: '2024-01-20T16:30:00Z',
+      };
+
+      const mockClient: IPulseMCPAdminClient = {
+        getPosts: vi.fn(),
+        getPost: vi.fn(),
+        createPost: vi.fn(),
+        updatePost: vi.fn(),
+        uploadImage: vi.fn(),
+        getAuthors: vi.fn(),
+        getAuthorBySlug: vi.fn(),
+        getAuthorById: vi.fn(),
+        getMCPServerBySlug: vi.fn(),
+        getMCPServerById: vi.fn(),
+        getMCPClientBySlug: vi.fn(),
+        getMCPClientById: vi.fn(),
+        searchMCPImplementations: vi.fn(),
+        saveMCPImplementation: vi.fn().mockResolvedValue(mockUpdatedImplementation),
+      };
+
+      const tool = saveMCPImplementation(mockServer, () => mockClient);
+      const result = await tool.handler({
+        id: 100,
+        name: 'Updated GitHub MCP Server',
+        status: 'live',
+        short_description: 'Updated description',
+        github_stars: 600,
+      });
+
+      expect(mockClient.saveMCPImplementation).toHaveBeenCalledWith(100, {
+        name: 'Updated GitHub MCP Server',
+        status: 'live',
+        short_description: 'Updated description',
+        github_stars: 600,
+      });
+
+      expect(result.content[0].type).toBe('text');
+      const text = result.content[0].text;
+      expect(text).toContain('Successfully saved MCP implementation!');
+      expect(text).toContain('Updated GitHub MCP Server');
+      expect(text).toContain('100');
+      expect(text).toContain('github-mcp-server');
+      expect(text).toContain('server');
+      expect(text).toContain('live');
+      expect(text).toContain('official');
+      expect(text).toContain('TypeScript');
+      expect(text).toContain('Anthropic');
+      expect(text).toContain('600');
+      expect(text).toContain('Fields updated:');
+      expect(text).toContain('- name');
+      expect(text).toContain('- status');
+      expect(text).toContain('- short_description');
+      expect(text).toContain('- github_stars');
+    });
+
+    it('should require ID parameter', async () => {
+      const mockClient: IPulseMCPAdminClient = {
+        getPosts: vi.fn(),
+        getPost: vi.fn(),
+        createPost: vi.fn(),
+        updatePost: vi.fn(),
+        uploadImage: vi.fn(),
+        getAuthors: vi.fn(),
+        getAuthorBySlug: vi.fn(),
+        getAuthorById: vi.fn(),
+        getMCPServerBySlug: vi.fn(),
+        getMCPServerById: vi.fn(),
+        getMCPClientBySlug: vi.fn(),
+        getMCPClientById: vi.fn(),
+        searchMCPImplementations: vi.fn(),
+        saveMCPImplementation: vi.fn(),
+      };
+
+      const tool = saveMCPImplementation(mockServer, () => mockClient);
+
+      // Test with missing ID - should throw validation error
+      await expect(async () => {
+        await tool.handler({ name: 'Test' } as unknown);
+      }).rejects.toThrow();
+    });
+
+    it('should handle no updates provided', async () => {
+      const mockClient: IPulseMCPAdminClient = {
+        getPosts: vi.fn(),
+        getPost: vi.fn(),
+        createPost: vi.fn(),
+        updatePost: vi.fn(),
+        uploadImage: vi.fn(),
+        getAuthors: vi.fn(),
+        getAuthorBySlug: vi.fn(),
+        getAuthorById: vi.fn(),
+        getMCPServerBySlug: vi.fn(),
+        getMCPServerById: vi.fn(),
+        getMCPClientBySlug: vi.fn(),
+        getMCPClientById: vi.fn(),
+        searchMCPImplementations: vi.fn(),
+        saveMCPImplementation: vi.fn(),
+      };
+
+      const tool = saveMCPImplementation(mockServer, () => mockClient);
+      const result = await tool.handler({ id: 100 });
+
+      expect(mockClient.saveMCPImplementation).not.toHaveBeenCalled();
+      expect(result.content[0].text).toContain('No changes provided');
+    });
+
+    it('should handle partial updates', async () => {
+      const mockUpdatedImplementation = {
+        id: 100,
+        name: 'Original Name',
+        slug: 'original-slug',
+        type: 'server' as const,
+        status: 'live' as const, // Only this changed
+        short_description: 'Original description',
+        updated_at: '2024-01-20T16:30:00Z',
+      };
+
+      const mockClient: IPulseMCPAdminClient = {
+        getPosts: vi.fn(),
+        getPost: vi.fn(),
+        createPost: vi.fn(),
+        updatePost: vi.fn(),
+        uploadImage: vi.fn(),
+        getAuthors: vi.fn(),
+        getAuthorBySlug: vi.fn(),
+        getAuthorById: vi.fn(),
+        getMCPServerBySlug: vi.fn(),
+        getMCPServerById: vi.fn(),
+        getMCPClientBySlug: vi.fn(),
+        getMCPClientById: vi.fn(),
+        searchMCPImplementations: vi.fn(),
+        saveMCPImplementation: vi.fn().mockResolvedValue(mockUpdatedImplementation),
+      };
+
+      const tool = saveMCPImplementation(mockServer, () => mockClient);
+      const result = await tool.handler({ id: 100, status: 'live' });
+
+      expect(mockClient.saveMCPImplementation).toHaveBeenCalledWith(100, { status: 'live' });
+      expect(result.content[0].text).toContain('Successfully saved MCP implementation!');
+      expect(result.content[0].text).toContain('- status');
+    });
+
+    it('should handle validation errors (422)', async () => {
+      const mockClient: IPulseMCPAdminClient = {
+        getPosts: vi.fn(),
+        getPost: vi.fn(),
+        createPost: vi.fn(),
+        updatePost: vi.fn(),
+        uploadImage: vi.fn(),
+        getAuthors: vi.fn(),
+        getAuthorBySlug: vi.fn(),
+        getAuthorById: vi.fn(),
+        getMCPServerBySlug: vi.fn(),
+        getMCPServerById: vi.fn(),
+        getMCPClientBySlug: vi.fn(),
+        getMCPClientById: vi.fn(),
+        searchMCPImplementations: vi.fn(),
+        saveMCPImplementation: vi
+          .fn()
+          .mockRejectedValue(
+            new Error('Validation failed: slug must be unique, name is required')
+          ),
+      };
+
+      const tool = saveMCPImplementation(mockServer, () => mockClient);
+      const result = await tool.handler({ id: 100, name: '' });
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain(
+        'Error saving MCP implementation: Validation failed'
+      );
+    });
+
+    it('should handle not found errors (404)', async () => {
+      const mockClient: IPulseMCPAdminClient = {
+        getPosts: vi.fn(),
+        getPost: vi.fn(),
+        createPost: vi.fn(),
+        updatePost: vi.fn(),
+        uploadImage: vi.fn(),
+        getAuthors: vi.fn(),
+        getAuthorBySlug: vi.fn(),
+        getAuthorById: vi.fn(),
+        getMCPServerBySlug: vi.fn(),
+        getMCPServerById: vi.fn(),
+        getMCPClientBySlug: vi.fn(),
+        getMCPClientById: vi.fn(),
+        searchMCPImplementations: vi.fn(),
+        saveMCPImplementation: vi
+          .fn()
+          .mockRejectedValue(new Error('MCP implementation not found: 99999')),
+      };
+
+      const tool = saveMCPImplementation(mockServer, () => mockClient);
+      const result = await tool.handler({ id: 99999, name: 'Updated' });
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('MCP implementation not found');
+    });
+
+    it('should support unlinking associations with null values', async () => {
+      const mockUpdatedImplementation = {
+        id: 100,
+        name: 'Unlinked Implementation',
+        slug: 'unlinked-impl',
+        type: 'server' as const,
+        status: 'draft' as const,
+        mcp_server_id: null,
+        mcp_client_id: null,
+        updated_at: '2024-01-20T16:30:00Z',
+      };
+
+      const mockClient: IPulseMCPAdminClient = {
+        getPosts: vi.fn(),
+        getPost: vi.fn(),
+        createPost: vi.fn(),
+        updatePost: vi.fn(),
+        uploadImage: vi.fn(),
+        getAuthors: vi.fn(),
+        getAuthorBySlug: vi.fn(),
+        getAuthorById: vi.fn(),
+        getMCPServerBySlug: vi.fn(),
+        getMCPServerById: vi.fn(),
+        getMCPClientBySlug: vi.fn(),
+        getMCPClientById: vi.fn(),
+        searchMCPImplementations: vi.fn(),
+        saveMCPImplementation: vi.fn().mockResolvedValue(mockUpdatedImplementation),
+      };
+
+      const tool = saveMCPImplementation(mockServer, () => mockClient);
+      const result = await tool.handler({
+        id: 100,
+        mcp_server_id: null,
+        mcp_client_id: null,
+      });
+
+      expect(mockClient.saveMCPImplementation).toHaveBeenCalledWith(100, {
+        mcp_server_id: null,
+        mcp_client_id: null,
+      });
+
+      expect(result.content[0].text).toContain('Successfully saved MCP implementation!');
+      expect(result.content[0].text).toContain('- mcp_server_id');
+      expect(result.content[0].text).toContain('- mcp_client_id');
+    });
+
+    it('should support updating all field types (enums and strings)', async () => {
+      const mockUpdatedImplementation = {
+        id: 100,
+        name: 'TypeScript Database',
+        slug: 'ts-database',
+        type: 'client' as const,
+        status: 'archived' as const,
+        classification: 'community' as const,
+        implementation_language: 'TypeScript',
+        provider_name: 'Community Team',
+        url: 'https://example.com/ts-db',
+        github_stars: 250,
+        short_description: 'TypeScript database client',
+        description: 'Full TypeScript database client implementation',
+        updated_at: '2024-01-20T16:30:00Z',
+      };
+
+      const mockClient: IPulseMCPAdminClient = {
+        getPosts: vi.fn(),
+        getPost: vi.fn(),
+        createPost: vi.fn(),
+        updatePost: vi.fn(),
+        uploadImage: vi.fn(),
+        getAuthors: vi.fn(),
+        getAuthorBySlug: vi.fn(),
+        getAuthorById: vi.fn(),
+        getMCPServerBySlug: vi.fn(),
+        getMCPServerById: vi.fn(),
+        getMCPClientBySlug: vi.fn(),
+        getMCPClientById: vi.fn(),
+        searchMCPImplementations: vi.fn(),
+        saveMCPImplementation: vi.fn().mockResolvedValue(mockUpdatedImplementation),
+      };
+
+      const tool = saveMCPImplementation(mockServer, () => mockClient);
+      const result = await tool.handler({
+        id: 100,
+        name: 'TypeScript Database',
+        type: 'client',
+        status: 'archived',
+        classification: 'community',
+        implementation_language: 'TypeScript',
+        provider_name: 'Community Team',
+        url: 'https://example.com/ts-db',
+        github_stars: 250,
+        short_description: 'TypeScript database client',
+        description: 'Full TypeScript database client implementation',
+        slug: 'ts-database',
+      });
+
+      expect(mockClient.saveMCPImplementation).toHaveBeenCalledWith(100, {
+        name: 'TypeScript Database',
+        type: 'client',
+        status: 'archived',
+        classification: 'community',
+        implementation_language: 'TypeScript',
+        provider_name: 'Community Team',
+        url: 'https://example.com/ts-db',
+        github_stars: 250,
+        short_description: 'TypeScript database client',
+        description: 'Full TypeScript database client implementation',
+        slug: 'ts-database',
+      });
+
+      expect(result.content[0].text).toContain('Successfully saved MCP implementation!');
+      expect(result.content[0].text).toContain('client');
+      expect(result.content[0].text).toContain('archived');
+      expect(result.content[0].text).toContain('community');
+    });
+
+    it('should handle API errors gracefully', async () => {
+      const mockClient: IPulseMCPAdminClient = {
+        getPosts: vi.fn(),
+        getPost: vi.fn(),
+        createPost: vi.fn(),
+        updatePost: vi.fn(),
+        uploadImage: vi.fn(),
+        getAuthors: vi.fn(),
+        getAuthorBySlug: vi.fn(),
+        getAuthorById: vi.fn(),
+        getMCPServerBySlug: vi.fn(),
+        getMCPServerById: vi.fn(),
+        getMCPClientBySlug: vi.fn(),
+        getMCPClientById: vi.fn(),
+        searchMCPImplementations: vi.fn(),
+        saveMCPImplementation: vi
+          .fn()
+          .mockRejectedValue(new Error('Invalid API key')),
+      };
+
+      const tool = saveMCPImplementation(mockServer, () => mockClient);
+      const result = await tool.handler({ id: 100, name: 'Updated' });
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('Error saving MCP implementation: Invalid API key');
     });
   });
 });

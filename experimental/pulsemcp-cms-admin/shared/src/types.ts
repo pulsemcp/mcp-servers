@@ -136,3 +136,19 @@ export interface MCPImplementationsResponse {
     limit?: number;
   };
 }
+
+export interface SaveMCPImplementationParams {
+  name?: string;
+  short_description?: string;
+  description?: string;
+  type?: 'server' | 'client';
+  status?: 'draft' | 'live' | 'archived';
+  slug?: string;
+  url?: string;
+  provider_name?: string;
+  github_stars?: number;
+  classification?: 'official' | 'community' | 'reference';
+  implementation_language?: string;
+  mcp_server_id?: number | null;
+  mcp_client_id?: number | null;
+}
