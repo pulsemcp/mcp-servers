@@ -27,10 +27,7 @@ const SaveMCPImplementationSchema = z.object({
   short_description: z.string().optional().describe(PARAM_DESCRIPTIONS.short_description),
   description: z.string().optional().describe(PARAM_DESCRIPTIONS.description),
   type: z.enum(['server', 'client']).optional().describe(PARAM_DESCRIPTIONS.type),
-  status: z
-    .enum(['draft', 'live', 'archived'])
-    .optional()
-    .describe(PARAM_DESCRIPTIONS.status),
+  status: z.enum(['draft', 'live', 'archived']).optional().describe(PARAM_DESCRIPTIONS.status),
   slug: z.string().optional().describe(PARAM_DESCRIPTIONS.slug),
   url: z.string().optional().describe(PARAM_DESCRIPTIONS.url),
   provider_name: z.string().optional().describe(PARAM_DESCRIPTIONS.provider_name),

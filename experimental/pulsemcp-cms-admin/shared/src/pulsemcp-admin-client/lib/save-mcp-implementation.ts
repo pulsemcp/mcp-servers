@@ -83,9 +83,7 @@ export async function saveMCPImplementation(
       const errors = errorData.errors || ['Validation failed'];
       throw new Error(`Validation failed: ${errors.join(', ')}`);
     }
-    throw new Error(
-      `Failed to save MCP implementation: ${response.status} ${response.statusText}`
-    );
+    throw new Error(`Failed to save MCP implementation: ${response.status} ${response.statusText}`);
   }
 
   const data = await response.json();

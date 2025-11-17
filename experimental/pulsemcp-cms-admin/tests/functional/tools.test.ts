@@ -1067,7 +1067,9 @@ describe('Newsletter Tools', () => {
       const result = await tool.handler({});
 
       expect(result.isError).toBe(true);
-      expect(result.content[0].text).toContain('Error fetching draft MCP implementations: Invalid API key');
+      expect(result.content[0].text).toContain(
+        'Error fetching draft MCP implementations: Invalid API key'
+      );
     });
   });
 
@@ -1244,9 +1246,7 @@ describe('Newsletter Tools', () => {
         searchMCPImplementations: vi.fn(),
         saveMCPImplementation: vi
           .fn()
-          .mockRejectedValue(
-            new Error('Validation failed: slug must be unique, name is required')
-          ),
+          .mockRejectedValue(new Error('Validation failed: slug must be unique, name is required')),
       };
 
       const tool = saveMCPImplementation(mockServer, () => mockClient);
@@ -1416,9 +1416,7 @@ describe('Newsletter Tools', () => {
         getMCPClientBySlug: vi.fn(),
         getMCPClientById: vi.fn(),
         searchMCPImplementations: vi.fn(),
-        saveMCPImplementation: vi
-          .fn()
-          .mockRejectedValue(new Error('Invalid API key')),
+        saveMCPImplementation: vi.fn().mockRejectedValue(new Error('Invalid API key')),
       };
 
       const tool = saveMCPImplementation(mockServer, () => mockClient);
