@@ -21,6 +21,7 @@ This server follows the standard MCP server template architecture with:
 The server integrates with the following Hatchbox API endpoints:
 
 1. **Environment Variables API**
+
    - PUT `https://app.hatchbox.io/api/v1/accounts/{accountId}/apps/{appId}/env_vars`
    - DELETE `https://app.hatchbox.io/api/v1/accounts/{accountId}/apps/{appId}/env_vars`
    - Note: GET endpoint is not available in the Hatchbox API

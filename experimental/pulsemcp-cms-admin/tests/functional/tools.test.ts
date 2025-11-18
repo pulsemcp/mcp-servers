@@ -654,8 +654,10 @@ describe('Newsletter Tools', () => {
 
   describe('parseEnabledToolGroups', () => {
     it('should parse valid tool groups from parameter', () => {
-      const groups = parseEnabledToolGroups('newsletter,server_queue');
-      expect(groups).toEqual(['newsletter', 'server_queue']);
+      const groups = parseEnabledToolGroups(
+        'newsletter,server_queue_readonly,server_queue_all'
+      );
+      expect(groups).toEqual(['newsletter', 'server_queue_readonly', 'server_queue_all']);
     });
 
     it('should parse single group', () => {
@@ -664,28 +666,32 @@ describe('Newsletter Tools', () => {
     });
 
     it('should handle whitespace in group names', () => {
-      const groups = parseEnabledToolGroups('newsletter , server_queue ');
-      expect(groups).toEqual(['newsletter', 'server_queue']);
+      const groups = parseEnabledToolGroups(
+        'newsletter , server_queue_readonly , server_queue_all '
+      );
+      expect(groups).toEqual(['newsletter', 'server_queue_readonly', 'server_queue_all']);
     });
 
     it('should filter out invalid group names', () => {
-      const groups = parseEnabledToolGroups('newsletter,invalid_group,server_queue');
-      expect(groups).toEqual(['newsletter', 'server_queue']);
+      const groups = parseEnabledToolGroups(
+        'newsletter,invalid_group,server_queue_readonly'
+      );
+      expect(groups).toEqual(['newsletter', 'server_queue_readonly']);
     });
 
     it('should return all groups when empty string provided', () => {
       const groups = parseEnabledToolGroups('');
-      expect(groups).toEqual(['newsletter', 'server_queue']);
+      expect(groups).toEqual(['newsletter', 'server_queue_readonly', 'server_queue_all']);
     });
 
     it('should return all groups when no parameter provided', () => {
       const groups = parseEnabledToolGroups();
-      expect(groups).toEqual(['newsletter', 'server_queue']);
+      expect(groups).toEqual(['newsletter', 'server_queue_readonly', 'server_queue_all']);
     });
 
     it('should prioritize parameter over environment variable', () => {
       const originalEnv = process.env.PULSEMCP_ADMIN_ENABLED_TOOLGROUPS;
-      process.env.PULSEMCP_ADMIN_ENABLED_TOOLGROUPS = 'server_queue';
+      process.env.PULSEMCP_ADMIN_ENABLED_TOOLGROUPS = 'server_queue_readonly';
 
       const groups = parseEnabledToolGroups('newsletter');
       expect(groups).toEqual(['newsletter']);
@@ -747,14 +753,14 @@ describe('Newsletter Tools', () => {
       expect(toolNames).not.toContain('save_mcp_implementation');
     });
 
-    it('should register only server_queue tools when server_queue group is enabled', async () => {
+    it('should register only server_queue tools when server_queue_all group is enabled', async () => {
       const mockServer = new Server(
         { name: 'test', version: '1.0.0' },
         { capabilities: { tools: {} } }
       );
       const clientFactory = () => createMockClient();
 
-      const registerTools = createRegisterTools(clientFactory, 'server_queue');
+      const registerTools = createRegisterTools(clientFactory, 'server_queue_all');
       registerTools(mockServer);
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -778,7 +784,10 @@ describe('Newsletter Tools', () => {
       );
       const clientFactory = () => createMockClient();
 
-      const registerTools = createRegisterTools(clientFactory, 'newsletter,server_queue');
+      const registerTools = createRegisterTools(
+        clientFactory,
+        'newsletter,server_queue_readonly,server_queue_all'
+      );
       registerTools(mockServer);
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any

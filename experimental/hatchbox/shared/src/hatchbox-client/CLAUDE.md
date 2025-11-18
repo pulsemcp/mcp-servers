@@ -14,6 +14,7 @@ The client provides methods to interact with the Hatchbox API:
 ### API Endpoints
 
 1. **Environment Variables**
+
    - GET `/api/v1/accounts/{accountId}/apps/{appId}/env_vars`
    - PUT `/api/v1/accounts/{accountId}/apps/{appId}/env_vars`
 

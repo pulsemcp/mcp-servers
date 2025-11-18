@@ -9,10 +9,12 @@ This is a comprehensive template for creating new MCP servers with TypeScript, t
 ## Using This Template
 
 1. **Copy the entire directory** to your desired location:
+
    - For experimental: `cp -r mcp-server-template experimental/myname`
    - For production: `cp -r mcp-server-template myname`
 
 2. **Replace placeholders** throughout all files:
+
    - `NAME` → your server name
    - `DESCRIPTION` → your server description
    - `YOUR_NAME` → author name
@@ -20,15 +22,18 @@ This is a comprehensive template for creating new MCP servers with TypeScript, t
    - `IExampleClient`/`ExampleClient` → your client interface/class names
 
 3. **Choose appropriate naming**:
+
    - **Experimental servers** (in `experimental/`): Use simple names like `my-server-mcp-server`
    - **Productionized servers** (in `productionized/`): Use scoped npm names like `@pulsemcp/pulse-servername`
    - Update package.json names, bin entries, and server name in server.ts accordingly
 
 4. **Set up CI/CD** (optional):
+
    - Follow the checklist in `CI_SETUP.md`
    - Delete `CI_SETUP.md` after completing setup
 
 5. **Update README preparation script**:
+
    - Edit `scripts/prepare-npm-readme.js` to match your server's title pattern
    - Update the GitHub repository URL path
    - Customize the repository notice text as needed
