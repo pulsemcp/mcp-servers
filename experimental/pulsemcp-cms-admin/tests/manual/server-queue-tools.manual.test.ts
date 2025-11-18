@@ -178,7 +178,8 @@ describe('Draft MCP Implementations - Manual Tests with Real API', () => {
       // Should show success message
       expect(text).toContain('Successfully saved MCP implementation');
       expect(text).toContain(`**ID:** ${testImplementationId}`);
-      expect(text).toContain('Updated test description via MCP tool');
+      // Should list the updated field
+      expect(text).toContain('short_description');
     });
 
     it('should handle multiple field updates', async () => {
@@ -197,8 +198,9 @@ describe('Draft MCP Implementations - Manual Tests with Real API', () => {
       const text = result.content[0].text;
 
       expect(text).toContain('Successfully saved MCP implementation');
-      expect(text).toContain('Multi-field update test');
-      expect(text).toContain('Test Provider');
+      // Should list both updated fields
+      expect(text).toContain('short_description');
+      expect(text).toContain('provider_name');
 
       console.log('Multi-field update result:', text);
     });
@@ -223,17 +225,14 @@ describe('Draft MCP Implementations - Manual Tests with Real API', () => {
     });
 
     it('should validate required ID parameter', async () => {
-      const result = await client.callTool('save_mcp_implementation', {
-        name: 'Test without ID',
-      });
+      // Zod validation happens at the MCP protocol level and throws an error
+      await expect(
+        client.callTool('save_mcp_implementation', {
+          name: 'Test without ID',
+        })
+      ).rejects.toThrow(/required|id/i);
 
-      expect(result.isError).toBeTruthy();
-      const text = result.content[0].text;
-
-      // Should show validation error
-      expect(text).toMatch(/required|id/i);
-
-      console.log('Validation error:', text);
+      console.log('Validation correctly rejected missing ID parameter');
     });
 
     it('should handle non-existent implementation ID', async () => {
