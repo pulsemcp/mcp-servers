@@ -124,6 +124,9 @@ export interface MCPImplementation {
   mcp_client_id?: number | null;
   created_at?: string;
   updated_at?: string;
+  // Associated objects (populated by tool, not API)
+  mcp_server?: MCPServer | null;
+  mcp_client?: MCPClient | null;
 }
 
 export interface MCPImplementationsResponse {

@@ -8,9 +8,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
-- `get_draft_mcp_implementations` tool for retrieving paginated list of draft MCP implementations
+- `get_draft_mcp_implementations` tool for retrieving paginated list of draft MCP implementations **with associated objects**
+  - Automatically fetches and includes linked MCP Server details (name, description, classification, downloads)
+  - Automatically fetches and includes linked MCP Client details (name, description, featured status, logo)
+  - Provides complete context for reviewing drafts without additional API calls
 - `save_mcp_implementation` tool for updating MCP implementations (replicates Admin panel "Save Changes" functionality)
 - New types: `SaveMCPImplementationParams` for MCP implementation updates
+- Extended `MCPImplementation` type to include optional `mcp_server` and `mcp_client` associated objects
 - API client methods: `getDraftMCPImplementations` and `saveMCPImplementation`
 - Comprehensive test coverage for new tools (30 new tests)
 - Missing setup scripts: `local/setup-dev.js` and `scripts/run-vitest.js`
@@ -18,6 +22,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Changed
 
 - Tool groups updated: `server_queue` now contains 3 tools (was 1 tool)
+- `get_draft_mcp_implementations` now fetches and populates associated MCP server/client objects for each implementation
 
 ## [0.1.0] - 2025-10-08
 

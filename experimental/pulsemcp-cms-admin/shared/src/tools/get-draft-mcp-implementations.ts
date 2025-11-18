@@ -16,7 +16,7 @@ const GetDraftMCPImplementationsSchema = z.object({
 export function getDraftMCPImplementations(_server: Server, clientFactory: ClientFactory) {
   return {
     name: 'get_draft_mcp_implementations',
-    description: `Retrieve a paginated list of draft MCP implementations from the PulseMCP Admin panel. Returns formatted markdown with implementation details and metadata.
+    description: `Retrieve a paginated list of draft MCP implementations from the PulseMCP Admin panel with all associated objects. Returns formatted markdown with implementation details, metadata, and linked resources.
 
 This tool returns the same data shown in the Admin panel sidebar under "MCPs" - all MCP implementations currently in draft status that need review, editing, or publishing.
 
@@ -29,16 +29,20 @@ The response is formatted as markdown with:
   - Classification (official, community, reference)
   - Implementation language
   - Provider name
-  - Associated MCP server/client ID (if linked)
+  - **Associated MCP Server details** (if linked): name, slug, description, classification, download stats
+  - **Associated MCP Client details** (if linked): name, slug, description, featured status, logo URL
   - Created and updated dates
 
+Associated objects are automatically fetched and included for each implementation that has linked MCP servers or clients, providing complete context for review and editing.
+
 Use cases:
-- Review all draft implementations that need attention
+- Review all draft implementations with complete context including linked servers/clients
 - Find specific draft implementations to edit before publishing
-- Monitor the queue of pending implementations
-- Check implementation details before making updates
+- Monitor the queue of pending implementations with their associations
+- Check implementation and linked resource details before making updates
 - Track which implementations are ready for publication
-- Search for specific draft implementations by name or description`,
+- Search for specific draft implementations by name or description
+- View complete server/client information without separate API calls`,
     inputSchema: {
       type: 'object',
       properties: {
@@ -58,6 +62,27 @@ Use cases:
 
       try {
         const response = await client.getDraftMCPImplementations(validatedArgs);
+
+        // Fetch associated MCP servers and clients for each implementation
+        for (const impl of response.implementations) {
+          if (impl.mcp_server_id) {
+            try {
+              impl.mcp_server = await client.getMCPServerById(impl.mcp_server_id);
+            } catch (error) {
+              console.error(`Failed to fetch MCP server ${impl.mcp_server_id}:`, error);
+              impl.mcp_server = null;
+            }
+          }
+
+          if (impl.mcp_client_id) {
+            try {
+              impl.mcp_client = await client.getMCPClientById(impl.mcp_client_id);
+            } catch (error) {
+              console.error(`Failed to fetch MCP client ${impl.mcp_client_id}:`, error);
+              impl.mcp_client = null;
+            }
+          }
+        }
 
         // Format the response for MCP
         let content = `Found ${response.implementations.length} draft MCP implementations`;
@@ -96,12 +121,34 @@ Use cases:
             content += `   GitHub Stars: ${impl.github_stars}\n`;
           }
 
-          if (impl.mcp_server_id) {
-            content += `   Linked MCP Server ID: ${impl.mcp_server_id}\n`;
+          if (impl.mcp_server) {
+            content += `   Linked MCP Server: ${impl.mcp_server.name || impl.mcp_server.slug} (${impl.mcp_server.slug}, ID: ${impl.mcp_server.id})\n`;
+            if (impl.mcp_server.description) {
+              content += `     Server Description: ${impl.mcp_server.description}\n`;
+            }
+            if (impl.mcp_server.classification) {
+              content += `     Server Classification: ${impl.mcp_server.classification}\n`;
+            }
+            if (impl.mcp_server.downloads_estimate_total) {
+              content += `     Total Downloads: ${impl.mcp_server.downloads_estimate_total.toLocaleString()}\n`;
+            }
+          } else if (impl.mcp_server_id) {
+            content += `   Linked MCP Server ID: ${impl.mcp_server_id} (details not available)\n`;
           }
 
-          if (impl.mcp_client_id) {
-            content += `   Linked MCP Client ID: ${impl.mcp_client_id}\n`;
+          if (impl.mcp_client) {
+            content += `   Linked MCP Client: ${impl.mcp_client.name || impl.mcp_client.slug} (${impl.mcp_client.slug}, ID: ${impl.mcp_client.id})\n`;
+            if (impl.mcp_client.description) {
+              content += `     Client Description: ${impl.mcp_client.description}\n`;
+            }
+            if (impl.mcp_client.featured) {
+              content += `     Featured Client: Yes\n`;
+            }
+            if (impl.mcp_client.logo_url) {
+              content += `     Logo: ${impl.mcp_client.logo_url}\n`;
+            }
+          } else if (impl.mcp_client_id) {
+            content += `   Linked MCP Client ID: ${impl.mcp_client_id} (details not available)\n`;
           }
 
           if (impl.created_at) {
