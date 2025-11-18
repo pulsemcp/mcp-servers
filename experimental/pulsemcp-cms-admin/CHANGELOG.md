@@ -21,7 +21,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Changed
 
-- Tool groups updated: `server_queue` now contains 3 tools (was 1 tool)
+- **BREAKING**: Tool groups reorganized into 3 groups (was 2 groups):
+  - `newsletter`: All newsletter-related tools (6 tools)
+  - `server_queue_readonly`: Read-only server queue tools (2 tools: search, get_drafts)
+  - `server_queue_all`: All server queue tools including write operations (3 tools: search, get_drafts, save)
 - `get_draft_mcp_implementations` now fetches and populates associated MCP server/client objects for each implementation
 
 ## [0.1.0] - 2025-10-08

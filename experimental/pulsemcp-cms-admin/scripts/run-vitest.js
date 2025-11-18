@@ -1,14 +1,17 @@
 #!/usr/bin/env node
+
 /**
- * Wrapper script to run vitest with proper ES module support
+ * Wrapper script to run vitest with proper ESM support
  */
 
-import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
+import { run } from 'vitest/node';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+// Pass through all command-line arguments
+const args = process.argv.slice(2);
 
-// Import and run vitest CLI
-const vitestCliPath = join(__dirname, '../node_modules/vitest/dist/cli.js');
-await import(vitestCliPath);
+try {
+  await run('test', args);
+} catch (error) {
+  console.error('Error running vitest:', error);
+  process.exit(1);
+}
