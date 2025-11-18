@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [0.2.0] - 2025-11-17
+
 ### Added
 
 - `get_draft_mcp_implementations` tool for retrieving paginated list of draft MCP implementations **with associated objects**
@@ -18,6 +20,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - API client methods: `getDraftMCPImplementations` and `saveMCPImplementation`
 - Comprehensive test coverage for new tools (30 new tests)
 - Missing setup scripts: `local/setup-dev.js` and `scripts/run-vitest.js`
+- Manual tests for new tools with comprehensive coverage (26/29 passing)
 
 ### Changed
 
