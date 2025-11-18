@@ -200,20 +200,17 @@ The admin API key successfully authenticates and provides full access to all ope
 ### What's New in This PR
 
 1. **Tool Group Architecture**: Three toolsets now available
-
    - `newsletter`: All newsletter-related tools (6 tools)
    - `server_queue_readonly`: Read-only server queue tools (2 tools: search, get_drafts)
    - `server_queue_all`: All server queue tools including write operations (3 tools: search, get_drafts, save)
 
 2. **get_draft_mcp_implementations**: New tool
-
    - Retrieves paginated list of draft MCP implementations
    - Automatically fetches and includes associated MCP server/client objects
    - Provides complete context without additional API calls
    - Supports pagination (20 items per page) and search filtering
 
 3. **save_mcp_implementation**: New tool
-
    - Updates MCP implementation details via API
    - Supports partial updates (only provided fields are updated)
    - Handles all field types including null values

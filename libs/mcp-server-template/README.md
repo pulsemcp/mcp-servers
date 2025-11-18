@@ -30,7 +30,6 @@ DESCRIPTION
 2. **Replace placeholders throughout the codebase**
 
    Search and replace these values:
-
    - `NAME` → your server name (e.g., `weather`, `github`)
    - `DESCRIPTION` → your server description
    - `YOUR_NAME` → your name (for package.json author field)
@@ -38,7 +37,6 @@ DESCRIPTION
    - `IExampleClient`/`ExampleClient` → your actual client interface/class
 
    **Naming Convention:**
-
    - **Experimental servers**: Use simple names like `weather-mcp-server`
    - **Productionized servers**: Use scoped npm names like `@pulsemcp/weather`
 

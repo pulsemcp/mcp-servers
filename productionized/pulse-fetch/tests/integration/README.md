@@ -68,13 +68,11 @@ This ensures our tests match exactly what happens during CI/CD publishing.
 ## How Built Mode Works
 
 1. **Setup Phase**:
-
    - Creates a `.test-publish` directory (gitignored)
    - Copies the local package files (excluding node_modules and build output)
    - Runs the `package-for-publish.js` script to simulate the npm publish process
 
 2. **Test Phase**:
-
    - Runs the same integration tests against the packaged output
    - Uses the `index.integration-with-mock.js` file with mocked dependencies
 
