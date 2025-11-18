@@ -654,9 +654,7 @@ describe('Newsletter Tools', () => {
 
   describe('parseEnabledToolGroups', () => {
     it('should parse valid tool groups from parameter', () => {
-      const groups = parseEnabledToolGroups(
-        'newsletter,server_queue_readonly,server_queue_all'
-      );
+      const groups = parseEnabledToolGroups('newsletter,server_queue_readonly,server_queue_all');
       expect(groups).toEqual(['newsletter', 'server_queue_readonly', 'server_queue_all']);
     });
 
@@ -673,9 +671,7 @@ describe('Newsletter Tools', () => {
     });
 
     it('should filter out invalid group names', () => {
-      const groups = parseEnabledToolGroups(
-        'newsletter,invalid_group,server_queue_readonly'
-      );
+      const groups = parseEnabledToolGroups('newsletter,invalid_group,server_queue_readonly');
       expect(groups).toEqual(['newsletter', 'server_queue_readonly']);
     });
 

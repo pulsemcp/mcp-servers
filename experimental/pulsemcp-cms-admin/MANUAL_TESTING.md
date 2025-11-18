@@ -29,6 +29,7 @@ All tests for the new `get_draft_mcp_implementations` tool passed successfully:
 - ✅ Should include comprehensive implementation details
 
 **Key Findings**:
+
 - Successfully fetches draft MCP implementations from the API
 - Correctly populates associated MCP server objects (name, description, classification, downloads)
 - Correctly populates associated MCP client objects (name, description, featured status, logo)
@@ -52,6 +53,7 @@ Core functionality verified, failures are test expectation issues:
 - ❌ Validation error test expects error response (gets MCP protocol error instead)
 
 **Known Issues**:
+
 - Test failures are related to test expectations, not actual functionality
 - The tool successfully updates implementations in the API
 - Some fields may not be returned in the API response (e.g., short_description after update)
@@ -198,17 +200,20 @@ The admin API key successfully authenticates and provides full access to all ope
 ### What's New in This PR
 
 1. **Tool Group Architecture**: Three toolsets now available
+
    - `newsletter`: All newsletter-related tools (6 tools)
    - `server_queue_readonly`: Read-only server queue tools (2 tools: search, get_drafts)
    - `server_queue_all`: All server queue tools including write operations (3 tools: search, get_drafts, save)
 
 2. **get_draft_mcp_implementations**: New tool
+
    - Retrieves paginated list of draft MCP implementations
    - Automatically fetches and includes associated MCP server/client objects
    - Provides complete context without additional API calls
    - Supports pagination (20 items per page) and search filtering
 
 3. **save_mcp_implementation**: New tool
+
    - Updates MCP implementation details via API
    - Supports partial updates (only provided fields are updated)
    - Handles all field types including null values
