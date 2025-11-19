@@ -1,6 +1,6 @@
 {
   "name": "pulsemcp-cms-admin-mcp-server",
-  "version": "0.0.2",
+  "version": "0.2.0",
   "description": "Internal MCP server for managing PulseMCP's content management system",
   "author": "PulseMCP",
   "license": "MIT",

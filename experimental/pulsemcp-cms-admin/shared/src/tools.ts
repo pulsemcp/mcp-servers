@@ -8,11 +8,17 @@ import { updateNewsletterPost } from './tools/update-newsletter-post.js';
 import { uploadImage } from './tools/upload-image.js';
 import { getAuthors } from './tools/get-authors.js';
 import { searchMCPImplementations } from './tools/search-mcp-implementations.js';
+import { getDraftMCPImplementations } from './tools/get-draft-mcp-implementations.js';
+import { saveMCPImplementation } from './tools/save-mcp-implementation.js';
 
 /**
  * Tool group definitions - groups of related tools that can be enabled/disabled together
+ *
+ * - newsletter: All newsletter-related tools (posts, authors, images)
+ * - server_queue_readonly: Read-only server queue tools (search, get drafts)
+ * - server_queue_all: All server queue tools including write operations (search, get drafts, save)
  */
-export type ToolGroup = 'newsletter' | 'server_queue';
+export type ToolGroup = 'newsletter' | 'server_queue_readonly' | 'server_queue_all';
 
 interface Tool {
   name: string;
@@ -38,12 +44,14 @@ const ALL_TOOLS: ToolDefinition[] = [
   { factory: updateNewsletterPost, groups: ['newsletter'] },
   { factory: uploadImage, groups: ['newsletter'] },
   { factory: getAuthors, groups: ['newsletter'] },
-  { factory: searchMCPImplementations, groups: ['server_queue'] },
+  { factory: searchMCPImplementations, groups: ['server_queue_readonly', 'server_queue_all'] },
+  { factory: getDraftMCPImplementations, groups: ['server_queue_readonly', 'server_queue_all'] },
+  { factory: saveMCPImplementation, groups: ['server_queue_all'] },
 ];
 
 /**
  * Parse enabled tool groups from environment variable or parameter
- * @param enabledGroupsParam - Comma-separated list of tool groups (e.g., "newsletter,server_queue")
+ * @param enabledGroupsParam - Comma-separated list of tool groups (e.g., "newsletter,server_queue_all")
  * @returns Array of enabled tool groups
  */
 export function parseEnabledToolGroups(enabledGroupsParam?: string): ToolGroup[] {
@@ -51,14 +59,18 @@ export function parseEnabledToolGroups(enabledGroupsParam?: string): ToolGroup[]
 
   if (!groupsStr) {
     // Default: all groups enabled
-    return ['newsletter', 'server_queue'];
+    return ['newsletter', 'server_queue_readonly', 'server_queue_all'];
   }
 
   const groups = groupsStr.split(',').map((g) => g.trim());
   const validGroups: ToolGroup[] = [];
 
   for (const group of groups) {
-    if (group === 'newsletter' || group === 'server_queue') {
+    if (
+      group === 'newsletter' ||
+      group === 'server_queue_readonly' ||
+      group === 'server_queue_all'
+    ) {
       validGroups.push(group);
     } else {
       console.warn(`Unknown tool group: ${group}`);
@@ -76,8 +88,13 @@ export function parseEnabledToolGroups(enabledGroupsParam?: string): ToolGroup[]
  * a factory pattern that accepts the server and clientFactory as parameters.
  *
  * Tool groups can be enabled/disabled via the PULSEMCP_ADMIN_ENABLED_TOOLGROUPS
- * environment variable (comma-separated list, e.g., "newsletter,server_queue").
+ * environment variable (comma-separated list, e.g., "newsletter,server_queue_readonly").
  * If not set, all tool groups are enabled by default.
+ *
+ * Available tool groups:
+ * - newsletter: All newsletter-related tools
+ * - server_queue_readonly: Read-only server queue tools (search, get drafts)
+ * - server_queue_all: All server queue tools including write operations
  *
  * @param clientFactory - Factory function that creates client instances
  * @param enabledGroups - Optional comma-separated list of enabled tool groups (overrides env var)

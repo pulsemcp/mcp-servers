@@ -10,7 +10,9 @@ import type {
   AuthorsResponse,
   MCPServer,
   MCPClient,
+  MCPImplementation,
   MCPImplementationsResponse,
+  SaveMCPImplementationParams,
 } from './types.js';
 
 // PulseMCP Admin API client interface
@@ -51,6 +53,16 @@ export interface IPulseMCPAdminClient {
     limit?: number;
     offset?: number;
   }): Promise<MCPImplementationsResponse>;
+
+  getDraftMCPImplementations(params?: {
+    page?: number;
+    search?: string;
+  }): Promise<MCPImplementationsResponse>;
+
+  saveMCPImplementation(
+    id: number,
+    params: SaveMCPImplementationParams
+  ): Promise<MCPImplementation>;
 }
 
 // PulseMCP Admin API client implementation
@@ -147,6 +159,26 @@ export class PulseMCPAdminClient implements IPulseMCPAdminClient {
       './pulsemcp-admin-client/lib/search-mcp-implementations.js'
     );
     return searchMCPImplementations(this.apiKey, this.baseUrl, params);
+  }
+
+  async getDraftMCPImplementations(params?: {
+    page?: number;
+    search?: string;
+  }): Promise<MCPImplementationsResponse> {
+    const { getDraftMCPImplementations } = await import(
+      './pulsemcp-admin-client/lib/get-draft-mcp-implementations.js'
+    );
+    return getDraftMCPImplementations(this.apiKey, this.baseUrl, params);
+  }
+
+  async saveMCPImplementation(
+    id: number,
+    params: SaveMCPImplementationParams
+  ): Promise<MCPImplementation> {
+    const { saveMCPImplementation } = await import(
+      './pulsemcp-admin-client/lib/save-mcp-implementation.js'
+    );
+    return saveMCPImplementation(this.apiKey, this.baseUrl, id, params);
   }
 }
 

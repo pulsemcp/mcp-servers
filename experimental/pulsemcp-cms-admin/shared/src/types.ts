@@ -124,6 +124,9 @@ export interface MCPImplementation {
   mcp_client_id?: number | null;
   created_at?: string;
   updated_at?: string;
+  // Associated objects (populated by tool, not API)
+  mcp_server?: MCPServer | null;
+  mcp_client?: MCPClient | null;
 }
 
 export interface MCPImplementationsResponse {
@@ -135,4 +138,20 @@ export interface MCPImplementationsResponse {
     has_next?: boolean;
     limit?: number;
   };
+}
+
+export interface SaveMCPImplementationParams {
+  name?: string;
+  short_description?: string;
+  description?: string;
+  type?: 'server' | 'client';
+  status?: 'draft' | 'live' | 'archived';
+  slug?: string;
+  url?: string;
+  provider_name?: string;
+  github_stars?: number;
+  classification?: 'official' | 'community' | 'reference';
+  implementation_language?: string;
+  mcp_server_id?: number | null;
+  mcp_client_id?: number | null;
 }
