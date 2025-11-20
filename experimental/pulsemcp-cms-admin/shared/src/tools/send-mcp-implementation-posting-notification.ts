@@ -94,21 +94,13 @@ Use cases:
       const client = clientFactory();
 
       try {
-        // Get the implementation details
-        const { searchMCPImplementations } = await import(
-          '../pulsemcp-admin-client/lib/search-mcp-implementations.js'
-        );
-        const searchResults = await searchMCPImplementations(
-          // Access the client's private properties through a workaround
-          (client as any).apiKey,
-          (client as any).baseUrl,
-          {
-            query: `id:${validatedArgs.implementation_id}`,
-            type: 'all',
-            status: 'all',
-            limit: 1,
-          }
-        );
+        // Get the implementation details by searching for the ID
+        const searchResults = await client.searchMCPImplementations({
+          query: `id:${validatedArgs.implementation_id}`,
+          type: 'all',
+          status: 'all',
+          limit: 1,
+        });
 
         if (!searchResults.implementations || searchResults.implementations.length === 0) {
           throw new Error(`Implementation with ID ${validatedArgs.implementation_id} not found`);
@@ -123,9 +115,7 @@ Use cases:
         } else if (implementation.type === 'client' && implementation.slug) {
           implementationUrl = `https://www.pulsemcp.com/clients/${implementation.slug}`;
         } else {
-          throw new Error(
-            `Cannot determine URL for implementation: missing slug or invalid type`
-          );
+          throw new Error(`Cannot determine URL for implementation: missing slug or invalid type`);
         }
 
         // Compose the email content (matching the web-app pattern)

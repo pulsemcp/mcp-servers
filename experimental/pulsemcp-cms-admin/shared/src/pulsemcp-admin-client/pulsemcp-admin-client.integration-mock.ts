@@ -420,7 +420,7 @@ export function createMockPulseMCPAdminClient(mockData: MockData): IPulseMCPAdmi
       return updatedImpl;
     },
 
-    async sendEmail(params) {
+    async sendEmail(params): Promise<SendEmailResponse> {
       if (mockData.errors?.sendEmail) {
         throw mockData.errors.sendEmail;
       }
