@@ -1,6 +1,7 @@
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { z } from 'zod';
 import type { ClientFactory } from '../server.js';
+import type { MCPImplementation } from '../types.js';
 
 const SendMCPImplementationPostingNotificationSchema = z.object({
   mcp_implementation_id: z
@@ -102,7 +103,8 @@ Error: No email address found in internal notes
         // Extract email from internal notes (simulating the email_in_notes method)
         // Look for email addresses in the format: word@domain.tld
         const emailRegex = /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b/;
-        const internalNotes = (implementation as any).internal_notes || '';
+        const internalNotes =
+          (implementation as MCPImplementation & { internal_notes?: string }).internal_notes || '';
         const emailMatch = internalNotes.match(emailRegex);
         const recipientEmail = emailMatch ? emailMatch[0] : null;
 

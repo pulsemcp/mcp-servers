@@ -518,7 +518,10 @@ describe('PulseMCP CMS Admin MCP Server Integration Tests', () => {
 
     it('should validate implementation ID is provided', async () => {
       try {
-        await client.callTool('send_mcp_implementation_posting_notification', {} as any);
+        await client.callTool(
+          'send_mcp_implementation_posting_notification',
+          {} as { mcp_implementation_id: number }
+        );
         expect(true).toBe(false);
       } catch (error) {
         // Expected - ID is required
