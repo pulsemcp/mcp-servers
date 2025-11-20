@@ -63,7 +63,6 @@ describe('PulseMCP CMS Admin - Toolgroups Integration Tests', () => {
     });
   });
 
-
   describe('server_queue_readonly group only', () => {
     let client: TestMCPClient;
 

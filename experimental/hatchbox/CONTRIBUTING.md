@@ -141,12 +141,14 @@ Manual tests are crucial for verifying real API integration:
 ## Adding New Features
 
 1. **New Tools**:
+
    - Create in `shared/src/tools/`
    - Follow existing tool patterns
    - Add to `shared/src/tools.ts`
    - Include tests
 
 2. **API Methods**:
+
    - Add to HatchboxClient class
    - Create lib file if complex
    - Mock in test files

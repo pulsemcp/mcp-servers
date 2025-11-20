@@ -709,7 +709,6 @@ describe('Newsletter Tools', () => {
         delete process.env.PULSEMCP_ADMIN_ENABLED_TOOLGROUPS;
       }
     });
-
   });
 
   describe('createRegisterTools with toolgroups filtering', () => {
