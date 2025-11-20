@@ -63,7 +63,7 @@ describe('PulseMCP CMS Admin - Toolgroups Integration Tests', () => {
     });
   });
 
-  describe('server_queue group only', () => {
+  describe('server_queue group only (backward compatibility)', () => {
     let client: TestMCPClient;
 
     beforeAll(async () => {
@@ -87,7 +87,7 @@ describe('PulseMCP CMS Admin - Toolgroups Integration Tests', () => {
       await client.disconnect();
     });
 
-    it('should only register server_queue tools', async () => {
+    it('should only register server_queue tools (maps to server_queue_all)', async () => {
       const tools = await client.listTools();
 
       expect(tools.tools).toHaveLength(3);
@@ -128,6 +128,102 @@ describe('PulseMCP CMS Admin - Toolgroups Integration Tests', () => {
     });
   });
 
+  describe('server_queue_readonly group only', () => {
+    let client: TestMCPClient;
+
+    beforeAll(async () => {
+      const serverPath = path.join(
+        __dirname,
+        '../../local/build/local/src/index.integration-with-mock.js'
+      );
+
+      client = new TestMCPClient({
+        serverPath: serverPath,
+        env: {
+          ...process.env,
+          PULSEMCP_ADMIN_ENABLED_TOOLGROUPS: 'server_queue_readonly',
+          PULSEMCP_MOCK_DATA: JSON.stringify({}),
+        },
+      });
+      await client.connect();
+    });
+
+    afterAll(async () => {
+      await client.disconnect();
+    });
+
+    it('should only register readonly server_queue tools', async () => {
+      const tools = await client.listTools();
+
+      expect(tools.tools).toHaveLength(2);
+      const toolNames = tools.tools.map((t) => t.name);
+
+      // Readonly server queue tools should be present
+      expect(toolNames).toContain('search_mcp_implementations');
+      expect(toolNames).toContain('get_draft_mcp_implementations');
+
+      // Write operations should NOT be present
+      expect(toolNames).not.toContain('save_mcp_implementation');
+
+      // Newsletter tools should NOT be present
+      expect(toolNames).not.toContain('get_newsletter_posts');
+    });
+
+    it('should error when calling write tool', async () => {
+      try {
+        await client.callTool('save_mcp_implementation', {
+          slug: 'test',
+          data: {},
+        });
+        // If we get here, the tool was found when it shouldn't have been
+        expect(true).toBe(false);
+      } catch (error) {
+        // Expected - tool should not be registered
+        expect(error).toBeDefined();
+      }
+    });
+  });
+
+  describe('server_queue_all group only', () => {
+    let client: TestMCPClient;
+
+    beforeAll(async () => {
+      const serverPath = path.join(
+        __dirname,
+        '../../local/build/local/src/index.integration-with-mock.js'
+      );
+
+      client = new TestMCPClient({
+        serverPath: serverPath,
+        env: {
+          ...process.env,
+          PULSEMCP_ADMIN_ENABLED_TOOLGROUPS: 'server_queue_all',
+          PULSEMCP_MOCK_DATA: JSON.stringify({}),
+        },
+      });
+      await client.connect();
+    });
+
+    afterAll(async () => {
+      await client.disconnect();
+    });
+
+    it('should register all server_queue tools including write operations', async () => {
+      const tools = await client.listTools();
+
+      expect(tools.tools).toHaveLength(3);
+      const toolNames = tools.tools.map((t) => t.name);
+
+      // All server queue tools should be present
+      expect(toolNames).toContain('search_mcp_implementations');
+      expect(toolNames).toContain('get_draft_mcp_implementations');
+      expect(toolNames).toContain('save_mcp_implementation');
+
+      // Newsletter tools should NOT be present
+      expect(toolNames).not.toContain('get_newsletter_posts');
+    });
+  });
+
   describe('both groups enabled', () => {
     let client: TestMCPClient;
 
@@ -141,7 +237,7 @@ describe('PulseMCP CMS Admin - Toolgroups Integration Tests', () => {
         serverPath: serverPath,
         env: {
           ...process.env,
-          PULSEMCP_ADMIN_ENABLED_TOOLGROUPS: 'newsletter,server_queue',
+          PULSEMCP_ADMIN_ENABLED_TOOLGROUPS: 'newsletter,server_queue_all',
           PULSEMCP_MOCK_DATA: JSON.stringify({}),
         },
       });
