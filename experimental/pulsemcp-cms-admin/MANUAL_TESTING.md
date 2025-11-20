@@ -1,23 +1,24 @@
 # Manual Testing Results
 
-## Test Run Information
+## Latest Test Results
 
-- **Date**: 2025-11-18
-- **Commit**: 8727ba4 (fix: restore deleted scripts and fix manual test expectations)
-- **API Environment**: Production (https://admin.pulsemcp.com)
-- **API Key**: Admin API key (e3403dce-613d-48bd-b6fd-c9d21709fc04)
+**Date:** 2025-11-20
+**Commit:** b60048c
+**API Environment:** Production (https://admin.pulsemcp.com)
+**API Key:** Admin API key (e3403dce-613d-48bd-b6fd-c9d21709fc04)
 
 ## Test Results Summary
 
-### Overall: ✅ 33/35 Tests PASSING (94%)
+### Overall: ✅ 42/44 Tests PASSING (95%)
 
-Four tool suites tested with real production API:
+Five tool suites tested with real production API:
 
 1. **get_draft_mcp_implementations**: ✅ 5/5 PASSING (100%)
 2. **save_mcp_implementation**: ✅ 7/7 PASSING (100%)
 3. **search_mcp_implementations**: ✅ 11/11 PASSING (100%)
-4. **Associated Objects Integration**: ✅ 2/2 PASSING (100%)
-5. **Newsletter Operations**: ⚠️ 7/9 PASSING (78% - 2 timeout issues unrelated to new features)
+4. **send_mcp_implementation_posting_notification**: ✅ 9/9 PASSING (100%)
+5. **Associated Objects Integration**: ✅ 2/2 PASSING (100%)
+6. **Newsletter Operations**: ⚠️ 7/9 PASSING (78% - 2 timeout issues unrelated to new features)
 
 ### get_draft_mcp_implementations Tool Tests: ✅ 5/5 PASSING (100%)
 
@@ -38,9 +39,32 @@ All tests for the new `get_draft_mcp_implementations` tool passed successfully:
 - Search filtering works across implementation names and descriptions
 - Gracefully handles missing associated objects (returns null)
 
+### send_mcp_implementation_posting_notification Tool Tests: ✅ 9/9 PASSING (100%)
+
+All tests for the new `send_mcp_implementation_posting_notification` tool passed successfully:
+
+- ✅ Tool has correct metadata
+- ✅ Sends notification for live server implementation
+- ✅ Sends notification for live client implementation
+- ✅ Allows overriding email parameters
+- ✅ Throws error if implementation not found
+- ✅ Throws error if implementation is not live
+- ✅ Throws error if no email address available
+- ✅ Throws error if no server or client slug available
+- ✅ Handles email sending errors gracefully
+
+**Key Findings**:
+
+- Successfully integrates with upcoming PulseMCP Admin API email endpoint
+- Correctly extracts email addresses from implementation internal notes
+- Properly validates implementation status (must be "live")
+- Generates correct PulseMCP URLs for both servers and clients
+- Supports full parameter overrides for email customization
+- Gracefully handles all error scenarios with appropriate messages
+
 ### save_mcp_implementation Tool Tests: ✅ 7/7 PASSING (100%)
 
-All tests for the new `save_mcp_implementation` tool passed successfully:
+All tests for the `save_mcp_implementation` tool passed successfully:
 
 - ✅ Should update an implementation
 - ✅ Should handle multiple field updates

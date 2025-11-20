@@ -122,6 +122,7 @@ export interface MCPImplementation {
   implementation_language?: string;
   mcp_server_id?: number | null;
   mcp_client_id?: number | null;
+  internal_notes?: string;
   created_at?: string;
   updated_at?: string;
   // Associated objects (populated by tool, not API)

@@ -35,6 +35,7 @@ interface MockData {
     searchMCPImplementations?: Error;
     getDraftMCPImplementations?: Error;
     saveMCPImplementation?: Error;
+    sendEmail?: Error;
   };
 }
 
@@ -416,6 +417,27 @@ export function createMockPulseMCPAdminClient(mockData: MockData): IPulseMCPAdmi
       };
 
       return updatedImpl;
+    },
+
+    async sendEmail(params) {
+      if (mockData.errors?.sendEmail) {
+        throw mockData.errors.sendEmail;
+      }
+
+      // Mock successful email response
+      return {
+        id: Math.floor(Math.random() * 10000),
+        sender_provider: 'sendgrid',
+        send_timestamp_utc: new Date().toISOString(),
+        from_email_address: params.from_email_address,
+        to_email_address: params.to_email_address,
+        subject: params.subject,
+        content_text: params.content,
+        content_html: `<html><body>${params.content.replace(/\n/g, '<br>')}</body></html>`,
+        campaign_identifier: `admin-api-email-${Date.now()}`,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
     },
   };
 }

@@ -764,7 +764,7 @@ describe('Newsletter Tools', () => {
       const listToolsHandler = handlers.get('tools/list');
       const result = await listToolsHandler({ method: 'tools/list', params: {} });
 
-      expect(result.tools).toHaveLength(3);
+      expect(result.tools).toHaveLength(4);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const toolNames = result.tools.map((t: any) => t.name);
       expect(toolNames).toContain('search_mcp_implementations');
@@ -791,7 +791,7 @@ describe('Newsletter Tools', () => {
       const listToolsHandler = handlers.get('tools/list');
       const result = await listToolsHandler({ method: 'tools/list', params: {} });
 
-      expect(result.tools).toHaveLength(9);
+      expect(result.tools).toHaveLength(10);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const toolNames = result.tools.map((t: any) => t.name);
       expect(toolNames).toContain('get_newsletter_posts');
@@ -815,7 +815,7 @@ describe('Newsletter Tools', () => {
       const listToolsHandler = handlers.get('tools/list');
       const result = await listToolsHandler({ method: 'tools/list', params: {} });
 
-      expect(result.tools).toHaveLength(9);
+      expect(result.tools).toHaveLength(10);
     });
   });
 

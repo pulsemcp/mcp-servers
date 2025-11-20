@@ -63,6 +63,27 @@ export interface IPulseMCPAdminClient {
     id: number,
     params: SaveMCPImplementationParams
   ): Promise<MCPImplementation>;
+
+  sendEmail(params: {
+    from_email_address: string;
+    from_name: string;
+    reply_to_email_address: string;
+    to_email_address: string;
+    subject: string;
+    content: string;
+  }): Promise<{
+    id: number;
+    sender_provider: string;
+    send_timestamp_utc: string;
+    from_email_address: string;
+    to_email_address: string;
+    subject: string;
+    content_text: string;
+    content_html: string;
+    campaign_identifier: string;
+    created_at: string;
+    updated_at: string;
+  }>;
 }
 
 // PulseMCP Admin API client implementation
@@ -179,6 +200,30 @@ export class PulseMCPAdminClient implements IPulseMCPAdminClient {
       './pulsemcp-admin-client/lib/save-mcp-implementation.js'
     );
     return saveMCPImplementation(this.apiKey, this.baseUrl, id, params);
+  }
+
+  async sendEmail(params: {
+    from_email_address: string;
+    from_name: string;
+    reply_to_email_address: string;
+    to_email_address: string;
+    subject: string;
+    content: string;
+  }): Promise<{
+    id: number;
+    sender_provider: string;
+    send_timestamp_utc: string;
+    from_email_address: string;
+    to_email_address: string;
+    subject: string;
+    content_text: string;
+    content_html: string;
+    campaign_identifier: string;
+    created_at: string;
+    updated_at: string;
+  }> {
+    const { sendEmail } = await import('./pulsemcp-admin-client/lib/send-email.js');
+    return sendEmail(this.apiKey, this.baseUrl, params);
   }
 }
 
