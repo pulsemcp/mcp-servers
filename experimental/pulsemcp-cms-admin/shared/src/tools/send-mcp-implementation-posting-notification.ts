@@ -1,6 +1,7 @@
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { z } from 'zod';
 import type { ClientFactory } from '../server.js';
+import { logError } from '../logging.js';
 
 // Parameter descriptions - single source of truth
 const PARAM_DESCRIPTIONS = {
@@ -128,7 +129,7 @@ Note: The email content includes the direct link to the published implementation
               implementationUrl = `https://www.pulsemcp.com/servers/${mcpServer.slug}`;
             }
           } catch (error) {
-            console.error(`Failed to fetch MCP server ${implementation.mcp_server_id}:`, error);
+            logError(`Failed to fetch MCP server ${implementation.mcp_server_id}`, error);
           }
         }
 
@@ -139,7 +140,7 @@ Note: The email content includes the direct link to the published implementation
               implementationUrl = `https://www.pulsemcp.com/clients/${mcpClient.slug}`;
             }
           } catch (error) {
-            console.error(`Failed to fetch MCP client ${implementation.mcp_client_id}:`, error);
+            logError(`Failed to fetch MCP client ${implementation.mcp_client_id}`, error);
           }
         }
 
