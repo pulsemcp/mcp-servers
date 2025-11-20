@@ -2,8 +2,8 @@
 
 ## Test Run Information
 
-- **Date**: 2025-11-18
-- **Commit**: 8727ba4 (fix: restore deleted scripts and fix manual test expectations)
+- **Date**: 2025-11-20
+- **Commit**: 354ef31 (test: remove backward compatibility tests)
 - **API Environment**: Production (https://admin.pulsemcp.com)
 - **API Key**: Admin API key (e3403dce-613d-48bd-b6fd-c9d21709fc04)
 
