@@ -59,8 +59,6 @@ This server organizes tools into groups that can be selectively enabled or disab
 
 You can control which tool groups are available by setting the `PULSEMCP_ADMIN_ENABLED_TOOLGROUPS` environment variable as a comma-separated list (e.g., `newsletter,server_queue_readonly` or `newsletter,server_queue_all`). If not set, all tool groups are enabled by default.
 
-**Backward Compatibility**: The legacy `server_queue` group name is still supported and maps to `server_queue_all` for backward compatibility.
-
 # Usage Tips
 
 - Use `get_newsletter_posts` to browse existing content before creating new posts

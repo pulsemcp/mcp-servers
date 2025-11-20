@@ -72,16 +72,12 @@ export function parseEnabledToolGroups(enabledGroupsParam?: string): ToolGroup[]
       group === 'server_queue_all'
     ) {
       validGroups.push(group);
-    } else if (group === 'server_queue') {
-      // Backward compatibility: 'server_queue' maps to 'server_queue_all'
-      validGroups.push('server_queue_all');
     } else {
       console.warn(`Unknown tool group: ${group}`);
     }
   }
 
-  // Deduplicate in case both legacy and new names are specified
-  return Array.from(new Set(validGroups));
+  return validGroups;
 }
 
 /**
