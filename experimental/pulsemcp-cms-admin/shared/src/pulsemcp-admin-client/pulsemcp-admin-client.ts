@@ -6,4 +6,6 @@ export type {
   CreatePostParams,
   UpdatePostParams,
   ImageUploadResponse,
+  SendEmailParams,
+  SendEmailResponse,
 } from '../types.js';

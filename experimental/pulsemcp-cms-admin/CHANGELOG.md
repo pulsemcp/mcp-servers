@@ -6,6 +6,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [0.2.1] - 2025-11-20
+
+### Added
+
+- `send_mcp_implementation_posting_notification` tool for sending email notifications to implementation submitters
+  - Composes and sends personalized thank-you emails when MCP implementations go live
+  - Includes direct links to the live implementation page (server or client)
+  - Follows the email pattern established in the web-app codebase
+  - Supports customizable sender information (from_email, from_name, reply_to_email)
+  - Tracks emails via campaign identifiers
+- `sendEmail` method in PulseMCPAdminClient for sending emails via admin API
+- New types: `SendEmailParams` and `SendEmailResponse` for email API integration
+
 ## [0.2.0] - 2025-11-17
 
 ### Added

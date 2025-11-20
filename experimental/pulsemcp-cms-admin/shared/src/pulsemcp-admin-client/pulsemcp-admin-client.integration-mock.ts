@@ -7,6 +7,7 @@ import type {
   MCPClient,
   MCPImplementation,
   MCPImplementationsResponse,
+  SendEmailResponse,
 } from '../types.js';
 
 interface MockData {
@@ -35,6 +36,7 @@ interface MockData {
     searchMCPImplementations?: Error;
     getDraftMCPImplementations?: Error;
     saveMCPImplementation?: Error;
+    sendEmail?: Error;
   };
 }
 
@@ -416,6 +418,24 @@ export function createMockPulseMCPAdminClient(mockData: MockData): IPulseMCPAdmi
       };
 
       return updatedImpl;
+    },
+
+    async sendEmail(params) {
+      if (mockData.errors?.sendEmail) {
+        throw mockData.errors.sendEmail;
+      }
+
+      return {
+        id: Math.floor(Math.random() * 1000),
+        from_email_address: params.from_email_address,
+        to_email_address: params.to_email_address,
+        subject: params.subject,
+        campaign_identifier: params.campaign_identifier || `mock-campaign-${Date.now()}`,
+        sender_provider: 'sendgrid',
+        send_timestamp_utc: new Date().toISOString(),
+        content_text: params.content,
+        content_html: `<p>${params.content}</p>`,
+      };
     },
   };
 }

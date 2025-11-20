@@ -155,3 +155,25 @@ export interface SaveMCPImplementationParams {
   mcp_server_id?: number | null;
   mcp_client_id?: number | null;
 }
+
+export interface SendEmailParams {
+  from_email_address: string;
+  from_name?: string;
+  reply_to_email_address?: string;
+  to_email_address: string;
+  subject: string;
+  content: string;
+  campaign_identifier?: string;
+}
+
+export interface SendEmailResponse {
+  id: number;
+  from_email_address: string;
+  to_email_address: string;
+  subject: string;
+  campaign_identifier: string;
+  sender_provider: string;
+  send_timestamp_utc: string;
+  content_text?: string;
+  content_html?: string;
+}
