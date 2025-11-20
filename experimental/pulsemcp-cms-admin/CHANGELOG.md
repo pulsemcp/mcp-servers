@@ -6,9 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
-## [0.2.1] - 2025-11-20
-
-### Fixed
+### Changed
 
 - Updated README to document the split of `server_queue` into `server_queue_readonly` and `server_queue_all` toolgroups
 - Updated integration tests to test both `server_queue_readonly` and `server_queue_all` groups
