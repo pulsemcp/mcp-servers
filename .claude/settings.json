@@ -2,18 +2,5 @@
   "permissions": {
     "allow": []
   },
-  "enableAllProjectMcpServers": true,
-  "hooks": {
-    "PreToolUse": [
-      {
-        "matcher": "Bash|Read|Write|Edit|Glob|Grep|NotebookEdit",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/validate-filesystem-root.sh"
-          }
-        ]
-      }
-    ]
-  }
+  "enableAllProjectMcpServers": true
 }
