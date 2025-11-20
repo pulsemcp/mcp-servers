@@ -13,6 +13,8 @@ import type {
   MCPImplementation,
   MCPImplementationsResponse,
   SaveMCPImplementationParams,
+  SendEmailParams,
+  SendEmailResponse,
 } from './types.js';
 
 // PulseMCP Admin API client interface
@@ -63,6 +65,8 @@ export interface IPulseMCPAdminClient {
     id: number,
     params: SaveMCPImplementationParams
   ): Promise<MCPImplementation>;
+
+  sendEmail(params: SendEmailParams): Promise<SendEmailResponse>;
 }
 
 // PulseMCP Admin API client implementation
@@ -179,6 +183,11 @@ export class PulseMCPAdminClient implements IPulseMCPAdminClient {
       './pulsemcp-admin-client/lib/save-mcp-implementation.js'
     );
     return saveMCPImplementation(this.apiKey, this.baseUrl, id, params);
+  }
+
+  async sendEmail(params: SendEmailParams): Promise<SendEmailResponse> {
+    const { sendEmail } = await import('./pulsemcp-admin-client/lib/send-email.js');
+    return sendEmail(this.apiKey, this.baseUrl, params);
   }
 }
 

@@ -7,6 +7,7 @@ import type {
   MCPClient,
   MCPImplementation,
   MCPImplementationsResponse,
+  SendEmailResponse,
 } from '../types.js';
 
 interface MockData {
@@ -416,6 +417,21 @@ export function createMockPulseMCPAdminClient(mockData: MockData): IPulseMCPAdmi
       };
 
       return updatedImpl;
+    },
+
+    async sendEmail(params) {
+      // Mock email sending
+      const mockResponse: SendEmailResponse = {
+        id: Math.floor(Math.random() * 1000),
+        to_email_address: params.to_email_address,
+        from_email_address: params.from_email_address,
+        subject: params.subject,
+        send_timestamp_utc: new Date().toISOString(),
+        content_text: params.content,
+        content_html: `<p>${params.content.replace(/\n/g, '<br>')}</p>`,
+      };
+
+      return mockResponse;
     },
   };
 }

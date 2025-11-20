@@ -90,13 +90,14 @@ describe('PulseMCP CMS Admin - Toolgroups Integration Tests', () => {
     it('should only register server_queue_all tools', async () => {
       const tools = await client.listTools();
 
-      expect(tools.tools).toHaveLength(3);
+      expect(tools.tools).toHaveLength(4);
       const toolNames = tools.tools.map((t) => t.name);
 
       // Server queue tools should be present
       expect(toolNames).toContain('search_mcp_implementations');
       expect(toolNames).toContain('get_draft_mcp_implementations');
       expect(toolNames).toContain('save_mcp_implementation');
+      expect(toolNames).toContain('send_mcp_implementation_posting_notification');
 
       // Newsletter tools should NOT be present
       expect(toolNames).not.toContain('get_newsletter_posts');
@@ -155,7 +156,7 @@ describe('PulseMCP CMS Admin - Toolgroups Integration Tests', () => {
     it('should register all tools', async () => {
       const tools = await client.listTools();
 
-      expect(tools.tools).toHaveLength(9);
+      expect(tools.tools).toHaveLength(10);
       const toolNames = tools.tools.map((t) => t.name);
 
       // All tools should be present
@@ -168,6 +169,7 @@ describe('PulseMCP CMS Admin - Toolgroups Integration Tests', () => {
       expect(toolNames).toContain('search_mcp_implementations');
       expect(toolNames).toContain('get_draft_mcp_implementations');
       expect(toolNames).toContain('save_mcp_implementation');
+      expect(toolNames).toContain('send_mcp_implementation_posting_notification');
     });
   });
 
@@ -200,12 +202,13 @@ describe('PulseMCP CMS Admin - Toolgroups Integration Tests', () => {
     it('should register all tools by default', async () => {
       const tools = await client.listTools();
 
-      expect(tools.tools).toHaveLength(9);
+      expect(tools.tools).toHaveLength(10);
       const toolNames = tools.tools.map((t) => t.name);
       expect(toolNames).toContain('get_newsletter_posts');
       expect(toolNames).toContain('search_mcp_implementations');
       expect(toolNames).toContain('get_draft_mcp_implementations');
       expect(toolNames).toContain('save_mcp_implementation');
+      expect(toolNames).toContain('send_mcp_implementation_posting_notification');
     });
   });
 });

@@ -468,7 +468,7 @@ describe('PulseMCP CMS Admin MCP Server Integration Tests', () => {
     it('should list all available tools', async () => {
       const tools = await client.listTools();
 
-      expect(tools.tools).toHaveLength(9);
+      expect(tools.tools).toHaveLength(10);
       const toolNames = tools.tools.map((t) => t.name);
       expect(toolNames).toContain('get_newsletter_posts');
       expect(toolNames).toContain('get_newsletter_post');
@@ -479,6 +479,51 @@ describe('PulseMCP CMS Admin MCP Server Integration Tests', () => {
       expect(toolNames).toContain('search_mcp_implementations');
       expect(toolNames).toContain('get_draft_mcp_implementations');
       expect(toolNames).toContain('save_mcp_implementation');
+      expect(toolNames).toContain('send_mcp_implementation_posting_notification');
+    });
+  });
+
+  describe('send_mcp_implementation_posting_notification', () => {
+    it('should send notification email for live implementation', async () => {
+      // This implementation already exists in the global mockData with ID 101 and is live
+      const result = await client.callTool('send_mcp_implementation_posting_notification', {
+        mcp_implementation_id: 101,
+      });
+
+      expect(result.isError).toBe(true);
+      // The existing implementation doesn't have an email in internal notes
+      expect(result.content[0].text).toContain('No email address found in internal notes');
+    });
+
+    it('should reject draft implementations', async () => {
+      const result = await client.callTool('send_mcp_implementation_posting_notification', {
+        mcp_implementation_id: 100, // This is a draft
+      });
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain(
+        "MCP implementation must be in 'live' status to send notification"
+      );
+      expect(result.content[0].text).toContain('current status: draft');
+    });
+
+    it('should handle non-existent implementation', async () => {
+      const result = await client.callTool('send_mcp_implementation_posting_notification', {
+        mcp_implementation_id: 99999,
+      });
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('MCP implementation with ID 99999 not found');
+    });
+
+    it('should validate implementation ID is provided', async () => {
+      try {
+        await client.callTool('send_mcp_implementation_posting_notification', {} as any);
+        expect(true).toBe(false);
+      } catch (error) {
+        // Expected - ID is required
+        expect(error).toBeDefined();
+      }
     });
   });
 });

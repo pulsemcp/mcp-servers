@@ -6,6 +6,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Added
+
+- `send_mcp_implementation_posting_notification` tool for sending email notifications to MCP implementation submitters when their submissions go live
+  - Automatically extracts email address from implementation internal notes
+  - Validates implementation status (must be "live")
+  - Sends personalized thank you email with direct link to live listing
+  - Supports both server and client implementations
+  - Includes proper error handling for missing emails or incorrect status
+- New API client method: `sendEmail` for sending emails via admin API
+- New types: `SendEmailParams` and `SendEmailResponse` for email functionality
+- Integration tests for the new notification tool
+
+### Changed
+
+- Tool groups updated: `server_queue_all` now includes 4 tools (was 3): search, get_drafts, save, and send_notification
+
 ## [0.2.0] - 2025-11-17
 
 ### Added
