@@ -1,6 +1,14 @@
 # Manual Testing Results
 
-## Test Run Information
+## Latest Test Results
+
+- **Date**: 2025-11-20
+- **Commit**: 36d7674 (feat: add send_mcp_implementation_posting_notification tool)
+- **API Environment**: Production (https://admin.pulsemcp.com)
+- **API Key**: Admin API key
+- **Note**: Manual testing for `send_mcp_implementation_posting_notification` will be performed after the email API endpoint (pulsemcp#1036) is merged and deployed to production. This tool has functional test coverage and follows the established pattern from the web-app codebase.
+
+## Previous Test Run Information
 
 - **Date**: 2025-11-18
 - **Commit**: 8727ba4 (fix: restore deleted scripts and fix manual test expectations)
