@@ -63,7 +63,7 @@ describe('PulseMCP CMS Admin - Toolgroups Integration Tests', () => {
     });
   });
 
-  describe('server_queue group only', () => {
+  describe('server_queue_all group only', () => {
     let client: TestMCPClient;
 
     beforeAll(async () => {
@@ -76,7 +76,7 @@ describe('PulseMCP CMS Admin - Toolgroups Integration Tests', () => {
         serverPath: serverPath,
         env: {
           ...process.env,
-          PULSEMCP_ADMIN_ENABLED_TOOLGROUPS: 'server_queue',
+          PULSEMCP_ADMIN_ENABLED_TOOLGROUPS: 'server_queue_all',
           PULSEMCP_MOCK_DATA: JSON.stringify({}),
         },
       });
@@ -87,7 +87,7 @@ describe('PulseMCP CMS Admin - Toolgroups Integration Tests', () => {
       await client.disconnect();
     });
 
-    it('should only register server_queue tools', async () => {
+    it('should only register server_queue_all tools', async () => {
       const tools = await client.listTools();
 
       expect(tools.tools).toHaveLength(3);
@@ -107,7 +107,7 @@ describe('PulseMCP CMS Admin - Toolgroups Integration Tests', () => {
       expect(toolNames).not.toContain('get_authors');
     });
 
-    it('should successfully call server_queue tool', async () => {
+    it('should successfully call server_queue_all tool', async () => {
       const result = await client.callTool('search_mcp_implementations', {
         query: 'test',
       });
@@ -141,7 +141,7 @@ describe('PulseMCP CMS Admin - Toolgroups Integration Tests', () => {
         serverPath: serverPath,
         env: {
           ...process.env,
-          PULSEMCP_ADMIN_ENABLED_TOOLGROUPS: 'newsletter,server_queue',
+          PULSEMCP_ADMIN_ENABLED_TOOLGROUPS: 'newsletter,server_queue_all',
           PULSEMCP_MOCK_DATA: JSON.stringify({}),
         },
       });
