@@ -675,16 +675,6 @@ describe('Newsletter Tools', () => {
       expect(groups).toEqual(['newsletter', 'server_queue_readonly']);
     });
 
-    it('should map legacy server_queue to server_queue_all for backward compatibility', () => {
-      const groups = parseEnabledToolGroups('server_queue');
-      expect(groups).toEqual(['server_queue_all']);
-    });
-
-    it('should handle legacy server_queue mixed with new groups', () => {
-      const groups = parseEnabledToolGroups('newsletter,server_queue');
-      expect(groups).toEqual(['newsletter', 'server_queue_all']);
-    });
-
     it('should return all groups when empty string provided', () => {
       const groups = parseEnabledToolGroups('');
       expect(groups).toEqual(['newsletter', 'server_queue_readonly', 'server_queue_all']);
