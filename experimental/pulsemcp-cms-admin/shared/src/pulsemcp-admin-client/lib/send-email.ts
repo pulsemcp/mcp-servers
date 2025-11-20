@@ -27,15 +27,25 @@ export async function sendEmail(
     content: string;
   }
 ): Promise<EmailResponse> {
-  const url = new URL('/admin/api/emails', baseUrl);
+  const url = new URL('/emails', baseUrl);
+
+  // Create form data for Rails-style parameters
+  const formData = new URLSearchParams();
+  formData.append('email[from_email_address]', params.from_email_address);
+  formData.append('email[from_name]', params.from_name);
+  formData.append('email[reply_to_email_address]', params.reply_to_email_address);
+  formData.append('email[to_email_address]', params.to_email_address);
+  formData.append('email[subject]', params.subject);
+  formData.append('email[content]', params.content);
 
   const response = await fetch(url.toString(), {
     method: 'POST',
     headers: {
-      'X-Admin-Api-Key': apiKey,
-      'Content-Type': 'application/json',
+      'X-API-Key': apiKey,
+      'Content-Type': 'application/x-www-form-urlencoded',
+      Accept: 'application/json',
     },
-    body: JSON.stringify({ email: params }),
+    body: formData.toString(),
   });
 
   if (!response.ok) {
