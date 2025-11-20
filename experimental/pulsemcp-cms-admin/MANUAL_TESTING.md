@@ -3,7 +3,7 @@
 ## Latest Test Results
 
 **Date:** 2025-11-20
-**Commit:** 24efdeb
+**Commit:** b60048c
 **API Environment:** Production (https://admin.pulsemcp.com)
 **API Key:** Admin API key (e3403dce-613d-48bd-b6fd-c9d21709fc04)
 
