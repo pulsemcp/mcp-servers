@@ -6,6 +6,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [0.2.1] - 2025-11-20
+
+### Added
+
+- `send_mcp_implementation_posting_notification` tool for sending email notifications when MCP implementations go live
+  - Sends thank you emails to submitters when their implementation is published
+  - Automatically extracts recipient email from implementation's internal notes
+  - Supports overriding email parameters (from, to, reply-to addresses)
+  - Includes direct link to the live implementation on PulseMCP
+  - Part of the `server_queue_all` tool group
+- `sendEmail` method added to IPulseMCPAdminClient interface
+- `send-email.ts` client implementation for calling the new admin API email endpoint
+- Extended `MCPImplementation` type to include optional `internal_notes` field
+- Comprehensive test coverage for the new email notification tool (9 functional tests)
+- Integration with the upcoming PulseMCP Admin API `/admin/api/emails` endpoint
+
 ## [0.2.0] - 2025-11-17
 
 ### Added
