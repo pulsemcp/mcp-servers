@@ -80,7 +80,8 @@ export function parseEnabledToolGroups(enabledGroupsParam?: string): ToolGroup[]
     }
   }
 
-  return validGroups;
+  // Deduplicate in case both legacy and new names are specified
+  return Array.from(new Set(validGroups));
 }
 
 /**

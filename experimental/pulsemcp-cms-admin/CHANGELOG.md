@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Added
+
+- Backward compatibility mapping for legacy `server_queue` toolgroup name (now maps to `server_queue_all`)
+
+### Fixed
+
+- Updated README to document the split of `server_queue` into `server_queue_readonly` and `server_queue_all` toolgroups
+
 ## [0.2.0] - 2025-11-17
 
 ### Added
@@ -24,10 +32,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Changed
 
-- **BREAKING**: Tool groups reorganized into 3 groups (was 2 groups):
+- **BREAKING** (mitigated with backward compatibility): Tool groups reorganized into 3 groups (was 2 groups):
   - `newsletter`: All newsletter-related tools (6 tools)
   - `server_queue_readonly`: Read-only server queue tools (2 tools: search, get_drafts)
   - `server_queue_all`: All server queue tools including write operations (3 tools: search, get_drafts, save)
+  - Note: Legacy `server_queue` name is still supported and maps to `server_queue_all` (added in unreleased version)
 - `get_draft_mcp_implementations` now fetches and populates associated MCP server/client objects for each implementation
 
 ## [0.1.0] - 2025-10-08

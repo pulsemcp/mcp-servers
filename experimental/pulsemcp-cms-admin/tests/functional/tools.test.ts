@@ -675,6 +675,16 @@ describe('Newsletter Tools', () => {
       expect(groups).toEqual(['newsletter', 'server_queue_readonly']);
     });
 
+    it('should map legacy server_queue to server_queue_all for backward compatibility', () => {
+      const groups = parseEnabledToolGroups('server_queue');
+      expect(groups).toEqual(['server_queue_all']);
+    });
+
+    it('should handle legacy server_queue mixed with new groups', () => {
+      const groups = parseEnabledToolGroups('newsletter,server_queue');
+      expect(groups).toEqual(['newsletter', 'server_queue_all']);
+    });
+
     it('should return all groups when empty string provided', () => {
       const groups = parseEnabledToolGroups('');
       expect(groups).toEqual(['newsletter', 'server_queue_readonly', 'server_queue_all']);
@@ -698,6 +708,26 @@ describe('Newsletter Tools', () => {
       } else {
         delete process.env.PULSEMCP_ADMIN_ENABLED_TOOLGROUPS;
       }
+    });
+
+    it('should map legacy server_queue to server_queue_all for backward compatibility', () => {
+      const groups = parseEnabledToolGroups('server_queue');
+      expect(groups).toEqual(['server_queue_all']);
+    });
+
+    it('should map legacy server_queue along with other groups', () => {
+      const groups = parseEnabledToolGroups('newsletter,server_queue');
+      expect(groups).toEqual(['newsletter', 'server_queue_all']);
+    });
+
+    it('should deduplicate when both server_queue and server_queue_all are specified', () => {
+      const groups = parseEnabledToolGroups('server_queue,server_queue_all');
+      expect(groups).toEqual(['server_queue_all']);
+    });
+
+    it('should deduplicate mixed legacy and new names with other groups', () => {
+      const groups = parseEnabledToolGroups('newsletter,server_queue,server_queue_all');
+      expect(groups).toEqual(['newsletter', 'server_queue_all']);
     });
   });
 
