@@ -26,9 +26,8 @@ interface RailsServerRemote {
 
 interface RailsMCPServer {
   id: number;
-  name?: string;
   slug: string;
-  description?: string;
+  // Note: name and description come from McpImplementation, not McpServer
   classification?: string;
   implementation_language?: string;
   downloads_estimate_total?: number;
@@ -44,9 +43,8 @@ interface RailsMCPServer {
 
 interface RailsMCPClient {
   id: number;
-  name?: string;
   slug: string;
-  description?: string;
+  // Note: name and description come from McpImplementation, not McpClient
   featured?: boolean;
   logo_url?: string | null;
 }
@@ -71,8 +69,8 @@ interface RailsImplementationsResponse {
     github_owner?: string;
     github_repo?: string;
     github_subfolder?: string;
-    github_repository_created_date?: string;
-    github_repository_status?: string;
+    github_created_date?: string;
+    github_status?: string;
     github_last_updated?: string;
     // Server-specific fields
     classification?: 'official' | 'community' | 'reference';
@@ -118,9 +116,7 @@ function mapMCPServer(server?: RailsMCPServer | null): MCPServer | null | undefi
   if (!server) return server;
   return {
     id: server.id,
-    name: server.name,
     slug: server.slug,
-    description: server.description,
     classification: server.classification,
     implementation_language: server.implementation_language,
     downloads_estimate_total: server.downloads_estimate_total,
@@ -139,9 +135,7 @@ function mapMCPClient(client?: RailsMCPClient | null): MCPClient | null | undefi
   if (!client) return client;
   return {
     id: client.id,
-    name: client.name,
     slug: client.slug,
-    description: client.description,
     featured: client.featured,
     logo_url: client.logo_url,
   };
@@ -210,8 +204,8 @@ export async function getDraftMCPImplementations(
         github_owner: impl.github_owner,
         github_repo: impl.github_repo,
         github_subfolder: impl.github_subfolder,
-        github_repository_created_date: impl.github_repository_created_date,
-        github_repository_status: impl.github_repository_status,
+        github_created_date: impl.github_created_date,
+        github_status: impl.github_status,
         github_last_updated: impl.github_last_updated,
         // Server-specific fields
         classification: impl.classification,

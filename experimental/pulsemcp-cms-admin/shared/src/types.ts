@@ -100,9 +100,8 @@ export interface MCPServerRemote {
 
 export interface MCPServer {
   id: number;
-  name?: string; // Not always present in API response
   slug: string;
-  description?: string;
+  // Note: name and description come from McpImplementation, not McpServer
   created_at?: string;
   updated_at?: string;
   classification?: string;
@@ -122,9 +121,8 @@ export interface MCPServer {
 
 export interface MCPClient {
   id: number;
-  name?: string; // Not always present in API response
   slug: string;
-  description?: string;
+  // Note: name and description come from McpImplementation, not McpClient
   created_at?: string;
   updated_at?: string;
   featured?: boolean;
@@ -150,8 +148,8 @@ export interface MCPImplementation {
   github_owner?: string;
   github_repo?: string;
   github_subfolder?: string;
-  github_repository_created_date?: string;
-  github_repository_status?: string;
+  github_created_date?: string;
+  github_status?: string;
   github_last_updated?: string;
   // Server-specific fields
   classification?: 'official' | 'community' | 'reference';

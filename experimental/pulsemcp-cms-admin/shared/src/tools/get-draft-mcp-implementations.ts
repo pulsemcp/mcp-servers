@@ -119,8 +119,8 @@ Use cases:
               githubLine += ` (⭐ ${impl.github_stars.toLocaleString()})`;
             }
             content += githubLine + '\n';
-            if (impl.github_repository_status) {
-              content += `   GitHub Status: ${impl.github_repository_status}\n`;
+            if (impl.github_status) {
+              content += `   GitHub Status: ${impl.github_status}\n`;
             }
             if (impl.github_last_updated) {
               content += `   GitHub Last Updated: ${impl.github_last_updated}\n`;
@@ -130,11 +130,9 @@ Use cases:
           }
 
           // Linked MCP Server (now inline from API)
+          // Note: name/description come from impl, not mcp_server
           if (impl.mcp_server) {
-            content += `   Linked MCP Server: ${impl.mcp_server.name || impl.mcp_server.slug} (${impl.mcp_server.slug}, ID: ${impl.mcp_server.id})\n`;
-            if (impl.mcp_server.description) {
-              content += `     Server Description: ${impl.mcp_server.description}\n`;
-            }
+            content += `   Linked MCP Server: ${impl.mcp_server.slug} (ID: ${impl.mcp_server.id})\n`;
             if (impl.mcp_server.classification) {
               content += `     Server Classification: ${impl.mcp_server.classification}\n`;
             }
@@ -188,11 +186,9 @@ Use cases:
           }
 
           // Linked MCP Client (now inline from API)
+          // Note: name/description come from impl, not mcp_client
           if (impl.mcp_client) {
-            content += `   Linked MCP Client: ${impl.mcp_client.name || impl.mcp_client.slug} (${impl.mcp_client.slug}, ID: ${impl.mcp_client.id})\n`;
-            if (impl.mcp_client.description) {
-              content += `     Client Description: ${impl.mcp_client.description}\n`;
-            }
+            content += `   Linked MCP Client: ${impl.mcp_client.slug} (ID: ${impl.mcp_client.id})\n`;
             if (impl.mcp_client.featured) {
               content += `     Featured Client: Yes\n`;
             }
