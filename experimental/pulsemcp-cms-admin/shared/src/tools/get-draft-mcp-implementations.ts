@@ -61,28 +61,8 @@ Use cases:
       const client = clientFactory();
 
       try {
+        // API now returns inline mcp_server and mcp_client objects - no N+1 fetching needed
         const response = await client.getDraftMCPImplementations(validatedArgs);
-
-        // Fetch associated MCP servers and clients for each implementation
-        for (const impl of response.implementations) {
-          if (impl.mcp_server_id) {
-            try {
-              impl.mcp_server = await client.getMCPServerById(impl.mcp_server_id);
-            } catch (error) {
-              console.error(`Failed to fetch MCP server ${impl.mcp_server_id}:`, error);
-              impl.mcp_server = null;
-            }
-          }
-
-          if (impl.mcp_client_id) {
-            try {
-              impl.mcp_client = await client.getMCPClientById(impl.mcp_client_id);
-            } catch (error) {
-              console.error(`Failed to fetch MCP client ${impl.mcp_client_id}:`, error);
-              impl.mcp_client = null;
-            }
-          }
-        }
 
         // Format the response for MCP
         let content = `Found ${response.implementations.length} draft MCP implementations`;
@@ -101,6 +81,10 @@ Use cases:
             content += `   Description: ${impl.short_description}\n`;
           }
 
+          if (impl.internal_notes) {
+            content += `   Internal Notes: ${impl.internal_notes}\n`;
+          }
+
           if (impl.classification) {
             content += `   Classification: ${impl.classification}\n`;
           }
@@ -109,18 +93,43 @@ Use cases:
             content += `   Language: ${impl.implementation_language}\n`;
           }
 
+          // Provider info
           if (impl.provider_name) {
-            content += `   Provider: ${impl.provider_name}\n`;
+            let providerLine = `   Provider: ${impl.provider_name}`;
+            if (impl.provider_slug) {
+              providerLine += ` (${impl.provider_slug})`;
+            }
+            if (impl.provider_url) {
+              providerLine += ` - ${impl.provider_url}`;
+            }
+            content += providerLine + '\n';
           }
 
           if (impl.url) {
             content += `   URL: ${impl.url}\n`;
           }
 
-          if (impl.github_stars !== undefined) {
-            content += `   GitHub Stars: ${impl.github_stars}\n`;
+          // GitHub info
+          if (impl.github_owner && impl.github_repo) {
+            let githubLine = `   GitHub: ${impl.github_owner}/${impl.github_repo}`;
+            if (impl.github_subfolder) {
+              githubLine += `/${impl.github_subfolder}`;
+            }
+            if (impl.github_stars !== undefined) {
+              githubLine += ` (⭐ ${impl.github_stars.toLocaleString()})`;
+            }
+            content += githubLine + '\n';
+            if (impl.github_repository_status) {
+              content += `   GitHub Status: ${impl.github_repository_status}\n`;
+            }
+            if (impl.github_last_updated) {
+              content += `   GitHub Last Updated: ${impl.github_last_updated}\n`;
+            }
+          } else if (impl.github_stars !== undefined) {
+            content += `   GitHub Stars: ${impl.github_stars.toLocaleString()}\n`;
           }
 
+          // Linked MCP Server (now inline from API)
           if (impl.mcp_server) {
             content += `   Linked MCP Server: ${impl.mcp_server.name || impl.mcp_server.slug} (${impl.mcp_server.slug}, ID: ${impl.mcp_server.id})\n`;
             if (impl.mcp_server.description) {
@@ -129,13 +138,56 @@ Use cases:
             if (impl.mcp_server.classification) {
               content += `     Server Classification: ${impl.mcp_server.classification}\n`;
             }
+            // Download metrics
             if (impl.mcp_server.downloads_estimate_total) {
-              content += `     Total Downloads: ${impl.mcp_server.downloads_estimate_total.toLocaleString()}\n`;
+              let downloadLine = `     Downloads: ${impl.mcp_server.downloads_estimate_total.toLocaleString()} total`;
+              if (impl.mcp_server.downloads_estimate_most_recent_week) {
+                downloadLine += `, ${impl.mcp_server.downloads_estimate_most_recent_week.toLocaleString()} this week`;
+              }
+              if (impl.mcp_server.downloads_estimate_last_four_weeks) {
+                downloadLine += `, ${impl.mcp_server.downloads_estimate_last_four_weeks.toLocaleString()} last 4 weeks`;
+              }
+              content += downloadLine + '\n';
+            }
+            if (impl.mcp_server.visitors_estimate_total) {
+              content += `     Visitors: ${impl.mcp_server.visitors_estimate_total.toLocaleString()} total\n`;
+            }
+            // Registry info
+            if (impl.mcp_server.registry_package_id) {
+              let registryLine = `     Registry Package ID: ${impl.mcp_server.registry_package_id}`;
+              if (impl.mcp_server.registry_package_soft_verified) {
+                registryLine += ' (verified)';
+              }
+              content += registryLine + '\n';
+            }
+            // Tags
+            if (impl.mcp_server.tags && impl.mcp_server.tags.length > 0) {
+              const tagNames = impl.mcp_server.tags.map((t) => t.name).join(', ');
+              content += `     Tags: ${tagNames}\n`;
+            }
+            // Remotes
+            if (impl.mcp_server.remotes && impl.mcp_server.remotes.length > 0) {
+              content += `     Remotes (${impl.mcp_server.remotes.length}):\n`;
+              for (const remote of impl.mcp_server.remotes) {
+                let remoteLine = `       - ${remote.display_name || remote.url || 'Unnamed'}`;
+                const attrs = [];
+                if (remote.transport) attrs.push(remote.transport);
+                if (remote.host_platform) attrs.push(remote.host_platform);
+                if (remote.authentication) attrs.push(`auth: ${remote.authentication}`);
+                if (remote.cost) attrs.push(remote.cost);
+                if (attrs.length > 0) {
+                  remoteLine += ` [${attrs.join(', ')}]`;
+                }
+                content += remoteLine + '\n';
+              }
+            } else if (impl.mcp_server.mcp_server_remotes_count) {
+              content += `     Remotes Count: ${impl.mcp_server.mcp_server_remotes_count}\n`;
             }
           } else if (impl.mcp_server_id) {
             content += `   Linked MCP Server ID: ${impl.mcp_server_id} (details not available)\n`;
           }
 
+          // Linked MCP Client (now inline from API)
           if (impl.mcp_client) {
             content += `   Linked MCP Client: ${impl.mcp_client.name || impl.mcp_client.slug} (${impl.mcp_client.slug}, ID: ${impl.mcp_client.id})\n`;
             if (impl.mcp_client.description) {
