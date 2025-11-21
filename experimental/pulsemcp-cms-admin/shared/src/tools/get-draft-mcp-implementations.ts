@@ -115,7 +115,7 @@ Use cases:
             if (impl.github_subfolder) {
               githubLine += `/${impl.github_subfolder}`;
             }
-            if (impl.github_stars !== undefined) {
+            if (impl.github_stars != null) {
               githubLine += ` (⭐ ${impl.github_stars.toLocaleString()})`;
             }
             content += githubLine + '\n';
@@ -125,7 +125,7 @@ Use cases:
             if (impl.github_last_updated) {
               content += `   GitHub Last Updated: ${impl.github_last_updated}\n`;
             }
-          } else if (impl.github_stars !== undefined) {
+          } else if (impl.github_stars != null) {
             content += `   GitHub Stars: ${impl.github_stars.toLocaleString()}\n`;
           }
 
