@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Changed
+
+- Enhanced `get_draft_mcp_implementations` tool to display much richer data per implementation:
+  - Added full provider details (URL, slug)
+  - Added full GitHub repository info (owner, repo, subfolder, status, last updated)
+  - Added internal notes display
+  - MCP Server inline data now includes: tags, remotes (with transport/host/auth/cost), download metrics by time period (week, 4-weeks), visitor estimates, registry package info
+  - **BREAKING (API dependency)**: Requires updated PulseMCP Admin API that returns inline `mcp_server` and `mcp_client` objects with expanded data
+- Removed N+1 API fetching for MCP servers/clients - now uses inline data from API response
+- Added new types: `MCPServerTag`, `MCPServerRemote` for tag and remote endpoint data
+
 ## [0.1.1] - 2025-11-20
 
 _Note: This release updates both the main package (0.2.1) and local package (0.1.1) versions._
