@@ -80,11 +80,28 @@ export interface AuthorsResponse {
   };
 }
 
+export interface MCPServerTag {
+  id: number;
+  name: string;
+  slug: string;
+}
+
+export interface MCPServerRemote {
+  id: number;
+  display_name?: string;
+  url?: string;
+  transport?: string; // e.g., "sse", "streamable_http"
+  host_platform?: string; // e.g., "smithery", "provider", "other"
+  host_infra?: string; // e.g., "cloudflare", "vercel", "fly_io"
+  authentication?: string; // e.g., "open", "oauth", "api_key"
+  cost?: string; // e.g., "free", "free_tier", "paid"
+  internal_notes?: string;
+}
+
 export interface MCPServer {
   id: number;
-  name?: string; // Not always present in API response
   slug: string;
-  description?: string;
+  // Note: name and description come from McpImplementation, not McpServer
   created_at?: string;
   updated_at?: string;
   classification?: string;
@@ -94,13 +111,18 @@ export interface MCPServer {
   downloads_estimate_last_7_days?: number;
   downloads_estimate_last_30_days?: number;
   downloads_estimate_total?: number;
+  downloads_estimate_most_recent_week?: number;
+  downloads_estimate_last_four_weeks?: number;
+  visitors_estimate_total?: number;
+  mcp_server_remotes_count?: number;
+  tags?: MCPServerTag[];
+  remotes?: MCPServerRemote[];
 }
 
 export interface MCPClient {
   id: number;
-  name?: string; // Not always present in API response
   slug: string;
-  description?: string;
+  // Note: name and description come from McpImplementation, not McpClient
   created_at?: string;
   updated_at?: string;
   featured?: boolean;
@@ -116,8 +138,20 @@ export interface MCPImplementation {
   status: 'draft' | 'live' | 'archived';
   slug: string;
   url?: string;
+  // Provider info
   provider_name?: string;
-  github_stars?: number;
+  provider_id?: number | null;
+  provider_url?: string;
+  provider_slug?: string;
+  // GitHub info
+  github_stars?: number | null;
+  github_owner?: string;
+  github_repo?: string;
+  github_subfolder?: string;
+  github_created_date?: string;
+  github_status?: string;
+  github_last_updated?: string;
+  // Server-specific fields
   classification?: 'official' | 'community' | 'reference';
   implementation_language?: string;
   mcp_server_id?: number | null;
@@ -125,7 +159,7 @@ export interface MCPImplementation {
   internal_notes?: string;
   created_at?: string;
   updated_at?: string;
-  // Associated objects (populated by tool, not API)
+  // Associated objects (now inline from API)
   mcp_server?: MCPServer | null;
   mcp_client?: MCPClient | null;
 }
@@ -150,9 +184,22 @@ export interface SaveMCPImplementationParams {
   slug?: string;
   url?: string;
   provider_name?: string;
-  github_stars?: number;
+  github_stars?: number | null;
   classification?: 'official' | 'community' | 'reference';
   implementation_language?: string;
   mcp_server_id?: number | null;
   mcp_client_id?: number | null;
+
+  // Provider creation/linking fields
+  provider_id?: string | number; // "new" to create, or numeric ID to link existing
+  provider_slug?: string; // Optional slug (auto-generated from name if omitted)
+  provider_url?: string; // Optional provider website URL
+
+  // GitHub repository fields
+  github_owner?: string; // GitHub organization or username
+  github_repo?: string; // Repository name
+  github_subfolder?: string; // Optional subfolder within repo (for monorepos)
+
+  // Other fields
+  internal_notes?: string; // Admin-only notes
 }

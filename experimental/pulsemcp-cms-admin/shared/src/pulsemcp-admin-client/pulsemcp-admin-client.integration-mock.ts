@@ -291,6 +291,17 @@ export function createMockPulseMCPAdminClient(mockData: MockData): IPulseMCPAdmi
       return null;
     },
 
+    async getMCPImplementationById(id) {
+      // Find implementation in mock data by ID
+      const implementations = mockData.implementations || [];
+      const found = implementations.find((impl) => impl.id === id);
+
+      if (found) return found;
+
+      // Return null if not found
+      return null;
+    },
+
     async searchMCPImplementations(params) {
       if (mockData.errors?.searchMCPImplementations) {
         throw mockData.errors.searchMCPImplementations;
@@ -409,9 +420,13 @@ export function createMockPulseMCPAdminClient(mockData: MockData): IPulseMCPAdmi
       }
 
       // Merge params with existing implementation
-      const updatedImpl = {
+      // Exclude provider_id from params since it's a request-only field ("new" or numeric ID for linking)
+      // The actual provider_id in the response is always a number or null
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { provider_id: _providerId, ...restParams } = params;
+      const updatedImpl: MCPImplementation = {
         ...existingImpl,
-        ...params,
+        ...restParams,
         id: id, // Ensure ID doesn't change
         updated_at: new Date().toISOString(),
       };

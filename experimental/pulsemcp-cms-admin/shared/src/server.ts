@@ -46,6 +46,8 @@ export interface IPulseMCPAdminClient {
 
   getMCPClientById(id: number): Promise<MCPClient | null>;
 
+  getMCPImplementationById(id: number): Promise<MCPImplementation | null>;
+
   searchMCPImplementations(params: {
     query: string;
     type?: 'server' | 'client' | 'all';
@@ -167,6 +169,13 @@ export class PulseMCPAdminClient implements IPulseMCPAdminClient {
       './pulsemcp-admin-client/lib/get-mcp-client-by-id.js'
     );
     return getMCPClientById(this.apiKey, this.baseUrl, id);
+  }
+
+  async getMCPImplementationById(id: number): Promise<MCPImplementation | null> {
+    const { getMCPImplementationById } = await import(
+      './pulsemcp-admin-client/lib/get-mcp-implementation-by-id.js'
+    );
+    return getMCPImplementationById(this.apiKey, this.baseUrl, id);
   }
 
   async searchMCPImplementations(params: {
