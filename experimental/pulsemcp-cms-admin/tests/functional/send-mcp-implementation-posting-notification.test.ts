@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { sendMCPImplementationPostingNotification } from '../../shared/src/tools/send-mcp-implementation-posting-notification.js';
 import type { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import type { IPulseMCPAdminClient } from '../../shared/src/server.js';
-import type { MCPImplementation, MCPServer, MCPClient } from '../../shared/src/types.js';
+import type { MCPImplementation } from '../../shared/src/types.js';
 
 describe('sendMCPImplementationPostingNotification', () => {
   let mockServer: Server;
@@ -14,6 +14,7 @@ describe('sendMCPImplementationPostingNotification', () => {
 
     // Create mock client with all required methods
     mockClient = {
+      getMCPImplementationById: vi.fn(),
       searchMCPImplementations: vi.fn(),
       getMCPServerById: vi.fn(),
       getMCPClientById: vi.fn(),
@@ -52,20 +53,15 @@ describe('sendMCPImplementationPostingNotification', () => {
       status: 'live',
       slug: 'test-server',
       mcp_server_id: 456,
+      mcp_server: {
+        id: 456,
+        slug: 'test-server',
+        name: 'Test Server',
+      },
       internal_notes: 'Submitted by developer@example.com',
     };
 
-    const mockServer: MCPServer = {
-      id: 456,
-      slug: 'test-server',
-      name: 'Test Server',
-    };
-
-    vi.mocked(mockClient.searchMCPImplementations).mockResolvedValue({
-      implementations: [mockImplementation],
-    });
-
-    vi.mocked(mockClient.getMCPServerById).mockResolvedValue(mockServer);
+    vi.mocked(mockClient.getMCPImplementationById).mockResolvedValue(mockImplementation);
 
     vi.mocked(mockClient.sendEmail).mockResolvedValue({
       id: 789,
@@ -77,13 +73,7 @@ describe('sendMCPImplementationPostingNotification', () => {
       implementation_id: 123,
     });
 
-    expect(mockClient.searchMCPImplementations).toHaveBeenCalledWith({
-      query: 'id:123',
-      status: 'all',
-      limit: 1,
-    });
-
-    expect(mockClient.getMCPServerById).toHaveBeenCalledWith(456);
+    expect(mockClient.getMCPImplementationById).toHaveBeenCalledWith(123);
 
     expect(mockClient.sendEmail).toHaveBeenCalledWith({
       from_email_address: 'tadas@s.pulsemcp.com',
@@ -107,20 +97,15 @@ describe('sendMCPImplementationPostingNotification', () => {
       status: 'live',
       slug: 'test-client',
       mcp_client_id: 457,
+      mcp_client: {
+        id: 457,
+        slug: 'test-client',
+        name: 'Test Client',
+      },
       internal_notes: 'Contact: user@example.org',
     };
 
-    const mockClientEntity: MCPClient = {
-      id: 457,
-      slug: 'test-client',
-      name: 'Test Client',
-    };
-
-    vi.mocked(mockClient.searchMCPImplementations).mockResolvedValue({
-      implementations: [mockImplementation],
-    });
-
-    vi.mocked(mockClient.getMCPClientById).mockResolvedValue(mockClientEntity);
+    vi.mocked(mockClient.getMCPImplementationById).mockResolvedValue(mockImplementation);
 
     vi.mocked(mockClient.sendEmail).mockResolvedValue({
       id: 790,
@@ -131,8 +116,6 @@ describe('sendMCPImplementationPostingNotification', () => {
     const result = await tool.handler({
       implementation_id: 124,
     });
-
-    expect(mockClient.getMCPClientById).toHaveBeenCalledWith(457);
 
     expect(mockClient.sendEmail).toHaveBeenCalledWith({
       from_email_address: 'tadas@s.pulsemcp.com',
@@ -156,19 +139,14 @@ describe('sendMCPImplementationPostingNotification', () => {
       status: 'live',
       slug: 'test-server',
       mcp_server_id: 458,
+      mcp_server: {
+        id: 458,
+        slug: 'test-server-override',
+        name: 'Test Server',
+      },
     };
 
-    const mockServer: MCPServer = {
-      id: 458,
-      slug: 'test-server-override',
-      name: 'Test Server',
-    };
-
-    vi.mocked(mockClient.searchMCPImplementations).mockResolvedValue({
-      implementations: [mockImplementation],
-    });
-
-    vi.mocked(mockClient.getMCPServerById).mockResolvedValue(mockServer);
+    vi.mocked(mockClient.getMCPImplementationById).mockResolvedValue(mockImplementation);
 
     vi.mocked(mockClient.sendEmail).mockResolvedValue({
       id: 791,
@@ -193,9 +171,7 @@ describe('sendMCPImplementationPostingNotification', () => {
   });
 
   it('should throw error if implementation not found', async () => {
-    vi.mocked(mockClient.searchMCPImplementations).mockResolvedValue({
-      implementations: [],
-    });
+    vi.mocked(mockClient.getMCPImplementationById).mockResolvedValue(null);
 
     const result = await tool.handler({
       implementation_id: 999,
@@ -214,9 +190,7 @@ describe('sendMCPImplementationPostingNotification', () => {
       slug: 'draft-server',
     };
 
-    vi.mocked(mockClient.searchMCPImplementations).mockResolvedValue({
-      implementations: [mockImplementation],
-    });
+    vi.mocked(mockClient.getMCPImplementationById).mockResolvedValue(mockImplementation);
 
     const result = await tool.handler({
       implementation_id: 126,
@@ -236,20 +210,15 @@ describe('sendMCPImplementationPostingNotification', () => {
       status: 'live',
       slug: 'no-email-server',
       mcp_server_id: 459,
+      mcp_server: {
+        id: 459,
+        slug: 'no-email-server',
+        name: 'No Email Server',
+      },
       // No internal_notes with email
     };
 
-    const mockServer: MCPServer = {
-      id: 459,
-      slug: 'no-email-server',
-      name: 'No Email Server',
-    };
-
-    vi.mocked(mockClient.searchMCPImplementations).mockResolvedValue({
-      implementations: [mockImplementation],
-    });
-
-    vi.mocked(mockClient.getMCPServerById).mockResolvedValue(mockServer);
+    vi.mocked(mockClient.getMCPImplementationById).mockResolvedValue(mockImplementation);
 
     const result = await tool.handler({
       implementation_id: 127,
@@ -268,15 +237,11 @@ describe('sendMCPImplementationPostingNotification', () => {
       status: 'live',
       slug: 'no-slug-server',
       mcp_server_id: 460,
+      // No mcp_server embedded object with slug
       internal_notes: 'test@example.com',
     };
 
-    // Server exists but has no slug
-    vi.mocked(mockClient.searchMCPImplementations).mockResolvedValue({
-      implementations: [mockImplementation],
-    });
-
-    vi.mocked(mockClient.getMCPServerById).mockResolvedValue(null);
+    vi.mocked(mockClient.getMCPImplementationById).mockResolvedValue(mockImplementation);
 
     const result = await tool.handler({
       implementation_id: 128,
@@ -296,20 +261,15 @@ describe('sendMCPImplementationPostingNotification', () => {
       status: 'live',
       slug: 'error-server',
       mcp_server_id: 461,
+      mcp_server: {
+        id: 461,
+        slug: 'error-server',
+        name: 'Error Server',
+      },
       internal_notes: 'error@example.com',
     };
 
-    const mockServer: MCPServer = {
-      id: 461,
-      slug: 'error-server',
-      name: 'Error Server',
-    };
-
-    vi.mocked(mockClient.searchMCPImplementations).mockResolvedValue({
-      implementations: [mockImplementation],
-    });
-
-    vi.mocked(mockClient.getMCPServerById).mockResolvedValue(mockServer);
+    vi.mocked(mockClient.getMCPImplementationById).mockResolvedValue(mockImplementation);
 
     vi.mocked(mockClient.sendEmail).mockRejectedValue(new Error('Email service unavailable'));
 

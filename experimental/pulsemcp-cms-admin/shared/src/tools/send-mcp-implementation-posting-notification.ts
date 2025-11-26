@@ -1,7 +1,6 @@
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { z } from 'zod';
 import type { ClientFactory } from '../server.js';
-import { logError } from '../logging.js';
 
 // Parameter descriptions - single source of truth
 const PARAM_DESCRIPTIONS = {
@@ -95,20 +94,16 @@ Note: The email content includes the direct link to the published implementation
       const client = clientFactory();
 
       try {
-        // First, fetch the implementation details to get all necessary information
-        const searchResponse = await client.searchMCPImplementations({
-          query: `id:${validatedArgs.implementation_id}`,
-          status: 'all',
-          limit: 1,
-        });
+        // First, fetch the implementation details by ID
+        const implementation = await client.getMCPImplementationById(
+          validatedArgs.implementation_id
+        );
 
-        if (!searchResponse.implementations || searchResponse.implementations.length === 0) {
+        if (!implementation) {
           throw new Error(
             `MCP implementation with ID ${validatedArgs.implementation_id} not found`
           );
         }
-
-        const implementation = searchResponse.implementations[0];
 
         // Validate the implementation is eligible for notification
         if (implementation.status !== 'live') {
@@ -117,31 +112,14 @@ Note: The email content includes the direct link to the published implementation
           );
         }
 
-        // Fetch associated server or client details if needed
-        let mcpServer = null;
-        let mcpClient = null;
+        // Get URL from embedded server or client data
         let implementationUrl = '';
 
-        if (implementation.mcp_server_id) {
-          try {
-            mcpServer = await client.getMCPServerById(implementation.mcp_server_id);
-            if (mcpServer?.slug) {
-              implementationUrl = `https://www.pulsemcp.com/servers/${mcpServer.slug}`;
-            }
-          } catch (error) {
-            logError(`Failed to fetch MCP server ${implementation.mcp_server_id}`, error);
-          }
-        }
-
-        if (implementation.mcp_client_id && !implementationUrl) {
-          try {
-            mcpClient = await client.getMCPClientById(implementation.mcp_client_id);
-            if (mcpClient?.slug) {
-              implementationUrl = `https://www.pulsemcp.com/clients/${mcpClient.slug}`;
-            }
-          } catch (error) {
-            logError(`Failed to fetch MCP client ${implementation.mcp_client_id}`, error);
-          }
+        // The implementation response includes embedded mcp_server or mcp_client objects
+        if (implementation.mcp_server?.slug) {
+          implementationUrl = `https://www.pulsemcp.com/servers/${implementation.mcp_server.slug}`;
+        } else if (implementation.mcp_client?.slug) {
+          implementationUrl = `https://www.pulsemcp.com/clients/${implementation.mcp_client.slug}`;
         }
 
         if (!implementationUrl) {

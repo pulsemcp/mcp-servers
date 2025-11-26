@@ -37,7 +37,10 @@ export async function saveMCPImplementation(
     formData.append('mcp_implementation[provider_name]', params.provider_name);
   }
   if (params.github_stars !== undefined) {
-    formData.append('mcp_implementation[github_stars]', params.github_stars.toString());
+    formData.append(
+      'mcp_implementation[github_stars]',
+      params.github_stars === null ? '' : params.github_stars.toString()
+    );
   }
   if (params.classification !== undefined) {
     formData.append('mcp_implementation[classification]', params.classification);
@@ -56,6 +59,33 @@ export async function saveMCPImplementation(
       'mcp_implementation[mcp_client_id]',
       params.mcp_client_id === null ? '' : params.mcp_client_id.toString()
     );
+  }
+
+  // Provider creation/linking
+  if (params.provider_id !== undefined) {
+    formData.append('mcp_implementation[provider_id]', params.provider_id.toString());
+  }
+  if (params.provider_slug !== undefined) {
+    formData.append('mcp_implementation[provider_slug]', params.provider_slug);
+  }
+  if (params.provider_url !== undefined) {
+    formData.append('mcp_implementation[provider_url]', params.provider_url);
+  }
+
+  // GitHub repository fields
+  if (params.github_owner !== undefined) {
+    formData.append('mcp_implementation[github_owner]', params.github_owner);
+  }
+  if (params.github_repo !== undefined) {
+    formData.append('mcp_implementation[github_repo]', params.github_repo);
+  }
+  if (params.github_subfolder !== undefined) {
+    formData.append('mcp_implementation[github_subfolder]', params.github_subfolder);
+  }
+
+  // Internal notes
+  if (params.internal_notes !== undefined) {
+    formData.append('mcp_implementation[internal_notes]', params.internal_notes);
   }
 
   const response = await fetch(url.toString(), {

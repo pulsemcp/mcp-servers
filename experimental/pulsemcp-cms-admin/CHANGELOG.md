@@ -6,6 +6,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Added
+
+- Added provider creation/linking fields to `save_mcp_implementation` tool:
+  - `provider_id`: Use `"new"` to create a new provider, or a numeric ID to link an existing one. Required when setting status to "live".
+  - `provider_slug`: URL-friendly provider identifier (auto-generated from name if omitted)
+  - `provider_url`: Provider website URL for deduplication
+- Added GitHub repository fields to `save_mcp_implementation` tool:
+  - `github_owner`: GitHub organization or username that owns the repository
+  - `github_repo`: GitHub repository name
+  - `github_subfolder`: Subfolder path for monorepos
+- Added `internal_notes` field to `save_mcp_implementation` for admin-only notes
+- Added support for `null` values in `github_stars` field (for implementations without GitHub repos)
+
 ### Changed
 
 - Enhanced `get_draft_mcp_implementations` tool to display much richer data per implementation:

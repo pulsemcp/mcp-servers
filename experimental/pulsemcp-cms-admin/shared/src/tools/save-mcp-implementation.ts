@@ -14,11 +14,26 @@ const PARAM_DESCRIPTIONS = {
   slug: 'Updated URL-friendly slug identifier',
   url: 'Updated URL to the implementation (GitHub repo, npm package, etc.)',
   provider_name: 'Updated provider/author name',
-  github_stars: 'Updated GitHub star count (integer)',
+  github_stars: 'Updated GitHub star count (integer, or null if unknown)',
   classification: 'Implementation classification - "official", "community", or "reference"',
   implementation_language: 'Updated programming language (e.g., "TypeScript", "Python", "Go")',
   mcp_server_id: 'ID of associated MCP server record (null to unlink)',
   mcp_client_id: 'ID of associated MCP client record (null to unlink)',
+  // Provider creation/linking
+  provider_id:
+    'Provider ID: use "new" to create a new provider, or a numeric ID to link an existing one. Required when setting status to "live".',
+  provider_slug:
+    'URL-friendly provider identifier. Auto-generated from provider_name if omitted. For individuals, prefix with "gh-" (e.g., "gh-username").',
+  provider_url:
+    'Provider website URL. For companies, use official website. For individuals, use GitHub profile URL.',
+  // GitHub repository fields
+  github_owner: 'GitHub organization or username that owns the repository.',
+  github_repo: 'GitHub repository name (without owner prefix).',
+  github_subfolder:
+    'Subfolder path within the repository, for monorepos. Omit for root-level projects.',
+  // Other fields
+  internal_notes:
+    'Admin-only notes. Not displayed publicly. Used for tracking submission sources, reviewer comments, etc.',
 } as const;
 
 const SaveMCPImplementationSchema = z.object({
@@ -31,7 +46,7 @@ const SaveMCPImplementationSchema = z.object({
   slug: z.string().optional().describe(PARAM_DESCRIPTIONS.slug),
   url: z.string().optional().describe(PARAM_DESCRIPTIONS.url),
   provider_name: z.string().optional().describe(PARAM_DESCRIPTIONS.provider_name),
-  github_stars: z.number().optional().describe(PARAM_DESCRIPTIONS.github_stars),
+  github_stars: z.number().nullable().optional().describe(PARAM_DESCRIPTIONS.github_stars),
   classification: z
     .enum(['official', 'community', 'reference'])
     .optional()
@@ -42,6 +57,19 @@ const SaveMCPImplementationSchema = z.object({
     .describe(PARAM_DESCRIPTIONS.implementation_language),
   mcp_server_id: z.number().nullable().optional().describe(PARAM_DESCRIPTIONS.mcp_server_id),
   mcp_client_id: z.number().nullable().optional().describe(PARAM_DESCRIPTIONS.mcp_client_id),
+  // Provider creation/linking
+  provider_id: z
+    .union([z.string(), z.number()])
+    .optional()
+    .describe(PARAM_DESCRIPTIONS.provider_id),
+  provider_slug: z.string().optional().describe(PARAM_DESCRIPTIONS.provider_slug),
+  provider_url: z.string().optional().describe(PARAM_DESCRIPTIONS.provider_url),
+  // GitHub repository fields
+  github_owner: z.string().optional().describe(PARAM_DESCRIPTIONS.github_owner),
+  github_repo: z.string().optional().describe(PARAM_DESCRIPTIONS.github_repo),
+  github_subfolder: z.string().optional().describe(PARAM_DESCRIPTIONS.github_subfolder),
+  // Other fields
+  internal_notes: z.string().optional().describe(PARAM_DESCRIPTIONS.internal_notes),
 });
 
 export function saveMCPImplementation(_server: Server, clientFactory: ClientFactory) {
@@ -128,7 +156,7 @@ Use cases:
           description: PARAM_DESCRIPTIONS.provider_name,
         },
         github_stars: {
-          type: 'number',
+          type: ['number', 'null'],
           description: PARAM_DESCRIPTIONS.github_stars,
         },
         classification: {
@@ -147,6 +175,37 @@ Use cases:
         mcp_client_id: {
           type: ['number', 'null'],
           description: PARAM_DESCRIPTIONS.mcp_client_id,
+        },
+        // Provider creation/linking
+        provider_id: {
+          type: ['string', 'number'],
+          description: PARAM_DESCRIPTIONS.provider_id,
+        },
+        provider_slug: {
+          type: 'string',
+          description: PARAM_DESCRIPTIONS.provider_slug,
+        },
+        provider_url: {
+          type: 'string',
+          description: PARAM_DESCRIPTIONS.provider_url,
+        },
+        // GitHub repository fields
+        github_owner: {
+          type: 'string',
+          description: PARAM_DESCRIPTIONS.github_owner,
+        },
+        github_repo: {
+          type: 'string',
+          description: PARAM_DESCRIPTIONS.github_repo,
+        },
+        github_subfolder: {
+          type: 'string',
+          description: PARAM_DESCRIPTIONS.github_subfolder,
+        },
+        // Other fields
+        internal_notes: {
+          type: 'string',
+          description: PARAM_DESCRIPTIONS.internal_notes,
         },
       },
       required: ['id'],

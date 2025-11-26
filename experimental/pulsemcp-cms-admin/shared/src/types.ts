@@ -144,7 +144,7 @@ export interface MCPImplementation {
   provider_url?: string;
   provider_slug?: string;
   // GitHub info
-  github_stars?: number;
+  github_stars?: number | null;
   github_owner?: string;
   github_repo?: string;
   github_subfolder?: string;
@@ -184,9 +184,22 @@ export interface SaveMCPImplementationParams {
   slug?: string;
   url?: string;
   provider_name?: string;
-  github_stars?: number;
+  github_stars?: number | null;
   classification?: 'official' | 'community' | 'reference';
   implementation_language?: string;
   mcp_server_id?: number | null;
   mcp_client_id?: number | null;
+
+  // Provider creation/linking fields
+  provider_id?: string | number; // "new" to create, or numeric ID to link existing
+  provider_slug?: string; // Optional slug (auto-generated from name if omitted)
+  provider_url?: string; // Optional provider website URL
+
+  // GitHub repository fields
+  github_owner?: string; // GitHub organization or username
+  github_repo?: string; // Repository name
+  github_subfolder?: string; // Optional subfolder within repo (for monorepos)
+
+  // Other fields
+  internal_notes?: string; // Admin-only notes
 }
