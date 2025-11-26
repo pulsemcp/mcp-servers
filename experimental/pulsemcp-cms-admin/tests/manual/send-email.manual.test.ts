@@ -1,8 +1,20 @@
 import { describe, it, expect } from 'vitest';
 import { sendEmail } from '../../shared/src/pulsemcp-admin-client/lib/send-email.js';
+import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Load environment variables from .env file
+dotenv.config({ path: path.join(__dirname, '../../.env') });
 
 describe('send-email manual tests', () => {
-  const apiKey = process.env.PULSEMCP_ADMIN_API_KEY || '4a4c8e02-ca6e-47c5-8233-c52bd01cd3a3';
+  const apiKey = process.env.PULSEMCP_ADMIN_API_KEY;
+  if (!apiKey) {
+    throw new Error('PULSEMCP_ADMIN_API_KEY environment variable is required');
+  }
   const baseUrl = 'https://admin.pulsemcp.com';
   const testEmail = 'tadas412@gmail.com';
 

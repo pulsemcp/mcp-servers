@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
-## [Unreleased]
+## [0.2.0] - 2025-11-25
 
 ### Added
 
@@ -18,6 +18,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   - `github_subfolder`: Subfolder path for monorepos
 - Added `internal_notes` field to `save_mcp_implementation` for admin-only notes
 - Added support for `null` values in `github_stars` field (for implementations without GitHub repos)
+
+### Fixed
+
+- Fixed `get_newsletter_posts` tool timeout by adding caching to author lookups (was making N+1 API calls for each post)
+- Fixed manual tests to properly load `.env` file for `send-email.manual.test.ts`
+- Fixed manual tests to fail on API errors instead of silently passing (more transparent test results)
 
 ### Changed
 
