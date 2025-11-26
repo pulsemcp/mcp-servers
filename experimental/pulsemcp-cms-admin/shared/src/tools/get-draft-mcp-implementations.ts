@@ -167,11 +167,11 @@ Use cases:
             if (impl.mcp_server.remotes && impl.mcp_server.remotes.length > 0) {
               content += `     Remotes (${impl.mcp_server.remotes.length}):\n`;
               for (const remote of impl.mcp_server.remotes) {
-                let remoteLine = `       - ${remote.display_name || remote.url || 'Unnamed'}`;
+                let remoteLine = `       - ${remote.display_name || remote.url_direct || remote.url_setup || 'Unnamed'}`;
                 const attrs = [];
                 if (remote.transport) attrs.push(remote.transport);
                 if (remote.host_platform) attrs.push(remote.host_platform);
-                if (remote.authentication) attrs.push(`auth: ${remote.authentication}`);
+                if (remote.authentication_method) attrs.push(`auth: ${remote.authentication_method}`);
                 if (remote.cost) attrs.push(remote.cost);
                 if (attrs.length > 0) {
                   remoteLine += ` [${attrs.join(', ')}]`;

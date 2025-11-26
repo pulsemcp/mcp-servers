@@ -4,6 +4,23 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [0.3.0] - 2025-11-26
+
+### Added
+
+- Added remote endpoint configuration support to `save_mcp_implementation` tool:
+  - `remote`: Array of remote endpoint configurations for MCP servers
+  - Each remote can specify: id (existing or blank for new), url_direct, url_setup, transport (e.g., "sse"), host_platform (e.g., "smithery", "superinterface"), host_infrastructure (e.g., "cloudflare"), authentication_method (e.g., "open", "oauth"), cost (e.g., "free", "paid"), status, display_name, and internal_notes
+- Added canonical URL support to `save_mcp_implementation` tool:
+  - `canonical`: Array of canonical URL configurations
+  - Each entry specifies: url (the canonical URL), scope (one of "domain", "subdomain", "subfolder", or "url"), and optional note
+- Updated type definitions to include `RemoteEndpointParams` and `CanonicalUrlParams` interfaces
+- Updated `MCPServerRemote` interface to match current API response format (url_direct, url_setup, host_infrastructure, authentication_method, status)
+
+### Changed
+
+- Updated `get_draft_mcp_implementations` tool to display remote endpoints using updated field names (url_direct, url_setup, authentication_method)
+
 ## [0.2.0] - 2025-11-25
 
 ### Added
