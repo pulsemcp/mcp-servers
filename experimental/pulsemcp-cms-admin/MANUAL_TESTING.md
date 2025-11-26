@@ -2,9 +2,9 @@
 
 ## Latest Test Results
 
-**Date:** 2025-11-25
-**Commit:** 42ccd76
-**Version:** 0.2.0
+**Date:** 2025-11-26
+**Commit:** 8273e9f
+**Version:** 0.3.0
 **API Environment:** Production (https://admin.pulsemcp.com)
 **API Key:** Admin API key (read/write)
 
