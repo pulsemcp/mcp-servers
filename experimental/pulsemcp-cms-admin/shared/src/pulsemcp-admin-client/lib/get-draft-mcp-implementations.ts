@@ -15,12 +15,14 @@ interface RailsServerTag {
 interface RailsServerRemote {
   id: number;
   display_name?: string;
-  url?: string;
+  url_direct?: string;
+  url_setup?: string;
   transport?: string;
   host_platform?: string;
-  host_infra?: string;
-  authentication?: string;
+  host_infrastructure?: string;
+  authentication_method?: string;
   cost?: string;
+  status?: string;
   internal_notes?: string;
 }
 
@@ -102,12 +104,14 @@ function mapServerRemotes(remotes?: RailsServerRemote[]): MCPServerRemote[] | un
   return remotes.map((r) => ({
     id: r.id,
     display_name: r.display_name,
-    url: r.url,
+    url_direct: r.url_direct,
+    url_setup: r.url_setup,
     transport: r.transport,
     host_platform: r.host_platform,
-    host_infra: r.host_infra,
-    authentication: r.authentication,
+    host_infrastructure: r.host_infrastructure,
+    authentication_method: r.authentication_method,
     cost: r.cost,
+    status: r.status,
     internal_notes: r.internal_notes,
   }));
 }
