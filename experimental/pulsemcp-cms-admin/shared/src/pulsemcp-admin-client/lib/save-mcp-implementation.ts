@@ -92,7 +92,7 @@ export async function saveMCPImplementation(
   if (params.remote !== undefined && params.remote.length > 0) {
     params.remote.forEach((remote, index) => {
       if (remote.id !== undefined) {
-        formData.append(`mcp_implementation[remote][${index}][id]`, remote.id);
+        formData.append(`mcp_implementation[remote][${index}][id]`, remote.id.toString());
       }
       if (remote.url_direct !== undefined) {
         formData.append(`mcp_implementation[remote][${index}][url_direct]`, remote.url_direct);

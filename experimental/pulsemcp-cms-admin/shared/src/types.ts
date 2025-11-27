@@ -101,7 +101,7 @@ export interface MCPServerRemote {
 }
 
 export interface RemoteEndpointParams {
-  id?: string; // ID of existing remote or blank for new
+  id?: string | number; // ID of existing remote (number from get_draft, string also accepted) or omit for new
   url_direct?: string;
   url_setup?: string;
   transport?: string; // e.g., "sse", "streamable_http"

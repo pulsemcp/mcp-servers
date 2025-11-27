@@ -78,7 +78,7 @@ const SaveMCPImplementationSchema = z.object({
   remote: z
     .array(
       z.object({
-        id: z.string().optional(),
+        id: z.union([z.string(), z.number()]).optional(),
         url_direct: z.string().optional(),
         url_setup: z.string().optional(),
         transport: z.string().optional(),
@@ -125,7 +125,7 @@ Example request (basic update):
   "implementation_language": "TypeScript"
 }
 
-Example request (with remote endpoints):
+Example request (with remote endpoints - new remote):
 {
   "id": 11371,
   "remote": [
@@ -138,6 +138,18 @@ Example request (with remote endpoints):
       "authentication_method": "open",
       "cost": "free",
       "display_name": "Main Remote"
+    }
+  ]
+}
+
+Example request (updating existing remote by ID):
+{
+  "id": 11371,
+  "remote": [
+    {
+      "id": 123,
+      "url_direct": "https://updated-api.example.com/mcp",
+      "status": "beta"
     }
   ]
 }
