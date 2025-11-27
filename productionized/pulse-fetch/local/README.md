@@ -375,6 +375,7 @@ The pulse-fetch MCP server includes an intelligent strategy system that automati
 The `OPTIMIZE_FOR` environment variable controls the order and selection of scraping strategies:
 
 - **`COST` (default)**: Optimizes for the lowest cost by trying native fetch first, then Firecrawl, then BrightData
+
   - Order: `native → firecrawl → brightdata`
   - Best for: Most use cases where cost is a concern
   - Behavior: Always tries the free native method first before paid services
@@ -488,10 +489,12 @@ When you provide an `extract` parameter with a natural language query, the tool 
 The implementation supports three provider types:
 
 1. **Anthropic (Native)**: Direct integration using Anthropic's SDK
+
    - Best for: Claude models with advanced reasoning capabilities
    - API: Uses Anthropic's native format
 
 2. **OpenAI**: Direct integration with OpenAI's API
+
    - Best for: GPT-4 and GPT-3.5 models
    - API: Standard OpenAI format
 

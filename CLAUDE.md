@@ -158,6 +158,7 @@ server-name/
 ### Rules for Adding/Updating Dependencies
 
 1. **Root package.json** (e.g., `experimental/twist/package.json`):
+
    - Should ONLY contain `devDependencies` (like vitest, dotenv, @types/node)
    - Should NOT contain `@modelcontextprotocol/sdk` or other production dependencies
    - Used only for workspace management and development tools
