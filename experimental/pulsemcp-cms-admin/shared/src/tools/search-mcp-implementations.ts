@@ -44,6 +44,8 @@ Returns a list of matching implementations with their metadata, including:
 - GitHub stars and popularity metrics
 - Associated MCP server/client IDs
 - PulseMCP web URL
+- Remote endpoints (for servers) - hosting platforms, transport methods, authentication
+- Canonical URLs - authoritative sources for the implementation
 
 Use cases:
 - Find existing MCP servers before creating a new one
@@ -143,6 +145,37 @@ Note: This tool queries the PulseMCP registry API. Results depend on what has be
 
           if (impl.mcp_client_id) {
             content += `   MCP Client ID: ${impl.mcp_client_id}\n`;
+          }
+
+          // Display remote endpoints if available
+          if (impl.mcp_server?.remotes && impl.mcp_server.remotes.length > 0) {
+            content += `   Remotes (${impl.mcp_server.remotes.length}):\n`;
+            for (const remote of impl.mcp_server.remotes) {
+              let remoteLine = `     - ${remote.display_name || remote.url_direct || remote.url_setup || 'Unnamed'}`;
+              const attrs = [];
+              if (remote.transport) attrs.push(remote.transport);
+              if (remote.host_platform) attrs.push(remote.host_platform);
+              if (remote.authentication_method) attrs.push(`auth: ${remote.authentication_method}`);
+              if (remote.cost) attrs.push(remote.cost);
+              if (attrs.length > 0) {
+                remoteLine += ` [${attrs.join(', ')}]`;
+              }
+              content += remoteLine + '\n';
+            }
+          } else if (impl.mcp_server?.mcp_server_remotes_count) {
+            content += `   Remotes Count: ${impl.mcp_server.mcp_server_remotes_count}\n`;
+          }
+
+          // Display canonical URLs if available
+          if (impl.canonical && impl.canonical.length > 0) {
+            content += `   Canonical URLs (${impl.canonical.length}):\n`;
+            for (const canonical of impl.canonical) {
+              let canonicalLine = `     - ${canonical.url} [scope: ${canonical.scope}]`;
+              if (canonical.note) {
+                canonicalLine += ` - ${canonical.note}`;
+              }
+              content += canonicalLine + '\n';
+            }
           }
 
           content += '\n';

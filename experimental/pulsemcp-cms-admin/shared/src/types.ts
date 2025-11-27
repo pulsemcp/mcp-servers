@@ -184,6 +184,7 @@ export interface MCPImplementation {
   // Associated objects (now inline from API)
   mcp_server?: MCPServer | null;
   mcp_client?: MCPClient | null;
+  canonical?: CanonicalUrlParams[];
 }
 
 export interface MCPImplementationsResponse {
