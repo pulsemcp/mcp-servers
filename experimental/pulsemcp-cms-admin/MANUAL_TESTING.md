@@ -17,21 +17,18 @@ All manual tests passed successfully against the production API, including the n
 ### Tool Test Results
 
 1. **Draft MCP Implementations** (server-queue-tools.manual.test.ts): ✅ 18/18 PASSING
-
    - get_draft_mcp_implementations (5 tests)
    - save_mcp_implementation (9 tests including **NEW** remote/canonical features)
    - Tool group filtering (1 test)
    - Associated objects integration (3 tests)
 
 2. **Search MCP Implementations** (search-mcp-implementations.manual.test.ts): ✅ 11/11 PASSING
-
    - Basic search functionality (3 tests - including previously skipped server type filter)
    - Filtering and pagination (3 tests)
    - Search result details (1 test)
    - Edge cases (4 tests - including previously skipped short queries and multi-field search)
 
 3. **Newsletter Operations** (pulsemcp-cms-admin.manual.test.ts): ✅ 9/9 PASSING
-
    - Newsletter post operations (7 tests)
    - Error handling (2 tests)
 

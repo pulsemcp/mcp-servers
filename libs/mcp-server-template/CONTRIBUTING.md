@@ -72,7 +72,6 @@ This template includes placeholders for three types of tests:
 ### Setting Up Tests
 
 1. Create test files in the appropriate directories:
-
    - `tests/functional/` - For unit tests
    - `tests/integration/` - For integration tests
    - `tests/manual/` - For manual tests

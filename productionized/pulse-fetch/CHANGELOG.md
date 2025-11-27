@@ -74,14 +74,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Improved
 
 - Made URL parameter more forgiving in the scrape tool
-
   - URLs without protocol (e.g., `example.com`) now automatically get `https://` prefix
   - Whitespace is automatically trimmed from URLs (prevents issues with trailing newlines or spaces)
   - Added comprehensive functional test coverage for URL preprocessing behavior
   - URLs with existing protocols (http://, ftp://, custom://) are preserved as-is
 
 - Enhanced manual pages test framework to detect strategy regressions
-
   - Tests now verify both pass/fail status AND which scraping strategy succeeded
   - Added expected strategy assertions for each page/configuration combination
   - Test output shows strategy used vs expected with clear visual indicators
@@ -195,7 +193,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Intelligent content cleaning with `cleanScrape` parameter
-
   - New `cleanScrape` parameter (default: true) controls whether to clean HTML content
   - Cleaning converts HTML to semantic Markdown, removing ads, navigation, and boilerplate
   - Achieves 50-90% content reduction while preserving main content
