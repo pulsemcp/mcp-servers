@@ -89,50 +89,66 @@ export async function saveMCPImplementation(
   }
 
   // Remote endpoints
+  // Rails expects nested attributes to use the _attributes suffix for has_many associations
   if (params.remote !== undefined && params.remote.length > 0) {
     params.remote.forEach((remote, index) => {
       if (remote.id !== undefined) {
-        formData.append(`mcp_implementation[remote][${index}][id]`, remote.id.toString());
+        formData.append(
+          `mcp_implementation[remote_attributes][${index}][id]`,
+          remote.id.toString()
+        );
       }
       if (remote.url_direct !== undefined) {
-        formData.append(`mcp_implementation[remote][${index}][url_direct]`, remote.url_direct);
+        formData.append(
+          `mcp_implementation[remote_attributes][${index}][url_direct]`,
+          remote.url_direct
+        );
       }
       if (remote.url_setup !== undefined) {
-        formData.append(`mcp_implementation[remote][${index}][url_setup]`, remote.url_setup);
+        formData.append(
+          `mcp_implementation[remote_attributes][${index}][url_setup]`,
+          remote.url_setup
+        );
       }
       if (remote.transport !== undefined) {
-        formData.append(`mcp_implementation[remote][${index}][transport]`, remote.transport);
+        formData.append(
+          `mcp_implementation[remote_attributes][${index}][transport]`,
+          remote.transport
+        );
       }
       if (remote.host_platform !== undefined) {
         formData.append(
-          `mcp_implementation[remote][${index}][host_platform]`,
+          `mcp_implementation[remote_attributes][${index}][host_platform]`,
           remote.host_platform
         );
       }
       if (remote.host_infrastructure !== undefined) {
         formData.append(
-          `mcp_implementation[remote][${index}][host_infrastructure]`,
+          `mcp_implementation[remote_attributes][${index}][host_infrastructure]`,
           remote.host_infrastructure
         );
       }
       if (remote.authentication_method !== undefined) {
         formData.append(
-          `mcp_implementation[remote][${index}][authentication_method]`,
+          `mcp_implementation[remote_attributes][${index}][authentication_method]`,
           remote.authentication_method
         );
       }
       if (remote.cost !== undefined) {
-        formData.append(`mcp_implementation[remote][${index}][cost]`, remote.cost);
+        formData.append(`mcp_implementation[remote_attributes][${index}][cost]`, remote.cost);
       }
       if (remote.status !== undefined) {
-        formData.append(`mcp_implementation[remote][${index}][status]`, remote.status);
+        formData.append(`mcp_implementation[remote_attributes][${index}][status]`, remote.status);
       }
       if (remote.display_name !== undefined) {
-        formData.append(`mcp_implementation[remote][${index}][display_name]`, remote.display_name);
+        formData.append(
+          `mcp_implementation[remote_attributes][${index}][display_name]`,
+          remote.display_name
+        );
       }
       if (remote.internal_notes !== undefined) {
         formData.append(
-          `mcp_implementation[remote][${index}][internal_notes]`,
+          `mcp_implementation[remote_attributes][${index}][internal_notes]`,
           remote.internal_notes
         );
       }
@@ -140,12 +156,19 @@ export async function saveMCPImplementation(
   }
 
   // Canonical URLs
+  // Rails expects nested attributes to use the _attributes suffix for has_many associations
   if (params.canonical !== undefined && params.canonical.length > 0) {
     params.canonical.forEach((canonicalUrl, index) => {
-      formData.append(`mcp_implementation[canonical][${index}][url]`, canonicalUrl.url);
-      formData.append(`mcp_implementation[canonical][${index}][scope]`, canonicalUrl.scope);
+      formData.append(`mcp_implementation[canonical_attributes][${index}][url]`, canonicalUrl.url);
+      formData.append(
+        `mcp_implementation[canonical_attributes][${index}][scope]`,
+        canonicalUrl.scope
+      );
       if (canonicalUrl.note !== undefined) {
-        formData.append(`mcp_implementation[canonical][${index}][note]`, canonicalUrl.note);
+        formData.append(
+          `mcp_implementation[canonical_attributes][${index}][note]`,
+          canonicalUrl.note
+        );
       }
     });
   }

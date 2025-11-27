@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Fixed
+
+- Fixed `save_mcp_implementation` to use correct Rails nested attributes parameter format for remote endpoints and canonical URLs
+  - Changed `mcp_implementation[remote][0][field]` to `mcp_implementation[remote_attributes][0][field]`
+  - Changed `mcp_implementation[canonical][0][field]` to `mcp_implementation[canonical_attributes][0][field]`
+  - This fix aligns with Rails `accepts_nested_attributes_for` convention
+  - **IMPORTANT**: Production testing confirms the client-side fix is correct (API accepts parameters), but backend issues prevent data persistence. See `TEST_RESULTS.md` for test evidence and `BACKEND_API_ISSUE.md` for backend investigation steps
+
 ### Changed
 
 - Enhanced `search_mcp_implementations` tool to display remote endpoint information (hosting platforms, transport methods, authentication, cost) and canonical URLs for MCP implementations, bringing it to parity with `get_draft_mcp_implementations`
