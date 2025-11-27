@@ -89,13 +89,35 @@ export interface MCPServerTag {
 export interface MCPServerRemote {
   id: number;
   display_name?: string;
-  url?: string;
+  url_direct?: string;
+  url_setup?: string;
   transport?: string; // e.g., "sse", "streamable_http"
-  host_platform?: string; // e.g., "smithery", "provider", "other"
-  host_infra?: string; // e.g., "cloudflare", "vercel", "fly_io"
-  authentication?: string; // e.g., "open", "oauth", "api_key"
+  host_platform?: string; // e.g., "smithery", "superinterface"
+  host_infrastructure?: string; // e.g., "cloudflare", "vercel", "fly_io"
+  authentication_method?: string; // e.g., "open", "oauth", "api_key"
   cost?: string; // e.g., "free", "free_tier", "paid"
+  status?: string; // e.g., "live", "draft"
   internal_notes?: string;
+}
+
+export interface RemoteEndpointParams {
+  id?: string | number; // ID of existing remote (number from get_draft, string also accepted) or omit for new
+  url_direct?: string;
+  url_setup?: string;
+  transport?: string; // e.g., "sse", "streamable_http"
+  host_platform?: string; // e.g., "smithery", "superinterface"
+  host_infrastructure?: string; // e.g., "cloudflare", "fly_io"
+  authentication_method?: string; // e.g., "open", "oauth"
+  cost?: string; // e.g., "free", "paid"
+  status?: string; // Status - defaults to "live"
+  display_name?: string;
+  internal_notes?: string;
+}
+
+export interface CanonicalUrlParams {
+  url: string;
+  scope: 'domain' | 'subdomain' | 'subfolder' | 'url';
+  note?: string;
 }
 
 export interface MCPServer {
@@ -199,6 +221,12 @@ export interface SaveMCPImplementationParams {
   github_owner?: string; // GitHub organization or username
   github_repo?: string; // Repository name
   github_subfolder?: string; // Optional subfolder within repo (for monorepos)
+
+  // Remote endpoints (for servers)
+  remote?: RemoteEndpointParams[]; // Array of remote endpoint configurations
+
+  // Canonical URLs
+  canonical?: CanonicalUrlParams[]; // Array of canonical URL configurations
 
   // Other fields
   internal_notes?: string; // Admin-only notes

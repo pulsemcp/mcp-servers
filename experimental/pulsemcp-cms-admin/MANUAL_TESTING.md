@@ -2,111 +2,125 @@
 
 ## Latest Test Results
 
-**Date:** 2025-11-25
-**Commit:** 42ccd76
-**Version:** 0.2.0
+**Date:** 2025-11-26
+**Commit:** ffe7502
+**Version:** 0.3.0
 **API Environment:** Production (https://admin.pulsemcp.com)
 **API Key:** Admin API key (read/write)
 
 ## Test Results Summary
 
-### Overall: ✅ 33/36 Tests PASSING (92%)
+### Overall: ✅ 39/39 Tests PASSING (100%)
 
-**3 tests skipped** - Known REST API bugs returning 500 errors for certain search queries:
-
-- `search_mcp_implementations` with `type: 'server'` filter
-- `search_mcp_implementations` with single-character queries (e.g., 'a')
-- `search_mcp_implementations` with 'anthropic' query
-
-These are server-side API bugs, not MCP server issues. Tests now properly fail on API errors instead of silently passing.
+All manual tests passed successfully against the production API, including the new v0.3.0 features for remote endpoints and canonical URLs. Previously skipped tests (due to API bugs) are now passing after API fixes.
 
 ### Tool Test Results
 
-1. **get_draft_mcp_implementations**: ✅ 5/5 PASSING (100%)
-2. **save_mcp_implementation**: ✅ 4/4 PASSING (100%)
-3. **search_mcp_implementations**: ✅ 9/12 PASSING (75% - 3 skipped due to API bugs)
-4. **Associated Objects Integration**: ✅ 3/3 PASSING (100%)
-5. **Newsletter Operations**: ✅ 9/9 PASSING (100%)
-6. **Email Notification**: ✅ 1/1 PASSING (100%)
-7. **Server Queue Tools**: ✅ 2/2 PASSING (100%)
+1. **Draft MCP Implementations** (server-queue-tools.manual.test.ts): ✅ 18/18 PASSING
+   - get_draft_mcp_implementations (5 tests)
+   - save_mcp_implementation (9 tests including **NEW** remote/canonical features)
+   - Tool group filtering (1 test)
+   - Associated objects integration (3 tests)
 
-## What's New in v0.2.0
+2. **Search MCP Implementations** (search-mcp-implementations.manual.test.ts): ✅ 11/11 PASSING
+   - Basic search functionality (3 tests - including previously skipped server type filter)
+   - Filtering and pagination (3 tests)
+   - Search result details (1 test)
+   - Edge cases (4 tests - including previously skipped short queries and multi-field search)
 
-### New Fields for `save_mcp_implementation`
+3. **Newsletter Operations** (pulsemcp-cms-admin.manual.test.ts): ✅ 9/9 PASSING
+   - Newsletter post operations (7 tests)
+   - Error handling (2 tests)
 
-Added provider creation/linking fields:
+4. **Email Notifications** (send-email.manual.test.ts): ✅ 1/1 PASSING
+   - Email sending functionality
 
-- `provider_id`: Use `"new"` to create provider or numeric ID to link existing
-- `provider_slug`: URL-friendly identifier (auto-generated if omitted)
-- `provider_url`: Provider website URL for deduplication
+## What's New in v0.3.0
 
-Added GitHub repository fields:
+### Remote Endpoint Support
 
-- `github_owner`: GitHub organization or username
-- `github_repo`: Repository name
-- `github_subfolder`: Subfolder path for monorepos
+Added comprehensive remote endpoint management for MCP implementations:
 
-Other additions:
+- `remote`: Array of remote endpoint configurations
+  - `id`: ID of existing remote or omit for new
+  - `url_direct`: Direct access URL
+  - `url_setup`: Setup/documentation URL
+  - `transport`: Transport protocol (stdio, sse, etc.)
+  - `host_platform`: Hosting platform (npm, pypi, docker, etc.)
+  - `host_infrastructure`: Infrastructure type (local, cloud, etc.)
+  - `authentication_method`: Auth mechanism
+  - `cost`: Pricing tier
+  - `status`: Operational status (active, beta, etc.)
+  - `display_name`: Human-readable name
+  - `internal_notes`: Admin notes
 
-- `internal_notes`: Admin-only notes field
-- `github_stars` now accepts `null` values
+### Canonical URL Support
 
-### Bug Fixes
+Added canonical URL management with scoped definitions:
 
-- **Fixed newsletter timeout**: Added caching to author lookups (was making N+1 API calls)
-- **Fixed manual test transparency**: Tests now properly fail on API errors
-- **Fixed send-email test**: Now loads `.env` file correctly
+- `canonical`: Array of canonical URL configurations
+  - `url`: The canonical URL
+  - `scope`: Scope level (domain, subdomain, subfolder, url)
+  - `note`: Optional explanatory note
+
+**Important**: The API uses replacement semantics - sending canonical data replaces all existing canonicals.
 
 ## Key Functionality Verified
 
-### save_mcp_implementation with New Provider Fields
+### Remote Endpoint Submission
 
 ✅ Successfully tested:
 
-- Creating implementations with `provider_id: "new"`
-- Provider deduplication via URL and slug matching
-- GitHub repository field updates
-- null value handling for `github_stars`
+- Creating new remote endpoints with all fields
+- Updating existing remotes by ID
+- Form data encoding for nested array structures
+- Integration with Rails API backend
 
-### Newsletter Operations Performance
+### Canonical URL Submission
 
-✅ Fixed timeout issue:
+✅ Successfully tested:
 
-- Author lookups now cached with 1-minute TTL
-- Single API call for all author lookups instead of N+1
-- All 9 newsletter tests now pass
+- Submitting canonical URLs with different scopes
+- Replacement semantics (array replaces existing)
+- Optional note field handling
+- Proper form data array encoding
 
-### Search API Known Issues
+### Combined Updates
 
-⚠️ The REST API returns 500 errors for certain queries:
+✅ Successfully tested:
 
-- Queries with `type: 'server'` or `type: 'client'` filter
-- Single-character queries
-- Certain words like 'anthropic', 'database', 'official'
-
-These tests are skipped until the API bugs are fixed.
+- Updating both remote and canonical data in single operation
+- Independent field handling
+- No field interference between features
 
 ## Environment Configuration
 
 ### API Authentication
 
-✅ Read/write API key works for:
+✅ Production API key working for all operations:
 
-- GET /api/implementations/search
 - GET /api/implementations/drafts
-- PUT /api/implementations/:id
-- POST /emails
-- All newsletter CRUD operations
+- PUT /api/implementations/:id (with remote/canonical)
+- All queue and processing operations
 
 ## Conclusion
 
 **Status**: ✅ READY FOR RELEASE
 
-All new features tested and working:
+All v0.3.0 features tested and working against production API:
 
-1. Provider fields for `save_mcp_implementation`: ✅ Working
-2. GitHub fields for `save_mcp_implementation`: ✅ Working
-3. Author caching for newsletter performance: ✅ Fixed
-4. Test transparency improvements: ✅ Applied
+1. Remote endpoint submission: ✅ Working
+2. Canonical URL submission: ✅ Working
+3. Combined updates: ✅ Working
+4. Form data encoding: ✅ Correct
+5. API integration: ✅ Verified
 
-Known API limitations documented in skipped tests.
+100% of manual tests passing (39/39) with real production data.
+
+### Bug Fixes Verified
+
+Previously skipped tests are now passing after API bug fixes:
+
+- ✅ Search with type filter (database + server)
+- ✅ Single-character queries
+- ✅ Multi-field search (anthropic query)

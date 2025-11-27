@@ -266,6 +266,106 @@ describe('Draft MCP Implementations - Manual Tests with Real API', () => {
 
       console.log('Empty update result:', text);
     });
+
+    it('should update remote endpoint data', async () => {
+      if (!testImplementationId) {
+        console.log('Skipping test - no draft implementation ID available');
+        return;
+      }
+
+      const result = await client.callTool('save_mcp_implementation', {
+        id: testImplementationId,
+        remote: [
+          {
+            url_direct: 'https://test-api.example.com/mcp',
+            url_setup: 'https://test.example.com/setup',
+            transport: 'sse',
+            host_platform: 'smithery',
+            host_infrastructure: 'cloudflare',
+            authentication_method: 'open',
+            cost: 'free',
+            display_name: 'Test Remote Endpoint',
+            status: 'live',
+          },
+        ],
+      });
+
+      expect(result.isError).toBeFalsy();
+      const text = result.content[0].text;
+
+      expect(text).toContain('Successfully saved MCP implementation');
+      expect(text).toContain('remote');
+
+      console.log('Remote endpoint update result:', text);
+    });
+
+    it('should update canonical URL data', async () => {
+      if (!testImplementationId) {
+        console.log('Skipping test - no draft implementation ID available');
+        return;
+      }
+
+      const result = await client.callTool('save_mcp_implementation', {
+        id: testImplementationId,
+        canonical: [
+          {
+            url: 'https://github.com/test-org/test-repo',
+            scope: 'url',
+            note: 'Official GitHub repository',
+          },
+        ],
+      });
+
+      expect(result.isError).toBeFalsy();
+      const text = result.content[0].text;
+
+      expect(text).toContain('Successfully saved MCP implementation');
+      expect(text).toContain('canonical');
+
+      console.log('Canonical URL update result:', text);
+    });
+
+    it('should update both remote and canonical data together', async () => {
+      if (!testImplementationId) {
+        console.log('Skipping test - no draft implementation ID available');
+        return;
+      }
+
+      const result = await client.callTool('save_mcp_implementation', {
+        id: testImplementationId,
+        remote: [
+          {
+            url_direct: 'https://test-api2.example.com/mcp',
+            transport: 'sse',
+            host_platform: 'superinterface',
+            authentication_method: 'oauth',
+            cost: 'paid',
+            display_name: 'Premium Remote',
+          },
+        ],
+        canonical: [
+          {
+            url: 'https://test.example.com',
+            scope: 'domain',
+            note: 'Official website',
+          },
+          {
+            url: 'https://docs.test.example.com',
+            scope: 'subdomain',
+            note: 'Documentation site',
+          },
+        ],
+      });
+
+      expect(result.isError).toBeFalsy();
+      const text = result.content[0].text;
+
+      expect(text).toContain('Successfully saved MCP implementation');
+      expect(text).toContain('remote');
+      expect(text).toContain('canonical');
+
+      console.log('Combined remote and canonical update result:', text);
+    });
   });
 
   describe('Tool group filtering', () => {

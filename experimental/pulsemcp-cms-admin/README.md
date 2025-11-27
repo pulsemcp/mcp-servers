@@ -71,6 +71,10 @@ You can control which tool groups are available by setting the `PULSEMCP_ADMIN_E
 - Use MCP server/client slugs for featured content (e.g., "github-mcp", "claude-desktop")
 - Use `search_mcp_implementations` to discover MCP servers and clients in the PulseMCP registry
 - Enable or disable specific toolgroups by setting `PULSEMCP_ADMIN_ENABLED_TOOLGROUPS` environment variable
+- Use the `remote` array parameter in `save_mcp_implementation` to configure remote endpoints for MCP servers (transport, host_platform, authentication_method, etc.)
+- Use the `canonical` array parameter in `save_mcp_implementation` to set canonical URLs with scope (domain, subdomain, subfolder, or url)
+- Remote endpoints allow specifying how MCP servers can be accessed (direct URL, setup URL, authentication method, cost, etc.)
+- When updating existing remotes, include the remote `id` (number from `get_draft_mcp_implementations`) in the remote object
 
 # Examples
 
