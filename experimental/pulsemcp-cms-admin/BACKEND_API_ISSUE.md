@@ -2,38 +2,81 @@
 
 ## Executive Summary
 
-The PulseMCP Admin REST API endpoint `PUT /api/implementations/:id` is not persisting remote endpoint and canonical URL data submitted via nested attributes, despite returning a successful response with the field names listed in the "updated" fields.
+The PulseMCP Admin REST API endpoint `PUT /api/implementations/:id` accepts nested attributes for remote endpoints and canonical URLs (returns 200 OK with fields listed as "updated"), but the data does not persist to the database.
 
-## Issue Details
+**Production testing confirms the issue:** Data submitted with correct Rails nested attributes format is accepted but silently not saved.
 
-### Endpoint
+## Reproduction Steps
 
-- **URL**: `PUT https://admin.pulsemcp.com/api/implementations/:id`
-- **Authentication**: `X-API-Key` header
-- **Content-Type**: `application/x-www-form-urlencoded`
+### Prerequisites
 
-### Expected Behavior
+- Admin API key with write access
+- Existing MCP implementation in database (e.g., ID 11519)
 
-When submitting nested attributes for `remote_attributes` and `canonical_attributes`, the associated records should be created or updated in the database and persist after the request completes.
+### Step 1: Submit Remote Endpoint and Canonical URL Data
 
-### Actual Behavior
+```bash
+curl -X PUT https://admin.pulsemcp.com/api/implementations/11519 \
+  -H "X-API-Key: YOUR_API_KEY" \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  --data-urlencode "mcp_implementation[remote_attributes][0][url_direct]=https://test.example.com/mcp" \
+  --data-urlencode "mcp_implementation[remote_attributes][0][transport]=sse" \
+  --data-urlencode "mcp_implementation[remote_attributes][0][authentication_method]=open" \
+  --data-urlencode "mcp_implementation[remote_attributes][0][cost]=free" \
+  --data-urlencode "mcp_implementation[remote_attributes][0][status]=live" \
+  --data-urlencode "mcp_implementation[canonical_attributes][0][url]=https://test.example.com" \
+  --data-urlencode "mcp_implementation[canonical_attributes][0][scope]=domain" \
+  --data-urlencode "mcp_implementation[internal_notes]=TEST - control field"
+```
 
-The API returns a successful response indicating that `remote` and `canonical` fields were updated, but the data does not persist to the database. Subsequent queries show no remote endpoints or canonical URLs associated with the implementation.
+### Step 2: Observe API Response
 
-## Root Cause Analysis
+**Expected:** 200 OK
+**Actual:** 200 OK ✅
 
-### Client-Side Fix Applied
+Response includes:
 
-The MCP server was incorrectly using parameter names without the `_attributes` suffix:
+```json
+{
+  "id": 11519,
+  "name": "...",
+  "updated_at": "2025-11-27T..."
+}
+```
 
-- ❌ **Before**: `mcp_implementation[remote][0][url_direct]`
-- ✅ **After**: `mcp_implementation[remote_attributes][0][url_direct]`
+API claims these fields were updated:
 
-This has been corrected in the MCP server client code to follow Rails nested attributes conventions.
+- `remote` ✅
+- `canonical` ✅
+- `internal_notes` ✅
 
-### Potential Backend Issues
+### Step 3: Verify Data Persisted
 
-Even with the correct parameter format, there may be backend issues that need investigation:
+```bash
+# Check implementation record
+curl https://admin.pulsemcp.com/api/implementations/11519 \
+  -H "X-API-Key: YOUR_API_KEY"
+```
+
+**Expected:** Response includes remote endpoints and canonical URLs
+**Actual:** ❌
+
+- `internal_notes` field shows "TEST - control field" ✅
+- No remote endpoint data present ❌
+- No canonical URL data present ❌
+
+### Observed Behavior
+
+1. ✅ API accepts the request (200 OK)
+2. ✅ API response lists `remote` and `canonical` as updated fields
+3. ✅ Control field (`internal_notes`) persists successfully
+4. ❌ Remote endpoint data does NOT persist
+5. ❌ Canonical URL data does NOT persist
+6. ❌ No error messages or validation failures reported
+
+## Root Cause Investigation
+
+The issue is NOT with parameter format - the client is sending correct Rails nested attributes format. The backend must be investigated for:
 
 #### 1. **Missing `accepts_nested_attributes_for` Configuration**
 
