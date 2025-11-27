@@ -764,12 +764,13 @@ describe('Newsletter Tools', () => {
       const listToolsHandler = handlers.get('tools/list');
       const result = await listToolsHandler({ method: 'tools/list', params: {} });
 
-      expect(result.tools).toHaveLength(4);
+      expect(result.tools).toHaveLength(5);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const toolNames = result.tools.map((t: any) => t.name);
       expect(toolNames).toContain('search_mcp_implementations');
       expect(toolNames).toContain('get_draft_mcp_implementations');
       expect(toolNames).toContain('save_mcp_implementation');
+      expect(toolNames).toContain('find_providers');
       expect(toolNames).not.toContain('get_newsletter_posts');
     });
 
@@ -791,13 +792,14 @@ describe('Newsletter Tools', () => {
       const listToolsHandler = handlers.get('tools/list');
       const result = await listToolsHandler({ method: 'tools/list', params: {} });
 
-      expect(result.tools).toHaveLength(10);
+      expect(result.tools).toHaveLength(11);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const toolNames = result.tools.map((t: any) => t.name);
       expect(toolNames).toContain('get_newsletter_posts');
       expect(toolNames).toContain('search_mcp_implementations');
       expect(toolNames).toContain('get_draft_mcp_implementations');
       expect(toolNames).toContain('save_mcp_implementation');
+      expect(toolNames).toContain('find_providers');
     });
 
     it('should register all tools when no groups specified (default)', async () => {
@@ -815,7 +817,7 @@ describe('Newsletter Tools', () => {
       const listToolsHandler = handlers.get('tools/list');
       const result = await listToolsHandler({ method: 'tools/list', params: {} });
 
-      expect(result.tools).toHaveLength(10);
+      expect(result.tools).toHaveLength(11);
     });
   });
 

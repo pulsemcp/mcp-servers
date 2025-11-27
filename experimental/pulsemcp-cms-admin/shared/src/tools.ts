@@ -11,6 +11,7 @@ import { searchMCPImplementations } from './tools/search-mcp-implementations.js'
 import { getDraftMCPImplementations } from './tools/get-draft-mcp-implementations.js';
 import { saveMCPImplementation } from './tools/save-mcp-implementation.js';
 import { sendMCPImplementationPostingNotification } from './tools/send-mcp-implementation-posting-notification.js';
+import { findProviders } from './tools/find-providers.js';
 
 /**
  * Tool group definitions - groups of related tools that can be enabled/disabled together
@@ -49,6 +50,7 @@ const ALL_TOOLS: ToolDefinition[] = [
   { factory: getDraftMCPImplementations, groups: ['server_queue_readonly', 'server_queue_all'] },
   { factory: saveMCPImplementation, groups: ['server_queue_all'] },
   { factory: sendMCPImplementationPostingNotification, groups: ['server_queue_all'] },
+  { factory: findProviders, groups: ['server_queue_readonly', 'server_queue_all'] },
 ];
 
 /**

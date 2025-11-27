@@ -32,6 +32,8 @@ describe('sendMCPImplementationPostingNotification', () => {
       getMCPClientBySlug: vi.fn(),
       getDraftMCPImplementations: vi.fn(),
       saveMCPImplementation: vi.fn(),
+      searchProviders: vi.fn(),
+      getProviderById: vi.fn(),
     } as IPulseMCPAdminClient;
 
     const clientFactory = () => mockClient;
