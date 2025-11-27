@@ -88,6 +88,68 @@ export async function saveMCPImplementation(
     formData.append('mcp_implementation[internal_notes]', params.internal_notes);
   }
 
+  // Remote endpoints
+  if (params.remote !== undefined && params.remote.length > 0) {
+    params.remote.forEach((remote, index) => {
+      if (remote.id !== undefined) {
+        formData.append(`mcp_implementation[remote][${index}][id]`, remote.id);
+      }
+      if (remote.url_direct !== undefined) {
+        formData.append(`mcp_implementation[remote][${index}][url_direct]`, remote.url_direct);
+      }
+      if (remote.url_setup !== undefined) {
+        formData.append(`mcp_implementation[remote][${index}][url_setup]`, remote.url_setup);
+      }
+      if (remote.transport !== undefined) {
+        formData.append(`mcp_implementation[remote][${index}][transport]`, remote.transport);
+      }
+      if (remote.host_platform !== undefined) {
+        formData.append(
+          `mcp_implementation[remote][${index}][host_platform]`,
+          remote.host_platform
+        );
+      }
+      if (remote.host_infrastructure !== undefined) {
+        formData.append(
+          `mcp_implementation[remote][${index}][host_infrastructure]`,
+          remote.host_infrastructure
+        );
+      }
+      if (remote.authentication_method !== undefined) {
+        formData.append(
+          `mcp_implementation[remote][${index}][authentication_method]`,
+          remote.authentication_method
+        );
+      }
+      if (remote.cost !== undefined) {
+        formData.append(`mcp_implementation[remote][${index}][cost]`, remote.cost);
+      }
+      if (remote.status !== undefined) {
+        formData.append(`mcp_implementation[remote][${index}][status]`, remote.status);
+      }
+      if (remote.display_name !== undefined) {
+        formData.append(`mcp_implementation[remote][${index}][display_name]`, remote.display_name);
+      }
+      if (remote.internal_notes !== undefined) {
+        formData.append(
+          `mcp_implementation[remote][${index}][internal_notes]`,
+          remote.internal_notes
+        );
+      }
+    });
+  }
+
+  // Canonical URLs
+  if (params.canonical !== undefined && params.canonical.length > 0) {
+    params.canonical.forEach((canonicalUrl, index) => {
+      formData.append(`mcp_implementation[canonical][${index}][url]`, canonicalUrl.url);
+      formData.append(`mcp_implementation[canonical][${index}][scope]`, canonicalUrl.scope);
+      if (canonicalUrl.note !== undefined) {
+        formData.append(`mcp_implementation[canonical][${index}][note]`, canonicalUrl.note);
+      }
+    });
+  }
+
   const response = await fetch(url.toString(), {
     method: 'PUT',
     headers: {

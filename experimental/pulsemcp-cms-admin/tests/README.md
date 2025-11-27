@@ -113,6 +113,7 @@ Integration tests use a real MCP client (`TestMCPClient`) to test the full MCP p
    ```
 
 3. The helper function:
+
    - Extracts mock data from the mock client
    - Passes it via environment variable to the server
    - Points to the special integration entry point

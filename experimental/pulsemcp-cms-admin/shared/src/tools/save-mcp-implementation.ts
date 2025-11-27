@@ -31,6 +31,12 @@ const PARAM_DESCRIPTIONS = {
   github_repo: 'GitHub repository name (without owner prefix).',
   github_subfolder:
     'Subfolder path within the repository, for monorepos. Omit for root-level projects.',
+  // Remote endpoints
+  remote:
+    'Array of remote endpoint configurations for MCP servers. Each remote can have: id (existing remote ID or blank for new), url_direct, url_setup, transport (e.g., "sse"), host_platform (e.g., "smithery"), host_infrastructure (e.g., "cloudflare"), authentication_method (e.g., "open"), cost (e.g., "free"), status (defaults to "live"), display_name, and internal_notes.',
+  // Canonical URLs
+  canonical:
+    'Array of canonical URL configurations. Each entry must have: url (the canonical URL), scope (one of "domain", "subdomain", "subfolder", or "url"), and optional note for additional context.',
   // Other fields
   internal_notes:
     'Admin-only notes. Not displayed publicly. Used for tracking submission sources, reviewer comments, etc.',
@@ -68,6 +74,36 @@ const SaveMCPImplementationSchema = z.object({
   github_owner: z.string().optional().describe(PARAM_DESCRIPTIONS.github_owner),
   github_repo: z.string().optional().describe(PARAM_DESCRIPTIONS.github_repo),
   github_subfolder: z.string().optional().describe(PARAM_DESCRIPTIONS.github_subfolder),
+  // Remote endpoints
+  remote: z
+    .array(
+      z.object({
+        id: z.string().optional(),
+        url_direct: z.string().optional(),
+        url_setup: z.string().optional(),
+        transport: z.string().optional(),
+        host_platform: z.string().optional(),
+        host_infrastructure: z.string().optional(),
+        authentication_method: z.string().optional(),
+        cost: z.string().optional(),
+        status: z.string().optional(),
+        display_name: z.string().optional(),
+        internal_notes: z.string().optional(),
+      })
+    )
+    .optional()
+    .describe(PARAM_DESCRIPTIONS.remote),
+  // Canonical URLs
+  canonical: z
+    .array(
+      z.object({
+        url: z.string(),
+        scope: z.enum(['domain', 'subdomain', 'subfolder', 'url']),
+        note: z.string().optional(),
+      })
+    )
+    .optional()
+    .describe(PARAM_DESCRIPTIONS.canonical),
   // Other fields
   internal_notes: z.string().optional().describe(PARAM_DESCRIPTIONS.internal_notes),
 });
@@ -79,7 +115,7 @@ export function saveMCPImplementation(_server: Server, clientFactory: ClientFact
 
 This tool allows partial updates - you only need to provide the fields you want to change. All business logic from the Rails controller is applied (validation, associations, callbacks).
 
-Example request:
+Example request (basic update):
 {
   "id": 11371,
   "name": "GitHub MCP Server",
@@ -87,6 +123,35 @@ Example request:
   "status": "live",
   "classification": "official",
   "implementation_language": "TypeScript"
+}
+
+Example request (with remote endpoints):
+{
+  "id": 11371,
+  "remote": [
+    {
+      "url_direct": "https://api.example.com/mcp",
+      "url_setup": "https://example.com/setup",
+      "transport": "sse",
+      "host_platform": "smithery",
+      "host_infrastructure": "cloudflare",
+      "authentication_method": "open",
+      "cost": "free",
+      "display_name": "Main Remote"
+    }
+  ]
+}
+
+Example request (with canonical URLs):
+{
+  "id": 11371,
+  "canonical": [
+    {
+      "url": "https://github.com/owner/repo",
+      "scope": "url",
+      "note": "Official GitHub repository"
+    }
+  ]
 }
 
 Example response:
@@ -106,6 +171,8 @@ Important notes:
 - Use get_draft_mcp_implementations first to see current values
 - The ID parameter is required to identify which implementation to update
 - Setting mcp_server_id or mcp_client_id to null will unlink the association
+- Remote endpoints are for MCP servers only and configure how they can be accessed
+- Canonical URLs help identify the authoritative source for the implementation
 
 Use cases:
 - Update draft implementations before publishing
@@ -113,7 +180,9 @@ Use cases:
 - Update metadata (stars, language, classification)
 - Link or unlink MCP server/client associations
 - Update descriptions and documentation
-- Modify URLs and provider information`,
+- Modify URLs and provider information
+- Add or update remote endpoint configurations for servers
+- Set canonical URLs for implementations`,
     inputSchema: {
       type: 'object',
       properties: {
@@ -201,6 +270,41 @@ Use cases:
         github_subfolder: {
           type: 'string',
           description: PARAM_DESCRIPTIONS.github_subfolder,
+        },
+        // Remote endpoints
+        remote: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              id: { type: 'string' },
+              url_direct: { type: 'string' },
+              url_setup: { type: 'string' },
+              transport: { type: 'string' },
+              host_platform: { type: 'string' },
+              host_infrastructure: { type: 'string' },
+              authentication_method: { type: 'string' },
+              cost: { type: 'string' },
+              status: { type: 'string' },
+              display_name: { type: 'string' },
+              internal_notes: { type: 'string' },
+            },
+          },
+          description: PARAM_DESCRIPTIONS.remote,
+        },
+        // Canonical URLs
+        canonical: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              url: { type: 'string' },
+              scope: { type: 'string', enum: ['domain', 'subdomain', 'subfolder', 'url'] },
+              note: { type: 'string' },
+            },
+            required: ['url', 'scope'],
+          },
+          description: PARAM_DESCRIPTIONS.canonical,
         },
         // Other fields
         internal_notes: {
