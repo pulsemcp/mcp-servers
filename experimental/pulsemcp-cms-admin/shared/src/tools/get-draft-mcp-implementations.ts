@@ -171,7 +171,8 @@ Use cases:
                 const attrs = [];
                 if (remote.transport) attrs.push(remote.transport);
                 if (remote.host_platform) attrs.push(remote.host_platform);
-                if (remote.authentication_method) attrs.push(`auth: ${remote.authentication_method}`);
+                if (remote.authentication_method)
+                  attrs.push(`auth: ${remote.authentication_method}`);
                 if (remote.cost) attrs.push(remote.cost);
                 if (attrs.length > 0) {
                   remoteLine += ` [${attrs.join(', ')}]`;

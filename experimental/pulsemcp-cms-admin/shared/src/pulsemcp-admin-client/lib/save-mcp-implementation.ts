@@ -104,7 +104,10 @@ export async function saveMCPImplementation(
         formData.append(`mcp_implementation[remote][${index}][transport]`, remote.transport);
       }
       if (remote.host_platform !== undefined) {
-        formData.append(`mcp_implementation[remote][${index}][host_platform]`, remote.host_platform);
+        formData.append(
+          `mcp_implementation[remote][${index}][host_platform]`,
+          remote.host_platform
+        );
       }
       if (remote.host_infrastructure !== undefined) {
         formData.append(
