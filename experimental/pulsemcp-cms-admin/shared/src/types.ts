@@ -232,3 +232,24 @@ export interface SaveMCPImplementationParams {
   // Other fields
   internal_notes?: string; // Admin-only notes
 }
+
+export interface Provider {
+  id: number;
+  name: string;
+  slug: string;
+  url?: string;
+  implementations_count?: number;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface ProvidersResponse {
+  providers: Provider[];
+  pagination?: {
+    current_page: number;
+    total_pages: number;
+    total_count: number;
+    has_next?: boolean;
+    limit?: number;
+  };
+}

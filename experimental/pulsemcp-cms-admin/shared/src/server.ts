@@ -13,6 +13,8 @@ import type {
   MCPImplementation,
   MCPImplementationsResponse,
   SaveMCPImplementationParams,
+  Provider,
+  ProvidersResponse,
 } from './types.js';
 
 // PulseMCP Admin API client interface
@@ -86,6 +88,14 @@ export interface IPulseMCPAdminClient {
     created_at: string;
     updated_at: string;
   }>;
+
+  searchProviders(params: {
+    query: string;
+    limit?: number;
+    offset?: number;
+  }): Promise<ProvidersResponse>;
+
+  getProviderById(id: number): Promise<Provider | null>;
 }
 
 // PulseMCP Admin API client implementation
@@ -233,6 +243,20 @@ export class PulseMCPAdminClient implements IPulseMCPAdminClient {
   }> {
     const { sendEmail } = await import('./pulsemcp-admin-client/lib/send-email.js');
     return sendEmail(this.apiKey, this.baseUrl, params);
+  }
+
+  async searchProviders(params: {
+    query: string;
+    limit?: number;
+    offset?: number;
+  }): Promise<ProvidersResponse> {
+    const { searchProviders } = await import('./pulsemcp-admin-client/lib/search-providers.js');
+    return searchProviders(this.apiKey, this.baseUrl, params);
+  }
+
+  async getProviderById(id: number): Promise<Provider | null> {
+    const { getProviderById } = await import('./pulsemcp-admin-client/lib/get-provider-by-id.js');
+    return getProviderById(this.apiKey, this.baseUrl, id);
   }
 }
 

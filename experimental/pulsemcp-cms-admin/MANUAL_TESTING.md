@@ -2,38 +2,135 @@
 
 ## Latest Test Results
 
-**Date:** 2025-11-26
-**Commit:** ffe7502
-**Version:** 0.3.0
+**Date:** 2025-11-27
+**Commit:** b4febd99fe6de425d004a3a866a310a36c533ea6
+**Version:** 0.3.0+ (with find_providers tool)
 **API Environment:** Production (https://admin.pulsemcp.com)
 **API Key:** Admin API key (read/write)
 
 ## Test Results Summary
 
-### Overall: ✅ 39/39 Tests PASSING (100%)
+### Overall: ✅ 48/48 Tests PASSING (100%)
 
-All manual tests passed successfully against the production API, including the new v0.3.0 features for remote endpoints and canonical URLs. Previously skipped tests (due to API bugs) are now passing after API fixes.
+All manual tests passed successfully against the production API, including the new find_providers tool tests, v0.3.0 features for remote endpoints and canonical URLs. Previously skipped tests (due to API bugs) are now passing after API fixes.
 
 ### Tool Test Results
 
-1. **Draft MCP Implementations** (server-queue-tools.manual.test.ts): ✅ 18/18 PASSING
+1. **Find Providers** (find-providers.manual.test.ts): ✅ 9/9 PASSING **NEW**
+   - searchProviders (4 tests)
+   - getProviderById (3 tests)
+   - API error handling (1 test)
+   - Data consistency (1 test)
+
+2. **Draft MCP Implementations** (server-queue-tools.manual.test.ts): ✅ 18/18 PASSING
    - get_draft_mcp_implementations (5 tests)
    - save_mcp_implementation (9 tests including **NEW** remote/canonical features)
    - Tool group filtering (1 test)
    - Associated objects integration (3 tests)
 
-2. **Search MCP Implementations** (search-mcp-implementations.manual.test.ts): ✅ 11/11 PASSING
+3. **Search MCP Implementations** (search-mcp-implementations.manual.test.ts): ✅ 11/11 PASSING
    - Basic search functionality (3 tests - including previously skipped server type filter)
    - Filtering and pagination (3 tests)
    - Search result details (1 test)
    - Edge cases (4 tests - including previously skipped short queries and multi-field search)
 
-3. **Newsletter Operations** (pulsemcp-cms-admin.manual.test.ts): ✅ 9/9 PASSING
+4. **Newsletter Operations** (pulsemcp-cms-admin.manual.test.ts): ✅ 9/9 PASSING
    - Newsletter post operations (7 tests)
    - Error handling (2 tests)
 
-4. **Email Notifications** (send-email.manual.test.ts): ✅ 1/1 PASSING
+5. **Email Notifications** (send-email.manual.test.ts): ✅ 1/1 PASSING
    - Email sending functionality
+
+## What's New
+
+### find_providers Tool (Added 2025-11-27)
+
+Added comprehensive provider search and retrieval functionality:
+
+**searchProviders**:
+
+- Search providers by name, URL, or slug (case-insensitive)
+- Pagination support with limit/offset
+- Returns providers with implementation counts and metadata
+
+**getProviderById**:
+
+- Direct retrieval of provider by numeric ID
+- Returns null for non-existent providers
+- Full provider details including optional fields
+
+#### Test Results Detail
+
+✅ **searchProviders Tests** (4 tests - 4.22s total):
+
+1. Basic search (1523ms): Successfully searched for "anthropic", retrieved 2 providers
+2. Pagination (1150ms): Retrieved 5 of 4267 providers with limit=5, validated pagination metadata
+3. Empty results (1431ms): Confirmed empty array with proper pagination for non-existent queries
+4. Multi-field search (1116ms): Found 3 providers matching "model" across name/url/slug fields
+
+✅ **getProviderById Tests** (3 tests - 9.0s total):
+
+1. Retrieve by ID (2775ms): Retrieved provider ID 1425, verified all fields
+2. Non-existent ID (1063ms): Confirmed null return for ID 999999999
+3. Multiple retrievals (5159ms): Retrieved 3 providers by ID, verified consistency
+
+✅ **API Error Handling** (1 test - 1348ms):
+
+- Invalid API key: Properly rejected with 401/Invalid API key error
+
+✅ **Data Consistency** (1 test - 2780ms):
+
+- Verified ID, name, slug, url match between search and getById operations
+
+#### Sample API Responses
+
+**Search Response** (query: "anthropic"):
+
+```json
+{
+  "providers": [
+    {
+      "id": 1425,
+      "name": "Shannon Sands",
+      "url": "https://github.com/misanthropic-ai",
+      "slug": "gh-misanthropic-ai",
+      "mcp_implementations_count": 2,
+      "created_at": "2025-03-13T15:45:41.559Z",
+      "updated_at": "2025-03-13T15:45:41.559Z"
+    },
+    {
+      "id": 3,
+      "name": "Anthropic",
+      "url": "https://www.anthropic.com/",
+      "slug": "anthropic",
+      "mcp_implementations_count": 25,
+      "created_at": "2024-12-05T22:04:56.170Z",
+      "updated_at": "2024-12-05T22:04:56.170Z"
+    }
+  ],
+  "pagination": {
+    "current_page": 1,
+    "total_pages": 1,
+    "total_count": 2,
+    "has_next": false,
+    "limit": 30
+  }
+}
+```
+
+**GetById Response** (ID 1425):
+
+```json
+{
+  "id": 1425,
+  "name": "Shannon Sands",
+  "url": "https://github.com/misanthropic-ai",
+  "slug": "gh-misanthropic-ai",
+  "mcp_implementations_count": 2,
+  "created_at": "2025-03-13T15:45:41.559Z",
+  "updated_at": "2025-03-13T15:45:41.559Z"
+}
+```
 
 ## What's New in v0.3.0
 

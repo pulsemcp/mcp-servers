@@ -25,6 +25,32 @@ vi.mock('fs/promises', () => ({
   readFile: vi.fn(),
 }));
 
+// Helper function to create a mock client with all required methods stubbed
+function createMockClient(overrides?: Partial<IPulseMCPAdminClient>): IPulseMCPAdminClient {
+  return {
+    getPosts: vi.fn(),
+    getPost: vi.fn(),
+    createPost: vi.fn(),
+    updatePost: vi.fn(),
+    uploadImage: vi.fn(),
+    getAuthors: vi.fn(),
+    getAuthorBySlug: vi.fn(),
+    getAuthorById: vi.fn(),
+    getMCPServerBySlug: vi.fn(),
+    getMCPServerById: vi.fn(),
+    getMCPClientBySlug: vi.fn(),
+    getMCPClientById: vi.fn(),
+    getMCPImplementationById: vi.fn(),
+    searchMCPImplementations: vi.fn(),
+    getDraftMCPImplementations: vi.fn(),
+    saveMCPImplementation: vi.fn(),
+    sendEmail: vi.fn(),
+    searchProviders: vi.fn(),
+    getProviderById: vi.fn(),
+    ...overrides,
+  };
+}
+
 describe('Newsletter Tools', () => {
   const mockServer = {} as Server;
 
@@ -57,7 +83,7 @@ describe('Newsletter Tools', () => {
         },
       ];
 
-      const mockClient: IPulseMCPAdminClient = {
+      const mockClient = createMockClient({
         getPosts: vi.fn().mockResolvedValue({
           posts: mockPosts.map((p) => ({ ...p, author: undefined })), // Remove author objects
           pagination: {
@@ -66,12 +92,6 @@ describe('Newsletter Tools', () => {
             total_count: 10,
           },
         } as PostsResponse),
-        getPost: vi.fn(),
-        createPost: vi.fn(),
-        updatePost: vi.fn(),
-        uploadImage: vi.fn(),
-        getAuthors: vi.fn(),
-        getAuthorBySlug: vi.fn(),
         getAuthorById: vi.fn().mockImplementation((id: number) => {
           const authors = [
             {
@@ -91,12 +111,7 @@ describe('Newsletter Tools', () => {
           ];
           return Promise.resolve(authors.find((a) => a.id === id) || null);
         }),
-        getMCPServerBySlug: vi.fn(),
-        getMCPServerById: vi.fn(),
-        getMCPClientBySlug: vi.fn(),
-        getMCPClientById: vi.fn(),
-        searchMCPImplementations: vi.fn(),
-      };
+      });
 
       const tool = getNewsletterPosts(mockServer, () => mockClient);
       const result = await tool.handler({ search: 'test', page: 1 });
@@ -764,12 +779,13 @@ describe('Newsletter Tools', () => {
       const listToolsHandler = handlers.get('tools/list');
       const result = await listToolsHandler({ method: 'tools/list', params: {} });
 
-      expect(result.tools).toHaveLength(4);
+      expect(result.tools).toHaveLength(5);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const toolNames = result.tools.map((t: any) => t.name);
       expect(toolNames).toContain('search_mcp_implementations');
       expect(toolNames).toContain('get_draft_mcp_implementations');
       expect(toolNames).toContain('save_mcp_implementation');
+      expect(toolNames).toContain('find_providers');
       expect(toolNames).not.toContain('get_newsletter_posts');
     });
 
@@ -791,13 +807,14 @@ describe('Newsletter Tools', () => {
       const listToolsHandler = handlers.get('tools/list');
       const result = await listToolsHandler({ method: 'tools/list', params: {} });
 
-      expect(result.tools).toHaveLength(10);
+      expect(result.tools).toHaveLength(11);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const toolNames = result.tools.map((t: any) => t.name);
       expect(toolNames).toContain('get_newsletter_posts');
       expect(toolNames).toContain('search_mcp_implementations');
       expect(toolNames).toContain('get_draft_mcp_implementations');
       expect(toolNames).toContain('save_mcp_implementation');
+      expect(toolNames).toContain('find_providers');
     });
 
     it('should register all tools when no groups specified (default)', async () => {
@@ -815,7 +832,7 @@ describe('Newsletter Tools', () => {
       const listToolsHandler = handlers.get('tools/list');
       const result = await listToolsHandler({ method: 'tools/list', params: {} });
 
-      expect(result.tools).toHaveLength(10);
+      expect(result.tools).toHaveLength(11);
     });
   });
 

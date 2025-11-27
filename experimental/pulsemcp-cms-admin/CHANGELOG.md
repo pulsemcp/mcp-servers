@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Added
+
+- Added `find_providers` tool for searching and retrieving provider information:
+  - Find by ID: Retrieve a specific provider by its numeric ID
+  - Search by query: Search for providers by name, URL, or slug with pagination support
+  - Returns provider details including name, slug, URL, implementation counts, and timestamps
+  - Available in both `server_queue_readonly` and `server_queue_all` tool groups
+
 ### Changed
 
 - Enhanced `search_mcp_implementations` tool to display remote endpoint information (hosting platforms, transport methods, authentication, cost) and canonical URLs for MCP implementations, bringing it to parity with `get_draft_mcp_implementations`
