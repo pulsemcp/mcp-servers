@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [Unreleased]
+
+### Changed
+
+- Enhanced `search_mcp_implementations` tool to display remote endpoint information (hosting platforms, transport methods, authentication, cost) and canonical URLs for MCP implementations, bringing it to parity with `get_draft_mcp_implementations`
+
 ## [0.3.0] - 2025-11-26
 
 ### Added
