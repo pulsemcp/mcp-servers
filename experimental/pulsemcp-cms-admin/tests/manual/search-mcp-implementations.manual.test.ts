@@ -101,9 +101,7 @@ describe('search_mcp_implementations - Manual Tests with Real API', () => {
       console.log('Search results:', text);
     });
 
-    // KNOWN ISSUE: The REST API returns 500 for some queries with type filter
-    // This test is expected to fail until the API bug is fixed
-    it.skip('should search for server implementations', async () => {
+    it('should search for server implementations', async () => {
       const result = await client.callTool('search_mcp_implementations', {
         query: 'database',
         type: 'server',
@@ -226,9 +224,7 @@ describe('search_mcp_implementations - Manual Tests with Real API', () => {
       console.log('No results case:', text);
     });
 
-    // KNOWN ISSUE: The REST API returns 500 for single-character queries
-    // This test is expected to fail until the API bug is fixed
-    it.skip('should handle very short queries', async () => {
+    it('should handle very short queries', async () => {
       const result = await client.callTool('search_mcp_implementations', {
         query: 'a',
       });
@@ -241,9 +237,7 @@ describe('search_mcp_implementations - Manual Tests with Real API', () => {
       console.log('Short query results:', text);
     });
 
-    // KNOWN ISSUE: The REST API returns 500 for 'anthropic' query
-    // This test is expected to fail until the API bug is fixed
-    it.skip('should search across multiple fields', async () => {
+    it('should search across multiple fields', async () => {
       const result = await client.callTool('search_mcp_implementations', {
         query: 'anthropic', // Should match provider name
       });

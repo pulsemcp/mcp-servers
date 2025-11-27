@@ -1,0 +1,1041 @@
+
+> pulsemcp-cms-admin-mcp-server@0.2.1 test:manual
+> node scripts/run-manual-built.js
+
+🔨 Building project...
+✅ Build complete
+
+🧪 Running manual tests...
+❌ Manual tests failed: Command failed: npx vitest run --config vitest.manual.config.ts tests/manual/
+MCP server pulsemcp-cms-admin running on stdio
+MCP server pulsemcp-cms-admin running on stdio
+MCP server pulsemcp-cms-admin running on stdio
+
+⎯⎯⎯⎯⎯⎯ Failed Tests 25 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  tests/manual/pulsemcp-cms-admin.manual.test.ts > PulseMCP CMS Admin - Manual Tests with Real API > Newsletter Post Operations > should list existing newsletter posts
+AssertionError: expected 'Error fetching newsletter posts: Inva…' to match /Found \d+ newsletter posts/
+
+[32m- Expected:[39m 
+/Found \d+ newsletter posts/
+
+[31m+ Received:[39m 
+"Error fetching newsletter posts: Invalid API key"
+
+ ❯ tests/manual/pulsemcp-cms-admin.manual.test.ts:136:38
+    134|       expect(result.content).toHaveLength(1);
+    135|       expect(result.content[0].type).toBe('text');
+    136|       expect(result.content[0].text).toMatch(/Found \d+ newsletter pos…
+       |                                      ^
+    137|     });
+    138| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/25]⎯
+
+ FAIL  tests/manual/pulsemcp-cms-admin.manual.test.ts > PulseMCP CMS Admin - Manual Tests with Real API > Newsletter Post Operations > should search for specific posts
+AssertionError: expected 'Error fetching newsletter posts: Inva…' to match /Found \d+ newsletter posts/
+
+[32m- Expected:[39m 
+/Found \d+ newsletter posts/
+
+[31m+ Received:[39m 
+"Error fetching newsletter posts: Invalid API key"
+
+ ❯ tests/manual/pulsemcp-cms-admin.manual.test.ts:148:20
+    146|       const text = result.content[0].text;
+    147|       // Should find posts about MCP
+    148|       expect(text).toMatch(/Found \d+ newsletter posts/);
+       |                    ^
+    149|     });
+    150| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/25]⎯
+
+ FAIL  tests/manual/pulsemcp-cms-admin.manual.test.ts > PulseMCP CMS Admin - Manual Tests with Real API > Newsletter Post Operations > should create a new draft post
+AssertionError: expected 'Error creating draft post: Invalid AP…' to contain 'Successfully created draft newsletter…'
+
+Expected: [32m"[7mSuccessfully[27m creat[7med[27m draft [7mnewsletter post![27m"[39m
+Received: [31m"[7mError[27m creat[7ming[27m draft [7mpost: Invalid API key[27m"[39m
+
+ ❯ tests/manual/pulsemcp-cms-admin.manual.test.ts:161:38
+    159|       });
+    160| 
+    161|       expect(result.content[0].text).toContain('Successfully created d…
+       |                                      ^
+    162|       expect(result.content[0].text).toContain('Test Post from MCP Ser…
+    163|       expect(result.content[0].text).toContain('**Status:** draft');
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/25]⎯
+
+ FAIL  tests/manual/pulsemcp-cms-admin.manual.test.ts > PulseMCP CMS Admin - Manual Tests with Real API > Newsletter Post Operations > should retrieve the created post
+AssertionError: expected 'Error fetching post: Invalid API key' to contain '# Test Post from MCP Server'
+
+Expected: [32m"# Test Post from MCP Server"[39m
+Received: [31m"Error fetching post: Invalid API key"[39m
+
+ ❯ tests/manual/pulsemcp-cms-admin.manual.test.ts:174:20
+    172|       expect(result.content[0].type).toBe('text');
+    173|       const text = result.content[0].text;
+    174|       expect(text).toContain('# Test Post from MCP Server');
+       |                    ^
+    175|       expect(text).toContain('**Status:** draft');
+    176|       expect(text).toContain('This is a test post created by the Pulse…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/25]⎯
+
+ FAIL  tests/manual/pulsemcp-cms-admin.manual.test.ts > PulseMCP CMS Admin - Manual Tests with Real API > Newsletter Post Operations > should update the post
+AssertionError: expected 'Error updating post: Invalid API key' to contain 'Successfully updated newsletter post!'
+
+Expected: [32m"Successfully updated newsletter post!"[39m
+Received: [31m"Error updating post: Invalid API key"[39m
+
+ ❯ tests/manual/pulsemcp-cms-admin.manual.test.ts:187:38
+    185|       });
+    186| 
+    187|       expect(result.content[0].text).toContain('Successfully updated n…
+       |                                      ^
+    188|       expect(result.content[0].text).toContain('Fields updated:');
+    189|       expect(result.content[0].text).toContain('- title');
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/25]⎯
+
+ FAIL  tests/manual/pulsemcp-cms-admin.manual.test.ts > PulseMCP CMS Admin - Manual Tests with Real API > Newsletter Post Operations > should upload an image for the post
+AssertionError: expected 'Error uploading image: Invalid API key' to contain 'Successfully uploaded image!'
+
+Expected: [32m"[7mSuccessfully[27m upload[7med[27m image[7m![27m"[39m
+Received: [31m"[7mError[27m upload[7ming[27m image[7m: Invalid API key[27m"[39m
+
+ ❯ tests/manual/pulsemcp-cms-admin.manual.test.ts:201:38
+    199|       });
+    200| 
+    201|       expect(result.content[0].text).toContain('Successfully uploaded …
+       |                                      ^
+    202|       expect(result.content[0].text).toContain(`**Post Slug:** ${testS…
+    203|       expect(result.content[0].text).toMatch(/\*\*URL:\*\* https:\/\/.…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/25]⎯
+
+ FAIL  tests/manual/pulsemcp-cms-admin.manual.test.ts > PulseMCP CMS Admin - Manual Tests with Real API > Newsletter Post Operations > should verify the updated post details
+AssertionError: expected 'Error fetching post: Invalid API key' to contain '# Updated Test Post from MCP Server'
+
+Expected: [32m"# Updated Test Post from MCP Server"[39m
+Received: [31m"Error fetching post: Invalid API key"[39m
+
+ ❯ tests/manual/pulsemcp-cms-admin.manual.test.ts:212:20
+    210| 
+    211|       const text = result.content[0].text;
+    212|       expect(text).toContain('# Updated Test Post from MCP Server');
+       |                    ^
+    213|       expect(text).toContain('Updated description during manual testin…
+    214|     });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/25]⎯
+
+ FAIL  tests/manual/pulsemcp-cms-admin.manual.test.ts > PulseMCP CMS Admin - Manual Tests with Real API > Error Handling > should handle non-existent post gracefully
+AssertionError: expected 'Error fetching post: Invalid API key' to contain 'Post not found'
+
+Expected: [32m"Post not found"[39m
+Received: [31m"Error fetching post: Invalid API key"[39m
+
+ ❯ tests/manual/pulsemcp-cms-admin.manual.test.ts:224:38
+    222| 
+    223|       expect(result.isError).toBe(true);
+    224|       expect(result.content[0].text).toContain('Post not found');
+       |                                      ^
+    225|     });
+    226| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/25]⎯
+
+ FAIL  tests/manual/search-mcp-implementations.manual.test.ts > search_mcp_implementations - Manual Tests with Real API > Basic search functionality > should search for MCP implementations by query
+AssertionError: expected true to be falsy
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- false[39m
+[31m+ true[39m
+
+ ❯ tests/manual/search-mcp-implementations.manual.test.ts:92:30
+     90| 
+     91|       // Test should fail if API returns an error
+     92|       expect(result.isError).toBeFalsy();
+       |                              ^
+     93|       expect(result.content).toHaveLength(1);
+     94|       expect(result.content[0].type).toBe('text');
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/25]⎯
+
+ FAIL  tests/manual/search-mcp-implementations.manual.test.ts > search_mcp_implementations - Manual Tests with Real API > Basic search functionality > should search for client implementations
+AssertionError: expected true to be falsy
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- false[39m
+[31m+ true[39m
+
+ ❯ tests/manual/search-mcp-implementations.manual.test.ts:128:30
+    126|       });
+    127| 
+    128|       expect(result.isError).toBeFalsy();
+       |                              ^
+    129|       const text = result.content[0].text;
+    130|       expect(text).toMatch(/Found \d+ MCP implementation/);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[10/25]⎯
+
+ FAIL  tests/manual/search-mcp-implementations.manual.test.ts > search_mcp_implementations - Manual Tests with Real API > Filtering and pagination > should filter by live status
+AssertionError: expected true to be falsy
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- false[39m
+[31m+ true[39m
+
+ ❯ tests/manual/search-mcp-implementations.manual.test.ts:146:30
+    144|       });
+    145| 
+    146|       expect(result.isError).toBeFalsy();
+       |                              ^
+    147|       const text = result.content[0].text;
+    148|       expect(text).toMatch(/Found \d+ MCP implementation/);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[11/25]⎯
+
+ FAIL  tests/manual/search-mcp-implementations.manual.test.ts > search_mcp_implementations - Manual Tests with Real API > Filtering and pagination > should handle pagination with limit and offset
+AssertionError: expected true to be falsy
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- false[39m
+[31m+ true[39m
+
+ ❯ tests/manual/search-mcp-implementations.manual.test.ts:162:30
+    160|       });
+    161| 
+    162|       expect(result.isError).toBeFalsy();
+       |                              ^
+    163|       const text = result.content[0].text;
+    164|       expect(text).toMatch(/Found \d+ MCP implementation/);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[12/25]⎯
+
+ FAIL  tests/manual/search-mcp-implementations.manual.test.ts > search_mcp_implementations - Manual Tests with Real API > Filtering and pagination > should retrieve next page of results
+AssertionError: expected true to be falsy
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- false[39m
+[31m+ true[39m
+
+ ❯ tests/manual/search-mcp-implementations.manual.test.ts:181:30
+    179|       });
+    180| 
+    181|       expect(result.isError).toBeFalsy();
+       |                              ^
+    182|       const text = result.content[0].text;
+    183|       expect(text).toMatch(/Found \d+ MCP implementation/);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[13/25]⎯
+
+ FAIL  tests/manual/search-mcp-implementations.manual.test.ts > search_mcp_implementations - Manual Tests with Real API > Search result details > should return comprehensive implementation metadata
+AssertionError: expected true to be falsy
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- false[39m
+[31m+ true[39m
+
+ ❯ tests/manual/search-mcp-implementations.manual.test.ts:196:30
+    194|       });
+    195| 
+    196|       expect(result.isError).toBeFalsy();
+       |                              ^
+    197|       const text = result.content[0].text;
+    198| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[14/25]⎯
+
+ FAIL  tests/manual/search-mcp-implementations.manual.test.ts > search_mcp_implementations - Manual Tests with Real API > Edge cases > should handle no results found
+AssertionError: expected true to be falsy
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- false[39m
+[31m+ true[39m
+
+ ❯ tests/manual/search-mcp-implementations.manual.test.ts:222:30
+    220|       });
+    221| 
+    222|       expect(result.isError).toBeFalsy();
+       |                              ^
+    223|       const text = result.content[0].text;
+    224|       expect(text).toMatch(/Found 0 MCP implementation/);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[15/25]⎯
+
+ FAIL  tests/manual/send-email.manual.test.ts > send-email manual tests > should send a test email to specified recipient
+Error: Failed to send email: Invalid API key
+ ❯ sendEmail shared/src/pulsemcp-admin-client/lib/send-email.ts:70:11
+     68|     }
+     69| 
+     70|     throw new Error(`Failed to send email: ${errorMessage}`);
+       |           ^
+     71|   }
+     72| 
+ ❯ tests/manual/send-email.manual.test.ts:22:20
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[16/25]⎯
+
+ FAIL  tests/manual/server-queue-tools.manual.test.ts > Draft MCP Implementations - Manual Tests with Real API > get_draft_mcp_implementations > should retrieve draft implementations with associated objects
+AssertionError: expected true to be falsy
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- false[39m
+[31m+ true[39m
+
+ ❯ tests/manual/server-queue-tools.manual.test.ts:57:30
+     55|       const result = await client.callTool('get_draft_mcp_implementati…
+     56| 
+     57|       expect(result.isError).toBeFalsy();
+       |                              ^
+     58|       expect(result.content).toHaveLength(1);
+     59|       expect(result.content[0].type).toBe('text');
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[17/25]⎯
+
+ FAIL  tests/manual/server-queue-tools.manual.test.ts > Draft MCP Implementations - Manual Tests with Real API > get_draft_mcp_implementations > should support pagination
+AssertionError: expected true to be falsy
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- false[39m
+[31m+ true[39m
+
+ ❯ tests/manual/server-queue-tools.manual.test.ts:98:30
+     96|       });
+     97| 
+     98|       expect(result.isError).toBeFalsy();
+       |                              ^
+     99|       const text = result.content[0].text;
+    100| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[18/25]⎯
+
+ FAIL  tests/manual/server-queue-tools.manual.test.ts > Draft MCP Implementations - Manual Tests with Real API > get_draft_mcp_implementations > should support search filtering
+AssertionError: expected true to be falsy
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- false[39m
+[31m+ true[39m
+
+ ❯ tests/manual/server-queue-tools.manual.test.ts:116:30
+    114|       });
+    115| 
+    116|       expect(result.isError).toBeFalsy();
+       |                              ^
+    117|       const text = result.content[0].text;
+    118| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[19/25]⎯
+
+ FAIL  tests/manual/server-queue-tools.manual.test.ts > Draft MCP Implementations - Manual Tests with Real API > get_draft_mcp_implementations > should handle no drafts found
+AssertionError: expected true to be falsy
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- false[39m
+[31m+ true[39m
+
+ ❯ tests/manual/server-queue-tools.manual.test.ts:129:30
+    127|       });
+    128| 
+    129|       expect(result.isError).toBeFalsy();
+       |                              ^
+    130|       const text = result.content[0].text;
+    131| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[20/25]⎯
+
+ FAIL  tests/manual/server-queue-tools.manual.test.ts > Draft MCP Implementations - Manual Tests with Real API > get_draft_mcp_implementations > should include comprehensive implementation details
+AssertionError: expected true to be falsy
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- false[39m
+[31m+ true[39m
+
+ ❯ tests/manual/server-queue-tools.manual.test.ts:141:30
+    139|       const result = await client.callTool('get_draft_mcp_implementati…
+    140| 
+    141|       expect(result.isError).toBeFalsy();
+       |                              ^
+    142|       const text = result.content[0].text;
+    143| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[21/25]⎯
+
+ FAIL  tests/manual/server-queue-tools.manual.test.ts > Draft MCP Implementations - Manual Tests with Real API > save_mcp_implementation > should handle non-existent implementation ID
+AssertionError: expected 'Error saving MCP implementation: Inva…' to match /404|not found/i
+
+[32m- Expected:[39m 
+/404|not found/i
+
+[31m+ Received:[39m 
+"Error saving MCP implementation: Invalid API key"
+
+ ❯ tests/manual/server-queue-tools.manual.test.ts:248:20
+    246| 
+    247|       // Should show 404 error
+    248|       expect(text).toMatch(/404|not found/i);
+       |                    ^
+    249| 
+    250|       console.log('Non-existent ID error:', text);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[22/25]⎯
+
+ FAIL  tests/manual/server-queue-tools.manual.test.ts > Draft MCP Implementations - Manual Tests with Real API > Associated objects integration > should fetch and include MCP server details when linked
+AssertionError: expected true to be falsy
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- false[39m
+[31m+ true[39m
+
+ ❯ tests/manual/server-queue-tools.manual.test.ts:390:30
+    388|       const result = await client.callTool('get_draft_mcp_implementati…
+    389| 
+    390|       expect(result.isError).toBeFalsy();
+       |                              ^
+    391|       const text = result.content[0].text;
+    392| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[23/25]⎯
+
+ FAIL  tests/manual/server-queue-tools.manual.test.ts > Draft MCP Implementations - Manual Tests with Real API > Associated objects integration > should fetch and include MCP client details when linked
+AssertionError: expected true to be falsy
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- false[39m
+[31m+ true[39m
+
+ ❯ tests/manual/server-queue-tools.manual.test.ts:410:30
+    408|       const result = await client.callTool('get_draft_mcp_implementati…
+    409| 
+    410|       expect(result.isError).toBeFalsy();
+       |                              ^
+    411|       const text = result.content[0].text;
+    412| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[24/25]⎯
+
+ FAIL  tests/manual/server-queue-tools.manual.test.ts > Draft MCP Implementations - Manual Tests with Real API > Associated objects integration > should gracefully handle missing associated objects
+AssertionError: expected true to be falsy
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- false[39m
+[31m+ true[39m
+
+ ❯ tests/manual/server-queue-tools.manual.test.ts:430:30
+    428|       const result = await client.callTool('get_draft_mcp_implementati…
+    429| 
+    430|       expect(result.isError).toBeFalsy();
+       |                              ^
+    431|       const text = result.content[0].text;
+    432| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[25/25]⎯
+
+
+
+ RUN  v3.2.4 /Users/admin/.agent-orchestrator/clones/mcp-servers-main-1764176397-b7170d7c/experimental/pulsemcp-cms-admin
+
+ ❯ tests/manual/send-email.manual.test.ts (1 test | 1 failed) 712ms
+   × send-email manual tests > should send a test email to specified recipient 711ms
+     → Failed to send email: Invalid API key
+stdout | tests/manual/server-queue-tools.manual.test.ts > Draft MCP Implementations - Manual Tests with Real API > save_mcp_implementation > should update an implementation
+Skipping save test - no draft implementation ID available from get_draft_mcp_implementations
+
+stdout | tests/manual/server-queue-tools.manual.test.ts > Draft MCP Implementations - Manual Tests with Real API > save_mcp_implementation > should handle multiple field updates
+Skipping test - no draft implementation ID available
+
+stdout | tests/manual/server-queue-tools.manual.test.ts > Draft MCP Implementations - Manual Tests with Real API > save_mcp_implementation > should handle null values for clearing fields
+Skipping test - no draft implementation ID available
+
+stdout | tests/manual/server-queue-tools.manual.test.ts > Draft MCP Implementations - Manual Tests with Real API > save_mcp_implementation > should validate required ID parameter
+Validation correctly rejected missing ID parameter
+
+stdout | tests/manual/server-queue-tools.manual.test.ts > Draft MCP Implementations - Manual Tests with Real API > save_mcp_implementation > should reject empty updates
+Skipping test - no draft implementation ID available
+
+stdout | tests/manual/server-queue-tools.manual.test.ts > Draft MCP Implementations - Manual Tests with Real API > save_mcp_implementation > should update remote endpoint data
+Skipping test - no draft implementation ID available
+
+stdout | tests/manual/server-queue-tools.manual.test.ts > Draft MCP Implementations - Manual Tests with Real API > save_mcp_implementation > should update canonical URL data
+Skipping test - no draft implementation ID available
+
+stdout | tests/manual/server-queue-tools.manual.test.ts > Draft MCP Implementations - Manual Tests with Real API > save_mcp_implementation > should update both remote and canonical data together
+Skipping test - no draft implementation ID available
+
+stdout | tests/manual/server-queue-tools.manual.test.ts > Draft MCP Implementations - Manual Tests with Real API > Tool group filtering > should list both tools in server_queue_all group
+Available tools: [
+  [32m'get_newsletter_posts'[39m,
+  [32m'get_newsletter_post'[39m,
+  [32m'draft_newsletter_post'[39m,
+  [32m'update_newsletter_post'[39m,
+  [32m'upload_image'[39m,
+  [32m'get_authors'[39m,
+  [32m'search_mcp_implementations'[39m,
+  [32m'get_draft_mcp_implementations'[39m,
+  [32m'save_mcp_implementation'[39m,
+  [32m'send_mcp_implementation_posting_notification'[39m
+]
+
+ ❯ tests/manual/search-mcp-implementations.manual.test.ts (11 tests | 7 failed | 3 skipped) 5153ms
+   × search_mcp_implementations - Manual Tests with Real API > Basic search functionality > should search for MCP implementations by query 820ms
+     → expected true to be falsy
+   ↓ search_mcp_implementations - Manual Tests with Real API > Basic search functionality > should search for server implementations
+   × search_mcp_implementations - Manual Tests with Real API > Basic search functionality > should search for client implementations 570ms
+     → expected true to be falsy
+   × search_mcp_implementations - Manual Tests with Real API > Filtering and pagination > should filter by live status 683ms
+     → expected true to be falsy
+   × search_mcp_implementations - Manual Tests with Real API > Filtering and pagination > should handle pagination with limit and offset 768ms
+     → expected true to be falsy
+   × search_mcp_implementations - Manual Tests with Real API > Filtering and pagination > should retrieve next page of results 730ms
+     → expected true to be falsy
+   × search_mcp_implementations - Manual Tests with Real API > Search result details > should return comprehensive implementation metadata 711ms
+     → expected true to be falsy
+   × search_mcp_implementations - Manual Tests with Real API > Edge cases > should handle no results found 791ms
+     → expected true to be falsy
+   ↓ search_mcp_implementations - Manual Tests with Real API > Edge cases > should handle very short queries
+   ↓ search_mcp_implementations - Manual Tests with Real API > Edge cases > should search across multiple fields
+   ✓ search_mcp_implementations - Manual Tests with Real API > Tool integration > should be listed in available tools when server_queue groups are enabled 2ms
+ ❯ tests/manual/server-queue-tools.manual.test.ts (18 tests | 9 failed) 6178ms
+   × Draft MCP Implementations - Manual Tests with Real API > get_draft_mcp_implementations > should retrieve draft implementations with associated objects 659ms
+     → expected true to be falsy
+   × Draft MCP Implementations - Manual Tests with Real API > get_draft_mcp_implementations > should support pagination 540ms
+     → expected true to be falsy
+   × Draft MCP Implementations - Manual Tests with Real API > get_draft_mcp_implementations > should support search filtering 613ms
+     → expected true to be falsy
+   × Draft MCP Implementations - Manual Tests with Real API > get_draft_mcp_implementations > should handle no drafts found 709ms
+     → expected true to be falsy
+   × Draft MCP Implementations - Manual Tests with Real API > get_draft_mcp_implementations > should include comprehensive implementation details 703ms
+     → expected true to be falsy
+   ✓ Draft MCP Implementations - Manual Tests with Real API > save_mcp_implementation > should update an implementation 0ms
+   ✓ Draft MCP Implementations - Manual Tests with Real API > save_mcp_implementation > should handle multiple field updates 0ms
+   ✓ Draft MCP Implementations - Manual Tests with Real API > save_mcp_implementation > should handle null values for clearing fields 0ms
+   ✓ Draft MCP Implementations - Manual Tests with Real API > save_mcp_implementation > should validate required ID parameter 1ms
+   × Draft MCP Implementations - Manual Tests with Real API > save_mcp_implementation > should handle non-existent implementation ID 795ms
+     → expected 'Error saving MCP implementation: Inva…' to match /404|not found/i
+   ✓ Draft MCP Implementations - Manual Tests with Real API > save_mcp_implementation > should reject empty updates 0ms
+   ✓ Draft MCP Implementations - Manual Tests with Real API > save_mcp_implementation > should update remote endpoint data 0ms
+   ✓ Draft MCP Implementations - Manual Tests with Real API > save_mcp_implementation > should update canonical URL data 0ms
+   ✓ Draft MCP Implementations - Manual Tests with Real API > save_mcp_implementation > should update both remote and canonical data together 0ms
+   ✓ Draft MCP Implementations - Manual Tests with Real API > Tool group filtering > should list both tools in server_queue_all group 2ms
+   × Draft MCP Implementations - Manual Tests with Real API > Associated objects integration > should fetch and include MCP server details when linked 813ms
+     → expected true to be falsy
+   × Draft MCP Implementations - Manual Tests with Real API > Associated objects integration > should fetch and include MCP client details when linked 725ms
+     → expected true to be falsy
+   × Draft MCP Implementations - Manual Tests with Real API > Associated objects integration > should gracefully handle missing associated objects 539ms
+     → expected true to be falsy
+ ❯ tests/manual/pulsemcp-cms-admin.manual.test.ts (9 tests | 8 failed) 6220ms
+   × PulseMCP CMS Admin - Manual Tests with Real API > Newsletter Post Operations > should list existing newsletter posts 825ms
+     → expected 'Error fetching newsletter posts: Inva…' to match /Found \d+ newsletter posts/
+   × PulseMCP CMS Admin - Manual Tests with Real API > Newsletter Post Operations > should search for specific posts 704ms
+     → expected 'Error fetching newsletter posts: Inva…' to match /Found \d+ newsletter posts/
+   × PulseMCP CMS Admin - Manual Tests with Real API > Newsletter Post Operations > should create a new draft post 641ms
+     → expected 'Error creating draft post: Invalid AP…' to contain 'Successfully created draft newsletter…'
+   × PulseMCP CMS Admin - Manual Tests with Real API > Newsletter Post Operations > should retrieve the created post 559ms
+     → expected 'Error fetching post: Invalid API key' to contain '# Test Post from MCP Server'
+   × PulseMCP CMS Admin - Manual Tests with Real API > Newsletter Post Operations > should update the post 564ms
+     → expected 'Error updating post: Invalid API key' to contain 'Successfully updated newsletter post!'
+   × PulseMCP CMS Admin - Manual Tests with Real API > Newsletter Post Operations > should upload an image for the post 715ms
+     → expected 'Error uploading image: Invalid API key' to contain 'Successfully uploaded image!'
+   × PulseMCP CMS Admin - Manual Tests with Real API > Newsletter Post Operations > should verify the updated post details 766ms
+     → expected 'Error fetching post: Invalid API key' to contain '# Updated Test Post from MCP Server'
+   × PulseMCP CMS Admin - Manual Tests with Real API > Error Handling > should handle non-existent post gracefully 675ms
+     → expected 'Error fetching post: Invalid API key' to contain 'Post not found'
+   ✓ PulseMCP CMS Admin - Manual Tests with Real API > Error Handling > should handle duplicate slug creation  694ms
+
+ Test Files  4 failed (4)
+      Tests  25 failed | 11 passed | 3 skipped (39)
+   Start at  17:32:20
+   Duration  6.53s (transform 99ms, setup 0ms, collect 289ms, tests 18.26s, environment 0ms, prepare 257ms)
+
+
+MCP server pulsemcp-cms-admin running on stdio
+MCP server pulsemcp-cms-admin running on stdio
+MCP server pulsemcp-cms-admin running on stdio
+
+⎯⎯⎯⎯⎯⎯ Failed Tests 25 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  tests/manual/pulsemcp-cms-admin.manual.test.ts > PulseMCP CMS Admin - Manual Tests with Real API > Newsletter Post Operations > should list existing newsletter posts
+AssertionError: expected 'Error fetching newsletter posts: Inva…' to match /Found \d+ newsletter posts/
+
+[32m- Expected:[39m 
+/Found \d+ newsletter posts/
+
+[31m+ Received:[39m 
+"Error fetching newsletter posts: Invalid API key"
+
+ ❯ tests/manual/pulsemcp-cms-admin.manual.test.ts:136:38
+    134|       expect(result.content).toHaveLength(1);
+    135|       expect(result.content[0].type).toBe('text');
+    136|       expect(result.content[0].text).toMatch(/Found \d+ newsletter pos…
+       |                                      ^
+    137|     });
+    138| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/25]⎯
+
+ FAIL  tests/manual/pulsemcp-cms-admin.manual.test.ts > PulseMCP CMS Admin - Manual Tests with Real API > Newsletter Post Operations > should search for specific posts
+AssertionError: expected 'Error fetching newsletter posts: Inva…' to match /Found \d+ newsletter posts/
+
+[32m- Expected:[39m 
+/Found \d+ newsletter posts/
+
+[31m+ Received:[39m 
+"Error fetching newsletter posts: Invalid API key"
+
+ ❯ tests/manual/pulsemcp-cms-admin.manual.test.ts:148:20
+    146|       const text = result.content[0].text;
+    147|       // Should find posts about MCP
+    148|       expect(text).toMatch(/Found \d+ newsletter posts/);
+       |                    ^
+    149|     });
+    150| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/25]⎯
+
+ FAIL  tests/manual/pulsemcp-cms-admin.manual.test.ts > PulseMCP CMS Admin - Manual Tests with Real API > Newsletter Post Operations > should create a new draft post
+AssertionError: expected 'Error creating draft post: Invalid AP…' to contain 'Successfully created draft newsletter…'
+
+Expected: [32m"[7mSuccessfully[27m creat[7med[27m draft [7mnewsletter post![27m"[39m
+Received: [31m"[7mError[27m creat[7ming[27m draft [7mpost: Invalid API key[27m"[39m
+
+ ❯ tests/manual/pulsemcp-cms-admin.manual.test.ts:161:38
+    159|       });
+    160| 
+    161|       expect(result.content[0].text).toContain('Successfully created d…
+       |                                      ^
+    162|       expect(result.content[0].text).toContain('Test Post from MCP Ser…
+    163|       expect(result.content[0].text).toContain('**Status:** draft');
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/25]⎯
+
+ FAIL  tests/manual/pulsemcp-cms-admin.manual.test.ts > PulseMCP CMS Admin - Manual Tests with Real API > Newsletter Post Operations > should retrieve the created post
+AssertionError: expected 'Error fetching post: Invalid API key' to contain '# Test Post from MCP Server'
+
+Expected: [32m"# Test Post from MCP Server"[39m
+Received: [31m"Error fetching post: Invalid API key"[39m
+
+ ❯ tests/manual/pulsemcp-cms-admin.manual.test.ts:174:20
+    172|       expect(result.content[0].type).toBe('text');
+    173|       const text = result.content[0].text;
+    174|       expect(text).toContain('# Test Post from MCP Server');
+       |                    ^
+    175|       expect(text).toContain('**Status:** draft');
+    176|       expect(text).toContain('This is a test post created by the Pulse…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/25]⎯
+
+ FAIL  tests/manual/pulsemcp-cms-admin.manual.test.ts > PulseMCP CMS Admin - Manual Tests with Real API > Newsletter Post Operations > should update the post
+AssertionError: expected 'Error updating post: Invalid API key' to contain 'Successfully updated newsletter post!'
+
+Expected: [32m"Successfully updated newsletter post!"[39m
+Received: [31m"Error updating post: Invalid API key"[39m
+
+ ❯ tests/manual/pulsemcp-cms-admin.manual.test.ts:187:38
+    185|       });
+    186| 
+    187|       expect(result.content[0].text).toContain('Successfully updated n…
+       |                                      ^
+    188|       expect(result.content[0].text).toContain('Fields updated:');
+    189|       expect(result.content[0].text).toContain('- title');
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/25]⎯
+
+ FAIL  tests/manual/pulsemcp-cms-admin.manual.test.ts > PulseMCP CMS Admin - Manual Tests with Real API > Newsletter Post Operations > should upload an image for the post
+AssertionError: expected 'Error uploading image: Invalid API key' to contain 'Successfully uploaded image!'
+
+Expected: [32m"[7mSuccessfully[27m upload[7med[27m image[7m![27m"[39m
+Received: [31m"[7mError[27m upload[7ming[27m image[7m: Invalid API key[27m"[39m
+
+ ❯ tests/manual/pulsemcp-cms-admin.manual.test.ts:201:38
+    199|       });
+    200| 
+    201|       expect(result.content[0].text).toContain('Successfully uploaded …
+       |                                      ^
+    202|       expect(result.content[0].text).toContain(`**Post Slug:** ${testS…
+    203|       expect(result.content[0].text).toMatch(/\*\*URL:\*\* https:\/\/.…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/25]⎯
+
+ FAIL  tests/manual/pulsemcp-cms-admin.manual.test.ts > PulseMCP CMS Admin - Manual Tests with Real API > Newsletter Post Operations > should verify the updated post details
+AssertionError: expected 'Error fetching post: Invalid API key' to contain '# Updated Test Post from MCP Server'
+
+Expected: [32m"# Updated Test Post from MCP Server"[39m
+Received: [31m"Error fetching post: Invalid API key"[39m
+
+ ❯ tests/manual/pulsemcp-cms-admin.manual.test.ts:212:20
+    210| 
+    211|       const text = result.content[0].text;
+    212|       expect(text).toContain('# Updated Test Post from MCP Server');
+       |                    ^
+    213|       expect(text).toContain('Updated description during manual testin…
+    214|     });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/25]⎯
+
+ FAIL  tests/manual/pulsemcp-cms-admin.manual.test.ts > PulseMCP CMS Admin - Manual Tests with Real API > Error Handling > should handle non-existent post gracefully
+AssertionError: expected 'Error fetching post: Invalid API key' to contain 'Post not found'
+
+Expected: [32m"Post not found"[39m
+Received: [31m"Error fetching post: Invalid API key"[39m
+
+ ❯ tests/manual/pulsemcp-cms-admin.manual.test.ts:224:38
+    222| 
+    223|       expect(result.isError).toBe(true);
+    224|       expect(result.content[0].text).toContain('Post not found');
+       |                                      ^
+    225|     });
+    226| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/25]⎯
+
+ FAIL  tests/manual/search-mcp-implementations.manual.test.ts > search_mcp_implementations - Manual Tests with Real API > Basic search functionality > should search for MCP implementations by query
+AssertionError: expected true to be falsy
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- false[39m
+[31m+ true[39m
+
+ ❯ tests/manual/search-mcp-implementations.manual.test.ts:92:30
+     90| 
+     91|       // Test should fail if API returns an error
+     92|       expect(result.isError).toBeFalsy();
+       |                              ^
+     93|       expect(result.content).toHaveLength(1);
+     94|       expect(result.content[0].type).toBe('text');
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/25]⎯
+
+ FAIL  tests/manual/search-mcp-implementations.manual.test.ts > search_mcp_implementations - Manual Tests with Real API > Basic search functionality > should search for client implementations
+AssertionError: expected true to be falsy
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- false[39m
+[31m+ true[39m
+
+ ❯ tests/manual/search-mcp-implementations.manual.test.ts:128:30
+    126|       });
+    127| 
+    128|       expect(result.isError).toBeFalsy();
+       |                              ^
+    129|       const text = result.content[0].text;
+    130|       expect(text).toMatch(/Found \d+ MCP implementation/);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[10/25]⎯
+
+ FAIL  tests/manual/search-mcp-implementations.manual.test.ts > search_mcp_implementations - Manual Tests with Real API > Filtering and pagination > should filter by live status
+AssertionError: expected true to be falsy
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- false[39m
+[31m+ true[39m
+
+ ❯ tests/manual/search-mcp-implementations.manual.test.ts:146:30
+    144|       });
+    145| 
+    146|       expect(result.isError).toBeFalsy();
+       |                              ^
+    147|       const text = result.content[0].text;
+    148|       expect(text).toMatch(/Found \d+ MCP implementation/);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[11/25]⎯
+
+ FAIL  tests/manual/search-mcp-implementations.manual.test.ts > search_mcp_implementations - Manual Tests with Real API > Filtering and pagination > should handle pagination with limit and offset
+AssertionError: expected true to be falsy
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- false[39m
+[31m+ true[39m
+
+ ❯ tests/manual/search-mcp-implementations.manual.test.ts:162:30
+    160|       });
+    161| 
+    162|       expect(result.isError).toBeFalsy();
+       |                              ^
+    163|       const text = result.content[0].text;
+    164|       expect(text).toMatch(/Found \d+ MCP implementation/);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[12/25]⎯
+
+ FAIL  tests/manual/search-mcp-implementations.manual.test.ts > search_mcp_implementations - Manual Tests with Real API > Filtering and pagination > should retrieve next page of results
+AssertionError: expected true to be falsy
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- false[39m
+[31m+ true[39m
+
+ ❯ tests/manual/search-mcp-implementations.manual.test.ts:181:30
+    179|       });
+    180| 
+    181|       expect(result.isError).toBeFalsy();
+       |                              ^
+    182|       const text = result.content[0].text;
+    183|       expect(text).toMatch(/Found \d+ MCP implementation/);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[13/25]⎯
+
+ FAIL  tests/manual/search-mcp-implementations.manual.test.ts > search_mcp_implementations - Manual Tests with Real API > Search result details > should return comprehensive implementation metadata
+AssertionError: expected true to be falsy
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- false[39m
+[31m+ true[39m
+
+ ❯ tests/manual/search-mcp-implementations.manual.test.ts:196:30
+    194|       });
+    195| 
+    196|       expect(result.isError).toBeFalsy();
+       |                              ^
+    197|       const text = result.content[0].text;
+    198| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[14/25]⎯
+
+ FAIL  tests/manual/search-mcp-implementations.manual.test.ts > search_mcp_implementations - Manual Tests with Real API > Edge cases > should handle no results found
+AssertionError: expected true to be falsy
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- false[39m
+[31m+ true[39m
+
+ ❯ tests/manual/search-mcp-implementations.manual.test.ts:222:30
+    220|       });
+    221| 
+    222|       expect(result.isError).toBeFalsy();
+       |                              ^
+    223|       const text = result.content[0].text;
+    224|       expect(text).toMatch(/Found 0 MCP implementation/);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[15/25]⎯
+
+ FAIL  tests/manual/send-email.manual.test.ts > send-email manual tests > should send a test email to specified recipient
+Error: Failed to send email: Invalid API key
+ ❯ sendEmail shared/src/pulsemcp-admin-client/lib/send-email.ts:70:11
+     68|     }
+     69| 
+     70|     throw new Error(`Failed to send email: ${errorMessage}`);
+       |           ^
+     71|   }
+     72| 
+ ❯ tests/manual/send-email.manual.test.ts:22:20
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[16/25]⎯
+
+ FAIL  tests/manual/server-queue-tools.manual.test.ts > Draft MCP Implementations - Manual Tests with Real API > get_draft_mcp_implementations > should retrieve draft implementations with associated objects
+AssertionError: expected true to be falsy
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- false[39m
+[31m+ true[39m
+
+ ❯ tests/manual/server-queue-tools.manual.test.ts:57:30
+     55|       const result = await client.callTool('get_draft_mcp_implementati…
+     56| 
+     57|       expect(result.isError).toBeFalsy();
+       |                              ^
+     58|       expect(result.content).toHaveLength(1);
+     59|       expect(result.content[0].type).toBe('text');
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[17/25]⎯
+
+ FAIL  tests/manual/server-queue-tools.manual.test.ts > Draft MCP Implementations - Manual Tests with Real API > get_draft_mcp_implementations > should support pagination
+AssertionError: expected true to be falsy
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- false[39m
+[31m+ true[39m
+
+ ❯ tests/manual/server-queue-tools.manual.test.ts:98:30
+     96|       });
+     97| 
+     98|       expect(result.isError).toBeFalsy();
+       |                              ^
+     99|       const text = result.content[0].text;
+    100| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[18/25]⎯
+
+ FAIL  tests/manual/server-queue-tools.manual.test.ts > Draft MCP Implementations - Manual Tests with Real API > get_draft_mcp_implementations > should support search filtering
+AssertionError: expected true to be falsy
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- false[39m
+[31m+ true[39m
+
+ ❯ tests/manual/server-queue-tools.manual.test.ts:116:30
+    114|       });
+    115| 
+    116|       expect(result.isError).toBeFalsy();
+       |                              ^
+    117|       const text = result.content[0].text;
+    118| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[19/25]⎯
+
+ FAIL  tests/manual/server-queue-tools.manual.test.ts > Draft MCP Implementations - Manual Tests with Real API > get_draft_mcp_implementations > should handle no drafts found
+AssertionError: expected true to be falsy
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- false[39m
+[31m+ true[39m
+
+ ❯ tests/manual/server-queue-tools.manual.test.ts:129:30
+    127|       });
+    128| 
+    129|       expect(result.isError).toBeFalsy();
+       |                              ^
+    130|       const text = result.content[0].text;
+    131| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[20/25]⎯
+
+ FAIL  tests/manual/server-queue-tools.manual.test.ts > Draft MCP Implementations - Manual Tests with Real API > get_draft_mcp_implementations > should include comprehensive implementation details
+AssertionError: expected true to be falsy
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- false[39m
+[31m+ true[39m
+
+ ❯ tests/manual/server-queue-tools.manual.test.ts:141:30
+    139|       const result = await client.callTool('get_draft_mcp_implementati…
+    140| 
+    141|       expect(result.isError).toBeFalsy();
+       |                              ^
+    142|       const text = result.content[0].text;
+    143| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[21/25]⎯
+
+ FAIL  tests/manual/server-queue-tools.manual.test.ts > Draft MCP Implementations - Manual Tests with Real API > save_mcp_implementation > should handle non-existent implementation ID
+AssertionError: expected 'Error saving MCP implementation: Inva…' to match /404|not found/i
+
+[32m- Expected:[39m 
+/404|not found/i
+
+[31m+ Received:[39m 
+"Error saving MCP implementation: Invalid API key"
+
+ ❯ tests/manual/server-queue-tools.manual.test.ts:248:20
+    246| 
+    247|       // Should show 404 error
+    248|       expect(text).toMatch(/404|not found/i);
+       |                    ^
+    249| 
+    250|       console.log('Non-existent ID error:', text);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[22/25]⎯
+
+ FAIL  tests/manual/server-queue-tools.manual.test.ts > Draft MCP Implementations - Manual Tests with Real API > Associated objects integration > should fetch and include MCP server details when linked
+AssertionError: expected true to be falsy
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- false[39m
+[31m+ true[39m
+
+ ❯ tests/manual/server-queue-tools.manual.test.ts:390:30
+    388|       const result = await client.callTool('get_draft_mcp_implementati…
+    389| 
+    390|       expect(result.isError).toBeFalsy();
+       |                              ^
+    391|       const text = result.content[0].text;
+    392| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[23/25]⎯
+
+ FAIL  tests/manual/server-queue-tools.manual.test.ts > Draft MCP Implementations - Manual Tests with Real API > Associated objects integration > should fetch and include MCP client details when linked
+AssertionError: expected true to be falsy
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- false[39m
+[31m+ true[39m
+
+ ❯ tests/manual/server-queue-tools.manual.test.ts:410:30
+    408|       const result = await client.callTool('get_draft_mcp_implementati…
+    409| 
+    410|       expect(result.isError).toBeFalsy();
+       |                              ^
+    411|       const text = result.content[0].text;
+    412| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[24/25]⎯
+
+ FAIL  tests/manual/server-queue-tools.manual.test.ts > Draft MCP Implementations - Manual Tests with Real API > Associated objects integration > should gracefully handle missing associated objects
+AssertionError: expected true to be falsy
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- false[39m
+[31m+ true[39m
+
+ ❯ tests/manual/server-queue-tools.manual.test.ts:430:30
+    428|       const result = await client.callTool('get_draft_mcp_implementati…
+    429| 
+    430|       expect(result.isError).toBeFalsy();
+       |                              ^
+    431|       const text = result.content[0].text;
+    432| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[25/25]⎯
+
+

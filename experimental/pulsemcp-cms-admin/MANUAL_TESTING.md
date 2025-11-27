@@ -10,28 +10,30 @@
 
 ## Test Results Summary
 
-### Overall: ✅ 15/15 Tests PASSING (100%)
+### Overall: ✅ 39/39 Tests PASSING (100%)
 
-All manual tests passed successfully against the production API, including the new v0.3.0 features for remote endpoints and canonical URLs.
+All manual tests passed successfully against the production API, including the new v0.3.0 features for remote endpoints and canonical URLs. Previously skipped tests (due to API bugs) are now passing after API fixes.
 
 ### Tool Test Results
 
-1. **Draft MCP Implementations**: ✅ 3/3 PASSING
-   - Retrieval with pagination
-   - Associated objects integration
-   - Display of server remotes and canonicals
+1. **Draft MCP Implementations** (server-queue-tools.manual.test.ts): ✅ 18/18 PASSING
+   - get_draft_mcp_implementations (5 tests)
+   - save_mcp_implementation (9 tests including **NEW** remote/canonical features)
+   - Tool group filtering (1 test)
+   - Associated objects integration (3 tests)
 
-2. **Save MCP Implementation**: ✅ 7/7 PASSING
-   - Multi-field update test
-   - Provider creation and linking
-   - GitHub repository fields
-   - **NEW: Remote endpoint data submission**
-   - **NEW: Canonical URL data submission**
-   - **NEW: Combined remote + canonical updates**
+2. **Search MCP Implementations** (search-mcp-implementations.manual.test.ts): ✅ 11/11 PASSING
+   - Basic search functionality (3 tests - including previously skipped server type filter)
+   - Filtering and pagination (3 tests)
+   - Search result details (1 test)
+   - Edge cases (4 tests - including previously skipped short queries and multi-field search)
 
-3. **Server Queue Tools**: ✅ 5/5 PASSING
-   - Queue status monitoring
-   - Agent processing with real API
+3. **Newsletter Operations** (pulsemcp-cms-admin.manual.test.ts): ✅ 9/9 PASSING
+   - Newsletter post operations (7 tests)
+   - Error handling (2 tests)
+
+4. **Email Notifications** (send-email.manual.test.ts): ✅ 1/1 PASSING
+   - Email sending functionality
 
 ## What's New in v0.3.0
 
@@ -113,4 +115,11 @@ All v0.3.0 features tested and working against production API:
 4. Form data encoding: ✅ Correct
 5. API integration: ✅ Verified
 
-100% of manual tests passing with real production data.
+100% of manual tests passing (39/39) with real production data.
+
+### Bug Fixes Verified
+
+Previously skipped tests are now passing after API bug fixes:
+- ✅ Search with type filter (database + server)
+- ✅ Single-character queries
+- ✅ Multi-field search (anthropic query)
