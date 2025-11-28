@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [0.3.1] - 2025-11-28
+
 ### Added
 
 - Added `find_providers` tool for searching and retrieving provider information:
@@ -13,6 +15,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   - Search by query: Search for providers by name, URL, or slug with pagination support
   - Returns provider details including name, slug, URL, implementation counts, and timestamps
   - Available in both `server_queue_readonly` and `server_queue_all` tool groups
+
+### Fixed
+
+- Fixed `save_mcp_implementation` to use correct Rails nested attributes parameter format for remote endpoints and canonical URLs
+  - Changed `mcp_implementation[remote][0][field]` to `mcp_implementation[remote_attributes][0][field]`
+  - Changed `mcp_implementation[canonical][0][field]` to `mcp_implementation[canonical_attributes][0][field]`
+  - This fix aligns with Rails `accepts_nested_attributes_for` convention
+  - Verified working with production API: remote and canonical data now persists correctly
 
 ### Changed
 

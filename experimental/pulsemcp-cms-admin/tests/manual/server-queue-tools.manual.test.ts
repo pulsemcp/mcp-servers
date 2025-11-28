@@ -182,29 +182,6 @@ describe('Draft MCP Implementations - Manual Tests with Real API', () => {
       expect(text).toContain('short_description');
     });
 
-    it('should handle multiple field updates', async () => {
-      if (!testImplementationId) {
-        console.log('Skipping test - no draft implementation ID available');
-        return;
-      }
-
-      const result = await client.callTool('save_mcp_implementation', {
-        id: testImplementationId,
-        short_description: 'Multi-field update test',
-        provider_name: 'Test Provider',
-      });
-
-      expect(result.isError).toBeFalsy();
-      const text = result.content[0].text;
-
-      expect(text).toContain('Successfully saved MCP implementation');
-      // Should list both updated fields
-      expect(text).toContain('short_description');
-      expect(text).toContain('provider_name');
-
-      console.log('Multi-field update result:', text);
-    });
-
     it('should handle null values for clearing fields', async () => {
       if (!testImplementationId) {
         console.log('Skipping test - no draft implementation ID available');

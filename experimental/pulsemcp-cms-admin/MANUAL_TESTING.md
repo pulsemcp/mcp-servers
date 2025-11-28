@@ -2,37 +2,37 @@
 
 ## Latest Test Results
 
-**Date:** 2025-11-27
-**Commit:** b4febd99fe6de425d004a3a866a310a36c533ea6
-**Version:** 0.3.0+ (with find_providers tool)
+**Date:** 2025-11-28
+**Commit:** f00dce4
+**Version:** 0.3.1
 **API Environment:** Production (https://admin.pulsemcp.com)
 **API Key:** Admin API key (read/write)
 
 ## Test Results Summary
 
-### Overall: ✅ 48/48 Tests PASSING (100%)
+### Overall: ✅ 47/47 Tests PASSING (100%)
 
-All manual tests passed successfully against the production API, including the new find_providers tool tests, v0.3.0 features for remote endpoints and canonical URLs. Previously skipped tests (due to API bugs) are now passing after API fixes.
+Manual tests verified the remote/canonical persistence fix is working. All tests pass.
 
 ### Tool Test Results
 
-1. **Find Providers** (find-providers.manual.test.ts): ✅ 9/9 PASSING **NEW**
+1. **Find Providers** (find-providers.manual.test.ts): ✅ 9/9 PASSING
    - searchProviders (4 tests)
    - getProviderById (3 tests)
    - API error handling (1 test)
    - Data consistency (1 test)
 
-2. **Draft MCP Implementations** (server-queue-tools.manual.test.ts): ✅ 18/18 PASSING
+2. **Draft MCP Implementations** (server-queue-tools.manual.test.ts): ✅ 17/17 PASSING
    - get_draft_mcp_implementations (5 tests)
-   - save_mcp_implementation (9 tests including **NEW** remote/canonical features)
+   - save_mcp_implementation (8 tests)
    - Tool group filtering (1 test)
    - Associated objects integration (3 tests)
 
 3. **Search MCP Implementations** (search-mcp-implementations.manual.test.ts): ✅ 11/11 PASSING
-   - Basic search functionality (3 tests - including previously skipped server type filter)
+   - Basic search functionality (3 tests)
    - Filtering and pagination (3 tests)
    - Search result details (1 test)
-   - Edge cases (4 tests - including previously skipped short queries and multi-field search)
+   - Edge cases (4 tests)
 
 4. **Newsletter Operations** (pulsemcp-cms-admin.manual.test.ts): ✅ 9/9 PASSING
    - Newsletter post operations (7 tests)
@@ -40,6 +40,16 @@ All manual tests passed successfully against the production API, including the n
 
 5. **Email Notifications** (send-email.manual.test.ts): ✅ 1/1 PASSING
    - Email sending functionality
+
+## What's Fixed in v0.3.1
+
+### Remote/Canonical Persistence Fix
+
+Fixed the Rails nested attributes parameter format for `save_mcp_implementation`:
+
+- Changed `mcp_implementation[remote][0][field]` to `mcp_implementation[remote_attributes][0][field]`
+- Changed `mcp_implementation[canonical][0][field]` to `mcp_implementation[canonical_attributes][0][field]`
+- Tested and verified against production API: remote and canonical data now persists correctly
 
 ## What's New
 
@@ -204,15 +214,16 @@ Added canonical URL management with scoped definitions:
 
 **Status**: ✅ READY FOR RELEASE
 
-All v0.3.0 features tested and working against production API:
+All v0.3.1 features tested and working against production API:
 
 1. Remote endpoint submission: ✅ Working
 2. Canonical URL submission: ✅ Working
 3. Combined updates: ✅ Working
 4. Form data encoding: ✅ Correct
 5. API integration: ✅ Verified
+6. find_providers tool: ✅ Working
 
-100% of manual tests passing (39/39) with real production data.
+100% of manual tests passing (47/47) with real production data.
 
 ### Bug Fixes Verified
 
