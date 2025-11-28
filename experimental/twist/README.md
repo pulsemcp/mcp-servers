@@ -155,14 +155,14 @@ npm run test:manual:watch
 
 ## Cheatsheet
 
-| Environment Variable | Description                                                         | Required | Default Value | Example               |
-| -------------------- | ------------------------------------------------------------------- | -------- | ------------- | --------------------- |
-| `TWIST_BEARER_TOKEN` | Your Twist bearer token. Get one at [twist.com](https://twist.com/) | Y        | N/A           | `Bearer tk_abc123...` |
-| `TWIST_WORKSPACE_ID` | Your Twist workspace ID                                             | Y        | N/A           | `12345`               |
+| Environment Variable | Description                                                                                            | Required | Default Value | Example               |
+| -------------------- | ------------------------------------------------------------------------------------------------------ | -------- | ------------- | --------------------- |
+| `TWIST_BEARER_TOKEN` | Your Twist bearer token. Get one at [twist.com](<[https://twist.com/](https://twist.com/app_console)>) | Y        | N/A           | `oauth2:4238438234..` |
+| `TWIST_WORKSPACE_ID` | Your Twist workspace ID                                                                                | Y        | N/A           | `12345`               |
 
 ## Claude Desktop
 
-Make sure you have a [bearer token from Twist](https://twist.com/integrations/apps) and your workspace ID ready.
+Make sure you have a [bearer token from Twist](<[https://twist.com/integrations/apps](https://twist.com/app_console)>) and your workspace ID ready.
 
 Then proceed to your preferred method of configuring the server below. If this is your first time using MCP Servers, you'll want to make sure you have the [Claude Desktop application](https://claude.ai/download) and follow the [official MCP setup instructions](https://modelcontextprotocol.io/quickstart/user).
 

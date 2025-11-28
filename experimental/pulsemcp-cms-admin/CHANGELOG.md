@@ -8,6 +8,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [0.3.1] - 2025-11-28
 
+### Added
+
+- Added `find_providers` tool for searching and retrieving provider information:
+  - Find by ID: Retrieve a specific provider by its numeric ID
+  - Search by query: Search for providers by name, URL, or slug with pagination support
+  - Returns provider details including name, slug, URL, implementation counts, and timestamps
+  - Available in both `server_queue_readonly` and `server_queue_all` tool groups
+
 ### Fixed
 
 - Fixed `save_mcp_implementation` to use correct Rails nested attributes parameter format for remote endpoints and canonical URLs

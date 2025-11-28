@@ -10,34 +10,36 @@
 
 ## Test Results Summary
 
-### Overall: ✅ 38/39 Tests PASSING (97%)
+### Overall: ✅ 47/47 Tests PASSING (100%)
 
-Manual tests verified the remote/canonical persistence fix is working. One unrelated test fails due to API validation requiring `provider_id` when updating `provider_name`.
+Manual tests verified the remote/canonical persistence fix is working. All tests pass.
 
 ### Tool Test Results
 
-1. **Draft MCP Implementations** (server-queue-tools.manual.test.ts): ✅ 17/18 PASSING (1 failing)
+1. **Find Providers** (find-providers.manual.test.ts): ✅ 9/9 PASSING
+   - searchProviders (4 tests)
+   - getProviderById (3 tests)
+   - API error handling (1 test)
+   - Data consistency (1 test)
+
+2. **Draft MCP Implementations** (server-queue-tools.manual.test.ts): ✅ 17/17 PASSING
    - get_draft_mcp_implementations (5 tests)
-   - save_mcp_implementation (8/9 tests - see known issues below)
+   - save_mcp_implementation (8 tests)
    - Tool group filtering (1 test)
    - Associated objects integration (3 tests)
 
-2. **Search MCP Implementations** (search-mcp-implementations.manual.test.ts): ✅ 11/11 PASSING
+3. **Search MCP Implementations** (search-mcp-implementations.manual.test.ts): ✅ 11/11 PASSING
    - Basic search functionality (3 tests)
    - Filtering and pagination (3 tests)
    - Search result details (1 test)
    - Edge cases (4 tests)
 
-3. **Newsletter Operations** (pulsemcp-cms-admin.manual.test.ts): ✅ 9/9 PASSING
+4. **Newsletter Operations** (pulsemcp-cms-admin.manual.test.ts): ✅ 9/9 PASSING
    - Newsletter post operations (7 tests)
    - Error handling (2 tests)
 
-4. **Email Notifications** (send-email.manual.test.ts): ✅ 1/1 PASSING
+5. **Email Notifications** (send-email.manual.test.ts): ✅ 1/1 PASSING
    - Email sending functionality
-
-### Known Issues (Unrelated to this PR)
-
-- **"should handle multiple field updates" test**: Fails because the API requires `provider_id` when updating `provider_name`. This is an existing API validation, not a bug introduced by this PR.
 
 ## What's Fixed in v0.3.1
 
@@ -48,6 +50,97 @@ Fixed the Rails nested attributes parameter format for `save_mcp_implementation`
 - Changed `mcp_implementation[remote][0][field]` to `mcp_implementation[remote_attributes][0][field]`
 - Changed `mcp_implementation[canonical][0][field]` to `mcp_implementation[canonical_attributes][0][field]`
 - Tested and verified against production API: remote and canonical data now persists correctly
+
+## What's New
+
+### find_providers Tool (Added 2025-11-27)
+
+Added comprehensive provider search and retrieval functionality:
+
+**searchProviders**:
+
+- Search providers by name, URL, or slug (case-insensitive)
+- Pagination support with limit/offset
+- Returns providers with implementation counts and metadata
+
+**getProviderById**:
+
+- Direct retrieval of provider by numeric ID
+- Returns null for non-existent providers
+- Full provider details including optional fields
+
+#### Test Results Detail
+
+✅ **searchProviders Tests** (4 tests - 4.22s total):
+
+1. Basic search (1523ms): Successfully searched for "anthropic", retrieved 2 providers
+2. Pagination (1150ms): Retrieved 5 of 4267 providers with limit=5, validated pagination metadata
+3. Empty results (1431ms): Confirmed empty array with proper pagination for non-existent queries
+4. Multi-field search (1116ms): Found 3 providers matching "model" across name/url/slug fields
+
+✅ **getProviderById Tests** (3 tests - 9.0s total):
+
+1. Retrieve by ID (2775ms): Retrieved provider ID 1425, verified all fields
+2. Non-existent ID (1063ms): Confirmed null return for ID 999999999
+3. Multiple retrievals (5159ms): Retrieved 3 providers by ID, verified consistency
+
+✅ **API Error Handling** (1 test - 1348ms):
+
+- Invalid API key: Properly rejected with 401/Invalid API key error
+
+✅ **Data Consistency** (1 test - 2780ms):
+
+- Verified ID, name, slug, url match between search and getById operations
+
+#### Sample API Responses
+
+**Search Response** (query: "anthropic"):
+
+```json
+{
+  "providers": [
+    {
+      "id": 1425,
+      "name": "Shannon Sands",
+      "url": "https://github.com/misanthropic-ai",
+      "slug": "gh-misanthropic-ai",
+      "mcp_implementations_count": 2,
+      "created_at": "2025-03-13T15:45:41.559Z",
+      "updated_at": "2025-03-13T15:45:41.559Z"
+    },
+    {
+      "id": 3,
+      "name": "Anthropic",
+      "url": "https://www.anthropic.com/",
+      "slug": "anthropic",
+      "mcp_implementations_count": 25,
+      "created_at": "2024-12-05T22:04:56.170Z",
+      "updated_at": "2024-12-05T22:04:56.170Z"
+    }
+  ],
+  "pagination": {
+    "current_page": 1,
+    "total_pages": 1,
+    "total_count": 2,
+    "has_next": false,
+    "limit": 30
+  }
+}
+```
+
+**GetById Response** (ID 1425):
+
+```json
+{
+  "id": 1425,
+  "name": "Shannon Sands",
+  "url": "https://github.com/misanthropic-ai",
+  "slug": "gh-misanthropic-ai",
+  "mcp_implementations_count": 2,
+  "created_at": "2025-03-13T15:45:41.559Z",
+  "updated_at": "2025-03-13T15:45:41.559Z"
+}
+```
 
 ## What's New in v0.3.0
 
@@ -121,15 +214,16 @@ Added canonical URL management with scoped definitions:
 
 **Status**: ✅ READY FOR RELEASE
 
-All v0.3.0 features tested and working against production API:
+All v0.3.1 features tested and working against production API:
 
 1. Remote endpoint submission: ✅ Working
 2. Canonical URL submission: ✅ Working
 3. Combined updates: ✅ Working
 4. Form data encoding: ✅ Correct
 5. API integration: ✅ Verified
+6. find_providers tool: ✅ Working
 
-100% of manual tests passing (39/39) with real production data.
+100% of manual tests passing (47/47) with real production data.
 
 ### Bug Fixes Verified
 

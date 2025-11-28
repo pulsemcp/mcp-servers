@@ -7,6 +7,8 @@ import type {
   MCPClient,
   MCPImplementation,
   MCPImplementationsResponse,
+  Provider,
+  ProvidersResponse,
 } from '../types.js';
 
 interface MockData {
@@ -22,6 +24,8 @@ interface MockData {
   implementations?: MCPImplementation[];
   implementationsResponse?: MCPImplementationsResponse;
   draftImplementationsResponse?: MCPImplementationsResponse;
+  providers?: Provider[];
+  providersResponse?: ProvidersResponse;
   errors?: {
     getPosts?: Error;
     getPost?: Error;
@@ -36,6 +40,8 @@ interface MockData {
     getDraftMCPImplementations?: Error;
     saveMCPImplementation?: Error;
     sendEmail?: Error;
+    searchProviders?: Error;
+    getProviderById?: Error;
   };
 }
 
@@ -453,6 +459,82 @@ export function createMockPulseMCPAdminClient(mockData: MockData): IPulseMCPAdmi
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       };
+    },
+
+    async searchProviders(params) {
+      if (mockData.errors?.searchProviders) {
+        throw mockData.errors.searchProviders;
+      }
+
+      if (mockData.providersResponse) {
+        return mockData.providersResponse;
+      }
+
+      let providers = mockData.providers || [
+        {
+          id: 1,
+          name: 'Test Provider',
+          slug: 'test-provider',
+          url: 'https://testprovider.com',
+          implementations_count: 5,
+          created_at: '2024-01-01T00:00:00Z',
+          updated_at: '2024-01-01T00:00:00Z',
+        },
+      ];
+
+      // Apply search filter
+      if (params.query) {
+        const query = params.query.toLowerCase();
+        providers = providers.filter(
+          (provider) =>
+            provider.name.toLowerCase().includes(query) ||
+            provider.slug.toLowerCase().includes(query) ||
+            (provider.url && provider.url.toLowerCase().includes(query))
+        );
+      }
+
+      // Apply pagination
+      const offset = params.offset || 0;
+      const limit = params.limit || 30;
+      const totalCount = providers.length;
+      const paginatedProviders = providers.slice(offset, offset + limit);
+
+      return {
+        providers: paginatedProviders,
+        pagination: {
+          current_page: Math.floor(offset / limit) + 1,
+          total_pages: Math.ceil(totalCount / limit),
+          total_count: totalCount,
+          has_next: offset + limit < totalCount,
+          limit: limit,
+        },
+      };
+    },
+
+    async getProviderById(id) {
+      if (mockData.errors?.getProviderById) {
+        throw mockData.errors.getProviderById;
+      }
+
+      // Find provider in mock data by ID
+      const providers = mockData.providers || [
+        {
+          id: 1,
+          name: 'Test Provider',
+          slug: 'test-provider',
+          url: 'https://testprovider.com',
+          implementations_count: 5,
+          created_at: '2024-01-01T00:00:00Z',
+          updated_at: '2024-01-01T00:00:00Z',
+        },
+      ];
+
+      const found = providers.find((p) => p.id === id);
+
+      if (found) return found;
+
+      // Return null if not found
+      return null;
     },
   };
 }
