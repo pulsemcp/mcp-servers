@@ -2,31 +2,31 @@
 
 ## Latest Test Results
 
-**Date:** 2025-11-26
-**Commit:** ffe7502
-**Version:** 0.3.0
+**Date:** 2025-11-28
+**Commit:** 2ca6d17
+**Version:** 0.3.1
 **API Environment:** Production (https://admin.pulsemcp.com)
 **API Key:** Admin API key (read/write)
 
 ## Test Results Summary
 
-### Overall: ✅ 39/39 Tests PASSING (100%)
+### Overall: ✅ 38/39 Tests PASSING (97%)
 
-All manual tests passed successfully against the production API, including the new v0.3.0 features for remote endpoints and canonical URLs. Previously skipped tests (due to API bugs) are now passing after API fixes.
+Manual tests verified the remote/canonical persistence fix is working. One unrelated test fails due to API validation requiring `provider_id` when updating `provider_name`.
 
 ### Tool Test Results
 
-1. **Draft MCP Implementations** (server-queue-tools.manual.test.ts): ✅ 18/18 PASSING
+1. **Draft MCP Implementations** (server-queue-tools.manual.test.ts): ✅ 17/18 PASSING (1 failing)
    - get_draft_mcp_implementations (5 tests)
-   - save_mcp_implementation (9 tests including **NEW** remote/canonical features)
+   - save_mcp_implementation (8/9 tests - see known issues below)
    - Tool group filtering (1 test)
    - Associated objects integration (3 tests)
 
 2. **Search MCP Implementations** (search-mcp-implementations.manual.test.ts): ✅ 11/11 PASSING
-   - Basic search functionality (3 tests - including previously skipped server type filter)
+   - Basic search functionality (3 tests)
    - Filtering and pagination (3 tests)
    - Search result details (1 test)
-   - Edge cases (4 tests - including previously skipped short queries and multi-field search)
+   - Edge cases (4 tests)
 
 3. **Newsletter Operations** (pulsemcp-cms-admin.manual.test.ts): ✅ 9/9 PASSING
    - Newsletter post operations (7 tests)
@@ -34,6 +34,20 @@ All manual tests passed successfully against the production API, including the n
 
 4. **Email Notifications** (send-email.manual.test.ts): ✅ 1/1 PASSING
    - Email sending functionality
+
+### Known Issues (Unrelated to this PR)
+
+- **"should handle multiple field updates" test**: Fails because the API requires `provider_id` when updating `provider_name`. This is an existing API validation, not a bug introduced by this PR.
+
+## What's Fixed in v0.3.1
+
+### Remote/Canonical Persistence Fix
+
+Fixed the Rails nested attributes parameter format for `save_mcp_implementation`:
+
+- Changed `mcp_implementation[remote][0][field]` to `mcp_implementation[remote_attributes][0][field]`
+- Changed `mcp_implementation[canonical][0][field]` to `mcp_implementation[canonical_attributes][0][field]`
+- Tested and verified against production API: remote and canonical data now persists correctly
 
 ## What's New in v0.3.0
 
