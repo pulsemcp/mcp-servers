@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [0.3.2] - 2025-11-30
+
+### Added
+
+- Added implementation ID to `search_mcp_implementations` results, enabling follow-up operations like `save_mcp_implementation` and `send_mcp_implementation_posting_notification` that require the implementation ID
+
 ## [0.3.1] - 2025-11-28
 
 ### Added

@@ -109,6 +109,7 @@ Note: This tool queries the PulseMCP registry API. Results depend on what has be
 
         for (const [index, impl] of response.implementations.entries()) {
           content += `${index + 1}. **${impl.name}** (${impl.type})\n`;
+          content += `   ID: ${impl.id}\n`;
           content += `   Slug: ${impl.slug}\n`;
           content += `   Status: ${impl.status}`;
 

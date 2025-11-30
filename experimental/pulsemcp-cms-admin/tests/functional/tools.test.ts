@@ -551,6 +551,7 @@ describe('Newsletter Tools', () => {
       const text = result.content[0].text;
       expect(text).toContain('Found 2 MCP implementation(s) matching "filesystem"');
       expect(text).toContain('Filesystem Server');
+      expect(text).toContain('ID: 1');
       expect(text).toContain('Slug: filesystem');
       expect(text).toContain('Status: live');
       expect(text).toContain('Classification: official');
