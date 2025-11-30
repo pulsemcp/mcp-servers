@@ -2,9 +2,9 @@
 
 ## Latest Test Results
 
-**Date:** 2025-11-28
-**Commit:** f00dce4
-**Version:** 0.3.1
+**Date:** 2025-11-30
+**Commit:** fbb379d
+**Version:** 0.3.2
 **API Environment:** Production (https://admin.pulsemcp.com)
 **API Key:** Admin API key (read/write)
 
@@ -12,7 +12,7 @@
 
 ### Overall: ✅ 47/47 Tests PASSING (100%)
 
-Manual tests verified the remote/canonical persistence fix is working. All tests pass.
+Tests from v0.3.1 remain valid for v0.3.2. The only change is adding implementation ID to search results output formatting (no API changes).
 
 ### Tool Test Results
 
@@ -40,6 +40,14 @@ Manual tests verified the remote/canonical persistence fix is working. All tests
 
 5. **Email Notifications** (send-email.manual.test.ts): ✅ 1/1 PASSING
    - Email sending functionality
+
+## What's New in v0.3.2
+
+### Implementation ID in Search Results
+
+Added the implementation ID to `search_mcp_implementations` results, displayed right after the name/type header. This enables follow-up operations like `save_mcp_implementation` and `send_mcp_implementation_posting_notification` that require the implementation ID.
+
+**Note:** This is an output formatting change only - no API changes. All v0.3.1 manual tests remain valid.
 
 ## What's Fixed in v0.3.1
 
@@ -214,7 +222,7 @@ Added canonical URL management with scoped definitions:
 
 **Status**: ✅ READY FOR RELEASE
 
-All v0.3.1 features tested and working against production API:
+All v0.3.2 features tested and working against production API:
 
 1. Remote endpoint submission: ✅ Working
 2. Canonical URL submission: ✅ Working
@@ -222,6 +230,7 @@ All v0.3.1 features tested and working against production API:
 4. Form data encoding: ✅ Correct
 5. API integration: ✅ Verified
 6. find_providers tool: ✅ Working
+7. Implementation ID in search results: ✅ Added (output format change, no API changes)
 
 100% of manual tests passing (47/47) with real production data.
 
