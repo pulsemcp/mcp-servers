@@ -1,4 +1,9 @@
-# Wait for CI Skill
+---
+name: wait-for-CI
+description: Block until CI passes or fails on the current PR
+---
+
+# Wait for CI
 
 This skill blocks until CI either passes or fails on the current PR using a single blocking command.
 
