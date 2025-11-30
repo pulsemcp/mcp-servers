@@ -23,4 +23,7 @@ If CI hasn't started yet, the command may return immediately with "no checks rep
 sleep 30 && gh pr checks --watch --fail-fast
 ```
 
-If after 2 attempts (about 1 minute total) there are still no checks, CI may not be configured for this repository.
+If after 2 attempts (about 1 minute total) there are still no checks, one of the following is true:
+- **You have merge conflicts.** Resolve them and then start the CI wait again.
+- **Your changes are not triggering CI.** Check the GitHub Actions setup to confirm nothing will have triggered. If true, you can consider CI green.
+- **GitHub is having issues.** Check status.github.com to verify. If true, bail out and let the user know they'll need to try again when GitHub is back.
