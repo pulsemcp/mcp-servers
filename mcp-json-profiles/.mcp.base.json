@@ -3,6 +3,24 @@
     "ref": {
       "type": "http",
       "url": "https://api.ref.tools/mcp?apiKey={{REF_API_KEY}}"
+    },
+    "bigquery": {
+      "type": "stdio",
+      "command": "/Users/admin/.local/bin/uv",
+      "args": [
+        "--directory",
+        "/Users/admin/github-projects/mcp-server-bigquery",
+        "run",
+        "mcp-server-bigquery",
+        "--project",
+        "pulse-443819",
+        "--location",
+        "us-west1",
+        "--dataset",
+        "pulse_warehouse",
+        "--key-file",
+        "/Users/admin/.secrets/bq-service-account.json"
+      ]
     }
   }
 }
