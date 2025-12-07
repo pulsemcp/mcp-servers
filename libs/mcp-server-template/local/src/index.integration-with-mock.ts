@@ -8,13 +8,10 @@
  * Mock data is passed via the EXAMPLE_MOCK_DATA environment variable.
  */
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
-// IMPORTANT: This uses the package name pattern, not a relative path
-// When you copy this template, replace 'NAME' with your server name
-// This matches how actual servers import their shared packages for integration tests
-import { createMCPServer } from 'mcp-server-NAME-shared';
+// Import from shared module via symlink (created by setup-dev.js)
+import { createMCPServer } from '../shared/index.js';
 // Import the mock client factory from the shared module
-// Note: This import path assumes the shared module is built and the integration mock is exported
-import { createIntegrationMockExampleClient } from '../../shared/src/example-client/example-client.integration-mock.js';
+import { createIntegrationMockExampleClient } from '../shared/example-client/example-client.integration-mock.js';
 
 async function main() {
   const transport = new StdioServerTransport();
