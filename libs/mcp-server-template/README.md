@@ -2,14 +2,48 @@
 
 DESCRIPTION
 
-## Features
+## Highlights
 
-- 🏗️ Modular monorepo architecture with local/shared separation
-- 🧪 Comprehensive testing setup with Vitest
-- 🔧 Dependency injection for better testability
-- 📝 TypeScript with strict type checking
-- 🚀 Development mode with automatic rebuilds
-- ✅ Pre-configured linting and formatting
+- Modular monorepo architecture with local/shared separation
+- Comprehensive testing setup (functional, integration, manual)
+- Tool grouping system for permission-based access control
+- Dependency injection for better testability
+- TypeScript with strict type checking
+- Development mode with automatic rebuilds
+- Pre-configured linting and formatting
+- Health checks for API credential validation
+
+## Capabilities
+
+### Tools
+
+| Tool           | Group                  | Description                                            |
+| -------------- | ---------------------- | ------------------------------------------------------ |
+| `example_tool` | readonly, write, admin | Process and transform messages with formatting options |
+| `search_items` | readonly, write, admin | Search for items or look up by ID with pagination      |
+
+### Resources
+
+| Resource         | Description                                     |
+| ---------------- | ----------------------------------------------- |
+| `NAME://config`  | Server configuration and status (for debugging) |
+| `NAME://example` | Example resource implementation                 |
+
+### Tool Groups
+
+Control which tools are available via the `ENABLED_TOOLGROUPS` environment variable:
+
+| Group      | Description                                   |
+| ---------- | --------------------------------------------- |
+| `readonly` | Read-only operations (search, get, list)      |
+| `write`    | Write operations (create, update)             |
+| `admin`    | Administrative operations (delete, configure) |
+
+**Examples:**
+
+- `ENABLED_TOOLGROUPS="readonly"` - Only read operations
+- `ENABLED_TOOLGROUPS="readonly,write"` - Read and write, no admin
+- Not set - All tools enabled (default)
 
 ## Quick Start
 
@@ -19,22 +53,22 @@ DESCRIPTION
 
    ```bash
    # For experimental servers
-   cp -r mcp-server-template experimental/myserver
+   cp -r libs/mcp-server-template experimental/myserver
 
    # For production servers
-   cp -r mcp-server-template myserver
+   cp -r libs/mcp-server-template productionized/myserver
 
-   cd myserver
+   cd experimental/myserver  # or productionized/myserver
    ```
 
 2. **Replace placeholders throughout the codebase**
 
    Search and replace these values:
-   - `NAME` → your server name (e.g., `weather`, `github`)
-   - `DESCRIPTION` → your server description
-   - `YOUR_NAME` → your name (for package.json author field)
-   - `YOUR_API_KEY` → your actual environment variable name
-   - `IExampleClient`/`ExampleClient` → your actual client interface/class
+   - `NAME` -> your server name (e.g., `weather`, `github`)
+   - `DESCRIPTION` -> your server description
+   - `YOUR_NAME` -> your name (for package.json author field)
+   - `YOUR_API_KEY` -> your actual environment variable name
+   - `IExampleClient`/`ExampleClient` -> your actual client interface/class
 
    **Naming Convention:**
    - **Experimental servers**: Use simple names like `weather-mcp-server`
@@ -63,24 +97,38 @@ DESCRIPTION
 NAME-mcp-server/
 ├── local/                 # Local server implementation
 │   ├── src/
-│   │   ├── index.ts      # Main entry point
-│   │   └── index.integration.ts  # Integration test entry
+│   │   ├── index.ts      # Main entry point with env validation
+│   │   └── index.integration-with-mock.ts  # Integration test entry
 │   ├── build/            # Compiled output
 │   └── package.json
 ├── shared/               # Shared business logic
 │   ├── src/
-│   │   ├── server.ts     # Server factory
-│   │   ├── tools.ts      # Tool implementations
+│   │   ├── server.ts     # Server factory with DI
+│   │   ├── tools.ts      # Tool registration with grouping
+│   │   ├── tools/        # Individual tool implementations
+│   │   │   ├── example-tool.ts
+│   │   │   └── search-tool.ts
 │   │   ├── resources.ts  # Resource implementations
-│   │   └── types.ts      # Shared types
-│   ├── dist/             # Compiled output
+│   │   ├── state.ts      # Dynamic state management
+│   │   ├── logging.ts    # Centralized logging
+│   │   ├── types.ts      # Shared types
+│   │   └── example-client/  # External API client
+│   │       ├── lib/      # Modular API methods
+│   │       └── CLAUDE.md # Client documentation
+│   ├── build/            # Compiled output
 │   └── package.json
 ├── tests/                # Test suite
-│   ├── functional/       # Unit tests
-│   ├── integration/      # Integration tests
+│   ├── functional/       # Unit tests with mocks
+│   ├── integration/      # MCP protocol tests
+│   ├── manual/          # Real API tests
 │   └── mocks/           # Mock implementations
-├── package.json          # Root package.json
-├── vitest.config.ts      # Test configuration
+├── scripts/             # Build and test scripts
+├── package.json         # Root workspace config
+├── vitest.config.ts     # Functional test config
+├── vitest.config.integration.ts  # Integration test config
+├── vitest.config.manual.ts       # Manual test config
+├── CHANGELOG.md         # Version history
+├── MANUAL_TESTING.md    # Test results tracking
 └── CI_SETUP.md          # CI setup guide (delete after setup)
 ```
 
@@ -88,17 +136,34 @@ NAME-mcp-server/
 
 ### Environment Variables
 
-The server validates required environment variables at startup. If any required variables are missing, it will exit with a helpful error message.
+| Variable             | Required | Description                    | Default     |
+| -------------------- | -------- | ------------------------------ | ----------- |
+| `YOUR_API_KEY`       | Yes      | API key for authentication     | -           |
+| `YOUR_WORKSPACE_ID`  | No       | Workspace/organization ID      | -           |
+| `ENABLED_TOOLGROUPS` | No       | Comma-separated tool groups    | All enabled |
+| `SKIP_HEALTH_CHECKS` | No       | Skip API validation at startup | `false`     |
 
-Update the `validateEnvironment()` function in `local/src/index.ts` with your server's requirements:
+The server validates required environment variables at startup. If any are missing, it exits with a helpful error message including examples.
 
-```typescript
-const required = [
-  { name: 'YOUR_API_KEY', description: 'API key for authentication' },
-  { name: 'YOUR_ENDPOINT', description: 'API endpoint URL' },
-];
+### Claude Desktop Configuration
 
-const optional = [{ name: 'YOUR_TIMEOUT', description: 'Request timeout in milliseconds' }];
+#### macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
+
+#### Windows: `%APPDATA%\Claude\claude_desktop_config.json`
+
+```json
+{
+  "mcpServers": {
+    "NAME": {
+      "command": "node",
+      "args": ["/path/to/NAME-mcp-server/local/build/index.js"],
+      "env": {
+        "YOUR_API_KEY": "your-api-key-here",
+        "ENABLED_TOOLGROUPS": "readonly,write"
+      }
+    }
+  }
+}
 ```
 
 ## Development
@@ -114,16 +179,20 @@ This watches for changes and automatically rebuilds.
 ### Testing
 
 ```bash
-# Run all tests in watch mode
+# Run functional tests in watch mode
 npm test
 
 # Run tests once
 npm run test:run
 
-# Run integration tests
+# Run integration tests (full MCP protocol)
 npm run test:integration
 
-# Run all tests (functional + integration)
+# Run manual tests (real APIs - requires .env)
+npm run test:manual:setup  # First time only
+npm run test:manual
+
+# Run all automated tests
 npm run test:all
 
 # Open test UI
@@ -150,232 +219,122 @@ npm run format:check
 
 ### Adding Tools
 
-1. **Define the tool in `shared/src/tools.ts`**
+1. **Create a new tool file** in `shared/src/tools/`
 
    ```typescript
-   const MyToolSchema = z.object({
-     param: z.string().describe('Parameter description'),
+   // shared/src/tools/my-tool.ts
+   import { Server } from '@modelcontextprotocol/sdk/server/index.js';
+   import { z } from 'zod';
+   import { IExampleClient } from '../example-client/example-client.js';
+
+   const PARAM_DESCRIPTIONS = {
+     param: 'Description of the parameter with examples',
+   } as const;
+
+   export const MyToolSchema = z.object({
+     param: z.string().describe(PARAM_DESCRIPTIONS.param),
    });
-   ```
 
-2. **Add to the tools list**
-
-   ```typescript
-   tools: [
-     {
-       name: 'my_tool',
-       description: 'What this tool does',
-       inputSchema: {...},
-     },
-   ]
-   ```
-
-3. **Implement the handler**
-
-   ```typescript
-   if (name === 'my_tool') {
-     const validatedArgs = MyToolSchema.parse(args);
-     const client = clientFactory();
-
-     // Use client to perform operations
-     const result = await client.doSomething(validatedArgs.param);
-
+   export function myTool(_server: Server, clientFactory: () => IExampleClient) {
      return {
-       content: [
-         {
-           type: 'text',
-           text: result,
+       name: 'my_tool',
+       description: `Brief description.
+   
+   **Returns:** What the tool returns
+   
+   **Use cases:**
+   - When to use this tool
+   - Another scenario`,
+       inputSchema: {
+         type: 'object' as const,
+         properties: {
+           param: { type: 'string', description: PARAM_DESCRIPTIONS.param },
          },
-       ],
+         required: ['param'],
+       },
+       handler: async (args: unknown) => {
+         try {
+           const validatedArgs = MyToolSchema.parse(args);
+           const client = clientFactory();
+           // Implementation...
+           return { content: [{ type: 'text', text: 'Result' }] };
+         } catch (error) {
+           return {
+             content: [
+               {
+                 type: 'text',
+                 text: `Error: ${error instanceof Error ? error.message : 'Unknown'}`,
+               },
+             ],
+             isError: true,
+           };
+         }
+       },
      };
    }
    ```
 
+2. **Register the tool** in `shared/src/tools.ts`
+
+   ```typescript
+   import { myTool } from './tools/my-tool.js';
+
+   const ALL_TOOLS: ToolDefinition[] = [
+     // ... existing tools
+     { factory: myTool, groups: ['write', 'admin'] },
+   ];
+   ```
+
+3. **Update the README** capabilities table
+
 ### Adding Resources
 
-Update `shared/src/resources.ts` to add new resources following the existing pattern.
+Update `shared/src/resources.ts` following the existing pattern. The config resource shows how to expose server status for debugging.
 
 ### Using External APIs
 
-**Note**: This section is about clients for external APIs (REST, GraphQL, databases, etc.), NOT MCP clients.
+See `shared/src/example-client/CLAUDE.md` for the complete guide on:
 
-1. **Define client interface in `shared/src/server.ts`**
-
-   ```typescript
-   export interface IMyApiClient {
-     fetchData(id: string): Promise<Data>;
-   }
-   ```
-
-2. **Implement the client**
-
-   ```typescript
-   export class MyApiClient implements IMyApiClient {
-     constructor(private apiKey: string) {}
-
-     async fetchData(id: string): Promise<Data> {
-       // Implementation
-     }
-   }
-   ```
-
-3. **Use dependency injection in tools**
-
-   The client factory pattern allows easy mocking for tests.
+- Interface-first design pattern
+- Modular API methods in `lib/` subdirectory
+- Testing strategies (functional, integration, manual)
+- Adding new API methods
 
 ### Writing Tests
 
-#### Functional Tests
+See `tests/README.md` for comprehensive testing documentation including:
 
-Test individual functions/tools in isolation:
-
-```typescript
-// tests/functional/tools.test.ts
-describe('my_tool', () => {
-  it('should process data correctly', async () => {
-    const mockClient = createMockClient();
-    mockClient.fetchData.mockResolvedValue({ data: 'test' });
-
-    // Test your tool with the mock
-  });
-});
-```
-
-#### Integration Tests
-
-Test the full MCP protocol:
-
-```typescript
-// tests/integration/NAME.integration.test.ts
-it('should handle my_tool via MCP', async () => {
-  const client = await createMockedClient({
-    mockData: {
-      /* ... */
-    },
-  });
-
-  const result = await client.callTool('my_tool', {
-    param: 'test',
-  });
-
-  expect(result.content[0].text).toBe('expected result');
-});
-```
+- Three-tier testing strategy
+- Mock organization patterns
+- Integration test architecture
+- Manual testing procedures
 
 ## Publishing to npm
 
-This template uses a workspace structure with `local` and `shared` directories. To handle this for npm publishing:
-
 ### How It Works
 
-#### Development Setup
+The template uses a workspace structure with symlinks for development and file copying for publishing:
 
-During development, the `local` package imports from the `shared` package using relative paths:
-
-- Imports use `import { createMCPServer } from '../shared/index.js'`
-- The `prebuild` and `predev` scripts automatically build the shared module and create a symlink
-- `setup-dev.js` creates a symlink from `local/shared` to `../shared/dist` for TypeScript resolution
-- This allows the same import paths to work in both development and published packages
-
-#### Publishing Process
-
-When publishing to npm, we need to ensure the shared code is included without workspace dependencies:
-
-1. The `prepublishOnly` script runs automatically before `npm publish`
-2. It runs `prepare-publish.js` which:
-   - Installs TypeScript temporarily (for CI environments)
-   - Builds the shared directory first
-   - Creates a symlink for building (using setup-dev.js)
-   - Builds the local package with all imports resolved
-   - Replaces the symlink with actual files for publishing
-3. The package is published with all necessary files included
-4. No bundler or extra dependencies needed!
-
-#### Script Execution Flow
-
-**During Development:**
-
-- `npm run build` → triggers `prebuild` → builds shared & creates symlink → builds local
-- `npm run dev` → triggers `predev` → builds shared & creates symlink → runs dev server
-
-**During Publishing:**
-
-- `npm publish` → triggers `prepublishOnly` → runs `prepare-publish.js` → publishes
-- `prepare-publish.js` handles everything:
-  1. Installs TypeScript temporarily (for CI environments)
-  2. Builds shared package first
-  3. Creates symlink using setup-dev.js
-  4. Builds local package (with imports resolved)
-  5. Replaces symlink with actual shared files
-  6. Package is ready for publishing
-
-### Important Files
-
-- `local/prepare-publish.js` - Copies shared files during publish
-- `local/setup-dev.js` - Creates development symlink
-- `.gitignore` - Ignores `local/shared` (it's either a symlink or temporary copy)
-
-### Benefits
-
-This approach ensures:
-
-- Clean development experience with proper TypeScript support
-- Published packages work without workspace dependencies
-- No need for bundlers or extra build tools
-- Maintains the monorepo benefits during development
+1. **Development**: Symlinks enable live editing of shared code
+2. **Publishing**: `prepare-publish.js` copies built files for npm
 
 ### Publishing Steps
 
 1. Navigate to the `local` directory
-2. Update the version number in `package.json`
-3. Run `npm publish`
-4. The `prepublishOnly` script will handle building and bundling automatically
+2. Run `npm run stage-publish` to bump version
+3. Update `CHANGELOG.md` with changes
+4. Update `MANUAL_TESTING.md` with test results
+5. Commit all changes
+6. Create PR - CI will publish on merge
 
-Note: Always publish from the `local` directory, not from the root workspace.
+**Important**: Always publish from the `local` directory, not from the root workspace.
 
-## Configuration
+## Usage Tips
 
-### Claude Desktop
-
-Add to your Claude Desktop configuration:
-
-#### macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
-
-#### Windows: `%APPDATA%\Claude\claude_desktop_config.json`
-
-```json
-{
-  "mcpServers": {
-    "NAME": {
-      "command": "node",
-      "args": ["/path/to/NAME-mcp-server/local/build/index.js"],
-      "env": {
-        "YOUR_API_KEY": "your-api-key-here"
-      }
-    }
-  }
-}
-```
-
-## Tools
-
-### example_tool
-
-An example tool that processes a message.
-
-**Input:**
-
-- `message` (string, required): The message to process
-
-**Returns:**
-
-- Processed message text
-
-## Resources
-
-### example://resource
-
-An example resource that returns static content.
+- **Start with the config resource**: Read `NAME://config` to verify your setup
+- **Use tool groups**: Restrict access for different use cases
+- **Check health on startup**: Validates credentials before first use
+- **Enable verbose mode**: Some tools support `verbose: true` for debugging
 
 ## License
 
