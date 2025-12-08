@@ -28,7 +28,10 @@ const PARAM_DESCRIPTIONS = {
 
 export const ExampleToolSchema = z.object({
   message: z.string().min(1).describe(PARAM_DESCRIPTIONS.message),
-  format: z.enum(['plain', 'json', 'markdown']).default('plain').describe(PARAM_DESCRIPTIONS.format),
+  format: z
+    .enum(['plain', 'json', 'markdown'])
+    .default('plain')
+    .describe(PARAM_DESCRIPTIONS.format),
   verbose: z.boolean().default(false).describe(PARAM_DESCRIPTIONS.verbose),
 });
 

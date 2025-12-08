@@ -11,7 +11,8 @@ import { IExampleClient } from '../example-client/example-client.js';
 // =============================================================================
 
 const PARAM_DESCRIPTIONS = {
-  id: 'Unique identifier to look up a specific item directly. ' +
+  id:
+    'Unique identifier to look up a specific item directly. ' +
     'When provided, performs a direct lookup instead of search. ' +
     'Example: "item-123", "abc-def-ghi"',
   query:
@@ -36,7 +37,10 @@ export const SearchToolSchema = z
     query: z.string().optional().describe(PARAM_DESCRIPTIONS.query),
     limit: z.number().min(1).max(100).default(10).describe(PARAM_DESCRIPTIONS.limit),
     offset: z.number().min(0).default(0).describe(PARAM_DESCRIPTIONS.offset),
-    sortBy: z.enum(['name', 'created', 'updated']).default('name').describe(PARAM_DESCRIPTIONS.sortBy),
+    sortBy: z
+      .enum(['name', 'created', 'updated'])
+      .default('name')
+      .describe(PARAM_DESCRIPTIONS.sortBy),
   })
   .refine((data) => data.id !== undefined || data.query !== undefined, {
     message: 'Either id or query must be provided',

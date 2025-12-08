@@ -23,38 +23,44 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - None yet
 
-<!--
-================================================================================
-CHANGELOG TEMPLATE GUIDE
-================================================================================
+# <!--
+
+# CHANGELOG TEMPLATE GUIDE
 
 Use these section headers to categorize changes:
 
 ### Added
+
 New features or functionality added to the server.
 Example: "Added `search_items` tool with pagination support"
 
 ### Changed
+
 Changes to existing functionality (non-breaking).
 Example: "Improved error messages for API timeout errors"
 
 ### Fixed
+
 Bug fixes.
 Example: "Fixed pagination returning duplicate results"
 
 ### Deprecated
+
 Features that will be removed in future versions.
 Example: "Deprecated `legacy_search` tool - use `search_items` instead"
 
 ### Removed
+
 Features that have been removed.
 Example: "Removed deprecated `legacy_search` tool"
 
 ### Security
+
 Security-related changes or fixes.
 Example: "Fixed API key exposure in error logs"
 
 ### Breaking
+
 Breaking changes that require user action.
 Example: "**BREAKING**: Renamed parameter `incidentId` to `incidentNumber`"
 
@@ -65,16 +71,20 @@ VERSION ENTRY FORMAT
 ## [X.Y.Z] - YYYY-MM-DD
 
 ### Added
+
 - Feature description with details
 - Another feature
 
 ### Changed
+
 - Change description
 
 ### Fixed
+
 - Bug fix description (reference issue if available)
 
 ### Breaking
+
 - **BREAKING**: Description of breaking change and migration steps
 
 ================================================================================

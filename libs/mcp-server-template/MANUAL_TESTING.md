@@ -73,38 +73,38 @@ The tests will:
 
 ### Summary
 
-| Metric | Value |
-|--------|-------|
-| Total Tests | X |
-| Passed | Y |
-| Failed | Z |
-| Pass Rate | XX% |
+| Metric      | Value |
+| ----------- | ----- |
+| Total Tests | X     |
+| Passed      | Y     |
+| Failed      | Z     |
+| Pass Rate   | XX%   |
 
 ### Test Files
 
-| File | Status | Tests | Notes |
-|------|--------|-------|-------|
-| `NAME.manual.test.ts` | :white_check_mark: PASS | X/Y | All core functionality working |
+| File                  | Status                  | Tests | Notes                          |
+| --------------------- | ----------------------- | ----- | ------------------------------ |
+| `NAME.manual.test.ts` | :white_check_mark: PASS | X/Y   | All core functionality working |
 
 ### Detailed Results
 
 #### example_tool Tests
 
-| Test | Status | Notes |
-|------|--------|-------|
-| Process message with plain format | :white_check_mark: PASS | Response time: Xms |
-| Process message with JSON format | :white_check_mark: PASS | |
-| Process message with markdown format | :white_check_mark: PASS | |
-| Handle empty message | :white_check_mark: PASS | Returns validation error |
+| Test                                 | Status                  | Notes                    |
+| ------------------------------------ | ----------------------- | ------------------------ |
+| Process message with plain format    | :white_check_mark: PASS | Response time: Xms       |
+| Process message with JSON format     | :white_check_mark: PASS |                          |
+| Process message with markdown format | :white_check_mark: PASS |                          |
+| Handle empty message                 | :white_check_mark: PASS | Returns validation error |
 
 #### search_items Tests
 
-| Test | Status | Notes |
-|------|--------|-------|
-| Search by query | :white_check_mark: PASS | Returns paginated results |
-| Get item by ID | :white_check_mark: PASS | |
-| Search with pagination | :white_check_mark: PASS | offset/limit working |
-| Handle not found | :white_check_mark: PASS | Returns helpful message |
+| Test                   | Status                  | Notes                     |
+| ---------------------- | ----------------------- | ------------------------- |
+| Search by query        | :white_check_mark: PASS | Returns paginated results |
+| Get item by ID         | :white_check_mark: PASS |                           |
+| Search with pagination | :white_check_mark: PASS | offset/limit working      |
+| Handle not found       | :white_check_mark: PASS | Returns helpful message   |
 
 ### Known Issues / Limitations
 
@@ -122,12 +122,12 @@ Document any API quirks or behaviors discovered:
 
 ## Test Result Status Legend
 
-| Icon | Meaning |
-|------|---------|
-| :white_check_mark: PASS | Test passed successfully |
-| :x: FAIL | Test failed - needs investigation |
-| :warning: WARN | Test passed with warnings or known issues |
-| :hourglass: SKIP | Test skipped (e.g., API unavailable) |
+| Icon                    | Meaning                                   |
+| ----------------------- | ----------------------------------------- |
+| :white_check_mark: PASS | Test passed successfully                  |
+| :x: FAIL                | Test failed - needs investigation         |
+| :warning: WARN          | Test passed with warnings or known issues |
+| :hourglass: SKIP        | Test skipped (e.g., API unavailable)      |
 
 ---
 

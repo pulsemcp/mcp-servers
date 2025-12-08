@@ -1,6 +1,11 @@
 // Core server exports
 export { registerResources } from './resources.js';
-export { registerTools, createRegisterTools, type ToolGroup, parseEnabledToolGroups } from './tools.js';
+export {
+  registerTools,
+  createRegisterTools,
+  type ToolGroup,
+  parseEnabledToolGroups,
+} from './tools.js';
 export {
   createMCPServer,
   type ClientFactory,

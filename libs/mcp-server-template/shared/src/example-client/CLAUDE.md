@@ -32,10 +32,7 @@ Each API method is implemented in its own file under `lib/`:
 
 ```typescript
 // lib/get-item.ts
-export async function getItem(
-  apiKey: string,
-  itemId: string
-): Promise<Item> {
+export async function getItem(apiKey: string, itemId: string): Promise<Item> {
   const response = await fetch(`https://api.example.com/items/${itemId}`, {
     headers: { Authorization: `Bearer ${apiKey}` },
   });
@@ -81,10 +78,7 @@ export class ExampleClient implements IExampleClient {
 1. **Create a new file in `lib/`** (e.g., `lib/create-item.ts`)
 
    ```typescript
-   export async function createItem(
-     apiKey: string,
-     data: CreateItemInput
-   ): Promise<Item> {
+   export async function createItem(apiKey: string, data: CreateItemInput): Promise<Item> {
      const response = await fetch('https://api.example.com/items', {
        method: 'POST',
        headers: {
@@ -107,7 +101,7 @@ export class ExampleClient implements IExampleClient {
    ```typescript
    export interface IExampleClient {
      getItem(itemId: string): Promise<Item>;
-     createItem(data: CreateItemInput): Promise<Item>;  // Add this
+     createItem(data: CreateItemInput): Promise<Item>; // Add this
    }
    ```
 
@@ -123,6 +117,7 @@ export class ExampleClient implements IExampleClient {
 ## Testing
 
 ### Functional Tests
+
 Mock the entire client interface using vitest:
 
 ```typescript
@@ -140,13 +135,12 @@ export function createFunctionalMockExampleClient(): IExampleClient {
 ```
 
 ### Integration Tests
+
 Use `example-client.integration-mock.ts` for TestMCPClient tests:
 
 ```typescript
 // example-client.integration-mock.ts
-export function createIntegrationMockExampleClient(
-  mockData: MockData
-): IExampleClient {
+export function createIntegrationMockExampleClient(mockData: MockData): IExampleClient {
   return {
     getItem: async (itemId: string) => {
       return mockData.items[itemId] || { id: itemId, name: 'Mock Item', value: 'mock' };
@@ -157,6 +151,7 @@ export function createIntegrationMockExampleClient(
 ```
 
 ### Manual Tests
+
 Use real client with actual credentials from `.env`:
 
 ```typescript

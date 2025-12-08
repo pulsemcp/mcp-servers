@@ -17,29 +17,30 @@ DESCRIPTION
 
 ### Tools
 
-| Tool | Group | Description |
-|------|-------|-------------|
+| Tool           | Group                  | Description                                            |
+| -------------- | ---------------------- | ------------------------------------------------------ |
 | `example_tool` | readonly, write, admin | Process and transform messages with formatting options |
-| `search_items` | readonly, write, admin | Search for items or look up by ID with pagination |
+| `search_items` | readonly, write, admin | Search for items or look up by ID with pagination      |
 
 ### Resources
 
-| Resource | Description |
-|----------|-------------|
-| `NAME://config` | Server configuration and status (for debugging) |
-| `NAME://example` | Example resource implementation |
+| Resource         | Description                                     |
+| ---------------- | ----------------------------------------------- |
+| `NAME://config`  | Server configuration and status (for debugging) |
+| `NAME://example` | Example resource implementation                 |
 
 ### Tool Groups
 
 Control which tools are available via the `ENABLED_TOOLGROUPS` environment variable:
 
-| Group | Description |
-|-------|-------------|
-| `readonly` | Read-only operations (search, get, list) |
-| `write` | Write operations (create, update) |
-| `admin` | Administrative operations (delete, configure) |
+| Group      | Description                                   |
+| ---------- | --------------------------------------------- |
+| `readonly` | Read-only operations (search, get, list)      |
+| `write`    | Write operations (create, update)             |
+| `admin`    | Administrative operations (delete, configure) |
 
 **Examples:**
+
 - `ENABLED_TOOLGROUPS="readonly"` - Only read operations
 - `ENABLED_TOOLGROUPS="readonly,write"` - Read and write, no admin
 - Not set - All tools enabled (default)
@@ -63,6 +64,7 @@ Control which tools are available via the `ENABLED_TOOLGROUPS` environment varia
 2. **Replace placeholders throughout the codebase**
 
    Search and replace these values:
+
    - `NAME` -> your server name (e.g., `weather`, `github`)
    - `DESCRIPTION` -> your server description
    - `YOUR_NAME` -> your name (for package.json author field)
@@ -70,6 +72,7 @@ Control which tools are available via the `ENABLED_TOOLGROUPS` environment varia
    - `IExampleClient`/`ExampleClient` -> your actual client interface/class
 
    **Naming Convention:**
+
    - **Experimental servers**: Use simple names like `weather-mcp-server`
    - **Productionized servers**: Use scoped npm names like `@pulsemcp/weather`
 
@@ -135,18 +138,19 @@ NAME-mcp-server/
 
 ### Environment Variables
 
-| Variable | Required | Description | Default |
-|----------|----------|-------------|---------|
-| `YOUR_API_KEY` | Yes | API key for authentication | - |
-| `YOUR_WORKSPACE_ID` | No | Workspace/organization ID | - |
-| `ENABLED_TOOLGROUPS` | No | Comma-separated tool groups | All enabled |
-| `SKIP_HEALTH_CHECKS` | No | Skip API validation at startup | `false` |
+| Variable             | Required | Description                    | Default     |
+| -------------------- | -------- | ------------------------------ | ----------- |
+| `YOUR_API_KEY`       | Yes      | API key for authentication     | -           |
+| `YOUR_WORKSPACE_ID`  | No       | Workspace/organization ID      | -           |
+| `ENABLED_TOOLGROUPS` | No       | Comma-separated tool groups    | All enabled |
+| `SKIP_HEALTH_CHECKS` | No       | Skip API validation at startup | `false`     |
 
 The server validates required environment variables at startup. If any are missing, it exits with a helpful error message including examples.
 
 ### Claude Desktop Configuration
 
 #### macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
+
 #### Windows: `%APPDATA%\Claude\claude_desktop_config.json`
 
 ```json
@@ -237,9 +241,9 @@ npm run format:check
      return {
        name: 'my_tool',
        description: `Brief description.
-
+   
    **Returns:** What the tool returns
-
+   
    **Use cases:**
    - When to use this tool
    - Another scenario`,
@@ -258,7 +262,12 @@ npm run format:check
            return { content: [{ type: 'text', text: 'Result' }] };
          } catch (error) {
            return {
-             content: [{ type: 'text', text: `Error: ${error instanceof Error ? error.message : 'Unknown'}` }],
+             content: [
+               {
+                 type: 'text',
+                 text: `Error: ${error instanceof Error ? error.message : 'Unknown'}`,
+               },
+             ],
              isError: true,
            };
          }
@@ -287,6 +296,7 @@ Update `shared/src/resources.ts` following the existing pattern. The config reso
 ### Using External APIs
 
 See `shared/src/example-client/CLAUDE.md` for the complete guide on:
+
 - Interface-first design pattern
 - Modular API methods in `lib/` subdirectory
 - Testing strategies (functional, integration, manual)
@@ -295,6 +305,7 @@ See `shared/src/example-client/CLAUDE.md` for the complete guide on:
 ### Writing Tests
 
 See `tests/README.md` for comprehensive testing documentation including:
+
 - Three-tier testing strategy
 - Mock organization patterns
 - Integration test architecture
