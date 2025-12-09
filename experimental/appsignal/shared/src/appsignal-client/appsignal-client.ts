@@ -23,6 +23,17 @@ import {
   type PerformanceIncidentSampleTimeline,
   type TimelineEvent,
 } from './lib/performance-incident-sample-timeline.js';
+import { getSlowRequests, type SlowRequestsResult } from './lib/slow-requests.js';
+import { getDeployMarkers, type DeployMarker, type TimeframeEnum } from './lib/deploy-markers.js';
+import { getMetrics, type MetricsResult } from './lib/metrics.js';
+import {
+  getPerformanceSamples,
+  type PerformanceSamplesResult,
+  type PerformanceSampleDetail,
+  type PerformanceSampleOverview,
+  type GroupDuration,
+} from './lib/performance-samples.js';
+import { getMetricsTimeseries, type TimeseriesResult } from './lib/metrics-timeseries.js';
 
 // Re-export interfaces for backward compatibility
 export type {
@@ -36,6 +47,15 @@ export type {
   PerformanceIncidentSample,
   PerformanceIncidentSampleTimeline,
   TimelineEvent,
+  SlowRequestsResult,
+  DeployMarker,
+  TimeframeEnum,
+  MetricsResult,
+  PerformanceSamplesResult,
+  PerformanceSampleDetail,
+  PerformanceSampleOverview,
+  GroupDuration,
+  TimeseriesResult,
 };
 
 export interface IAppsignalClient {
@@ -79,6 +99,24 @@ export interface IAppsignalClient {
   getPerformanceIncidentSampleTimeline(
     incidentNumber: string
   ): Promise<PerformanceIncidentSampleTimeline>;
+  getSlowRequests(
+    namespace: string | null,
+    incidentLimit?: number,
+    samplesPerIncident?: number
+  ): Promise<SlowRequestsResult>;
+  getDeployMarkers(timeframe?: TimeframeEnum, limit?: number): Promise<DeployMarker[]>;
+  getMetrics(
+    metricName: string,
+    namespace: string,
+    timeframe?: TimeframeEnum,
+    limit?: number
+  ): Promise<MetricsResult>;
+  getPerformanceSamples(actionName: string, limit?: number): Promise<PerformanceSamplesResult>;
+  getMetricsTimeseries(
+    metricName: string,
+    namespace: string,
+    timeframe?: TimeframeEnum
+  ): Promise<TimeseriesResult>;
 }
 
 // Implementation using GraphQL API
@@ -169,5 +207,44 @@ export class AppsignalClient implements IAppsignalClient {
     incidentNumber: string
   ): Promise<PerformanceIncidentSampleTimeline> {
     return getPerformanceIncidentSampleTimeline(this.graphqlClient, this.appId, incidentNumber);
+  }
+
+  async getSlowRequests(
+    namespace: string | null = null,
+    incidentLimit = 5,
+    samplesPerIncident = 3
+  ): Promise<SlowRequestsResult> {
+    return getSlowRequests(
+      this.graphqlClient,
+      this.appId,
+      namespace,
+      incidentLimit,
+      samplesPerIncident
+    );
+  }
+
+  async getDeployMarkers(timeframe: TimeframeEnum = 'R7D', limit = 10): Promise<DeployMarker[]> {
+    return getDeployMarkers(this.graphqlClient, this.appId, timeframe, limit);
+  }
+
+  async getMetrics(
+    metricName: string,
+    namespace: string,
+    timeframe: TimeframeEnum = 'R24H',
+    limit = 30
+  ): Promise<MetricsResult> {
+    return getMetrics(this.graphqlClient, this.appId, metricName, namespace, timeframe, limit);
+  }
+
+  async getPerformanceSamples(actionName: string, limit = 10): Promise<PerformanceSamplesResult> {
+    return getPerformanceSamples(this.graphqlClient, this.appId, actionName, limit);
+  }
+
+  async getMetricsTimeseries(
+    metricName: string,
+    namespace: string,
+    timeframe: TimeframeEnum = 'R1H'
+  ): Promise<TimeseriesResult> {
+    return getMetricsTimeseries(this.graphqlClient, this.appId, metricName, namespace, timeframe);
   }
 }
