@@ -153,7 +153,10 @@ export function createIntegrationMockAppsignalClient(
     async searchLogs(
       query: string,
       limit = 100,
-      severities?: Array<'debug' | 'info' | 'warn' | 'error' | 'fatal'>
+      severities?: Array<'debug' | 'info' | 'warn' | 'error' | 'fatal'>,
+      _start?: string,
+      _end?: string,
+      _verbose?: boolean
     ): Promise<LogSearchResult> {
       // Check for error scenarios
       if (mockData.errorScenarios?.searchLogs?.[query]) {
@@ -208,6 +211,7 @@ export function createIntegrationMockAppsignalClient(
         queryWindow: 3600,
         lines,
         formattedSummary,
+        truncationApplied: false,
       };
     },
 
