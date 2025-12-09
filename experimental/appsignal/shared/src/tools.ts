@@ -15,6 +15,11 @@ import { getPerformanceIncidentsTool } from './tools/get-performance-incidents.j
 import { getPerformanceIncidentTool } from './tools/get-performance-incident.js';
 import { getPerformanceIncidentSampleTool } from './tools/get-performance-incident-sample.js';
 import { getPerformanceIncidentSampleTimelineTool } from './tools/get-performance-incident-sample-timeline.js';
+import { getSlowRequestsTool } from './tools/get-slow-requests.js';
+import { getDeployMarkersTool } from './tools/get-deploy-markers.js';
+import { getMetricsTool } from './tools/get-metrics.js';
+import { getPerformanceSamplesTool } from './tools/get-performance-samples.js';
+import { getMetricsTimeseriesTool } from './tools/get-metrics-timeseries.js';
 
 export type ClientFactory = () => IAppsignalClient;
 
@@ -41,6 +46,11 @@ export function createRegisterTools(clientFactory: ClientFactory) {
       getPerformanceIncident?: RegisteredTool;
       getPerformanceIncidentSample?: RegisteredTool;
       getPerformanceIncidentSampleTimeline?: RegisteredTool;
+      getSlowRequests?: RegisteredTool;
+      getDeployMarkers?: RegisteredTool;
+      getMetrics?: RegisteredTool;
+      getPerformanceSamples?: RegisteredTool;
+      getMetricsTimeseries?: RegisteredTool;
       [key: string]: RegisteredTool | undefined;
     } = {};
 
@@ -63,6 +73,11 @@ export function createRegisterTools(clientFactory: ClientFactory) {
       if (mainTools.getPerformanceIncidentSample) mainTools.getPerformanceIncidentSample.enable();
       if (mainTools.getPerformanceIncidentSampleTimeline)
         mainTools.getPerformanceIncidentSampleTimeline.enable();
+      if (mainTools.getSlowRequests) mainTools.getSlowRequests.enable();
+      if (mainTools.getDeployMarkers) mainTools.getDeployMarkers.enable();
+      if (mainTools.getMetrics) mainTools.getMetrics.enable();
+      if (mainTools.getPerformanceSamples) mainTools.getPerformanceSamples.enable();
+      if (mainTools.getMetricsTimeseries) mainTools.getMetricsTimeseries.enable();
 
       // Switch from select_app_id to change_app_id
       if (selectAppTool) {
@@ -131,6 +146,11 @@ export function createRegisterTools(clientFactory: ClientFactory) {
         def: getPerformanceIncidentSampleTimelineTool(server, clientFactory),
         key: 'getPerformanceIncidentSampleTimeline',
       },
+      { def: getSlowRequestsTool(server, clientFactory), key: 'getSlowRequests' },
+      { def: getDeployMarkersTool(server, clientFactory), key: 'getDeployMarkers' },
+      { def: getMetricsTool(server, clientFactory), key: 'getMetrics' },
+      { def: getPerformanceSamplesTool(server, clientFactory), key: 'getPerformanceSamples' },
+      { def: getMetricsTimeseriesTool(server, clientFactory), key: 'getMetricsTimeseries' },
     ];
 
     toolDefs.forEach(({ def, key }) => {
@@ -163,6 +183,11 @@ export function createRegisterTools(clientFactory: ClientFactory) {
       if (mainTools.getPerformanceIncidentSample) mainTools.getPerformanceIncidentSample.disable();
       if (mainTools.getPerformanceIncidentSampleTimeline)
         mainTools.getPerformanceIncidentSampleTimeline.disable();
+      if (mainTools.getSlowRequests) mainTools.getSlowRequests.disable();
+      if (mainTools.getDeployMarkers) mainTools.getDeployMarkers.disable();
+      if (mainTools.getMetrics) mainTools.getMetrics.disable();
+      if (mainTools.getPerformanceSamples) mainTools.getPerformanceSamples.disable();
+      if (mainTools.getMetricsTimeseries) mainTools.getMetricsTimeseries.disable();
     } else {
       // App ID already set - show change_app_id, hide select_app_id
       if (selectAppTool) selectAppTool.disable();

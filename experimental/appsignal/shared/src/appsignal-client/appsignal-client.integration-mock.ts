@@ -9,6 +9,12 @@ import type {
   PerformanceIncident,
   PerformanceIncidentSample,
   PerformanceIncidentSampleTimeline,
+  SlowRequestsResult,
+  DeployMarker,
+  TimeframeEnum,
+  MetricsResult,
+  PerformanceSamplesResult,
+  TimeseriesResult,
 } from './appsignal-client.js';
 
 export interface MockData {
@@ -492,6 +498,154 @@ export function createIntegrationMockAppsignalClient(
         };
       }
       throw new Error(`No sample found for performance incident with number ${incidentNumber}`);
+    },
+
+    async getSlowRequests(
+      namespace: string | null = null,
+      _incidentLimit = 5,
+      samplesPerIncident = 3
+    ): Promise<SlowRequestsResult> {
+      // Return mock slow requests data
+      return {
+        incidents: [
+          {
+            number: 42,
+            actionNames: ['UsersController#show'],
+            mean: 1234.5,
+            count: 523,
+            hasNPlusOne: true,
+            namespace: namespace || 'web',
+            samples: Array(Math.min(samplesPerIncident, 3))
+              .fill(null)
+              .map((_, idx) => ({
+                id: `sample-${idx + 1}`,
+                time: new Date().toISOString(),
+                action: 'UsersController#show',
+                duration: 2500 + idx * 100,
+                queueDuration: 10,
+                hasNPlusOne: true,
+                params: '{"id":"456"}',
+                overview: [
+                  { key: 'method', value: 'GET' },
+                  { key: 'path', value: '/users/456' },
+                  { key: 'format', value: 'html' },
+                ],
+                groupDurations: [
+                  { key: 'active_record', value: 1800 },
+                  { key: 'action_view', value: 650 },
+                  { key: 'action_controller', value: 50 },
+                ],
+              })),
+          },
+        ],
+      };
+    },
+
+    async getDeployMarkers(
+      _timeframe: TimeframeEnum = 'R7D',
+      _limit = 10
+    ): Promise<DeployMarker[]> {
+      return [
+        {
+          id: 'deploy-1',
+          revision: 'abc123def456',
+          shortRevision: 'abc123d',
+          createdAt: new Date(Date.now() - 86400000).toISOString(),
+          user: 'deployer@example.com',
+          exceptionCount: 5,
+        },
+        {
+          id: 'deploy-2',
+          revision: 'def456ghi789',
+          shortRevision: 'def456g',
+          createdAt: new Date(Date.now() - 172800000).toISOString(),
+          user: 'deployer@example.com',
+          exceptionCount: 2,
+        },
+      ];
+    },
+
+    async getMetrics(
+      metricName: string,
+      namespace: string,
+      _timeframe: TimeframeEnum = 'R24H',
+      _limit = 100
+    ): Promise<MetricsResult> {
+      return {
+        start: new Date(Date.now() - 86400000).toISOString(),
+        end: new Date().toISOString(),
+        total: 100,
+        rows: [
+          {
+            id: 'metric-1',
+            name: metricName,
+            tags: [
+              { key: 'namespace', value: namespace },
+              { key: 'host', value: 'web-1' },
+            ],
+            fields: [
+              { key: 'mean', value: 123.45 },
+              { key: 'count', value: 1000 },
+            ],
+          },
+        ],
+      };
+    },
+
+    async getPerformanceSamples(actionName: string, limit = 10): Promise<PerformanceSamplesResult> {
+      return {
+        incidentNumber: 42,
+        actionNames: [actionName],
+        mean: 1234.5,
+        samples: Array(Math.min(limit, 3))
+          .fill(null)
+          .map((_, idx) => ({
+            id: `sample-${idx + 1}`,
+            time: new Date().toISOString(),
+            action: 'UsersController#show',
+            duration: 2500 + idx * 100,
+            queueDuration: 10,
+            hasNPlusOne: true,
+            params: '{"id":"456"}',
+            overview: [
+              { key: 'method', value: 'GET' },
+              { key: 'path', value: '/users/456' },
+            ],
+            groupDurations: [
+              { key: 'active_record', value: 1800 },
+              { key: 'action_view', value: 650 },
+            ],
+          })),
+      };
+    },
+
+    async getMetricsTimeseries(
+      metricName: string,
+      namespace: string,
+      _timeframe: TimeframeEnum = 'R1H'
+    ): Promise<TimeseriesResult> {
+      const now = Date.now();
+      return {
+        resolution: '1m',
+        start: new Date(now - 3600000).toISOString(),
+        end: new Date(now).toISOString(),
+        keys: [
+          {
+            name: metricName,
+            fields: ['mean', 'p95'],
+            tags: [{ key: 'namespace', value: namespace }],
+          },
+        ],
+        points: Array(60)
+          .fill(null)
+          .map((_, idx) => ({
+            timestamp: now - (60 - idx) * 60000,
+            values: [
+              { key: 'mean', value: 100 + Math.random() * 50 },
+              { key: 'p95', value: 150 + Math.random() * 100 },
+            ],
+          })),
+      };
     },
   };
 

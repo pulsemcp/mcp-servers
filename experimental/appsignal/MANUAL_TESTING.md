@@ -62,27 +62,45 @@ The tests will:
 
 ## Latest Test Results
 
-**Test Date:** 2025-09-08 15:54 PDT  
-**Branch:** tadasant/setup-packages-for-mcp-registry  
-**Commit:** 38c0ba3  
-**Tested By:** Claude  
-**Environment:** Build verification only - no API key available
+**Test Date:** 2025-12-09 11:52 PST
+**Branch:** tadasant/appsignal-new-tools
+**Commit:** d8654cb
+**Tested By:** Claude
+**Environment:** macOS, Node.js, Real AppSignal API
 
 ### Test Results
 
-**Type:** Build verification only
-**Status:** ✅ Build successful
+**Type:** Full manual testing with real API
+**Status:** ✅ All 16 tests passed (6 test files)
+
+**Test Duration:** 65.96s
 
 **Details:**
 
-- Successfully built shared module
-- Successfully built local module with integration tests
-- TypeScript compilation completed without errors
-- Package ready for version bump
+New Tools Test Results:
 
-**Note:** Full manual testing with API key was not performed. This is a metadata-only change (adding mcpName field) that does not affect functionality.
+- ✅ get_performance_samples: Working - retrieved 5 samples for McpServersController#index
+- ✅ get_metrics: Working - returned mean (1347.69ms), P95 (2744.90ms), count (29497) for 24h
+- ✅ get_metrics_timeseries: Working - 59 MINUTELY data points with mean and P95 values
+- ✅ get_deploy_markers: Working - no markers in last 7 days (expected for test app)
+- ✅ get_slow_requests: Working - found 3 slow endpoints with samples and timing breakdowns
 
-- Performance incident data available in production app (pulsemcp)
-- Empty states array correctly defaults to OPEN state
+Existing Tools:
 
-**Summary:** All manual tests passed successfully. The AppSignal MCP server is working correctly with all features functional.
+- ✅ App selection and switching
+- ✅ Performance incidents list (4 OPEN, 254 total)
+- ✅ Log search with various parameter combinations
+- ✅ Error handling for non-existent incidents
+- ✅ State filtering (OPEN/CLOSED/WIP)
+- ✅ Pagination parameters
+
+**Sample Output from get_slow_requests:**
+
+```
+Slowest endpoints:
+  1. McpServersController#index - Mean: 1352.15ms, Count: 1855466, Has N+1: true
+  2. McpServersController#show - Mean: 581.02ms, Count: 6967348, Has N+1: true
+  3. PagesController#home - Mean: 638.71ms, Count: 1204355, Has N+1: false
+```
+
+**Summary:** All 5 new tools are working correctly with the real AppSignal API. The tools provide granular performance data including samples, timing breakdowns, metrics aggregations, and time-series data for performance investigation.
