@@ -1,6 +1,9 @@
 import { gql } from 'graphql-request';
 import type { GraphQLClient } from 'graphql-request';
 
+// Default truncation limit for log messages
+const DEFAULT_TRUNCATION_LIMIT = 500;
+
 export interface LogSearchResult {
   queryWindow: number;
   lines: Array<{
@@ -13,6 +16,8 @@ export interface LogSearchResult {
   }>;
   // For LLM optimization, we can add a formatted summary
   formattedSummary?: string;
+  // Indicates if truncation was applied to any messages
+  truncationApplied?: boolean;
 }
 
 interface SearchLogsResponse {
@@ -44,7 +49,8 @@ export async function searchLogs(
   limit = 100,
   severities?: Array<'debug' | 'info' | 'warn' | 'error' | 'fatal'>,
   start?: string,
-  end?: string
+  end?: string,
+  verbose = false
 ): Promise<LogSearchResult> {
   // NOTE: AppSignal GraphQL API limitation - we have to query all apps and filter
   // This can cause 500 errors with large datasets. Future improvement would be
@@ -101,11 +107,32 @@ export async function searchLogs(
     throw new Error(`App with ID ${appId} not found`);
   }
 
-  const lines = targetApp.logs.lines || [];
+  const rawLines = targetApp.logs.lines || [];
   const queryWindow = targetApp.logs.queryWindow;
 
+  // Apply truncation to log messages unless verbose mode is enabled
+  let truncationApplied = false;
+  const lines = rawLines.map((line) => {
+    if (!verbose && line.message.length > DEFAULT_TRUNCATION_LIMIT) {
+      truncationApplied = true;
+      return {
+        ...line,
+        message: `${line.message.slice(0, DEFAULT_TRUNCATION_LIMIT)}... [truncated, use verbose:true for full content]`,
+      };
+    }
+    return line;
+  });
+
   // Create a formatted summary for LLM optimization
-  let formattedSummary = `Found ${lines.length} log entries within ${queryWindow}s window.\n\n`;
+  let formattedSummary = `Found ${lines.length} log entries within ${queryWindow}s window.`;
+  if (truncationApplied) {
+    formattedSummary += ' (some messages truncated)';
+  }
+  if (verbose && lines.length > 20) {
+    formattedSummary +=
+      '\n⚠️ Verbose mode enabled with many results. Consider reducing limit to avoid context overflow.';
+  }
+  formattedSummary += '\n\n';
 
   if (lines.length > 0) {
     // Group logs by severity for a concise overview
@@ -143,5 +170,6 @@ export async function searchLogs(
     queryWindow,
     lines,
     formattedSummary,
+    truncationApplied,
   };
 }

@@ -11,6 +11,8 @@ const PARAM_DESCRIPTIONS = {
   severities: 'Filter by severity levels. If not specified, returns logs of all severities',
   start: 'Start time for the search window in ISO 8601 format (e.g., "2024-01-15T00:00:00Z")',
   end: 'End time for the search window in ISO 8601 format (e.g., "2024-01-15T23:59:59Z")',
+  verbose:
+    'Return full untruncated log messages (default: false). When false, messages over 500 characters are truncated to prevent LLM context overflow. Set to true when you need complete log content, but consider reducing limit to avoid context issues.',
 } as const;
 
 export function searchLogsTool(_server: McpServer, clientFactory: () => IAppsignalClient) {
@@ -23,6 +25,7 @@ export function searchLogsTool(_server: McpServer, clientFactory: () => IAppsign
       .describe(PARAM_DESCRIPTIONS.severities),
     start: z.string().optional().describe(PARAM_DESCRIPTIONS.start),
     end: z.string().optional().describe(PARAM_DESCRIPTIONS.end),
+    verbose: z.boolean().default(false).describe(PARAM_DESCRIPTIONS.verbose),
   };
 
   const SearchLogsSchema = z.object(SearchLogsShape);
@@ -82,7 +85,7 @@ Use cases:
 - Filtering logs by severity to focus on critical issues`,
     inputSchema: SearchLogsShape,
     handler: async (args: unknown) => {
-      const { query, limit, severities, start, end } = SearchLogsSchema.parse(args);
+      const { query, limit, severities, start, end, verbose } = SearchLogsSchema.parse(args);
       const appId = getEffectiveAppId();
       if (!appId) {
         return {
@@ -97,7 +100,7 @@ Use cases:
 
       try {
         const client = clientFactory();
-        const logs = await client.searchLogs(query, limit, severities, start, end);
+        const logs = await client.searchLogs(query, limit, severities, start, end, verbose);
 
         return {
           content: [
