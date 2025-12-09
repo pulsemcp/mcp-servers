@@ -7,9 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2025-12-09
+
 ### Added
 
-- New `get_performance_samples` tool for retrieving multiple recent samples for a performance incident. Unlike `get_performance_incident_sample` which returns only one sample, this tool returns up to N samples (default 10) with detailed request info including path, params, and timing breakdown by component (active_record, action_view, etc.).
+- New `get_performance_samples` tool for retrieving multiple recent samples for a controller action. Returns up to N samples (default 10) with detailed request info including path, params, and timing breakdown by component (active_record, action_view, etc.).
 - New `get_metrics` tool for retrieving aggregated metrics like mean response time, P95, and request counts. Supports filtering by metric name, namespace, timeframe, and limit.
 - New `get_metrics_timeseries` tool for retrieving time-series metrics data showing how metrics change over time. Returns data points with timestamps for both MEAN (average) and P95 (95th percentile) values, useful for identifying performance trends, spikes, or degradations.
 - New `get_deploy_markers` tool for retrieving recent deployment markers to correlate performance issues and incidents with code deployments. Includes revision information, deployment time, deployer username, and exception counts per deployment.
