@@ -45,6 +45,15 @@ interface GetSlowRequestsResponse {
   };
 }
 
+// Validate input to prevent GraphQL injection
+function validateSafeName(value: string, fieldName: string): void {
+  if (!/^[a-zA-Z0-9_-]+$/.test(value)) {
+    throw new Error(
+      `Invalid ${fieldName}: only alphanumeric characters, underscores, and hyphens are allowed`
+    );
+  }
+}
+
 export async function getSlowRequests(
   graphqlClient: GraphQLClient,
   appId: string,
@@ -52,6 +61,11 @@ export async function getSlowRequests(
   incidentLimit = 5,
   samplesPerIncident = 3
 ): Promise<SlowRequestsResult> {
+  // Validate namespace if provided to prevent GraphQL injection
+  if (namespace) {
+    validateSafeName(namespace, 'namespace');
+  }
+
   // Build namespace filter if provided
   const namespaceFilter = namespace ? `namespaces: ["${namespace}"]` : '';
 

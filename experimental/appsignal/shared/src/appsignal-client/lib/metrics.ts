@@ -48,6 +48,15 @@ interface GetMetricsResponse {
   };
 }
 
+// Validate input to prevent GraphQL injection
+function validateSafeName(value: string, fieldName: string): void {
+  if (!/^[a-zA-Z0-9_-]+$/.test(value)) {
+    throw new Error(
+      `Invalid ${fieldName}: only alphanumeric characters, underscores, and hyphens are allowed`
+    );
+  }
+}
+
 export async function getMetrics(
   graphqlClient: GraphQLClient,
   appId: string,
@@ -56,6 +65,10 @@ export async function getMetrics(
   timeframe: TimeframeEnum = 'R24H',
   limit = 30
 ): Promise<MetricsResult> {
+  // Validate inputs to prevent GraphQL injection
+  validateSafeName(metricName, 'metric name');
+  validateSafeName(namespace, 'namespace');
+
   // NOTE: Unlike logs, the metrics API supports direct app(id:) queries
   // We construct the query dynamically to embed metricName and namespace
   // since these need to be part of the query structure, not variables

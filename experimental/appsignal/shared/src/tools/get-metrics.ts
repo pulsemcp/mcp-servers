@@ -90,7 +90,7 @@ Use cases:
 - Capacity planning based on request volumes`,
     inputSchema: GetMetricsShape,
     handler: async (args: unknown) => {
-      const { metricName, namespace, timeframe, limit } = GetMetricsSchema.parse(args);
+      const { metricName, namespace, timeframe, limit } = GetMetricsSchema.parse(args || {});
       const appId = getEffectiveAppId();
       if (!appId) {
         return {

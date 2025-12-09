@@ -36,6 +36,15 @@ interface GetTimeseriesResponse {
   };
 }
 
+// Validate input to prevent GraphQL injection
+function validateSafeName(value: string, fieldName: string): void {
+  if (!/^[a-zA-Z0-9_-]+$/.test(value)) {
+    throw new Error(
+      `Invalid ${fieldName}: only alphanumeric characters, underscores, and hyphens are allowed`
+    );
+  }
+}
+
 export async function getMetricsTimeseries(
   graphqlClient: GraphQLClient,
   appId: string,
@@ -43,6 +52,10 @@ export async function getMetricsTimeseries(
   namespace: string,
   timeframe: TimeframeEnum = 'R1H'
 ): Promise<TimeseriesResult> {
+  // Validate inputs to prevent GraphQL injection
+  validateSafeName(metricName, 'metric name');
+  validateSafeName(namespace, 'namespace');
+
   const query = gql`
     query GetTimeseries($appId: String!, $timeframe: TimeframeEnum!) {
       app(id: $appId) {

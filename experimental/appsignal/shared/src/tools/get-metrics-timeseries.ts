@@ -108,7 +108,7 @@ The resolution field indicates the time interval between data points (e.g., "60s
           content: [
             {
               type: 'text' as const,
-              text: `Error retrieving metrics timeseries: ${error instanceof Error ? error.message : 'Unknown error'}`,
+              text: `Error fetching metrics timeseries: ${error instanceof Error ? error.message : 'Unknown error'}`,
             },
           ],
         };
