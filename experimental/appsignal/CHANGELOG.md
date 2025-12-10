@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.1] - 2025-12-09
+
 ### Added
 
 - New `verbose` parameter for `search_logs` tool (default: `false`). When `false`, log messages over 500 characters are automatically truncated with `... [truncated, use verbose:true for full content]` suffix to prevent LLM context overflow. Set `verbose: true` to retrieve full untruncated content.
