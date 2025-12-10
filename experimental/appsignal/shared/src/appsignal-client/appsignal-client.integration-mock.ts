@@ -651,6 +651,27 @@ export function createIntegrationMockAppsignalClient(
           })),
       };
     },
+
+    async executeCustomQuery(
+      _query: string,
+      _variables?: Record<string, unknown>
+    ): Promise<unknown> {
+      // Return mock data for custom queries
+      return {
+        viewer: {
+          organizations: [
+            {
+              apps: [
+                {
+                  id: 'test-app-id',
+                  name: 'Test App',
+                },
+              ],
+            },
+          ],
+        },
+      };
+    },
   };
 
   return client;

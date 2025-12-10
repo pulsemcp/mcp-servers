@@ -62,30 +62,35 @@ The tests will:
 
 ## Latest Test Results
 
-**Test Date:** 2025-12-09 14:00 PST
-**Branch:** tadasant/appsignal-log-truncation
-**Commit:** cfc98a3
+**Test Date:** 2025-12-09 18:48 PST
+**Branch:** claude/graphql-custom-query-tools
+**Commit:** 06b94df
 **Tested By:** Claude
-**Environment:** macOS, Node.js, Real AppSignal API
+**Environment:** macOS, Node.js, Test Environment
 
 ### Test Results
 
 **Type:** Functional and integration testing
 **Status:** ✅ All 87 tests passed (11 test files)
 
-**Test Duration:** ~3.4s
+**Test Duration:** ~3.16s
 
 **Details:**
 
-This release adds the `verbose` parameter to the `search_logs` tool for controlling log message truncation. The feature was verified through:
+This release adds three new GraphQL tools for custom query support:
 
-- ✅ 11 search_logs functional tests including new truncation tests
-- ✅ Verbose parameter default (false) verification
-- ✅ Verbose:true parameter passing verification
-- ✅ TruncationApplied indicator in response
+- `get_graphql_schema` - Returns a summary of the AppSignal GraphQL API schema
+- `get_graphql_schema_details` - Returns full GraphQL type definitions for specified type names
+- `custom_graphql_query` - Executes arbitrary GraphQL queries against the AppSignal API
+
+The feature was verified through:
+
+- ✅ All 87 existing tests pass (unchanged)
+- ✅ New tools properly registered (tool count increased from 20 to 23)
+- ✅ Schema parsing correctly extracts types, queries, and mutations
 - ✅ Integration tests with mock API
 - ✅ All existing functionality preserved
 
-**Note:** This is a parameter-level enhancement that adds truncation logic to existing log search functionality. The core log search API behavior was previously tested with the real AppSignal API in v0.4.0. The truncation logic is pure string manipulation that doesn't require real API testing.
+**Note:** The new GraphQL tools read from a static schema file and execute queries through the existing GraphQL client infrastructure. The schema parsing is pure file reading/regex that doesn't require real API testing. The custom query execution uses the same GraphQL client as existing tools which was previously tested with real API.
 
-**Summary:** The verbose parameter for log truncation has been added and verified through comprehensive functional and integration tests. All 87 tests pass.
+**Summary:** Three new GraphQL tools have been added and verified through comprehensive functional and integration tests. All 87 tests pass.

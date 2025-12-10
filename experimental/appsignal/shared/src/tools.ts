@@ -20,6 +20,9 @@ import { getDeployMarkersTool } from './tools/get-deploy-markers.js';
 import { getMetricsTool } from './tools/get-metrics.js';
 import { getPerformanceSamplesTool } from './tools/get-performance-samples.js';
 import { getMetricsTimeseriesTool } from './tools/get-metrics-timeseries.js';
+import { getGraphqlSchemaTool } from './tools/get-graphql-schema.js';
+import { getGraphqlSchemaDetailsTool } from './tools/get-graphql-schema-details.js';
+import { customGraphqlQueryTool } from './tools/custom-graphql-query.js';
 
 export type ClientFactory = () => IAppsignalClient;
 
@@ -51,6 +54,7 @@ export function createRegisterTools(clientFactory: ClientFactory) {
       getMetrics?: RegisteredTool;
       getPerformanceSamples?: RegisteredTool;
       getMetricsTimeseries?: RegisteredTool;
+      customGraphqlQuery?: RegisteredTool;
       [key: string]: RegisteredTool | undefined;
     } = {};
 
@@ -78,6 +82,7 @@ export function createRegisterTools(clientFactory: ClientFactory) {
       if (mainTools.getMetrics) mainTools.getMetrics.enable();
       if (mainTools.getPerformanceSamples) mainTools.getPerformanceSamples.enable();
       if (mainTools.getMetricsTimeseries) mainTools.getMetricsTimeseries.enable();
+      if (mainTools.customGraphqlQuery) mainTools.customGraphqlQuery.enable();
 
       // Switch from select_app_id to change_app_id
       if (selectAppTool) {
@@ -87,6 +92,23 @@ export function createRegisterTools(clientFactory: ClientFactory) {
         changeAppTool.enable();
       }
     };
+
+    // Register GraphQL schema tools (always available, don't require app selection)
+    const schemaTool = getGraphqlSchemaTool(server, clientFactory);
+    server.tool(
+      schemaTool.name,
+      schemaTool.description,
+      schemaTool.inputSchema,
+      schemaTool.handler
+    );
+
+    const schemaDetailsTool = getGraphqlSchemaDetailsTool(server, clientFactory);
+    server.tool(
+      schemaDetailsTool.name,
+      schemaDetailsTool.description,
+      schemaDetailsTool.inputSchema,
+      schemaDetailsTool.handler
+    );
 
     // Check if app ID is locked (configured via env var)
     const locked = isAppIdLocked();
@@ -151,6 +173,7 @@ export function createRegisterTools(clientFactory: ClientFactory) {
       { def: getMetricsTool(server, clientFactory), key: 'getMetrics' },
       { def: getPerformanceSamplesTool(server, clientFactory), key: 'getPerformanceSamples' },
       { def: getMetricsTimeseriesTool(server, clientFactory), key: 'getMetricsTimeseries' },
+      { def: customGraphqlQueryTool(server, clientFactory), key: 'customGraphqlQuery' },
     ];
 
     toolDefs.forEach(({ def, key }) => {
@@ -188,6 +211,7 @@ export function createRegisterTools(clientFactory: ClientFactory) {
       if (mainTools.getMetrics) mainTools.getMetrics.disable();
       if (mainTools.getPerformanceSamples) mainTools.getPerformanceSamples.disable();
       if (mainTools.getMetricsTimeseries) mainTools.getMetricsTimeseries.disable();
+      if (mainTools.customGraphqlQuery) mainTools.customGraphqlQuery.disable();
     } else {
       // App ID already set - show change_app_id, hide select_app_id
       if (selectAppTool) selectAppTool.disable();

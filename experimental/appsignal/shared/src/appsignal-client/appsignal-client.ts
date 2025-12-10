@@ -118,6 +118,7 @@ export interface IAppsignalClient {
     namespace: string,
     timeframe?: TimeframeEnum
   ): Promise<TimeseriesResult>;
+  executeCustomQuery(query: string, variables?: Record<string, unknown>): Promise<unknown>;
 }
 
 // Implementation using GraphQL API
@@ -257,5 +258,9 @@ export class AppsignalClient implements IAppsignalClient {
     timeframe: TimeframeEnum = 'R1H'
   ): Promise<TimeseriesResult> {
     return getMetricsTimeseries(this.graphqlClient, this.appId, metricName, namespace, timeframe);
+  }
+
+  async executeCustomQuery(query: string, variables?: Record<string, unknown>): Promise<unknown> {
+    return this.graphqlClient.request(query, variables);
   }
 }

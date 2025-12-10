@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0] - 2025-12-09
+
+### Added
+
+- New `get_graphql_schema` tool that returns a summary of the AppSignal GraphQL API schema, including available Query fields, Mutation fields, and all type definitions. Use this as a discovery tool before constructing custom queries.
+- New `get_graphql_schema_details` tool that returns full GraphQL type definitions for specified type names. Use after `get_graphql_schema` to see detailed field information for types needed in custom queries.
+- New `custom_graphql_query` tool that executes arbitrary GraphQL queries against the AppSignal API. This is a powerful escape hatch for accessing data not available through the specialized tools.
+- Added `schema.graphql` file containing the complete AppSignal GraphQL schema in SDL format (introspected December 9, 2025).
+
 ## [0.4.1] - 2025-12-09
 
 ### Added
