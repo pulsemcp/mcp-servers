@@ -1,0 +1,4970 @@
+# AppSignal GraphQL Schema
+# Introspected from the AppSignal API on December 9, 2025
+# This schema is used for reference when constructing custom GraphQL queries.
+
+"""
+Requires that exactly one field must be supplied and that field must not be `null`.
+"""
+directive @oneOf on INPUT_OBJECT
+
+type ActionLink {
+  sourceAction: ActionLinkAction!
+  sourceApp: App!
+  targetAction: ActionLinkAction!
+  targetApp: App!
+}
+
+type ActionLinkAction {
+  id: String!
+  name: String!
+  namespace: String!
+}
+
+"""
+A list of fields to return.
+
+Example:
+
+"fields": [
+  {"field": COUNT, "aggregate": SUM},
+  {"field": P90,   "aggregate", AVG}
+]
+"""
+input AggregateField {
+  """Name of field to return (MEAN, COUNT, P90, P95 and gauge)"""
+  field: MetricFieldEnum!
+
+  """Aggregation to perform (SUM, AVG, MIN and MAX)"""
+  aggregate: MetricAggregateEnum!
+}
+
+"""Aggregation of metrics grouped by tags"""
+type AggregationList {
+  """End time of performed metric query"""
+  end: DateTime!
+
+  """Rows returned for aggregated list"""
+  rows: [AggregationListRow!]
+
+  """Start time of performed metric query"""
+  start: DateTime!
+
+  """Total keys found for query, only populated when $offset is 0"""
+  total: Int
+}
+
+"""Row with grouped aggregation list data"""
+type AggregationListRow {
+  """List of fields with value for metric"""
+  fields: [KeyFloatValue!]
+
+  """ID of metric"""
+  id: String!
+
+  """Name of metric"""
+  name: String!
+
+  """List of tags for metric"""
+  tags: [KeyStringValue!]
+}
+
+"""Alert triggered by metrics monitor"""
+type Alert {
+  """
+  Time at which the alert was closed after cooling down. Is 'null' if still open.
+  """
+  closedAt: DateTime
+
+  """(optional) Reason alert was closed"""
+  closedReason: String
+
+  """
+  Time at which an alert was created. The condition for the parent Trigger was met at this time.
+  """
+  createdAt: DateTime
+
+  """Time at which the first notification was sent."""
+  firstNotifiedAt: DateTime
+
+  """Triggered Alert ID"""
+  id: String!
+
+  """Time at which the alert was last processed."""
+  lastProcessedAt: DateTime
+
+  """Last value that triggered the alert"""
+  lastValue: Float!
+
+  """Mean value during alert"""
+  mean: Float!
+
+  """(optional) Message"""
+  message: String
+
+  """Digest of metric that triggered the alert"""
+  metricDigest: String!
+
+  """Time at which the alert was opened after warming up."""
+  openedAt: DateTime
+
+  """Peak value during alert"""
+  peakValue: Float!
+
+  """
+  Time at which the alert was resolved before cooling down. Can be reopened if occurred during cooldown. Is 'null' if still open or warming up.
+  """
+  resolvedAt: DateTime
+
+  """The current alert state"""
+  state: AlertStateEnum!
+
+  """List of state changes"""
+  stateChanges: [AlertStateChange!]
+
+  """List of tags"""
+  tags: [KeyStringValue!]
+
+  """End of timeframe for alert data"""
+  timeframeEndAt: DateTime
+
+  """Start of timeframe for alert data"""
+  timeframeStartAt: DateTime
+
+  """Alert trigger that triggered this alert"""
+  trigger: Trigger!
+
+  """Version of alert"""
+  version: Int!
+}
+
+"""State changes for an alert"""
+type AlertStateChange {
+  """The current alert state"""
+  state: AlertStateEnum!
+
+  """Time the state was changed"""
+  time: DateTime
+
+  """Last value that triggered the alert"""
+  value: Float
+}
+
+enum AlertStateEnum {
+  OPEN
+  CLOSED
+  WARMUP
+  COOLDOWN
+  UNTRACKED
+  ARCHIVED
+}
+
+"""Anomaly incident in which a problem or exception was reported"""
+type AnomalyIncident implements IncidentInterface {
+  """Alert that was triggered by this incident"""
+  alert(id: String!): Alert
+
+  """Alert state of this incident"""
+  alertState: AlertStateEnum
+
+  """Alerts that were triggered by this incident"""
+  alerts(state: AlertStateEnum, limit: Int): [Alert]
+
+  """App in which the incident occurred"""
+  app: App
+
+  """Users assigned to investigate or resolve this incident"""
+  assignees: [User]
+
+  """Total count of all recorded requests/jobs for this incident"""
+  count: Int!
+
+  """Create time of incident"""
+  createdAt: DateTime
+
+  """Incident description, or steps to solve the issue"""
+  description: String
+
+  """All incident digests"""
+  digests: [String!]
+
+  """Incident ID"""
+  id: String!
+
+  """List of available integration types"""
+  integrations: [Integration]
+
+  """Time incident last occurred at"""
+  lastOccurredAt: DateTime
+
+  """Logbook for incident"""
+  logbook: Logbook!
+
+  """Notification frequency for incident"""
+  notificationFrequency: IncidentNotificationFrequencyEnum
+
+  """Incident number"""
+  number: Int!
+
+  """Severity of incident (critical/high/low/etc.)"""
+  severity: IncidentSeverityEnum
+
+  """State of incident (open/closed)"""
+  state: IncidentStateEnum
+
+  """Tags of metric that matches this triggered incident"""
+  tags: [KeyStringValue!]
+
+  """Trigger that triggered this incident"""
+  trigger: Trigger
+
+  """Last update time of incident"""
+  updatedAt: DateTime
+}
+
+"""An AppSignal app"""
+type App {
+  """Linked apps through distributed tracing"""
+  actionLinks(
+    """Start date for time query"""
+    start: DateTime
+
+    """End date for time query"""
+    end: DateTime
+
+    """Timeframe for time query"""
+    timeframe: TimeframeEnum
+
+    """Source app id"""
+    sourceAppId: String!
+
+    """Source app id"""
+    targetAppId: String!
+  ): [ActionLink]
+
+  """List triggered alerts"""
+  alerts(
+    """Start time for time query."""
+    start: DateTime
+
+    """End time for time query."""
+    end: DateTime
+    limit: Int
+    offset: Int
+    state: AlertStateEnum
+  ): [Alert]
+  anomalyIncidents(
+    state: IncidentStateEnum
+
+    """Default is unlimited"""
+    limit: Int
+
+    """Offset to begin returning documents"""
+    offset: Int
+
+    """Field to order incidents by"""
+    order: IncidentOrderEnum
+  ): [AnomalyIncident]
+
+  """Backtrace for the given ID"""
+  backtrace(
+    """Backtrace ID"""
+    id: String!
+
+    """Revision, used to generate git links"""
+    revision: String!
+  ): [BacktraceLine]
+
+  """Check-in-related queries"""
+  checkIns: CheckIns
+  createdAt: DateTime
+  dashboard(id: String!): Dashboard
+  dashboards: [Dashboard]
+
+  """List of deploy markers"""
+  deployMarkers(
+    """Start time for time query."""
+    start: DateTime
+
+    """End time for time query."""
+    end: DateTime
+
+    """Timeframe for time query"""
+    timeframe: TimeframeEnum
+    limit: Int
+    offset: Int
+    dummy: Boolean = true
+
+    """Only return markers for these revisions"""
+    revisions: [String]
+
+    """Only return markers for this namespace"""
+    namespaces: [String]
+  ): [DeployMarker]
+
+  """App environment"""
+  environment: String!
+
+  """TEMPORARY, DO NOT USE. Event"""
+  event(
+    """Event digest"""
+    digest: String!
+  ): Event
+
+  """
+  TEMPORARY, DO NOT USE. (top) list of event group metrics (e.g. active_record)
+  """
+  eventGroupList(
+    """Start date for time query"""
+    start: DateTime
+
+    """End date for time query"""
+    end: DateTime
+
+    """Timeframe for time query"""
+    timeframe: TimeframeEnum
+
+    """Event group to filter on"""
+    groups: [String!]!
+  ): AggregationList
+  exceptionIncidents(
+    namespaces: [String]
+    marker: String
+
+    """Query to filter incidents"""
+    query: String
+    state: IncidentStateEnum
+
+    """Default is unlimited"""
+    limit: Int
+
+    """Offset to begin returning documents"""
+    offset: Int
+
+    """Field to order incidents by"""
+    order: IncidentOrderEnum
+    actionName: String
+  ): [ExceptionIncident]
+
+  """Front-End API key"""
+  frontendApiKey: String!
+
+  """Getting started items"""
+  gettingStartedItems: [Item]!
+
+  """App ID"""
+  id: String!
+  incident(
+    """Incident number"""
+    incidentNumber: Int!
+  ): Incident
+
+  """List of all incidents (Exception and Performance)"""
+  incidents(
+    namespaces: [String]
+    marker: String
+    state: IncidentStateEnum
+    actionName: String
+
+    """Default is unlimited"""
+    limit: Int
+
+    """Offset to begin returning documents"""
+    offset: Int
+
+    """Field to order incidents by"""
+    order: IncidentOrderEnum
+  ): [Incident]
+
+  """Linked apps through distributed tracing"""
+  links(
+    """Start date for time query"""
+    start: DateTime
+
+    """End date for time query"""
+    end: DateTime
+
+    """Timeframe for time query"""
+    timeframe: TimeframeEnum
+  ): [Link]
+  logIncidents(
+    state: IncidentStateEnum
+
+    """Default is unlimited"""
+    limit: Int
+
+    """Offset to begin returning documents"""
+    offset: Int
+
+    """Field to order incidents by"""
+    order: IncidentOrderEnum
+  ): [LogIncident]
+  logView(id: String!): View
+  logViews: [View]
+
+  """Log-related queries"""
+  logs: Logs
+
+  """Single marker of any type, by id"""
+  marker(id: String!): MarkerUnion
+
+  """List of all marker types (Deploy/Notification/Custom)"""
+  markers(
+    """Start time for time query."""
+    start: DateTime
+
+    """End time for time query."""
+    end: DateTime
+
+    """Default is 50."""
+    limit: Int
+
+    """Default is 0."""
+    offset: Int
+  ): [MarkerUnion]
+
+  """Metrics for app, (timelines/lists/gauges)"""
+  metrics: Metrics
+
+  """App name"""
+  name: String!
+
+  """List of namespaces, filtered by optional filter"""
+  namespaces(
+    """Only return these namespaces"""
+    namespaces: [String]
+  ): [Namespace]
+
+  """List of available 3rd party notifiers"""
+  notifiers: [Notifier]
+
+  """Organization that this app belongs to."""
+  organization: Organization
+  paginatedAnomalyIncidents(
+    state: IncidentStateEnum
+
+    """Default is unlimited"""
+    limit: Int
+
+    """Offset to begin returning documents"""
+    offset: Int
+
+    """Field to order incidents by"""
+    order: IncidentOrderEnum
+  ): PaginatedAnomalyIncidents
+  paginatedExceptionIncidents(
+    namespaces: [String]
+    marker: String
+
+    """Query to filter incidents"""
+    query: String
+    state: IncidentStateEnum
+
+    """Default is unlimited"""
+    limit: Int
+
+    """Offset to begin returning documents"""
+    offset: Int
+
+    """Field to order incidents by"""
+    order: IncidentOrderEnum
+    actionName: String
+    exceptionQuery: ExceptionIncidentQueryEnum
+
+    """Start time for time query."""
+    start: DateTime
+
+    """End time for time query."""
+    end: DateTime
+
+    """Timeframe for time query"""
+    timeframe: TimeframeEnum
+  ): PaginatedExceptionIncidents
+  paginatedLogIncidents(
+    state: IncidentStateEnum
+
+    """Default is unlimited"""
+    limit: Int
+
+    """Offset to begin returning documents"""
+    offset: Int
+
+    """Field to order incidents by"""
+    order: IncidentOrderEnum
+  ): PaginatedLogIncidents
+  paginatedPerformanceIncidents(
+    namespaces: [String]
+    marker: String
+
+    """Query to filter incidents"""
+    query: String
+    state: IncidentStateEnum
+
+    """Default is unlimited"""
+    limit: Int
+
+    """Offset to begin returning documents"""
+    offset: Int
+
+    """Field to order incidents by"""
+    order: IncidentOrderEnum
+    actionName: String
+  ): PaginatedPerformanceIncidents
+  performanceIncidents(
+    namespaces: [String]
+    marker: String
+
+    """Query to filter incidents"""
+    query: String
+    state: IncidentStateEnum
+
+    """Default is unlimited"""
+    limit: Int
+
+    """Offset to begin returning documents"""
+    offset: Int
+
+    """Field to order incidents by"""
+    order: IncidentOrderEnum
+    actionName: String
+  ): [PerformanceIncident]
+
+  """List of seen platforms"""
+  platforms: [String!]
+
+  """Push API key (Heroku apps only) (internal use only, might be removed)"""
+  pushApiKey: String!
+
+  """Span-related queries"""
+  spans: Spans
+
+  """App status"""
+  status: String!
+
+  """
+  List of time detective data points that occurred within a specific time.
+  """
+  timeDetectiveErrorDataPoints(
+    """Start time for time query."""
+    start: DateTime!
+
+    """End time for time query."""
+    end: DateTime!
+    namespaces: [String]!
+  ): [TimeDetectiveDataPoint]
+
+  """
+  List of time detective data points that occurred within a specific time.
+  """
+  timeDetectivePerformanceDataPoints(
+    """Start time for time query."""
+    start: DateTime!
+
+    """End time for time query."""
+    end: DateTime!
+    namespaces: [String]!
+  ): [TimeDetectiveDataPoint]
+
+  """Find a single trigger."""
+  trigger(id: String): Trigger
+
+  """List alert triggers for apps."""
+  triggers(
+    """Filter triggers by tags"""
+    tags: [KeyStringValueInput!]
+  ): [Trigger]
+  updatedAt: DateTime
+  uptimeMonitor(id: String): UptimeMonitor
+
+  """List of available uptime monitor regions"""
+  uptimeMonitorRegions: [UptimeMonitorRegion]
+
+  """List of uptime monitors for app."""
+  uptimeMonitors: [UptimeMonitor]
+  urlTemplates: [UrlTemplate]
+  users: [User]
+  viewerPinned: Boolean
+}
+
+type Asana implements IntegrationInterface {
+  """Form data fields for Asana integration"""
+  formData: AsanaFormData
+
+  """Integration title"""
+  name: String!
+
+  """Set to true if the integration needs a migration"""
+  needsMigration: Boolean!
+
+  """List of Asana tasks"""
+  tasks: [AsanaTask]!
+}
+
+type AsanaFormData implements IntegrationFormDataInterface {
+  """Body"""
+  body: String!
+
+  """Title"""
+  title: String!
+}
+
+type AsanaTask implements IntegrationResultInterface {
+  """Description provided by the AppSignal user"""
+  description: String!
+
+  """Integration result ID"""
+  id: String!
+
+  """Remote ID of integration (e.g. GitHub issue number or Asana ID"""
+  remoteId: String!
+
+  """Title provided by the AppSignal user"""
+  title: String!
+
+  """Url to remote integration"""
+  url: String!
+}
+
+type AssigneeChange implements ItemInterface & ViaInterface {
+  """Added assignees"""
+  addedAssignees: [User!]!
+
+  """User that created the change. If empty, the user was deleted."""
+  author: User
+
+  """Time at which the change was created."""
+  createdAt: DateTime!
+
+  """Current assignees"""
+  currentAssignees: [User!]!
+
+  """Change ID."""
+  id: String!
+
+  """Previous assignees"""
+  previousAssignees: [User!]!
+
+  """Removed assignees"""
+  removedAssignees: [User!]!
+
+  """Time at which the change was updated last."""
+  updatedAt: DateTime!
+
+  """The integration that was used to make the change"""
+  via: String
+}
+
+type BacktraceLine {
+  """Backtrace surrounding code"""
+  code: [Code]
+
+  """Backtrace column number"""
+  column: String
+
+  """Backtrace line parse error"""
+  error: Error
+
+  """Backtrace line number"""
+  line: String
+
+  """Backtrace method"""
+  method: String
+
+  """Original (unparsed) line"""
+  original: String
+
+  """Backtrace path"""
+  path: String
+
+  """Backtrace type, (line/app)"""
+  type: String
+
+  """Backtrace url"""
+  url: String
+}
+
+type BillingCycleUsage {
+  """Apm limit for this billing period"""
+  apmLimit: Float
+
+  """Apm usage for this billing period"""
+  apmUsage: Float
+
+  """Days left in this billing period"""
+  daysLeft: Int
+
+  """Log limit in bytes for this billing period"""
+  logLimit: Float
+
+  """Log usage in bytes for this billing period"""
+  logUsage: Float
+}
+
+"""Breadcrumb belonging to a sample"""
+type Breadcrumb {
+  """Action performed to create breadcrumb (e.g The user clicked a button)"""
+  action: String!
+
+  """Category (e.g. Network)"""
+  category: String!
+
+  """Log message"""
+  message: String
+
+  """Metadata recorded when breadcrumb was created."""
+  metadata: [KeyStringValue]
+
+  """Time of breadcrumb creation"""
+  time: DateTime
+}
+
+type BulkTimeseries {
+  """List if series used for metrics"""
+  series: [Series!]!
+
+  """List of values to plot"""
+  values: [Values!]!
+}
+
+type CheckIn {
+  """Actual duration of the run in milliseconds"""
+  actualDuration: Int
+
+  """Actual finish time"""
+  actualEnd: DateTime
+
+  """Actual start time"""
+  actualStart: DateTime
+
+  """Expected duration of the run in milliseconds"""
+  expectedDuration: Int
+
+  """Expected finish time"""
+  expectedEnd: DateTime
+
+  """Expected start time"""
+  expectedStart: DateTime!
+
+  """ID of the run"""
+  id: String!
+
+  """State of the check-in"""
+  state: CheckInStateEnum!
+
+  """updates"""
+  updates: [CheckInUpdate!]
+}
+
+enum CheckInKindEnum {
+  START
+  FINISH
+}
+
+enum CheckInStateEnum {
+  NEW
+  STARTED
+  FINISHED
+  MISSED
+  LATE
+  UNEXPECTED
+}
+
+type CheckInTrigger {
+  checkIn(
+    """Id for run"""
+    id: String!
+  ): CheckIn
+  checkIns(
+    """Filter by state"""
+    states: [CheckInStateEnum!]
+
+    """Offset for runs query"""
+    offset: Int
+
+    """Limit for runs query"""
+    limit: Int
+  ): [CheckIn!]
+
+  """Description of the heartbeat trigger"""
+  description: String
+
+  """ID of the check-in trigger"""
+  id: String!
+
+  """Identifier of the check-in trigger"""
+  identifier: String!
+
+  """Kind of check-in trigger"""
+  kind: CheckInTriggerKindEnum!
+
+  """Last error time, if present"""
+  lastErrorAt: DateTime
+
+  """State of the last received check-in"""
+  lastState: CheckInStateEnum!
+
+  """Last success time, if present"""
+  lastSuccessAt: DateTime
+
+  """Last update time, if present"""
+  lastUpdateAt: DateTime
+
+  """Logbook for trigger"""
+  logbook: Logbook!
+  notifiers: [Notifier!]
+
+  """Cron syntax"""
+  syntax: String
+
+  """Timezone"""
+  timezone: String!
+
+  """Wait time in minutes"""
+  waitTimeMinutes: Int!
+}
+
+enum CheckInTriggerKindEnum {
+  CRON
+  HEARTBEAT
+}
+
+type CheckInUpdate {
+  """Digest provided by the user"""
+  digest: String
+
+  """Check-in kind"""
+  kind: CheckInKindEnum!
+
+  """Timestamp of check-in"""
+  timestamp: DateTime!
+}
+
+type CheckIns {
+  """Check-in trigger by id"""
+  trigger(
+    """Check-in trigger id"""
+    id: String
+  ): CheckInTrigger
+
+  """List of check-in triggers"""
+  triggers: [CheckInTrigger!]
+}
+
+type Code {
+  """Code line number"""
+  line: String
+
+  """Code source"""
+  source: String
+}
+
+"""Autogenerated return type of CreateCsvExport."""
+type CreateCsvExportPayload {
+  success: Boolean!
+}
+
+"""Autogenerated return type of CreateCsvExportUrl."""
+type CreateCsvExportUrlPayload {
+  error: String
+  filename: String
+  success: Boolean!
+  url: String
+}
+
+input CreateStatusPageInput {
+  """Title of the status page"""
+  title: String!
+
+  """Description for the status page"""
+  description: String
+
+  """Uptime monitors associated to the status page"""
+  uptimeMonitorIds: [String!]
+
+  """Minimum threshold for considering a service down"""
+  threshold: Int
+
+  """Hostname for the status page"""
+  hostname: String!
+}
+
+"""CSV Export"""
+type CsvExport {
+  completedAt: DateTime
+  createdAt: DateTime!
+  errorMessage: String
+
+  """Type of the export"""
+  exportType: String!
+
+  """Filename"""
+  fileName: String
+
+  """Size of the file"""
+  fileSize: String
+
+  """Download url for the file"""
+  fileUrl: String
+
+  """CSV Export ID"""
+  id: String!
+
+  """Organization .for this export"""
+  organization: Organization
+
+  """User who requested the export. If empty, the user was deleted."""
+  requestedBy: User
+
+  """Number of exported rows"""
+  rowCount: Int
+
+  """Site for the export"""
+  site: App
+
+  """Status of the export"""
+  status: CsvExportStateEnum!
+}
+
+enum CsvExportStateEnum {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+"""Marker with custom information"""
+type CustomMarker implements MarkerInterface {
+  """UTC ISO8601 Datetime of deploy"""
+  createdAt: DateTime!
+
+  """(Emoji) Icon for custom marker"""
+  icon: String!
+
+  """Marker ID"""
+  id: String!
+
+  """Message for custom marker"""
+  message: String!
+}
+
+"""A dashboard containing multiple visualization components"""
+type Dashboard {
+  """When the dashboard was first created"""
+  createdAt: DateTime!
+
+  """Optional description of the dashboard's purpose"""
+  description: String
+
+  """Unique identifier for the dashboard"""
+  id: String!
+
+  """
+  System-generated key for AUTO dashboards, used to identify specific magic dashboard types
+  """
+  key: String
+
+  """Source of the dashboard - user created or system generated"""
+  source: DashboardSourceEnum!
+
+  """Title of the dashboard"""
+  title: String!
+
+  """When the dashboard was last modified"""
+  updatedAt: DateTime!
+
+  """Single visualization component from the dashboard, selected by ID"""
+  visual(
+    """ID of the visual to retrieve"""
+    id: String!
+  ): Visual
+
+  """List of visualization components displayed on the dashboard"""
+  visuals: [Visual!]!
+}
+
+enum DashboardDisplayEnum {
+  LINE
+  AREA
+  AREA_RELATIVE
+}
+
+input DashboardGraphInput {
+  title: String!
+  description: String
+
+  """
+  Customizable name for the line.
+  Support replacements for the metric names, fields and tags with %name%,
+  %field% and %tag% (where tag is the tag name you've specified).
+  
+  Defaults to %name%
+  """
+  lineLabel: String
+  format: String
+  display: DashboardDisplayEnum
+  formatInput: String
+  drawNullAsZero: Boolean
+  minYAxis: Float
+
+  """List of tags for the graph"""
+  tags: [TagInput!]
+  metrics: [DashboardGraphMetricInput!]
+}
+
+input DashboardGraphMetricInput {
+  name: String!
+  fields: [MetricFieldEnum!]!
+
+  """List of tags for the metric"""
+  tags: [TagInput!]
+}
+
+"""
+Dashboard source. User created or automatically added by the system.
+When AppSignal detects certain metrics, language or library specific metrics, it will add
+a "magic" dashboard for it and related metrics.
+"""
+enum DashboardSourceEnum {
+  """Manually user created dashboards."""
+  USER
+
+  """
+  Automatically created dashboards when certain app metrics are detected.
+  """
+  AUTO
+}
+
+input DataInput {
+  x: DateTime!
+  y: Float
+  y0: Float
+  y1: Float
+}
+
+"""UTC DateTime in ISO8601 format"""
+scalar DateTime
+
+"""Marker with deploy information"""
+type DeployMarker implements MarkerInterface {
+  """UTC ISO8601 Datetime of deploy"""
+  createdAt: DateTime!
+
+  """Number of exceptions in deploy"""
+  exceptionCount: Int!
+
+  """Exception rate in deploy"""
+  exceptionRate: Float!
+
+  """Git(hub/lab) compare url"""
+  gitCompareUrl: String
+
+  """Marker ID"""
+  id: String!
+
+  """Last occurred at"""
+  lastOccurredAt: DateTime
+
+  """Time deploy was live in hours"""
+  liveFor: Int!
+
+  """Time deploy was live in words"""
+  liveForInWords: String!
+
+  """Namespace of the deploy"""
+  namespace: String
+
+  """Exceptions that first started happening in this deploy"""
+  newExceptionIncidents(
+    """Limit the number of incidents returned, defaults to 100"""
+    limit: Int
+  ): [ExceptionIncident]!
+
+  """Previous deploy"""
+  previousDeploy: DeployMarker
+
+  """(Git) Revision"""
+  revision: String
+
+  """First 8 characters of the git revision"""
+  shortRevision: String
+
+  """User that performed the deploy"""
+  user: String
+}
+
+type Error {
+  """Error class"""
+  class: String!
+
+  """Error message"""
+  message: String
+}
+
+"""Error cause for an exception sample"""
+type ErrorCause {
+  firstLine: BacktraceLine
+
+  """Error message"""
+  message: String
+
+  """Error name"""
+  name: String!
+}
+
+type Event {
+  """Digest of event"""
+  digest: String
+
+  """List of actions where this event occurred"""
+  incidents(
+    """Start date for time query"""
+    start: DateTime
+
+    """End date for time query"""
+    end: DateTime
+
+    """Timeframe for time query"""
+    timeframe: TimeframeEnum
+  ): [PerformanceIncident]
+
+  """Name of event"""
+  name: String
+
+  """Payload of event"""
+  payload: String
+
+  """Metrics timeseries data"""
+  timeseries(
+    """Start date for time query"""
+    start: DateTime
+
+    """End date for time query"""
+    end: DateTime
+
+    """Timeframe for time query"""
+    timeframe: TimeframeEnum
+  ): Timeseries
+
+  """Title of event"""
+  title: String
+}
+
+type Exception {
+  """Backtrace of the exception"""
+  backtrace: [BacktraceLine]
+
+  """Message of the exception"""
+  message: String
+
+  """Type/Name of the exception"""
+  name: String
+}
+
+"""Exception incident in which a problem or exception was reported"""
+type ExceptionIncident implements IncidentInterface & TransactionIncidentInterface {
+  """
+  All action names where incident occurred, only exception incidents can have more than one action name
+  """
+  actionNames: [String!]
+
+  """App in which the incident occurred"""
+  app: App
+
+  """Users assigned to investigate or resolve this incident"""
+  assignees: [User]
+
+  """Total count of all recorded requests/jobs for this incident"""
+  count: Int!
+
+  """Create time of incident"""
+  createdAt: DateTime
+
+  """Incident description, or steps to solve the issue"""
+  description: String
+
+  """All incident digests"""
+  digests: [String!]
+
+  """Error grouping strategy"""
+  errorGroupingStrategy: IncidentErrorGroupingEnum!
+
+  """Exception message"""
+  exceptionMessage: String
+
+  """Name of exception, usually the error class"""
+  exceptionName: String
+
+  """First (application) backtrace line"""
+  firstBacktraceLine: String
+
+  """First deploy this error was seen in"""
+  firstMarker: DeployMarker
+
+  """
+  Indicates wether this incidents has any samples in the retention of an account
+  """
+  hasSamplesInRetention: Boolean!
+
+  """Incident ID"""
+  id: String!
+
+  """List of available integration types"""
+  integrations: [Integration]
+
+  """Time incident last occurred at"""
+  lastOccurredAt: DateTime
+
+  """Time of last recorded sample"""
+  lastSampleOccurredAt: DateTime
+
+  """Logbook for incident"""
+  logbook: Logbook!
+
+  """Metadata distributions"""
+  metadataDistributions: [MetadataDistributions]!
+
+  """Namespace the incident occurred in."""
+  namespace: String
+
+  """Notification frequency for incident"""
+  notificationFrequency: IncidentNotificationFrequencyEnum
+
+  """Notification threshold (nth in hour/day) for incident"""
+  notificationThreshold: Int
+
+  """Incident number"""
+  number: Int!
+
+  """
+  Total duration of all recorded requests/jobs for this incident and revision/marker
+  """
+  perMarkerCount(marker: String): Int
+
+  """Sample for incident, returns first sample that matches the arguments"""
+  sample(
+    """Sample id, last sample is returned if empty"""
+    id: String
+    timestamp: String
+
+    """
+    Array of two DateTime values. The first value is the start of the
+    range. The second value the end of the range. A sample between
+    these two dates will be searched for.
+    """
+    timerange: [DateTime]
+  ): ExceptionSample
+
+  """Samples for incident"""
+  samples(
+    start: DateTime
+    end: DateTime
+
+    """Default is 200"""
+    limit: Int
+  ): [ExceptionSample]
+
+  """
+  Count of applied scope (e.g. selected revisions, or timeframe), defaults to total count
+  """
+  scopedCount: Int
+
+  """Severity of incident (critical/high/low/etc.)"""
+  severity: IncidentSeverityEnum
+
+  """Source of exception, can be 'sample' or 'span'"""
+  source: IncidentSourceEnum
+
+  """State of incident (open/closed)"""
+  state: IncidentStateEnum
+
+  """Last update time of incident"""
+  updatedAt: DateTime
+}
+
+enum ExceptionIncidentQueryEnum {
+  MOST_RECENT
+  RECEIVING_DATA
+  SPECIFIC_DEPLOY
+  TIMEFRAME
+}
+
+"""Exception sample containing relevant sample data"""
+type ExceptionSample implements SampleInterface {
+  """The action name on which a sample was reported"""
+  action: String
+
+  """App of sample"""
+  app: App!
+
+  """Internal app id of the sample"""
+  appId: String!
+
+  """Root span attributes"""
+  attributes: [KeyStringValue]
+
+  """Breadcrumbs that lead up to the exception"""
+  breadcrumbs: [Breadcrumb]
+
+  """Time at which the sample was reported"""
+  createdAt: DateTime
+
+  """Custom data"""
+  customData: String
+  duration: Float
+
+  """Environment data"""
+  environment: [KeyStringValue]
+
+  """Errors that lead to the sample error"""
+  errorCauses: [ErrorCause]
+
+  """Exception that occurred on the sample"""
+  exception: Exception!
+
+  """First deploy this error was seen in"""
+  firstMarker: DeployMarker
+
+  """Internal id of the sample"""
+  id: String!
+
+  """Incident of sample"""
+  incident: Incident
+
+  """Internal id of the incident this sample is linked to"""
+  incidentId: String!
+
+  """Namespace the sample occurred in"""
+  namespace: String
+
+  """Original ID of sample, if replaced by better sample"""
+  originalId: String
+
+  """
+  ID/timerange of original request, is present when sample differs from requested sample
+  """
+  originallyRequested: SampleOriginalRequestEnum
+
+  """Overview of sample, contains request id, hostname and tags"""
+  overview: [KeyStringValue!]
+
+  """Sample params"""
+  params: String
+
+  """Time spent in a queue before processing"""
+  queueDuration: Int
+
+  """Revision of sample"""
+  revision: String
+
+  """Session data"""
+  sessionData: String
+
+  """Time when sample occurred"""
+  time: DateTime
+
+  """Sample type version"""
+  version: Int
+}
+
+"""A log export"""
+type Export {
+  """Export will be Gzipped when enabled"""
+  compressed: Boolean!
+
+  """Export jobs for this export"""
+  exportJobs(
+    """
+    Limit the amount of export jobs returned with a default of 10, and a maximum of 100
+    """
+    limit: Int
+  ): [ExportJob!]!
+
+  """Export ID"""
+  id: String!
+  lastRequestedAt: DateTime
+
+  """Amount of export jobs that are in the `failed` state"""
+  retryCount: Int
+
+  """Type of the source"""
+  s3AccessKey: String!
+
+  """Name of this source"""
+  s3Url: String!
+
+  """
+  Export will not run when state is Failed, and will run when state is Running or Retrying
+  """
+  state: ExportStateEnum!
+}
+
+"""A log export job"""
+type ExportJob {
+  """Export was compressed with Gzip"""
+  compressed: Boolean!
+
+  """Duration of the export job in milliseconds"""
+  duration: Float
+
+  """Type of the source"""
+  filename: String!
+
+  """Export ID"""
+  id: String!
+
+  """Amount of times this job has been retried"""
+  retryCount: Int!
+  state: ExportJobStateEnum!
+  timestampFrom: DateTime!
+  timestampTo: DateTime!
+
+  """Updates for this job"""
+  updates: [ExportJobUpdate!]!
+
+  """Type of the source"""
+  url: String!
+}
+
+enum ExportJobStateEnum {
+  REQUESTED
+  STARTED
+  COMPLETED
+  FAILED
+}
+
+"""A log export job update"""
+type ExportJobUpdate {
+  """Optional message from the update"""
+  message: String
+
+  """Result (state) of the update"""
+  state: ExportJobStateEnum!
+
+  """Time the update happened"""
+  timestamp: DateTime!
+}
+
+enum ExportStateEnum {
+  RUNNING
+  RETRYING
+  FAILED
+}
+
+"""
+A list of fields to return.
+
+Example:
+
+"fields": [
+  {"field": COUNT},
+  {"field": P90}
+]
+"""
+input Field {
+  """Name of field to return (MEAN, COUNT, P90, P95 and GAUGE)"""
+  field: MetricFieldEnum!
+}
+
+enum GettingStartedItemStateEnum {
+  COMPLETED
+  SKIPPED
+}
+
+type GitHub implements IntegrationInterface {
+  """Form data fields for GitHub integration"""
+  formData: GitHubFormData
+
+  """GitHub issues"""
+  issues: [GitHubIssue]
+
+  """Integration title"""
+  name: String!
+
+  """Set to true if the integration needs a migration"""
+  needsMigration: Boolean!
+}
+
+type GitHubFormData implements IntegrationFormDataInterface {
+  """Body"""
+  body: String!
+
+  """Title"""
+  title: String!
+}
+
+type GitHubIssue implements IntegrationResultInterface {
+  """Description provided by the AppSignal user"""
+  description: String!
+
+  """Integration result ID"""
+  id: String!
+
+  """Remote ID of integration (e.g. GitHub issue number or Asana ID"""
+  remoteId: String!
+
+  """Title provided by the AppSignal user"""
+  title: String!
+
+  """Url to remote integration"""
+  url: String!
+}
+
+type GitLab implements IntegrationInterface {
+  """Form data fields for GitLab integration"""
+  formData: GitLabFormData
+
+  """GitLab issues"""
+  issues: [GitLabIssue]
+
+  """Integration title"""
+  name: String!
+
+  """Set to true if the integration needs a migration"""
+  needsMigration: Boolean!
+}
+
+type GitLabFormData implements IntegrationFormDataInterface {
+  """Body"""
+  body: String!
+
+  """Title"""
+  title: String!
+}
+
+type GitLabIssue implements IntegrationResultInterface {
+  """Description provided by the AppSignal user"""
+  description: String!
+
+  """Integration result ID"""
+  id: String!
+
+  """Remote ID of integration (e.g. GitHub issue number or Asana ID"""
+  remoteId: String!
+
+  """Title provided by the AppSignal user"""
+  title: String!
+
+  """Url to remote integration"""
+  url: String!
+}
+
+"""A hosted collector for log collection"""
+type HostedCollector {
+  """When the hosted collector was created"""
+  createdAt: DateTime!
+
+  """Hosted collector ID"""
+  id: String!
+
+  """Whether this is the default hosted collector for the account"""
+  isDefault: Boolean!
+
+  """Region where the hosted collector is deployed"""
+  region: String!
+
+  """Current status of the hosted collector"""
+  status: HostedCollectorStatusEnum!
+
+  """Subdomain for the hosted collector"""
+  subdomain: String!
+
+  """When the hosted collector was last updated"""
+  updatedAt: DateTime!
+
+  """Full URL for the hosted collector"""
+  url: String!
+}
+
+"""Status of a hosted collector"""
+enum HostedCollectorStatusEnum {
+  """Hosted collector has not been provisioned yet"""
+  unprovisioned
+
+  """Hosted collector is being provisioned"""
+  provisioning
+
+  """Hosted collector is provisioned and ready to use"""
+  provisioned
+
+  """Hosted collector is being deprovisioned"""
+  deprovisioning
+
+  """Hosted collector has been deprovisioned"""
+  deprovisioned
+
+  """Hosted collector provisioning failed"""
+  failed
+}
+
+"""Incident objects. Can be performance, exception or log incident"""
+union Incident = AnomalyIncident | ExceptionIncident | LogIncident | PerformanceIncident
+
+"""Error grouping of incident."""
+enum IncidentErrorGroupingEnum {
+  """
+  Error grouping using the incident type (performance/error) and the namespace/action/error combination.
+  """
+  TYPE_AND_ACTION
+
+  """Error grouping using the backtrace line."""
+  TYPE_AND_RELEVANT_BACKTRACE_LINE
+}
+
+"""An AppSignal incident"""
+interface IncidentInterface {
+  """App in which the incident occurred"""
+  app: App
+
+  """Users assigned to investigate or resolve this incident"""
+  assignees: [User]
+
+  """Total count of all recorded requests/jobs for this incident"""
+  count: Int!
+
+  """Create time of incident"""
+  createdAt: DateTime
+
+  """Incident description, or steps to solve the issue"""
+  description: String
+
+  """All incident digests"""
+  digests: [String!]
+
+  """Incident ID"""
+  id: String!
+
+  """List of available integration types"""
+  integrations: [Integration]
+
+  """Time incident last occurred at"""
+  lastOccurredAt: DateTime
+
+  """Logbook for incident"""
+  logbook: Logbook!
+
+  """Notification frequency for incident"""
+  notificationFrequency: IncidentNotificationFrequencyEnum
+
+  """Incident number"""
+  number: Int!
+
+  """Severity of incident (critical/high/low/etc.)"""
+  severity: IncidentSeverityEnum
+
+  """State of incident (open/closed)"""
+  state: IncidentStateEnum
+
+  """Last update time of incident"""
+  updatedAt: DateTime
+}
+
+enum IncidentNotificationFrequencyEnum {
+  ALWAYS
+  NEVER
+  FIRST_IN_DEPLOY
+  FIRST_AFTER_CLOSE
+  NTH_IN_HOUR
+  NTH_IN_DAY
+}
+
+enum IncidentOrderEnum {
+  ID
+  LAST
+}
+
+enum IncidentSeverityEnum {
+  UNTRIAGED
+  CRITICAL
+  HIGH
+  LOW
+  NONE
+  INFORMATIONAL
+}
+
+"""The source of an incident (what generated this incident)"""
+enum IncidentSourceEnum {
+  """This incident was generated by our sampling system"""
+  SAMPLE
+
+  """This incident was extracted from an OpenTelemetry span"""
+  SPAN
+}
+
+enum IncidentStateEnum {
+  OPEN
+  CLOSED
+  WIP
+}
+
+"""Integration objects such as GitHub, GitLab, Trello etc."""
+union Integration = Asana | GitHub | GitLab | Jira | Linear | Phabricator | PivotalTracker | Shortcut | Trello
+
+type IntegrationCreate implements ItemInterface & ViaInterface {
+  """User that created the change. If empty, the user was deleted."""
+  author: User
+
+  """Time at which the change was created."""
+  createdAt: DateTime!
+
+  """Change ID."""
+  id: String!
+
+  """Integration name"""
+  name: String
+
+  """Time at which the change was updated last."""
+  updatedAt: DateTime!
+
+  """Url to integration"""
+  url: String!
+
+  """The integration that was used to make the change"""
+  via: String
+}
+
+"""Default form data fields"""
+interface IntegrationFormDataInterface {
+  """Body"""
+  body: String!
+
+  """Title"""
+  title: String!
+}
+
+"""An AppSignal incident integration"""
+interface IntegrationInterface {
+  """Integration title"""
+  name: String!
+
+  """Set to true if the integration needs a migration"""
+  needsMigration: Boolean!
+}
+
+"""An AppSignal incident integration result"""
+interface IntegrationResultInterface {
+  """Description provided by the AppSignal user"""
+  description: String!
+
+  """Integration result ID"""
+  id: String!
+
+  """Remote ID of integration (e.g. GitHub issue number or Asana ID"""
+  remoteId: String!
+
+  """Title provided by the AppSignal user"""
+  title: String!
+
+  """Url to remote integration"""
+  url: String!
+}
+
+"""A 'getting started' item"""
+type Item {
+  """User that created the change. If empty, the user was deleted."""
+  author: User
+
+  """Time at which the item was created."""
+  createdAt: DateTime!
+
+  """Item ID."""
+  id: String!
+
+  """Name of the getting started item"""
+  name: String!
+
+  """State of the getting started item"""
+  state: GettingStartedItemStateEnum!
+
+  """Time at which the item was updated last."""
+  updatedAt: DateTime!
+}
+
+"""An AppSignal logbook item"""
+interface ItemInterface {
+  """User that created the change. If empty, the user was deleted."""
+  author: User
+
+  """Time at which the change was created."""
+  createdAt: DateTime!
+
+  """Change ID."""
+  id: String!
+
+  """Time at which the change was updated last."""
+  updatedAt: DateTime!
+}
+
+"""Represents untyped JSON"""
+scalar JSON
+
+type Jira implements IntegrationInterface {
+  """Form data fields for Jira integration"""
+  formData: JiraFormData
+
+  """Jira issues"""
+  issues: [JiraIssue]
+
+  """Integration title"""
+  name: String!
+
+  """Set to true if the integration needs a migration"""
+  needsMigration: Boolean!
+}
+
+type JiraFormData implements IntegrationFormDataInterface {
+  """Body"""
+  body: String!
+
+  """Title"""
+  title: String!
+}
+
+type JiraIssue implements IntegrationResultInterface {
+  """Description provided by the AppSignal user"""
+  description: String!
+
+  """Integration result ID"""
+  id: String!
+
+  """Remote ID of integration (e.g. GitHub issue number or Asana ID"""
+  remoteId: String!
+
+  """Title provided by the AppSignal user"""
+  title: String!
+
+  """Url to remote integration"""
+  url: String!
+}
+
+"""Holds a key and a float value, used for metrics"""
+type KeyFloatValue {
+  """Key of keyvalue"""
+  key: String!
+
+  """Float value of keyvalue"""
+  value: Float
+}
+
+"""Holds a key and a value, used for metrics"""
+type KeyStringValue {
+  """Key of key value"""
+  key: String!
+
+  """Value of key value"""
+  value: String
+}
+
+"""Key value hash GraphQL datastructure. Hash<String, String>"""
+input KeyStringValueInput {
+  key: String
+  value: String
+}
+
+type Linear implements IntegrationInterface {
+  """Form data fields for Linear integration"""
+  formData: LinearFormData
+
+  """Linear issues"""
+  issues: [LinearIssue]
+
+  """Integration title"""
+  name: String!
+
+  """Set to true if the integration needs a migration"""
+  needsMigration: Boolean!
+}
+
+type LinearFormData implements IntegrationFormDataInterface {
+  """Body"""
+  body: String!
+
+  """Title"""
+  title: String!
+}
+
+type LinearIssue implements IntegrationResultInterface {
+  """Description provided by the AppSignal user"""
+  description: String!
+
+  """Integration result ID"""
+  id: String!
+
+  """Remote ID of integration (e.g. GitHub issue number or Asana ID"""
+  remoteId: String!
+
+  """Title provided by the AppSignal user"""
+  title: String!
+
+  """Url to remote integration"""
+  url: String!
+}
+
+type Link {
+  sourceApp: App!
+  targetApp: App!
+}
+
+"""Log incident in which a problem or exception was reported"""
+type LogIncident implements IncidentInterface {
+  """App in which the incident occurred"""
+  app: App
+
+  """Users assigned to investigate or resolve this incident"""
+  assignees: [User]
+
+  """Total count of all recorded requests/jobs for this incident"""
+  count: Int!
+
+  """Create time of incident"""
+  createdAt: DateTime
+
+  """Incident description, or steps to solve the issue"""
+  description: String
+
+  """All incident digests"""
+  digests: [String!]
+
+  """Incident ID"""
+  id: String!
+
+  """List of available integration types"""
+  integrations: [Integration]
+
+  """Time incident last occurred at"""
+  lastOccurredAt: DateTime
+
+  """Last log line for incident"""
+  logLine: LogLine
+
+  """Logbook for incident"""
+  logbook: Logbook!
+
+  """Notification frequency for incident"""
+  notificationFrequency: IncidentNotificationFrequencyEnum
+
+  """Incident number"""
+  number: Int!
+
+  """Severity of incident (critical/high/low/etc.)"""
+  severity: IncidentSeverityEnum
+
+  """State of incident (open/closed)"""
+  state: IncidentStateEnum
+
+  """Trigger that triggered this incident"""
+  trigger: LogTrigger!
+
+  """Last update time of incident"""
+  updatedAt: DateTime
+}
+
+type LogLine {
+  """Attributes for log line"""
+  attributes: [KeyStringValue!]
+
+  """Log group"""
+  group: String
+
+  """Hostname where log was recorded"""
+  hostname: String!
+
+  """Log line UUID"""
+  id: String!
+
+  """The log message"""
+  message: String!
+
+  """Severity (warn/info etc.)."""
+  severity: SeverityEnum!
+
+  """Source of the log"""
+  source: Source
+
+  """Time of log occurrence"""
+  timestamp: PreciseDateTime!
+}
+
+"""
+A log trigger. Uses query to match against log lines and creates an incident when found.
+"""
+type LogTrigger {
+  """Description provided by the user about the trigger"""
+  description: String
+
+  """Alert configuration ID."""
+  id: String!
+
+  """Linked log view."""
+  logView: View
+
+  """Trigger name."""
+  name: String!
+
+  """Incident notification option"""
+  notificationOptions: IncidentNotificationFrequencyEnum
+
+  """Incident notification duration treshold"""
+  notificationTriggerValue: Int
+  notifiers: [Notifier!]
+  previousTrigger: Trigger
+
+  """Query to perform against the log lines."""
+  query: String
+
+  """Severities"""
+  severities: [String]!
+
+  """Log source ids"""
+  sourceIds: [String]!
+
+  """Log sources"""
+  sources: [Source]!
+
+  """The user who created this Trigger."""
+  user: User
+}
+
+type Logbook {
+  """Note ID."""
+  id: String!
+  items: [LogbookItem!]!
+
+  """ID of the pinned note."""
+  pinnedNoteId: String
+}
+
+"""Logbook item objects."""
+union LogbookItem = AssigneeChange | IntegrationCreate | ManualAlertStateChange | Note | NotificationFrequencyChange | NotificationThresholdChange | NotifierResult | SeverityChange | StateChange
+
+enum LogbookableTypeEnum {
+  INCIDENT
+  HEARTBEAT
+}
+
+type Logs {
+  """Logs for this app"""
+  lines(
+    """Start date for time query"""
+    start: PreciseDateTime
+
+    """End date for time query"""
+    end: PreciseDateTime
+
+    """filter by source"""
+    sourceIds: [String!]
+
+    """filter by severity"""
+    severities: [SeverityEnum!]
+
+    """filter by query"""
+    query: String
+
+    """Limit defaults to 100, any number > 100 will be limited to 100"""
+    limit: Int
+
+    """Order, defaults to desc"""
+    order: OrderEnum
+  ): [LogLine!]
+
+  """Metrics for log metrics query"""
+  metrics(
+    """Start time for log metrics query"""
+    start: PreciseDateTime
+
+    """End time log metrics time query"""
+    end: PreciseDateTime
+
+    """filter by source id"""
+    sourceIds: [String!]
+
+    """filter by severity"""
+    severities: [SeverityEnum!]
+
+    """filter by query"""
+    query: String
+
+    """Resolution for log metrics query, defaults to Hourly"""
+    resolution: ResolutionEnum
+  ): BulkTimeseries
+
+  """Query window in seconds"""
+  queryWindow: Int!
+
+  """Log source"""
+  source(
+    """Source ID"""
+    id: String
+  ): Source
+
+  """Log sources"""
+  sources: [Source]!
+
+  """Log sources"""
+  triggers: [LogTrigger]!
+  vercelProjects: [VercelProject]!
+}
+
+type ManualAlertStateChange implements ItemInterface & ViaInterface {
+  """User that created the change. If empty, the user was deleted."""
+  author: User
+
+  """Time at which the change was created."""
+  createdAt: DateTime!
+
+  """Current state"""
+  currentState: AlertStateEnum!
+
+  """Change ID."""
+  id: String!
+
+  """Previous state"""
+  previousState: AlertStateEnum
+
+  """Time at which the change was updated last."""
+  updatedAt: DateTime!
+
+  """The integration that was used to make the change"""
+  via: String
+}
+
+"""An AppSignal marker"""
+interface MarkerInterface {
+  """UTC ISO8601 Datetime of deploy"""
+  createdAt: DateTime!
+
+  """Marker ID"""
+  id: String!
+}
+
+"""Marker objects. Can be Deploy, Notification or Custom"""
+union MarkerUnion = CustomMarker | DeployMarker | NotificationMarker
+
+type MetadataDistributions {
+  """Log line UUID"""
+  key: String!
+
+  """Time of log occurrence"""
+  total: Int!
+
+  """Time of log occurrence"""
+  unique: Int!
+}
+
+"""Fields to return in metric query"""
+enum MetricAggregateEnum {
+  """Returns maximum value of group"""
+  MAX
+
+  """Returns minimum value of group"""
+  MIN
+
+  """Returns average value of group"""
+  AVG
+
+  """Sums values of group"""
+  SUM
+
+  """Returns the first seen value of field"""
+  FIRST
+
+  """Returns the last seen value of field"""
+  LAST
+}
+
+"""
+Input to request a Metric List
+
+Example of an Aggegration input query:
+
+{
+  "name": "transaction_duration",
+  "tags": [
+    {"key": "action",    "value": "*"},
+    {"key": "namespace", "value": "b"}
+  ],
+  "fields": [{"field": COUNT, "aggregate": SUM}]
+}
+"""
+input MetricAggregation {
+  """Name of the metric to query"""
+  name: String!
+
+  """List of tags to narrow results"""
+  tags: [TagInput!]!
+
+  """List of fields and possible aggregation to return"""
+  fields: [AggregateField!]!
+}
+
+"""Fields to return in metric query"""
+enum MetricFieldEnum {
+  """Mean of measurement"""
+  MEAN
+
+  """90th percentile of measurement"""
+  P90
+
+  """95th percentile of measurement"""
+  P95
+
+  """Count of measurement/counter"""
+  COUNT
+
+  """Gauge value"""
+  GAUGE
+
+  """Counter value"""
+  COUNTER
+}
+
+"""Metric key exctracted from timeseries data."""
+type MetricKey {
+  """Digest of metric key."""
+  digest: String!
+
+  """Metric fields"""
+  fields: [MetricFieldEnum!]!
+
+  """Metric key name."""
+  name: String!
+
+  """List of tags for metric key."""
+  tags: [KeyStringValue!]
+
+  """Metric type"""
+  type: MetricTypeEnum!
+}
+
+"""
+Input to request timeseries Metric data
+
+Example of an Aggegration input query:
+
+{
+  "name": "transaction_duration",
+  "tags": [
+    {"key": "action",    "value": "*"},
+    {"key": "namespace", "value": "b"}
+  ],
+  "fields": [
+    { "field": COUNT },
+    { "field": MEAN }
+  ]
+}
+"""
+input MetricTimeseries {
+  """Name of the metric to query"""
+  name: String!
+
+  """List of tags to narrow results"""
+  tags: [TagInput!]
+
+  """List of fields and possible aggregation to return"""
+  fields: [Field!]!
+}
+
+"""Type of metric"""
+enum MetricTypeEnum {
+  GAUGE
+  MEASUREMENT
+  COUNTER
+}
+
+"""Holds different metric fields"""
+type Metrics {
+  """List of metric keys"""
+  keys(
+    """Start date for time query"""
+    start: DateTime
+
+    """End date for time query"""
+    end: DateTime
+
+    """Timeframe for time query"""
+    timeframe: TimeframeEnum
+
+    """Name of the metric to query"""
+    name: String
+
+    """List of tags to narrow results"""
+    tags: [TagInput!]
+
+    """Default is unlimited"""
+    limit: Int
+
+    """Offset to begin returning documents"""
+    offset: Int
+  ): [MetricKey!]
+
+  """(Aggregated) List of requested metrics and fields"""
+  list(
+    """Start date for time query"""
+    start: DateTime
+
+    """End date for time query"""
+    end: DateTime
+
+    """Timeframe for time query"""
+    timeframe: TimeframeEnum
+
+    """Aggregation Input query"""
+    query: [MetricAggregation]!
+
+    """Default is unlimited"""
+    limit: Int
+
+    """Offset to begin returning documents"""
+    offset: Int
+  ): AggregationList
+
+  """Metrics timeseries data"""
+  timeseries(
+    """Start date for time query"""
+    start: DateTime
+
+    """End date for time query"""
+    end: DateTime
+
+    """Timeframe for time query"""
+    timeframe: TimeframeEnum
+
+    """Aggregation Input query"""
+    query: [MetricTimeseries]
+  ): Timeseries
+}
+
+"""The mutation root of this schema."""
+type Mutation {
+  archiveAlert(
+    """ID of alert to be archived"""
+    id: String!
+    appId: String!
+  ): Boolean
+  archiveTrigger(
+    """Id of record to remove."""
+    id: String!
+    appId: String!
+  ): Trigger
+  bulkUpdateIncidents(
+    """List of ids to be updated with given state"""
+    ids: [String]!
+
+    """If ID is present, returns marker-specific metrics"""
+    marker: String
+
+    """New incident state"""
+    state: IncidentStateEnum
+
+    """New incident severity"""
+    severity: IncidentSeverityEnum
+    appId: String!
+  ): [Incident!]
+  createApp(
+    """Parent organization of the app"""
+    organizationSlug: String!
+
+    """App name"""
+    name: String!
+
+    """App environment"""
+    environment: String!
+  ): App
+  createAsanaTask(
+    """Incident number."""
+    incidentNumber: Int!
+
+    """Asana task title."""
+    title: String!
+
+    """Asana task description."""
+    description: String!
+    appId: String!
+  ): Incident
+  createCheckInTrigger(
+    """Identifier of the trigger"""
+    identifier: String!
+
+    """Cron syntax"""
+    syntax: String
+
+    """Description of the trigger"""
+    description: String
+
+    """Kind of check-in trigger"""
+    kind: CheckInTriggerKindEnum!
+
+    """Time to wait before expecting the result"""
+    waitTimeMinutes: Int!
+
+    """Timezone of the server (UTC recommended)"""
+    timezone: String
+
+    """List of notifier ids"""
+    notifierIds: [String!]
+    appId: String!
+  ): CheckInTrigger
+  createCheckInTriggerNote(
+    """Check-in trigger ID"""
+    checkInTriggerId: String!
+
+    """Content of the note"""
+    content: String!
+    appId: String!
+  ): CheckInTrigger
+  createCsvExport(type: String!, filters: JSON, appId: String!): CreateCsvExportPayload
+  createCsvExportUrl(
+    """ID of the export"""
+    exportId: String!
+
+    """Parent organization of the app"""
+    organizationSlug: String!
+  ): CreateCsvExportUrlPayload
+  createDashboard(
+    """Title of the dashboard."""
+    title: String!
+
+    """Description of the dashboard."""
+    description: String
+
+    """DEPRECATED: Use the `createVisual*` mutations instead."""
+    graphs: [DashboardGraphInput!] @deprecated(reason: "Use the `createVisual*` mutations instead.")
+    appId: String!
+  ): Dashboard
+  createGettingStartedItem(
+    """Name of the item to create."""
+    name: String!
+
+    """The state of the item (completed/skipped)"""
+    state: GettingStartedItemStateEnum!
+    appId: String!
+  ): App
+  createGithubIssue(
+    """Incident number."""
+    incidentNumber: Int!
+
+    """GitHub issue title."""
+    title: String!
+
+    """GitHub issue description."""
+    description: String!
+    appId: String!
+  ): Incident
+  createGitlabIssue(
+    """Incident number."""
+    incidentNumber: Int!
+
+    """GitLab issue title."""
+    title: String!
+
+    """GitLab issue description."""
+    description: String!
+    appId: String!
+  ): Incident
+  createHostedCollector(
+    """Organization slug where the hosted collector belongs."""
+    organizationSlug: String!
+  ): HostedCollector
+  createIncidentNote(
+    """Incident number"""
+    incidentNumber: Int!
+
+    """Content of the note"""
+    content: String!
+    appId: String!
+  ): Incident
+  createJiraIssue(
+    """Incident number."""
+    incidentNumber: Int!
+
+    """Jira issue title."""
+    title: String!
+
+    """Jira issue description."""
+    description: String!
+    appId: String!
+  ): Incident
+  createLinearIssue(
+    """Incident number."""
+    incidentNumber: Int!
+
+    """Linear issue title."""
+    title: String!
+
+    """Linear issue description."""
+    description: String!
+    appId: String!
+  ): Incident
+  createLogExport(
+    """The ID of the source to create an export for"""
+    sourceId: String!
+
+    """S3 URL (including bucket/subdirectory)"""
+    s3Url: String!
+
+    """S3 access key"""
+    s3AccessKey: String!
+
+    """S3 secret key"""
+    s3SecretKey: String!
+
+    """Compress export with Gzip"""
+    compressed: Boolean!
+    appId: String!
+  ): Export
+  createLogSource(
+    """Name of the source"""
+    name: String!
+
+    """Type of source"""
+    type: String!
+
+    """Format of source, can be plaintext, logfmt or JSON"""
+    fmt: SourceFormatEnum!
+
+    """(Vercel) project id"""
+    projectId: String
+
+    """(Vercel) integration id"""
+    integrationId: String
+
+    """If true, the log severity will be parsed from the message"""
+    parseSeverity: Boolean
+    appId: String!
+  ): Source
+  createLogTrigger(
+    """Name of the trigger"""
+    name: String!
+
+    """Log query to match against"""
+    query: String!
+
+    """Description provided by the user about the trigger."""
+    description: String
+
+    """List of source ids"""
+    sourceIds: [String!]
+
+    """List of notifier ids"""
+    notifierIds: [String!]
+
+    """List of severities"""
+    severities: [String!]
+
+    """Incident notification option"""
+    notificationOptions: IncidentNotificationFrequencyEnum
+
+    """Incident notification duration treshold"""
+    notificationTriggerValue: Int
+    appId: String!
+  ): LogTrigger
+  createLogView(
+    """Name of the view"""
+    name: String!
+
+    """Source ids to include in the view"""
+    sourceIds: [String!]
+
+    """Severities to include in the view"""
+    severities: [String!]
+
+    """Columns to include in the view"""
+    columns: [String!]
+
+    """Line height of this view"""
+    lineHeight: String
+
+    """Query to include in the view"""
+    query: String
+    appId: String!
+  ): View
+  createOrUpdateCustomMarker(
+    """Id of record, if present record will be updated"""
+    id: String
+
+    """Emoji representing the marker icon"""
+    icon: String!
+
+    """Message for the custom marker"""
+    message: String
+
+    """DateTime of marker"""
+    createdAt: DateTime
+    appId: String!
+  ): CustomMarker
+  createPhabricatorIssue(
+    """Incident number."""
+    incidentNumber: Int!
+
+    """Phabricator issue title."""
+    title: String!
+
+    """Phabricator issue description."""
+    description: String!
+
+    """Phabricator issue priority."""
+    priority: String!
+    appId: String!
+  ): Incident
+  createPivotalTrackerStory(
+    """Incident number."""
+    incidentNumber: Int!
+
+    """Pivotal Tracker story title."""
+    title: String!
+
+    """Pivotal Tracker story description."""
+    description: String!
+    appId: String!
+  ): Incident
+  createSavedVisual(resolution: String!, valueFormat: String, valueInput: String, title: String!, series: [SerieInput]!, appId: String!): SavedVisual
+  createShortcutStory(
+    """Incident number."""
+    incidentNumber: Int!
+
+    """Shortcut story title."""
+    title: String!
+
+    """Shortcut story description."""
+    description: String!
+    appId: String!
+  ): Incident
+  createStatusPage(
+    """Organization slug where the status pages belongs."""
+    organizationSlug: String!
+
+    """Status page to create"""
+    statusPage: CreateStatusPageInput!
+  ): StatusPage
+  createStatusPageUpdate(
+    """Organization slug where the status pages belongs."""
+    organizationSlug: String!
+
+    """Id of the status page this update belongs to"""
+    statusPageId: String!
+
+    """Status upage update"""
+    statusPageUpdate: StatusPageUpdateInput!
+  ): StatusPageUpdate
+  createTrelloCard(
+    """Incident number."""
+    incidentNumber: Int!
+
+    """Trello list ID."""
+    listId: String!
+
+    """Trello card title."""
+    title: String!
+
+    """Trello card description."""
+    description: String!
+    appId: String!
+  ): Incident
+  createTrigger(
+    """Id of record, if present record will be updated"""
+    previousTriggerId: String
+
+    """Name describing the trigger, metric name is used if empty."""
+    name: String
+
+    """The metric this trigger is about."""
+    metricName: String!
+
+    """List of notifier ids"""
+    notifierIds: [String!]
+
+    """If no data is received for this metric, treat the value as 0"""
+    noMatchIsZero: Boolean
+    condition: ThresholdConditionInput!
+
+    """Field which will be compared against for this alert."""
+    field: MetricFieldEnum!
+
+    """Trigger kind (ExceptionRate/Throughput etc)."""
+    kind: String!
+
+    """Description provided by the user about the trigger."""
+    description: String
+
+    """Trigger warm up time."""
+    warmupDuration: Int!
+
+    """Trigger cool down time."""
+    cooldownDuration: Int!
+
+    """Dashboard ID to link to in notifications."""
+    dashboardId: String
+
+    """
+    The data format of the metric the trigger is configured.
+    
+    For more information, see our docs:
+    https://docs.appsignal.com/metrics/custom.html#metric-values
+    """
+    format: String
+
+    """
+    The data format input size for the "size" format.
+    
+    For more information, see our docs:
+    https://docs.appsignal.com/metrics/custom.html#metric-values
+    """
+    formatInput: String
+
+    """
+    Map of tags that will filter which metrics to include. Values may include wildcards: *value*
+    """
+    tags: [KeyStringValueInput!]
+    appId: String!
+  ): Trigger
+  createUptimeMonitor(
+    """Uptime monitor to create."""
+    uptimeMonitor: UptimeMonitorInput!
+    appId: String!
+  ): UptimeMonitor
+  createVisualNumber(
+    """Dashboard ID."""
+    dashboardId: String!
+
+    """Big Number Visual to create."""
+    visual: VisualNumberInput!
+    appId: String!
+  ): Dashboard
+  createVisualTimeseries(
+    """Dashboard ID."""
+    dashboardId: String!
+
+    """Visual to create."""
+    visual: VisualTimeseriesInput!
+    appId: String!
+  ): Dashboard
+  deleteApp(appId: String!): App
+  deleteCheckIn(
+    """Check-in ID."""
+    id: String!
+    appId: String!
+  ): CheckIn
+  deleteCheckInTrigger(
+    """Check-in Trigger ID."""
+    id: String!
+    appId: String!
+  ): CheckInTrigger
+  deleteCustomMarker(
+    """Id of custom marker to remove."""
+    id: String!
+    appId: String!
+  ): CustomMarker
+  deleteDashboard(
+    """Dashboard ID."""
+    id: String!
+    appId: String!
+  ): Dashboard
+  deleteLogExport(
+    """Export ID."""
+    id: String!
+    appId: String!
+  ): Export
+  deleteLogSource(
+    """Source ID."""
+    id: String!
+    appId: String!
+  ): Source
+  deleteLogTrigger(
+    """Log Trigger ID."""
+    id: String!
+    appId: String!
+  ): LogTrigger
+  deleteLogView(
+    """Log View ID."""
+    id: String!
+    appId: String!
+  ): View
+  deleteLogbookNote(
+    """Logbookable ID"""
+    logbookableId: String!
+
+    """Logbookable type"""
+    logbookableType: LogbookableTypeEnum!
+
+    """Note ID that needs to be deleted"""
+    id: String!
+    appId: String!
+  ): Logbook
+  deleteStatusPage(
+    """Organization slug where the status page belongs."""
+    organizationSlug: String!
+
+    """ID of the status page to remove."""
+    id: String!
+  ): StatusPage
+  deleteStatusPageUpdate(
+    """Organization slug where the status page belongs."""
+    organizationSlug: String!
+
+    """Id of the status page this update belongs to"""
+    statusPageId: String!
+
+    """ID of the status page to remove."""
+    id: String!
+  ): StatusPageUpdate
+  deleteUptimeMonitor(
+    """ID of the uptime monitor to remove."""
+    id: String!
+    appId: String!
+  ): UptimeMonitor
+  deleteVisual(
+    """Id of the visual to delete."""
+    id: String!
+    appId: String!
+  ): Dashboard
+  endLastAlert(
+    """The number of of the incident for which you want to end the last alert"""
+    number: Int!
+    appId: String!
+  ): AnomalyIncident
+  importDashboard(
+    """JSON encoded string containing dashboard definition"""
+    json: String!
+    appId: String!
+  ): Dashboard
+  markTooltipAsSeen(
+    """Name of the tooltip"""
+    tooltip: String!
+  ): Viewer
+  pinApp(appId: String!): App
+  pinLogbookComment(
+    """Logbookable ID"""
+    logbookableId: String!
+
+    """Logbookable type"""
+    logbookableType: LogbookableTypeEnum!
+
+    """Comment ID"""
+    commentId: String!
+    appId: String!
+  ): Logbook
+  removeIntegration(
+    """Incident number"""
+    incidentNumber: Int!
+
+    """Integration id"""
+    id: String!
+    appId: String!
+  ): Incident
+  reorderVisuals(
+    """Dashboard ID."""
+    id: String!
+
+    """Ordered list of visual IDs."""
+    visualIds: [String]!
+    appId: String!
+  ): Dashboard
+  unpinApp(appId: String!): App
+  unpinLogbookComment(
+    """Logbookable ID"""
+    logbookableId: String!
+
+    """Logbookable type"""
+    logbookableType: LogbookableTypeEnum!
+    appId: String!
+  ): Logbook
+  updateCheckInTrigger(
+    """check-in trigger ID"""
+    id: String!
+
+    """Identifier of the trigger"""
+    identifier: String
+
+    """Cron syntax"""
+    syntax: String
+
+    """Description of the trigger"""
+    description: String
+
+    """Time to wait before expecting the result"""
+    waitTimeMinutes: Int
+
+    """Timezone of the server (UTC recommended)"""
+    timezone: String
+
+    """List of notifier ids"""
+    notifierIds: [String!]
+    appId: String!
+  ): CheckInTrigger
+  updateDashboard(
+    """Dashboard ID"""
+    id: String!
+
+    """Dashboard title."""
+    title: String!
+
+    """Dashboard description."""
+    description: String
+
+    """
+    DEPRECATED: Use the `updateVisual*` and `removeVisual*` mutations instead.
+    """
+    graphs: [DashboardGraphInput!] @deprecated(reason: "Use the `updateVisual*` and `removeVisual*` mutations instead.")
+    appId: String!
+  ): Dashboard
+  updateIncident(
+    """Incident number"""
+    number: Int!
+
+    """Incident state"""
+    state: IncidentStateEnum
+
+    """Incident severity"""
+    severity: IncidentSeverityEnum
+
+    """Incident notification option"""
+    notificationFrequency: IncidentNotificationFrequencyEnum
+
+    """Incident notification duration treshold"""
+    notificationThreshold: Int
+
+    """Incident description or solution"""
+    description: String
+
+    """
+    Array of user_ids that are assigned to resolve or investigate this incident
+    """
+    assigneeIds: [String!]
+    appId: String!
+  ): Incident
+  updateLogExport(
+    """The ID of the export to edit"""
+    id: String!
+
+    """S3 URL (including bucket/subdirectory)"""
+    s3Url: String
+
+    """S3 access key"""
+    s3AccessKey: String
+
+    """S3 secret key"""
+    s3SecretKey: String
+
+    """Compress export with Gzip"""
+    compressed: Boolean
+    appId: String!
+  ): Export
+  updateLogSource(
+    """Source ID"""
+    id: String!
+
+    """Source name."""
+    name: String!
+
+    """Format of source, can be true, logfmt or JSON"""
+    fmt: SourceFormatEnum!
+
+    """If true, the log severity will be parsed from the message"""
+    parseSeverity: Boolean
+    appId: String!
+  ): Source
+  updateLogTrigger(
+    """Trigger ID"""
+    id: String!
+
+    """Name of the trigger"""
+    name: String
+
+    """Log query to match against"""
+    query: String
+
+    """Description provided by the user about the trigger."""
+    description: String
+
+    """List of source ids"""
+    sourceIds: [String!]
+
+    """List of notifier ids"""
+    notifierIds: [String!]
+
+    """List of severities"""
+    severities: [String!]
+
+    """Incident notification option"""
+    notificationOptions: IncidentNotificationFrequencyEnum
+
+    """Incident notification duration treshold"""
+    notificationTriggerValue: Int
+    appId: String!
+  ): LogTrigger
+  updateLogView(
+    """View ID"""
+    id: String!
+
+    """View name."""
+    name: String
+
+    """Source ids to include in the view"""
+    sourceIds: [String!]
+
+    """Severities to include in the view"""
+    severities: [String!]
+
+    """Columns to include in the view"""
+    columns: [String!]
+
+    """Line height of this view"""
+    lineHeight: String
+
+    """Query to include in the view"""
+    query: String
+    appId: String!
+  ): View
+  updateStatusPage(
+    """Organization slug where the status pages belongs."""
+    organizationSlug: String!
+
+    """Id of the status page to update."""
+    id: String!
+
+    """Status page to update"""
+    statusPage: UpdateStatusPageInput!
+  ): StatusPage
+  updateStatusPageUpdate(
+    """Organization slug where the status pages belongs."""
+    organizationSlug: String!
+
+    """Id of the status page this update belongs to"""
+    statusPageId: String!
+
+    """Id of the update to... update."""
+    id: String!
+
+    """Status upage update"""
+    statusPageUpdate: StatusPageUpdateInput!
+  ): StatusPageUpdate
+  updateUptimeMonitor(
+    """ID of the uptime monitor to update."""
+    id: String!
+
+    """Uptime monitor to create."""
+    uptimeMonitor: UptimeMonitorInput!
+    appId: String!
+  ): UptimeMonitor
+  updateViewer(
+    """Hide getting started page when true"""
+    hideGettingStarted: Boolean
+
+    """Show horizontal chart lines when true"""
+    chartShowHorizontalLines: Boolean
+
+    """Show vertical chart lines when true"""
+    chartShowVerticalLines: Boolean
+
+    """Show chart markers when true"""
+    chartShowMarkers: Boolean
+
+    """Chart line thickness"""
+    chartLineThickness: Float
+
+    """Chart color palette"""
+    chartColorPalette: String
+  ): Viewer
+  updateVisualNumber(
+    """Id of the Big Number Visual to update."""
+    visualId: String!
+
+    """Big Number Visual data to update."""
+    visual: VisualNumberInput!
+    appId: String!
+  ): Dashboard
+  updateVisualTimeseries(
+    """Id of the visual to update."""
+    visualId: String!
+
+    """Visual to update."""
+    visual: VisualTimeseriesInput!
+    appId: String!
+  ): Dashboard
+  usedFeature(
+    """Feature user has used."""
+    feature: String!
+  ): Viewer
+}
+
+"""Namespace for an app, contains deploy markers"""
+type Namespace {
+  """List of deploy markers for this namespace"""
+  deployMarkers(
+    """Limit the markers per namespace, default is 5"""
+    limit: Int
+  ): [DeployMarker]
+
+  """Unique identifier for the namespace"""
+  id: String!
+
+  """User configured notifier name"""
+  name: String!
+}
+
+type Note implements ViaInterface {
+  """User that created the note. If empty, the user was deleted."""
+  author: User
+
+  """Content of the note."""
+  content: String!
+
+  """Time at which the note was created."""
+  createdAt: DateTime!
+
+  """Note ID."""
+  id: String!
+
+  """Time at which the note was updated last."""
+  updatedAt: DateTime!
+
+  """The integration that was used to make the change"""
+  via: String
+
+  """Returns true if user can delete this note."""
+  viewerCanDelete: Boolean!
+}
+
+type NotificationFrequencyChange implements ItemInterface & ViaInterface {
+  """User that created the change. If empty, the user was deleted."""
+  author: User
+
+  """Time at which the change was created."""
+  createdAt: DateTime!
+
+  """Current frequency"""
+  currentFrequency: IncidentNotificationFrequencyEnum!
+
+  """Change ID."""
+  id: String!
+
+  """Previous frequency"""
+  previousFrequency: IncidentNotificationFrequencyEnum
+
+  """Time at which the change was updated last."""
+  updatedAt: DateTime!
+
+  """The integration that was used to make the change"""
+  via: String
+}
+
+"""Marker with important AppSignal information"""
+type NotificationMarker implements MarkerInterface {
+  """UTC ISO8601 Datetime of deploy"""
+  createdAt: DateTime!
+
+  """Marker ID"""
+  id: String!
+
+  """Message with AppSignal information"""
+  message: String!
+}
+
+type NotificationThresholdChange implements ItemInterface & ViaInterface {
+  """User that created the change. If empty, the user was deleted."""
+  author: User
+
+  """Time at which the change was created."""
+  createdAt: DateTime!
+
+  """Current threshold"""
+  currentThreshold: Int!
+
+  """Change ID."""
+  id: String!
+
+  """Previous threshold"""
+  previousThreshold: Int
+
+  """Time at which the change was updated last."""
+  updatedAt: DateTime!
+
+  """The integration that was used to make the change"""
+  via: String
+}
+
+"""Destination for alerts, such as Slack, Discord or Email"""
+type Notifier {
+  """Notifier icon"""
+  icon: String!
+
+  """Notifier ID"""
+  id: String!
+
+  """User configured notifier name"""
+  name: String!
+}
+
+type NotifierResult implements ItemInterface {
+  """User that created the change. If empty, the user was deleted."""
+  author: User
+
+  """Time at which the change was created."""
+  createdAt: DateTime!
+
+  """Change ID."""
+  id: String!
+
+  """Notifier results"""
+  results: [Result!]!
+
+  """Time at which the change was updated last."""
+  updatedAt: DateTime!
+}
+
+enum OrderEnum {
+  DESC
+  ASC
+}
+
+"""An AppSignal organization"""
+type Organization {
+  """Apps for this organization"""
+  apps: [App]
+
+  """Usage information for this organization"""
+  billingCycleUsage: BillingCycleUsage
+
+  """List of CSV exports"""
+  csvExports(
+    """Limit the number of exports"""
+    limit: Int
+
+    """Offset the list of exports"""
+    offset: Int
+  ): [CsvExport]
+
+  """Days left in trial, is `null` when plan is paid"""
+  daysLeftInTrial: Int
+
+  """True if the organization is made by our Heroku add-on,"""
+  heroku: Boolean!
+
+  """Get a specific hosted collector by ID"""
+  hostedCollector(
+    """Hosted collector ID"""
+    id: String!
+  ): HostedCollector
+
+  """Hosted collectors for this organization"""
+  hostedCollectors: [HostedCollector]
+
+  """Organization ID"""
+  id: String!
+
+  """Is true when account is in trial period"""
+  inTrial: Boolean!
+
+  """Linked apps through distributed tracing"""
+  links(
+    """Start date for time query"""
+    start: DateTime
+
+    """End date for time query"""
+    end: DateTime
+
+    """Timeframe for time query"""
+    timeframe: TimeframeEnum
+  ): [Link]
+
+  """Organization name"""
+  name: String!
+
+  """Is true when account is on free plan"""
+  onFreePlan: Boolean!
+
+  """Organization Push API key"""
+  pushApiKey: String!
+
+  """Filter samples across apps on 'overview' data"""
+  search(
+    """Filter results on given appId"""
+    appId: String
+
+    """Filter results on given namespace"""
+    namespace: String
+
+    """Filter results on given query"""
+    query: String
+
+    """Filter results on given sample type"""
+    sampleType: SampleTypeEnum
+
+    """
+    Array of two DateTime values. The first value is the start of the
+    range. The second value the end of the range. A sample between
+    these two dates will be searched for.
+    """
+    timerange: [DateTime]
+  ): [Sample]
+
+  """Organization slug"""
+  slug: String!
+
+  """Status page for given ID"""
+  statusPage(id: String): StatusPage
+
+  """Status page update for given ID"""
+  statusPageUpdate(statusPageId: String, id: String): StatusPageUpdate
+
+  """Status pages for organization"""
+  statusPages: [StatusPage]
+
+  """Throughput in last 30 days"""
+  throughputLast30Days: Int!
+
+  """Organization retention in seconds"""
+  ttl: Int!
+
+  """Users belonging to an oganization"""
+  users: [User]
+}
+
+"""Anomaly incidents with pagination information"""
+type PaginatedAnomalyIncidents {
+  """Anomaly incidents"""
+  rows: [AnomalyIncident!]!
+
+  """Incident total"""
+  total: Int
+}
+
+"""Exception incidents with pagination information"""
+type PaginatedExceptionIncidents {
+  """Exception incidents"""
+  rows: [ExceptionIncident!]!
+
+  """Incident total"""
+  total: Int
+}
+
+"""Log incidents with pagination information"""
+type PaginatedLogIncidents {
+  """Log incidents"""
+  rows: [LogIncident!]!
+
+  """Incident total"""
+  total: Int
+}
+
+"""Performance incidents with pagination information"""
+type PaginatedPerformanceIncidents {
+  """Performance incidents"""
+  rows: [PerformanceIncident!]!
+
+  """Incident total"""
+  total: Int
+}
+
+"""Performance incident in which a problem or exception was reported"""
+type PerformanceIncident implements IncidentInterface & TransactionIncidentInterface {
+  """
+  All action names where incident occurred, only exception incidents can have more than one action name
+  """
+  actionNames: [String!]
+
+  """App in which the incident occurred"""
+  app: App
+
+  """Users assigned to investigate or resolve this incident"""
+  assignees: [User]
+
+  """Total count of all recorded requests/jobs for this incident"""
+  count: Int!
+
+  """Create time of incident"""
+  createdAt: DateTime
+
+  """Deploy markers for incident"""
+  deployMarkers: [PerformanceMarker]!
+
+  """Incident description, or steps to solve the issue"""
+  description: String
+
+  """All incident digests"""
+  digests: [String!]
+
+  """Value to indicate that any of the last 5 deploys had an N+1 query"""
+  hasNPlusOne: Boolean
+
+  """
+  Indicates wether this incidents has any samples in the retention of an account
+  """
+  hasSamplesInRetention: Boolean!
+
+  """Incident ID"""
+  id: String!
+
+  """List of available integration types"""
+  integrations: [Integration]
+
+  """Time incident last occurred at"""
+  lastOccurredAt: DateTime
+
+  """Time of last recorded sample"""
+  lastSampleOccurredAt: DateTime
+
+  """Logbook for incident"""
+  logbook: Logbook!
+
+  """Mean duration of all recorded requests/jobs for this incident"""
+  mean: Float!
+
+  """Namespace the incident occurred in."""
+  namespace: String
+
+  """Notification frequency for incident"""
+  notificationFrequency: IncidentNotificationFrequencyEnum
+
+  """Notification threshold (in ms) for incident"""
+  notificationThreshold: Int
+
+  """Incident number"""
+  number: Int!
+
+  """
+  Total duration of all recorded requests/jobs for this incident and revision/marker
+  """
+  perMarkerCount(marker: String): Int
+
+  """
+  Value is true when we encountered a sample with a N+1 query for this incident and given revision/marker
+  """
+  perMarkerHasNPlusOne(marker: String): Boolean
+
+  """
+  Mean duration of all recorded requests/jobs for this incident and given revision/marker
+  """
+  perMarkerMean(marker: String): Float
+
+  """
+  Total duration of all recorded requests/jobs for this incident and given revision/marker
+  """
+  perMarkerTotalDuration(marker: String): Float
+
+  """Sample for incident, returns first sample that matches the arguments"""
+  sample(
+    """Sample id, last sample is returned if empty"""
+    id: String
+    timestamp: String
+
+    """
+    Array of two DateTime values. The first value is the start of the
+    range. The second value the end of the range. A sample between
+    these two dates will be searched for.
+    """
+    timerange: [DateTime]
+  ): PerformanceSample
+
+  """Samples for incident"""
+  samples(
+    start: DateTime
+    end: DateTime
+
+    """Default is 200"""
+    limit: Int
+  ): [PerformanceSample]
+
+  """
+  Count of applied scope (e.g. selected revisions, or timeframe), defaults to total count
+  """
+  scopedCount: Int
+
+  """Severity of incident (critical/high/low/etc.)"""
+  severity: IncidentSeverityEnum
+
+  """State of incident (open/closed)"""
+  state: IncidentStateEnum
+
+  """Total duration of all recorded requests/jobs for this incident"""
+  totalDuration: Float!
+
+  """Last update time of incident"""
+  updatedAt: DateTime
+}
+
+"""An AppSignal incident"""
+type PerformanceMarker {
+  """Incident number"""
+  count: Int!
+
+  """Id of deploy marker"""
+  id: String!
+
+  """Deploy marker"""
+  marker: DeployMarker!
+
+  """Incident number"""
+  mean: Int!
+}
+
+"""Performance sample containing relevant sample data"""
+type PerformanceSample implements SampleInterface {
+  """The action name on which a sample was reported"""
+  action: String
+
+  """App of sample"""
+  app: App!
+
+  """Internal app id of the sample"""
+  appId: String!
+
+  """Root span attributes"""
+  attributes: [KeyStringValue]
+
+  """Time at which the sample was reported"""
+  createdAt: DateTime
+
+  """Custom data"""
+  customData: String
+
+  """Duration of performance sample"""
+  duration: Float!
+
+  """Environment data"""
+  environment: [KeyStringValue]
+
+  """Grouped allocations of performance sample"""
+  groupAllocations: [KeyFloatValue!]!
+
+  """Grouped durations of performance sample"""
+  groupDurations: [KeyFloatValue!]!
+
+  """Indicates if sample contains a N+1 query when true"""
+  hasNPlusOne: Boolean!
+
+  """Internal id of the sample"""
+  id: String!
+
+  """Incident of sample"""
+  incident: Incident
+
+  """Internal id of the incident this sample is linked to"""
+  incidentId: String!
+
+  """Namespace the sample occurred in"""
+  namespace: String
+
+  """Original ID of sample, if replaced by better sample"""
+  originalId: String
+
+  """
+  ID/timerange of original request, is present when sample differs from requested sample
+  """
+  originallyRequested: SampleOriginalRequestEnum
+
+  """Overview of sample, contains request id, hostname and tags"""
+  overview: [KeyStringValue!]
+
+  """Sample params"""
+  params: String
+
+  """Time spent in a queue before processing"""
+  queueDuration: Int
+
+  """Revision of sample"""
+  revision: String
+
+  """Session data"""
+  sessionData: String
+
+  """Time when sample occurred"""
+  time: DateTime
+
+  """Event timeline of performance sample"""
+  timeline: [TimelineEvent]!
+
+  """Amount of truncated events, if the event tree limit was reached"""
+  timelineTruncatedEvents: Int!
+
+  """Sample type version"""
+  version: Int
+}
+
+type Phabricator implements IntegrationInterface {
+  """Form data fields for Phabricator integration"""
+  formData: PhabricatorFormData
+
+  """Phabricator issues"""
+  issues: [PhabricatorIssue]
+
+  """Integration title"""
+  name: String!
+
+  """Set to true if the integration needs a migration"""
+  needsMigration: Boolean!
+}
+
+type PhabricatorFormData implements IntegrationFormDataInterface {
+  """Body"""
+  body: String!
+
+  """Available priorities"""
+  priorities: [KeyStringValue]
+
+  """Title"""
+  title: String!
+}
+
+type PhabricatorIssue implements IntegrationResultInterface {
+  """Description provided by the AppSignal user"""
+  description: String!
+
+  """Integration result ID"""
+  id: String!
+
+  """Priority of issue"""
+  priority: String!
+
+  """Remote ID of integration (e.g. GitHub issue number or Asana ID"""
+  remoteId: String!
+
+  """Title provided by the AppSignal user"""
+  title: String!
+
+  """Url to remote integration"""
+  url: String!
+}
+
+type PivotalTracker implements IntegrationInterface {
+  """Form data fields for PivotalTracker integration"""
+  formData: PivotalTrackerFormData
+
+  """Integration title"""
+  name: String!
+
+  """Set to true if the integration needs a migration"""
+  needsMigration: Boolean!
+
+  """PivotalTracker stories"""
+  stories: [PivotalTrackerStory]
+}
+
+type PivotalTrackerFormData implements IntegrationFormDataInterface {
+  """Body"""
+  body: String!
+
+  """Title"""
+  title: String!
+}
+
+type PivotalTrackerStory implements IntegrationResultInterface {
+  """Description provided by the AppSignal user"""
+  description: String!
+
+  """Integration result ID"""
+  id: String!
+
+  """Remote ID of integration (e.g. GitHub issue number or Asana ID"""
+  remoteId: String!
+
+  """Title provided by the AppSignal user"""
+  title: String!
+
+  """Url to remote integration"""
+  url: String!
+}
+
+"""Group of datapoints in timeseries"""
+type Point {
+  """Timestamp of bucket"""
+  timestamp: Int!
+
+  """Points returned for bucket"""
+  values: [KeyFloatValue!]
+}
+
+"""UTC DateTime in rfc3339 format with a 3-digit precision"""
+scalar PreciseDateTime
+
+"""The query root of this schema"""
+type Query {
+  """AppSignal App"""
+  app(
+    """App id"""
+    id: String!
+  ): App
+  organization(slug: String!): Organization
+
+  """List of supported timezones"""
+  timezones: [Timezone!]!
+
+  """Current logged in user"""
+  viewer: Viewer
+}
+
+"""Resolution values to be used with metrics."""
+enum ResolutionEnum {
+  """Resolution of: minutely"""
+  MINUTELY
+
+  """Resolution of: hourly"""
+  HOURLY
+
+  """Resolution of: daily"""
+  DAILY
+}
+
+type Result {
+  """Error count"""
+  errorCount: Int!
+
+  """Timestamp of last notifier error"""
+  errorLast: DateTime
+
+  """Notifier"""
+  notifier: Notifier
+
+  """Success count"""
+  successCount: Int!
+
+  """Timestamp of last succesfull notifier"""
+  successLast: DateTime
+}
+
+"""Sample objects. Can be performance or exception sample"""
+union Sample = ExceptionSample | PerformanceSample
+
+"""An AppSignal sample"""
+interface SampleInterface {
+  """The action name on which a sample was reported"""
+  action: String
+
+  """App of sample"""
+  app: App!
+
+  """Internal app id of the sample"""
+  appId: String!
+
+  """Root span attributes"""
+  attributes: [KeyStringValue]
+
+  """Time at which the sample was reported"""
+  createdAt: DateTime
+
+  """Custom data"""
+  customData: String
+  duration: Float
+
+  """Environment data"""
+  environment: [KeyStringValue]
+
+  """Internal id of the sample"""
+  id: String!
+
+  """Incident of sample"""
+  incident: Incident
+
+  """Internal id of the incident this sample is linked to"""
+  incidentId: String!
+
+  """Namespace the sample occurred in"""
+  namespace: String
+
+  """Original ID of sample, if replaced by better sample"""
+  originalId: String
+
+  """
+  ID/timerange of original request, is present when sample differs from requested sample
+  """
+  originallyRequested: SampleOriginalRequestEnum
+
+  """Overview of sample, contains request id, hostname and tags"""
+  overview: [KeyStringValue!]
+
+  """Sample params"""
+  params: String
+
+  """Time spent in a queue before processing"""
+  queueDuration: Int
+
+  """Revision of sample"""
+  revision: String
+
+  """Session data"""
+  sessionData: String
+
+  """Time when sample occurred"""
+  time: DateTime
+
+  """Sample type version"""
+  version: Int
+}
+
+"""The original requested item. We return this if we send an alternative"""
+enum SampleOriginalRequestEnum {
+  """No alternative sample is being returned"""
+  NONE
+
+  """Sample was requested by ID, but we are returning an alternative"""
+  ID
+
+  """Sample was requested by timestamp, but we are returning an alternative"""
+  TIMESTAMP
+
+  """Sample was requested by timerange, but we are returning an alternative"""
+  TIMERANGE
+}
+
+"""Types of sample."""
+enum SampleTypeEnum {
+  """Exception sample"""
+  EXCEPTION
+
+  """Performance sample"""
+  PERFORMANCE
+}
+
+"""Saved visual"""
+type SavedVisual {
+  """URL to page with SVG of saved visual"""
+  csvUrl: String!
+
+  """URL to page with SVG of saved visual"""
+  htmlUrl: String!
+
+  """ID of saved visual"""
+  id: String!
+
+  """URL to saved visual PNG"""
+  jsonUrl: String!
+
+  """URL to saved visual PNG"""
+  pngUrl: String!
+
+  """Title of the saved visual"""
+  title: String!
+}
+
+input SerieInput {
+  color: String!
+  name: String!
+  renderer: String!
+  data: [DataInput!]!
+}
+
+type Series {
+  """Digest of metric key."""
+  digest: String!
+
+  """Metric name"""
+  name: String!
+
+  """Metric tags"""
+  tags: [KeyStringValue]!
+
+  """Metric type"""
+  type: MetricTypeEnum!
+}
+
+type SeverityChange implements ItemInterface & ViaInterface {
+  """User that created the change. If empty, the user was deleted."""
+  author: User
+
+  """Time at which the change was created."""
+  createdAt: DateTime!
+
+  """Current severity"""
+  currentSeverity: IncidentSeverityEnum!
+
+  """Change ID."""
+  id: String!
+
+  """Previous severity"""
+  previousSeverity: IncidentSeverityEnum
+
+  """Time at which the change was updated last."""
+  updatedAt: DateTime!
+
+  """The integration that was used to make the change"""
+  via: String
+}
+
+enum SeverityEnum {
+  UNKNOWN
+  TRACE
+  DEBUG
+  INFO
+  NOTICE
+  WARN
+  ERROR
+  CRITICAL
+  ALERT
+  FATAL
+}
+
+type Shortcut implements IntegrationInterface {
+  """Form data fields for Shortcut integration"""
+  formData: ShortcutFormData
+
+  """Integration title"""
+  name: String!
+
+  """Set to true if the integration needs a migration"""
+  needsMigration: Boolean!
+
+  """Shortcut stories"""
+  stories: [ShortcutStory]
+}
+
+type ShortcutFormData implements IntegrationFormDataInterface {
+  """Body"""
+  body: String!
+
+  """Title"""
+  title: String!
+}
+
+type ShortcutStory implements IntegrationResultInterface {
+  """Description provided by the AppSignal user"""
+  description: String!
+
+  """Integration result ID"""
+  id: String!
+
+  """Remote ID of integration (e.g. GitHub issue number or Asana ID"""
+  remoteId: String!
+
+  """Title provided by the AppSignal user"""
+  title: String!
+
+  """Url to remote integration"""
+  url: String!
+}
+
+"""A log source"""
+type Source {
+  """
+  Indicates if source can be removed. The default Application source cannot be removed
+  """
+  canBeModified: Boolean!
+
+  """Log exports for this source"""
+  export: Export
+
+  """Log format"""
+  fmt: SourceFormatEnum!
+
+  """Source ID"""
+  id: String!
+
+  """API key of the source"""
+  key: String!
+
+  """Metrics for log source"""
+  metrics(
+    """Start time for log source query"""
+    start: PreciseDateTime
+
+    """End time log source query"""
+    end: PreciseDateTime
+
+    """Resolution for log source metrics"""
+    resolution: ResolutionEnum
+  ): BulkTimeseries
+
+  """Name of this source"""
+  name: String!
+
+  """
+  If true, we'll attempt to parse any severity string from the log message
+  """
+  parseSeverity: Boolean!
+
+  """Type of the source"""
+  type: String!
+
+  """Usage in bytes for the last 24 hours"""
+  usageBytesLast24h: Int!
+}
+
+enum SourceFormatEnum {
+  PLAINTEXT
+  LOGFMT
+  JSON
+  AUTODETECT
+}
+
+type Spans {
+  """Metadata distribution"""
+  metadataDistribution(
+    """Incident digest"""
+    incidentDigests: [String!]!
+
+    """Metadata key"""
+    metadataKey: String!
+
+    """Limit (defaults to 10)"""
+    limit: Int
+  ): [KeyFloatValue]!
+
+  """Metadata distributions"""
+  metadataDistributions(
+    """Incident digests"""
+    incidentDigests: [String!]!
+  ): [MetadataDistributions]!
+}
+
+type StateChange implements ItemInterface & ViaInterface {
+  """User that created the change. If empty, the user was deleted."""
+  author: User
+
+  """Time at which the change was created."""
+  createdAt: DateTime!
+
+  """Current state"""
+  currentState: IncidentStateEnum!
+
+  """Change ID."""
+  id: String!
+
+  """Previous state"""
+  previousState: IncidentStateEnum
+
+  """Time at which the change was updated last."""
+  updatedAt: DateTime!
+
+  """The integration that was used to make the change"""
+  via: String
+}
+
+type StatusPage {
+  """Description of the page"""
+  description: String
+
+  """Boolean indicating if redirect from http to https has been enabled"""
+  forceSsl: Boolean!
+
+  """Boolean indicating if SSL Cert has been requested for status page"""
+  hasSsl: Boolean!
+
+  """Domain of the page"""
+  hostname: String!
+
+  """ID of the status page"""
+  id: String!
+
+  """State of all monitored services on the status page."""
+  state: StatusPageStateEnum!
+
+  """Minimum threshold for considering a service down"""
+  threshold: Int
+
+  """Title of the page"""
+  title: String!
+
+  """Updates from the last 7 days for this page"""
+  updates: [StatusPageUpdate!]
+
+  """Ids for uptime monitors"""
+  uptimeMonitorIds: [String!]
+
+  """Uptime monitors associated with this page"""
+  uptimeMonitors: [UptimeMonitor!]
+}
+
+"""Status page state"""
+enum StatusPageStateEnum {
+  """up"""
+  UP
+
+  """down"""
+  DOWN
+}
+
+type StatusPageUpdate {
+  """Time of status update"""
+  createdAt: DateTime!
+
+  """Description of the update"""
+  description: String!
+
+  """ID of the status page update"""
+  id: String!
+
+  """State of the update."""
+  state: StatusPageUpdateStateEnum!
+
+  """Title of the update"""
+  title: String!
+}
+
+input StatusPageUpdateInput {
+  """Title of the status page"""
+  title: String!
+
+  """Description for the status page"""
+  description: String
+
+  """State for the update"""
+  state: StatusPageUpdateStateEnum!
+}
+
+"""Status page update state"""
+enum StatusPageUpdateStateEnum {
+  """investigating"""
+  INVESTIGATING
+
+  """identified"""
+  IDENTIFIED
+
+  """recovering"""
+  RECOVERING
+
+  """resolved"""
+  RESOLVED
+}
+
+"""
+A list of tags to narrow/group aggregation, example:
+
+"tags": [
+  {"key": "action",    "value": "*"},
+  {"key": "namespace", "value": "b"}
+]
+"""
+input TagInput {
+  key: String!
+  value: String!
+}
+
+"""Comparision operation to use to compare against a value."""
+enum ThresholdAlertSettingComparisonOperationEnum {
+  """Less than"""
+  LESS_THAN
+
+  """Greater than"""
+  GREATER_THAN
+
+  """Less than or equal"""
+  LESS_THAN_OR_EQUAL
+
+  """Greater than or equal"""
+  GREATER_THAN_OR_EQUAL
+
+  """Equal"""
+  EQUAL
+
+  """Not equal"""
+  NOT_EQUAL
+}
+
+"""Settings for the AlertConfiguration to compare against."""
+type ThresholdCondition {
+  """Comparision operator to use in this alert check."""
+  comparisonOperator: ThresholdAlertSettingComparisonOperationEnum!
+
+  """Human readable version of the comparision used in this check."""
+  humanComparisonOperator: String!
+
+  """Threshold alert setting ID."""
+  id: String!
+
+  """
+  Threshold value. The comparison operator uses this value to compare against the real value.
+  """
+  value: Float!
+}
+
+"""Settings for the AlertConfiguration to compare against."""
+input ThresholdConditionInput {
+  """
+  Threshold value. The comparison operator uses this value to compare against the real value.
+  """
+  value: Float
+
+  """Comparision to use in this check."""
+  comparisonOperator: ThresholdAlertSettingComparisonOperationEnum!
+}
+
+type TimeDetectiveDataPoint {
+  """Action of snapshot"""
+  actionName: String
+
+  """Exception of snapshot"""
+  exceptionName: String
+
+  """Incident of snapshot"""
+  incident: Incident
+
+  """
+  Average duration of the samples in this incident for the selected timeframe.
+  """
+  mean: Float
+
+  """Namespace of snapshot"""
+  namespace: String
+
+  """
+  90th percentile of the samples in this incident for the selected timeframe.
+  """
+  p90: Float
+
+  """Throughput of the samples in this incident for the selected timeframe."""
+  throughput: Int
+}
+
+"""Timeframes to be used with metrics."""
+enum TimeframeEnum {
+  """Timeframe of: 1"""
+  R1H
+
+  """Timeframe of: 4"""
+  R4H
+
+  """Timeframe of: 8"""
+  R8H
+
+  """Timeframe of: 12"""
+  R12H
+
+  """Timeframe of: 24"""
+  R24H
+
+  """Timeframe of: 48"""
+  R48H
+
+  """Timeframe of: 7"""
+  R7D
+
+  """Timeframe of: 30"""
+  R30D
+}
+
+"""Event belonging in a performance sample timeline"""
+type TimelineEvent {
+  """Event action (e.g. query)"""
+  action: String!
+
+  """Memory allocations during event"""
+  allocationCount: Float
+
+  """Memory allocations of all children"""
+  childAllocationCount: Float
+
+  """Duration of all children of eveni, in ms"""
+  childDuration: Float!
+
+  """Numer of times event has occured. More than one time means N+1"""
+  count: Int!
+
+  """Event digest, idempotent for action/payload combination"""
+  digest: String!
+
+  """Duration of event, in ms"""
+  duration: Float!
+
+  """Time event record was ended"""
+  end: Float!
+
+  """Event group (e.g. sql)"""
+  group: String
+
+  """Nesting level of event"""
+  level: Int!
+
+  """Event name (e.g. User load)"""
+  name: String
+
+  """Event payload (e.g. a sanitized SQL query)"""
+  payload: TimelineEventPayload
+
+  """Time event record was started"""
+  time: Float!
+
+  """True if this is a wrapping event"""
+  wrapping: Boolean!
+}
+
+"""Payload belonging event in a performance sample timeline"""
+type TimelineEventPayload {
+  """Body of payload (e.g an `sql query)"""
+  body: String
+
+  """Name of payload (e.g. User Load)"""
+  name: String
+}
+
+"""Timeseries data of metrics"""
+type Timeseries {
+  """End time of performed metric query"""
+  end: DateTime!
+
+  """Keys used to fetch metrics"""
+  keys: [MetricKey!]
+
+  """Rows returned for aggregated list"""
+  points: [Point!]
+
+  """Resolution fo returned series"""
+  resolution: ResolutionEnum
+
+  """Start time of performed metric query"""
+  start: DateTime!
+}
+
+"""Timezone information"""
+type Timezone {
+  """Timezone abbreviation"""
+  identifier: String!
+
+  """Timezone friendly name"""
+  name: String!
+
+  """Timezone UTC offset"""
+  offset: String!
+}
+
+"""An AppSignal transaction incident"""
+interface TransactionIncidentInterface {
+  """
+  All action names where incident occurred, only exception incidents can have more than one action name
+  """
+  actionNames: [String!]
+
+  """
+  Indicates wether this incidents has any samples in the retention of an account
+  """
+  hasSamplesInRetention: Boolean!
+
+  """Time of last recorded sample"""
+  lastSampleOccurredAt: DateTime
+
+  """Namespace the incident occurred in."""
+  namespace: String
+
+  """
+  Total duration of all recorded requests/jobs for this incident and revision/marker
+  """
+  perMarkerCount(marker: String): Int
+
+  """
+  Count of applied scope (e.g. selected revisions, or timeframe), defaults to total count
+  """
+  scopedCount: Int
+}
+
+type Trello implements IntegrationInterface {
+  """Trello cards"""
+  cards: [TrelloCard]
+
+  """Form data fields for Trello integration"""
+  formData: TrelloFormData
+
+  """Integration title"""
+  name: String!
+
+  """Set to true if the integration needs a migration"""
+  needsMigration: Boolean!
+}
+
+type TrelloCard implements IntegrationResultInterface {
+  """Description provided by the AppSignal user"""
+  description: String!
+
+  """Integration result ID"""
+  id: String!
+
+  """ID of the destination list"""
+  listId: String!
+
+  """Remote ID of integration (e.g. GitHub issue number or Asana ID"""
+  remoteId: String!
+
+  """Title provided by the AppSignal user"""
+  title: String!
+
+  """Url to remote integration"""
+  url: String!
+}
+
+type TrelloFormData implements IntegrationFormDataInterface {
+  """Body"""
+  body: String!
+
+  """Available Trello lists"""
+  lists: [KeyStringValue!]!
+
+  """Title"""
+  title: String!
+}
+
+"""
+An alert trigger. Configuration used to decide if a metric value requires an alert.
+"""
+type Trigger {
+  """
+  Time in minutes AppSignal waits before closing an alert and sending a notification about it.
+  """
+  cooldownDuration: Int!
+
+  """ID of linked dashboard to trigger."""
+  dashboardId: String
+
+  """Description provided by the user about the trigger"""
+  description: String
+
+  """Field which will be compared against for this alert."""
+  field: MetricFieldEnum!
+
+  """
+  The data format of the metric the trigger is configured.
+  
+  For more information, see our docs:
+  https://docs.appsignal.com/metrics/custom.html#metric-values
+  """
+  format: String
+
+  """
+  The data format input size for the "size" format.
+  
+  For more information, see our docs:
+  https://docs.appsignal.com/metrics/custom.html#metric-values
+  """
+  formatInput: String
+
+  """Alert configuration ID."""
+  id: String!
+
+  """Trigger kind (exception rate/ throughput etc)."""
+  kind: String!
+
+  """The metric this trigger is about."""
+  metricName: String!
+
+  """Name provided by the user about the trigger"""
+  name: String!
+
+  """If true, when no data is received it treats the value as 0."""
+  noMatchIsZero: Boolean!
+  notifiers: [Notifier!]
+  previousTrigger: Trigger
+
+  """
+  Map of tags that will filter which metrics to include. Values may include wildcards: *value*
+  """
+  tags: [KeyStringValue!]
+  thresholdCondition: ThresholdCondition!
+
+  """The user who created this Trigger."""
+  user: User
+
+  """
+  Time in minutes AppSignal waits before opening an alert and sending a notification about it.
+  """
+  warmupDuration: Int!
+}
+
+input UpdateStatusPageInput {
+  """Title of the status page"""
+  title: String!
+
+  """Description for the status page"""
+  description: String
+
+  """Uptime monitors associated to the status page"""
+  uptimeMonitorIds: [String!]
+
+  """Minimum threshold for considering a service down"""
+  threshold: Int
+}
+
+type UptimeMonitor {
+  """List of alerts for this montior"""
+  alerts: [Alert]!
+
+  """
+  {description: "If present, uptime monitor will check response body content for this string.", null: true}
+  """
+  checkBodyContent: String
+
+  """Description for monitor"""
+  description: String
+
+  """Headers to send with monitor request"""
+  headers: [KeyStringValue]
+
+  """Uptime Monitor ID."""
+  id: String!
+
+  """Name of endpoint."""
+  name: String!
+
+  """Notifier ids for moniotor"""
+  notifierIds: [String]!
+
+  """List of notifiers for this monitor"""
+  notifiers: [Notifier]!
+
+  """
+  {description: "List of regions where the monitor is pinging from", null: false}
+  """
+  regions: [UptimeMonitorRegionEnum!]
+
+  """List of status pages this monitor is used on"""
+  statusPages: [StatusPage]!
+
+  """Url for endpoint."""
+  url: String!
+
+  """Warmup duration in minutes"""
+  warmupDuration: Int!
+}
+
+input UptimeMonitorInput {
+  """Name of monitor, shown on public page"""
+  name: String!
+
+  """URL to monitor"""
+  url: String!
+
+  """Description of monitor, shown in app"""
+  description: String
+
+  """IDs of notifiers to use when URL doesn't respond"""
+  notifierIds: [String!]
+
+  """Time an URL must be down before we alert"""
+  warmupDuration: Int
+
+  """List of headers to send with the request"""
+  headers: [KeyStringValueInput!]
+
+  """Body content to check for"""
+  checkBodyContent: String
+
+  """Regions to check from"""
+  regions: [UptimeMonitorRegionEnum]!
+}
+
+type UptimeMonitorRegion {
+  """Uptime Monitor Region id."""
+  id: UptimeMonitorRegionEnum!
+
+  """Name of region."""
+  name: String!
+}
+
+"""Available regions for Uptime monitoring."""
+enum UptimeMonitorRegionEnum {
+  """Uptime monitor region: europe"""
+  EUROPE
+
+  """Uptime monitor region: north-america"""
+  NORTH_AMERICA
+
+  """Uptime monitor region: asia-pacific"""
+  ASIA_PACIFIC
+
+  """Uptime monitor region: south-america"""
+  SOUTH_AMERICA
+}
+
+"""Url template, used to generate links from log/trace/sample attributes"""
+type UrlTemplate {
+  """Label for the generated URL"""
+  label: String!
+
+  """Url template"""
+  line: String!
+
+  """Tag(s) needed to build the URL"""
+  tags: [String]
+}
+
+"""An AppSignal user"""
+type User implements UserInterface {
+  """User primary Email"""
+  email: String!
+
+  """User email hash as SHA256"""
+  emailHash: String!
+
+  """User has gravatar enabled"""
+  gravatarEnabled: Boolean!
+
+  """User wants to hide getting started screen"""
+  hideGettingStarted: Boolean!
+
+  """User ID"""
+  id: String!
+
+  """User initials"""
+  initials: String!
+
+  """User's name"""
+  name: String!
+
+  """All organizations this user has access to"""
+  organizations: [Organization]!
+}
+
+"""Common user fields"""
+interface UserInterface {
+  """User primary Email"""
+  email: String!
+
+  """User email hash as SHA256"""
+  emailHash: String!
+
+  """User has gravatar enabled"""
+  gravatarEnabled: Boolean!
+
+  """User wants to hide getting started screen"""
+  hideGettingStarted: Boolean!
+
+  """User ID"""
+  id: String!
+
+  """User initials"""
+  initials: String!
+
+  """User's name"""
+  name: String!
+
+  """All organizations this user has access to"""
+  organizations: [Organization]!
+}
+
+type Values {
+  """Time of log occurrence"""
+  values: [KeyFloatValue!]!
+}
+
+"""A Vercel project, used in Log Source"""
+type VercelProject {
+  """Vercel Integration ID"""
+  integrationId: String!
+
+  """Name of project"""
+  name: String!
+
+  """Vercel Project ID"""
+  projectId: String!
+}
+
+"""
+A logbook item that can be made through a 3rd party integration interface
+"""
+interface ViaInterface {
+  """The integration that was used to make the change"""
+  via: String
+}
+
+"""A log view"""
+type View {
+  """Columns of this view"""
+  columns: [String!]
+
+  """View ID"""
+  id: String!
+
+  """Line height of this view"""
+  lineHeight: String!
+
+  """Name of this view"""
+  name: String!
+
+  """Query of this view"""
+  query: String!
+
+  """Severities of this view"""
+  severities: [String!]!
+
+  """Sources of this view"""
+  sourceIds: [String!]!
+}
+
+"""A logged-in AppSignal user"""
+type Viewer implements UserInterface {
+  """List of all incidents assigned to viewer"""
+  assignedIncidents(
+    appIds: [String!]
+    state: [IncidentStateEnum!]
+    severity: IncidentSeverityEnum
+    query: String
+
+    """Default is unlimited"""
+    limit: Int
+
+    """Offset to begin returning documents"""
+    offset: Int
+
+    """Field to order incidents by"""
+    order: IncidentOrderEnum
+  ): [Incident]!
+
+  """Chart color palette"""
+  chartColorPalette: String!
+
+  """Chart line thickness"""
+  chartLineThickness: Float!
+
+  """Show horizontal chart lines when true"""
+  chartShowHorizontalLines: Boolean!
+
+  """Show chart markers when true"""
+  chartShowMarkers: Boolean
+
+  """Show vertical chart lines when true"""
+  chartShowVerticalLines: Boolean!
+
+  """User primary Email"""
+  email: String!
+
+  """User email hash as SHA256"""
+  emailHash: String!
+
+  """User has gravatar enabled"""
+  gravatarEnabled: Boolean!
+
+  """User wants to hide getting started screen"""
+  hideGettingStarted: Boolean!
+
+  """User ID"""
+  id: String!
+
+  """List of all incidents within the projects the user has access to"""
+  incidents(
+    appIds: [String!]
+    state: [IncidentStateEnum!]
+    severity: IncidentSeverityEnum
+    query: String
+
+    """Default is 200"""
+    limit: Int
+
+    """Offset to begin returning documents"""
+    offset: Int
+
+    """Field to order incidents by"""
+    order: IncidentOrderEnum
+    assigneeIds: [String!]
+  ): [Incident]!
+
+  """User initials"""
+  initials: String!
+
+  """Is user controlled by SAML Single Sign-On"""
+  isExternallyControlled: Boolean!
+
+  """User's name"""
+  name: String!
+
+  """List of organizations user belongs to"""
+  organizations: [Organization]!
+
+  """List of tooltips seen by the user"""
+  seenTooltips: [String!]!
+
+  """Authentication token"""
+  token: String!
+
+  """List of features used by user"""
+  usedFeatures: [String!]!
+}
+
+"""Visual object, used in dashboards. Can be timeseries or number."""
+union Visual = VisualNumber | VisualTimeseries
+
+"""
+Some data is better understood if the graph is rendered in a different way.
+The following different types of different visuals are supported on dashboards.
+
+- LINE: Line graphs.
+- AREA: Area graphs.
+- AREA_RELATIVE: Relative area graphs.
+
+For more information see: https://docs.appsignal.com/metrics/dashboards.html
+"""
+enum VisualDisplayEnum {
+  LINE
+  AREA
+  AREA_RELATIVE
+}
+
+"""An AppSignal visual, used on dashboards."""
+interface VisualInterface {
+  """Visual description"""
+  description: String
+
+  """Format string for the visual display"""
+  format: String
+
+  """Format input string for the visual"""
+  formatInput: String
+
+  """Unique identifier for the visual"""
+  id: String!
+
+  """Visual title"""
+  title: String!
+}
+
+"""Number visual, used on dashboard to show a single big number."""
+type VisualNumber implements VisualInterface {
+  """Visual description"""
+  description: String
+
+  """Format string for the visual display"""
+  format: String
+
+  """Format input string for the visual"""
+  formatInput: String
+
+  """Unique identifier for the visual"""
+  id: String!
+
+  """The metric to display"""
+  metric: VisualNumberMetric
+
+  """Visual title"""
+  title: String!
+}
+
+input VisualNumberInput {
+  """Visual title"""
+  title: String!
+
+  """Visual description"""
+  description: String
+
+  """Format string for the visual display"""
+  format: String
+
+  """Format input string for the visual"""
+  formatInput: String
+
+  """Single metric to display (note: singular, not an array)"""
+  metric: VisualNumberMetricInput
+}
+
+type VisualNumberMetric {
+  """Aggregation type"""
+  aggregate: MetricAggregateEnum
+
+  """Metric field name"""
+  field: MetricFieldEnum
+
+  """Metric name"""
+  name: String!
+
+  """List of tags of the metric"""
+  tags: [KeyStringValue!]
+}
+
+input VisualNumberMetricInput {
+  """Metric name"""
+  name: String!
+
+  """Metric field name"""
+  field: MetricFieldEnum!
+
+  """Aggregation type for the metric field"""
+  aggregate: MetricAggregateEnum!
+
+  """List of tags for the metric"""
+  tags: [TagInput!]
+}
+
+"""Timeseries visual, used on dashboard to show a timeseries graph."""
+type VisualTimeseries implements VisualInterface {
+  """Visual description"""
+  description: String
+
+  """Display type for the visual (line, area, or relative area)"""
+  display: VisualDisplayEnum
+
+  """Whether to draw null values as zero instead of gaps in the graph"""
+  drawNullAsZero: Boolean
+
+  """Format string for the visual display"""
+  format: String
+
+  """Format input string for the visual"""
+  formatInput: String
+
+  """Unique identifier for the visual"""
+  id: String!
+
+  """
+  Customizable name for the line.
+  Support replacements for the metric names, fields and tags with %name%,
+  %field% and %tag% (where tag is the tag name you've specified).
+  
+  Defaults to %name%
+  """
+  lineLabel: String
+
+  """List of metrics to display in the timeseries"""
+  metrics: [VisualTimeseriesMetric!]!
+
+  """Minimum value for the Y axis"""
+  minYAxis: Float
+
+  """Visual title"""
+  title: String!
+}
+
+input VisualTimeseriesInput {
+  """Visual title"""
+  title: String!
+
+  """Visual description"""
+  description: String
+
+  """Format string for the visual display"""
+  format: String
+
+  """Format input string for the visual"""
+  formatInput: String
+
+  """
+  Customizable name for the line.
+  Support replacements for the metric names, fields and tags with %name%,
+  %field% and %tag% (where tag is the tag name you've specified).
+  
+  Defaults to %name%
+  """
+  lineLabel: String
+
+  """Display type for the visual (line, area, or relative area)"""
+  display: VisualDisplayEnum
+
+  """Whether to draw null values as zero instead of gaps in the graph"""
+  drawNullAsZero: Boolean
+
+  """Minimum value for the Y axis"""
+  minYAxis: Float
+
+  """List of tags for the graph"""
+  tags: [TagInput!]
+
+  """List of metrics to display in the timeseries"""
+  metrics: [VisualTimeseriesMetricInput!]
+}
+
+type VisualTimeseriesMetric {
+  """Metric fields"""
+  fields: [VisualTimeseriesMetricField!]
+
+  """Metric name"""
+  name: String!
+
+  """List of tags of the graph"""
+  tags: [KeyStringValue!]
+}
+
+type VisualTimeseriesMetricField {
+  field: MetricFieldEnum
+}
+
+input VisualTimeseriesMetricFieldInput {
+  field: MetricFieldEnum!
+}
+
+input VisualTimeseriesMetricInput {
+  name: String!
+  fields: [VisualTimeseriesMetricFieldInput!]!
+
+  """List of tags for the metric"""
+  tags: [TagInput!]
+}

@@ -71,7 +71,7 @@ describe('Tool Registration', () => {
   it('should register all tools when API key is provided', () => {
     registerTools(mockServer);
 
-    expect(mockServer.tool).toHaveBeenCalledTimes(20);
+    expect(mockServer.tool).toHaveBeenCalledTimes(23);
     expect(registeredTools.has('get_apps')).toBe(true);
     expect(registeredTools.has('select_app_id')).toBe(true);
     expect(registeredTools.has('change_app_id')).toBe(true);
@@ -87,12 +87,16 @@ describe('Tool Registration', () => {
     expect(registeredTools.has('get_performance_incident')).toBe(true);
     expect(registeredTools.has('get_performance_incident_sample')).toBe(true);
     expect(registeredTools.has('get_performance_incident_sample_timeline')).toBe(true);
-    // New tools
+    // Performance monitoring tools
     expect(registeredTools.has('get_performance_samples')).toBe(true);
     expect(registeredTools.has('get_metrics')).toBe(true);
     expect(registeredTools.has('get_metrics_timeseries')).toBe(true);
     expect(registeredTools.has('get_deploy_markers')).toBe(true);
     expect(registeredTools.has('get_slow_requests')).toBe(true);
+    // GraphQL tools
+    expect(registeredTools.has('get_graphql_schema')).toBe(true);
+    expect(registeredTools.has('get_graphql_schema_details')).toBe(true);
+    expect(registeredTools.has('custom_graphql_query')).toBe(true);
   });
 
   it('should throw error when API key is missing', () => {
