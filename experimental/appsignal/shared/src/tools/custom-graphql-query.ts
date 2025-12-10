@@ -55,9 +55,10 @@ Note: The currently selected app ID is automatically available. Use $appId varia
       const { query, variables } = CustomGraphqlQuerySchema.parse(args);
       const appId = getEffectiveAppId();
 
-      // Inject appId into variables if not provided and query seems to need it
+      // Inject appId into variables if not explicitly provided and query seems to need it
+      // Use 'in' check to respect user-provided null/undefined values
       const finalVariables = { ...variables };
-      if (appId && query.includes('$appId') && !finalVariables.appId) {
+      if (appId && query.includes('$appId') && !('appId' in finalVariables)) {
         finalVariables.appId = appId;
       }
 

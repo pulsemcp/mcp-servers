@@ -265,6 +265,16 @@ export function createMockAppsignalClient(): IAppsignalClient {
         }
         throw new Error(`No sample found for performance incident ${incidentNumber}`);
       }),
+    // Custom GraphQL query execution
+    executeCustomQuery: vi.fn().mockImplementation(async () => ({
+      viewer: {
+        organizations: [
+          {
+            apps: [{ id: 'test-app-id', name: 'Test App' }],
+          },
+        ],
+      },
+    })),
   };
 }
 

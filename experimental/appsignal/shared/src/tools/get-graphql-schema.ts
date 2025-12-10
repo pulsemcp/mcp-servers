@@ -9,6 +9,20 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const SCHEMA_PATH = join(__dirname, '..', 'graphql', 'schema.graphql');
 
+// Cache for parsed schema to avoid re-reading on every request
+let cachedSchemaContent: string | null = null;
+let cachedSchemaSummary: SchemaSummary | null = null;
+
+/**
+ * Get the cached schema content, reading from disk only once
+ */
+export function getCachedSchemaContent(): string {
+  if (!cachedSchemaContent) {
+    cachedSchemaContent = readFileSync(SCHEMA_PATH, 'utf-8');
+  }
+  return cachedSchemaContent;
+}
+
 interface TypeSummary {
   name: string;
   kind: 'type' | 'input' | 'enum' | 'interface' | 'union' | 'scalar';
@@ -163,8 +177,12 @@ Example workflow:
     inputSchema: GetGraphqlSchemaShape,
     handler: async () => {
       try {
-        const schemaContent = readFileSync(SCHEMA_PATH, 'utf-8');
-        const summary = parseSchemaForSummary(schemaContent);
+        // Use cached data if available to avoid re-reading and re-parsing
+        if (!cachedSchemaSummary) {
+          const schemaContent = getCachedSchemaContent();
+          cachedSchemaSummary = parseSchemaForSummary(schemaContent);
+        }
+        const summary = cachedSchemaSummary;
 
         const output = {
           message:

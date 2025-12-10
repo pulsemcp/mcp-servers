@@ -47,6 +47,9 @@ This server is built and tested on macOS with Claude Desktop. It should work wit
 | `get_log_incidents`             | Get a list of log incidents with optional state filter (OPEN, CLOSED, WIP).       |
 | `get_exception_incidents`       | Get a list of exception incidents with optional state filter (OPEN, CLOSED, WIP). |
 | `get_anomaly_incidents`         | Get a list of anomaly incidents with optional state filter (OPEN, CLOSED, WIP).   |
+| `get_graphql_schema`            | Get a summary of the AppSignal GraphQL API schema for custom query construction.  |
+| `get_graphql_schema_details`    | Get full type definitions for specific GraphQL types.                             |
+| `custom_graphql_query`          | Execute custom GraphQL queries when specialized tools don't meet your needs.      |
 
 # Usage Tips
 

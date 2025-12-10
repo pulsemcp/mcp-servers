@@ -1,14 +1,7 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 import { IAppsignalClient } from '../appsignal-client/appsignal-client.js';
-import { readFileSync } from 'fs';
-import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
-
-// Get the directory of this module to find the schema file
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-const SCHEMA_PATH = join(__dirname, '..', 'graphql', 'schema.graphql');
+import { getCachedSchemaContent } from './get-graphql-schema.js';
 
 const PARAM_DESCRIPTIONS = {
   typeNames:
@@ -26,7 +19,8 @@ interface TypeDefinition {
  */
 function extractTypeDefinitions(schemaContent: string, typeNames: string[]): TypeDefinition[] {
   const definitions: TypeDefinition[] = [];
-  const typeNamesSet = new Set(typeNames.map((n) => n.toLowerCase()));
+  // Use case-sensitive matching for GraphQL type names (GraphQL is case-sensitive)
+  const typeNamesSet = new Set(typeNames);
 
   // Pattern to match any top-level definition with its full body
   // This handles types, inputs, enums, interfaces, unions, and scalars
@@ -36,7 +30,7 @@ function extractTypeDefinitions(schemaContent: string, typeNames: string[]): Typ
   let match;
   while ((match = definitionPattern.exec(schemaContent)) !== null) {
     const [fullMatch, kind, name] = match;
-    if (typeNamesSet.has(name.toLowerCase())) {
+    if (typeNamesSet.has(name)) {
       definitions.push({
         name,
         kind,
@@ -45,9 +39,9 @@ function extractTypeDefinitions(schemaContent: string, typeNames: string[]): Typ
     }
   }
 
-  // Check for types that weren't found
-  const foundNames = new Set(definitions.map((d) => d.name.toLowerCase()));
-  const notFound = typeNames.filter((n) => !foundNames.has(n.toLowerCase()));
+  // Check for types that weren't found (case-sensitive comparison)
+  const foundNames = new Set(definitions.map((d) => d.name));
+  const notFound = typeNames.filter((n) => !foundNames.has(n));
 
   if (notFound.length > 0) {
     definitions.push({
@@ -98,7 +92,8 @@ Tip: Include related enums and input types to understand valid parameter values.
       const { typeNames } = GetGraphqlSchemaDetailsSchema.parse(args);
 
       try {
-        const schemaContent = readFileSync(SCHEMA_PATH, 'utf-8');
+        // Use cached schema content to avoid re-reading from disk
+        const schemaContent = getCachedSchemaContent();
         const definitions = extractTypeDefinitions(schemaContent, typeNames);
 
         const output = {
