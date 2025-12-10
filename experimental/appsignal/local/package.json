@@ -52,6 +52,7 @@
     "build/**/*.js",
     "shared/**/*.js",
     "shared/**/*.d.ts",
+    "shared/graphql/schema.graphql",
     "README.md"
   ],
   "repository": {
