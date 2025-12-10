@@ -127,6 +127,7 @@ describe('search_logs Tool', () => {
           queryWindow: 3600,
           lines,
           formattedSummary: `Found ${lines.length} log entries within 3600s window.`,
+          truncationApplied: false,
         };
       });
 
@@ -146,7 +147,8 @@ describe('search_logs Tool', () => {
       5,
       ['error', 'fatal'],
       undefined,
-      undefined
+      undefined,
+      false
     );
   });
 
@@ -171,6 +173,7 @@ describe('search_logs Tool', () => {
       queryWindow: 3600,
       lines: [],
       formattedSummary: 'Found 0 log entries within 3600s window.\n\n',
+      truncationApplied: false,
     });
 
     registerToolsWithClient(customClient);
@@ -226,6 +229,7 @@ describe('search_logs Tool', () => {
               },
             ],
             formattedSummary: 'Found 1 log entries within 86400s window.',
+            truncationApplied: false,
           };
         }
       );
@@ -247,7 +251,8 @@ describe('search_logs Tool', () => {
       10,
       undefined,
       '2024-01-15T00:00:00Z',
-      '2024-01-15T23:59:59Z'
+      '2024-01-15T23:59:59Z',
+      false
     );
   });
 
@@ -272,6 +277,7 @@ describe('search_logs Tool', () => {
             queryWindow: 3600,
             lines: [],
             formattedSummary: 'Found 0 log entries within 3600s window.',
+            truncationApplied: false,
           };
         }
       );
@@ -291,7 +297,8 @@ describe('search_logs Tool', () => {
       50,
       undefined,
       '2024-01-15T00:00:00Z',
-      undefined
+      undefined,
+      false
     );
   });
 
@@ -313,6 +320,7 @@ describe('search_logs Tool', () => {
         },
       ],
       formattedSummary: 'Found 1 log entries within 3600s window.',
+      truncationApplied: false,
     });
 
     registerToolsWithClient(customClient);
@@ -326,6 +334,94 @@ describe('search_logs Tool', () => {
     const response = JSON.parse(result.content[0].text);
     expect(response.lines).toHaveLength(1);
     // The empty array should be passed through, not converted to undefined
-    expect(customClient.searchLogs).toHaveBeenCalledWith('test', 10, [], undefined, undefined);
+    // verbose defaults to false
+    expect(customClient.searchLogs).toHaveBeenCalledWith(
+      'test',
+      10,
+      [],
+      undefined,
+      undefined,
+      false
+    );
+  });
+
+  it('should pass verbose:false by default', async () => {
+    vi.mocked(getSelectedAppId).mockReturnValue('test-app-id');
+
+    const customClient = createMockAppsignalClient();
+    customClient.searchLogs = vi.fn().mockResolvedValue({
+      queryWindow: 3600,
+      lines: [],
+      formattedSummary: 'Found 0 log entries within 3600s window.',
+      truncationApplied: false,
+    });
+
+    registerToolsWithClient(customClient);
+    const tool = registeredTools.get('search_logs');
+    await tool.handler({ query: 'test' });
+
+    expect(customClient.searchLogs).toHaveBeenCalledWith(
+      'test',
+      50, // default limit
+      undefined,
+      undefined,
+      undefined,
+      false // verbose defaults to false
+    );
+  });
+
+  it('should pass verbose:true when explicitly set', async () => {
+    vi.mocked(getSelectedAppId).mockReturnValue('test-app-id');
+
+    const customClient = createMockAppsignalClient();
+    customClient.searchLogs = vi.fn().mockResolvedValue({
+      queryWindow: 3600,
+      lines: [],
+      formattedSummary: 'Found 0 log entries within 3600s window.',
+      truncationApplied: false,
+    });
+
+    registerToolsWithClient(customClient);
+    const tool = registeredTools.get('search_logs');
+    await tool.handler({ query: 'test', verbose: true });
+
+    expect(customClient.searchLogs).toHaveBeenCalledWith(
+      'test',
+      50,
+      undefined,
+      undefined,
+      undefined,
+      true
+    );
+  });
+
+  it('should indicate when truncation was applied', async () => {
+    vi.mocked(getSelectedAppId).mockReturnValue('test-app-id');
+
+    const customClient = createMockAppsignalClient();
+    customClient.searchLogs = vi.fn().mockResolvedValue({
+      queryWindow: 3600,
+      lines: [
+        {
+          id: 'log-1',
+          timestamp: '2024-01-15T10:00:00Z',
+          message: 'Short message... [truncated, use verbose:true for full content]',
+          severity: 'ERROR',
+          hostname: 'api-server-01',
+          group: 'api-service',
+        },
+      ],
+      formattedSummary: 'Found 1 log entries within 3600s window. (some messages truncated)',
+      truncationApplied: true,
+    });
+
+    registerToolsWithClient(customClient);
+    const tool = registeredTools.get('search_logs');
+    const result = await tool.handler({ query: 'test' });
+
+    const response = JSON.parse(result.content[0].text);
+    expect(response.truncationApplied).toBe(true);
+    expect(response.formattedSummary).toContain('truncated');
+    expect(response.lines[0].message).toContain('[truncated, use verbose:true for full content]');
   });
 });

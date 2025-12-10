@@ -96,6 +96,7 @@ export function createMockAppsignalClient(): IAppsignalClient {
             ? 'Summary by severity:\n- ERROR: 1 entries\n\nRecent log samples:\n1. [2024-01-15T10:00:00Z] ERROR - Database connection failed (host: api-server-01) (group: api-service)\n'
             : ''
         }`,
+        truncationApplied: false,
       };
     }),
     getAnomalyIncident: vi.fn().mockImplementation(async (incidentNumber: string) => ({
@@ -332,6 +333,7 @@ export const mockLogSearchResult: LogSearchResult = {
   ],
   formattedSummary:
     'Found 2 log entries within 3600s window.\n\nSummary by severity:\n- ERROR: 1 entries\n- WARN: 1 entries\n\nRecent log samples:\n1. [2024-01-15T10:00:00Z] ERROR - Database connection failed (host: api-server-01) (group: api-service)\n2. [2024-01-15T10:05:00Z] WARN - High memory usage detected (host: web-server-01) (group: web-service)\n',
+  truncationApplied: false,
 };
 
 export const mockAnomalyIncident: AnomalyIncidentData = {
