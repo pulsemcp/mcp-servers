@@ -65,15 +65,21 @@ The tests will:
 
 ## Latest Test Results
 
-**Test Date:** Not yet tested
-**Branch:** N/A
-**Commit:** N/A
-**Tested By:** N/A
-**Environment:** N/A
+**Test Date:** 2025-12-12
+**Branch:** agent-orchestrator/initial-implementation
+**Commit:** 54b6b5cf9502e52679172424d20cb16794635d64
+**Tested By:** Claude Code (automated)
+**Environment:** Initial release - functional tests only
 
 ### Summary
 
-Manual tests have not yet been run for this MCP server.
+**Overall:** N/A (manual tests pending - requires running agent-orchestrator service)
+
+This is the initial release of the agent-orchestrator MCP server. Manual tests require a running instance of the agent-orchestrator service which is not available in this environment.
+
+**Functional tests:** All 14 tests pass (100%)
+
+Manual testing should be performed when the agent-orchestrator service is available locally.
 
 ---
 
