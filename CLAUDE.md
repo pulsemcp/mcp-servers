@@ -225,6 +225,10 @@ npm run build                         # Builds both shared and local
 
 ## Testing Strategy
 
+**IMPORTANT: Run targeted tests locally, delegate full suite to CI.**
+
+Running full test suites locally is prone to failure. Instead, run only targeted tests for the files you changed, then commit to a PR and let CI run the complete test suite.
+
 MCP servers may include up to three types of tests:
 
 1. **Functional Tests** - Unit tests with all dependencies mocked
@@ -236,6 +240,19 @@ Manual tests are particularly important when:
 - Modifying code that interacts with external APIs
 - Debugging issues that only appear with real API responses
 - Verifying that API integrations work correctly
+
+To run targeted tests locally:
+
+```bash
+# Run tests for a specific MCP server you're working on
+cd experimental/twist && npm test
+
+# Run a specific test file
+cd experimental/twist && npx vitest run tests/specific.test.ts
+
+# Do NOT run tests for all servers locally - delegate to CI
+# Instead, commit to a PR and let CI run the full test suite
+```
 
 To run manual tests (when available):
 
