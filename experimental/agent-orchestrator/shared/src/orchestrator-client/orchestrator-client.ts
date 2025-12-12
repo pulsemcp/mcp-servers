@@ -120,17 +120,30 @@ export interface IAgentOrchestratorClient {
   deleteSubagentTranscript(sessionId: string | number, transcriptId: number): Promise<void>;
 }
 
+/** Default timeout for API requests in milliseconds */
+const DEFAULT_TIMEOUT_MS = 30000;
+
 /**
  * Implementation of the Agent Orchestrator API client.
  */
 export class AgentOrchestratorClient implements IAgentOrchestratorClient {
   private baseUrl: string;
   private apiKey: string;
+  private timeoutMs: number;
 
-  constructor(baseUrl: string, apiKey: string) {
+  constructor(baseUrl: string, apiKey: string, timeoutMs: number = DEFAULT_TIMEOUT_MS) {
+    // Validate inputs
+    if (!baseUrl || baseUrl.trim().length === 0) {
+      throw new Error('Base URL cannot be empty');
+    }
+    if (!apiKey || apiKey.trim().length === 0) {
+      throw new Error('API key cannot be empty');
+    }
+
     // Remove trailing slash if present
-    this.baseUrl = baseUrl.replace(/\/$/, '');
-    this.apiKey = apiKey;
+    this.baseUrl = baseUrl.trim().replace(/\/$/, '');
+    this.apiKey = apiKey.trim();
+    this.timeoutMs = timeoutMs;
   }
 
   private async request<T>(
@@ -154,16 +167,32 @@ export class AgentOrchestratorClient implements IAgentOrchestratorClient {
       'Content-Type': 'application/json',
     };
 
+    // Set up timeout with AbortController
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), this.timeoutMs);
+
     const options: RequestInit = {
       method,
       headers,
+      signal: controller.signal,
     };
 
     if (body && (method === 'POST' || method === 'PATCH' || method === 'PUT')) {
       options.body = JSON.stringify(body);
     }
 
-    const response = await fetch(url.toString(), options);
+    let response: Response;
+    try {
+      response = await fetch(url.toString(), options);
+    } catch (error) {
+      clearTimeout(timeoutId);
+      if (error instanceof Error && error.name === 'AbortError') {
+        throw new Error(`Request timeout after ${this.timeoutMs}ms`);
+      }
+      throw error;
+    } finally {
+      clearTimeout(timeoutId);
+    }
 
     if (!response.ok) {
       const errorText = await response.text();

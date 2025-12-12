@@ -42,6 +42,9 @@ const TOOL_DESCRIPTION = `List agent sessions from the Agent Orchestrator.
 - failed: Session encountered an error
 - archived: Session completed and archived`;
 
+/** Maximum characters to display for prompt preview */
+const MAX_PROMPT_DISPLAY_LENGTH = 100;
+
 function formatSession(session: Session): string {
   const lines = [
     `### ${session.title} (ID: ${session.id})`,
@@ -55,7 +58,9 @@ function formatSession(session: Session): string {
   if (session.branch) lines.push(`- **Branch:** ${session.branch}`);
   if (session.prompt) {
     const truncatedPrompt =
-      session.prompt.length > 100 ? session.prompt.slice(0, 100) + '...' : session.prompt;
+      session.prompt.length > MAX_PROMPT_DISPLAY_LENGTH
+        ? session.prompt.slice(0, MAX_PROMPT_DISPLAY_LENGTH) + '...'
+        : session.prompt;
     lines.push(`- **Prompt:** ${truncatedPrompt}`);
   }
   if (session.mcp_servers && session.mcp_servers.length > 0) {

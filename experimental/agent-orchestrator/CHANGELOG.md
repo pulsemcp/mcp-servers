@@ -12,6 +12,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Initial implementation of agent-orchestrator MCP server
+- Input validation for API client (baseUrl and apiKey cannot be empty)
+- Request timeout configuration (default 30s) with AbortController
 - Session management tools:
   - `list_sessions` - List agent sessions with filtering and pagination
   - `get_session` - Get detailed session information with optional transcript
