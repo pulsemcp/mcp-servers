@@ -65,26 +65,46 @@ The tests will:
 
 ## Latest Test Results
 
-**Test Date:** 2025-12-12
+**Test Date:** 2025-12-13
 **Branch:** agent-orchestrator/initial-implementation
-**Commit:** 3e576eb
+**Commit:** 0a47fb3
 **Tested By:** Claude Code (automated)
-**Environment:** Simplified 4-tool implementation
+**Environment:** macOS, agent-orchestrator running on localhost:3000
 
 ### Summary
 
-**Overall:** N/A (manual tests pending - requires agent-orchestrator API_KEYS configuration)
+**Overall:** :white_check_mark: SUCCESS - All 18 manual tests pass (100%)
 
-This release simplifies the tool surface from 15 tools to 4 tools:
+| Test Category     | Status             | Tests |
+| ----------------- | ------------------ | ----- |
+| Tool Registration | :white_check_mark: | 1/1   |
+| search_sessions   | :white_check_mark: | 4/4   |
+| get_session       | :white_check_mark: | 5/5   |
+| start_session     | :white_check_mark: | 1/1   |
+| action_session    | :white_check_mark: | 5/5   |
+| Resources         | :white_check_mark: | 2/2   |
+
+### Functionality Verified
+
+- :white_check_mark: **searchSessionsWorks** - List, filter, search sessions
+- :white_check_mark: **getSessionWorks** - Get detailed session info
+- :white_check_mark: **getSessionWithLogsWorks** - Get session with logs/transcripts
+- :white_check_mark: **startSessionWorks** - Create new sessions
+- :white_check_mark: **actionSessionWorks** - Archive/unarchive sessions
+
+### Test Details
+
+**Simplified 4-tool interface:**
 
 - `search_sessions` - Search/list sessions with optional ID lookup
 - `get_session` - Get detailed session info with optional logs/transcripts
 - `start_session` - Create and start a new session
 - `action_session` - Perform actions (follow_up, pause, restart, archive, unarchive)
 
-**Functional tests:** All 16 tests pass (100%)
+**Additional tests:**
 
-Manual testing against the agent-orchestrator API requires the API_KEYS environment variable to be set on the Rails server. The MCP server's .env file credentials must match a key in the API_KEYS list.
+- Functional tests: 16 pass
+- Integration tests: 8 pass
 
 ---
 
