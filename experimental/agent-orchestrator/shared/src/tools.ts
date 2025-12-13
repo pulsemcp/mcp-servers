@@ -2,29 +2,11 @@ import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { ListToolsRequestSchema, CallToolRequestSchema } from '@modelcontextprotocol/sdk/types.js';
 import { ClientFactory } from './server.js';
 
-// Session tools
-import { listSessionsTool } from './tools/list-sessions.js';
-import { getSessionTool } from './tools/get-session.js';
-import { createSessionTool } from './tools/create-session.js';
+// Simplified tool surface - 4 tools
 import { searchSessionsTool } from './tools/search-sessions.js';
-import {
-  followUpTool,
-  pauseSessionTool,
-  restartSessionTool,
-  archiveSessionTool,
-  unarchiveSessionTool,
-  updateSessionTool,
-  deleteSessionTool,
-} from './tools/session-actions.js';
-
-// Log tools
-import { listLogsTool, createLogTool } from './tools/logs.js';
-
-// Subagent transcript tools
-import {
-  listSubagentTranscriptsTool,
-  getSubagentTranscriptTool,
-} from './tools/subagent-transcripts.js';
+import { startSessionTool } from './tools/start-session.js';
+import { getSessionTool } from './tools/get-session.js';
+import { actionSessionTool } from './tools/action-session.js';
 
 // =============================================================================
 // TOOL GROUPING SYSTEM
@@ -39,9 +21,9 @@ import {
 
 /**
  * Available tool groups for agent-orchestrator:
- * - 'readonly': Read-only operations (list, get, search)
- * - 'write': Write operations (create, update, follow_up, pause, restart, archive, unarchive)
- * - 'admin': Administrative operations (delete)
+ * - 'readonly': Read-only operations (search_sessions, get_session)
+ * - 'write': Write operations (start_session, action_session)
+ * - 'admin': Administrative operations (reserved for future use)
  */
 export type ToolGroup = 'readonly' | 'write' | 'admin';
 
@@ -103,32 +85,21 @@ interface ToolDefinition {
 /**
  * All available tools with their group assignments.
  * Tools can belong to multiple groups.
+ *
+ * Simplified tool surface:
+ * - search_sessions: Search/list/get sessions by ID
+ * - start_session: Create a new session
+ * - get_session: Get detailed session info with optional logs/transcripts
+ * - action_session: Perform actions (follow_up, pause, restart, archive, unarchive)
  */
 const ALL_TOOLS: ToolDefinition[] = [
-  // Session read operations
-  { factory: listSessionsTool, groups: ['readonly', 'write', 'admin'] },
-  { factory: getSessionTool, groups: ['readonly', 'write', 'admin'] },
+  // Read operations
   { factory: searchSessionsTool, groups: ['readonly', 'write', 'admin'] },
+  { factory: getSessionTool, groups: ['readonly', 'write', 'admin'] },
 
-  // Session write operations
-  { factory: createSessionTool, groups: ['write', 'admin'] },
-  { factory: updateSessionTool, groups: ['write', 'admin'] },
-  { factory: followUpTool, groups: ['write', 'admin'] },
-  { factory: pauseSessionTool, groups: ['write', 'admin'] },
-  { factory: restartSessionTool, groups: ['write', 'admin'] },
-  { factory: archiveSessionTool, groups: ['write', 'admin'] },
-  { factory: unarchiveSessionTool, groups: ['write', 'admin'] },
-
-  // Session admin operations
-  { factory: deleteSessionTool, groups: ['admin'] },
-
-  // Log operations
-  { factory: listLogsTool, groups: ['readonly', 'write', 'admin'] },
-  { factory: createLogTool, groups: ['write', 'admin'] },
-
-  // Subagent transcript operations
-  { factory: listSubagentTranscriptsTool, groups: ['readonly', 'write', 'admin'] },
-  { factory: getSubagentTranscriptTool, groups: ['readonly', 'write', 'admin'] },
+  // Write operations
+  { factory: startSessionTool, groups: ['write', 'admin'] },
+  { factory: actionSessionTool, groups: ['write', 'admin'] },
 ];
 
 /**

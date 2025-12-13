@@ -1,28 +1,54 @@
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { z } from 'zod';
 import type { IAgentOrchestratorClient } from '../orchestrator-client/orchestrator-client.js';
-import type { Session } from '../types.js';
+import type { Session, Log, SubagentTranscript } from '../types.js';
 
 const PARAM_DESCRIPTIONS = {
   id: 'Session ID (numeric) or slug (string). Examples: "1", "fix-auth-bug-20250115"',
   include_transcript:
     'Include the full transcript of the session. Default: false. Set to true for complete conversation history.',
+  include_logs:
+    'Include logs for the session. Default: false. Use logs_page and logs_per_page for pagination.',
+  logs_page: 'Page number for logs pagination. Default: 1',
+  logs_per_page: 'Number of logs per page (1-100). Default: 25',
+  include_subagent_transcripts:
+    'Include subagent transcripts for the session. Default: false. Use transcripts_page and transcripts_per_page for pagination.',
+  transcripts_page: 'Page number for subagent transcripts pagination. Default: 1',
+  transcripts_per_page: 'Number of subagent transcripts per page (1-100). Default: 25',
 } as const;
 
 export const GetSessionSchema = z.object({
   id: z.union([z.string(), z.number()]).describe(PARAM_DESCRIPTIONS.id),
   include_transcript: z.boolean().optional().describe(PARAM_DESCRIPTIONS.include_transcript),
+  include_logs: z.boolean().optional().describe(PARAM_DESCRIPTIONS.include_logs),
+  logs_page: z.number().min(1).optional().describe(PARAM_DESCRIPTIONS.logs_page),
+  logs_per_page: z.number().min(1).max(100).optional().describe(PARAM_DESCRIPTIONS.logs_per_page),
+  include_subagent_transcripts: z
+    .boolean()
+    .optional()
+    .describe(PARAM_DESCRIPTIONS.include_subagent_transcripts),
+  transcripts_page: z.number().min(1).optional().describe(PARAM_DESCRIPTIONS.transcripts_page),
+  transcripts_per_page: z
+    .number()
+    .min(1)
+    .max(100)
+    .optional()
+    .describe(PARAM_DESCRIPTIONS.transcripts_per_page),
 });
 
 const TOOL_DESCRIPTION = `Get detailed information about a specific agent session.
 
-**Returns:** Complete session details including status, configuration, metadata, and optionally the full transcript.
+**Returns:** Complete session details including status, configuration, metadata, and optionally:
+- Full session transcript
+- Session logs (paginated)
+- Subagent transcripts (paginated)
 
 **Use cases:**
 - View detailed session information
 - Check session status and progress
 - Retrieve session transcript for review
-- Debug session issues`;
+- Review logs for debugging
+- Inspect subagent transcripts`;
 
 function formatSessionDetails(session: Session, includeTranscript: boolean): string {
   const lines = [
@@ -97,6 +123,82 @@ function formatSessionDetails(session: Session, includeTranscript: boolean): str
   return lines.join('\n');
 }
 
+function formatLogs(
+  logs: Log[],
+  pagination: { page: number; total_pages: number; total_count: number }
+): string {
+  const lines = [
+    '',
+    '---',
+    `### Logs (${pagination.total_count} total, page ${pagination.page} of ${pagination.total_pages})`,
+    '',
+  ];
+
+  if (logs.length === 0) {
+    lines.push('No logs found.');
+  } else {
+    logs.forEach((log) => {
+      const levelIcons: Record<string, string> = {
+        debug: '🔍',
+        info: 'ℹ️',
+        warning: '⚠️',
+        error: '❌',
+        verbose: '📝',
+      };
+      const icon = levelIcons[log.level] || '📝';
+      lines.push(`${icon} **[${log.level.toUpperCase()}]** ${log.created_at}`);
+      lines.push(`   ${log.content}`);
+      lines.push('');
+    });
+  }
+
+  if (pagination.page < pagination.total_pages) {
+    lines.push(`*More logs available. Use logs_page=${pagination.page + 1} to see the next page.*`);
+  }
+
+  return lines.join('\n');
+}
+
+function formatSubagentTranscripts(
+  transcripts: SubagentTranscript[],
+  pagination: { page: number; total_pages: number; total_count: number }
+): string {
+  const lines = [
+    '',
+    '---',
+    `### Subagent Transcripts (${pagination.total_count} total, page ${pagination.page} of ${pagination.total_pages})`,
+    '',
+  ];
+
+  if (transcripts.length === 0) {
+    lines.push('No subagent transcripts found.');
+  } else {
+    transcripts.forEach((transcript) => {
+      const statusIcons: Record<string, string> = {
+        running: '🔄',
+        completed: '✅',
+        failed: '❌',
+      };
+      const icon = transcript.status ? statusIcons[transcript.status] || '📝' : '📝';
+      const label = transcript.display_label || transcript.agent_id;
+      const statusText = transcript.status || 'unknown';
+      lines.push(`${icon} **${label}** (${statusText})`);
+      if (transcript.description) lines.push(`   ${transcript.description}`);
+      if (transcript.subagent_type) lines.push(`   Type: ${transcript.subagent_type}`);
+      lines.push(`   Created: ${transcript.created_at}`);
+      lines.push('');
+    });
+  }
+
+  if (pagination.page < pagination.total_pages) {
+    lines.push(
+      `*More transcripts available. Use transcripts_page=${pagination.page + 1} to see the next page.*`
+    );
+  }
+
+  return lines.join('\n');
+}
+
 export function getSessionTool(_server: Server, clientFactory: () => IAgentOrchestratorClient) {
   return {
     name: 'get_session',
@@ -112,6 +214,36 @@ export function getSessionTool(_server: Server, clientFactory: () => IAgentOrche
           type: 'boolean',
           description: PARAM_DESCRIPTIONS.include_transcript,
         },
+        include_logs: {
+          type: 'boolean',
+          description: PARAM_DESCRIPTIONS.include_logs,
+        },
+        logs_page: {
+          type: 'number',
+          minimum: 1,
+          description: PARAM_DESCRIPTIONS.logs_page,
+        },
+        logs_per_page: {
+          type: 'number',
+          minimum: 1,
+          maximum: 100,
+          description: PARAM_DESCRIPTIONS.logs_per_page,
+        },
+        include_subagent_transcripts: {
+          type: 'boolean',
+          description: PARAM_DESCRIPTIONS.include_subagent_transcripts,
+        },
+        transcripts_page: {
+          type: 'number',
+          minimum: 1,
+          description: PARAM_DESCRIPTIONS.transcripts_page,
+        },
+        transcripts_per_page: {
+          type: 'number',
+          minimum: 1,
+          maximum: 100,
+          description: PARAM_DESCRIPTIONS.transcripts_per_page,
+        },
       },
       required: ['id'],
     },
@@ -120,13 +252,37 @@ export function getSessionTool(_server: Server, clientFactory: () => IAgentOrche
         const validatedArgs = GetSessionSchema.parse(args);
         const client = clientFactory();
 
+        // Get session details
         const session = await client.getSession(validatedArgs.id, validatedArgs.include_transcript);
+
+        let output = formatSessionDetails(session, validatedArgs.include_transcript || false);
+
+        // Get logs if requested
+        if (validatedArgs.include_logs) {
+          const logsResponse = await client.listLogs(session.id, {
+            page: validatedArgs.logs_page,
+            per_page: validatedArgs.logs_per_page,
+          });
+          output += formatLogs(logsResponse.logs, logsResponse.pagination);
+        }
+
+        // Get subagent transcripts if requested
+        if (validatedArgs.include_subagent_transcripts) {
+          const transcriptsResponse = await client.listSubagentTranscripts(session.id, {
+            page: validatedArgs.transcripts_page,
+            per_page: validatedArgs.transcripts_per_page,
+          });
+          output += formatSubagentTranscripts(
+            transcriptsResponse.subagent_transcripts,
+            transcriptsResponse.pagination
+          );
+        }
 
         return {
           content: [
             {
               type: 'text',
-              text: formatSessionDetails(session, validatedArgs.include_transcript || false),
+              text: output,
             },
           ],
         };

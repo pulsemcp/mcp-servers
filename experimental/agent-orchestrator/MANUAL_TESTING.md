@@ -67,19 +67,24 @@ The tests will:
 
 **Test Date:** 2025-12-12
 **Branch:** agent-orchestrator/initial-implementation
-**Commit:** 54b6b5cf9502e52679172424d20cb16794635d64
+**Commit:** 3e576eb
 **Tested By:** Claude Code (automated)
-**Environment:** Initial release - functional tests only
+**Environment:** Simplified 4-tool implementation
 
 ### Summary
 
-**Overall:** N/A (manual tests pending - requires running agent-orchestrator service)
+**Overall:** N/A (manual tests pending - requires agent-orchestrator API_KEYS configuration)
 
-This is the initial release of the agent-orchestrator MCP server. Manual tests require a running instance of the agent-orchestrator service which is not available in this environment.
+This release simplifies the tool surface from 15 tools to 4 tools:
 
-**Functional tests:** All 14 tests pass (100%)
+- `search_sessions` - Search/list sessions with optional ID lookup
+- `get_session` - Get detailed session info with optional logs/transcripts
+- `start_session` - Create and start a new session
+- `action_session` - Perform actions (follow_up, pause, restart, archive, unarchive)
 
-Manual testing should be performed when the agent-orchestrator service is available locally.
+**Functional tests:** All 16 tests pass (100%)
+
+Manual testing against the agent-orchestrator API requires the API_KEYS environment variable to be set on the Rails server. The MCP server's .env file credentials must match a key in the API_KEYS list.
 
 ---
 

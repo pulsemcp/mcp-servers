@@ -1,17 +1,10 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { createMockOrchestratorClient } from '../mocks/orchestrator-client.functional-mock.js';
-import { listSessionsTool } from '../../shared/src/tools/list-sessions.js';
+import { searchSessionsTool } from '../../shared/src/tools/search-sessions.js';
+import { startSessionTool } from '../../shared/src/tools/start-session.js';
 import { getSessionTool } from '../../shared/src/tools/get-session.js';
-import { createSessionTool } from '../../shared/src/tools/create-session.js';
-import {
-  followUpTool,
-  pauseSessionTool,
-  restartSessionTool,
-  archiveSessionTool,
-} from '../../shared/src/tools/session-actions.js';
-import { listLogsTool, createLogTool } from '../../shared/src/tools/logs.js';
-import { listSubagentTranscriptsTool } from '../../shared/src/tools/subagent-transcripts.js';
+import { actionSessionTool } from '../../shared/src/tools/action-session.js';
 
 describe('Tools', () => {
   let mockServer: Server;
@@ -25,18 +18,14 @@ describe('Tools', () => {
     clientFactory = () => mockClient;
   });
 
-  describe('list_sessions', () => {
-    it('should list sessions successfully', async () => {
-      const tool = listSessionsTool(mockServer, clientFactory);
+  describe('search_sessions', () => {
+    it('should list all sessions when no filters provided', async () => {
+      const tool = searchSessionsTool(mockServer, clientFactory);
 
       const result = await tool.handler({});
 
       expect(result).toMatchObject({
-        content: [
-          {
-            type: 'text',
-          },
-        ],
+        content: [{ type: 'text' }],
       });
       expect((result as { content: Array<{ text: string }> }).content[0].text).toContain(
         'Test Session'
@@ -44,13 +33,61 @@ describe('Tools', () => {
       expect(mockClient.listSessions).toHaveBeenCalledTimes(1);
     });
 
+    it('should search sessions by query', async () => {
+      const tool = searchSessionsTool(mockServer, clientFactory);
+
+      await tool.handler({ query: 'test' });
+
+      expect(mockClient.searchSessions).toHaveBeenCalledWith('test', expect.anything());
+    });
+
+    it('should get session by ID', async () => {
+      const tool = searchSessionsTool(mockServer, clientFactory);
+
+      const result = await tool.handler({ id: 1 });
+
+      expect(result).toMatchObject({
+        content: [{ type: 'text' }],
+      });
+      expect((result as { content: Array<{ text: string }> }).content[0].text).toContain(
+        'Session Found'
+      );
+      expect(mockClient.getSession).toHaveBeenCalledWith(1);
+    });
+
     it('should filter by status', async () => {
-      const tool = listSessionsTool(mockServer, clientFactory);
+      const tool = searchSessionsTool(mockServer, clientFactory);
 
       await tool.handler({ status: 'running' });
 
       expect(mockClient.listSessions).toHaveBeenCalledWith(
         expect.objectContaining({ status: 'running' })
+      );
+    });
+  });
+
+  describe('start_session', () => {
+    it('should start a session', async () => {
+      const tool = startSessionTool(mockServer, clientFactory);
+
+      const result = await tool.handler({
+        title: 'New Session',
+        prompt: 'Do something',
+        git_root: 'https://github.com/test/repo.git',
+      });
+
+      expect(result).toMatchObject({
+        content: [{ type: 'text' }],
+      });
+      expect((result as { content: Array<{ text: string }> }).content[0].text).toContain(
+        'Session Started Successfully'
+      );
+      expect(mockClient.createSession).toHaveBeenCalledWith(
+        expect.objectContaining({
+          title: 'New Session',
+          prompt: 'Do something',
+          git_root: 'https://github.com/test/repo.git',
+        })
       );
     });
   });
@@ -62,11 +99,7 @@ describe('Tools', () => {
       const result = await tool.handler({ id: 1 });
 
       expect(result).toMatchObject({
-        content: [
-          {
-            type: 'text',
-          },
-        ],
+        content: [{ type: 'text' }],
       });
       expect((result as { content: Array<{ text: string }> }).content[0].text).toContain(
         'Test Session'
@@ -81,53 +114,46 @@ describe('Tools', () => {
 
       expect(mockClient.getSession).toHaveBeenCalledWith(1, true);
     });
-  });
 
-  describe('create_session', () => {
-    it('should create a session', async () => {
-      const tool = createSessionTool(mockServer, clientFactory);
+    it('should include logs when requested', async () => {
+      const tool = getSessionTool(mockServer, clientFactory);
 
-      const result = await tool.handler({
-        title: 'New Session',
-        prompt: 'Do something',
-        git_root: 'https://github.com/test/repo.git',
+      const result = await tool.handler({ id: 1, include_logs: true });
+
+      expect(mockClient.listLogs).toHaveBeenCalledWith(1, {
+        page: undefined,
+        per_page: undefined,
       });
+      expect((result as { content: Array<{ text: string }> }).content[0].text).toContain('Logs');
+    });
 
-      expect(result).toMatchObject({
-        content: [
-          {
-            type: 'text',
-          },
-        ],
+    it('should include subagent transcripts when requested', async () => {
+      const tool = getSessionTool(mockServer, clientFactory);
+
+      const result = await tool.handler({ id: 1, include_subagent_transcripts: true });
+
+      expect(mockClient.listSubagentTranscripts).toHaveBeenCalledWith(1, {
+        page: undefined,
+        per_page: undefined,
       });
       expect((result as { content: Array<{ text: string }> }).content[0].text).toContain(
-        'Session Created Successfully'
-      );
-      expect(mockClient.createSession).toHaveBeenCalledWith(
-        expect.objectContaining({
-          title: 'New Session',
-          prompt: 'Do something',
-          git_root: 'https://github.com/test/repo.git',
-        })
+        'Subagent Transcripts'
       );
     });
   });
 
-  describe('follow_up', () => {
+  describe('action_session', () => {
     it('should send follow-up prompt', async () => {
-      const tool = followUpTool(mockServer, clientFactory);
+      const tool = actionSessionTool(mockServer, clientFactory);
 
       const result = await tool.handler({
         session_id: 1,
+        action: 'follow_up',
         prompt: 'Continue with next step',
       });
 
       expect(result).toMatchObject({
-        content: [
-          {
-            type: 'text',
-          },
-        ],
+        content: [{ type: 'text' }],
       });
       expect((result as { content: Array<{ text: string }> }).content[0].text).toContain(
         'Follow-up Sent'
@@ -135,135 +161,91 @@ describe('Tools', () => {
       expect(mockClient.followUp).toHaveBeenCalledWith(1, 'Continue with next step');
     });
 
-    it('should require prompt', async () => {
-      const tool = followUpTool(mockServer, clientFactory);
+    it('should require prompt for follow_up action', async () => {
+      const tool = actionSessionTool(mockServer, clientFactory);
 
-      // Missing required prompt parameter will cause Zod validation to fail
-      // The tool returns an error response instead of throwing
       const result = await tool.handler({
         session_id: 1,
+        action: 'follow_up',
         // Missing prompt
       });
 
       expect(result.isError).toBe(true);
-      expect((result as { content: Array<{ text: string }> }).content[0].text).toContain(
-        'Required'
-      );
+      expect((result as { content: Array<{ text: string }> }).content[0].text).toContain('prompt');
     });
-  });
 
-  describe('pause_session', () => {
     it('should pause a session', async () => {
-      const tool = pauseSessionTool(mockServer, clientFactory);
+      const tool = actionSessionTool(mockServer, clientFactory);
 
-      const result = await tool.handler({ session_id: 1 });
+      const result = await tool.handler({
+        session_id: 1,
+        action: 'pause',
+      });
 
       expect((result as { content: Array<{ text: string }> }).content[0].text).toContain(
         'Session Paused'
       );
       expect(mockClient.pauseSession).toHaveBeenCalledWith(1);
     });
-  });
 
-  describe('restart_session', () => {
     it('should restart a session', async () => {
-      const tool = restartSessionTool(mockServer, clientFactory);
+      const tool = actionSessionTool(mockServer, clientFactory);
 
-      const result = await tool.handler({ session_id: 1 });
+      const result = await tool.handler({
+        session_id: 1,
+        action: 'restart',
+      });
 
       expect((result as { content: Array<{ text: string }> }).content[0].text).toContain(
         'Session Restarted'
       );
       expect(mockClient.restartSession).toHaveBeenCalledWith(1);
     });
-  });
 
-  describe('archive_session', () => {
     it('should archive a session', async () => {
-      const tool = archiveSessionTool(mockServer, clientFactory);
+      const tool = actionSessionTool(mockServer, clientFactory);
 
-      const result = await tool.handler({ session_id: 1 });
+      const result = await tool.handler({
+        session_id: 1,
+        action: 'archive',
+      });
 
       expect((result as { content: Array<{ text: string }> }).content[0].text).toContain(
         'Session Archived'
       );
       expect(mockClient.archiveSession).toHaveBeenCalledWith(1);
     });
-  });
 
-  describe('list_logs', () => {
-    it('should list logs for a session', async () => {
-      const tool = listLogsTool(mockServer, clientFactory);
-
-      const result = await tool.handler({ session_id: 1 });
-
-      expect((result as { content: Array<{ text: string }> }).content[0].text).toContain(
-        'Test log message'
-      );
-      expect(mockClient.listLogs).toHaveBeenCalledWith(1, {});
-    });
-  });
-
-  describe('create_log', () => {
-    it('should create a log entry', async () => {
-      const tool = createLogTool(mockServer, clientFactory);
+    it('should unarchive a session', async () => {
+      const tool = actionSessionTool(mockServer, clientFactory);
 
       const result = await tool.handler({
         session_id: 1,
-        content: 'New log entry',
-        level: 'info',
+        action: 'unarchive',
       });
 
       expect((result as { content: Array<{ text: string }> }).content[0].text).toContain(
-        'Log Created'
+        'Session Unarchived'
       );
-      expect(mockClient.createLog).toHaveBeenCalledWith(1, {
-        content: 'New log entry',
-        level: 'info',
-      });
-    });
-  });
-
-  describe('list_subagent_transcripts', () => {
-    it('should list subagent transcripts', async () => {
-      const tool = listSubagentTranscriptsTool(mockServer, clientFactory);
-
-      const result = await tool.handler({ session_id: 1 });
-
-      expect((result as { content: Array<{ text: string }> }).content[0].text).toContain(
-        'Test subagent'
-      );
-      expect(mockClient.listSubagentTranscripts).toHaveBeenCalledWith(1, {});
+      expect(mockClient.unarchiveSession).toHaveBeenCalledWith(1);
     });
   });
 
   describe('tool definitions', () => {
     it('should have correct tool definitions', () => {
       const tools = [
-        listSessionsTool(mockServer, clientFactory),
+        searchSessionsTool(mockServer, clientFactory),
+        startSessionTool(mockServer, clientFactory),
         getSessionTool(mockServer, clientFactory),
-        createSessionTool(mockServer, clientFactory),
-        followUpTool(mockServer, clientFactory),
-        pauseSessionTool(mockServer, clientFactory),
-        restartSessionTool(mockServer, clientFactory),
-        archiveSessionTool(mockServer, clientFactory),
-        listLogsTool(mockServer, clientFactory),
-        createLogTool(mockServer, clientFactory),
-        listSubagentTranscriptsTool(mockServer, clientFactory),
+        actionSessionTool(mockServer, clientFactory),
       ];
 
-      expect(tools).toHaveLength(10);
+      expect(tools).toHaveLength(4);
       const toolNames = tools.map((t) => t.name);
-      expect(toolNames).toContain('list_sessions');
+      expect(toolNames).toContain('search_sessions');
+      expect(toolNames).toContain('start_session');
       expect(toolNames).toContain('get_session');
-      expect(toolNames).toContain('create_session');
-      expect(toolNames).toContain('follow_up');
-      expect(toolNames).toContain('pause_session');
-      expect(toolNames).toContain('restart_session');
-      expect(toolNames).toContain('archive_session');
-      expect(toolNames).toContain('list_logs');
-      expect(toolNames).toContain('create_log');
-      expect(toolNames).toContain('list_subagent_transcripts');
+      expect(toolNames).toContain('action_session');
     });
   });
 });

@@ -4,9 +4,9 @@ MCP server for PulseMCP's agent-orchestrator: a Claude Code + MCP-powered agent-
 
 ## Highlights
 
-- Full CRUD operations for agent sessions, logs, and subagent transcripts
-- Session lifecycle management (create, pause, restart, archive, unarchive)
-- Follow-up prompts for interactive agent conversations
+- Simplified 4-tool interface for full agent session management
+- Search, filter, and retrieve sessions with optional logs and transcripts
+- Session lifecycle actions (pause, restart, archive, unarchive, follow_up)
 - Tool grouping system for permission-based access control
 - TypeScript with strict type checking
 - Comprehensive testing setup (functional, integration, manual)
@@ -15,23 +15,12 @@ MCP server for PulseMCP's agent-orchestrator: a Claude Code + MCP-powered agent-
 
 ### Tools
 
-| Tool                        | Group    | Description                                    |
-| --------------------------- | -------- | ---------------------------------------------- |
-| `list_sessions`             | readonly | List agent sessions with optional filtering    |
-| `get_session`               | readonly | Get detailed session info including transcript |
-| `search_sessions`           | readonly | Search sessions by query string                |
-| `create_session`            | write    | Create a new agent session                     |
-| `update_session`            | write    | Update session title, slug, or metadata        |
-| `follow_up`                 | write    | Send follow-up prompt to a paused session      |
-| `pause_session`             | write    | Pause a running session                        |
-| `restart_session`           | write    | Restart a paused or failed session             |
-| `archive_session`           | write    | Archive a session                              |
-| `unarchive_session`         | write    | Restore an archived session                    |
-| `delete_session`            | admin    | Permanently delete a session                   |
-| `list_logs`                 | readonly | List logs for a session                        |
-| `create_log`                | write    | Create a log entry for a session               |
-| `list_subagent_transcripts` | readonly | List subagent transcripts for a session        |
-| `get_subagent_transcript`   | readonly | Get detailed subagent transcript info          |
+| Tool              | Group    | Description                                                            |
+| ----------------- | -------- | ---------------------------------------------------------------------- |
+| `search_sessions` | readonly | Search/list sessions with optional ID lookup, query, and status filter |
+| `get_session`     | readonly | Get detailed session info with optional logs and transcripts           |
+| `start_session`   | write    | Create and start a new agent session                                   |
+| `action_session`  | write    | Perform actions: follow_up, pause, restart, archive, unarchive         |
 
 ### Resources
 

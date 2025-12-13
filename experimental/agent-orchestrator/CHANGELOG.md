@@ -14,25 +14,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Initial implementation of agent-orchestrator MCP server
 - Input validation for API client (baseUrl and apiKey cannot be empty)
 - Request timeout configuration (default 30s) with AbortController
-- Session management tools:
-  - `list_sessions` - List agent sessions with filtering and pagination
-  - `get_session` - Get detailed session information with optional transcript
-  - `create_session` - Create new agent sessions
-  - `update_session` - Update session attributes
-  - `delete_session` - Permanently delete sessions
-  - `search_sessions` - Search sessions by query string
-- Session lifecycle tools:
-  - `follow_up` - Send follow-up prompts to paused sessions
-  - `pause_session` - Pause running sessions
-  - `restart_session` - Restart paused or failed sessions
-  - `archive_session` - Archive sessions
-  - `unarchive_session` - Restore archived sessions
-- Log management tools:
-  - `list_logs` - List logs for a session
-  - `create_log` - Create log entries
-- Subagent transcript tools:
-  - `list_subagent_transcripts` - List subagent transcripts
-  - `get_subagent_transcript` - Get detailed transcript info
+- Simplified 4-tool interface:
+  - `search_sessions` - Search/list sessions with optional ID lookup, query, and filters
+  - `start_session` - Create and start new agent sessions
+  - `get_session` - Get detailed session info with optional logs and subagent transcripts (paginated)
+  - `action_session` - Perform session actions (follow_up, pause, restart, archive, unarchive)
 - Configuration resource at `agent-orchestrator://config`
 - Tool grouping system (readonly, write, admin)
 - Environment variable validation at startup
