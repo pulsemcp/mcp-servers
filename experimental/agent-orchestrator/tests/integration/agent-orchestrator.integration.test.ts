@@ -13,49 +13,40 @@ describe('Agent Orchestrator MCP Server Integration Tests', () => {
 
   afterEach(async () => {
     if (client) {
-      await client.close();
+      await client.disconnect();
       client = null;
     }
   });
 
   describe('Server Lifecycle', () => {
-    it('should connect and list capabilities', async () => {
+    it('should connect and list tools', async () => {
       const mockClient = createIntegrationMockOrchestratorClient({});
       client = await createTestMCPClientWithMock(mockClient);
 
-      const serverInfo = await client.getServerInfo();
-      expect(serverInfo.name).toBe('agent-orchestrator-mcp-server');
-      expect(serverInfo.version).toBe('0.1.0');
+      // Server is initialized if we can list tools
+      const result = await client.listTools();
+      expect(result).toBeDefined();
+      expect(result.tools).toBeDefined();
     });
   });
 
   describe('Tools', () => {
-    it('should list available tools', async () => {
+    it('should list available tools (simplified 4-tool API)', async () => {
       const mockClient = createIntegrationMockOrchestratorClient({});
       client = await createTestMCPClientWithMock(mockClient);
 
-      const tools = await client.listTools();
-      expect(tools.length).toBeGreaterThan(0);
+      const result = await client.listTools();
+      const tools = result.tools;
+      expect(tools.length).toBe(4);
 
       const toolNames = tools.map((t: { name: string }) => t.name);
-      expect(toolNames).toContain('list_sessions');
-      expect(toolNames).toContain('get_session');
-      expect(toolNames).toContain('create_session');
       expect(toolNames).toContain('search_sessions');
-      expect(toolNames).toContain('follow_up');
-      expect(toolNames).toContain('pause_session');
-      expect(toolNames).toContain('restart_session');
-      expect(toolNames).toContain('archive_session');
-      expect(toolNames).toContain('unarchive_session');
-      expect(toolNames).toContain('update_session');
-      expect(toolNames).toContain('delete_session');
-      expect(toolNames).toContain('list_logs');
-      expect(toolNames).toContain('create_log');
-      expect(toolNames).toContain('list_subagent_transcripts');
-      expect(toolNames).toContain('get_subagent_transcript');
+      expect(toolNames).toContain('get_session');
+      expect(toolNames).toContain('start_session');
+      expect(toolNames).toContain('action_session');
     });
 
-    it('should execute list_sessions tool', async () => {
+    it('should execute search_sessions tool', async () => {
       const mockClient = createIntegrationMockOrchestratorClient({
         sessions: [
           {
@@ -85,7 +76,7 @@ describe('Agent Orchestrator MCP Server Integration Tests', () => {
       });
       client = await createTestMCPClientWithMock(mockClient);
 
-      const result = await client.callTool('list_sessions', {});
+      const result = await client.callTool('search_sessions', {});
 
       expect(result.content).toBeDefined();
       expect(result.content[0].type).toBe('text');
@@ -132,11 +123,11 @@ describe('Agent Orchestrator MCP Server Integration Tests', () => {
       expect(result.content[0].text).toContain('feature');
     });
 
-    it('should execute create_session tool', async () => {
+    it('should execute start_session tool', async () => {
       const mockClient = createIntegrationMockOrchestratorClient({});
       client = await createTestMCPClientWithMock(mockClient);
 
-      const result = await client.callTool('create_session', {
+      const result = await client.callTool('start_session', {
         title: 'New Test Session',
         prompt: 'Create a test file',
         git_root: 'https://github.com/test/repo.git',
@@ -145,11 +136,11 @@ describe('Agent Orchestrator MCP Server Integration Tests', () => {
 
       expect(result.content).toBeDefined();
       expect(result.content[0].type).toBe('text');
-      expect(result.content[0].text).toContain('Session Created Successfully');
+      expect(result.content[0].text).toContain('Session Started Successfully');
       expect(result.content[0].text).toContain('New Test Session');
     });
 
-    it('should execute list_logs tool', async () => {
+    it('should execute get_session tool with logs', async () => {
       const mockClient = createIntegrationMockOrchestratorClient({
         sessions: [
           {
@@ -197,7 +188,7 @@ describe('Agent Orchestrator MCP Server Integration Tests', () => {
       });
       client = await createTestMCPClientWithMock(mockClient);
 
-      const result = await client.callTool('list_logs', { session_id: 1 });
+      const result = await client.callTool('get_session', { id: 1, include_logs: true });
 
       expect(result.content).toBeDefined();
       expect(result.content[0].type).toBe('text');
@@ -211,7 +202,8 @@ describe('Agent Orchestrator MCP Server Integration Tests', () => {
       const mockClient = createIntegrationMockOrchestratorClient({});
       client = await createTestMCPClientWithMock(mockClient);
 
-      const resources = await client.listResources();
+      const result = await client.listResources();
+      const resources = result.resources;
       expect(resources).toHaveLength(1);
       expect(resources[0].uri).toBe('agent-orchestrator://config');
     });
