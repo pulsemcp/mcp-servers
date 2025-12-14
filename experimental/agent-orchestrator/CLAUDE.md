@@ -20,15 +20,12 @@ agent-orchestrator/
 ├── shared/                     # Shared business logic
 │   ├── src/
 │   │   ├── server.ts          # Server factory with DI
-│   │   ├── tools.ts           # Tool registration with grouping
-│   │   ├── tools/             # Individual tool implementations
-│   │   │   ├── list-sessions.ts
-│   │   │   ├── get-session.ts
-│   │   │   ├── create-session.ts
-│   │   │   ├── search-sessions.ts
-│   │   │   ├── session-actions.ts
-│   │   │   ├── logs.ts
-│   │   │   └── subagent-transcripts.ts
+│   │   ├── tools.ts           # Tool registration
+│   │   ├── tools/             # Individual tool implementations (4 tools)
+│   │   │   ├── search-sessions.ts  # List/search/filter sessions
+│   │   │   ├── get-session.ts      # Get session details with logs/transcripts
+│   │   │   ├── start-session.ts    # Create and start new sessions
+│   │   │   └── action-session.ts   # Session actions (follow_up, pause, restart, archive, unarchive)
 │   │   ├── orchestrator-client/  # REST API client
 │   │   │   ├── orchestrator-client.ts
 │   │   │   └── orchestrator-client.integration-mock.ts
@@ -55,11 +52,14 @@ Optional:
 - `ENABLED_TOOLGROUPS` - Comma-separated list of tool groups (readonly, write, admin)
 - `SKIP_HEALTH_CHECKS` - Skip API validation at startup
 
-## Tool Groups
+## Tools
 
-- **readonly**: list_sessions, get_session, search_sessions, list_logs, list_subagent_transcripts, get_subagent_transcript
-- **write**: create_session, update_session, follow_up, pause_session, restart_session, archive_session, unarchive_session, create_log
-- **admin**: delete_session
+The server provides 4 tools with a simplified, consolidated API:
+
+- **search_sessions** - List, filter, and search sessions (supports status filter, query search, pagination)
+- **get_session** - Get detailed session info with optional logs and subagent transcripts
+- **start_session** - Create and optionally start a new agent session
+- **action_session** - Perform actions on sessions (follow_up, pause, restart, archive, unarchive)
 
 ## Development
 

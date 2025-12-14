@@ -1,6 +1,6 @@
-# NAME MCP Server - Remote Implementation
+# Agent Orchestrator MCP Server - Remote Implementation
 
-This directory is reserved for the remote/HTTP implementation of the NAME MCP server.
+This directory is reserved for the remote/HTTP implementation of the Agent Orchestrator MCP server.
 
 ## Status
 

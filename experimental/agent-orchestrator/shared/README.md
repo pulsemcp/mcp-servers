@@ -1,6 +1,6 @@
-# NAME MCP Server - Shared Module
+# Agent Orchestrator MCP Server - Shared Module
 
-This module contains the core business logic for the NAME MCP server.
+This module contains the core business logic for the Agent Orchestrator MCP server.
 
 ## Overview
 

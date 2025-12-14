@@ -31,7 +31,7 @@ export function toolNameTool(server: Server, clientFactory: () => IYourClient) {
 
 ## Example
 
-See `example-tool.ts` for a complete example implementation.
+See `search-sessions.ts` or `get-session.ts` for complete example implementations.
 
 ## Benefits
 

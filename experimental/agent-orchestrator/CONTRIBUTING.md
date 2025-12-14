@@ -1,33 +1,30 @@
-# Contributing
+# Contributing to Agent Orchestrator MCP Server
 
-This is a template for creating new MCP servers. When you copy this template to create your own server, update this CONTRIBUTING.md file with your specific details.
+This guide covers development setup and contribution guidelines for the Agent Orchestrator MCP server.
 
 ## Getting Started
 
-1. Copy this entire directory to your desired location
-2. Rename the directory to your server name
-3. Update all instances of:
-   - `NAME` → Your server name
-   - `DESCRIPTION` → Your server description
-   - Package names in `package.json` files
-4. Update this CONTRIBUTING.md with your server-specific information
+### Prerequisites
 
-## Running the server locally
+- Node.js 18+
+- Access to an Agent Orchestrator instance (local or remote)
+- API credentials for the Agent Orchestrator
+
+### Running the server locally
 
 ```bash
-npm install
+npm run install-all
 npm run build
 npm run start
 ```
 
 ## Environment Variables
 
-Create a `.env` file for any required configuration:
+Create a `.env` file with the following:
 
 ```bash
-# Example environment variables
-# YOUR_API_KEY=your-api-key-here
-# YOUR_CONFIG_OPTION=value
+AGENT_ORCHESTRATOR_BASE_URL=http://localhost:3000
+AGENT_ORCHESTRATOR_API_KEY=your-api-key-here
 ```
 
 ## Debugging tools
@@ -37,20 +34,12 @@ Create a `.env` file for any required configuration:
 Using local build:
 
 ```bash
-cd your-server-directory
-npm install
+cd experimental/agent-orchestrator
+npm run install-all
 npm run build
 npx @modelcontextprotocol/inspector node local/build/index.js \
-  -e YOUR_ENV_VAR=<your-value> \
-  -e ANOTHER_ENV_VAR=<another-value>
-```
-
-Using published package (after publishing):
-
-```bash
-npx @modelcontextprotocol/inspector npx @your-org/your-server@latest \
-  -e YOUR_ENV_VAR=<your-value> \
-  -e ANOTHER_ENV_VAR=<another-value>
+  -e AGENT_ORCHESTRATOR_BASE_URL=http://localhost:3000 \
+  -e AGENT_ORCHESTRATOR_API_KEY=your-api-key
 ```
 
 ### Claude Desktop
@@ -63,65 +52,53 @@ tail -n 20 -f ~/Library/Logs/Claude/mcp*.log
 
 ## Testing
 
-This template includes placeholders for three types of tests:
+This server includes three types of tests:
 
 1. **Functional Tests** (`npm test`) - Unit tests with mocked dependencies
-2. **Integration Tests** (`npm run test:integration`) - Tests the full MCP server
-3. **Manual Tests** (`npm run test:manual`) - Tests against real external APIs
+2. **Integration Tests** (`npm run test:integration`) - Tests the full MCP server with mocked API
+3. **Manual Tests** (`npm run test:manual`) - Tests against a real Agent Orchestrator instance
 
-### Setting Up Tests
+### Running Tests
 
-1. Create test files in the appropriate directories:
-   - `tests/functional/` - For unit tests
-   - `tests/integration/` - For integration tests
-   - `tests/manual/` - For manual tests
+```bash
+# Functional tests
+npm test
 
-2. Follow the patterns from other MCP servers in this repository
+# Integration tests
+npm run test:integration
+
+# Manual tests (requires real API credentials and running Agent Orchestrator)
+npm run test:manual
+```
 
 ### Manual Testing
 
-Manual tests are important when your server interacts with external APIs:
+Manual tests are critical for verifying the server works with a real Agent Orchestrator:
 
-- Use real API credentials (not mocked)
-- Verify actual API integration works correctly
-- Test response shapes and error handling
-- Are NOT run in CI to avoid external dependencies
+- Requires real API credentials in `.env`
+- Agent Orchestrator must be running at the configured URL
+- Tests verify actual API responses and session management
+- Results are tracked in `MANUAL_TESTING.md`
 
-## Testing with a test.ts file
+Before creating a version bump, always run manual tests:
 
-Helpful for isolating and trying out pieces of code.
-
-1. Create a `src/test.ts` file
-2. Write test code to exercise specific functionality
-3. Run with: `npm run build && node build/test.js`
-
-Example test file:
-
-```ts
-import * as dotenv from 'dotenv';
-// Import your server components here
-
-dotenv.config();
-
-async function test() {
-  // Add your test code here
-  console.log('Testing server functionality...');
-}
-
-test().catch(console.error);
+```bash
+npm run test:manual:setup  # First time setup
+npm run test:manual        # Run tests
 ```
 
 ## Publishing
 
-See the main repository's [PUBLISHING_SERVERS.md](../docs/PUBLISHING_SERVERS.md) for detailed publishing instructions.
+See the main repository's [PUBLISHING_SERVERS.md](../../docs/PUBLISHING_SERVERS.md) for detailed publishing instructions.
 
 Quick summary:
 
-1. Update version: `npm run stage-publish`
-2. Update CHANGELOG.md
-3. Commit all changes
-4. Push and create PR
-5. After merge, GitHub Actions will publish automatically
+1. Run manual tests and update `MANUAL_TESTING.md`
+2. Update version: `npm run stage-publish`
+3. Update CHANGELOG.md
+4. Commit all changes
+5. Push and create PR
+6. After merge, GitHub Actions will publish automatically
 
 ## Development Tips
 
@@ -129,26 +106,29 @@ Quick summary:
 - Follow the MCP SDK patterns for implementing resources and tools
 - Use Zod for input validation
 - Include comprehensive error handling
-- Document all resources and tools in your README.md
-- Consider adding TypeScript JSDoc comments for better IDE support
+- Use the logging utilities from `shared/src/logging.ts` instead of console.log
 
-## Template Structure
-
-This template follows the standard MCP server structure:
+## Project Structure
 
 ```
-your-server/
+agent-orchestrator/
 ├── shared/           # Core business logic
 │   ├── src/
-│   │   ├── resources.ts  # MCP resources
-│   │   ├── tools.ts      # MCP tools
-│   │   └── index.ts      # Main exports
+│   │   ├── server.ts         # Server factory
+│   │   ├── tools.ts          # Tool registration
+│   │   ├── tools/            # Individual tool implementations
+│   │   ├── resources.ts      # MCP resources
+│   │   ├── types.ts          # TypeScript types
+│   │   └── logging.ts        # Logging utilities
 │   └── package.json
 ├── local/            # Stdio transport
 │   ├── src/
-│   │   └── index.ts      # Server setup
+│   │   └── index.ts          # Server entry point
 │   └── package.json
 ├── tests/            # Test suites
+│   ├── functional/           # Unit tests
+│   ├── integration/          # Protocol tests
+│   └── manual/               # Real API tests
 ├── package.json      # Root workspace
 ├── README.md         # User documentation
 ├── CHANGELOG.md      # Version history

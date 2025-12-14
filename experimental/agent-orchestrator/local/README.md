@@ -1,6 +1,6 @@
-# NAME MCP Server - Local Implementation
+# Agent Orchestrator MCP Server - Local Implementation
 
-This is the local implementation of the NAME MCP server using stdio transport.
+This is the local implementation of the Agent Orchestrator MCP server using stdio transport.
 
 ## Usage
 

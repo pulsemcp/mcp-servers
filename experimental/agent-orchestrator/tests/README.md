@@ -9,9 +9,9 @@ tests/
 ├── functional/          # Functional tests for individual components
 │   └── tools.test.ts   # Tests for MCP tool implementations
 ├── integration/        # Integration tests using TestMCPClient
-│   └── NAME.integration.test.ts  # Full server integration tests
+│   └── agent-orchestrator.integration.test.ts  # Full server integration tests
 ├── manual/             # Manual tests that hit real external APIs
-│   └── NAME.manual.test.ts  # Tests with real API calls
+│   └── agent-orchestrator.manual.test.ts  # Tests with real API calls
 └── mocks/              # Mock implementations and test data
     └── example-client.functional-mock.ts  # Vitest mocks for functional tests
 ```
