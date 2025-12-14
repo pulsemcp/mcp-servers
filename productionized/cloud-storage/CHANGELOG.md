@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Support for individual credential environment variables as alternative to JSON key file
+  - `GCS_CLIENT_EMAIL`: Service account email
+  - `GCS_PRIVATE_KEY`: Service account private key in PEM format
+  - Useful for secrets managers and environments where storing key files is not ideal
+
 ### Security
 
 - Add path traversal validation for cloud storage paths (prevents `..` sequences)

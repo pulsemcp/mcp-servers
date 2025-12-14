@@ -31,8 +31,19 @@ function validateEnvironment(): void {
     },
     {
       name: 'GCS_KEY_FILE',
-      description: 'Path to service account JSON key file',
+      description:
+        'Path to service account JSON key file (alternative to individual credential env vars)',
       defaultValue: 'uses default credentials',
+    },
+    {
+      name: 'GCS_CLIENT_EMAIL',
+      description: 'Service account email (alternative to GCS_KEY_FILE)',
+      defaultValue: 'uses key file or default credentials',
+    },
+    {
+      name: 'GCS_PRIVATE_KEY',
+      description: 'Service account private key in PEM format (use with GCS_CLIENT_EMAIL)',
+      defaultValue: 'uses key file or default credentials',
     },
     {
       name: 'ENABLED_TOOLGROUPS',

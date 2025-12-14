@@ -131,12 +131,27 @@ export interface StorageConfig {
 }
 
 /**
+ * Service account credentials for GCS
+ * These can be provided as individual fields instead of a JSON key file
+ */
+export interface GCSServiceAccountCredentials {
+  /** Service account email (e.g., "my-sa@project.iam.gserviceaccount.com") */
+  clientEmail: string;
+  /** Private key in PEM format (the "private_key" field from the JSON key file) */
+  privateKey: string;
+  /** Project ID */
+  projectId: string;
+}
+
+/**
  * GCS-specific configuration
  */
 export interface GCSConfig extends StorageConfig {
   provider: 'gcs';
-  /** Path to service account key file (optional if using default credentials) */
+  /** Path to service account key file (optional - use this OR individual credentials) */
   keyFilePath?: string;
-  /** Project ID (optional if using default credentials) */
+  /** Project ID (optional if using key file or default credentials) */
   projectId?: string;
+  /** Individual service account credentials (alternative to keyFilePath) */
+  credentials?: GCSServiceAccountCredentials;
 }

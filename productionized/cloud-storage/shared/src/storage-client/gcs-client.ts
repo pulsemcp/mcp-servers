@@ -52,13 +52,25 @@ export class GCSStorageClient implements IStorageClient {
   constructor(config: GCSConfig) {
     const storageOptions: ConstructorParameters<typeof Storage>[0] = {};
 
-    if (config.keyFilePath) {
+    // Priority: individual credentials > key file > default credentials
+    if (config.credentials) {
+      // Use individual credential fields
+      storageOptions.credentials = {
+        client_email: config.credentials.clientEmail,
+        private_key: config.credentials.privateKey,
+      };
+      storageOptions.projectId = config.credentials.projectId;
+    } else if (config.keyFilePath) {
+      // Use key file path
       storageOptions.keyFilename = config.keyFilePath;
-    }
-
-    if (config.projectId) {
+      if (config.projectId) {
+        storageOptions.projectId = config.projectId;
+      }
+    } else if (config.projectId) {
+      // Just project ID (for default credentials)
       storageOptions.projectId = config.projectId;
     }
+    // If none provided, will use Application Default Credentials
 
     this.storage = new Storage(storageOptions);
     this.bucket = this.storage.bucket(config.bucket);

@@ -15,6 +15,11 @@ export type StorageClientFactory = () => IStorageClient;
 
 /**
  * Create a GCS storage client from environment variables
+ *
+ * Supports three authentication methods (in order of priority):
+ * 1. Individual credential env vars: GCS_CLIENT_EMAIL, GCS_PRIVATE_KEY, GCS_PROJECT_ID
+ * 2. Service account key file: GCS_KEY_FILE (path to JSON key file)
+ * 3. Application Default Credentials (ADC)
  */
 export function createDefaultStorageClient(): IStorageClient {
   const bucket = process.env.GCS_BUCKET;
@@ -27,9 +32,29 @@ export function createDefaultStorageClient(): IStorageClient {
     provider: 'gcs',
     bucket,
     rootDirectory: process.env.GCS_ROOT_DIRECTORY,
-    keyFilePath: process.env.GCS_KEY_FILE,
     projectId: process.env.GCS_PROJECT_ID,
   };
+
+  // Check for individual credential env vars (highest priority)
+  const clientEmail = process.env.GCS_CLIENT_EMAIL;
+  const privateKey = process.env.GCS_PRIVATE_KEY;
+
+  if (clientEmail && privateKey) {
+    // Use individual credentials
+    const projectId = process.env.GCS_PROJECT_ID;
+    if (!projectId) {
+      throw new Error('GCS_PROJECT_ID is required when using GCS_CLIENT_EMAIL and GCS_PRIVATE_KEY');
+    }
+    config.credentials = {
+      clientEmail,
+      privateKey: privateKey.replace(/\\n/g, '\n'), // Handle escaped newlines
+      projectId,
+    };
+  } else if (process.env.GCS_KEY_FILE) {
+    // Use key file path
+    config.keyFilePath = process.env.GCS_KEY_FILE;
+  }
+  // If neither, will use Application Default Credentials
 
   return new GCSStorageClient(config);
 }

@@ -7,7 +7,7 @@ MCP server for cloud storage operations. Currently supports Google Cloud Storage
 - Full CRUD operations for cloud storage files (save, get, search, delete)
 - Files exposed as MCP Resources for easy browsing
 - Support for both inline content and local file references (preserves context window for large/binary files)
-- Flexible authentication options (service account key file or default credentials)
+- Flexible authentication (individual env vars, key file, or default credentials)
 - Optional root directory scoping within a bucket
 - Tool grouping for permission-based access control
 
@@ -51,27 +51,41 @@ Control which tools are available via the `ENABLED_TOOLGROUPS` environment varia
 
 ### Environment Variables
 
-| Variable             | Required | Description                                  | Default            |
-| -------------------- | -------- | -------------------------------------------- | ------------------ |
-| `GCS_BUCKET`         | Yes      | Google Cloud Storage bucket name             | -                  |
-| `GCS_ROOT_DIRECTORY` | No       | Optional root directory prefix in the bucket | Bucket root        |
-| `GCS_PROJECT_ID`     | No       | Google Cloud project ID                      | From default creds |
-| `GCS_KEY_FILE`       | No       | Path to service account JSON key file        | Uses default creds |
-| `ENABLED_TOOLGROUPS` | No       | Comma-separated tool groups to enable        | All enabled        |
-| `SKIP_HEALTH_CHECKS` | No       | Skip bucket connectivity check at startup    | `false`            |
+| Variable             | Required | Description                                         | Default            |
+| -------------------- | -------- | --------------------------------------------------- | ------------------ |
+| `GCS_BUCKET`         | Yes      | Google Cloud Storage bucket name                    | -                  |
+| `GCS_ROOT_DIRECTORY` | No       | Optional root directory prefix in the bucket        | Bucket root        |
+| `GCS_PROJECT_ID`     | No       | Google Cloud project ID                             | From default creds |
+| `GCS_KEY_FILE`       | No       | Path to service account JSON key file               | Uses default creds |
+| `GCS_CLIENT_EMAIL`   | No       | Service account email (alternative to key file)     | Uses key file      |
+| `GCS_PRIVATE_KEY`    | No       | Service account private key (use with CLIENT_EMAIL) | Uses key file      |
+| `ENABLED_TOOLGROUPS` | No       | Comma-separated tool groups to enable               | All enabled        |
+| `SKIP_HEALTH_CHECKS` | No       | Skip bucket connectivity check at startup           | `false`            |
 
 ### Authentication
 
-The server supports two authentication methods:
+The server supports three authentication methods (in order of priority):
 
-1. **Service Account Key File**: Set `GCS_KEY_FILE` to the path of your service account JSON key file
-2. **Default Credentials**: If `GCS_KEY_FILE` is not set, the server uses Google Cloud's [Application Default Credentials](https://cloud.google.com/docs/authentication/application-default-credentials)
+1. **Individual Credential Environment Variables** (recommended for secrets managers):
+   - Set `GCS_CLIENT_EMAIL`, `GCS_PRIVATE_KEY`, and `GCS_PROJECT_ID`
+   - Useful when you don't want to store a JSON key file on disk
+   - The private key should be in PEM format (can include literal `\n` for newlines)
+
+2. **Service Account Key File**:
+   - Set `GCS_KEY_FILE` to the path of your service account JSON key file
+   - Optionally set `GCS_PROJECT_ID` (often included in the key file)
+
+3. **Application Default Credentials (ADC)**:
+   - If no credentials are provided, uses Google Cloud's [Application Default Credentials](https://cloud.google.com/docs/authentication/application-default-credentials)
+   - Works automatically on GCE, Cloud Run, or after running `gcloud auth application-default login`
 
 ### Claude Desktop Configuration
 
 macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
 
 Windows: `%APPDATA%\Claude\claude_desktop_config.json`
+
+**Using key file:**
 
 ```json
 {
@@ -83,6 +97,25 @@ Windows: `%APPDATA%\Claude\claude_desktop_config.json`
         "GCS_BUCKET": "my-bucket-name",
         "GCS_KEY_FILE": "/path/to/service-account-key.json",
         "GCS_ROOT_DIRECTORY": "optional/prefix"
+      }
+    }
+  }
+}
+```
+
+**Using individual credential env vars:**
+
+```json
+{
+  "mcpServers": {
+    "cloud-storage": {
+      "command": "npx",
+      "args": ["-y", "@pulsemcp/cloud-storage"],
+      "env": {
+        "GCS_BUCKET": "my-bucket-name",
+        "GCS_PROJECT_ID": "my-project-id",
+        "GCS_CLIENT_EMAIL": "my-sa@my-project-id.iam.gserviceaccount.com",
+        "GCS_PRIVATE_KEY": "-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"
       }
     }
   }
