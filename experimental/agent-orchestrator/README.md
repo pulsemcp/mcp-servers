@@ -44,31 +44,14 @@ Control which tools are available via the `ENABLED_TOOLGROUPS` environment varia
 - `ENABLED_TOOLGROUPS="readonly,write"` - Read and write, no admin
 - Not set - All tools enabled (default)
 
-## Quick Start
+## Setup
 
-### Installation
+### Prerequisites
 
-```bash
-npm run install-all
-npm run build
-```
+- Node.js (use `nvm use` if you have nvm installed)
+- An Agent Orchestrator instance with API access
 
-### Configuration
-
-Set the required environment variables:
-
-```bash
-export AGENT_ORCHESTRATOR_BASE_URL="http://localhost:3000"
-export AGENT_ORCHESTRATOR_API_KEY="your_api_key_here"
-```
-
-### Running
-
-```bash
-npm start
-```
-
-## Environment Variables
+### Environment Variables
 
 | Variable                      | Required | Description                       | Default     |
 | ----------------------------- | -------- | --------------------------------- | ----------- |
@@ -77,18 +60,28 @@ npm start
 | `ENABLED_TOOLGROUPS`          | No       | Comma-separated tool groups       | All enabled |
 | `SKIP_HEALTH_CHECKS`          | No       | Skip API validation at startup    | `false`     |
 
-### Claude Desktop Configuration
+### Claude Desktop
 
-#### macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
+Make sure you have your Agent Orchestrator base URL and API key ready.
 
-#### Windows: `%APPDATA%\Claude\claude_desktop_config.json`
+Then proceed to the setup instructions below. If this is your first time using MCP Servers, you'll want to make sure you have the [Claude Desktop application](https://claude.ai/download) and follow the [official MCP setup instructions](https://modelcontextprotocol.io/quickstart/user).
+
+#### Manual Setup
+
+You're going to need Node working on your machine so you can run `npx` commands in your terminal. If you don't have Node, you can install it from [nodejs.org](https://nodejs.org/en/download).
+
+macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
+
+Windows: `%APPDATA%\Claude\claude_desktop_config.json`
+
+Modify your `claude_desktop_config.json` file to add the following:
 
 ```json
 {
   "mcpServers": {
     "agent-orchestrator": {
-      "command": "node",
-      "args": ["/path/to/agent-orchestrator/local/build/index.js"],
+      "command": "npx",
+      "args": ["-y", "agent-orchestrator-mcp-server"],
       "env": {
         "AGENT_ORCHESTRATOR_BASE_URL": "http://localhost:3000",
         "AGENT_ORCHESTRATOR_API_KEY": "your-api-key-here",
@@ -98,6 +91,8 @@ npm start
   }
 }
 ```
+
+Restart Claude Desktop and you should be ready to go!
 
 ## Development
 

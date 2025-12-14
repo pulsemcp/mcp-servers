@@ -147,16 +147,22 @@ The server validates required environment variables at startup. If any are missi
 
 ### Claude Desktop Configuration
 
-#### macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
+If this is your first time using MCP Servers, you'll want to make sure you have the [Claude Desktop application](https://claude.ai/download) and follow the [official MCP setup instructions](https://modelcontextprotocol.io/quickstart/user).
 
-#### Windows: `%APPDATA%\Claude\claude_desktop_config.json`
+You're going to need Node working on your machine so you can run `npx` commands in your terminal. If you don't have Node, you can install it from [nodejs.org](https://nodejs.org/en/download).
+
+macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
+
+Windows: `%APPDATA%\Claude\claude_desktop_config.json`
+
+Modify your `claude_desktop_config.json` file to add the following:
 
 ```json
 {
   "mcpServers": {
     "NAME": {
-      "command": "node",
-      "args": ["/path/to/NAME-mcp-server/local/build/index.js"],
+      "command": "npx",
+      "args": ["-y", "NAME-mcp-server"],
       "env": {
         "YOUR_API_KEY": "your-api-key-here",
         "ENABLED_TOOLGROUPS": "readonly,write"
@@ -165,6 +171,8 @@ The server validates required environment variables at startup. If any are missi
   }
 }
 ```
+
+Restart Claude Desktop and you should be ready to go!
 
 ## Development
 
