@@ -13,7 +13,7 @@ tests/
 ├── manual/             # Manual tests that hit real external APIs
 │   └── agent-orchestrator.manual.test.ts  # Tests with real API calls
 └── mocks/              # Mock implementations and test data
-    └── example-client.functional-mock.ts  # Vitest mocks for functional tests
+    └── orchestrator-client.functional-mock.ts  # Vitest mocks for functional tests
 ```
 
 ## Running Tests
@@ -63,7 +63,7 @@ The tests use dependency injection to mock external clients/services:
 
 ```typescript
 // Create a mock client
-const mockClient = createMockClient();
+const mockClient = createMockOrchestratorClient();
 
 // Inject it into the tools
 const registerTools = createRegisterTools(() => mockClient);
@@ -92,7 +92,7 @@ Integration tests use a real MCP client (`TestMCPClient`) to test the full MCP p
 ### Components
 
 1. **TestMCPClient** - Real MCP client that communicates with the server via stdio
-2. **Mock External Client** - Mock implementation of external APIs (e.g., `example-client.integration-mock.ts`)
+2. **Mock External Client** - Mock implementation of external APIs (e.g., `orchestrator-client.integration-mock.ts`)
 3. **Integration Entry Point** - Special server entry (`index.integration-with-mock.ts`) that uses the mock client
 4. **Environment Variables** - Used to pass mock data configuration to the server
 
@@ -101,8 +101,8 @@ Integration tests use a real MCP client (`TestMCPClient`) to test the full MCP p
 1. Test creates a mock external client with specific test data:
 
    ```typescript
-   const mockExampleClient = createIntegrationMockExampleClient({
-     items: { 'item-123': { id: 'item-123', name: 'Test Item' } },
+   const mockClient = createIntegrationMockOrchestratorClient({
+     sessions: [{ id: 1, title: 'Test Session', status: 'running' }],
    });
    ```
 
@@ -126,25 +126,21 @@ Integration tests use a real MCP client (`TestMCPClient`) to test the full MCP p
 
 ```typescript
 // Create a mock external client with custom data
-const mockExampleClient = createIntegrationMockExampleClient({
-  searchResponses: {
-    'user:john': [
-      { id: '1', name: 'John Doe', email: 'john@example.com' },
-      { id: '2', name: 'John Smith', email: 'jsmith@example.com' },
-    ],
-  },
+const mockClient = createIntegrationMockOrchestratorClient({
+  sessions: [
+    { id: 1, title: 'Test Session', status: 'running' },
+    { id: 2, title: 'Another Session', status: 'completed' },
+  ],
 });
 
 // Create TestMCPClient that will use our mock
-const client = await createTestMCPClientWithMock(mockExampleClient);
+const client = await createTestMCPClientWithMock(mockClient);
 
 // Call the MCP tool (real MCP protocol communication)
-const result = await client.callTool('search_users', { query: 'user:john' });
+const result = await client.callTool('search_sessions', { status: 'running' });
 
 // Verify the results
-const users = JSON.parse(result.content[0].text);
-expect(users).toHaveLength(2);
-expect(users[0].name).toBe('John Doe');
+expect(result.content[0].text).toContain('Test Session');
 ```
 
 ### Key Benefits
@@ -187,8 +183,8 @@ Manual tests are designed to test the MCP server against real external APIs. The
 1. Create a `.env` file in the server root:
 
    ```bash
-   YOUR_API_KEY=your-actual-api-key
-   OTHER_ENV_VAR=value
+   AGENT_ORCHESTRATOR_BASE_URL=http://localhost:3000
+   AGENT_ORCHESTRATOR_API_KEY=your-actual-api-key
    ```
 
 2. Run manual tests:
@@ -207,11 +203,11 @@ Manual tests report detailed outcomes:
 ### Example Output
 
 ```
-✅ example_tool - real API call: SUCCESS
-   Details: Message processed successfully
+✅ search_sessions - list all sessions: SUCCESS
+   Details: Found 15 sessions
 
-⚠️ example_tool - rate limit handling: WARNING
-   Details: 2 requests failed for non-rate-limit reasons
+⚠️ get_session - retrieve session with logs: WARNING
+   Details: Session found but logs were empty
 ```
 
 ### When to Run Manual Tests
