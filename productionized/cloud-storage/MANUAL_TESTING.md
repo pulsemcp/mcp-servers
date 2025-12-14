@@ -67,30 +67,51 @@ The tests will:
 
 ## Latest Test Results
 
-**Test Date:** Not yet tested
-**Branch:** Not yet tested
-**Commit:** Not yet tested
-**Tested By:** Not yet tested
-**Environment:** Not yet tested
+**Test Date:** 2024-12-14
+**Branch:** claude-agent/cloud-storage-mcp-server
+**Commit:** 878d20d
+**Tested By:** Claude Code
+**Environment:** Initial release - functional and integration tests pass, manual tests pending credentials
 
 ### Summary
 
-| Metric      | Value          |
-| ----------- | -------------- |
-| Total Tests | Not yet tested |
-| Passed      | Not yet tested |
-| Failed      | Not yet tested |
-| Pass Rate   | Not yet tested |
+| Metric      | Value                              |
+| ----------- | ---------------------------------- |
+| Total Tests | 23 (15 functional + 8 integration) |
+| Passed      | 23                                 |
+| Failed      | 0                                  |
+| Pass Rate   | 100%                               |
 
 ### Test Files
 
-| File                           | Status           | Tests | Notes      |
-| ------------------------------ | ---------------- | ----- | ---------- |
-| `cloud-storage.manual.test.ts` | :hourglass: SKIP | -     | Not tested |
+| File                                | Status             | Tests | Notes                                   |
+| ----------------------------------- | ------------------ | ----- | --------------------------------------- |
+| `tools.test.ts` (functional)        | :white_check_mark: | 15    | All tool handlers pass with mock client |
+| `cloud-storage.integration.test.ts` | :white_check_mark: | 8     | Server integration tests pass with mock |
+| `cloud-storage.manual.test.ts`      | :hourglass: SKIP   | -     | Pending GCS credentials from user       |
 
 ### Detailed Results
 
-Manual testing is pending GCS credentials from the user.
+**Functional Tests (15 passed):**
+
+- save_file: metadata, inline content, custom metadata, error handling
+- get_file: metadata, existing file, non-existent file, JSON content
+- search_files: metadata, list all files, prefix filtering, empty results
+- delete_file: metadata, delete existing, non-existent file
+
+**Integration Tests (8 passed):**
+
+- Server lifecycle: tools listing on connect
+- Tools: list tools, save_file + get_file, search_files, delete_file
+- Resources: list resources with config, read config resource, read file resources
+
+**Manual Tests:**
+Skipped - requires real GCS bucket credentials. The manual test file is ready and will verify:
+
+- Real GCS bucket operations
+- Large file handling
+- Binary file support via local_file_path
+- Root directory prefix functionality
 
 ---
 
