@@ -2,6 +2,42 @@ import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { z } from 'zod';
 import { IStorageClient } from '../storage-client/types.js';
 import { readFileSync, existsSync } from 'fs';
+import { resolve } from 'path';
+
+/**
+ * Validate that a local file path is safe to access
+ * Prevents path traversal and access to sensitive system directories
+ */
+function validateLocalFilePath(filePath: string): void {
+  // Resolve to absolute path to detect path traversal
+  const resolvedPath = resolve(filePath);
+
+  // Check for path traversal attempts
+  if (filePath.includes('..')) {
+    throw new Error('Path traversal not allowed in local file path');
+  }
+
+  // Block access to sensitive system directories
+  const blockedPrefixes = [
+    '/etc/',
+    '/var/',
+    '/usr/',
+    '/bin/',
+    '/sbin/',
+    '/root/',
+    '/sys/',
+    '/proc/',
+    'C:\\Windows\\',
+    'C:\\Program Files\\',
+    'C:\\ProgramData\\',
+  ];
+
+  for (const prefix of blockedPrefixes) {
+    if (resolvedPath.toLowerCase().startsWith(prefix.toLowerCase())) {
+      throw new Error(`Access to system directory not allowed: ${prefix}`);
+    }
+  }
+}
 
 // =============================================================================
 // PARAMETER DESCRIPTIONS
@@ -112,6 +148,8 @@ export function saveFileTool(_server: Server, clientFactory: () => IStorageClien
         let fileContent: string | Buffer;
 
         if (validatedArgs.local_file_path) {
+          // Validate the local file path for security
+          validateLocalFilePath(validatedArgs.local_file_path);
           // Read from local file
           if (!existsSync(validatedArgs.local_file_path)) {
             throw new Error(`Local file not found: ${validatedArgs.local_file_path}`);

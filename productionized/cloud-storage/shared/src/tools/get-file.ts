@@ -2,6 +2,42 @@ import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { z } from 'zod';
 import { IStorageClient } from '../storage-client/types.js';
 import { writeFileSync } from 'fs';
+import { resolve } from 'path';
+
+/**
+ * Validate that a local file path is safe to write to
+ * Prevents path traversal and writes to sensitive system directories
+ */
+function validateLocalFilePath(filePath: string): void {
+  // Resolve to absolute path to detect path traversal
+  const resolvedPath = resolve(filePath);
+
+  // Check for path traversal attempts
+  if (filePath.includes('..')) {
+    throw new Error('Path traversal not allowed in local file path');
+  }
+
+  // Block writes to sensitive system directories
+  const blockedPrefixes = [
+    '/etc/',
+    '/var/',
+    '/usr/',
+    '/bin/',
+    '/sbin/',
+    '/root/',
+    '/sys/',
+    '/proc/',
+    'C:\\Windows\\',
+    'C:\\Program Files\\',
+    'C:\\ProgramData\\',
+  ];
+
+  for (const prefix of blockedPrefixes) {
+    if (resolvedPath.toLowerCase().startsWith(prefix.toLowerCase())) {
+      throw new Error(`Write to system directory not allowed: ${prefix}`);
+    }
+  }
+}
 
 // =============================================================================
 // PARAMETER DESCRIPTIONS
@@ -96,6 +132,8 @@ export function getFileTool(_server: Server, clientFactory: () => IStorageClient
 
         // If local_file_path is provided, write content to file
         if (validatedArgs.local_file_path) {
+          // Validate the local file path for security
+          validateLocalFilePath(validatedArgs.local_file_path);
           const contentBuffer =
             typeof result.content === 'string'
               ? Buffer.from(result.content, 'utf-8')

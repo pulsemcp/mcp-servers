@@ -66,9 +66,20 @@ export class GCSStorageClient implements IStorageClient {
   }
 
   /**
+   * Validate that a path doesn't contain path traversal sequences
+   */
+  private validatePath(path: string): void {
+    if (path.includes('..')) {
+      throw new Error('Path traversal not allowed: paths cannot contain ".."');
+    }
+  }
+
+  /**
    * Get the full path including root directory
    */
   private getFullPath(path: string): string {
+    // Validate path for security
+    this.validatePath(path);
     // Remove leading slash if present
     const cleanPath = path.replace(/^\//, '');
     return this.rootDirectory + cleanPath;

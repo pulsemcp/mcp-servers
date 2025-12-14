@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Security
+
+- Add path traversal validation for cloud storage paths (prevents `..` sequences)
+- Add local file path validation for `save_file` and `get_file` tools
+  - Prevents path traversal in local file paths
+  - Blocks access to sensitive system directories (/etc, /var, /usr, etc.)
+
 ## [0.1.0] - 2024-12-14
 
 ### Added
