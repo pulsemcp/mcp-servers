@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.1] - 2025-12-14
+
+### Added
+
+- New `change_mcp_servers` action in the `action_session` tool to update MCP servers for a session
+
 ### Changed
 
 - Updated README to use npm package (`npx -y agent-orchestrator-mcp-server`) instead of local node build path

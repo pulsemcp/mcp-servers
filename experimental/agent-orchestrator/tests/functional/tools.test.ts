@@ -229,6 +229,39 @@ describe('Tools', () => {
       );
       expect(mockClient.unarchiveSession).toHaveBeenCalledWith(1);
     });
+
+    it('should change MCP servers for a session', async () => {
+      const tool = actionSessionTool(mockServer, clientFactory);
+
+      const result = await tool.handler({
+        session_id: 1,
+        action: 'change_mcp_servers',
+        mcp_servers: ['server1', 'server2'],
+      });
+
+      expect((result as { content: Array<{ text: string }> }).content[0].text).toContain(
+        'MCP Servers Updated'
+      );
+      expect((result as { content: Array<{ text: string }> }).content[0].text).toContain(
+        'server1, server2'
+      );
+      expect(mockClient.changeMcpServers).toHaveBeenCalledWith(1, ['server1', 'server2']);
+    });
+
+    it('should require mcp_servers for change_mcp_servers action', async () => {
+      const tool = actionSessionTool(mockServer, clientFactory);
+
+      const result = await tool.handler({
+        session_id: 1,
+        action: 'change_mcp_servers',
+        // Missing mcp_servers
+      });
+
+      expect(result.isError).toBe(true);
+      expect((result as { content: Array<{ text: string }> }).content[0].text).toContain(
+        'mcp_servers'
+      );
+    });
   });
 
   describe('tool definitions', () => {

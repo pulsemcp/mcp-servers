@@ -5,17 +5,27 @@ import type { IAgentOrchestratorClient } from '../orchestrator-client/orchestrat
 const PARAM_DESCRIPTIONS = {
   session_id: 'Session ID (numeric) or slug (string) to perform the action on.',
   action:
-    'Action to perform: "follow_up" (send prompt to paused session), "pause" (pause running session), "restart" (restart paused/failed session), "archive" (archive session), "unarchive" (restore archived session)',
+    'Action to perform: "follow_up" (send prompt to paused session), "pause" (pause running session), "restart" (restart paused/failed session), "archive" (archive session), "unarchive" (restore archived session), "change_mcp_servers" (update MCP servers for session)',
   prompt:
     'Required for "follow_up" action. The prompt to send to the agent. Not used for other actions.',
+  mcp_servers:
+    'Required for "change_mcp_servers" action. Array of MCP server names to set for the session.',
 } as const;
 
-const ACTION_ENUM = ['follow_up', 'pause', 'restart', 'archive', 'unarchive'] as const;
+const ACTION_ENUM = [
+  'follow_up',
+  'pause',
+  'restart',
+  'archive',
+  'unarchive',
+  'change_mcp_servers',
+] as const;
 
 export const ActionSessionSchema = z.object({
   session_id: z.union([z.string(), z.number()]).describe(PARAM_DESCRIPTIONS.session_id),
   action: z.enum(ACTION_ENUM).describe(PARAM_DESCRIPTIONS.action),
   prompt: z.string().optional().describe(PARAM_DESCRIPTIONS.prompt),
+  mcp_servers: z.array(z.string()).optional().describe(PARAM_DESCRIPTIONS.mcp_servers),
 });
 
 const TOOL_DESCRIPTION = `Perform an action on an agent session.
@@ -26,6 +36,7 @@ const TOOL_DESCRIPTION = `Perform an action on an agent session.
 - **restart**: Restart a paused or failed session without providing new input
 - **archive**: Archive a session (marks as completed)
 - **unarchive**: Restore an archived session to "needs_input" status
+- **change_mcp_servers**: Update the MCP servers for a session (requires "mcp_servers" parameter)
 
 **Status requirements:**
 - follow_up: Session must be "needs_input"
@@ -33,11 +44,13 @@ const TOOL_DESCRIPTION = `Perform an action on an agent session.
 - restart: Session must be "needs_input" or "failed"
 - archive: Session can be in any status except "archived"
 - unarchive: Session must be "archived"
+- change_mcp_servers: Session can be in any status except "archived"
 
 **Use cases:**
 - Provide additional instructions to an agent
 - Control session lifecycle (pause, restart)
-- Organize sessions (archive, unarchive)`;
+- Organize sessions (archive, unarchive)
+- Reconfigure session MCP server access`;
 
 export function actionSessionTool(_server: Server, clientFactory: () => IAgentOrchestratorClient) {
   return {
@@ -59,6 +72,11 @@ export function actionSessionTool(_server: Server, clientFactory: () => IAgentOr
           type: 'string',
           description: PARAM_DESCRIPTIONS.prompt,
         },
+        mcp_servers: {
+          type: 'array',
+          items: { type: 'string' },
+          description: PARAM_DESCRIPTIONS.mcp_servers,
+        },
       },
       required: ['session_id', 'action'],
     },
@@ -66,7 +84,7 @@ export function actionSessionTool(_server: Server, clientFactory: () => IAgentOr
       try {
         const validatedArgs = ActionSessionSchema.parse(args);
         const client = clientFactory();
-        const { session_id, action, prompt } = validatedArgs;
+        const { session_id, action, prompt, mcp_servers } = validatedArgs;
 
         // Validate that prompt is provided for follow_up action
         if (action === 'follow_up' && !prompt) {
@@ -75,6 +93,19 @@ export function actionSessionTool(_server: Server, clientFactory: () => IAgentOr
               {
                 type: 'text',
                 text: 'Error: The "prompt" parameter is required for the "follow_up" action.',
+              },
+            ],
+            isError: true,
+          };
+        }
+
+        // Validate that mcp_servers is provided for change_mcp_servers action
+        if (action === 'change_mcp_servers' && !mcp_servers) {
+          return {
+            content: [
+              {
+                type: 'text',
+                text: 'Error: The "mcp_servers" parameter is required for the "change_mcp_servers" action.',
               },
             ],
             isError: true,
@@ -160,6 +191,19 @@ export function actionSessionTool(_server: Server, clientFactory: () => IAgentOr
               `- **Session ID:** ${session.id}`,
               `- **Title:** ${session.title}`,
               `- **New Status:** ${session.status}`,
+            ];
+            result = lines.join('\n');
+            break;
+          }
+
+          case 'change_mcp_servers': {
+            const session = await client.changeMcpServers(session_id, mcp_servers!);
+            const lines = [
+              `## MCP Servers Updated`,
+              '',
+              `- **Session ID:** ${session.id}`,
+              `- **Title:** ${session.title}`,
+              `- **MCP Servers:** ${session.mcp_servers.length > 0 ? session.mcp_servers.join(', ') : '(none)'}`,
             ];
             result = lines.join('\n');
             break;
