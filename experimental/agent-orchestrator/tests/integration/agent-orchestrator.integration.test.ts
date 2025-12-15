@@ -140,6 +140,48 @@ describe('Agent Orchestrator MCP Server Integration Tests', () => {
       expect(result.content[0].text).toContain('New Test Session');
     });
 
+    it('should execute action_session tool with change_mcp_servers', async () => {
+      const mockClient = createIntegrationMockOrchestratorClient({
+        sessions: [
+          {
+            id: 1,
+            slug: 'test-session',
+            title: 'Test Session',
+            status: 'needs_input',
+            agent_type: 'claude_code',
+            prompt: 'Test prompt',
+            git_root: 'https://github.com/test/repo.git',
+            branch: 'main',
+            subdirectory: null,
+            execution_provider: 'local_filesystem',
+            stop_condition: null,
+            mcp_servers: ['old-server'],
+            config: {},
+            metadata: {},
+            custom_metadata: {},
+            session_id: null,
+            job_id: null,
+            running_job_id: null,
+            archived_at: null,
+            created_at: '2025-01-15T14:30:00Z',
+            updated_at: '2025-01-15T14:35:00Z',
+          },
+        ],
+      });
+      client = await createTestMCPClientWithMock(mockClient);
+
+      const result = await client.callTool('action_session', {
+        session_id: 1,
+        action: 'change_mcp_servers',
+        mcp_servers: ['new-server-1', 'new-server-2'],
+      });
+
+      expect(result.content).toBeDefined();
+      expect(result.content[0].type).toBe('text');
+      expect(result.content[0].text).toContain('MCP Servers Updated');
+      expect(result.content[0].text).toContain('new-server-1, new-server-2');
+    });
+
     it('should execute get_session tool with logs', async () => {
       const mockClient = createIntegrationMockOrchestratorClient({
         sessions: [

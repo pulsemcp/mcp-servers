@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { createMockOrchestratorClient } from '../mocks/orchestrator-client.functional-mock.js';
 import { searchSessionsTool } from '../../shared/src/tools/search-sessions.js';
@@ -261,6 +261,28 @@ describe('Tools', () => {
       expect((result as { content: Array<{ text: string }> }).content[0].text).toContain(
         'mcp_servers'
       );
+    });
+
+    it('should handle empty mcp_servers array', async () => {
+      mockClient.changeMcpServers = vi.fn().mockResolvedValue({
+        id: 1,
+        title: 'Test Session',
+        mcp_servers: [],
+      });
+
+      const tool = actionSessionTool(mockServer, clientFactory);
+
+      const result = await tool.handler({
+        session_id: 1,
+        action: 'change_mcp_servers',
+        mcp_servers: [],
+      });
+
+      expect((result as { content: Array<{ text: string }> }).content[0].text).toContain(
+        'MCP Servers Updated'
+      );
+      expect((result as { content: Array<{ text: string }> }).content[0].text).toContain('(none)');
+      expect(mockClient.changeMcpServers).toHaveBeenCalledWith(1, []);
     });
   });
 
