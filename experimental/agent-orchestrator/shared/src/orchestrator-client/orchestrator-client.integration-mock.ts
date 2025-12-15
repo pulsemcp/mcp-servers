@@ -228,6 +228,7 @@ export function createIntegrationMockOrchestratorClient(
       if (data.title !== undefined) session.title = data.title;
       if (data.slug !== undefined) session.slug = data.slug;
       if (data.stop_condition !== undefined) session.stop_condition = data.stop_condition;
+      if (data.mcp_servers !== undefined) session.mcp_servers = data.mcp_servers;
       if (data.custom_metadata !== undefined) session.custom_metadata = data.custom_metadata;
       session.updated_at = new Date().toISOString();
       return session;
@@ -300,6 +301,16 @@ export function createIntegrationMockOrchestratorClient(
       session.running_job_id = `job_${Date.now()}`;
       session.updated_at = new Date().toISOString();
       return { session, message: 'Session restarted' };
+    },
+
+    async changeMcpServers(id: string | number, mcp_servers: string[]): Promise<Session> {
+      const session = mockData.sessions?.find((s) => s.id === Number(id) || s.slug === String(id));
+      if (!session) {
+        throw new Error(`API Error (404): Session not found`);
+      }
+      session.mcp_servers = mcp_servers;
+      session.updated_at = new Date().toISOString();
+      return session;
     },
 
     async listLogs(

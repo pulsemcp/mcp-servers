@@ -6,7 +6,7 @@ MCP server for PulseMCP's agent-orchestrator: a Claude Code + MCP-powered agent-
 
 - Simplified 4-tool interface for full agent session management
 - Search, filter, and retrieve sessions with optional logs and transcripts
-- Session lifecycle actions (pause, restart, archive, unarchive, follow_up)
+- Session lifecycle actions (pause, restart, archive, unarchive, follow_up, change_mcp_servers)
 - Tool grouping system for permission-based access control
 - TypeScript with strict type checking
 - Comprehensive testing setup (functional, integration, manual)
@@ -15,12 +15,12 @@ MCP server for PulseMCP's agent-orchestrator: a Claude Code + MCP-powered agent-
 
 ### Tools
 
-| Tool              | Group    | Description                                                            |
-| ----------------- | -------- | ---------------------------------------------------------------------- |
-| `search_sessions` | readonly | Search/list sessions with optional ID lookup, query, and status filter |
-| `get_session`     | readonly | Get detailed session info with optional logs and transcripts           |
-| `start_session`   | write    | Create and start a new agent session                                   |
-| `action_session`  | write    | Perform actions: follow_up, pause, restart, archive, unarchive         |
+| Tool              | Group    | Description                                                                        |
+| ----------------- | -------- | ---------------------------------------------------------------------------------- |
+| `search_sessions` | readonly | Search/list sessions with optional ID lookup, query, and status filter             |
+| `get_session`     | readonly | Get detailed session info with optional logs and transcripts                       |
+| `start_session`   | write    | Create and start a new agent session                                               |
+| `action_session`  | write    | Perform actions: follow_up, pause, restart, archive, unarchive, change_mcp_servers |
 
 ### Resources
 

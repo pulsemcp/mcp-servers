@@ -145,6 +145,7 @@ export interface UpdateSessionRequest {
   title?: string;
   slug?: string;
   stop_condition?: string;
+  mcp_servers?: string[];
   custom_metadata?: Record<string, unknown>;
 }
 

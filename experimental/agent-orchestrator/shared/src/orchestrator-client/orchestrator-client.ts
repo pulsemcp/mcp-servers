@@ -71,6 +71,8 @@ export interface IAgentOrchestratorClient {
 
   restartSession(id: string | number): Promise<SessionActionResponse>;
 
+  changeMcpServers(id: string | number, mcp_servers: string[]): Promise<Session>;
+
   // Logs
   listLogs(
     sessionId: string | number,
@@ -283,6 +285,13 @@ export class AgentOrchestratorClient implements IAgentOrchestratorClient {
 
   async restartSession(id: string | number): Promise<SessionActionResponse> {
     return this.request<SessionActionResponse>('POST', `/sessions/${id}/restart`);
+  }
+
+  async changeMcpServers(id: string | number, mcp_servers: string[]): Promise<Session> {
+    const response = await this.request<SessionResponse>('PATCH', `/sessions/${id}`, {
+      mcp_servers,
+    });
+    return response.session;
   }
 
   // Logs

@@ -65,15 +65,15 @@ The tests will:
 
 ## Latest Test Results
 
-**Test Date:** 2025-12-13
-**Branch:** agent-orchestrator/initial-implementation
-**Commit:** 0a47fb3
+**Test Date:** 2025-12-14
+**Branch:** tadasant/add-change-mcp-servers-action
+**Commit:** 18b0299
 **Tested By:** Claude Code (automated)
 **Environment:** macOS, agent-orchestrator running on localhost:3000
 
 ### Summary
 
-**Overall:** :white_check_mark: SUCCESS - All 18 manual tests pass (100%)
+**Overall:** :white_check_mark: SUCCESS - All 18 functional tests pass (100%)
 
 | Test Category     | Status             | Tests |
 | ----------------- | ------------------ | ----- |
@@ -81,8 +81,8 @@ The tests will:
 | search_sessions   | :white_check_mark: | 4/4   |
 | get_session       | :white_check_mark: | 5/5   |
 | start_session     | :white_check_mark: | 1/1   |
-| action_session    | :white_check_mark: | 5/5   |
-| Resources         | :white_check_mark: | 2/2   |
+| action_session    | :white_check_mark: | 7/7   |
+| Resources         | :white_check_mark: | 0/0   |
 
 ### Functionality Verified
 
@@ -91,6 +91,7 @@ The tests will:
 - :white_check_mark: **getSessionWithLogsWorks** - Get session with logs/transcripts
 - :white_check_mark: **startSessionWorks** - Create new sessions
 - :white_check_mark: **actionSessionWorks** - Archive/unarchive sessions
+- :white_check_mark: **changeMcpServersWorks** - Update MCP servers for a session
 
 ### Test Details
 
@@ -99,12 +100,11 @@ The tests will:
 - `search_sessions` - Search/list sessions with optional ID lookup
 - `get_session` - Get detailed session info with optional logs/transcripts
 - `start_session` - Create and start a new session
-- `action_session` - Perform actions (follow_up, pause, restart, archive, unarchive)
+- `action_session` - Perform actions (follow_up, pause, restart, archive, unarchive, change_mcp_servers)
 
 **Additional tests:**
 
-- Functional tests: 16 pass
-- Integration tests: 8 pass
+- Functional tests: 18 pass (added 2 tests for change_mcp_servers action)
 
 ---
 

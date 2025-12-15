@@ -111,6 +111,11 @@ export function createMockOrchestratorClient(): IAgentOrchestratorClient {
       message: 'Session restarted',
     }),
 
+    changeMcpServers: vi.fn().mockResolvedValue({
+      ...defaultSession,
+      mcp_servers: ['server1', 'server2'],
+    }),
+
     listLogs: vi.fn().mockResolvedValue({
       logs: [defaultLog],
       pagination: { page: 1, per_page: 25, total_count: 1, total_pages: 1 },
