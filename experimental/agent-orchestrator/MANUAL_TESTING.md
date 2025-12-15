@@ -67,7 +67,7 @@ The tests will:
 
 **Test Date:** 2025-12-14
 **Branch:** tadasant/add-change-mcp-servers-action
-**Commit:** 23ef0a6
+**Commit:** 18b0299
 **Tested By:** Claude Code (automated)
 **Environment:** macOS, agent-orchestrator running on localhost:3000
 
