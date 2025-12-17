@@ -284,4 +284,110 @@ describe('sendMCPImplementationPostingNotification', () => {
       'Error sending MCP implementation notification: Email service unavailable'
     );
   });
+
+  it('should use custom content with placeholder replacement', async () => {
+    const mockImplementation: MCPImplementation = {
+      id: 130,
+      name: 'Custom Content Server',
+      type: 'server',
+      status: 'live',
+      slug: 'custom-server',
+      mcp_server_id: 462,
+      mcp_server: {
+        id: 462,
+        slug: 'custom-server',
+        name: 'Custom Content Server',
+      },
+      internal_notes: 'custom@example.com',
+    };
+
+    vi.mocked(mockClient.getMCPImplementationById).mockResolvedValue(mockImplementation);
+    vi.mocked(mockClient.sendEmail).mockResolvedValue({ id: 792 });
+
+    await tool.handler({
+      implementation_id: 130,
+      content: 'Congratulations! Your server is live at ${implementationUrl}. Enjoy!',
+    });
+
+    expect(mockClient.sendEmail).toHaveBeenCalledWith({
+      from_email_address: 'tadas@s.pulsemcp.com',
+      from_name: 'Tadas at PulseMCP',
+      reply_to_email_address: 'tadas@pulsemcp.com',
+      to_email_address: 'custom@example.com',
+      subject: 'Thanks for your submission to PulseMCP!',
+      content:
+        'Congratulations! Your server is live at https://www.pulsemcp.com/servers/custom-server. Enjoy!',
+    });
+  });
+
+  it('should replace multiple placeholder occurrences', async () => {
+    const mockImplementation: MCPImplementation = {
+      id: 131,
+      name: 'Multi Placeholder Server',
+      type: 'server',
+      status: 'live',
+      slug: 'multi-server',
+      mcp_server_id: 463,
+      mcp_server: {
+        id: 463,
+        slug: 'multi-server',
+        name: 'Multi Placeholder Server',
+      },
+      internal_notes: 'multi@example.com',
+    };
+
+    vi.mocked(mockClient.getMCPImplementationById).mockResolvedValue(mockImplementation);
+    vi.mocked(mockClient.sendEmail).mockResolvedValue({ id: 793 });
+
+    await tool.handler({
+      implementation_id: 131,
+      content: 'Check it out at ${implementationUrl}. Share ${implementationUrl} with friends!',
+    });
+
+    expect(mockClient.sendEmail).toHaveBeenCalledWith({
+      from_email_address: 'tadas@s.pulsemcp.com',
+      from_name: 'Tadas at PulseMCP',
+      reply_to_email_address: 'tadas@pulsemcp.com',
+      to_email_address: 'multi@example.com',
+      subject: 'Thanks for your submission to PulseMCP!',
+      content:
+        'Check it out at https://www.pulsemcp.com/servers/multi-server. Share https://www.pulsemcp.com/servers/multi-server with friends!',
+    });
+  });
+
+  it('should use default content when content parameter not provided', async () => {
+    const mockImplementation: MCPImplementation = {
+      id: 132,
+      name: 'Default Content Server',
+      type: 'server',
+      status: 'live',
+      slug: 'default-server',
+      mcp_server_id: 464,
+      mcp_server: {
+        id: 464,
+        slug: 'default-server',
+        name: 'Default Content Server',
+      },
+      internal_notes: 'default@example.com',
+    };
+
+    vi.mocked(mockClient.getMCPImplementationById).mockResolvedValue(mockImplementation);
+    vi.mocked(mockClient.sendEmail).mockResolvedValue({ id: 794 });
+
+    await tool.handler({
+      implementation_id: 132,
+    });
+
+    const callArgs = vi.mocked(mockClient.sendEmail).mock.calls[0][0];
+
+    // Verify it contains the URL
+    expect(callArgs.content).toContain(
+      'Your submission is now live here: https://www.pulsemcp.com/servers/default-server'
+    );
+
+    // Verify it contains the full default template
+    expect(callArgs.content).toContain('Hi there,');
+    expect(callArgs.content).toContain('Let us know how we can be helpful to you!');
+    expect(callArgs.content).toContain('Best,\nTadas');
+  });
 });

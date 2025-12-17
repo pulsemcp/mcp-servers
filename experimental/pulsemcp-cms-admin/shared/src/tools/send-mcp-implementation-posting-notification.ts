@@ -186,8 +186,12 @@ Use cases:
         }
 
         // Prepare email content - use custom content or default, replacing ${implementationUrl}
+        // Using function callback to avoid special character issues in replacement
         const contentTemplate = validatedArgs.content || DEFAULT_EMAIL_CONTENT;
-        const emailContent = contentTemplate.replace(/\$\{implementationUrl\}/g, implementationUrl);
+        const emailContent = contentTemplate.replace(
+          /\$\{implementationUrl\}/g,
+          () => implementationUrl
+        );
 
         // Prepare email parameters with defaults
         const emailParams = {
