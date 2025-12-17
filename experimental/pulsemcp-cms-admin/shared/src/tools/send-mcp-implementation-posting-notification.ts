@@ -82,7 +82,7 @@ Tadas
 Example with custom content:
 {
   "implementation_id": 11371,
-  "content": "Congratulations! Your MCP server is now published at \${implementationUrl}. Thank you for contributing!"
+  "content": "Hey Mike,\\n\\nYour submission is now live here: \${implementationUrl}\\n\\nLet us know how we can be helpful to you!\\n\\nBest,\\nTadas"
 }
 
 Default email template:
