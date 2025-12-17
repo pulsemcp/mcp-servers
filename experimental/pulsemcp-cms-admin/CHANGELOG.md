@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [0.3.3] - 2025-12-16
+
+### Added
+
+- Added `content` parameter to `send_mcp_implementation_posting_notification` tool for customizing email body content
+  - Use `${implementationUrl}` placeholder to insert the link to the live implementation
+  - Falls back to the default email template when not provided
+
 ## [0.3.2] - 2025-11-30
 
 ### Added

@@ -2,6 +2,16 @@ import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { z } from 'zod';
 import type { ClientFactory } from '../server.js';
 
+// Default email content template
+const DEFAULT_EMAIL_CONTENT = `Hi there,
+
+Your submission is now live here: \${implementationUrl}
+
+Let us know how we can be helpful to you!
+
+Best,
+Tadas`;
+
 // Parameter descriptions - single source of truth
 const PARAM_DESCRIPTIONS = {
   implementation_id: 'The ID of the MCP implementation to send notification for (e.g., 11371)',
@@ -10,6 +20,9 @@ const PARAM_DESCRIPTIONS = {
   from_email_address: 'Sender email address. Default: "tadas@s.pulsemcp.com"',
   from_name: 'Sender display name. Default: "Tadas at PulseMCP"',
   reply_to_email_address: 'Reply-to email address. Default: "tadas@pulsemcp.com"',
+  content: `Custom email body content. Use \${implementationUrl} to insert the link to the live implementation. Default:
+
+${DEFAULT_EMAIL_CONTENT}`,
 } as const;
 
 const SendMCPImplementationPostingNotificationSchema = z.object({
@@ -22,6 +35,7 @@ const SendMCPImplementationPostingNotificationSchema = z.object({
     .email()
     .optional()
     .describe(PARAM_DESCRIPTIONS.reply_to_email_address),
+  content: z.string().optional().describe(PARAM_DESCRIPTIONS.content),
 });
 
 export function sendMCPImplementationPostingNotification(
@@ -50,9 +64,29 @@ Example usage:
   "to_email_address": "developer@example.com"  // Optional override
 }
 
+**Customizing email content:**
+Use the \`content\` parameter to customize the email body. Include \`\${implementationUrl}\` where you want the link to the live implementation inserted.
+
+Default content:
+\`\`\`
+Hi there,
+
+Your submission is now live here: \${implementationUrl}
+
+Let us know how we can be helpful to you!
+
+Best,
+Tadas
+\`\`\`
+
+Example with custom content:
+{
+  "implementation_id": 11371,
+  "content": "Congratulations! Your MCP server is now published at \${implementationUrl}. Thank you for contributing!"
+}
+
 Default email template:
 - Subject: "Thanks for your submission to PulseMCP!"
-- Content: Personalized message with link to the live implementation
 - From: "Tadas at PulseMCP" <tadas@s.pulsemcp.com>
 - Reply-to: tadas@pulsemcp.com
 
@@ -61,8 +95,7 @@ Use cases:
 - Send thank you emails after publishing implementations
 - Automate the notification process after approving submissions
 - Re-send notifications if needed
-
-Note: The email content includes the direct link to the published implementation on PulseMCP.`,
+- Send customized messages for different implementation types`,
     inputSchema: {
       type: 'object',
       properties: {
@@ -85,6 +118,10 @@ Note: The email content includes the direct link to the published implementation
         reply_to_email_address: {
           type: 'string',
           description: PARAM_DESCRIPTIONS.reply_to_email_address,
+        },
+        content: {
+          type: 'string',
+          description: PARAM_DESCRIPTIONS.content,
         },
       },
       required: ['implementation_id'],
@@ -148,6 +185,10 @@ Note: The email content includes the direct link to the published implementation
           );
         }
 
+        // Prepare email content - use custom content or default, replacing ${implementationUrl}
+        const contentTemplate = validatedArgs.content || DEFAULT_EMAIL_CONTENT;
+        const emailContent = contentTemplate.replace(/\$\{implementationUrl\}/g, implementationUrl);
+
         // Prepare email parameters with defaults
         const emailParams = {
           from_email_address: validatedArgs.from_email_address || 'tadas@s.pulsemcp.com',
@@ -155,14 +196,7 @@ Note: The email content includes the direct link to the published implementation
           reply_to_email_address: validatedArgs.reply_to_email_address || 'tadas@pulsemcp.com',
           to_email_address: recipientEmail,
           subject: 'Thanks for your submission to PulseMCP!',
-          content: `Hi there,
-
-Your submission is now live here: ${implementationUrl}
-
-Let us know how we can be helpful to you!
-
-Best,
-Tadas`,
+          content: emailContent,
         };
 
         // Send the email via the API
