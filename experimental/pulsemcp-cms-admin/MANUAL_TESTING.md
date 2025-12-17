@@ -2,9 +2,9 @@
 
 ## Latest Test Results
 
-**Date:** 2025-11-30
-**Commit:** fbb379d
-**Version:** 0.3.2
+**Date:** 2025-12-16
+**Commit:** 010d27a
+**Version:** 0.3.3
 **API Environment:** Production (https://admin.pulsemcp.com)
 **API Key:** Admin API key (read/write)
 
@@ -12,7 +12,7 @@
 
 ### Overall: ✅ 47/47 Tests PASSING (100%)
 
-Tests from v0.3.1 remain valid for v0.3.2. The only change is adding implementation ID to search results output formatting (no API changes).
+Tests from v0.3.2 remain valid for v0.3.3. The only change is adding an optional `content` parameter to `send_mcp_implementation_posting_notification` tool for customizing email body content. This doesn't affect the external API - it uses the same `sendEmail` API endpoint with the same parameters (content was already a parameter in the API call, just hardcoded previously).
 
 ### Tool Test Results
 
@@ -40,6 +40,17 @@ Tests from v0.3.1 remain valid for v0.3.2. The only change is adding implementat
 
 5. **Email Notifications** (send-email.manual.test.ts): ✅ 1/1 PASSING
    - Email sending functionality
+
+## What's New in v0.3.3
+
+### Customizable Email Content
+
+Added `content` parameter to `send_mcp_implementation_posting_notification` tool for customizing email body content:
+
+- Use `${implementationUrl}` placeholder to insert the link to the live implementation
+- Falls back to the default email template when not provided
+
+**Note:** This is a tool parameter addition only - no API changes. The tool already used the `sendEmail` API with a `content` parameter; this change makes that parameter user-customizable instead of hardcoded. All v0.3.2 manual tests remain valid.
 
 ## What's New in v0.3.2
 
@@ -222,7 +233,7 @@ Added canonical URL management with scoped definitions:
 
 **Status**: ✅ READY FOR RELEASE
 
-All v0.3.2 features tested and working against production API:
+All v0.3.3 features tested and working against production API:
 
 1. Remote endpoint submission: ✅ Working
 2. Canonical URL submission: ✅ Working
@@ -231,6 +242,7 @@ All v0.3.2 features tested and working against production API:
 5. API integration: ✅ Verified
 6. find_providers tool: ✅ Working
 7. Implementation ID in search results: ✅ Added (output format change, no API changes)
+8. Customizable email content: ✅ Added (tool parameter addition, no API changes)
 
 100% of manual tests passing (47/47) with real production data.
 
