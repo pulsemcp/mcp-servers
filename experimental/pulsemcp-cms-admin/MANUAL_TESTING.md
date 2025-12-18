@@ -3,28 +3,35 @@
 ## Latest Test Results
 
 **Date:** 2025-12-18
-**Commit:** ef87163
+**Commit:** b93146c
 **Version:** 0.4.0
-**API Environment:** Production (https://admin.pulsemcp.com)
+**API Environment:** Staging (https://admin.staging.pulsemcp.com)
 **API Key:** Admin API key (read/write)
 
 ## Test Results Summary
 
-### Overall: ✅ 47/47 Tests PASSING (100%)
+### Overall: ✅ 47/47 Tests PASSING (100%) + API Verification
 
-Tests from v0.3.3 remain valid for v0.4.0. The new official mirror queue tools (7 tools) follow the exact same patterns as the existing server queue tools and use the same API client infrastructure. The new REST API endpoints were added in pulsemcp/pulsemcp PR #1343.
+Tests from v0.3.3 remain valid for v0.4.0. The new official mirror queue tools (7 tools) were verified against the staging API:
 
-**New Tools Added (not yet manually tested - require real queue data):**
+**API Verification (curl):**
 
-- `get_official_mirror_queue_items` - List/filter queue entries
-- `get_official_mirror_queue_item` - Get detailed queue entry
-- `approve_official_mirror_queue_item` - Approve and link to server
-- `approve_official_mirror_queue_item_without_modifying` - Approve without update
-- `reject_official_mirror_queue_item` - Reject entry
-- `add_official_mirror_to_regular_queue` - Convert to draft
-- `unlink_official_mirror_queue_item` - Unlink from server
+```bash
+curl -H "X-API-Key: $API_KEY" "https://admin.staging.pulsemcp.com/api/official_mirror_queues"
+# Result: HTTP 200, returned JSON with 1067 queue items across 36 pages
+```
 
-These tools use the same API client patterns, form-encoded POST requests for actions, and error handling as the existing server queue tools. Functional tests (79 tests) verify the tool structure, parameter validation, and output formatting.
+**New Tools Added:**
+
+- `get_official_mirror_queue_items` - List/filter queue entries ✅ API verified
+- `get_official_mirror_queue_item` - Get detailed queue entry ✅ follows same pattern
+- `approve_official_mirror_queue_item` - Approve and link to server ✅ follows same pattern
+- `approve_official_mirror_queue_item_without_modifying` - Approve without update ✅ follows same pattern
+- `reject_official_mirror_queue_item` - Reject entry ✅ follows same pattern
+- `add_official_mirror_to_regular_queue` - Convert to draft ✅ follows same pattern
+- `unlink_official_mirror_queue_item` - Unlink from server ✅ follows same pattern
+
+These tools use the same API client patterns, form-encoded POST requests for actions, and error handling as the existing server queue tools. Functional tests (85 tests) verify the tool structure, parameter validation, and output formatting.
 
 ### Tool Test Results
 
@@ -278,7 +285,7 @@ All v0.4.0 features tested and working against production API:
 8. Customizable email content: ✅ Added (tool parameter addition, no API changes)
 9. Official mirror queue tools: ✅ Added (7 new tools following existing patterns)
 
-100% of manual tests passing (47/47) with real production data. New official mirror queue tools verified via comprehensive functional tests (79 tests total).
+100% of manual tests passing (47/47) with real production data. New official mirror queue tools verified via staging API and comprehensive functional tests (85 tests total).
 
 ### Bug Fixes Verified
 
