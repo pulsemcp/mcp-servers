@@ -253,3 +253,92 @@ export interface ProvidersResponse {
     limit?: number;
   };
 }
+
+// Official Mirror Queue Types
+export type OfficialMirrorQueueStatus =
+  | 'pending'
+  | 'pending_new'
+  | 'pending_update'
+  | 'approved'
+  | 'rejected';
+
+export interface OfficialMirrorSummary {
+  id: number;
+  name: string;
+  version: string;
+  description?: string;
+  github_url?: string;
+  website_url?: string;
+  published_at?: string;
+}
+
+export interface OfficialMirror {
+  id: number;
+  name: string;
+  version: string;
+  official_version_id: string;
+  description?: string;
+  github_url?: string;
+  website_url?: string;
+  categories?: string[];
+  license?: string;
+  remotes?: unknown[];
+  packages?: unknown[];
+  published_at?: string;
+  schema_version?: string;
+  datetime_ingested?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface LinkedServer {
+  id: number;
+  slug: string;
+  classification?: string;
+  implementation_language?: string;
+  provider_name?: string;
+  provider_slug?: string;
+  implementation_name?: string;
+  implementation_status?: string;
+}
+
+export interface OfficialMirrorQueueItem {
+  id: number;
+  name: string;
+  status: OfficialMirrorQueueStatus;
+  mirrors_count: number;
+  linked_server_slug?: string | null;
+  linked_server_id?: number | null;
+  latest_mirror?: OfficialMirrorSummary | null;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface OfficialMirrorQueueItemDetail {
+  id: number;
+  name: string;
+  status: OfficialMirrorQueueStatus;
+  mirrors_count: number;
+  linked_server?: LinkedServer | null;
+  server_linkage_consistent: boolean;
+  mirrors: OfficialMirror[];
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface OfficialMirrorQueueResponse {
+  items: OfficialMirrorQueueItem[];
+  pagination?: {
+    current_page: number;
+    total_pages: number;
+    total_count: number;
+    has_next?: boolean;
+    limit?: number;
+  };
+}
+
+export interface OfficialMirrorQueueActionResponse {
+  success: boolean;
+  message: string;
+  queue_item: OfficialMirrorQueueItem;
+}

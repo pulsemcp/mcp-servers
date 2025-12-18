@@ -6,6 +6,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [0.4.0] - 2025-12-18
+
+### Added
+
+- Added official mirror queue management tools for managing MCP Registry server.json submissions:
+  - `get_official_mirror_queue_items`: List and filter official mirror queue entries with pagination and search
+  - `get_official_mirror_queue_item`: Get detailed information about a single queue entry including all mirror versions
+  - `approve_official_mirror_queue_item`: Approve a queue entry and link it to an existing MCP server (async operation)
+  - `approve_official_mirror_queue_item_without_modifying`: Approve without updating the linked server
+  - `reject_official_mirror_queue_item`: Reject a queue entry (async operation)
+  - `add_official_mirror_to_regular_queue`: Convert a queue entry to a draft MCP implementation (async operation)
+  - `unlink_official_mirror_queue_item`: Unlink a queue entry from its linked MCP server
+- Added two new tool groups:
+  - `official_queue_readonly`: Read-only access to official mirror queue (list, get)
+  - `official_queue_all`: Full access including approve, reject, unlink, and add to regular queue
+- Added comprehensive TypeScript types for official mirror queue API responses
+- Added functional tests for all new official mirror queue tools
+
 ## [0.3.3] - 2025-12-16
 
 ### Added

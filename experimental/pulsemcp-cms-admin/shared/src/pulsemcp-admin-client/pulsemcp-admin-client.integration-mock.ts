@@ -9,6 +9,10 @@ import type {
   MCPImplementationsResponse,
   Provider,
   ProvidersResponse,
+  OfficialMirrorQueueItem,
+  OfficialMirrorQueueItemDetail,
+  OfficialMirrorQueueResponse,
+  OfficialMirrorQueueActionResponse,
 } from '../types.js';
 
 interface MockData {
@@ -26,6 +30,11 @@ interface MockData {
   draftImplementationsResponse?: MCPImplementationsResponse;
   providers?: Provider[];
   providersResponse?: ProvidersResponse;
+  // Official mirror queue mock data
+  officialMirrorQueueItems?: OfficialMirrorQueueItem[];
+  officialMirrorQueueItemsResponse?: OfficialMirrorQueueResponse;
+  officialMirrorQueueItemDetail?: OfficialMirrorQueueItemDetail;
+  officialMirrorQueueActionResponse?: OfficialMirrorQueueActionResponse;
   errors?: {
     getPosts?: Error;
     getPost?: Error;
@@ -42,6 +51,14 @@ interface MockData {
     sendEmail?: Error;
     searchProviders?: Error;
     getProviderById?: Error;
+    // Official mirror queue errors
+    getOfficialMirrorQueueItems?: Error;
+    getOfficialMirrorQueueItem?: Error;
+    approveOfficialMirrorQueueItem?: Error;
+    approveOfficialMirrorQueueItemWithoutModifying?: Error;
+    rejectOfficialMirrorQueueItem?: Error;
+    addOfficialMirrorToRegularQueue?: Error;
+    unlinkOfficialMirrorQueueItem?: Error;
   };
 }
 
@@ -535,6 +552,270 @@ export function createMockPulseMCPAdminClient(mockData: MockData): IPulseMCPAdmi
 
       // Return null if not found
       return null;
+    },
+
+    // Official Mirror Queue methods
+    async getOfficialMirrorQueueItems(params) {
+      if (mockData.errors?.getOfficialMirrorQueueItems) {
+        throw mockData.errors.getOfficialMirrorQueueItems;
+      }
+
+      if (mockData.officialMirrorQueueItemsResponse) {
+        return mockData.officialMirrorQueueItemsResponse;
+      }
+
+      const defaultItem: OfficialMirrorQueueItem = {
+        id: 1,
+        name: 'com.example/test-server',
+        status: 'pending_new',
+        mirrors_count: 1,
+        linked_server_slug: null,
+        linked_server_id: null,
+        latest_mirror: {
+          id: 1,
+          name: 'com.example/test-server',
+          version: '1.0.0',
+          description: 'A test MCP server',
+          github_url: 'https://github.com/example/test-server',
+          website_url: 'https://example.com',
+          published_at: '2024-01-01T00:00:00Z',
+        },
+        created_at: '2024-01-01T00:00:00Z',
+        updated_at: '2024-01-01T00:00:00Z',
+      };
+
+      let items = mockData.officialMirrorQueueItems || [defaultItem];
+
+      // Apply status filter
+      if (params?.status && params.status !== 'pending') {
+        items = items.filter((item) => item.status === params.status);
+      } else if (params?.status === 'pending') {
+        items = items.filter(
+          (item) => item.status === 'pending_new' || item.status === 'pending_update'
+        );
+      }
+
+      // Apply search filter
+      if (params?.q) {
+        const query = params.q.toLowerCase();
+        items = items.filter(
+          (item) =>
+            item.name.toLowerCase().includes(query) ||
+            item.latest_mirror?.github_url?.toLowerCase().includes(query) ||
+            item.latest_mirror?.website_url?.toLowerCase().includes(query)
+        );
+      }
+
+      // Apply pagination
+      const offset = params?.offset || 0;
+      const limit = params?.limit || 30;
+      const totalCount = items.length;
+      const paginatedItems = items.slice(offset, offset + limit);
+
+      return {
+        items: paginatedItems,
+        pagination: {
+          current_page: Math.floor(offset / limit) + 1,
+          total_pages: Math.ceil(totalCount / limit),
+          total_count: totalCount,
+          has_next: offset + limit < totalCount,
+          limit: limit,
+        },
+      };
+    },
+
+    async getOfficialMirrorQueueItem(id) {
+      if (mockData.errors?.getOfficialMirrorQueueItem) {
+        throw mockData.errors.getOfficialMirrorQueueItem;
+      }
+
+      if (mockData.officialMirrorQueueItemDetail) {
+        return mockData.officialMirrorQueueItemDetail;
+      }
+
+      // Check if item exists in mock data
+      const items = mockData.officialMirrorQueueItems || [];
+      const item = items.find((i) => i.id === id);
+
+      if (!item && id !== 1) {
+        throw new Error(`Queue entry not found: ${id}`);
+      }
+
+      return {
+        id: item?.id || 1,
+        name: item?.name || 'com.example/test-server',
+        status: item?.status || 'pending_new',
+        mirrors_count: item?.mirrors_count || 1,
+        linked_server: null,
+        server_linkage_consistent: true,
+        mirrors: [
+          {
+            id: 1,
+            name: 'com.example/test-server',
+            version: '1.0.0',
+            official_version_id: 'test-server-1',
+            description: 'A test MCP server',
+            github_url: 'https://github.com/example/test-server',
+            website_url: 'https://example.com',
+            categories: ['development'],
+            license: 'MIT',
+            remotes: [],
+            packages: [],
+            published_at: '2024-01-01T00:00:00Z',
+            schema_version: '2025-09-29',
+            datetime_ingested: '2024-01-02T00:00:00Z',
+            created_at: '2024-01-02T00:00:00Z',
+            updated_at: '2024-01-02T00:00:00Z',
+          },
+        ],
+        created_at: item?.created_at || '2024-01-01T00:00:00Z',
+        updated_at: item?.updated_at || '2024-01-01T00:00:00Z',
+      };
+    },
+
+    async approveOfficialMirrorQueueItem(id, mcpServerSlug) {
+      if (mockData.errors?.approveOfficialMirrorQueueItem) {
+        throw mockData.errors.approveOfficialMirrorQueueItem;
+      }
+
+      if (mockData.officialMirrorQueueActionResponse) {
+        return mockData.officialMirrorQueueActionResponse;
+      }
+
+      const items = mockData.officialMirrorQueueItems || [];
+      const item = items.find((i) => i.id === id);
+
+      return {
+        success: true,
+        message: `Approval job enqueued for linking to ${mcpServerSlug}`,
+        queue_item: {
+          id: item?.id || id,
+          name: item?.name || 'com.example/test-server',
+          status: item?.status || 'pending_new',
+          mirrors_count: item?.mirrors_count || 1,
+          linked_server_slug: mcpServerSlug,
+          linked_server_id: 1,
+          latest_mirror: item?.latest_mirror || null,
+          created_at: item?.created_at || '2024-01-01T00:00:00Z',
+          updated_at: new Date().toISOString(),
+        },
+      };
+    },
+
+    async approveOfficialMirrorQueueItemWithoutModifying(id) {
+      if (mockData.errors?.approveOfficialMirrorQueueItemWithoutModifying) {
+        throw mockData.errors.approveOfficialMirrorQueueItemWithoutModifying;
+      }
+
+      if (mockData.officialMirrorQueueActionResponse) {
+        return mockData.officialMirrorQueueActionResponse;
+      }
+
+      const items = mockData.officialMirrorQueueItems || [];
+      const item = items.find((i) => i.id === id);
+
+      return {
+        success: true,
+        message: 'Queue item approved without modifying linked server',
+        queue_item: {
+          id: item?.id || id,
+          name: item?.name || 'com.example/test-server',
+          status: 'approved' as const,
+          mirrors_count: item?.mirrors_count || 1,
+          linked_server_slug: item?.linked_server_slug || 'test-server',
+          linked_server_id: item?.linked_server_id || 1,
+          latest_mirror: item?.latest_mirror || null,
+          created_at: item?.created_at || '2024-01-01T00:00:00Z',
+          updated_at: new Date().toISOString(),
+        },
+      };
+    },
+
+    async rejectOfficialMirrorQueueItem(id) {
+      if (mockData.errors?.rejectOfficialMirrorQueueItem) {
+        throw mockData.errors.rejectOfficialMirrorQueueItem;
+      }
+
+      if (mockData.officialMirrorQueueActionResponse) {
+        return mockData.officialMirrorQueueActionResponse;
+      }
+
+      const items = mockData.officialMirrorQueueItems || [];
+      const item = items.find((i) => i.id === id);
+
+      return {
+        success: true,
+        message: 'Rejection job enqueued',
+        queue_item: {
+          id: item?.id || id,
+          name: item?.name || 'com.example/test-server',
+          status: item?.status || 'pending_new',
+          mirrors_count: item?.mirrors_count || 1,
+          linked_server_slug: item?.linked_server_slug || null,
+          linked_server_id: item?.linked_server_id || null,
+          latest_mirror: item?.latest_mirror || null,
+          created_at: item?.created_at || '2024-01-01T00:00:00Z',
+          updated_at: new Date().toISOString(),
+        },
+      };
+    },
+
+    async addOfficialMirrorToRegularQueue(id) {
+      if (mockData.errors?.addOfficialMirrorToRegularQueue) {
+        throw mockData.errors.addOfficialMirrorToRegularQueue;
+      }
+
+      if (mockData.officialMirrorQueueActionResponse) {
+        return mockData.officialMirrorQueueActionResponse;
+      }
+
+      const items = mockData.officialMirrorQueueItems || [];
+      const item = items.find((i) => i.id === id);
+
+      return {
+        success: true,
+        message: `Adding ${item?.name || 'com.example/test-server'} to regular queue`,
+        queue_item: {
+          id: item?.id || id,
+          name: item?.name || 'com.example/test-server',
+          status: item?.status || 'pending_new',
+          mirrors_count: item?.mirrors_count || 1,
+          linked_server_slug: item?.linked_server_slug || null,
+          linked_server_id: item?.linked_server_id || null,
+          latest_mirror: item?.latest_mirror || null,
+          created_at: item?.created_at || '2024-01-01T00:00:00Z',
+          updated_at: new Date().toISOString(),
+        },
+      };
+    },
+
+    async unlinkOfficialMirrorQueueItem(id) {
+      if (mockData.errors?.unlinkOfficialMirrorQueueItem) {
+        throw mockData.errors.unlinkOfficialMirrorQueueItem;
+      }
+
+      if (mockData.officialMirrorQueueActionResponse) {
+        return mockData.officialMirrorQueueActionResponse;
+      }
+
+      const items = mockData.officialMirrorQueueItems || [];
+      const item = items.find((i) => i.id === id);
+
+      return {
+        success: true,
+        message: `Successfully unlinked ${item?.linked_server_slug || 'server'} from this mirror queue`,
+        queue_item: {
+          id: item?.id || id,
+          name: item?.name || 'com.example/test-server',
+          status: 'pending_new' as const,
+          mirrors_count: item?.mirrors_count || 1,
+          linked_server_slug: null,
+          linked_server_id: null,
+          latest_mirror: item?.latest_mirror || null,
+          created_at: item?.created_at || '2024-01-01T00:00:00Z',
+          updated_at: new Date().toISOString(),
+        },
+      };
     },
   };
 }
