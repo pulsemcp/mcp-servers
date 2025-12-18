@@ -15,6 +15,10 @@ import type {
   SaveMCPImplementationParams,
   Provider,
   ProvidersResponse,
+  OfficialMirrorQueueStatus,
+  OfficialMirrorQueueResponse,
+  OfficialMirrorQueueItemDetail,
+  OfficialMirrorQueueActionResponse,
 } from './types.js';
 
 // PulseMCP Admin API client interface
@@ -96,13 +100,43 @@ export interface IPulseMCPAdminClient {
   }): Promise<ProvidersResponse>;
 
   getProviderById(id: number): Promise<Provider | null>;
+
+  // Official Mirror Queue methods
+  getOfficialMirrorQueueItems(params?: {
+    status?: OfficialMirrorQueueStatus;
+    q?: string;
+    limit?: number;
+    offset?: number;
+  }): Promise<OfficialMirrorQueueResponse>;
+
+  getOfficialMirrorQueueItem(id: number): Promise<OfficialMirrorQueueItemDetail>;
+
+  approveOfficialMirrorQueueItem(
+    id: number,
+    mcpServerSlug: string
+  ): Promise<OfficialMirrorQueueActionResponse>;
+
+  approveOfficialMirrorQueueItemWithoutModifying(
+    id: number
+  ): Promise<OfficialMirrorQueueActionResponse>;
+
+  rejectOfficialMirrorQueueItem(id: number): Promise<OfficialMirrorQueueActionResponse>;
+
+  addOfficialMirrorToRegularQueue(id: number): Promise<OfficialMirrorQueueActionResponse>;
+
+  unlinkOfficialMirrorQueueItem(id: number): Promise<OfficialMirrorQueueActionResponse>;
 }
 
 // PulseMCP Admin API client implementation
 export class PulseMCPAdminClient implements IPulseMCPAdminClient {
-  private baseUrl = 'https://admin.pulsemcp.com';
+  private baseUrl: string;
 
-  constructor(private apiKey: string) {}
+  constructor(
+    private apiKey: string,
+    baseUrl?: string
+  ) {
+    this.baseUrl = baseUrl || 'https://admin.pulsemcp.com';
+  }
 
   async getPosts(params?: {
     search?: string;
@@ -258,6 +292,66 @@ export class PulseMCPAdminClient implements IPulseMCPAdminClient {
     const { getProviderById } = await import('./pulsemcp-admin-client/lib/get-provider-by-id.js');
     return getProviderById(this.apiKey, this.baseUrl, id);
   }
+
+  // Official Mirror Queue methods
+  async getOfficialMirrorQueueItems(params?: {
+    status?: OfficialMirrorQueueStatus;
+    q?: string;
+    limit?: number;
+    offset?: number;
+  }): Promise<OfficialMirrorQueueResponse> {
+    const { getOfficialMirrorQueueItems } = await import(
+      './pulsemcp-admin-client/lib/get-official-mirror-queue-items.js'
+    );
+    return getOfficialMirrorQueueItems(this.apiKey, this.baseUrl, params);
+  }
+
+  async getOfficialMirrorQueueItem(id: number): Promise<OfficialMirrorQueueItemDetail> {
+    const { getOfficialMirrorQueueItem } = await import(
+      './pulsemcp-admin-client/lib/get-official-mirror-queue-item.js'
+    );
+    return getOfficialMirrorQueueItem(this.apiKey, this.baseUrl, id);
+  }
+
+  async approveOfficialMirrorQueueItem(
+    id: number,
+    mcpServerSlug: string
+  ): Promise<OfficialMirrorQueueActionResponse> {
+    const { approveOfficialMirrorQueueItem } = await import(
+      './pulsemcp-admin-client/lib/approve-official-mirror-queue-item.js'
+    );
+    return approveOfficialMirrorQueueItem(this.apiKey, this.baseUrl, id, mcpServerSlug);
+  }
+
+  async approveOfficialMirrorQueueItemWithoutModifying(
+    id: number
+  ): Promise<OfficialMirrorQueueActionResponse> {
+    const { approveOfficialMirrorQueueItemWithoutModifying } = await import(
+      './pulsemcp-admin-client/lib/approve-official-mirror-queue-item-without-modifying.js'
+    );
+    return approveOfficialMirrorQueueItemWithoutModifying(this.apiKey, this.baseUrl, id);
+  }
+
+  async rejectOfficialMirrorQueueItem(id: number): Promise<OfficialMirrorQueueActionResponse> {
+    const { rejectOfficialMirrorQueueItem } = await import(
+      './pulsemcp-admin-client/lib/reject-official-mirror-queue-item.js'
+    );
+    return rejectOfficialMirrorQueueItem(this.apiKey, this.baseUrl, id);
+  }
+
+  async addOfficialMirrorToRegularQueue(id: number): Promise<OfficialMirrorQueueActionResponse> {
+    const { addOfficialMirrorToRegularQueue } = await import(
+      './pulsemcp-admin-client/lib/add-official-mirror-to-regular-queue.js'
+    );
+    return addOfficialMirrorToRegularQueue(this.apiKey, this.baseUrl, id);
+  }
+
+  async unlinkOfficialMirrorQueueItem(id: number): Promise<OfficialMirrorQueueActionResponse> {
+    const { unlinkOfficialMirrorQueueItem } = await import(
+      './pulsemcp-admin-client/lib/unlink-official-mirror-queue-item.js'
+    );
+    return unlinkOfficialMirrorQueueItem(this.apiKey, this.baseUrl, id);
+  }
 }
 
 export type ClientFactory = () => IPulseMCPAdminClient;
@@ -282,12 +376,13 @@ export function createMCPServer() {
       (() => {
         // Get configuration from environment variables
         const apiKey = process.env.PULSEMCP_ADMIN_API_KEY;
+        const baseUrl = process.env.PULSEMCP_ADMIN_API_URL;
 
         if (!apiKey) {
           throw new Error('PULSEMCP_ADMIN_API_KEY environment variable must be configured');
         }
 
-        return new PulseMCPAdminClient(apiKey);
+        return new PulseMCPAdminClient(apiKey, baseUrl);
       });
 
     const registerTools = createRegisterTools(factory);

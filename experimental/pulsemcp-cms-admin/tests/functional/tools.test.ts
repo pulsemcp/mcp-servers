@@ -8,6 +8,13 @@ import { getAuthors } from '../../shared/src/tools/get-authors.js';
 import { searchMCPImplementations } from '../../shared/src/tools/search-mcp-implementations.js';
 import { getDraftMCPImplementations } from '../../shared/src/tools/get-draft-mcp-implementations.js';
 import { saveMCPImplementation } from '../../shared/src/tools/save-mcp-implementation.js';
+import { getOfficialMirrorQueueItems } from '../../shared/src/tools/get-official-mirror-queue-items.js';
+import { getOfficialMirrorQueueItem } from '../../shared/src/tools/get-official-mirror-queue-item.js';
+import { approveOfficialMirrorQueueItem } from '../../shared/src/tools/approve-official-mirror-queue-item.js';
+import { approveOfficialMirrorQueueItemWithoutModifying } from '../../shared/src/tools/approve-official-mirror-queue-item-without-modifying.js';
+import { rejectOfficialMirrorQueueItem } from '../../shared/src/tools/reject-official-mirror-queue-item.js';
+import { addOfficialMirrorToRegularQueue } from '../../shared/src/tools/add-official-mirror-to-regular-queue.js';
+import { unlinkOfficialMirrorQueueItem } from '../../shared/src/tools/unlink-official-mirror-queue-item.js';
 import { parseEnabledToolGroups, createRegisterTools } from '../../shared/src/tools.js';
 import type {
   IPulseMCPAdminClient,
@@ -47,6 +54,14 @@ function createMockClient(overrides?: Partial<IPulseMCPAdminClient>): IPulseMCPA
     sendEmail: vi.fn(),
     searchProviders: vi.fn(),
     getProviderById: vi.fn(),
+    // Official mirror queue methods
+    getOfficialMirrorQueueItems: vi.fn(),
+    getOfficialMirrorQueueItem: vi.fn(),
+    approveOfficialMirrorQueueItem: vi.fn(),
+    approveOfficialMirrorQueueItemWithoutModifying: vi.fn(),
+    rejectOfficialMirrorQueueItem: vi.fn(),
+    addOfficialMirrorToRegularQueue: vi.fn(),
+    unlinkOfficialMirrorQueueItem: vi.fn(),
     ...overrides,
   };
 }
@@ -693,12 +708,24 @@ describe('Newsletter Tools', () => {
 
     it('should return all groups when empty string provided', () => {
       const groups = parseEnabledToolGroups('');
-      expect(groups).toEqual(['newsletter', 'server_queue_readonly', 'server_queue_all']);
+      expect(groups).toEqual([
+        'newsletter',
+        'server_queue_readonly',
+        'server_queue_all',
+        'official_queue_readonly',
+        'official_queue_all',
+      ]);
     });
 
     it('should return all groups when no parameter provided', () => {
       const groups = parseEnabledToolGroups();
-      expect(groups).toEqual(['newsletter', 'server_queue_readonly', 'server_queue_all']);
+      expect(groups).toEqual([
+        'newsletter',
+        'server_queue_readonly',
+        'server_queue_all',
+        'official_queue_readonly',
+        'official_queue_all',
+      ]);
     });
 
     it('should prioritize parameter over environment variable', () => {
@@ -799,7 +826,7 @@ describe('Newsletter Tools', () => {
 
       const registerTools = createRegisterTools(
         clientFactory,
-        'newsletter,server_queue_readonly,server_queue_all'
+        'newsletter,server_queue_readonly,server_queue_all,official_queue_readonly,official_queue_all'
       );
       registerTools(mockServer);
 
@@ -808,7 +835,7 @@ describe('Newsletter Tools', () => {
       const listToolsHandler = handlers.get('tools/list');
       const result = await listToolsHandler({ method: 'tools/list', params: {} });
 
-      expect(result.tools).toHaveLength(11);
+      expect(result.tools).toHaveLength(18); // 11 original + 7 official queue tools
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const toolNames = result.tools.map((t: any) => t.name);
       expect(toolNames).toContain('get_newsletter_posts');
@@ -816,6 +843,7 @@ describe('Newsletter Tools', () => {
       expect(toolNames).toContain('get_draft_mcp_implementations');
       expect(toolNames).toContain('save_mcp_implementation');
       expect(toolNames).toContain('find_providers');
+      expect(toolNames).toContain('get_official_mirror_queue_items');
     });
 
     it('should register all tools when no groups specified (default)', async () => {
@@ -833,7 +861,7 @@ describe('Newsletter Tools', () => {
       const listToolsHandler = handlers.get('tools/list');
       const result = await listToolsHandler({ method: 'tools/list', params: {} });
 
-      expect(result.tools).toHaveLength(11);
+      expect(result.tools).toHaveLength(18); // 11 original + 7 official queue tools
     });
   });
 
@@ -1447,6 +1475,426 @@ describe('Newsletter Tools', () => {
 
       expect(result.isError).toBe(true);
       expect(result.content[0].text).toContain('Error saving MCP implementation: Invalid API key');
+    });
+  });
+
+  describe('Official Mirror Queue Tools', () => {
+    const mockServer = {} as Server;
+
+    describe('get_official_mirror_queue_items', () => {
+      it('should fetch and format official mirror queue items', async () => {
+        const mockClient = createMockClient({
+          getOfficialMirrorQueueItems: vi.fn().mockResolvedValue({
+            items: [
+              {
+                id: 1,
+                name: 'com.example/test-server',
+                status: 'pending_new',
+                mirrors_count: 2,
+                linked_server_slug: null,
+                linked_server_id: null,
+                latest_mirror: {
+                  id: 1,
+                  name: 'com.example/test-server',
+                  version: '1.0.0',
+                  description: 'A test MCP server',
+                  github_url: 'https://github.com/example/test-server',
+                  website_url: 'https://example.com',
+                  published_at: '2024-01-15T00:00:00Z',
+                },
+                created_at: '2024-01-15T00:00:00Z',
+                updated_at: '2024-01-15T00:00:00Z',
+              },
+            ],
+            pagination: {
+              current_page: 1,
+              total_pages: 1,
+              total_count: 1,
+              has_next: false,
+              limit: 30,
+            },
+          }),
+        });
+
+        const tool = getOfficialMirrorQueueItems(mockServer, () => mockClient);
+        const result = await tool.handler({});
+
+        expect(mockClient.getOfficialMirrorQueueItems).toHaveBeenCalledWith({});
+        expect(result.content[0].type).toBe('text');
+        expect(result.content[0].text).toContain('Found 1 official mirror queue items');
+        expect(result.content[0].text).toContain('com.example/test-server');
+        expect(result.content[0].text).toContain('pending_new');
+        expect(result.content[0].text).toContain('Mirrors: 2');
+        expect(result.content[0].text).toContain('1.0.0');
+      });
+
+      it('should support status filtering', async () => {
+        const mockClient = createMockClient({
+          getOfficialMirrorQueueItems: vi.fn().mockResolvedValue({
+            items: [],
+            pagination: {
+              current_page: 1,
+              total_pages: 0,
+              total_count: 0,
+              has_next: false,
+              limit: 30,
+            },
+          }),
+        });
+
+        const tool = getOfficialMirrorQueueItems(mockServer, () => mockClient);
+        await tool.handler({ status: 'approved' });
+
+        expect(mockClient.getOfficialMirrorQueueItems).toHaveBeenCalledWith({ status: 'approved' });
+      });
+
+      it('should handle errors gracefully', async () => {
+        const mockClient = createMockClient({
+          getOfficialMirrorQueueItems: vi.fn().mockRejectedValue(new Error('Invalid API key')),
+        });
+
+        const tool = getOfficialMirrorQueueItems(mockServer, () => mockClient);
+        const result = await tool.handler({});
+
+        expect(result.isError).toBe(true);
+        expect(result.content[0].text).toContain('Error fetching official mirror queue items');
+      });
+    });
+
+    describe('get_official_mirror_queue_item', () => {
+      it('should fetch and format a single queue item with details', async () => {
+        const mockClient = createMockClient({
+          getOfficialMirrorQueueItem: vi.fn().mockResolvedValue({
+            id: 1,
+            name: 'com.example/test-server',
+            status: 'pending_new',
+            mirrors_count: 1,
+            linked_server: null,
+            server_linkage_consistent: true,
+            mirrors: [
+              {
+                id: 1,
+                name: 'com.example/test-server',
+                version: '1.0.0',
+                official_version_id: 'test-1',
+                description: 'A test server',
+                github_url: 'https://github.com/example/test-server',
+                website_url: 'https://example.com',
+                categories: ['development'],
+                license: 'MIT',
+                remotes: [],
+                packages: [],
+                published_at: '2024-01-15T00:00:00Z',
+                schema_version: '2025-09-29',
+                datetime_ingested: '2024-01-16T00:00:00Z',
+                created_at: '2024-01-16T00:00:00Z',
+                updated_at: '2024-01-16T00:00:00Z',
+              },
+            ],
+            created_at: '2024-01-15T00:00:00Z',
+            updated_at: '2024-01-15T00:00:00Z',
+          }),
+        });
+
+        const tool = getOfficialMirrorQueueItem(mockServer, () => mockClient);
+        const result = await tool.handler({ id: 1 });
+
+        expect(mockClient.getOfficialMirrorQueueItem).toHaveBeenCalledWith(1);
+        expect(result.content[0].type).toBe('text');
+        expect(result.content[0].text).toContain('com.example/test-server');
+        expect(result.content[0].text).toContain('pending_new');
+        expect(result.content[0].text).toContain('**Server Linkage Consistent:** Yes');
+        expect(result.content[0].text).toContain('1.0.0');
+        expect(result.content[0].text).toContain('MIT');
+      });
+
+      it('should handle not found errors', async () => {
+        const mockClient = createMockClient({
+          getOfficialMirrorQueueItem: vi
+            .fn()
+            .mockRejectedValue(new Error('Queue entry not found: 999')),
+        });
+
+        const tool = getOfficialMirrorQueueItem(mockServer, () => mockClient);
+        const result = await tool.handler({ id: 999 });
+
+        expect(result.isError).toBe(true);
+        expect(result.content[0].text).toContain('Queue entry not found');
+      });
+    });
+
+    describe('approve_official_mirror_queue_item', () => {
+      it('should approve and link queue item to server', async () => {
+        const mockClient = createMockClient({
+          approveOfficialMirrorQueueItem: vi.fn().mockResolvedValue({
+            success: true,
+            message: 'Approval job enqueued for linking to test-server',
+            queue_item: {
+              id: 1,
+              name: 'com.example/test-server',
+              status: 'pending_new',
+              mirrors_count: 1,
+              linked_server_slug: 'test-server',
+              linked_server_id: 42,
+              latest_mirror: null,
+              created_at: '2024-01-15T00:00:00Z',
+              updated_at: '2024-01-15T00:00:00Z',
+            },
+          }),
+        });
+
+        const tool = approveOfficialMirrorQueueItem(mockServer, () => mockClient);
+        const result = await tool.handler({ id: 1, mcp_server_slug: 'test-server' });
+
+        expect(mockClient.approveOfficialMirrorQueueItem).toHaveBeenCalledWith(1, 'test-server');
+        expect(result.content[0].text).toContain('Approval Job Enqueued');
+        expect(result.content[0].text).toContain('test-server');
+        expect(result.content[0].text).toContain('async operation');
+      });
+
+      it('should handle server not found errors', async () => {
+        const mockClient = createMockClient({
+          approveOfficialMirrorQueueItem: vi
+            .fn()
+            .mockRejectedValue(new Error('MCP Server not found')),
+        });
+
+        const tool = approveOfficialMirrorQueueItem(mockServer, () => mockClient);
+        const result = await tool.handler({ id: 1, mcp_server_slug: 'nonexistent' });
+
+        expect(result.isError).toBe(true);
+        expect(result.content[0].text).toContain('MCP Server not found');
+      });
+    });
+
+    describe('reject_official_mirror_queue_item', () => {
+      it('should reject queue item', async () => {
+        const mockClient = createMockClient({
+          rejectOfficialMirrorQueueItem: vi.fn().mockResolvedValue({
+            success: true,
+            message: 'Rejection job enqueued',
+            queue_item: {
+              id: 1,
+              name: 'com.example/test-server',
+              status: 'pending_new',
+              mirrors_count: 1,
+              linked_server_slug: null,
+              linked_server_id: null,
+              latest_mirror: null,
+              created_at: '2024-01-15T00:00:00Z',
+              updated_at: '2024-01-15T00:00:00Z',
+            },
+          }),
+        });
+
+        const tool = rejectOfficialMirrorQueueItem(mockServer, () => mockClient);
+        const result = await tool.handler({ id: 1 });
+
+        expect(mockClient.rejectOfficialMirrorQueueItem).toHaveBeenCalledWith(1);
+        expect(result.content[0].text).toContain('Rejection Job Enqueued');
+        expect(result.content[0].text).toContain('async operation');
+      });
+    });
+
+    describe('approve_official_mirror_queue_item_without_modifying', () => {
+      it('should approve queue item without modifying linked server', async () => {
+        const mockClient = createMockClient({
+          approveOfficialMirrorQueueItemWithoutModifying: vi.fn().mockResolvedValue({
+            success: true,
+            message: 'Queue item approved without modifying linked server',
+            queue_item: {
+              id: 1,
+              name: 'com.example/test-server',
+              status: 'approved',
+              mirrors_count: 1,
+              linked_server_slug: 'test-server',
+              linked_server_id: 42,
+              latest_mirror: null,
+              created_at: '2024-01-15T00:00:00Z',
+              updated_at: '2024-01-15T00:00:00Z',
+            },
+          }),
+        });
+
+        const tool = approveOfficialMirrorQueueItemWithoutModifying(mockServer, () => mockClient);
+        const result = await tool.handler({ id: 1 });
+
+        expect(mockClient.approveOfficialMirrorQueueItemWithoutModifying).toHaveBeenCalledWith(1);
+        expect(result.content[0].text).toContain('Queue Item Approved');
+        expect(result.content[0].text).toContain('approved without modifying');
+        expect(result.content[0].text).toContain('test-server');
+      });
+
+      it('should handle errors when queue item is not linked', async () => {
+        const mockClient = createMockClient({
+          approveOfficialMirrorQueueItemWithoutModifying: vi
+            .fn()
+            .mockRejectedValue(new Error('Queue item must be linked to a server first')),
+        });
+
+        const tool = approveOfficialMirrorQueueItemWithoutModifying(mockServer, () => mockClient);
+        const result = await tool.handler({ id: 1 });
+
+        expect(result.isError).toBe(true);
+        expect(result.content[0].text).toContain('Queue item must be linked to a server first');
+      });
+    });
+
+    describe('add_official_mirror_to_regular_queue', () => {
+      it('should add queue item to regular queue as draft implementation', async () => {
+        const mockClient = createMockClient({
+          addOfficialMirrorToRegularQueue: vi.fn().mockResolvedValue({
+            success: true,
+            message: 'Job enqueued to create draft MCP implementation',
+            queue_item: {
+              id: 1,
+              name: 'com.example/test-server',
+              status: 'pending_new',
+              mirrors_count: 1,
+              linked_server_slug: null,
+              linked_server_id: null,
+              latest_mirror: null,
+              created_at: '2024-01-15T00:00:00Z',
+              updated_at: '2024-01-15T00:00:00Z',
+            },
+          }),
+        });
+
+        const tool = addOfficialMirrorToRegularQueue(mockServer, () => mockClient);
+        const result = await tool.handler({ id: 1 });
+
+        expect(mockClient.addOfficialMirrorToRegularQueue).toHaveBeenCalledWith(1);
+        expect(result.content[0].text).toContain('Job enqueued');
+        expect(result.content[0].text).toContain('draft MCP implementation');
+        expect(result.content[0].text).toContain('async operation');
+      });
+
+      it('should handle validation errors', async () => {
+        const mockClient = createMockClient({
+          addOfficialMirrorToRegularQueue: vi
+            .fn()
+            .mockRejectedValue(new Error('Queue item is already linked to a server')),
+        });
+
+        const tool = addOfficialMirrorToRegularQueue(mockServer, () => mockClient);
+        const result = await tool.handler({ id: 1 });
+
+        expect(result.isError).toBe(true);
+        expect(result.content[0].text).toContain('Queue item is already linked to a server');
+      });
+    });
+
+    describe('unlink_official_mirror_queue_item', () => {
+      it('should unlink queue item from linked server', async () => {
+        const mockClient = createMockClient({
+          unlinkOfficialMirrorQueueItem: vi.fn().mockResolvedValue({
+            success: true,
+            message: 'Queue item unlinked from server',
+            queue_item: {
+              id: 1,
+              name: 'com.example/test-server',
+              status: 'pending_new',
+              mirrors_count: 1,
+              linked_server_slug: null,
+              linked_server_id: null,
+              latest_mirror: null,
+              created_at: '2024-01-15T00:00:00Z',
+              updated_at: '2024-01-15T00:00:00Z',
+            },
+          }),
+        });
+
+        const tool = unlinkOfficialMirrorQueueItem(mockServer, () => mockClient);
+        const result = await tool.handler({ id: 1 });
+
+        expect(mockClient.unlinkOfficialMirrorQueueItem).toHaveBeenCalledWith(1);
+        expect(result.content[0].text).toContain('Queue Item Unlinked');
+        expect(result.content[0].text).toContain('successfully unlinked');
+      });
+
+      it('should handle errors when queue item is not linked', async () => {
+        const mockClient = createMockClient({
+          unlinkOfficialMirrorQueueItem: vi
+            .fn()
+            .mockRejectedValue(new Error('Queue item is not linked to any server')),
+        });
+
+        const tool = unlinkOfficialMirrorQueueItem(mockServer, () => mockClient);
+        const result = await tool.handler({ id: 1 });
+
+        expect(result.isError).toBe(true);
+        expect(result.content[0].text).toContain('Queue item is not linked to any server');
+      });
+    });
+  });
+
+  describe('parseEnabledToolGroups with official queue groups', () => {
+    it('should parse official_queue_readonly group', () => {
+      const groups = parseEnabledToolGroups('official_queue_readonly');
+      expect(groups).toEqual(['official_queue_readonly']);
+    });
+
+    it('should parse official_queue_all group', () => {
+      const groups = parseEnabledToolGroups('official_queue_all');
+      expect(groups).toEqual(['official_queue_all']);
+    });
+
+    it('should include official queue groups in default', () => {
+      const groups = parseEnabledToolGroups();
+      expect(groups).toContain('official_queue_readonly');
+      expect(groups).toContain('official_queue_all');
+    });
+  });
+
+  describe('Tool Group Registration with Official Queue', () => {
+    it('should register official queue tools when official_queue_all is enabled', async () => {
+      const mockServer = new Server(
+        { name: 'test', version: '1.0.0' },
+        { capabilities: { tools: {} } }
+      );
+      const clientFactory = () => createMockClient();
+
+      const registerTools = createRegisterTools(clientFactory, 'official_queue_all');
+      registerTools(mockServer);
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const handlers = (mockServer as any)._requestHandlers;
+      const listToolsHandler = handlers.get('tools/list');
+      const result = await listToolsHandler({ method: 'tools/list', params: {} });
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const toolNames = result.tools.map((t: any) => t.name);
+      expect(toolNames).toContain('get_official_mirror_queue_items');
+      expect(toolNames).toContain('get_official_mirror_queue_item');
+      expect(toolNames).toContain('approve_official_mirror_queue_item');
+      expect(toolNames).toContain('approve_official_mirror_queue_item_without_modifying');
+      expect(toolNames).toContain('reject_official_mirror_queue_item');
+      expect(toolNames).toContain('add_official_mirror_to_regular_queue');
+      expect(toolNames).toContain('unlink_official_mirror_queue_item');
+    });
+
+    it('should only register read-only tools when official_queue_readonly is enabled', async () => {
+      const mockServer = new Server(
+        { name: 'test', version: '1.0.0' },
+        { capabilities: { tools: {} } }
+      );
+      const clientFactory = () => createMockClient();
+
+      const registerTools = createRegisterTools(clientFactory, 'official_queue_readonly');
+      registerTools(mockServer);
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const handlers = (mockServer as any)._requestHandlers;
+      const listToolsHandler = handlers.get('tools/list');
+      const result = await listToolsHandler({ method: 'tools/list', params: {} });
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const toolNames = result.tools.map((t: any) => t.name);
+      expect(toolNames).toContain('get_official_mirror_queue_items');
+      expect(toolNames).toContain('get_official_mirror_queue_item');
+      // Write tools should NOT be present
+      expect(toolNames).not.toContain('approve_official_mirror_queue_item');
+      expect(toolNames).not.toContain('reject_official_mirror_queue_item');
     });
   });
 });

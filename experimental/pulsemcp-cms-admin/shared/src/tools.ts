@@ -12,6 +12,13 @@ import { getDraftMCPImplementations } from './tools/get-draft-mcp-implementation
 import { saveMCPImplementation } from './tools/save-mcp-implementation.js';
 import { sendMCPImplementationPostingNotification } from './tools/send-mcp-implementation-posting-notification.js';
 import { findProviders } from './tools/find-providers.js';
+import { getOfficialMirrorQueueItems } from './tools/get-official-mirror-queue-items.js';
+import { getOfficialMirrorQueueItem } from './tools/get-official-mirror-queue-item.js';
+import { approveOfficialMirrorQueueItem } from './tools/approve-official-mirror-queue-item.js';
+import { approveOfficialMirrorQueueItemWithoutModifying } from './tools/approve-official-mirror-queue-item-without-modifying.js';
+import { rejectOfficialMirrorQueueItem } from './tools/reject-official-mirror-queue-item.js';
+import { addOfficialMirrorToRegularQueue } from './tools/add-official-mirror-to-regular-queue.js';
+import { unlinkOfficialMirrorQueueItem } from './tools/unlink-official-mirror-queue-item.js';
 
 /**
  * Tool group definitions - groups of related tools that can be enabled/disabled together
@@ -19,8 +26,15 @@ import { findProviders } from './tools/find-providers.js';
  * - newsletter: All newsletter-related tools (posts, authors, images)
  * - server_queue_readonly: Read-only server queue tools (search, get drafts)
  * - server_queue_all: All server queue tools including write operations (search, get drafts, save)
+ * - official_queue_readonly: Read-only official mirror queue tools (list, get)
+ * - official_queue_all: All official mirror queue tools including write operations (approve, reject, unlink)
  */
-export type ToolGroup = 'newsletter' | 'server_queue_readonly' | 'server_queue_all';
+export type ToolGroup =
+  | 'newsletter'
+  | 'server_queue_readonly'
+  | 'server_queue_all'
+  | 'official_queue_readonly'
+  | 'official_queue_all';
 
 interface Tool {
   name: string;
@@ -51,6 +65,20 @@ const ALL_TOOLS: ToolDefinition[] = [
   { factory: saveMCPImplementation, groups: ['server_queue_all'] },
   { factory: sendMCPImplementationPostingNotification, groups: ['server_queue_all'] },
   { factory: findProviders, groups: ['server_queue_readonly', 'server_queue_all'] },
+  // Official mirror queue tools
+  {
+    factory: getOfficialMirrorQueueItems,
+    groups: ['official_queue_readonly', 'official_queue_all'],
+  },
+  {
+    factory: getOfficialMirrorQueueItem,
+    groups: ['official_queue_readonly', 'official_queue_all'],
+  },
+  { factory: approveOfficialMirrorQueueItem, groups: ['official_queue_all'] },
+  { factory: approveOfficialMirrorQueueItemWithoutModifying, groups: ['official_queue_all'] },
+  { factory: rejectOfficialMirrorQueueItem, groups: ['official_queue_all'] },
+  { factory: addOfficialMirrorToRegularQueue, groups: ['official_queue_all'] },
+  { factory: unlinkOfficialMirrorQueueItem, groups: ['official_queue_all'] },
 ];
 
 /**
@@ -63,7 +91,13 @@ export function parseEnabledToolGroups(enabledGroupsParam?: string): ToolGroup[]
 
   if (!groupsStr) {
     // Default: all groups enabled
-    return ['newsletter', 'server_queue_readonly', 'server_queue_all'];
+    return [
+      'newsletter',
+      'server_queue_readonly',
+      'server_queue_all',
+      'official_queue_readonly',
+      'official_queue_all',
+    ];
   }
 
   const groups = groupsStr.split(',').map((g) => g.trim());
@@ -73,7 +107,9 @@ export function parseEnabledToolGroups(enabledGroupsParam?: string): ToolGroup[]
     if (
       group === 'newsletter' ||
       group === 'server_queue_readonly' ||
-      group === 'server_queue_all'
+      group === 'server_queue_all' ||
+      group === 'official_queue_readonly' ||
+      group === 'official_queue_all'
     ) {
       validGroups.push(group);
     } else {
@@ -99,6 +135,8 @@ export function parseEnabledToolGroups(enabledGroupsParam?: string): ToolGroup[]
  * - newsletter: All newsletter-related tools
  * - server_queue_readonly: Read-only server queue tools (search, get drafts)
  * - server_queue_all: All server queue tools including write operations
+ * - official_queue_readonly: Read-only official mirror queue tools (list, get)
+ * - official_queue_all: All official mirror queue tools including write operations
  *
  * @param clientFactory - Factory function that creates client instances
  * @param enabledGroups - Optional comma-separated list of enabled tool groups (overrides env var)

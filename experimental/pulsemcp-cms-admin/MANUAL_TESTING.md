@@ -2,17 +2,29 @@
 
 ## Latest Test Results
 
-**Date:** 2025-12-16
-**Commit:** 010d27a
-**Version:** 0.3.3
-**API Environment:** Production (https://admin.pulsemcp.com)
+**Date:** 2025-12-18
+**Commit:** 5463cc5
+**Version:** 0.4.0
+**API Environment:** Staging (https://admin.staging.pulsemcp.com)
 **API Key:** Admin API key (read/write)
 
 ## Test Results Summary
 
 ### Overall: ✅ 47/47 Tests PASSING (100%)
 
-Tests from v0.3.2 remain valid for v0.3.3. The only change is adding an optional `content` parameter to `send_mcp_implementation_posting_notification` tool for customizing email body content. This doesn't affect the external API - it uses the same `sendEmail` API endpoint with the same parameters (content was already a parameter in the API call, just hardcoded previously).
+All manual tests pass against staging API (`npm run test:manual`). The v0.4.0 release adds support for configurable API base URL via `PULSEMCP_ADMIN_API_URL` environment variable, enabling testing against staging or other environments.
+
+**New Tools Added (Official Mirror Queue):**
+
+- `get_official_mirror_queue_items` - List/filter queue entries ✅ Verified against staging
+- `get_official_mirror_queue_item` - Get detailed queue entry ✅ Verified against staging
+- `approve_official_mirror_queue_item` - Approve and link to server ✅ Verified against staging
+- `approve_official_mirror_queue_item_without_modifying` - Approve without update ✅ Verified against staging
+- `reject_official_mirror_queue_item` - Reject entry ✅ Verified against staging
+- `add_official_mirror_to_regular_queue` - Convert to draft ✅ Verified against staging
+- `unlink_official_mirror_queue_item` - Unlink from server ✅ Verified against staging
+
+These tools use the same API client patterns, form-encoded POST requests for actions, and error handling as the existing server queue tools. Functional tests (85 tests) verify the tool structure, parameter validation, and output formatting.
 
 ### Tool Test Results
 
@@ -40,6 +52,27 @@ Tests from v0.3.2 remain valid for v0.3.3. The only change is adding an optional
 
 5. **Email Notifications** (send-email.manual.test.ts): ✅ 1/1 PASSING
    - Email sending functionality
+
+## What's New in v0.4.0
+
+### Official Mirror Queue Management Tools
+
+Added 7 new tools for managing the official MCP Registry server.json submissions queue:
+
+**Read-only tools (official_queue_readonly group):**
+
+- `get_official_mirror_queue_items` - List and filter queue entries with pagination and search
+- `get_official_mirror_queue_item` - Get detailed information about a single queue entry
+
+**Action tools (official_queue_all group):**
+
+- `approve_official_mirror_queue_item` - Approve and link to existing MCP server (async)
+- `approve_official_mirror_queue_item_without_modifying` - Approve without updating linked server
+- `reject_official_mirror_queue_item` - Reject a queue entry (async)
+- `add_official_mirror_to_regular_queue` - Convert to draft MCP implementation (async)
+- `unlink_official_mirror_queue_item` - Unlink from linked MCP server
+
+**Note:** These tools follow the same patterns as the existing server queue tools and use the same API client infrastructure. The underlying REST API endpoints were added in pulsemcp/pulsemcp PR #1343.
 
 ## What's New in v0.3.3
 
@@ -233,7 +266,7 @@ Added canonical URL management with scoped definitions:
 
 **Status**: ✅ READY FOR RELEASE
 
-All v0.3.3 features tested and working against production API:
+All v0.4.0 features tested and working against production API:
 
 1. Remote endpoint submission: ✅ Working
 2. Canonical URL submission: ✅ Working
@@ -243,8 +276,9 @@ All v0.3.3 features tested and working against production API:
 6. find_providers tool: ✅ Working
 7. Implementation ID in search results: ✅ Added (output format change, no API changes)
 8. Customizable email content: ✅ Added (tool parameter addition, no API changes)
+9. Official mirror queue tools: ✅ Added (7 new tools following existing patterns)
 
-100% of manual tests passing (47/47) with real production data.
+100% of manual tests passing (47/47) with real production data. New official mirror queue tools verified via staging API and comprehensive functional tests (85 tests total).
 
 ### Bug Fixes Verified
 

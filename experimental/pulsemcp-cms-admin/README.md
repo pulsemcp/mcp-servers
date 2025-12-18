@@ -29,7 +29,7 @@ This is an MCP ([Model Context Protocol](https://modelcontextprotocol.io/)) Serv
 
 **MCP Implementation Search**: Search for MCP servers and clients in the PulseMCP registry.
 
-**Toolgroups**: Enable/disable tool groups (newsletter, server_queue_readonly, server_queue_all) via environment variable.
+**Toolgroups**: Enable/disable tool groups (newsletter, server_queue_readonly, server_queue_all, official_queue_readonly, official_queue_all) via environment variable.
 
 **Draft Control**: Manage draft posts before publishing to the newsletter.
 
@@ -37,26 +37,36 @@ This is an MCP ([Model Context Protocol](https://modelcontextprotocol.io/)) Serv
 
 This server is built and tested on macOS with Claude Desktop. It should work with other MCP clients as well.
 
-| Tool Name                                      | Tool Group            | Description                                                                  |
-| ---------------------------------------------- | --------------------- | ---------------------------------------------------------------------------- |
-| `get_newsletter_posts`                         | newsletter            | List newsletter posts with search, sorting, and pagination options.          |
-| `get_newsletter_post`                          | newsletter            | Retrieve a specific newsletter post by its unique slug.                      |
-| `draft_newsletter_post`                        | newsletter            | Create a new draft newsletter post with title, body, and metadata.           |
-| `update_newsletter_post`                       | newsletter            | Update an existing newsletter post's content and metadata (except status).   |
-| `upload_image`                                 | newsletter            | Upload an image and attach it to a specific newsletter post.                 |
-| `get_authors`                                  | newsletter            | Get a list of authors with optional search and pagination.                   |
-| `search_mcp_implementations`                   | server_queue_readonly | Search for MCP servers and clients in the PulseMCP registry.                 |
-| `get_draft_mcp_implementations`                | server_queue_readonly | Retrieve paginated list of draft MCP implementations needing review.         |
-| `save_mcp_implementation`                      | server_queue_all      | Update an MCP implementation (replicates Admin panel "Save Changes" button). |
-| `send_mcp_implementation_posting_notification` | server_queue_all      | Send email notification when MCP implementation goes live.                   |
+| Tool Name                                              | Tool Group              | Description                                                                  |
+| ------------------------------------------------------ | ----------------------- | ---------------------------------------------------------------------------- |
+| `get_newsletter_posts`                                 | newsletter              | List newsletter posts with search, sorting, and pagination options.          |
+| `get_newsletter_post`                                  | newsletter              | Retrieve a specific newsletter post by its unique slug.                      |
+| `draft_newsletter_post`                                | newsletter              | Create a new draft newsletter post with title, body, and metadata.           |
+| `update_newsletter_post`                               | newsletter              | Update an existing newsletter post's content and metadata (except status).   |
+| `upload_image`                                         | newsletter              | Upload an image and attach it to a specific newsletter post.                 |
+| `get_authors`                                          | newsletter              | Get a list of authors with optional search and pagination.                   |
+| `search_mcp_implementations`                           | server_queue_readonly   | Search for MCP servers and clients in the PulseMCP registry.                 |
+| `get_draft_mcp_implementations`                        | server_queue_readonly   | Retrieve paginated list of draft MCP implementations needing review.         |
+| `find_providers`                                       | server_queue_readonly   | Search for providers by ID, name, URL, or slug.                              |
+| `save_mcp_implementation`                              | server_queue_all        | Update an MCP implementation (replicates Admin panel "Save Changes" button). |
+| `send_mcp_implementation_posting_notification`         | server_queue_all        | Send email notification when MCP implementation goes live.                   |
+| `get_official_mirror_queue_items`                      | official_queue_readonly | List and filter official mirror queue entries with pagination and search.    |
+| `get_official_mirror_queue_item`                       | official_queue_readonly | Get detailed information about a single official mirror queue entry.         |
+| `approve_official_mirror_queue_item`                   | official_queue_all      | Approve a queue entry and link it to an existing MCP server (async).         |
+| `approve_official_mirror_queue_item_without_modifying` | official_queue_all      | Approve without updating the linked server.                                  |
+| `reject_official_mirror_queue_item`                    | official_queue_all      | Reject a queue entry (async operation).                                      |
+| `add_official_mirror_to_regular_queue`                 | official_queue_all      | Convert a queue entry to a draft MCP implementation (async).                 |
+| `unlink_official_mirror_queue_item`                    | official_queue_all      | Unlink a queue entry from its linked MCP server.                             |
 
 # Tool Groups
 
 This server organizes tools into groups that can be selectively enabled or disabled:
 
 - **newsletter** (6 tools): Newsletter management, image uploads, and author retrieval
-- **server_queue_readonly** (2 tools): Read-only MCP implementation tools (search, draft retrieval)
-- **server_queue_all** (4 tools): All MCP implementation tools including write operations (search, draft retrieval, update, and email notification)
+- **server_queue_readonly** (3 tools): Read-only MCP implementation tools (search, draft retrieval, provider lookup)
+- **server_queue_all** (5 tools): All MCP implementation tools including write operations (search, draft retrieval, provider lookup, update, and email notification)
+- **official_queue_readonly** (2 tools): Read-only official mirror queue tools (list, get details)
+- **official_queue_all** (7 tools): All official mirror queue tools including approve, reject, unlink, and add to regular queue
 
 You can control which tool groups are available by setting the `PULSEMCP_ADMIN_ENABLED_TOOLGROUPS` environment variable as a comma-separated list (e.g., `newsletter,server_queue_readonly`). If not set, all tool groups are enabled by default.
 
@@ -181,7 +191,7 @@ Add to your Claude Desktop configuration:
       "args": ["/path/to/pulsemcp-cms-admin/local/build/index.js"],
       "env": {
         "PULSEMCP_ADMIN_API_KEY": "your-api-key-here",
-        "PULSEMCP_ADMIN_ENABLED_TOOLGROUPS": "newsletter,server_queue_readonly,server_queue_all"
+        "PULSEMCP_ADMIN_ENABLED_TOOLGROUPS": "newsletter,server_queue_readonly,server_queue_all,official_queue_readonly,official_queue_all"
       }
     }
   }

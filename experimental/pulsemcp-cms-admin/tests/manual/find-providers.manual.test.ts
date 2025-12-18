@@ -12,12 +12,13 @@ dotenv.config({ path: path.join(__dirname, '../../.env') });
 
 describe('find_providers manual tests', () => {
   const apiKey = process.env.PULSEMCP_ADMIN_API_KEY;
+  const baseUrl = process.env.PULSEMCP_ADMIN_API_URL;
 
   if (!apiKey) {
     throw new Error('PULSEMCP_ADMIN_API_KEY environment variable is required for manual tests');
   }
 
-  const client = new PulseMCPAdminClient(apiKey);
+  const client = new PulseMCPAdminClient(apiKey, baseUrl);
 
   describe('searchProviders', () => {
     it('should search for providers by query', async () => {
@@ -188,7 +189,7 @@ describe('find_providers manual tests', () => {
 
   describe('API error handling', () => {
     it('should handle invalid API key gracefully', async () => {
-      const invalidClient = new PulseMCPAdminClient('invalid-api-key');
+      const invalidClient = new PulseMCPAdminClient('invalid-api-key', baseUrl);
 
       await expect(invalidClient.searchProviders({ query: 'test' })).rejects.toThrow(
         /Invalid API key|401/
