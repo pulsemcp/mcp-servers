@@ -11,7 +11,10 @@ import { saveMCPImplementation } from '../../shared/src/tools/save-mcp-implement
 import { getOfficialMirrorQueueItems } from '../../shared/src/tools/get-official-mirror-queue-items.js';
 import { getOfficialMirrorQueueItem } from '../../shared/src/tools/get-official-mirror-queue-item.js';
 import { approveOfficialMirrorQueueItem } from '../../shared/src/tools/approve-official-mirror-queue-item.js';
+import { approveOfficialMirrorQueueItemWithoutModifying } from '../../shared/src/tools/approve-official-mirror-queue-item-without-modifying.js';
 import { rejectOfficialMirrorQueueItem } from '../../shared/src/tools/reject-official-mirror-queue-item.js';
+import { addOfficialMirrorToRegularQueue } from '../../shared/src/tools/add-official-mirror-to-regular-queue.js';
+import { unlinkOfficialMirrorQueueItem } from '../../shared/src/tools/unlink-official-mirror-queue-item.js';
 import { parseEnabledToolGroups, createRegisterTools } from '../../shared/src/tools.js';
 import type {
   IPulseMCPAdminClient,
@@ -1690,6 +1693,137 @@ describe('Newsletter Tools', () => {
         expect(mockClient.rejectOfficialMirrorQueueItem).toHaveBeenCalledWith(1);
         expect(result.content[0].text).toContain('Rejection Job Enqueued');
         expect(result.content[0].text).toContain('async operation');
+      });
+    });
+
+    describe('approve_official_mirror_queue_item_without_modifying', () => {
+      it('should approve queue item without modifying linked server', async () => {
+        const mockClient = createMockClient({
+          approveOfficialMirrorQueueItemWithoutModifying: vi.fn().mockResolvedValue({
+            success: true,
+            message: 'Queue item approved without modifying linked server',
+            queue_item: {
+              id: 1,
+              name: 'com.example/test-server',
+              status: 'approved',
+              mirrors_count: 1,
+              linked_server_slug: 'test-server',
+              linked_server_id: 42,
+              latest_mirror: null,
+              created_at: '2024-01-15T00:00:00Z',
+              updated_at: '2024-01-15T00:00:00Z',
+            },
+          }),
+        });
+
+        const tool = approveOfficialMirrorQueueItemWithoutModifying(mockServer, () => mockClient);
+        const result = await tool.handler({ id: 1 });
+
+        expect(mockClient.approveOfficialMirrorQueueItemWithoutModifying).toHaveBeenCalledWith(1);
+        expect(result.content[0].text).toContain('Queue Item Approved');
+        expect(result.content[0].text).toContain('approved without modifying');
+        expect(result.content[0].text).toContain('test-server');
+      });
+
+      it('should handle errors when queue item is not linked', async () => {
+        const mockClient = createMockClient({
+          approveOfficialMirrorQueueItemWithoutModifying: vi
+            .fn()
+            .mockRejectedValue(new Error('Queue item must be linked to a server first')),
+        });
+
+        const tool = approveOfficialMirrorQueueItemWithoutModifying(mockServer, () => mockClient);
+        const result = await tool.handler({ id: 1 });
+
+        expect(result.isError).toBe(true);
+        expect(result.content[0].text).toContain('Queue item must be linked to a server first');
+      });
+    });
+
+    describe('add_official_mirror_to_regular_queue', () => {
+      it('should add queue item to regular queue as draft implementation', async () => {
+        const mockClient = createMockClient({
+          addOfficialMirrorToRegularQueue: vi.fn().mockResolvedValue({
+            success: true,
+            message: 'Job enqueued to create draft MCP implementation',
+            queue_item: {
+              id: 1,
+              name: 'com.example/test-server',
+              status: 'pending_new',
+              mirrors_count: 1,
+              linked_server_slug: null,
+              linked_server_id: null,
+              latest_mirror: null,
+              created_at: '2024-01-15T00:00:00Z',
+              updated_at: '2024-01-15T00:00:00Z',
+            },
+          }),
+        });
+
+        const tool = addOfficialMirrorToRegularQueue(mockServer, () => mockClient);
+        const result = await tool.handler({ id: 1 });
+
+        expect(mockClient.addOfficialMirrorToRegularQueue).toHaveBeenCalledWith(1);
+        expect(result.content[0].text).toContain('Job enqueued');
+        expect(result.content[0].text).toContain('draft MCP implementation');
+        expect(result.content[0].text).toContain('async operation');
+      });
+
+      it('should handle validation errors', async () => {
+        const mockClient = createMockClient({
+          addOfficialMirrorToRegularQueue: vi
+            .fn()
+            .mockRejectedValue(new Error('Queue item is already linked to a server')),
+        });
+
+        const tool = addOfficialMirrorToRegularQueue(mockServer, () => mockClient);
+        const result = await tool.handler({ id: 1 });
+
+        expect(result.isError).toBe(true);
+        expect(result.content[0].text).toContain('Queue item is already linked to a server');
+      });
+    });
+
+    describe('unlink_official_mirror_queue_item', () => {
+      it('should unlink queue item from linked server', async () => {
+        const mockClient = createMockClient({
+          unlinkOfficialMirrorQueueItem: vi.fn().mockResolvedValue({
+            success: true,
+            message: 'Queue item unlinked from server',
+            queue_item: {
+              id: 1,
+              name: 'com.example/test-server',
+              status: 'pending_new',
+              mirrors_count: 1,
+              linked_server_slug: null,
+              linked_server_id: null,
+              latest_mirror: null,
+              created_at: '2024-01-15T00:00:00Z',
+              updated_at: '2024-01-15T00:00:00Z',
+            },
+          }),
+        });
+
+        const tool = unlinkOfficialMirrorQueueItem(mockServer, () => mockClient);
+        const result = await tool.handler({ id: 1 });
+
+        expect(mockClient.unlinkOfficialMirrorQueueItem).toHaveBeenCalledWith(1);
+        expect(result.content[0].text).toContain('Queue Item Unlinked');
+        expect(result.content[0].text).toContain('successfully unlinked');
+      });
+
+      it('should handle errors when queue item is not linked', async () => {
+        const mockClient = createMockClient({
+          unlinkOfficialMirrorQueueItem: vi
+            .fn()
+            .mockRejectedValue(new Error('Queue item is not linked to any server')),
+        });
+
+        const tool = unlinkOfficialMirrorQueueItem(mockServer, () => mockClient);
+        const result = await tool.handler({ id: 1 });
+
+        expect(result.isError).toBe(true);
+        expect(result.content[0].text).toContain('Queue item is not linked to any server');
       });
     });
   });
