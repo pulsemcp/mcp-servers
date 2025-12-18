@@ -15,7 +15,7 @@ describe('send-email manual tests', () => {
   if (!apiKey) {
     throw new Error('PULSEMCP_ADMIN_API_KEY environment variable is required');
   }
-  const baseUrl = 'https://admin.pulsemcp.com';
+  const baseUrl = process.env.PULSEMCP_ADMIN_API_URL || 'https://admin.pulsemcp.com';
   const testEmail = 'tadas412@gmail.com';
 
   it('should send a test email to specified recipient', async () => {

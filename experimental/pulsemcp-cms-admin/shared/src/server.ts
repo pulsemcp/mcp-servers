@@ -129,9 +129,14 @@ export interface IPulseMCPAdminClient {
 
 // PulseMCP Admin API client implementation
 export class PulseMCPAdminClient implements IPulseMCPAdminClient {
-  private baseUrl = 'https://admin.pulsemcp.com';
+  private baseUrl: string;
 
-  constructor(private apiKey: string) {}
+  constructor(
+    private apiKey: string,
+    baseUrl?: string
+  ) {
+    this.baseUrl = baseUrl || 'https://admin.pulsemcp.com';
+  }
 
   async getPosts(params?: {
     search?: string;
@@ -371,12 +376,13 @@ export function createMCPServer() {
       (() => {
         // Get configuration from environment variables
         const apiKey = process.env.PULSEMCP_ADMIN_API_KEY;
+        const baseUrl = process.env.PULSEMCP_ADMIN_API_URL;
 
         if (!apiKey) {
           throw new Error('PULSEMCP_ADMIN_API_KEY environment variable must be configured');
         }
 
-        return new PulseMCPAdminClient(apiKey);
+        return new PulseMCPAdminClient(apiKey, baseUrl);
       });
 
     const registerTools = createRegisterTools(factory);

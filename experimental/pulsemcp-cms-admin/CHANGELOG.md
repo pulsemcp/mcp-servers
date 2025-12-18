@@ -23,6 +23,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   - `official_queue_all`: Full access including approve, reject, unlink, and add to regular queue
 - Added comprehensive TypeScript types for official mirror queue API responses
 - Added functional tests for all new official mirror queue tools
+- Added configurable API base URL via `PULSEMCP_ADMIN_API_URL` environment variable for testing against staging or other environments
 
 ## [0.3.3] - 2025-12-16
 

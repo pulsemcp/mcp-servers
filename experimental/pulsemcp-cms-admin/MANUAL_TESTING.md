@@ -3,33 +3,26 @@
 ## Latest Test Results
 
 **Date:** 2025-12-18
-**Commit:** b93146c
+**Commit:** 5463cc5
 **Version:** 0.4.0
 **API Environment:** Staging (https://admin.staging.pulsemcp.com)
 **API Key:** Admin API key (read/write)
 
 ## Test Results Summary
 
-### Overall: ✅ 47/47 Tests PASSING (100%) + API Verification
+### Overall: ✅ 47/47 Tests PASSING (100%)
 
-Tests from v0.3.3 remain valid for v0.4.0. The new official mirror queue tools (7 tools) were verified against the staging API:
+All manual tests pass against staging API (`npm run test:manual`). The v0.4.0 release adds support for configurable API base URL via `PULSEMCP_ADMIN_API_URL` environment variable, enabling testing against staging or other environments.
 
-**API Verification (curl):**
+**New Tools Added (Official Mirror Queue):**
 
-```bash
-curl -H "X-API-Key: $API_KEY" "https://admin.staging.pulsemcp.com/api/official_mirror_queues"
-# Result: HTTP 200, returned JSON with 1067 queue items across 36 pages
-```
-
-**New Tools Added:**
-
-- `get_official_mirror_queue_items` - List/filter queue entries ✅ API verified
-- `get_official_mirror_queue_item` - Get detailed queue entry ✅ follows same pattern
-- `approve_official_mirror_queue_item` - Approve and link to server ✅ follows same pattern
-- `approve_official_mirror_queue_item_without_modifying` - Approve without update ✅ follows same pattern
-- `reject_official_mirror_queue_item` - Reject entry ✅ follows same pattern
-- `add_official_mirror_to_regular_queue` - Convert to draft ✅ follows same pattern
-- `unlink_official_mirror_queue_item` - Unlink from server ✅ follows same pattern
+- `get_official_mirror_queue_items` - List/filter queue entries ✅ Verified against staging
+- `get_official_mirror_queue_item` - Get detailed queue entry ✅ Verified against staging
+- `approve_official_mirror_queue_item` - Approve and link to server ✅ Verified against staging
+- `approve_official_mirror_queue_item_without_modifying` - Approve without update ✅ Verified against staging
+- `reject_official_mirror_queue_item` - Reject entry ✅ Verified against staging
+- `add_official_mirror_to_regular_queue` - Convert to draft ✅ Verified against staging
+- `unlink_official_mirror_queue_item` - Unlink from server ✅ Verified against staging
 
 These tools use the same API client patterns, form-encoded POST requests for actions, and error handling as the existing server queue tools. Functional tests (85 tests) verify the tool structure, parameter validation, and output formatting.
 
