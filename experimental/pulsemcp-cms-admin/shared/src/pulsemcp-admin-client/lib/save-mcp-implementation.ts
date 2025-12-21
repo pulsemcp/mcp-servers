@@ -31,7 +31,7 @@ export async function saveMCPImplementation(
     formData.append('mcp_implementation[slug]', params.slug);
   }
   if (params.url !== undefined) {
-    formData.append('mcp_implementation[url]', params.url);
+    formData.append('mcp_implementation[marketing_url]', params.url);
   }
   if (params.provider_name !== undefined) {
     formData.append('mcp_implementation[provider_name]', params.provider_name);
