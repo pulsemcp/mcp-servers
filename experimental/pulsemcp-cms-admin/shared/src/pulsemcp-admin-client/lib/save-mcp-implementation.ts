@@ -31,6 +31,7 @@ export async function saveMCPImplementation(
     formData.append('mcp_implementation[slug]', params.slug);
   }
   if (params.url !== undefined) {
+    // Backend expects 'marketing_url' field, but tool exposes it as 'url' for better UX
     formData.append('mcp_implementation[marketing_url]', params.url);
   }
   if (params.provider_name !== undefined) {
