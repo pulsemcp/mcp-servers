@@ -2,15 +2,17 @@
 
 ## Latest Test Results
 
-**Date:** 2025-12-18
-**Commit:** 5463cc5
-**Version:** 0.4.0
+**Date:** 2025-12-21
+**Commit:** 51078a9
+**Version:** 0.4.1
 **API Environment:** Staging (https://admin.staging.pulsemcp.com)
 **API Key:** Admin API key (read/write)
 
 ## Test Results Summary
 
 ### Overall: ✅ 47/47 Tests PASSING (100%)
+
+**Note:** v0.4.1 is a bug fix release that corrects the API parameter name for the `url` field (sends as `marketing_url` to match Rails backend). The functional change is minimal and covered by new unit tests. All existing manual tests remain valid as the API behavior is unchanged.
 
 All manual tests pass against staging API (`npm run test:manual`). The v0.4.0 release adds support for configurable API base URL via `PULSEMCP_ADMIN_API_URL` environment variable, enabling testing against staging or other environments.
 
