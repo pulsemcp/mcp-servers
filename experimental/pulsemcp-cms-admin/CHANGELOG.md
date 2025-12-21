@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [0.4.1] - 2025-12-21
+
+### Fixed
+
+- Fixed `save_mcp_implementation` `url` parameter not updating the implementation URL
+  - The API client was sending `mcp_implementation[url]` but the Rails backend expects `mcp_implementation[marketing_url]`
+  - Now correctly sends the `url` parameter value as `marketing_url` to the backend
+
 ## [0.4.0] - 2025-12-18
 
 ### Added
