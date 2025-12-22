@@ -31,7 +31,7 @@ Use this when:
 
 **Requirements:**
 - The queue entry must already be linked to an MCP server
-- Server linkage must be consistent (use get_mirror_item to check)
+- Server linkage must be consistent (use get_official_mirror_queue_item to check)
 
 This is useful for server.json updates where you want to acknowledge the update was received but the existing PulseMCP server data should not be modified.`,
     inputSchema: {

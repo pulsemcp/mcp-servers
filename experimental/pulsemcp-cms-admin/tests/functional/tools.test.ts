@@ -1696,7 +1696,7 @@ describe('Newsletter Tools', () => {
       });
     });
 
-    describe('approve_official_mirror_queue_item_without_modifying', () => {
+    describe('approve_mirror_no_modify', () => {
       it('should approve queue item without modifying linked server', async () => {
         const mockClient = createMockClient({
           approveOfficialMirrorQueueItemWithoutModifying: vi.fn().mockResolvedValue({
