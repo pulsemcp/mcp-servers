@@ -468,17 +468,30 @@ describe('PulseMCP CMS Admin MCP Server Integration Tests', () => {
     it('should list all available tools', async () => {
       const tools = await client.listTools();
 
-      expect(tools.tools).toHaveLength(9);
+      // 6 newsletter + 5 server_queue_all + 7 official_queue_all = 18 tools
+      expect(tools.tools).toHaveLength(18);
       const toolNames = tools.tools.map((t) => t.name);
+      // Newsletter tools
       expect(toolNames).toContain('get_newsletter_posts');
       expect(toolNames).toContain('get_newsletter_post');
       expect(toolNames).toContain('draft_newsletter_post');
       expect(toolNames).toContain('update_newsletter_post');
       expect(toolNames).toContain('upload_image');
       expect(toolNames).toContain('get_authors');
+      // Server queue tools
       expect(toolNames).toContain('search_mcp_implementations');
       expect(toolNames).toContain('get_draft_mcp_implementations');
       expect(toolNames).toContain('save_mcp_implementation');
+      expect(toolNames).toContain('find_providers');
+      expect(toolNames).toContain('send_impl_posted_notif');
+      // Official queue tools
+      expect(toolNames).toContain('get_official_mirror_queue_items');
+      expect(toolNames).toContain('get_official_mirror_queue_item');
+      expect(toolNames).toContain('approve_official_mirror_queue_item');
+      expect(toolNames).toContain('approve_mirror_no_modify');
+      expect(toolNames).toContain('reject_official_mirror_queue_item');
+      expect(toolNames).toContain('add_official_mirror_to_regular_queue');
+      expect(toolNames).toContain('unlink_official_mirror_queue_item');
     });
   });
 });

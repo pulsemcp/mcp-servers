@@ -43,7 +43,7 @@ export function sendMCPImplementationPostingNotification(
   clientFactory: ClientFactory
 ) {
   return {
-    name: 'send_mcp_implementation_posting_notification',
+    name: 'send_impl_posted_notif',
     description: `Send an email notification to the submitter of an MCP implementation that has been published to PulseMCP.
 
 This tool sends the actual notification email (not just a draft) to inform submitters that their MCP implementation is now live on PulseMCP. It replicates and extends the "Draft Notification" functionality from the Admin panel, but actually sends the email.

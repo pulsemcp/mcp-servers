@@ -16,7 +16,7 @@ export function approveOfficialMirrorQueueItemWithoutModifying(
   clientFactory: ClientFactory
 ) {
   return {
-    name: 'approve_official_mirror_queue_item_without_modifying',
+    name: 'approve_mirror_no_modify',
     description: `Approve an official mirror queue entry without modifying the linked MCP server. This is a synchronous operation.
 
 This action:

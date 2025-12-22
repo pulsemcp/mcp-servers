@@ -37,26 +37,26 @@ This is an MCP ([Model Context Protocol](https://modelcontextprotocol.io/)) Serv
 
 This server is built and tested on macOS with Claude Desktop. It should work with other MCP clients as well.
 
-| Tool Name                                              | Tool Group              | Description                                                                  |
-| ------------------------------------------------------ | ----------------------- | ---------------------------------------------------------------------------- |
-| `get_newsletter_posts`                                 | newsletter              | List newsletter posts with search, sorting, and pagination options.          |
-| `get_newsletter_post`                                  | newsletter              | Retrieve a specific newsletter post by its unique slug.                      |
-| `draft_newsletter_post`                                | newsletter              | Create a new draft newsletter post with title, body, and metadata.           |
-| `update_newsletter_post`                               | newsletter              | Update an existing newsletter post's content and metadata (except status).   |
-| `upload_image`                                         | newsletter              | Upload an image and attach it to a specific newsletter post.                 |
-| `get_authors`                                          | newsletter              | Get a list of authors with optional search and pagination.                   |
-| `search_mcp_implementations`                           | server_queue_readonly   | Search for MCP servers and clients in the PulseMCP registry.                 |
-| `get_draft_mcp_implementations`                        | server_queue_readonly   | Retrieve paginated list of draft MCP implementations needing review.         |
-| `find_providers`                                       | server_queue_readonly   | Search for providers by ID, name, URL, or slug.                              |
-| `save_mcp_implementation`                              | server_queue_all        | Update an MCP implementation (replicates Admin panel "Save Changes" button). |
-| `send_mcp_implementation_posting_notification`         | server_queue_all        | Send email notification when MCP implementation goes live.                   |
-| `get_official_mirror_queue_items`                      | official_queue_readonly | List and filter official mirror queue entries with pagination and search.    |
-| `get_official_mirror_queue_item`                       | official_queue_readonly | Get detailed information about a single official mirror queue entry.         |
-| `approve_official_mirror_queue_item`                   | official_queue_all      | Approve a queue entry and link it to an existing MCP server (async).         |
-| `approve_official_mirror_queue_item_without_modifying` | official_queue_all      | Approve without updating the linked server.                                  |
-| `reject_official_mirror_queue_item`                    | official_queue_all      | Reject a queue entry (async operation).                                      |
-| `add_official_mirror_to_regular_queue`                 | official_queue_all      | Convert a queue entry to a draft MCP implementation (async).                 |
-| `unlink_official_mirror_queue_item`                    | official_queue_all      | Unlink a queue entry from its linked MCP server.                             |
+| Tool Name                              | Tool Group              | Description                                                                  |
+| -------------------------------------- | ----------------------- | ---------------------------------------------------------------------------- |
+| `get_newsletter_posts`                 | newsletter              | List newsletter posts with search, sorting, and pagination options.          |
+| `get_newsletter_post`                  | newsletter              | Retrieve a specific newsletter post by its unique slug.                      |
+| `draft_newsletter_post`                | newsletter              | Create a new draft newsletter post with title, body, and metadata.           |
+| `update_newsletter_post`               | newsletter              | Update an existing newsletter post's content and metadata (except status).   |
+| `upload_image`                         | newsletter              | Upload an image and attach it to a specific newsletter post.                 |
+| `get_authors`                          | newsletter              | Get a list of authors with optional search and pagination.                   |
+| `search_mcp_implementations`           | server_queue_readonly   | Search for MCP servers and clients in the PulseMCP registry.                 |
+| `get_draft_mcp_implementations`        | server_queue_readonly   | Retrieve paginated list of draft MCP implementations needing review.         |
+| `find_providers`                       | server_queue_readonly   | Search for providers by ID, name, URL, or slug.                              |
+| `save_mcp_implementation`              | server_queue_all        | Update an MCP implementation (replicates Admin panel "Save Changes" button). |
+| `send_impl_posted_notif`               | server_queue_all        | Send email notification when MCP implementation goes live.                   |
+| `get_official_mirror_queue_items`      | official_queue_readonly | List and filter official mirror queue entries with pagination and search.    |
+| `get_official_mirror_queue_item`       | official_queue_readonly | Get detailed information about a single official mirror queue entry.         |
+| `approve_official_mirror_queue_item`   | official_queue_all      | Approve a queue entry and link it to an existing MCP server (async).         |
+| `approve_mirror_no_modify`             | official_queue_all      | Approve without updating the linked server.                                  |
+| `reject_official_mirror_queue_item`    | official_queue_all      | Reject a queue entry (async operation).                                      |
+| `add_official_mirror_to_regular_queue` | official_queue_all      | Convert a queue entry to a draft MCP implementation (async).                 |
+| `unlink_official_mirror_queue_item`    | official_queue_all      | Unlink a queue entry from its linked MCP server.                             |
 
 # Tool Groups
 

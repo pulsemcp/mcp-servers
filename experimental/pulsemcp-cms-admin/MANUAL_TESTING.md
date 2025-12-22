@@ -3,8 +3,8 @@
 ## Latest Test Results
 
 **Date:** 2025-12-21
-**Commit:** 51078a9
-**Version:** 0.4.1
+**Commit:** f5c6430
+**Version:** 0.4.2
 **API Environment:** Staging (https://admin.staging.pulsemcp.com)
 **API Key:** Admin API key (read/write)
 
@@ -12,7 +12,12 @@
 
 ### Overall: ✅ 47/47 Tests PASSING (100%)
 
-**Note:** v0.4.1 is a bug fix release that corrects the API parameter name for the `url` field (sends as `marketing_url` to match Rails backend). The functional change is minimal and covered by new unit tests. All existing manual tests remain valid as the API behavior is unchanged.
+**Note:** v0.4.2 renames two tool names to prevent exceeding Claude's 64-character limit when combined with long MCP server configuration names:
+
+- `approve_official_mirror_queue_item_without_modifying` → `approve_mirror_no_modify`
+- `send_mcp_implementation_posting_notification` → `send_impl_posted_notif`
+
+This is a naming change only - no API changes or functional differences. All existing manual tests remain valid.
 
 All manual tests pass against staging API (`npm run test:manual`). The v0.4.0 release adds support for configurable API base URL via `PULSEMCP_ADMIN_API_URL` environment variable, enabling testing against staging or other environments.
 
@@ -21,7 +26,7 @@ All manual tests pass against staging API (`npm run test:manual`). The v0.4.0 re
 - `get_official_mirror_queue_items` - List/filter queue entries ✅ Verified against staging
 - `get_official_mirror_queue_item` - Get detailed queue entry ✅ Verified against staging
 - `approve_official_mirror_queue_item` - Approve and link to server ✅ Verified against staging
-- `approve_official_mirror_queue_item_without_modifying` - Approve without update ✅ Verified against staging
+- `approve_mirror_no_modify` - Approve without update ✅ Verified against staging
 - `reject_official_mirror_queue_item` - Reject entry ✅ Verified against staging
 - `add_official_mirror_to_regular_queue` - Convert to draft ✅ Verified against staging
 - `unlink_official_mirror_queue_item` - Unlink from server ✅ Verified against staging
@@ -69,7 +74,7 @@ Added 7 new tools for managing the official MCP Registry server.json submissions
 **Action tools (official_queue_all group):**
 
 - `approve_official_mirror_queue_item` - Approve and link to existing MCP server (async)
-- `approve_official_mirror_queue_item_without_modifying` - Approve without updating linked server
+- `approve_mirror_no_modify` - Approve without updating linked server (renamed from `approve_official_mirror_queue_item_without_modifying` in v0.4.2)
 - `reject_official_mirror_queue_item` - Reject a queue entry (async)
 - `add_official_mirror_to_regular_queue` - Convert to draft MCP implementation (async)
 - `unlink_official_mirror_queue_item` - Unlink from linked MCP server
@@ -80,7 +85,7 @@ Added 7 new tools for managing the official MCP Registry server.json submissions
 
 ### Customizable Email Content
 
-Added `content` parameter to `send_mcp_implementation_posting_notification` tool for customizing email body content:
+Added `content` parameter to `send_impl_posted_notif` (formerly `send_mcp_implementation_posting_notification`) tool for customizing email body content:
 
 - Use `${implementationUrl}` placeholder to insert the link to the live implementation
 - Falls back to the default email template when not provided
@@ -91,7 +96,7 @@ Added `content` parameter to `send_mcp_implementation_posting_notification` tool
 
 ### Implementation ID in Search Results
 
-Added the implementation ID to `search_mcp_implementations` results, displayed right after the name/type header. This enables follow-up operations like `save_mcp_implementation` and `send_mcp_implementation_posting_notification` that require the implementation ID.
+Added the implementation ID to `search_mcp_implementations` results, displayed right after the name/type header. This enables follow-up operations like `save_mcp_implementation` and `send_impl_posted_notif` that require the implementation ID.
 
 **Note:** This is an output formatting change only - no API changes. All v0.3.1 manual tests remain valid.
 
