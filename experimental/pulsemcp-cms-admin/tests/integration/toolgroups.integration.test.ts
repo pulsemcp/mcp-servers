@@ -98,7 +98,7 @@ describe('PulseMCP CMS Admin - Toolgroups Integration Tests', () => {
       expect(toolNames).toContain('get_draft_mcp_implementations');
       expect(toolNames).toContain('find_providers');
       expect(toolNames).toContain('save_mcp_implementation');
-      expect(toolNames).toContain('send_mcp_implementation_posting_notification');
+      expect(toolNames).toContain('send_impl_posted_notif');
 
       // Newsletter tools should NOT be present
       expect(toolNames).not.toContain('get_newsletter_posts');
@@ -176,7 +176,7 @@ describe('PulseMCP CMS Admin - Toolgroups Integration Tests', () => {
       expect(toolNames).toContain('get_draft_mcp_implementations');
       expect(toolNames).toContain('find_providers');
       expect(toolNames).toContain('save_mcp_implementation');
-      expect(toolNames).toContain('send_mcp_implementation_posting_notification');
+      expect(toolNames).toContain('send_impl_posted_notif');
 
       // Official queue tools should NOT be present (not enabled)
       expect(toolNames).not.toContain('get_official_mirror_queue_items');
@@ -217,7 +217,7 @@ describe('PulseMCP CMS Admin - Toolgroups Integration Tests', () => {
       expect(toolNames).toContain('get_official_mirror_queue_items');
       expect(toolNames).toContain('get_official_mirror_queue_item');
       expect(toolNames).toContain('approve_official_mirror_queue_item');
-      expect(toolNames).toContain('approve_official_mirror_queue_item_without_modifying');
+      expect(toolNames).toContain('approve_mirror_no_modify');
       expect(toolNames).toContain('reject_official_mirror_queue_item');
       expect(toolNames).toContain('add_official_mirror_to_regular_queue');
       expect(toolNames).toContain('unlink_official_mirror_queue_item');
@@ -314,13 +314,13 @@ describe('PulseMCP CMS Admin - Toolgroups Integration Tests', () => {
       expect(toolNames).toContain('get_draft_mcp_implementations');
       expect(toolNames).toContain('find_providers');
       expect(toolNames).toContain('save_mcp_implementation');
-      expect(toolNames).toContain('send_mcp_implementation_posting_notification');
+      expect(toolNames).toContain('send_impl_posted_notif');
 
       // Official queue tools
       expect(toolNames).toContain('get_official_mirror_queue_items');
       expect(toolNames).toContain('get_official_mirror_queue_item');
       expect(toolNames).toContain('approve_official_mirror_queue_item');
-      expect(toolNames).toContain('approve_official_mirror_queue_item_without_modifying');
+      expect(toolNames).toContain('approve_mirror_no_modify');
       expect(toolNames).toContain('reject_official_mirror_queue_item');
       expect(toolNames).toContain('add_official_mirror_to_regular_queue');
       expect(toolNames).toContain('unlink_official_mirror_queue_item');

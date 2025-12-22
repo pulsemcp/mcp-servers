@@ -1867,7 +1867,7 @@ describe('Newsletter Tools', () => {
       expect(toolNames).toContain('get_official_mirror_queue_items');
       expect(toolNames).toContain('get_official_mirror_queue_item');
       expect(toolNames).toContain('approve_official_mirror_queue_item');
-      expect(toolNames).toContain('approve_official_mirror_queue_item_without_modifying');
+      expect(toolNames).toContain('approve_mirror_no_modify');
       expect(toolNames).toContain('reject_official_mirror_queue_item');
       expect(toolNames).toContain('add_official_mirror_to_regular_queue');
       expect(toolNames).toContain('unlink_official_mirror_queue_item');

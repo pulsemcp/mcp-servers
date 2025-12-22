@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [0.4.2] - 2025-12-21
+
+### Changed
+
+- **BREAKING**: Shortened two tool names to prevent exceeding Claude's 64-character limit when combined with MCP server name prefix:
+  - `approve_official_mirror_queue_item_without_modifying` → `approve_mirror_no_modify`
+  - `send_mcp_implementation_posting_notification` → `send_impl_posted_notif`
+- Users with long MCP server configuration names (e.g., `pulsemcp-admin-submission-queue-readonly`) should update their code to use the new shorter tool names
+
 ## [0.4.1] - 2025-12-21
 
 ### Fixed

@@ -41,7 +41,7 @@ describe('sendMCPImplementationPostingNotification', () => {
   });
 
   it('should have correct metadata', () => {
-    expect(tool.name).toBe('send_mcp_implementation_posting_notification');
+    expect(tool.name).toBe('send_impl_posted_notif');
     expect(tool.description).toContain('Send an email notification');
     expect(tool.inputSchema.properties).toHaveProperty('implementation_id');
     expect(tool.inputSchema.required).toEqual(['implementation_id']);
