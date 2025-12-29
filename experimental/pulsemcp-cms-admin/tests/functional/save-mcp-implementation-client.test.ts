@@ -185,5 +185,50 @@ describe('saveMCPImplementation API client', () => {
       expect(params.get('mcp_implementation[canonical_attributes][1][scope]')).toBe('domain');
       expect(params.get('mcp_implementation[canonical_attributes][1][note]')).toBe('test note');
     });
+
+    it('should send remote entries when non-empty array is provided', async () => {
+      let capturedBody: string | undefined;
+
+      global.fetch = vi.fn().mockImplementation(async (_url, options) => {
+        capturedBody = options?.body?.toString();
+        return mockSuccessResponse();
+      });
+
+      await saveMCPImplementation(mockApiKey, mockBaseUrl, 100, {
+        remote: [
+          {
+            url_direct: 'https://api.example.com/mcp',
+            transport: 'sse' as const,
+            host_platform: 'smithery' as const,
+          },
+          {
+            id: 42,
+            url_setup: 'https://example.com/setup',
+            authentication_method: 'oauth' as const,
+            cost: 'paid' as const,
+          },
+        ],
+      });
+
+      expect(capturedBody).toBeDefined();
+      const params = new URLSearchParams(capturedBody);
+      // First remote entry
+      expect(params.get('mcp_implementation[remote_attributes][0][url_direct]')).toBe(
+        'https://api.example.com/mcp'
+      );
+      expect(params.get('mcp_implementation[remote_attributes][0][transport]')).toBe('sse');
+      expect(params.get('mcp_implementation[remote_attributes][0][host_platform]')).toBe(
+        'smithery'
+      );
+      // Second remote entry
+      expect(params.get('mcp_implementation[remote_attributes][1][id]')).toBe('42');
+      expect(params.get('mcp_implementation[remote_attributes][1][url_setup]')).toBe(
+        'https://example.com/setup'
+      );
+      expect(params.get('mcp_implementation[remote_attributes][1][authentication_method]')).toBe(
+        'oauth'
+      );
+      expect(params.get('mcp_implementation[remote_attributes][1][cost]')).toBe('paid');
+    });
   });
 });
