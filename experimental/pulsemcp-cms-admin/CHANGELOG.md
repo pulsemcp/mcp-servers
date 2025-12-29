@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [0.4.4] - 2025-12-29
+
 ### Fixed
 
 - Fixed empty validation error messages in `save_mcp_implementation` tool
