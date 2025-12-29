@@ -2,15 +2,23 @@
 
 ## Latest Test Results
 
-**Date:** 2025-12-21
-**Commit:** f5c6430
-**Version:** 0.4.2
+**Date:** 2025-12-29
+**Commit:** 5efd3ba
+**Version:** 0.4.3
 **API Environment:** Staging (https://admin.staging.pulsemcp.com)
 **API Key:** Admin API key (read/write)
 
 ## Test Results Summary
 
 ### Overall: ✅ 47/47 Tests PASSING (100%)
+
+**Note:** v0.4.3 fixes empty array handling for `canonical` and `remote` parameters in `save_mcp_implementation`:
+
+- Passing `canonical: []` now correctly sends the empty array marker to Rails, triggering deletion of all canonical URLs
+- Passing `remote: []` now correctly sends the empty array marker to Rails, triggering deletion of all remote endpoints
+- Previously, empty arrays were being omitted from the API request due to the `length > 0` check
+
+This is a payload construction fix verified by 8 new unit tests. The fix changes how the API payload is constructed but does not change the expected Rails API behavior. Existing manual tests remain valid as they test non-empty array operations which are unaffected.
 
 **Note:** v0.4.2 renames two tool names to prevent exceeding Claude's 64-character limit when combined with long MCP server configuration names:
 

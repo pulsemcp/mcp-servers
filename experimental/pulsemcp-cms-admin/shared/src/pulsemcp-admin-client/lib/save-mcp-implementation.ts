@@ -91,87 +91,104 @@ export async function saveMCPImplementation(
 
   // Remote endpoints
   // Rails expects nested attributes to use the _attributes suffix for has_many associations
-  if (params.remote !== undefined && params.remote.length > 0) {
-    params.remote.forEach((remote, index) => {
-      if (remote.id !== undefined) {
-        formData.append(
-          `mcp_implementation[remote_attributes][${index}][id]`,
-          remote.id.toString()
-        );
-      }
-      if (remote.url_direct !== undefined) {
-        formData.append(
-          `mcp_implementation[remote_attributes][${index}][url_direct]`,
-          remote.url_direct
-        );
-      }
-      if (remote.url_setup !== undefined) {
-        formData.append(
-          `mcp_implementation[remote_attributes][${index}][url_setup]`,
-          remote.url_setup
-        );
-      }
-      if (remote.transport !== undefined) {
-        formData.append(
-          `mcp_implementation[remote_attributes][${index}][transport]`,
-          remote.transport
-        );
-      }
-      if (remote.host_platform !== undefined) {
-        formData.append(
-          `mcp_implementation[remote_attributes][${index}][host_platform]`,
-          remote.host_platform
-        );
-      }
-      if (remote.host_infrastructure !== undefined) {
-        formData.append(
-          `mcp_implementation[remote_attributes][${index}][host_infrastructure]`,
-          remote.host_infrastructure
-        );
-      }
-      if (remote.authentication_method !== undefined) {
-        formData.append(
-          `mcp_implementation[remote_attributes][${index}][authentication_method]`,
-          remote.authentication_method
-        );
-      }
-      if (remote.cost !== undefined) {
-        formData.append(`mcp_implementation[remote_attributes][${index}][cost]`, remote.cost);
-      }
-      if (remote.status !== undefined) {
-        formData.append(`mcp_implementation[remote_attributes][${index}][status]`, remote.status);
-      }
-      if (remote.display_name !== undefined) {
-        formData.append(
-          `mcp_implementation[remote_attributes][${index}][display_name]`,
-          remote.display_name
-        );
-      }
-      if (remote.internal_notes !== undefined) {
-        formData.append(
-          `mcp_implementation[remote_attributes][${index}][internal_notes]`,
-          remote.internal_notes
-        );
-      }
-    });
+  if (params.remote !== undefined) {
+    if (params.remote.length > 0) {
+      params.remote.forEach((remote, index) => {
+        if (remote.id !== undefined) {
+          formData.append(
+            `mcp_implementation[remote_attributes][${index}][id]`,
+            remote.id.toString()
+          );
+        }
+        if (remote.url_direct !== undefined) {
+          formData.append(
+            `mcp_implementation[remote_attributes][${index}][url_direct]`,
+            remote.url_direct
+          );
+        }
+        if (remote.url_setup !== undefined) {
+          formData.append(
+            `mcp_implementation[remote_attributes][${index}][url_setup]`,
+            remote.url_setup
+          );
+        }
+        if (remote.transport !== undefined) {
+          formData.append(
+            `mcp_implementation[remote_attributes][${index}][transport]`,
+            remote.transport
+          );
+        }
+        if (remote.host_platform !== undefined) {
+          formData.append(
+            `mcp_implementation[remote_attributes][${index}][host_platform]`,
+            remote.host_platform
+          );
+        }
+        if (remote.host_infrastructure !== undefined) {
+          formData.append(
+            `mcp_implementation[remote_attributes][${index}][host_infrastructure]`,
+            remote.host_infrastructure
+          );
+        }
+        if (remote.authentication_method !== undefined) {
+          formData.append(
+            `mcp_implementation[remote_attributes][${index}][authentication_method]`,
+            remote.authentication_method
+          );
+        }
+        if (remote.cost !== undefined) {
+          formData.append(`mcp_implementation[remote_attributes][${index}][cost]`, remote.cost);
+        }
+        if (remote.status !== undefined) {
+          formData.append(`mcp_implementation[remote_attributes][${index}][status]`, remote.status);
+        }
+        if (remote.display_name !== undefined) {
+          formData.append(
+            `mcp_implementation[remote_attributes][${index}][display_name]`,
+            remote.display_name
+          );
+        }
+        if (remote.internal_notes !== undefined) {
+          formData.append(
+            `mcp_implementation[remote_attributes][${index}][internal_notes]`,
+            remote.internal_notes
+          );
+        }
+      });
+    } else {
+      // Empty array explicitly provided - send empty array marker to Rails.
+      // The Rails backend has custom logic to interpret '[]' as "delete all remote endpoints".
+      // See: mcp_implementation_update_service.rb:612-613 for the destroy_all logic.
+      formData.append('mcp_implementation[remote_attributes]', '[]');
+    }
   }
 
   // Canonical URLs
   // Rails expects nested attributes to use the _attributes suffix for has_many associations
-  if (params.canonical !== undefined && params.canonical.length > 0) {
-    params.canonical.forEach((canonicalUrl, index) => {
-      formData.append(`mcp_implementation[canonical_attributes][${index}][url]`, canonicalUrl.url);
-      formData.append(
-        `mcp_implementation[canonical_attributes][${index}][scope]`,
-        canonicalUrl.scope
-      );
-      if (canonicalUrl.note !== undefined) {
+  if (params.canonical !== undefined) {
+    if (params.canonical.length > 0) {
+      params.canonical.forEach((canonicalUrl, index) => {
         formData.append(
-          `mcp_implementation[canonical_attributes][${index}][note]`,
-          canonicalUrl.note
+          `mcp_implementation[canonical_attributes][${index}][url]`,
+          canonicalUrl.url
         );
-      }
-    });
+        formData.append(
+          `mcp_implementation[canonical_attributes][${index}][scope]`,
+          canonicalUrl.scope
+        );
+        if (canonicalUrl.note !== undefined) {
+          formData.append(
+            `mcp_implementation[canonical_attributes][${index}][note]`,
+            canonicalUrl.note
+          );
+        }
+      });
+    } else {
+      // Empty array explicitly provided - send empty array marker to Rails.
+      // The Rails backend has custom logic to interpret '[]' as "delete all canonical URLs".
+      // See: mcp_implementation_update_service.rb for the destroy_all logic.
+      formData.append('mcp_implementation[canonical_attributes]', '[]');
+    }
   }
 
   const response = await fetch(url.toString(), {
