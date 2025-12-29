@@ -212,8 +212,15 @@ export async function saveMCPImplementation(
       throw new Error(`MCP implementation not found: ${id}`);
     }
     if (response.status === 422) {
-      const errorData = (await response.json()) as { errors?: string[] };
-      const errors = errorData.errors || ['Validation failed'];
+      const errorData = (await response.json()) as { errors?: string[]; error?: string };
+      // Handle both array format and single error string format from Rails
+      // Also handle empty arrays - an empty array should fall back to the default message
+      const errors =
+        errorData.errors && errorData.errors.length > 0
+          ? errorData.errors
+          : errorData.error
+            ? [errorData.error]
+            : ['Unknown validation error'];
       throw new Error(`Validation failed: ${errors.join(', ')}`);
     }
     throw new Error(`Failed to save MCP implementation: ${response.status} ${response.statusText}`);

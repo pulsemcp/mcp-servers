@@ -54,14 +54,16 @@ export async function sendEmail(
 
     try {
       const errorData = JSON.parse(errorBody);
-      if (errorData.errors) {
-        errorMessage = Array.isArray(errorData.errors)
-          ? errorData.errors.join(', ')
-          : JSON.stringify(errorData.errors);
+      // Handle both array format and single error string format from Rails
+      // Also handle empty arrays - an empty array should fall back to checking other fields
+      if (Array.isArray(errorData.errors) && errorData.errors.length > 0) {
+        errorMessage = errorData.errors.join(', ');
+      } else if (errorData.errors && typeof errorData.errors === 'object') {
+        errorMessage = JSON.stringify(errorData.errors);
       } else if (errorData.error) {
         errorMessage = errorData.error;
       } else {
-        errorMessage = errorBody;
+        errorMessage = errorBody || 'Unknown validation error';
       }
     } catch {
       errorMessage = errorBody || `HTTP ${response.status}: ${response.statusText}`;

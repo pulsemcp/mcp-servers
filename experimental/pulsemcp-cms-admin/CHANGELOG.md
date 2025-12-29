@@ -6,6 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Fixed
+
+- Fixed empty validation error messages in `save_mcp_implementation` tool
+  - When the Rails backend returns a 422 with an empty `errors` array, the tool now shows "Unknown validation error" instead of just "Validation failed: " (empty after colon)
+  - Added support for Rails `error` string format in addition to `errors` array format
+  - This fix also applied to `create_post`, `update_post`, and email sending error handling
+
 ## [0.4.3] - 2025-12-29
 
 ### Fixed

@@ -231,4 +231,78 @@ describe('saveMCPImplementation API client', () => {
       expect(params.get('mcp_implementation[remote_attributes][1][cost]')).toBe('paid');
     });
   });
+
+  describe('error handling for 422 validation errors', () => {
+    it('should handle empty errors array by providing a default message', async () => {
+      global.fetch = vi.fn().mockImplementation(async () => ({
+        ok: false,
+        status: 422,
+        json: async () => ({ errors: [] }),
+      }));
+
+      await expect(
+        saveMCPImplementation(mockApiKey, mockBaseUrl, 100, { name: 'Test' })
+      ).rejects.toThrow('Validation failed: Unknown validation error');
+    });
+
+    it('should handle non-empty errors array', async () => {
+      global.fetch = vi.fn().mockImplementation(async () => ({
+        ok: false,
+        status: 422,
+        json: async () => ({ errors: ['slug must be unique', 'name is required'] }),
+      }));
+
+      await expect(
+        saveMCPImplementation(mockApiKey, mockBaseUrl, 100, { name: 'Test' })
+      ).rejects.toThrow('Validation failed: slug must be unique, name is required');
+    });
+
+    it('should handle single error string format', async () => {
+      global.fetch = vi.fn().mockImplementation(async () => ({
+        ok: false,
+        status: 422,
+        json: async () => ({ error: 'Invalid request' }),
+      }));
+
+      await expect(
+        saveMCPImplementation(mockApiKey, mockBaseUrl, 100, { name: 'Test' })
+      ).rejects.toThrow('Validation failed: Invalid request');
+    });
+
+    it('should handle missing errors field entirely', async () => {
+      global.fetch = vi.fn().mockImplementation(async () => ({
+        ok: false,
+        status: 422,
+        json: async () => ({}),
+      }));
+
+      await expect(
+        saveMCPImplementation(mockApiKey, mockBaseUrl, 100, { name: 'Test' })
+      ).rejects.toThrow('Validation failed: Unknown validation error');
+    });
+
+    it('should prefer errors array over error string when both are present', async () => {
+      global.fetch = vi.fn().mockImplementation(async () => ({
+        ok: false,
+        status: 422,
+        json: async () => ({ errors: ['specific error'], error: 'generic error' }),
+      }));
+
+      await expect(
+        saveMCPImplementation(mockApiKey, mockBaseUrl, 100, { name: 'Test' })
+      ).rejects.toThrow('Validation failed: specific error');
+    });
+
+    it('should fall back to error string when errors array is empty', async () => {
+      global.fetch = vi.fn().mockImplementation(async () => ({
+        ok: false,
+        status: 422,
+        json: async () => ({ errors: [], error: 'fallback error' }),
+      }));
+
+      await expect(
+        saveMCPImplementation(mockApiKey, mockBaseUrl, 100, { name: 'Test' })
+      ).rejects.toThrow('Validation failed: fallback error');
+    });
+  });
 });
