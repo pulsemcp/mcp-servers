@@ -156,7 +156,9 @@ export async function saveMCPImplementation(
         }
       });
     } else {
-      // Empty array means delete all remote endpoints - send empty array marker for Rails
+      // Empty array explicitly provided - send empty array marker to Rails.
+      // The Rails backend has custom logic to interpret '[]' as "delete all remote endpoints".
+      // See: mcp_implementation_update_service.rb:612-613 for the destroy_all logic.
       formData.append('mcp_implementation[remote_attributes]', '[]');
     }
   }
@@ -182,7 +184,9 @@ export async function saveMCPImplementation(
         }
       });
     } else {
-      // Empty array means delete all canonical URLs - send empty array marker for Rails
+      // Empty array explicitly provided - send empty array marker to Rails.
+      // The Rails backend has custom logic to interpret '[]' as "delete all canonical URLs".
+      // See: mcp_implementation_update_service.rb for the destroy_all logic.
       formData.append('mcp_implementation[canonical_attributes]', '[]');
     }
   }
