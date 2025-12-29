@@ -6,6 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Fixed
+
+- Fixed empty array handling for `canonical` and `remote` parameters in `save_mcp_implementation`
+  - Passing `canonical: []` now correctly sends the empty array marker to Rails, triggering deletion of all canonical URLs
+  - Passing `remote: []` now correctly sends the empty array marker to Rails, triggering deletion of all remote endpoints
+  - Previously, empty arrays were being omitted from the API request due to the `length > 0` check
+
 ## [0.4.2] - 2025-12-21
 
 ### Changed
