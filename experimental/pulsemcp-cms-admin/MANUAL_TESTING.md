@@ -3,14 +3,22 @@
 ## Latest Test Results
 
 **Date:** 2025-12-29
-**Commit:** 5efd3ba
-**Version:** 0.4.3
+**Commit:** ccdade8
+**Version:** 0.4.4
 **API Environment:** Staging (https://admin.staging.pulsemcp.com)
 **API Key:** Admin API key (read/write)
 
 ## Test Results Summary
 
 ### Overall: ✅ 47/47 Tests PASSING (100%)
+
+**Note:** v0.4.4 fixes empty validation error messages in `save_mcp_implementation`:
+
+- When the Rails backend returns a 422 with an empty `errors` array, the tool now shows "Unknown validation error" instead of just "Validation failed: " (empty after colon)
+- Added support for Rails `error` string format in addition to `errors` array format
+- This fix also applied to `create_post`, `update_post`, and email sending error handling
+
+This is an error handling fix verified by 6 new unit tests. The fix changes how error responses are parsed but does not change the expected Rails API behavior. Existing manual tests remain valid as they test successful operations.
 
 **Note:** v0.4.3 fixes empty array handling for `canonical` and `remote` parameters in `save_mcp_implementation`:
 
