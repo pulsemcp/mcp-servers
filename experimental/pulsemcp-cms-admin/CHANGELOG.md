@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [0.4.3] - 2025-12-29
+
 ### Fixed
 
 - Fixed empty array handling for `canonical` and `remote` parameters in `save_mcp_implementation`
