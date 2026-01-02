@@ -1,0 +1,87 @@
+name: Slack MCP Server CI
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'experimental/slack/**'
+      - '.github/workflows/slack-ci.yml'
+  pull_request:
+    paths:
+      - 'experimental/slack/**'
+      - '.github/workflows/slack-ci.yml'
+
+jobs:
+  functional-tests:
+    name: Slack MCP Server Functional Tests
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: experimental/slack
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+
+      - name: Install dependencies
+        run: npm ci && npm run install-all
+
+      - name: Build project
+        run: npm run build
+
+      - name: Install and build test-mcp-client
+        # Note: --ignore-scripts prevents workspace root's husky prepare script from running
+        # This is needed because test-mcp-client is a workspace member but husky isn't installed in CI
+        run: cd ../../libs/test-mcp-client && npm ci --ignore-scripts && npm run build
+
+      - name: Run functional tests
+        run: npm run test:run -- --reporter=json --reporter=default --outputFile=test-results.json
+        env:
+          SLACK_BOT_TOKEN: xoxb-test-token
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: functional-test-results
+          path: experimental/slack/test-results.json
+          retention-days: 7
+
+  integration-tests:
+    name: Slack MCP Server Integration Tests
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: experimental/slack
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+
+      - name: Install dependencies
+        run: npm ci && npm run ci:install
+
+      - name: Install test-mcp-client dependencies
+        # Note: --ignore-scripts prevents workspace root's husky prepare script from running
+        run: cd ../../libs/test-mcp-client && npm ci --ignore-scripts
+
+      - name: Build test-mcp-client
+        run: cd ../../libs/test-mcp-client && npm run build
+
+      - name: Run integration tests
+        run: npm run test:integration
+        env:
+          SLACK_BOT_TOKEN: xoxb-test-token
