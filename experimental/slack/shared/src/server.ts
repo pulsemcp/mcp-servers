@@ -157,7 +157,7 @@ export type ClientFactory = () => ISlackClient;
 export function createMCPServer() {
   const server = new Server(
     {
-      name: 'slack-mcp-server',
+      name: 'slack-workspace-mcp-server',
       version: '0.0.1',
     },
     {

@@ -1,11 +1,11 @@
 {
-  "name": "@pulsemcp/slack-mcp-server",
+  "name": "slack-workspace-mcp-server",
   "version": "0.0.1",
   "description": "MCP server for Slack workspace integration",
   "main": "build/index.js",
   "type": "module",
   "bin": {
-    "slack-mcp-server": "./build/index.js"
+    "slack-workspace-mcp-server": "./build/index.js"
   },
   "files": [
     "build/**/*.js",

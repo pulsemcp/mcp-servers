@@ -1,5 +1,5 @@
 {
-  "name": "slack-mcp-server-shared",
+  "name": "slack-workspace-mcp-server-shared",
   "version": "0.0.1",
   "description": "Shared code for Slack MCP server implementations",
   "main": "build/index.js",

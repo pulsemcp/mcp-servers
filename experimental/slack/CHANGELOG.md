@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Renamed package from `@pulsemcp/slack-mcp-server` to `slack-workspace-mcp-server`
+
 ## [0.0.1] - 2026-01-02
 
 ### Added

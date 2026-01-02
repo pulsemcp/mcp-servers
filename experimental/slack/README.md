@@ -15,13 +15,13 @@ A Model Context Protocol (MCP) server for integrating with Slack workspaces. Thi
 ## Installation
 
 ```bash
-npm install @pulsemcp/slack-mcp-server
+npm install slack-workspace-mcp-server
 ```
 
 Or run directly with npx:
 
 ```bash
-npx @pulsemcp/slack-mcp-server
+npx slack-workspace-mcp-server
 ```
 
 ## Configuration
@@ -62,7 +62,7 @@ For Claude Desktop, add to your configuration:
   "mcpServers": {
     "slack": {
       "command": "npx",
-      "args": ["@pulsemcp/slack-mcp-server"],
+      "args": ["slack-workspace-mcp-server"],
       "env": {
         "SLACK_BOT_TOKEN": "xoxb-your-token-here"
       }

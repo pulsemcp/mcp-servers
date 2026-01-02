@@ -1,5 +1,5 @@
 {
-  "name": "slack-mcp-server",
+  "name": "slack-workspace-mcp-server",
   "version": "0.0.1",
   "description": "MCP server for Slack workspace integration",
   "author": "PulseMCP",
