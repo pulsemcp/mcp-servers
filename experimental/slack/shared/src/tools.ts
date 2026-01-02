@@ -1,6 +1,7 @@
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { ListToolsRequestSchema, CallToolRequestSchema } from '@modelcontextprotocol/sdk/types.js';
 import { ClientFactory } from './server.js';
+import { logWarning } from './logging.js';
 import { getChannelsTool } from './tools/get-channels.js';
 import { getChannelTool } from './tools/get-channel.js';
 import { getThreadTool } from './tools/get-thread.js';
@@ -30,8 +31,9 @@ export function parseEnabledToolGroups(enabledGroupsParam?: string): ToolGroup[]
   );
 
   if (validGroups.length === 0) {
-    console.error(
-      `Warning: No valid tool groups found in "${enabledGroupsParam}". Valid groups: ${ALL_TOOL_GROUPS.join(', ')}`
+    logWarning(
+      'parseEnabledToolGroups',
+      `No valid tool groups found in "${enabledGroupsParam}". Valid groups: ${ALL_TOOL_GROUPS.join(', ')}`
     );
     return ALL_TOOL_GROUPS;
   }
