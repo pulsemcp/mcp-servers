@@ -42,53 +42,39 @@ npm run test:manual
 
 **Test Date:** 2026-01-02
 **Branch:** claude/add-slack-mcp-server
-**Commit:** 728ff22
+**Commit:** d1ef08d
 **Tested By:** Claude
 
 ### Summary
 
-**Overall:** 5 of 8 tests passed (62.5%)
+**Overall:** 8 of 8 tests passed (100%)
 
-The passing tests demonstrate core functionality works correctly. The 3 failing tests all fail with `not_in_channel` error because the bot was not invited to the test channel - this is expected Slack API behavior, not a code bug.
+All tests pass when the bot is properly invited to test channels (#general, #clawdbot-testing).
 
 ### Detailed Results
 
-| Test                 | Status  | Notes                               |
-| -------------------- | ------- | ----------------------------------- |
-| List channels        | ✅ Pass | Found 9 channels                    |
-| Get channel info     | ✅ Pass | Retrieved #general with 2 members   |
-| Get channel messages | ❌ Fail | `not_in_channel` - bot not invited  |
-| Post message         | ✅ Pass | Successfully posted to #general     |
-| Add reaction         | ❌ Fail | `not_in_channel` - bot not invited  |
-| Update message       | ✅ Pass | Successfully updated posted message |
-| Post thread reply    | ✅ Pass | Successfully posted thread reply    |
-| Get thread replies   | ❌ Fail | `not_in_channel` - bot not invited  |
-
-### Analysis
-
-The `not_in_channel` errors are expected Slack API behavior:
-
-- The bot can **post** to public channels without being a member
-- The bot **cannot read** messages or add reactions without being a channel member
-- This is a Slack permission model, not a bug in our implementation
-
-To fix the failing tests, invite the bot to the channel:
-
-```
-/invite @YourBotName
-```
+| Test                 | Status  | Notes                                |
+| -------------------- | ------- | ------------------------------------ |
+| List channels        | ✅ Pass | Found 9 channels                     |
+| Get channel info     | ✅ Pass | Retrieved #general with 2 members    |
+| Get channel messages | ✅ Pass | Retrieved messages from #general     |
+| Post message         | ✅ Pass | Successfully posted to #general      |
+| Add reaction         | ✅ Pass | Successfully added thumbsup reaction |
+| Update message       | ✅ Pass | Successfully updated posted message  |
+| Post thread reply    | ✅ Pass | Successfully posted thread reply     |
+| Get thread replies   | ✅ Pass | Retrieved thread with all replies    |
 
 ### Test Cases Status
 
-| Tool                   | Functional Test | Integration Test | Manual Test             |
-| ---------------------- | --------------- | ---------------- | ----------------------- |
-| slack_get_channels     | ✅ Pass         | ✅ Pass          | ✅ Pass                 |
-| slack_get_channel      | ✅ Pass         | ✅ Pass          | ✅ Pass                 |
-| slack_get_thread       | ✅ Pass         | ✅ Pass          | ⚠️ Needs channel invite |
-| slack_post_message     | ✅ Pass         | ✅ Pass          | ✅ Pass                 |
-| slack_reply_to_thread  | ✅ Pass         | ✅ Pass          | ✅ Pass                 |
-| slack_update_message   | ✅ Pass         | ✅ Pass          | ✅ Pass                 |
-| slack_react_to_message | ✅ Pass         | ✅ Pass          | ⚠️ Needs channel invite |
+| Tool                   | Functional Test | Integration Test | Manual Test |
+| ---------------------- | --------------- | ---------------- | ----------- |
+| slack_get_channels     | ✅ Pass         | ✅ Pass          | ✅ Pass     |
+| slack_get_channel      | ✅ Pass         | ✅ Pass          | ✅ Pass     |
+| slack_get_thread       | ✅ Pass         | ✅ Pass          | ✅ Pass     |
+| slack_post_message     | ✅ Pass         | ✅ Pass          | ✅ Pass     |
+| slack_reply_to_thread  | ✅ Pass         | ✅ Pass          | ✅ Pass     |
+| slack_update_message   | ✅ Pass         | ✅ Pass          | ✅ Pass     |
+| slack_react_to_message | ✅ Pass         | ✅ Pass          | ✅ Pass     |
 
 ## Getting the Bot Token
 
