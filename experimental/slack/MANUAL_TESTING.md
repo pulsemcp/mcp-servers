@@ -16,7 +16,6 @@ This file tracks the **most recent** manual test results for the Slack MCP serve
    ```
 
 2. **Required OAuth Scopes for Bot Token:**
-
    - `channels:read` - View basic channel information
    - `channels:history` - View messages in public channels
    - `groups:read` - View private channels
