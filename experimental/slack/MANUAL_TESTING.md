@@ -1,53 +1,70 @@
 # Manual Testing Results
 
-This document tracks manual testing of the Slack MCP Server against real Slack APIs.
+This file tracks the **most recent** manual test results for the Slack MCP server.
 
-## Latest Test Run
+**Note:** Each new test run should overwrite the previous results. We only maintain the latest test results here.
 
-- **Date**: Pending - needs Bot Token
-- **Commit**: (pending)
-- **Tester**: (pending)
-- **Results**: Manual tests require Bot User OAuth Token (xoxb-...)
+## Test Execution
 
-## Test Environment Requirements
+### Prerequisites
 
-- Slack Workspace with a bot app installed
-- Bot User OAuth Token (starts with `xoxb-`)
-- Bot must have the following OAuth scopes:
-  - `channels:read` - View basic channel information
-  - `channels:history` - View messages in public channels
-  - `groups:read` - View private channels
-  - `groups:history` - View messages in private channels
-  - `chat:write` - Send messages
-  - `reactions:write` - Add reactions
+1. **Set up API credentials** - Ensure you have the necessary API credentials in your `.env` file:
 
-## Test Cases
+   ```bash
+   cp .env.example .env
+   # Edit .env with your Slack Bot Token
+   ```
 
-### Channel Operations
+2. **Required OAuth Scopes for Bot Token:**
+   - `channels:read` - View basic channel information
+   - `channels:history` - View messages in public channels
+   - `groups:read` - View private channels
+   - `groups:history` - View messages in private channels
+   - `chat:write` - Send messages
+   - `reactions:write` - Add reactions
 
-| Test                 | Status  | Notes |
-| -------------------- | ------- | ----- |
-| List channels        | Pending |       |
-| Get channel info     | Pending |       |
-| Get channel messages | Pending |       |
+### Running Tests
 
-### Message Operations
+```bash
+# First time setup
+npm run test:manual:setup
 
-| Test              | Status  | Notes |
-| ----------------- | ------- | ----- |
-| Post message      | Pending |       |
-| Add reaction      | Pending |       |
-| Update message    | Pending |       |
-| Post thread reply | Pending |       |
-| Get thread        | Pending |       |
+# Run manual tests
+npm run test:manual
+```
 
-## Instructions
+## Latest Test Results
 
-1. Copy `.env.example` to `.env`
-2. Add your Slack Bot User OAuth Token (get from app's OAuth & Permissions page)
-3. Run `npm run test:manual:setup` for first-time setup
-4. Run `npm run test:manual` to execute tests
-5. Update this document with results
+**Test Date:** 2026-01-02
+**Branch:** claude/add-slack-mcp-server
+**Commit:** de6b510
+**Tested By:** Claude
+
+### Summary
+
+**Overall:** Initial release v0.0.1 - Functional and integration tests passing (26 tests total)
+
+- Functional tests: 15 tests passed
+- Integration tests: 11 tests passed
+
+### Notes
+
+This is the initial v0.0.1 release. Manual tests against real Slack API require a Bot User OAuth Token which was not available during this test run. The server has been validated using:
+
+1. **Functional tests** - All 15 tests pass with mocked Slack client
+2. **Integration tests** - All 11 tests pass using TestMCPClient with mock data
+
+### Test Cases Status
+
+| Tool                   | Functional Test | Integration Test | Manual Test |
+| ---------------------- | --------------- | ---------------- | ----------- |
+| slack_get_channels     | ✅ Pass         | ✅ Pass          | Pending     |
+| slack_get_channel      | ✅ Pass         | ✅ Pass          | Pending     |
+| slack_get_thread       | ✅ Pass         | ✅ Pass          | Pending     |
+| slack_post_message     | ✅ Pass         | ✅ Pass          | Pending     |
+| slack_reply_to_thread  | ✅ Pass         | ✅ Pass          | Pending     |
+| slack_update_message   | ✅ Pass         | ✅ Pass          | Pending     |
+| slack_react_to_message | ✅ Pass         | ✅ Pass          | Pending     |
 
 ## Getting the Bot Token
 
