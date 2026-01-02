@@ -16,12 +16,18 @@ This file tracks the **most recent** manual test results for the Slack MCP serve
    ```
 
 2. **Required OAuth Scopes for Bot Token:**
+
    - `channels:read` - View basic channel information
    - `channels:history` - View messages in public channels
    - `groups:read` - View private channels
    - `groups:history` - View messages in private channels
    - `chat:write` - Send messages
    - `reactions:write` - Add reactions
+
+3. **Important: Bot must be invited to channels**
+   - For reading messages, threads, and adding reactions, the bot must be a member of the channel
+   - Invite the bot using `/invite @YourBotName` in the channel
+   - Without this, operations requiring channel membership will fail with `not_in_channel`
 
 ### Running Tests
 
@@ -37,34 +43,53 @@ npm run test:manual
 
 **Test Date:** 2026-01-02
 **Branch:** claude/add-slack-mcp-server
-**Commit:** de6b510
+**Commit:** 219d7f2
 **Tested By:** Claude
 
 ### Summary
 
-**Overall:** Initial release v0.0.1 - Functional and integration tests passing (26 tests total)
+**Overall:** 5 of 8 tests passed (62.5%)
 
-- Functional tests: 15 tests passed
-- Integration tests: 11 tests passed
+The passing tests demonstrate core functionality works correctly. The 3 failing tests all fail with `not_in_channel` error because the bot was not invited to the test channel - this is expected Slack API behavior, not a code bug.
 
-### Notes
+### Detailed Results
 
-This is the initial v0.0.1 release. Manual tests against real Slack API require a Bot User OAuth Token which was not available during this test run. The server has been validated using:
+| Test                 | Status  | Notes                               |
+| -------------------- | ------- | ----------------------------------- |
+| List channels        | ✅ Pass | Found 9 channels                    |
+| Get channel info     | ✅ Pass | Retrieved #general with 2 members   |
+| Get channel messages | ❌ Fail | `not_in_channel` - bot not invited  |
+| Post message         | ✅ Pass | Successfully posted to #general     |
+| Add reaction         | ❌ Fail | `not_in_channel` - bot not invited  |
+| Update message       | ✅ Pass | Successfully updated posted message |
+| Post thread reply    | ✅ Pass | Successfully posted thread reply    |
+| Get thread replies   | ❌ Fail | `not_in_channel` - bot not invited  |
 
-1. **Functional tests** - All 15 tests pass with mocked Slack client
-2. **Integration tests** - All 11 tests pass using TestMCPClient with mock data
+### Analysis
+
+The `not_in_channel` errors are expected Slack API behavior:
+
+- The bot can **post** to public channels without being a member
+- The bot **cannot read** messages or add reactions without being a channel member
+- This is a Slack permission model, not a bug in our implementation
+
+To fix the failing tests, invite the bot to the channel:
+
+```
+/invite @YourBotName
+```
 
 ### Test Cases Status
 
-| Tool                   | Functional Test | Integration Test | Manual Test |
-| ---------------------- | --------------- | ---------------- | ----------- |
-| slack_get_channels     | ✅ Pass         | ✅ Pass          | Pending     |
-| slack_get_channel      | ✅ Pass         | ✅ Pass          | Pending     |
-| slack_get_thread       | ✅ Pass         | ✅ Pass          | Pending     |
-| slack_post_message     | ✅ Pass         | ✅ Pass          | Pending     |
-| slack_reply_to_thread  | ✅ Pass         | ✅ Pass          | Pending     |
-| slack_update_message   | ✅ Pass         | ✅ Pass          | Pending     |
-| slack_react_to_message | ✅ Pass         | ✅ Pass          | Pending     |
+| Tool                   | Functional Test | Integration Test | Manual Test             |
+| ---------------------- | --------------- | ---------------- | ----------------------- |
+| slack_get_channels     | ✅ Pass         | ✅ Pass          | ✅ Pass                 |
+| slack_get_channel      | ✅ Pass         | ✅ Pass          | ✅ Pass                 |
+| slack_get_thread       | ✅ Pass         | ✅ Pass          | ⚠️ Needs channel invite |
+| slack_post_message     | ✅ Pass         | ✅ Pass          | ✅ Pass                 |
+| slack_reply_to_thread  | ✅ Pass         | ✅ Pass          | ✅ Pass                 |
+| slack_update_message   | ✅ Pass         | ✅ Pass          | ✅ Pass                 |
+| slack_react_to_message | ✅ Pass         | ✅ Pass          | ⚠️ Needs channel invite |
 
 ## Getting the Bot Token
 
@@ -74,3 +99,4 @@ This is the initial v0.0.1 release. Manual tests against real Slack API require 
 4. Add the required Bot Token Scopes listed above
 5. Install/Reinstall the app to your workspace
 6. Copy the **Bot User OAuth Token** (starts with `xoxb-`)
+7. **Important**: Invite the bot to channels where you want it to read messages
