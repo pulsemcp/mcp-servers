@@ -1,0 +1,39 @@
+# Dependencies
+node_modules/
+
+# Build output
+build/
+dist/
+*.js
+*.d.ts
+*.js.map
+
+# But keep script files
+!scripts/*.js
+!local/setup-dev.js
+!local/prepare-publish.js
+
+# Local symlink (created by setup-dev.js)
+local/shared
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+
+# Test coverage
+coverage/
