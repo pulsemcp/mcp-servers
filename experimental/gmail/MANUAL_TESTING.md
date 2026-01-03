@@ -2,17 +2,52 @@
 
 ## Test Run: 2026-01-03 (v0.0.2 - Environment Variable Refactor)
 
-**Commit:** c292672
+**Commit:** d08a83f
 
 **Authentication Method:** Service Account with Domain-Wide Delegation (via environment variables)
 
-**Environment Variables Required:**
+**Environment:**
+
+- Node.js v22.x
+- Service account with gmail.readonly scope
+- Impersonating: tadas@tadasant.com
+
+**Environment Variables Used:**
 
 - `GMAIL_SERVICE_ACCOUNT_CLIENT_EMAIL`: Service account email address
-- `GMAIL_SERVICE_ACCOUNT_PRIVATE_KEY`: Service account private key (PEM format)
+- `GMAIL_SERVICE_ACCOUNT_PRIVATE_KEY`: Private key with `\n` literals (newline conversion working)
 - `GMAIL_IMPERSONATE_EMAIL`: Email address to impersonate
 
-**Note:** This version changes from file-based credentials (`GMAIL_SERVICE_ACCOUNT_KEY_FILE`) to direct environment variable credentials. The authentication logic is unchanged; only the way credentials are provided has been refactored. Functional and integration tests (13 + 6 = 19 tests) pass successfully.
+### Test Results
+
+```
+ ✓ tests/manual/gmail-client.test.ts (7 tests) 2084ms
+   ✓ Gmail Client - Manual Tests > listMessages > should list messages from inbox  723ms
+   ✓ Gmail Client - Manual Tests > listMessages > should filter by query
+   ✓ Gmail Client - Manual Tests > listMessages > should filter by time horizon (24 hours)
+   ✓ Gmail Client - Manual Tests > getMessage > should get a message with full format  341ms
+   ✓ Gmail Client - Manual Tests > getMessage > should get a message with metadata format  319ms
+   ✓ Gmail Client - Manual Tests > getMessage > should decode email body content  304ms
+   ✓ Gmail Client - Manual Tests > authentication > should use service account authentication
+
+ Test Files  1 passed (1)
+      Tests  7 passed (7)
+```
+
+### Verification Details
+
+1. **Service Account Authentication**: Successfully authenticated using domain-wide delegation with env vars
+2. **Newline Handling**: Private key with `\n` literals correctly converted to actual newlines
+3. **List Messages**: Retrieved 5 messages from inbox, 10-20 messages from last 24 hours
+4. **Get Message**: Successfully retrieved full message with headers and body
+5. **Body Decoding**: Successfully decoded base64url encoded email body content
+6. **Message Preview**: Verified email content from `Google <no-reply@accounts.google.com>` with subject "Security alert"
+
+### Notes
+
+- All 7 tests passed on first run
+- Environment variable-based authentication works correctly
+- Newline conversion for private key (`\n` → actual newlines) verified working
 
 ---
 
