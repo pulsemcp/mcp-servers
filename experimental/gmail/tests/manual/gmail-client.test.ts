@@ -1,5 +1,4 @@
 import { describe, it, expect, beforeAll } from 'vitest';
-import { readFileSync } from 'fs';
 import {
   ServiceAccountGmailClient,
   type IGmailClient,
@@ -10,33 +9,46 @@ import {
  * Manual tests that hit the real Gmail API
  *
  * Prerequisites:
- *   - GMAIL_SERVICE_ACCOUNT_KEY_FILE: Path to service account JSON key file
+ *   - GMAIL_SERVICE_ACCOUNT_CLIENT_EMAIL: Service account email address
+ *   - GMAIL_SERVICE_ACCOUNT_PRIVATE_KEY: Service account private key (PEM format)
  *   - GMAIL_IMPERSONATE_EMAIL: Email address to impersonate
  *
  * To set up service account:
  * 1. Create a Google Cloud project and enable Gmail API
  * 2. Create a service account with domain-wide delegation
  * 3. In Google Workspace Admin, grant the service account access to gmail.readonly scope
- * 4. Download the JSON key file
+ * 4. Download the JSON key file and extract client_email and private_key
  */
 
 describe('Gmail Client - Manual Tests', () => {
   let client: IGmailClient;
 
   beforeAll(() => {
-    const serviceAccountKeyFile = process.env.GMAIL_SERVICE_ACCOUNT_KEY_FILE;
+    const clientEmail = process.env.GMAIL_SERVICE_ACCOUNT_CLIENT_EMAIL;
+    const privateKey = process.env.GMAIL_SERVICE_ACCOUNT_PRIVATE_KEY;
     const impersonateEmail = process.env.GMAIL_IMPERSONATE_EMAIL;
 
-    if (!serviceAccountKeyFile || !impersonateEmail) {
+    if (!clientEmail || !privateKey || !impersonateEmail) {
       throw new Error(
         'Gmail authentication not configured. Set:\n' +
-          '  - GMAIL_SERVICE_ACCOUNT_KEY_FILE: Path to service account JSON key file\n' +
+          '  - GMAIL_SERVICE_ACCOUNT_CLIENT_EMAIL: Service account email address\n' +
+          '  - GMAIL_SERVICE_ACCOUNT_PRIVATE_KEY: Service account private key (PEM format)\n' +
           '  - GMAIL_IMPERSONATE_EMAIL: Email address to impersonate'
       );
     }
 
-    const keyFileContent = readFileSync(serviceAccountKeyFile, 'utf-8');
-    const credentials: ServiceAccountCredentials = JSON.parse(keyFileContent);
+    const credentials: ServiceAccountCredentials = {
+      type: 'service_account',
+      project_id: '',
+      private_key_id: '',
+      private_key: privateKey,
+      client_email: clientEmail,
+      client_id: '',
+      auth_uri: 'https://accounts.google.com/o/oauth2/auth',
+      token_uri: 'https://oauth2.googleapis.com/token',
+      auth_provider_x509_cert_url: 'https://www.googleapis.com/oauth2/v1/certs',
+      client_x509_cert_url: '',
+    };
     client = new ServiceAccountGmailClient(credentials, impersonateEmail);
     console.log(`Using service account authentication, impersonating: ${impersonateEmail}`);
   });

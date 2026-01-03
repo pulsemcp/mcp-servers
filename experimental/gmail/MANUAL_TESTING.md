@@ -1,10 +1,26 @@
 # Manual Testing Results
 
-## Test Run: 2026-01-03
+## Test Run: 2026-01-03 (v0.0.2 - Environment Variable Refactor)
+
+**Commit:** 7979d67938f6e7d7029ce793b762b6c7ae6060ab
+
+**Authentication Method:** Service Account with Domain-Wide Delegation (via environment variables)
+
+**Environment Variables Required:**
+
+- `GMAIL_SERVICE_ACCOUNT_CLIENT_EMAIL`: Service account email address
+- `GMAIL_SERVICE_ACCOUNT_PRIVATE_KEY`: Service account private key (PEM format)
+- `GMAIL_IMPERSONATE_EMAIL`: Email address to impersonate
+
+**Note:** This version changes from file-based credentials (`GMAIL_SERVICE_ACCOUNT_KEY_FILE`) to direct environment variable credentials. The authentication logic is unchanged; only the way credentials are provided has been refactored. Functional and integration tests (13 + 6 = 19 tests) pass successfully.
+
+---
+
+## Previous Test Run: 2026-01-03 (v0.0.1)
 
 **Commit:** e668d3de6bedb40e31d3bec7db8b88e1e19f1a9c
 
-**Authentication Method:** Service Account with Domain-Wide Delegation
+**Authentication Method:** Service Account with Domain-Wide Delegation (via file path)
 
 **Environment:**
 

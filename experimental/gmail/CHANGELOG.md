@@ -4,11 +4,14 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.0.2] - 2026-01-03
+
 ### Changed
 
-- Improved error messages for service account authentication failures
-- Extracted shared `getHeader` utility to reduce code duplication
-- Added file existence check before reading service account key file
+- **BREAKING**: Changed authentication from file-based to environment variable-based
+  - Replaced `GMAIL_SERVICE_ACCOUNT_KEY_FILE` with `GMAIL_SERVICE_ACCOUNT_CLIENT_EMAIL` and `GMAIL_SERVICE_ACCOUNT_PRIVATE_KEY`
+  - Credentials are now passed directly as environment variables instead of a file path
+  - This allows more flexible deployment (e.g., in containerized environments where mounting files is not ideal)
 
 ## [0.0.1] - Initial Release
 

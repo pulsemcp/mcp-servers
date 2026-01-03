@@ -10,8 +10,11 @@ import { logServerStart, logError } from '../shared/logging.js';
 function validateEnvironment(): void {
   const missing: string[] = [];
 
-  if (!process.env.GMAIL_SERVICE_ACCOUNT_KEY_FILE) {
-    missing.push('GMAIL_SERVICE_ACCOUNT_KEY_FILE');
+  if (!process.env.GMAIL_SERVICE_ACCOUNT_CLIENT_EMAIL) {
+    missing.push('GMAIL_SERVICE_ACCOUNT_CLIENT_EMAIL');
+  }
+  if (!process.env.GMAIL_SERVICE_ACCOUNT_PRIVATE_KEY) {
+    missing.push('GMAIL_SERVICE_ACCOUNT_PRIVATE_KEY');
   }
   if (!process.env.GMAIL_IMPERSONATE_EMAIL) {
     missing.push('GMAIL_IMPERSONATE_EMAIL');
@@ -23,15 +26,17 @@ function validateEnvironment(): void {
     console.error('\nThis MCP server requires a Google Cloud service account with');
     console.error('domain-wide delegation to access Gmail on behalf of users.');
     console.error('\nRequired environment variables:');
-    console.error('  GMAIL_SERVICE_ACCOUNT_KEY_FILE: Path to service account JSON key file');
-    console.error('    Example: /path/to/service-account.json');
+    console.error('  GMAIL_SERVICE_ACCOUNT_CLIENT_EMAIL: Service account email address');
+    console.error('    Example: my-service-account@my-project.iam.gserviceaccount.com');
+    console.error('  GMAIL_SERVICE_ACCOUNT_PRIVATE_KEY: Service account private key (PEM format)');
+    console.error('    Example: -----BEGIN PRIVATE KEY-----\\nMIIE...\\n-----END PRIVATE KEY-----');
     console.error('  GMAIL_IMPERSONATE_EMAIL: Email address to impersonate');
     console.error('    Example: user@yourdomain.com');
     console.error('\nSetup steps:');
     console.error('  1. Go to https://console.cloud.google.com/');
     console.error('  2. Create a service account with domain-wide delegation');
     console.error('  3. In Google Workspace Admin, grant gmail.readonly scope');
-    console.error('  4. Download the JSON key file');
+    console.error('  4. Download the JSON key file and extract client_email and private_key');
     console.error('\n======================================================\n');
 
     process.exit(1);
