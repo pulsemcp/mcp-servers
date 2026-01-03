@@ -145,7 +145,8 @@ export type ClientFactory = () => IGmailClient;
  */
 export function createDefaultClient(): IGmailClient {
   const clientEmail = process.env.GMAIL_SERVICE_ACCOUNT_CLIENT_EMAIL;
-  const privateKey = process.env.GMAIL_SERVICE_ACCOUNT_PRIVATE_KEY;
+  // Handle both literal \n in JSON configs and actual newlines
+  const privateKey = process.env.GMAIL_SERVICE_ACCOUNT_PRIVATE_KEY?.replace(/\\n/g, '\n');
   const impersonateEmail = process.env.GMAIL_IMPERSONATE_EMAIL;
 
   if (!clientEmail) {
@@ -189,7 +190,7 @@ export function createMCPServer() {
   const server = new Server(
     {
       name: 'gmail-workspace-mcp-server',
-      version: '0.0.1',
+      version: '0.0.2',
     },
     {
       capabilities: {
