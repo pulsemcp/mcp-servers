@@ -30,7 +30,9 @@ This server follows the standard PulseMCP MCP server architecture:
 
 The server uses Google Cloud service accounts with domain-wide delegation:
 
-- Service account JSON key file is read from `GMAIL_SERVICE_ACCOUNT_KEY_FILE`
+- Service account credentials are provided via environment variables:
+  - `GMAIL_SERVICE_ACCOUNT_CLIENT_EMAIL`: The service account email address
+  - `GMAIL_SERVICE_ACCOUNT_PRIVATE_KEY`: The private key in PEM format
 - Impersonates a Workspace user specified by `GMAIL_IMPERSONATE_EMAIL`
 - Requires `gmail.readonly` scope granted in Google Workspace Admin
 - JWT tokens are automatically refreshed before expiry
@@ -71,7 +73,8 @@ npm run test:integration
 Test against real Gmail API:
 
 ```bash
-export GMAIL_SERVICE_ACCOUNT_KEY_FILE="/path/to/service-account.json"
+export GMAIL_SERVICE_ACCOUNT_CLIENT_EMAIL="my-service-account@my-project.iam.gserviceaccount.com"
+export GMAIL_SERVICE_ACCOUNT_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----"
 export GMAIL_IMPERSONATE_EMAIL="user@yourdomain.com"
 npm run test:manual
 ```
@@ -82,7 +85,7 @@ npm run test:manual
 
 If you see 401 or 403 errors:
 
-- Verify service account JSON key file path is correct
+- Verify service account email and private key are correctly set
 - Check that the service account has domain-wide delegation enabled
 - Ensure `gmail.readonly` scope is granted in Google Workspace Admin Console
 - Verify the impersonate email is a valid Workspace user

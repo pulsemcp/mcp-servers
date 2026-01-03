@@ -1,4 +1,3 @@
-import { existsSync, readFileSync } from 'fs';
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { JWT } from 'google-auth-library';
 import { createRegisterTools } from './tools.js';
@@ -140,17 +139,27 @@ export type ClientFactory = () => IGmailClient;
 /**
  * Creates the default Gmail client based on environment variables.
  * Uses service account with domain-wide delegation:
- *   - GMAIL_SERVICE_ACCOUNT_KEY_FILE: Path to service account JSON key file
+ *   - GMAIL_SERVICE_ACCOUNT_CLIENT_EMAIL: Service account email address
+ *   - GMAIL_SERVICE_ACCOUNT_PRIVATE_KEY: Service account private key (PEM format)
  *   - GMAIL_IMPERSONATE_EMAIL: Email address to impersonate
  */
 export function createDefaultClient(): IGmailClient {
-  const serviceAccountKeyFile = process.env.GMAIL_SERVICE_ACCOUNT_KEY_FILE;
+  const clientEmail = process.env.GMAIL_SERVICE_ACCOUNT_CLIENT_EMAIL;
+  // Handle both literal \n in JSON configs and actual newlines
+  const privateKey = process.env.GMAIL_SERVICE_ACCOUNT_PRIVATE_KEY?.replace(/\\n/g, '\n');
   const impersonateEmail = process.env.GMAIL_IMPERSONATE_EMAIL;
 
-  if (!serviceAccountKeyFile) {
+  if (!clientEmail) {
     throw new Error(
-      'GMAIL_SERVICE_ACCOUNT_KEY_FILE environment variable must be set. ' +
-        'This should point to your Google Cloud service account JSON key file.'
+      'GMAIL_SERVICE_ACCOUNT_CLIENT_EMAIL environment variable must be set. ' +
+        'This is the email address from your Google Cloud service account.'
+    );
+  }
+
+  if (!privateKey) {
+    throw new Error(
+      'GMAIL_SERVICE_ACCOUNT_PRIVATE_KEY environment variable must be set. ' +
+        'This is the private key from your Google Cloud service account (PEM format).'
     );
   }
 
@@ -161,33 +170,18 @@ export function createDefaultClient(): IGmailClient {
     );
   }
 
-  // Check if the key file exists
-  if (!existsSync(serviceAccountKeyFile)) {
-    throw new Error(
-      `Service account key file not found: ${serviceAccountKeyFile}. ` +
-        'Ensure the path is correct and the file exists.'
-    );
-  }
-
-  // Read and parse the service account key file
-  const keyFileContent = readFileSync(serviceAccountKeyFile, 'utf-8');
-  let credentials: ServiceAccountCredentials;
-  try {
-    credentials = JSON.parse(keyFileContent);
-  } catch {
-    throw new Error(`Invalid JSON in service account key file: ${serviceAccountKeyFile}`);
-  }
-
-  // Validate required credential fields
-  const requiredFields = ['client_email', 'private_key'] as const;
-  for (const field of requiredFields) {
-    if (!credentials[field]) {
-      throw new Error(
-        `Service account key file missing required field: ${field}. ` +
-          'Ensure you are using a valid service account JSON key file.'
-      );
-    }
-  }
+  const credentials: ServiceAccountCredentials = {
+    type: 'service_account',
+    project_id: '',
+    private_key_id: '',
+    private_key: privateKey,
+    client_email: clientEmail,
+    client_id: '',
+    auth_uri: 'https://accounts.google.com/o/oauth2/auth',
+    token_uri: 'https://oauth2.googleapis.com/token',
+    auth_provider_x509_cert_url: 'https://www.googleapis.com/oauth2/v1/certs',
+    client_x509_cert_url: '',
+  };
 
   return new ServiceAccountGmailClient(credentials, impersonateEmail);
 }
@@ -196,7 +190,7 @@ export function createMCPServer() {
   const server = new Server(
     {
       name: 'gmail-workspace-mcp-server',
-      version: '0.0.1',
+      version: '0.0.2',
     },
     {
       capabilities: {

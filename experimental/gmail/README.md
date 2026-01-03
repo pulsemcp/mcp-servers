@@ -35,10 +35,13 @@ This server requires a Google Cloud service account with domain-wide delegation 
 
 ### Environment Variables
 
-| Variable                         | Required | Description                           |
-| -------------------------------- | -------- | ------------------------------------- |
-| `GMAIL_SERVICE_ACCOUNT_KEY_FILE` | Yes      | Path to service account JSON key file |
-| `GMAIL_IMPERSONATE_EMAIL`        | Yes      | Email address to impersonate          |
+| Variable                             | Required | Description                              |
+| ------------------------------------ | -------- | ---------------------------------------- |
+| `GMAIL_SERVICE_ACCOUNT_CLIENT_EMAIL` | Yes      | Service account email address            |
+| `GMAIL_SERVICE_ACCOUNT_PRIVATE_KEY`  | Yes      | Service account private key (PEM format) |
+| `GMAIL_IMPERSONATE_EMAIL`            | Yes      | Email address to impersonate             |
+
+You can find the `client_email` and `private_key` values in your service account JSON key file.
 
 ## Configuration
 
@@ -53,13 +56,19 @@ Add to your Claude Desktop configuration (`~/Library/Application Support/Claude/
       "command": "npx",
       "args": ["gmail-workspace-mcp-server"],
       "env": {
-        "GMAIL_SERVICE_ACCOUNT_KEY_FILE": "/path/to/service-account-key.json",
+        "GMAIL_SERVICE_ACCOUNT_CLIENT_EMAIL": "my-service-account@my-project.iam.gserviceaccount.com",
+        "GMAIL_SERVICE_ACCOUNT_PRIVATE_KEY": "-----BEGIN PRIVATE KEY-----\nMIIE...\n-----END PRIVATE KEY-----",
         "GMAIL_IMPERSONATE_EMAIL": "user@yourdomain.com"
       }
     }
   }
 }
 ```
+
+**Note:** For the private key, you can either:
+
+1. Use the key directly with `\n` for newlines (as shown above)
+2. Set the environment variable from a shell that preserves newlines
 
 ## Available Tools
 
