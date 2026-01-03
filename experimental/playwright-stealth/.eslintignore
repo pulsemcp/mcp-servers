@@ -1,0 +1,6 @@
+node_modules/
+build/
+*.js
+!scripts/*.js
+!local/setup-dev.js
+!local/prepare-publish.js
