@@ -4,7 +4,6 @@
 export {
   createMCPServer,
   createDefaultClient,
-  GmailClient,
   ServiceAccountGmailClient,
   type IGmailClient,
   type ClientFactory,

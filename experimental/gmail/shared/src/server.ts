@@ -36,46 +36,6 @@ export interface IGmailClient {
 }
 
 /**
- * Gmail API client implementation using a static access token
- */
-export class GmailClient implements IGmailClient {
-  private baseUrl = 'https://gmail.googleapis.com/gmail/v1/users/me';
-  private headers: Record<string, string>;
-
-  constructor(private accessToken: string) {
-    this.headers = {
-      Authorization: `Bearer ${accessToken}`,
-      'Content-Type': 'application/json',
-    };
-  }
-
-  async listMessages(options?: {
-    q?: string;
-    maxResults?: number;
-    pageToken?: string;
-    labelIds?: string[];
-  }): Promise<{
-    messages: EmailListItem[];
-    nextPageToken?: string;
-    resultSizeEstimate?: number;
-  }> {
-    const { listMessages } = await import('./gmail-client/lib/list-messages.js');
-    return listMessages(this.baseUrl, this.headers, options);
-  }
-
-  async getMessage(
-    messageId: string,
-    options?: {
-      format?: 'minimal' | 'full' | 'raw' | 'metadata';
-      metadataHeaders?: string[];
-    }
-  ): Promise<Email> {
-    const { getMessage } = await import('./gmail-client/lib/get-message.js');
-    return getMessage(this.baseUrl, this.headers, messageId, options);
-  }
-}
-
-/**
  * Service account credentials structure
  */
 export interface ServiceAccountCredentials {
@@ -179,59 +139,49 @@ export type ClientFactory = () => IGmailClient;
 
 /**
  * Creates the default Gmail client based on environment variables.
- * Supports two authentication methods:
- * 1. Service account with domain-wide delegation (recommended):
- *    - GMAIL_SERVICE_ACCOUNT_KEY_FILE: Path to service account JSON key file
- *    - GMAIL_IMPERSONATE_EMAIL: Email address to impersonate
- * 2. Static access token:
- *    - GMAIL_ACCESS_TOKEN: OAuth2 access token
+ * Uses service account with domain-wide delegation:
+ *   - GMAIL_SERVICE_ACCOUNT_KEY_FILE: Path to service account JSON key file
+ *   - GMAIL_IMPERSONATE_EMAIL: Email address to impersonate
  */
 export function createDefaultClient(): IGmailClient {
   const serviceAccountKeyFile = process.env.GMAIL_SERVICE_ACCOUNT_KEY_FILE;
   const impersonateEmail = process.env.GMAIL_IMPERSONATE_EMAIL;
-  const accessToken = process.env.GMAIL_ACCESS_TOKEN;
 
-  // Check for service account authentication
-  if (serviceAccountKeyFile) {
-    if (!impersonateEmail) {
+  if (!serviceAccountKeyFile) {
+    throw new Error(
+      'GMAIL_SERVICE_ACCOUNT_KEY_FILE environment variable must be set. ' +
+        'This should point to your Google Cloud service account JSON key file.'
+    );
+  }
+
+  if (!impersonateEmail) {
+    throw new Error(
+      'GMAIL_IMPERSONATE_EMAIL environment variable must be set. ' +
+        'This is the email address of the user to access Gmail as.'
+    );
+  }
+
+  // Read and parse the service account key file
+  const keyFileContent = readFileSync(serviceAccountKeyFile, 'utf-8');
+  let credentials: ServiceAccountCredentials;
+  try {
+    credentials = JSON.parse(keyFileContent);
+  } catch {
+    throw new Error(`Invalid JSON in service account key file: ${serviceAccountKeyFile}`);
+  }
+
+  // Validate required credential fields
+  const requiredFields = ['client_email', 'private_key'] as const;
+  for (const field of requiredFields) {
+    if (!credentials[field]) {
       throw new Error(
-        'GMAIL_IMPERSONATE_EMAIL must be set when using service account authentication'
+        `Service account key file missing required field: ${field}. ` +
+          'Ensure you are using a valid service account JSON key file.'
       );
     }
-
-    // Read and parse the service account key file
-    const keyFileContent = readFileSync(serviceAccountKeyFile, 'utf-8');
-    let credentials: ServiceAccountCredentials;
-    try {
-      credentials = JSON.parse(keyFileContent);
-    } catch {
-      throw new Error(`Invalid JSON in service account key file: ${serviceAccountKeyFile}`);
-    }
-
-    // Validate required credential fields
-    const requiredFields = ['client_email', 'private_key'] as const;
-    for (const field of requiredFields) {
-      if (!credentials[field]) {
-        throw new Error(
-          `Service account key file missing required field: ${field}. ` +
-            'Ensure you are using a valid service account JSON key file.'
-        );
-      }
-    }
-
-    return new ServiceAccountGmailClient(credentials, impersonateEmail);
   }
 
-  // Fall back to access token authentication
-  if (accessToken) {
-    return new GmailClient(accessToken);
-  }
-
-  throw new Error(
-    'Gmail authentication not configured. Set either:\n' +
-      '  - GMAIL_SERVICE_ACCOUNT_KEY_FILE and GMAIL_IMPERSONATE_EMAIL for service account auth, or\n' +
-      '  - GMAIL_ACCESS_TOKEN for OAuth2 access token auth'
-  );
+  return new ServiceAccountGmailClient(credentials, impersonateEmail);
 }
 
 export function createMCPServer() {

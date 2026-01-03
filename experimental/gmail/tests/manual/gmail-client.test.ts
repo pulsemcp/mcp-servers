@@ -1,7 +1,6 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import { readFileSync } from 'fs';
 import {
-  GmailClient,
   ServiceAccountGmailClient,
   type IGmailClient,
   type ServiceAccountCredentials,
@@ -10,55 +9,36 @@ import {
 /**
  * Manual tests that hit the real Gmail API
  *
- * Prerequisites (choose one):
- *
- * Option 1: Service Account with Domain-Wide Delegation (Recommended)
+ * Prerequisites:
  *   - GMAIL_SERVICE_ACCOUNT_KEY_FILE: Path to service account JSON key file
  *   - GMAIL_IMPERSONATE_EMAIL: Email address to impersonate
- *
- * Option 2: OAuth2 Access Token
- *   - GMAIL_ACCESS_TOKEN: Valid OAuth2 access token with gmail.readonly scope
  *
  * To set up service account:
  * 1. Create a Google Cloud project and enable Gmail API
  * 2. Create a service account with domain-wide delegation
  * 3. In Google Workspace Admin, grant the service account access to gmail.readonly scope
  * 4. Download the JSON key file
- *
- * To get an access token:
- * 1. Create a Google Cloud project and enable Gmail API
- * 2. Create OAuth2 credentials
- * 3. Use the OAuth2 playground or your app to get an access token
  */
 
 describe('Gmail Client - Manual Tests', () => {
   let client: IGmailClient;
-  let authMethod: 'service_account' | 'access_token';
 
   beforeAll(() => {
     const serviceAccountKeyFile = process.env.GMAIL_SERVICE_ACCOUNT_KEY_FILE;
     const impersonateEmail = process.env.GMAIL_IMPERSONATE_EMAIL;
-    const accessToken = process.env.GMAIL_ACCESS_TOKEN;
 
-    if (serviceAccountKeyFile && impersonateEmail) {
-      // Use service account authentication
-      const keyFileContent = readFileSync(serviceAccountKeyFile, 'utf-8');
-      const credentials: ServiceAccountCredentials = JSON.parse(keyFileContent);
-      client = new ServiceAccountGmailClient(credentials, impersonateEmail);
-      authMethod = 'service_account';
-      console.log(`Using service account authentication, impersonating: ${impersonateEmail}`);
-    } else if (accessToken) {
-      // Use access token authentication
-      client = new GmailClient(accessToken);
-      authMethod = 'access_token';
-      console.log('Using access token authentication');
-    } else {
+    if (!serviceAccountKeyFile || !impersonateEmail) {
       throw new Error(
-        'Gmail authentication not configured. Set either:\n' +
-          '  - GMAIL_SERVICE_ACCOUNT_KEY_FILE and GMAIL_IMPERSONATE_EMAIL for service account auth, or\n' +
-          '  - GMAIL_ACCESS_TOKEN for OAuth2 access token auth'
+        'Gmail authentication not configured. Set:\n' +
+          '  - GMAIL_SERVICE_ACCOUNT_KEY_FILE: Path to service account JSON key file\n' +
+          '  - GMAIL_IMPERSONATE_EMAIL: Email address to impersonate'
       );
     }
+
+    const keyFileContent = readFileSync(serviceAccountKeyFile, 'utf-8');
+    const credentials: ServiceAccountCredentials = JSON.parse(keyFileContent);
+    client = new ServiceAccountGmailClient(credentials, impersonateEmail);
+    console.log(`Using service account authentication, impersonating: ${impersonateEmail}`);
   });
 
   describe('listMessages', () => {
@@ -193,9 +173,9 @@ describe('Gmail Client - Manual Tests', () => {
   });
 
   describe('authentication', () => {
-    it('should report authentication method', () => {
-      expect(['service_account', 'access_token']).toContain(authMethod);
-      console.log(`Authenticated using: ${authMethod}`);
+    it('should use service account authentication', () => {
+      expect(client).toBeInstanceOf(ServiceAccountGmailClient);
+      console.log('Authenticated using: service_account');
     });
   });
 });
