@@ -59,7 +59,7 @@ jobs:
               const relevantChecks = checkRuns.data.check_runs.filter(run => 
                 run.name !== 'CI Build & Test Checks Passed' && 
                 run.app.slug === 'github-actions' &&
-                (run.name.includes('MCP Server') || run.name === 'Lint & Type Check')
+                (run.name.includes('MCP Server') || run.name === 'Lint & Type Check' || run.name === 'Validate Publish Files')
               );
               
               // Group by name and get latest run
@@ -119,7 +119,7 @@ jobs:
             const finalOtherChecks = finalCheckRuns.data.check_runs.filter(run => 
               run.name !== 'CI Build & Test Checks Passed' && 
               run.app.slug === 'github-actions' &&
-              (run.name.includes('MCP Server') || run.name === 'Lint & Type Check')
+              (run.name.includes('MCP Server') || run.name === 'Lint & Type Check' || run.name === 'Validate Publish Files')
             );
 
             if (finalOtherChecks.length === 0) {
