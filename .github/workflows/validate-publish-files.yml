@@ -38,20 +38,31 @@ jobs:
 
             echo "Checking $SERVER_DIR..."
 
-            # Check for prepare-publish.js in local directory
-            if [ ! -f "$SERVER_DIR/local/prepare-publish.js" ]; then
-              ERRORS="${ERRORS}ERROR: Missing $SERVER_DIR/local/prepare-publish.js\n"
-              echo "  ❌ Missing local/prepare-publish.js"
+            # Read prepublishOnly script from package.json
+            PREPUBLISH_SCRIPT=$(grep -o '"prepublishOnly"[[:space:]]*:[[:space:]]*"[^"]*"' "$LOCAL_PKG" | sed 's/.*: *"\([^"]*\)"/\1/' || true)
+
+            # Check for prepare-publish.js in local directory (if referenced in prepublishOnly)
+            if echo "$PREPUBLISH_SCRIPT" | grep -q "prepare-publish.js"; then
+              if [ ! -f "$SERVER_DIR/local/prepare-publish.js" ]; then
+                ERRORS="${ERRORS}ERROR: Missing $SERVER_DIR/local/prepare-publish.js (referenced in prepublishOnly script)\n"
+                echo "  ❌ Missing local/prepare-publish.js"
+              else
+                echo "  ✅ local/prepare-publish.js exists"
+              fi
             else
-              echo "  ✅ local/prepare-publish.js exists"
+              echo "  ⏭️  local/prepare-publish.js not referenced in prepublishOnly (skipped)"
             fi
 
-            # Check for prepare-npm-readme.js in scripts directory
-            if [ ! -f "$SERVER_DIR/scripts/prepare-npm-readme.js" ]; then
-              ERRORS="${ERRORS}ERROR: Missing $SERVER_DIR/scripts/prepare-npm-readme.js\n"
-              echo "  ❌ Missing scripts/prepare-npm-readme.js"
+            # Check for prepare-npm-readme.js in scripts directory (only if referenced in prepublishOnly)
+            if echo "$PREPUBLISH_SCRIPT" | grep -q "prepare-npm-readme.js"; then
+              if [ ! -f "$SERVER_DIR/scripts/prepare-npm-readme.js" ]; then
+                ERRORS="${ERRORS}ERROR: Missing $SERVER_DIR/scripts/prepare-npm-readme.js (referenced in prepublishOnly script)\n"
+                echo "  ❌ Missing scripts/prepare-npm-readme.js"
+              else
+                echo "  ✅ scripts/prepare-npm-readme.js exists"
+              fi
             else
-              echo "  ✅ scripts/prepare-npm-readme.js exists"
+              echo "  ⏭️  scripts/prepare-npm-readme.js not referenced in prepublishOnly (skipped)"
             fi
 
             echo ""
@@ -68,8 +79,9 @@ jobs:
             echo ""
             echo -e "$ERRORS"
             echo ""
-            echo "These files are required for npm publishing to work correctly."
-            echo "Please ensure they exist (you can copy them from libs/mcp-server-template):"
+            echo "These files are referenced in the prepublishOnly script but are missing."
+            echo "The publish workflow will fail without them."
+            echo "You can copy these files from libs/mcp-server-template:"
             echo "  - local/prepare-publish.js: Prepares shared module files for npm package"
             echo "  - scripts/prepare-npm-readme.js: Copies README.md to local/ for npm package"
             echo ""
