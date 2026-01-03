@@ -62,12 +62,22 @@ async function main() {
   validateEnvironment();
 
   // Step 2: Create server using factory
-  const { server, registerHandlers } = createMCPServer();
+  const { server, registerHandlers, cleanup } = createMCPServer();
 
   // Step 3: Register all handlers (tools)
   await registerHandlers(server);
 
-  // Step 4: Start server with stdio transport
+  // Step 4: Set up graceful shutdown
+  const handleShutdown = async () => {
+    logWarning('shutdown', 'Received shutdown signal, closing browser...');
+    await cleanup();
+    process.exit(0);
+  };
+
+  process.on('SIGINT', handleShutdown);
+  process.on('SIGTERM', handleShutdown);
+
+  // Step 5: Start server with stdio transport
   const transport = new StdioServerTransport();
   await server.connect(transport);
 

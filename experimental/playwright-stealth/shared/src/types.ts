@@ -13,7 +13,6 @@ export interface ExecuteResult {
   result?: unknown;
   error?: string;
   consoleOutput?: string[];
-  screenshot?: string;
 }
 
 export interface BrowserState {

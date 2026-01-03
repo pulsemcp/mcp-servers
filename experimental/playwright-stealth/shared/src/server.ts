@@ -193,6 +193,9 @@ export function createMCPServer() {
     }
   );
 
+  // Track active client for cleanup
+  let activeClient: IPlaywrightClient | null = null;
+
   const registerHandlers = async (server: Server, clientFactory?: ClientFactory) => {
     // Use provided factory or create default client
     const factory =
@@ -201,16 +204,24 @@ export function createMCPServer() {
         const headless = process.env.HEADLESS !== 'false';
         const timeout = parseInt(process.env.TIMEOUT || '30000', 10);
 
-        return new PlaywrightClient({
+        activeClient = new PlaywrightClient({
           stealthMode,
           headless,
           timeout,
         });
+        return activeClient;
       });
 
     const registerTools = createRegisterTools(factory);
     registerTools(server);
   };
 
-  return { server, registerHandlers };
+  const cleanup = async () => {
+    if (activeClient) {
+      await activeClient.close();
+      activeClient = null;
+    }
+  };
+
+  return { server, registerHandlers, cleanup };
 }

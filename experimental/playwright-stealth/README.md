@@ -155,6 +155,16 @@ const items = await page.$$eval('.item', (els) => els.map((el) => el.textContent
 return items;
 ```
 
+## Security Considerations
+
+**Important:** The `browser_execute` tool executes arbitrary JavaScript code. This design provides full Playwright API access but has security implications:
+
+- Only use this server with trusted input (e.g., from an LLM in a controlled environment)
+- The code runs in a Node.js context with access to the `page` object
+- Do not expose this server to untrusted users or public networks
+
+This is intentional for maximum flexibility - it allows LLMs to leverage their existing Playwright knowledge. For production use, ensure proper access controls are in place.
+
 ## When to Use Stealth Mode
 
 Enable stealth mode (`STEALTH_MODE=true`) when:

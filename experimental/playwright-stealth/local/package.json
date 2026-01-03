@@ -25,7 +25,6 @@
     "stage-publish": "npm version"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.54.0",
     "@modelcontextprotocol/sdk": "^1.19.1",
     "playwright": "^1.49.1",
     "playwright-extra": "^4.3.6",
