@@ -1,23 +1,5 @@
 import type { Email } from '../../types.js';
-
-/**
- * Handles common Gmail API errors with user-friendly messages
- */
-function handleApiError(status: number, messageId: string): never {
-  if (status === 401) {
-    throw new Error('Gmail access token expired or invalid. Please refresh your access token.');
-  }
-  if (status === 403) {
-    throw new Error('Permission denied. Ensure your access token has the gmail.readonly scope.');
-  }
-  if (status === 429) {
-    throw new Error('Gmail API rate limit exceeded. Please try again later.');
-  }
-  if (status === 404) {
-    throw new Error(`Message not found: ${messageId}`);
-  }
-  throw new Error(`Gmail API error while getting message: HTTP ${status}`);
-}
+import { handleApiError } from './api-errors.js';
 
 /**
  * Gets a specific message by ID
@@ -51,7 +33,7 @@ export async function getMessage(
   });
 
   if (!response.ok) {
-    handleApiError(response.status, messageId);
+    handleApiError(response.status, 'getting message', messageId);
   }
 
   return (await response.json()) as Email;

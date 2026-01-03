@@ -99,6 +99,7 @@ export class ServiceAccountGmailClient implements IGmailClient {
   private jwtClient: JWT;
   private cachedToken: string | null = null;
   private tokenExpiry: number = 0;
+  private refreshPromise: Promise<void> | null = null;
 
   constructor(
     credentials: ServiceAccountCredentials,
@@ -112,16 +113,7 @@ export class ServiceAccountGmailClient implements IGmailClient {
     });
   }
 
-  private async getHeaders(): Promise<Record<string, string>> {
-    // Check if we have a valid cached token
-    if (this.cachedToken && Date.now() < this.tokenExpiry - 60000) {
-      return {
-        Authorization: `Bearer ${this.cachedToken}`,
-        'Content-Type': 'application/json',
-      };
-    }
-
-    // Get a new access token
+  private async refreshToken(): Promise<void> {
     const tokenResponse = await this.jwtClient.authorize();
     if (!tokenResponse.access_token) {
       throw new Error('Failed to obtain access token from service account');
@@ -130,6 +122,24 @@ export class ServiceAccountGmailClient implements IGmailClient {
     this.cachedToken = tokenResponse.access_token;
     // Token typically expires in 1 hour, but use the actual expiry if provided
     this.tokenExpiry = tokenResponse.expiry_date || Date.now() + 3600000;
+  }
+
+  private async getHeaders(): Promise<Record<string, string>> {
+    // Check if we have a valid cached token (with 60 second buffer)
+    if (this.cachedToken && Date.now() < this.tokenExpiry - 60000) {
+      return {
+        Authorization: `Bearer ${this.cachedToken}`,
+        'Content-Type': 'application/json',
+      };
+    }
+
+    // Use mutex pattern to prevent concurrent token refresh
+    if (!this.refreshPromise) {
+      this.refreshPromise = this.refreshToken().finally(() => {
+        this.refreshPromise = null;
+      });
+    }
+    await this.refreshPromise;
 
     return {
       Authorization: `Bearer ${this.cachedToken}`,
@@ -191,7 +201,23 @@ export function createDefaultClient(): IGmailClient {
 
     // Read and parse the service account key file
     const keyFileContent = readFileSync(serviceAccountKeyFile, 'utf-8');
-    const credentials: ServiceAccountCredentials = JSON.parse(keyFileContent);
+    let credentials: ServiceAccountCredentials;
+    try {
+      credentials = JSON.parse(keyFileContent);
+    } catch {
+      throw new Error(`Invalid JSON in service account key file: ${serviceAccountKeyFile}`);
+    }
+
+    // Validate required credential fields
+    const requiredFields = ['client_email', 'private_key'] as const;
+    for (const field of requiredFields) {
+      if (!credentials[field]) {
+        throw new Error(
+          `Service account key file missing required field: ${field}. ` +
+            'Ensure you are using a valid service account JSON key file.'
+        );
+      }
+    }
 
     return new ServiceAccountGmailClient(credentials, impersonateEmail);
   }

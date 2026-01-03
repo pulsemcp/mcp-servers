@@ -1,23 +1,5 @@
 import type { EmailListItem } from '../../types.js';
-
-/**
- * Handles common Gmail API errors with user-friendly messages
- */
-function handleApiError(status: number, operation: string): never {
-  if (status === 401) {
-    throw new Error('Gmail access token expired or invalid. Please refresh your access token.');
-  }
-  if (status === 403) {
-    throw new Error('Permission denied. Ensure your access token has the gmail.readonly scope.');
-  }
-  if (status === 429) {
-    throw new Error('Gmail API rate limit exceeded. Please try again later.');
-  }
-  if (status === 404) {
-    throw new Error('Gmail resource not found. The message or label may not exist.');
-  }
-  throw new Error(`Gmail API error while trying to ${operation}: HTTP ${status}`);
-}
+import { handleApiError } from './api-errors.js';
 
 interface MessagesListResponse {
   messages?: EmailListItem[];
@@ -70,7 +52,7 @@ export async function listMessages(
   });
 
   if (!response.ok) {
-    handleApiError(response.status, 'list messages');
+    handleApiError(response.status, 'listing messages');
   }
 
   const data = (await response.json()) as MessagesListResponse;

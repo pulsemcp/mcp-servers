@@ -10,6 +10,9 @@ All notable changes to this project will be documented in this file.
 - Structured error handling for Gmail API errors (401, 403, 429, 404)
 - Additional test coverage for edge cases (no subject, HTML-only body, attachments, empty body)
 - Manual test suite with service account and access token authentication options
+- Credential validation for service account key files
+- Token refresh mutex to prevent concurrent refresh race conditions
+- Shared API error handling utility
 
 ## [0.0.1] - Initial Release
 

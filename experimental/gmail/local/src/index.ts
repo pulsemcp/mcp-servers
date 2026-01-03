@@ -8,34 +8,35 @@ import { logServerStart, logError } from '../shared/logging.js';
 // =============================================================================
 
 function validateEnvironment(): void {
-  const required: { name: string; description: string; example: string }[] = [
-    {
-      name: 'GMAIL_ACCESS_TOKEN',
-      description: 'Gmail API OAuth2 access token',
-      example: 'ya29.a0AfH6SMB...',
-    },
-  ];
+  const hasServiceAccount =
+    process.env.GMAIL_SERVICE_ACCOUNT_KEY_FILE && process.env.GMAIL_IMPERSONATE_EMAIL;
+  const hasAccessToken = !!process.env.GMAIL_ACCESS_TOKEN;
 
-  const missing = required.filter(({ name }) => !process.env[name]);
-
-  if (missing.length > 0) {
+  if (!hasServiceAccount && !hasAccessToken) {
     logError('validateEnvironment', 'Missing required environment variables:');
 
-    missing.forEach(({ name, description, example }) => {
-      console.error(`  - ${name}: ${description}`);
-      console.error(`    Example: ${example}`);
-    });
+    console.error('\nGmail authentication requires ONE of the following:');
+    console.error('\n========== Option 1: Service Account (Recommended) ==========');
+    console.error('  GMAIL_SERVICE_ACCOUNT_KEY_FILE: Path to service account JSON key file');
+    console.error('    Example: /path/to/service-account.json');
+    console.error('  GMAIL_IMPERSONATE_EMAIL: Email address to impersonate');
+    console.error('    Example: user@yourdomain.com');
+    console.error('\n  Setup steps:');
+    console.error('  1. Go to https://console.cloud.google.com/');
+    console.error('  2. Create a service account with domain-wide delegation');
+    console.error('  3. In Google Workspace Admin, grant gmail.readonly scope');
+    console.error('  4. Download the JSON key file');
 
-    console.error('\n----------------------------------------');
-    console.error('Please set the required environment variables and try again.');
-    console.error('\nTo get an access token:');
-    console.error('1. Go to https://console.cloud.google.com/');
-    console.error('2. Create or select a project');
-    console.error('3. Enable the Gmail API');
-    console.error('4. Create OAuth2 credentials');
-    console.error('5. Use the OAuth2 flow to get an access token');
+    console.error('\n========== Option 2: OAuth2 Access Token ==========');
+    console.error('  GMAIL_ACCESS_TOKEN: Gmail API OAuth2 access token');
+    console.error('    Example: ya29.a0AfH6SMB...');
+    console.error('\n  Setup steps:');
+    console.error('  1. Go to https://console.cloud.google.com/');
+    console.error('  2. Create OAuth2 credentials');
+    console.error('  3. Use OAuth2 flow to get an access token');
     console.error('   Required scopes: gmail.readonly');
-    console.error('----------------------------------------\n');
+
+    console.error('\n======================================================\n');
 
     process.exit(1);
   }
