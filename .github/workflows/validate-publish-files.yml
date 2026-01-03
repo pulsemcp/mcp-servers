@@ -1,0 +1,91 @@
+name: Validate MCP Server Publish Files
+
+# This workflow ensures that critical files required for npm publishing
+# are present in all MCP servers. This prevents accidental deletion of
+# files like prepare-publish.js or prepare-npm-readme.js which would
+# cause the publish workflow to fail.
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  validate-publish-files:
+    name: Validate Publish Files
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Validate critical publish files exist
+        run: |
+          set -e
+
+          echo "Validating critical publish files for MCP servers..."
+          echo ""
+
+          ERRORS=""
+          SERVERS_CHECKED=0
+
+          # Find all MCP servers (directories containing local/package.json)
+          for LOCAL_PKG in $(find experimental productionized -name "package.json" -path "*/local/package.json" 2>/dev/null); do
+            SERVER_DIR=$(dirname $(dirname "$LOCAL_PKG"))
+            SERVER_NAME=$(basename "$SERVER_DIR")
+            SERVERS_CHECKED=$((SERVERS_CHECKED + 1))
+
+            echo "Checking $SERVER_DIR..."
+
+            # Read prepublishOnly script from package.json
+            PREPUBLISH_SCRIPT=$(grep -o '"prepublishOnly"[[:space:]]*:[[:space:]]*"[^"]*"' "$LOCAL_PKG" | sed 's/.*: *"\([^"]*\)"/\1/' || true)
+
+            # Check for prepare-publish.js in local directory (if referenced in prepublishOnly)
+            if echo "$PREPUBLISH_SCRIPT" | grep -q "prepare-publish.js"; then
+              if [ ! -f "$SERVER_DIR/local/prepare-publish.js" ]; then
+                ERRORS="${ERRORS}ERROR: Missing $SERVER_DIR/local/prepare-publish.js (referenced in prepublishOnly script)\n"
+                echo "  ❌ Missing local/prepare-publish.js"
+              else
+                echo "  ✅ local/prepare-publish.js exists"
+              fi
+            else
+              echo "  ⏭️  local/prepare-publish.js not referenced in prepublishOnly (skipped)"
+            fi
+
+            # Check for prepare-npm-readme.js in scripts directory (only if referenced in prepublishOnly)
+            if echo "$PREPUBLISH_SCRIPT" | grep -q "prepare-npm-readme.js"; then
+              if [ ! -f "$SERVER_DIR/scripts/prepare-npm-readme.js" ]; then
+                ERRORS="${ERRORS}ERROR: Missing $SERVER_DIR/scripts/prepare-npm-readme.js (referenced in prepublishOnly script)\n"
+                echo "  ❌ Missing scripts/prepare-npm-readme.js"
+              else
+                echo "  ✅ scripts/prepare-npm-readme.js exists"
+              fi
+            else
+              echo "  ⏭️  scripts/prepare-npm-readme.js not referenced in prepublishOnly (skipped)"
+            fi
+
+            echo ""
+          done
+
+          echo "---"
+          echo "Checked $SERVERS_CHECKED MCP servers"
+          echo ""
+
+          if [ -n "$ERRORS" ]; then
+            echo "❌ VALIDATION FAILED"
+            echo ""
+            echo "The following critical publish files are missing:"
+            echo ""
+            echo -e "$ERRORS"
+            echo ""
+            echo "These files are referenced in the prepublishOnly script but are missing."
+            echo "The publish workflow will fail without them."
+            echo "You can copy these files from libs/mcp-server-template:"
+            echo "  - local/prepare-publish.js: Prepares shared module files for npm package"
+            echo "  - scripts/prepare-npm-readme.js: Copies README.md to local/ for npm package"
+            echo ""
+            exit 1
+          fi
+
+          echo "✅ All critical publish files are present"
