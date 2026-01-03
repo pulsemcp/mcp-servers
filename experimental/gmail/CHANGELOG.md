@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.0.3] - 2026-01-03
+
 ### Fixed
 
 - Restored missing `scripts/prepare-npm-readme.js` file that was accidentally deleted, which caused npm publish to fail

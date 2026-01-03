@@ -1,8 +1,8 @@
 # Manual Testing Results
 
-## Test Run: 2026-01-03 (v0.0.2 - Environment Variable Refactor)
+## Test Run: 2026-01-03 (v0.0.3 - Publish Fix)
 
-**Commit:** d08a83f
+**Commit:** 36568ff (v0.0.2 tests remain valid - only restored missing publish script, no code changes)
 
 **Authentication Method:** Service Account with Domain-Wide Delegation (via environment variables)
 
