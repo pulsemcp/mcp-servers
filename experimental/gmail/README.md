@@ -1,22 +1,23 @@
-# Gmail MCP Server
+# Gmail Workspace MCP Server
 
-An MCP (Model Context Protocol) server that provides Gmail integration for AI assistants.
+An MCP (Model Context Protocol) server that provides Gmail integration for AI assistants, with support for Google Workspace service accounts.
 
 ## Features
 
 - **List Recent Emails**: Retrieve recent emails within a specified time horizon
 - **Get Email Details**: Fetch full email content including body and attachments info
+- **Service Account Support**: Domain-wide delegation for Google Workspace organizations
 
 ## Installation
 
 ```bash
-npm install gmail-mcp-server
+npm install gmail-workspace-mcp-server
 ```
 
 Or run directly with npx:
 
 ```bash
-npx gmail-mcp-server
+npx gmail-workspace-mcp-server
 ```
 
 ## Prerequisites
@@ -63,7 +64,7 @@ Add to your Claude Desktop configuration (`~/Library/Application Support/Claude/
   "mcpServers": {
     "gmail": {
       "command": "npx",
-      "args": ["gmail-mcp-server"],
+      "args": ["gmail-workspace-mcp-server"],
       "env": {
         "GMAIL_SERVICE_ACCOUNT_KEY_FILE": "/path/to/service-account-key.json",
         "GMAIL_IMPERSONATE_EMAIL": "user@yourdomain.com"
@@ -80,7 +81,7 @@ Add to your Claude Desktop configuration (`~/Library/Application Support/Claude/
   "mcpServers": {
     "gmail": {
       "command": "npx",
-      "args": ["gmail-mcp-server"],
+      "args": ["gmail-workspace-mcp-server"],
       "env": {
         "GMAIL_ACCESS_TOKEN": "your-access-token-here"
       }

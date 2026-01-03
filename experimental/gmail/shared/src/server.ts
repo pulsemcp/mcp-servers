@@ -237,7 +237,7 @@ export function createDefaultClient(): IGmailClient {
 export function createMCPServer() {
   const server = new Server(
     {
-      name: 'gmail-mcp-server',
+      name: 'gmail-workspace-mcp-server',
       version: '0.0.1',
     },
     {

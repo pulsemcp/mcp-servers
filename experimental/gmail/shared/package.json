@@ -1,7 +1,7 @@
 {
-  "name": "gmail-mcp-server-shared",
+  "name": "gmail-workspace-mcp-server-shared",
   "version": "0.0.1",
-  "description": "Shared code for Gmail MCP server implementations",
+  "description": "Shared code for Gmail Workspace MCP server implementations",
   "main": "build/index.js",
   "type": "module",
   "scripts": {
