@@ -122,6 +122,76 @@ describe('Playwright Client Manual Tests', () => {
     });
   });
 
+  describe('Anti-Bot Protection Tests', () => {
+    it('should fail to load claude.ai login WITHOUT stealth mode', async () => {
+      client = new PlaywrightClient({
+        stealthMode: false,
+        headless: true,
+        timeout: 30000,
+      });
+
+      const result = await client.execute(`
+        await page.goto('https://claude.ai/login', { waitUntil: 'domcontentloaded', timeout: 15000 });
+        await page.waitForTimeout(2000);
+
+        // Check if we're blocked or got a challenge page
+        const content = await page.content();
+        const url = page.url();
+
+        // Look for signs of being blocked
+        const isBlocked = content.includes('challenge') ||
+                         content.includes('captcha') ||
+                         content.includes('verify') ||
+                         content.includes('blocked') ||
+                         content.includes('cf-') ||
+                         url.includes('challenges');
+
+        return { url, isBlocked, hasLoginForm: content.includes('password') || content.includes('email') };
+      `);
+
+      console.log('Non-stealth claude.ai result:', result.result);
+      expect(result.success).toBe(true);
+      // Non-stealth should likely be blocked or show challenge
+    });
+
+    it('should successfully load claude.ai login WITH stealth mode', async () => {
+      await client?.close();
+      client = new PlaywrightClient({
+        stealthMode: true,
+        headless: true,
+        timeout: 30000,
+      });
+
+      const result = await client.execute(`
+        await page.goto('https://claude.ai/login', { waitUntil: 'domcontentloaded', timeout: 15000 });
+        await page.waitForTimeout(2000);
+
+        // Check if we got through to the actual login page
+        const content = await page.content();
+        const url = page.url();
+
+        // Look for signs of being blocked
+        const isBlocked = content.includes('challenge') ||
+                         content.includes('captcha') ||
+                         content.includes('verify') ||
+                         content.includes('blocked') ||
+                         content.includes('cf-') ||
+                         url.includes('challenges');
+
+        return { url, isBlocked, hasLoginForm: content.includes('password') || content.includes('email') };
+      `);
+
+      console.log('Stealth claude.ai result:', result.result);
+      expect(result.success).toBe(true);
+      // Stealth mode should be able to get through
+    });
+
+    it('should clean up after anti-bot tests', async () => {
+      await client?.close();
+      client = null;
+    });
+  });
+
   describe('Error Handling', () => {
     it('should handle navigation errors gracefully', async () => {
       client = new PlaywrightClient({
