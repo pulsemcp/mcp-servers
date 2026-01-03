@@ -106,5 +106,143 @@ describe('Gmail MCP Server Tools', () => {
 
       expect(result.content[0].text).toContain('**Labels:** INBOX, UNREAD');
     });
+
+    it('should handle email with no subject', async () => {
+      (mockClient.getMessage as ReturnType<typeof vi.fn>).mockResolvedValue({
+        id: 'msg_no_subject',
+        threadId: 'thread_no_subject',
+        labelIds: ['INBOX'],
+        snippet: 'Email without subject line',
+        historyId: '12345',
+        internalDate: String(Date.now()),
+        payload: {
+          mimeType: 'text/plain',
+          headers: [
+            { name: 'From', value: 'sender@example.com' },
+            { name: 'To', value: 'me@example.com' },
+            { name: 'Date', value: new Date().toISOString() },
+          ],
+          body: {
+            size: 100,
+            data: Buffer.from('Body content').toString('base64url'),
+          },
+        },
+      });
+
+      const tool = getEmailTool(mockServer, () => mockClient);
+      const result = await tool.handler({ email_id: 'msg_no_subject' });
+
+      expect(result.content[0].text).toContain('**Subject:** (No Subject)');
+    });
+
+    it('should handle email with HTML body when plain text is unavailable', async () => {
+      (mockClient.getMessage as ReturnType<typeof vi.fn>).mockResolvedValue({
+        id: 'msg_html',
+        threadId: 'thread_html',
+        labelIds: ['INBOX'],
+        snippet: 'HTML email',
+        historyId: '12345',
+        internalDate: String(Date.now()),
+        payload: {
+          mimeType: 'multipart/alternative',
+          headers: [
+            { name: 'Subject', value: 'HTML Email' },
+            { name: 'From', value: 'sender@example.com' },
+            { name: 'To', value: 'me@example.com' },
+            { name: 'Date', value: new Date().toISOString() },
+          ],
+          parts: [
+            {
+              partId: '1',
+              mimeType: 'text/html',
+              body: {
+                size: 100,
+                data: Buffer.from('<p>Hello <b>World</b></p>').toString('base64url'),
+              },
+            },
+          ],
+        },
+      });
+
+      const tool = getEmailTool(mockServer, () => mockClient);
+      const result = await tool.handler({ email_id: 'msg_html' });
+
+      expect(result.content[0].text).toContain('Hello');
+      expect(result.content[0].text).toContain('World');
+      expect(result.content[0].text).not.toContain('<p>');
+      expect(result.content[0].text).not.toContain('<b>');
+    });
+
+    it('should list attachments', async () => {
+      (mockClient.getMessage as ReturnType<typeof vi.fn>).mockResolvedValue({
+        id: 'msg_attachment',
+        threadId: 'thread_attachment',
+        labelIds: ['INBOX'],
+        snippet: 'Email with attachment',
+        historyId: '12345',
+        internalDate: String(Date.now()),
+        payload: {
+          mimeType: 'multipart/mixed',
+          headers: [
+            { name: 'Subject', value: 'Document Attached' },
+            { name: 'From', value: 'sender@example.com' },
+            { name: 'To', value: 'me@example.com' },
+            { name: 'Date', value: new Date().toISOString() },
+          ],
+          parts: [
+            {
+              partId: '0',
+              mimeType: 'text/plain',
+              body: {
+                size: 50,
+                data: Buffer.from('See attached').toString('base64url'),
+              },
+            },
+            {
+              partId: '1',
+              mimeType: 'application/pdf',
+              filename: 'document.pdf',
+              body: {
+                attachmentId: 'att_001',
+                size: 102400,
+              },
+            },
+          ],
+        },
+      });
+
+      const tool = getEmailTool(mockServer, () => mockClient);
+      const result = await tool.handler({ email_id: 'msg_attachment' });
+
+      expect(result.content[0].text).toContain('## Attachments (1)');
+      expect(result.content[0].text).toContain('document.pdf');
+      expect(result.content[0].text).toContain('application/pdf');
+      expect(result.content[0].text).toContain('100 KB');
+    });
+
+    it('should handle email with no body', async () => {
+      (mockClient.getMessage as ReturnType<typeof vi.fn>).mockResolvedValue({
+        id: 'msg_no_body',
+        threadId: 'thread_no_body',
+        labelIds: ['INBOX'],
+        snippet: '',
+        historyId: '12345',
+        internalDate: String(Date.now()),
+        payload: {
+          mimeType: 'text/plain',
+          headers: [
+            { name: 'Subject', value: 'Empty Email' },
+            { name: 'From', value: 'sender@example.com' },
+            { name: 'To', value: 'me@example.com' },
+            { name: 'Date', value: new Date().toISOString() },
+          ],
+        },
+      });
+
+      const tool = getEmailTool(mockServer, () => mockClient);
+      const result = await tool.handler({ email_id: 'msg_no_body' });
+
+      expect(result.content[0].text).toContain('(No body content available)');
+    });
   });
 });
