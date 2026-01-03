@@ -25,7 +25,7 @@ npm run test:manual
 
 **Test Date:** 2026-01-03
 **Branch:** tadasant/playwright-stealth-mcp-server
-**Commit:** 4c1cb91
+**Commit:** d7a98b1
 **Tested By:** Claude
 
 ### Summary
