@@ -6,9 +6,13 @@
 import { execSync } from 'child_process';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
+import { config } from 'dotenv';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const rootDir = join(__dirname, '..');
+
+// Load environment variables from .env file
+config({ path: join(rootDir, '.env') });
 
 try {
   // Build first

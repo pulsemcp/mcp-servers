@@ -1,7 +1,15 @@
 // Main exports for Gmail MCP Server
 
 // Server and client
-export { createMCPServer, GmailClient, type IGmailClient, type ClientFactory } from './server.js';
+export {
+  createMCPServer,
+  createDefaultClient,
+  GmailClient,
+  ServiceAccountGmailClient,
+  type IGmailClient,
+  type ClientFactory,
+  type ServiceAccountCredentials,
+} from './server.js';
 
 // Tools
 export { createRegisterTools, registerTools } from './tools.js';

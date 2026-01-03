@@ -21,11 +21,22 @@ npx gmail-mcp-server
 
 ## Prerequisites
 
-### Gmail API Access Token
+This server supports two authentication methods:
 
-This server requires a Gmail API OAuth2 access token with the `gmail.readonly` scope.
+### Option 1: Service Account with Domain-Wide Delegation (Recommended)
 
-To obtain an access token:
+Use a Google Cloud service account with domain-wide delegation to access Gmail on behalf of users in your Google Workspace domain.
+
+1. Go to [Google Cloud Console](https://console.cloud.google.com/)
+2. Create or select a project
+3. Enable the Gmail API
+4. Create a service account with domain-wide delegation enabled
+5. In [Google Workspace Admin Console](https://admin.google.com/), grant the service account access to the `https://www.googleapis.com/auth/gmail.readonly` scope
+6. Download the JSON key file
+
+### Option 2: OAuth2 Access Token
+
+Use a standard OAuth2 access token with the `gmail.readonly` scope.
 
 1. Go to [Google Cloud Console](https://console.cloud.google.com/)
 2. Create or select a project
@@ -35,15 +46,34 @@ To obtain an access token:
 
 ### Environment Variables
 
-| Variable             | Required | Description                   |
-| -------------------- | -------- | ----------------------------- |
-| `GMAIL_ACCESS_TOKEN` | Yes      | Gmail API OAuth2 access token |
+| Variable                         | Required                  | Description                           |
+| -------------------------------- | ------------------------- | ------------------------------------- |
+| `GMAIL_SERVICE_ACCOUNT_KEY_FILE` | Yes (for service account) | Path to service account JSON key file |
+| `GMAIL_IMPERSONATE_EMAIL`        | Yes (for service account) | Email address to impersonate          |
+| `GMAIL_ACCESS_TOKEN`             | Yes (for OAuth2)          | Gmail API OAuth2 access token         |
 
 ## Configuration
 
-### Claude Desktop
+### Claude Desktop (Service Account)
 
 Add to your Claude Desktop configuration (`~/Library/Application Support/Claude/claude_desktop_config.json`):
+
+```json
+{
+  "mcpServers": {
+    "gmail": {
+      "command": "npx",
+      "args": ["gmail-mcp-server"],
+      "env": {
+        "GMAIL_SERVICE_ACCOUNT_KEY_FILE": "/path/to/service-account-key.json",
+        "GMAIL_IMPERSONATE_EMAIL": "user@yourdomain.com"
+      }
+    }
+  }
+}
+```
+
+### Claude Desktop (OAuth2 Access Token)
 
 ```json
 {
