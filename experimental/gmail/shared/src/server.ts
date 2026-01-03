@@ -1,4 +1,4 @@
-import { readFileSync } from 'fs';
+import { existsSync, readFileSync } from 'fs';
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { JWT } from 'google-auth-library';
 import { createRegisterTools } from './tools.js';
@@ -158,6 +158,14 @@ export function createDefaultClient(): IGmailClient {
     throw new Error(
       'GMAIL_IMPERSONATE_EMAIL environment variable must be set. ' +
         'This is the email address of the user to access Gmail as.'
+    );
+  }
+
+  // Check if the key file exists
+  if (!existsSync(serviceAccountKeyFile)) {
+    throw new Error(
+      `Service account key file not found: ${serviceAccountKeyFile}. ` +
+        'Ensure the path is correct and the file exists.'
     );
   }
 

@@ -2,6 +2,7 @@ import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { z } from 'zod';
 import type { ClientFactory } from '../server.js';
 import type { Email, EmailPart } from '../types.js';
+import { getHeader } from '../utils/email-helpers.js';
 
 const PARAM_DESCRIPTIONS = {
   email_id:
@@ -33,14 +34,6 @@ Full email details including:
 - Check attachment details
 
 **Note:** Use gmail_list_recent_emails first to get email IDs.`;
-
-/**
- * Extracts a header value from an email
- */
-function getHeader(email: Email, headerName: string): string | undefined {
-  return email.payload?.headers?.find((h) => h.name.toLowerCase() === headerName.toLowerCase())
-    ?.value;
-}
 
 /**
  * Decodes base64url encoded content

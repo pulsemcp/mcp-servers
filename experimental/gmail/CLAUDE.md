@@ -28,11 +28,12 @@ This server follows the standard PulseMCP MCP server architecture:
 
 ### Authentication
 
-The server uses OAuth2 access tokens for authentication. Access tokens:
+The server uses Google Cloud service accounts with domain-wide delegation:
 
-- Must have `gmail.readonly` scope
-- Are short-lived and need periodic refresh
-- Should be obtained via the OAuth2 flow
+- Service account JSON key file is read from `GMAIL_SERVICE_ACCOUNT_KEY_FILE`
+- Impersonates a Workspace user specified by `GMAIL_IMPERSONATE_EMAIL`
+- Requires `gmail.readonly` scope granted in Google Workspace Admin
+- JWT tokens are automatically refreshed before expiry
 
 ### API Endpoints Used
 
@@ -70,18 +71,21 @@ npm run test:integration
 Test against real Gmail API:
 
 ```bash
-export GMAIL_ACCESS_TOKEN="your-token"
+export GMAIL_SERVICE_ACCOUNT_KEY_FILE="/path/to/service-account.json"
+export GMAIL_IMPERSONATE_EMAIL="user@yourdomain.com"
 npm run test:manual
 ```
 
 ## Common Issues
 
-### Access Token Expiration
+### Authentication Errors
 
-OAuth2 access tokens typically expire after 1 hour. If you see 401 errors:
+If you see 401 or 403 errors:
 
-- Refresh the access token
-- Check token scope includes `gmail.readonly`
+- Verify service account JSON key file path is correct
+- Check that the service account has domain-wide delegation enabled
+- Ensure `gmail.readonly` scope is granted in Google Workspace Admin Console
+- Verify the impersonate email is a valid Workspace user
 
 ### Rate Limiting
 

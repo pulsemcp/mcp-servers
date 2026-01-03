@@ -6,10 +6,14 @@
  */
 export function handleApiError(status: number, operation: string, resourceId?: string): never {
   if (status === 401) {
-    throw new Error('Gmail access token expired or invalid. Please refresh your access token.');
+    throw new Error(
+      'Service account authentication failed. Verify the key file and domain-wide delegation.'
+    );
   }
   if (status === 403) {
-    throw new Error('Permission denied. Ensure your access token has the gmail.readonly scope.');
+    throw new Error(
+      'Permission denied. Ensure gmail.readonly scope is granted in Google Workspace Admin.'
+    );
   }
   if (status === 429) {
     throw new Error('Gmail API rate limit exceeded. Please try again later.');

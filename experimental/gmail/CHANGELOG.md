@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Changed
+
+- Improved error messages for service account authentication failures
+- Extracted shared `getHeader` utility to reduce code duplication
+- Added file existence check before reading service account key file
+
 ## [0.0.1] - Initial Release
 
 ### Added

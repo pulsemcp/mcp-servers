@@ -2,6 +2,7 @@ import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { z } from 'zod';
 import type { ClientFactory } from '../server.js';
 import type { Email } from '../types.js';
+import { getHeader } from '../utils/email-helpers.js';
 
 const PARAM_DESCRIPTIONS = {
   hours:
@@ -42,14 +43,6 @@ A formatted list of emails with:
 - List recent emails from specific labels like SENT or STARRED
 
 **Note:** This tool only returns email metadata and snippets. Use get_email with an email ID to retrieve the full message content.`;
-
-/**
- * Extracts a header value from an email
- */
-function getHeader(email: Email, headerName: string): string | undefined {
-  return email.payload?.headers?.find((h) => h.name.toLowerCase() === headerName.toLowerCase())
-    ?.value;
-}
 
 /**
  * Formats an email for display
