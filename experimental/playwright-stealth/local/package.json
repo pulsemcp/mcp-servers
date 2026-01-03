@@ -1,0 +1,67 @@
+{
+  "name": "playwright-stealth-mcp-server",
+  "version": "0.0.1",
+  "description": "Local implementation of Playwright Stealth MCP server",
+  "mcpName": "com.pulsemcp.servers/playwright-stealth",
+  "main": "build/index.js",
+  "type": "module",
+  "bin": {
+    "playwright-stealth-mcp-server": "./build/index.js"
+  },
+  "scripts": {
+    "build": "tsc && npm run build:integration",
+    "build:integration": "tsc -p tsconfig.integration.json",
+    "start": "node build/index.js",
+    "start:integration": "node build/index.integration-with-mock.js",
+    "dev": "tsx src/index.ts",
+    "dev:integration": "tsx src/index.integration-with-mock.ts",
+    "predev": "cd ../shared && npm run build && cd ../local && node setup-dev.js",
+    "prebuild": "cd ../shared && npm run build && cd ../local && node setup-dev.js",
+    "prepublishOnly": "node prepare-publish.js && node ../scripts/prepare-npm-readme.js",
+    "lint": "eslint . --ext .ts,.tsx",
+    "lint:fix": "eslint . --ext .ts,.tsx --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "stage-publish": "npm version"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.19.1",
+    "playwright": "^1.49.1",
+    "playwright-extra": "^4.3.6",
+    "puppeteer-extra-plugin-stealth": "^2.11.2",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.31",
+    "tsx": "^4.19.4",
+    "typescript": "^5.7.3"
+  },
+  "keywords": [
+    "mcp",
+    "modelcontextprotocol",
+    "playwright",
+    "stealth",
+    "browser",
+    "automation"
+  ],
+  "author": "PulseMCP",
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "build/**/*.js",
+    "shared/**/*.js",
+    "shared/**/*.d.ts",
+    "README.md"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/pulsemcp/mcp-servers.git",
+    "directory": "experimental/playwright-stealth/local"
+  },
+  "bugs": {
+    "url": "https://github.com/pulsemcp/mcp-servers/issues"
+  },
+  "homepage": "https://github.com/pulsemcp/mcp-servers/tree/main/experimental/playwright-stealth"
+}

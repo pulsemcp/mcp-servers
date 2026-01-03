@@ -1,0 +1,31 @@
+# Dependencies
+node_modules/
+
+# Build output
+build/
+*.js
+*.js.map
+*.d.ts
+
+# Keep these JavaScript files
+!scripts/*.js
+!local/setup-dev.js
+!local/prepare-publish.js
+
+# Environment files
+.env
+.env.local
+
+# IDE
+.idea/
+.vscode/
+
+# OS files
+.DS_Store
+
+# Test coverage
+coverage/
+
+# Playwright
+playwright-report/
+test-results/
