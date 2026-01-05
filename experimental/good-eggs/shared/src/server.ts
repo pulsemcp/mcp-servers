@@ -341,6 +341,7 @@ export class GoodEggsClient implements IGoodEggsClient {
     });
 
     // Set quantity if different from 1
+    let quantitySet = false;
     if (quantity > 1) {
       // Try to find and use quantity selector
       const quantitySelector = await page.$(
@@ -348,6 +349,7 @@ export class GoodEggsClient implements IGoodEggsClient {
       );
       if (quantitySelector) {
         await quantitySelector.selectOption(String(quantity));
+        quantitySet = true;
       } else {
         // Try clicking + button multiple times
         const plusButton = await page.$('button[aria-label*="increase"], button:has-text("+")');
@@ -356,7 +358,17 @@ export class GoodEggsClient implements IGoodEggsClient {
             await plusButton.click();
             await page.waitForTimeout(200);
           }
+          quantitySet = true;
         }
+      }
+
+      if (!quantitySet) {
+        return {
+          success: false,
+          message: `Could not set quantity to ${quantity} - quantity controls not found. Item may only support single-item adds.`,
+          itemName,
+          quantity: 1,
+        };
       }
     }
 

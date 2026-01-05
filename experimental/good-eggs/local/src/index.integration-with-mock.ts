@@ -6,7 +6,8 @@
  * It uses the real MCP server but injects a mock client factory to avoid
  * actual browser automation during CI tests.
  *
- * Set GOOD_EGGS_MOCK_MODE=true to use the mock client.
+ * Note: The mock client is defined inline because TypeScript's rootDir
+ * constraints prevent importing from the tests/ directory.
  */
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { createMCPServer, type IGoodEggsClient } from '../shared/index.js';
@@ -19,7 +20,8 @@ import type {
 } from '../shared/types.js';
 
 /**
- * Creates a mock Good Eggs client for integration testing
+ * Creates a mock Good Eggs client for integration testing.
+ * This is kept inline to avoid TypeScript rootDir issues with importing from tests/.
  */
 function createMockGoodEggsClient(): IGoodEggsClient {
   const mockConfig: GoodEggsConfig = {

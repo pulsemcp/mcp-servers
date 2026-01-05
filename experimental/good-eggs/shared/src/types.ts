@@ -53,13 +53,27 @@ export const SearchGrocerySchema = z.object({
     .describe('Search query for groceries (e.g., "organic apples", "milk", "bread")'),
 });
 
+const goodEggsUrlSchema = z
+  .string()
+  .url()
+  .refine((url) => url.startsWith('https://www.goodeggs.com/'), {
+    message: 'URL must be a Good Eggs URL (https://www.goodeggs.com/...)',
+  });
+
 export const GetGroceryDetailsSchema = z.object({
-  grocery_url: z.string().describe('The Good Eggs URL of the grocery item to get details for'),
+  grocery_url: goodEggsUrlSchema.describe(
+    'The Good Eggs URL of the grocery item to get details for'
+  ),
 });
 
 export const AddToCartSchema = z.object({
-  grocery_url: z.string().describe('The Good Eggs URL of the grocery item to add to cart'),
-  quantity: z.number().optional().default(1).describe('Quantity to add (default: 1)'),
+  grocery_url: goodEggsUrlSchema.describe('The Good Eggs URL of the grocery item to add to cart'),
+  quantity: z
+    .number()
+    .min(1)
+    .optional()
+    .default(1)
+    .describe('Quantity to add (minimum 1, default: 1)'),
 });
 
 export const GetPastOrderGroceriesSchema = z.object({

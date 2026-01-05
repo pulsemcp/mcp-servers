@@ -23,3 +23,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Automatic login on first tool use
 - Persistent browser session across tool calls
 - Smart page detection to minimize navigation
+- URL validation to ensure only Good Eggs URLs are accepted
+- Minimum quantity validation (quantity must be >= 1)
+- Explicit error handling when quantity cannot be set
