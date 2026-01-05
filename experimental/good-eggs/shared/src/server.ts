@@ -416,80 +416,91 @@ export class GoodEggsClient implements IGoodEggsClient {
 
   async searchFreebieGroceries(): Promise<GroceryItem[]> {
     const page = await this.ensureBrowser();
+    const allFreeItems: GroceryItem[] = [];
+    const seen = new Set<string>();
 
-    // Navigate to deals page
-    await page.goto(`${BASE_URL}/good-deals`, { waitUntil: 'networkidle' });
+    // Helper function to extract free items ($0.00) from current page
+    const extractFreeItems = async (): Promise<GroceryItem[]> => {
+      return await page.evaluate(() => {
+        const products: GroceryItem[] = [];
+        const seenUrls = new Set<string>();
 
-    // Wait for page to load
+        // Find all product links
+        const productElements = document.querySelectorAll(
+          'a[href*="/product/"], a[href*="goodeggs"]'
+        );
+
+        productElements.forEach((el) => {
+          const link = el as HTMLAnchorElement;
+          const href = link.href;
+
+          if (
+            !href ||
+            seenUrls.has(href) ||
+            href.includes('/fresh-picks') ||
+            href.includes('/signin')
+          ) {
+            return;
+          }
+
+          const container = link.closest('div[class*="product"], article, [class*="card"]') || link;
+
+          // Look for price element and check if it's $0.00
+          const priceEl = container.querySelector('[class*="price"]');
+          const priceText = priceEl?.textContent?.trim() || '';
+
+          // Only include items that are free ($0.00)
+          if (!priceText.includes('$0.00') && !priceText.includes('$0')) {
+            return;
+          }
+
+          const nameEl = container.querySelector('h2, h3, [class*="title"], [class*="name"]');
+          const brandEl = container.querySelector('[class*="brand"], [class*="producer"]');
+          const imgEl = container.querySelector('img');
+
+          const name = nameEl?.textContent?.trim();
+          if (!name || name.length < 3) return;
+
+          seenUrls.add(href);
+          products.push({
+            url: href,
+            name: name,
+            brand: brandEl?.textContent?.trim() || '',
+            price: priceText,
+            discount: 'FREE',
+            imageUrl: imgEl?.src || undefined,
+          });
+        });
+
+        return products;
+      });
+    };
+
+    // Check homepage for free items
+    await page.goto(BASE_URL, { waitUntil: 'networkidle' });
     await page.waitForTimeout(1000);
 
-    // Look for items that are free or have 100% off
-    const items = await page.evaluate(() => {
-      const products: GroceryItem[] = [];
-      const seen = new Set<string>();
+    const homePageItems = await extractFreeItems();
+    for (const item of homePageItems) {
+      if (!seen.has(item.url)) {
+        seen.add(item.url);
+        allFreeItems.push(item);
+      }
+    }
 
-      // Look for products with "FREE" or "$0" or "100% OFF"
-      const allElements = document.querySelectorAll('*');
-      const freeContainers: Element[] = [];
+    // Check /fresh-picks page for free items
+    await page.goto(`${BASE_URL}/fresh-picks`, { waitUntil: 'networkidle' });
+    await page.waitForTimeout(1000);
 
-      allElements.forEach((el) => {
-        const text = el.textContent || '';
-        if (
-          text.includes('FREE') ||
-          text.includes('$0.00') ||
-          text.includes('100% OFF') ||
-          text.toLowerCase().includes('freebie')
-        ) {
-          const container = el.closest('div[class*="product"], article, [class*="card"]');
-          if (container && !freeContainers.includes(container)) {
-            freeContainers.push(container);
-          }
-        }
-      });
+    const freshPicksItems = await extractFreeItems();
+    for (const item of freshPicksItems) {
+      if (!seen.has(item.url)) {
+        seen.add(item.url);
+        allFreeItems.push(item);
+      }
+    }
 
-      // Also get regular deals items
-      const productElements = document.querySelectorAll(
-        'a[href*="/product/"], a[href*="goodeggs"]'
-      );
-
-      productElements.forEach((el) => {
-        const link = el as HTMLAnchorElement;
-        const href = link.href;
-
-        if (!href || seen.has(href) || href.includes('/good-deals') || href.includes('/signin')) {
-          return;
-        }
-
-        const container = link.closest('div[class*="product"], article, [class*="card"]') || link;
-        const discountEl = container.querySelector('[class*="off"], [class*="discount"]');
-        const discountText = discountEl?.textContent?.trim() || '';
-
-        // Only include items with discounts
-        if (!discountText) return;
-
-        const nameEl = container.querySelector('h2, h3, [class*="title"], [class*="name"]');
-        const brandEl = container.querySelector('[class*="brand"], [class*="producer"]');
-        const priceEl = container.querySelector('[class*="price"]');
-        const imgEl = container.querySelector('img');
-
-        const name = nameEl?.textContent?.trim();
-        if (!name || name.length < 3) return;
-
-        seen.add(href);
-        products.push({
-          url: href,
-          name: name,
-          brand: brandEl?.textContent?.trim() || '',
-          price: priceEl?.textContent?.trim() || '',
-          discount: discountText,
-          imageUrl: imgEl?.src || undefined,
-        });
-      });
-
-      return products;
-    });
-
-    return items;
+    return allFreeItems;
   }
 
   async getPastOrderDates(): Promise<PastOrder[]> {

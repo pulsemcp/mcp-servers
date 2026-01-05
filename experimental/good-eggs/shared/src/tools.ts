@@ -59,14 +59,12 @@ Returns confirmation of the item added and quantity.
 
 **Tip:** This tool checks if you're already on the product page to minimize navigation.`;
 
-const SEARCH_FREEBIE_GROCERIES_DESCRIPTION = `Search for free items and deals on Good Eggs.
+const SEARCH_FREEBIE_GROCERIES_DESCRIPTION = `Search for free items ($0.00) on Good Eggs.
 
-Navigates to the deals page and returns items with discounts, focusing on:
-- Free items (100% off)
-- Items with significant discounts
-- Current promotions
+Checks the homepage and /fresh-picks page for items priced at $0.00.
+These are typically promotional freebies offered by Good Eggs.
 
-Returns product details including discount percentages.`;
+Returns a list of free items with their URLs for adding to cart.`;
 
 const GET_PAST_ORDER_DATES_DESCRIPTION = `Get a list of past order dates from Good Eggs.
 
