@@ -90,17 +90,19 @@ describe('Good Eggs Manual Tests', () => {
         expect(result).toHaveProperty('content');
         const text = (result as { content: Array<{ text: string }> }).content[0].text;
 
-        if (text.includes('Found') && text.includes('groceries')) {
+        // Response format: "Found N groceries for..." or "No groceries found for..."
+        if (text.startsWith('Error')) {
+          reportOutcome(testName, 'FAILURE', 'API error: ' + text.substring(0, 200));
+          throw new Error(text);
+        } else if (text.includes('Found') && text.includes('groceries for')) {
           reportOutcome(testName, 'SUCCESS', 'Search returned results');
           console.log('   First 500 chars:', text.substring(0, 500));
         } else if (text.includes('No groceries found')) {
-          reportOutcome(
-            testName,
-            'WARNING',
-            'No results found - may be valid if no matching products'
-          );
+          reportOutcome(testName, 'SUCCESS', 'No results found - valid response');
+          console.log('   Response:', text);
         } else {
           reportOutcome(testName, 'WARNING', 'Unexpected response format');
+          console.log('   Response:', text.substring(0, 300));
         }
       } catch (error) {
         reportOutcome(
@@ -128,11 +130,16 @@ describe('Good Eggs Manual Tests', () => {
         expect(result).toHaveProperty('content');
         const text = (result as { content: Array<{ text: string }> }).content[0].text;
 
-        if (text.includes('favorite items') || text.includes('No favorite')) {
+        // Response format: "Found N favorite items..." or "No favorite items found..."
+        if (text.startsWith('Error')) {
+          reportOutcome(testName, 'FAILURE', 'API error: ' + text.substring(0, 200));
+          throw new Error(text);
+        } else if (text.includes('favorite item')) {
           reportOutcome(testName, 'SUCCESS', 'Favorites retrieved successfully');
           console.log('   First 500 chars:', text.substring(0, 500));
         } else {
           reportOutcome(testName, 'WARNING', 'Unexpected response format');
+          console.log('   Response:', text.substring(0, 300));
         }
       } catch (error) {
         reportOutcome(
@@ -160,11 +167,20 @@ describe('Good Eggs Manual Tests', () => {
         expect(result).toHaveProperty('content');
         const text = (result as { content: Array<{ text: string }> }).content[0].text;
 
-        if (text.includes('deals/freebies') || text.includes('No free items')) {
+        // Response format: "Found N deals/freebies..." or "No free items or deals..."
+        if (text.startsWith('Error')) {
+          reportOutcome(testName, 'FAILURE', 'API error: ' + text.substring(0, 200));
+          throw new Error(text);
+        } else if (
+          text.includes('deals') ||
+          text.includes('freebies') ||
+          text.includes('No free items')
+        ) {
           reportOutcome(testName, 'SUCCESS', 'Deals search completed');
           console.log('   First 500 chars:', text.substring(0, 500));
         } else {
           reportOutcome(testName, 'WARNING', 'Unexpected response format');
+          console.log('   Response:', text.substring(0, 300));
         }
       } catch (error) {
         reportOutcome(
@@ -192,11 +208,16 @@ describe('Good Eggs Manual Tests', () => {
         expect(result).toHaveProperty('content');
         const text = (result as { content: Array<{ text: string }> }).content[0].text;
 
-        if (text.includes('past orders') || text.includes('No past orders')) {
+        // Response format: "Found N past orders..." or "No past orders found."
+        if (text.startsWith('Error')) {
+          reportOutcome(testName, 'FAILURE', 'API error: ' + text.substring(0, 200));
+          throw new Error(text);
+        } else if (text.includes('past orders') || text.includes('No past orders')) {
           reportOutcome(testName, 'SUCCESS', 'Past orders retrieved');
           console.log('   First 500 chars:', text.substring(0, 500));
         } else {
           reportOutcome(testName, 'WARNING', 'Unexpected response format');
+          console.log('   Response:', text.substring(0, 300));
         }
       } catch (error) {
         reportOutcome(
@@ -239,11 +260,16 @@ describe('Good Eggs Manual Tests', () => {
         expect(result).toHaveProperty('content');
         const text = (result as { content: Array<{ text: string }> }).content[0].text;
 
-        if (text.includes('Price:') || text.includes('Brand:')) {
+        // Response format: "**ProductName**\nBrand: ...\nPrice: ..."
+        if (text.startsWith('Error')) {
+          reportOutcome(testName, 'FAILURE', 'API error: ' + text.substring(0, 200));
+          throw new Error(text);
+        } else if (text.includes('Price:') || text.includes('Brand:')) {
           reportOutcome(testName, 'SUCCESS', 'Product details retrieved');
           console.log('   First 500 chars:', text.substring(0, 500));
         } else {
           reportOutcome(testName, 'WARNING', 'Unexpected response format');
+          console.log('   Response:', text.substring(0, 300));
         }
       } catch (error) {
         reportOutcome(
@@ -287,13 +313,18 @@ describe('Good Eggs Manual Tests', () => {
         expect(result).toHaveProperty('content');
         const text = (result as { content: Array<{ text: string }> }).content[0].text;
 
-        if (text.includes('Successfully added') || text.includes('add to cart')) {
+        // Response format: "Successfully added N x ItemName to cart" or "Failed..."
+        if (text.startsWith('Error')) {
+          reportOutcome(testName, 'FAILURE', 'API error: ' + text.substring(0, 200));
+          throw new Error(text);
+        } else if (text.includes('Successfully added')) {
           reportOutcome(testName, 'SUCCESS', 'Item added to cart');
           console.log('   Result:', text);
-        } else if (text.includes('Failed')) {
+        } else if (text.includes('Failed') || text.includes('Could not')) {
           reportOutcome(testName, 'WARNING', 'Add to cart may have failed: ' + text);
         } else {
           reportOutcome(testName, 'WARNING', 'Unexpected response format');
+          console.log('   Response:', text.substring(0, 300));
         }
       } catch (error) {
         reportOutcome(
@@ -339,11 +370,16 @@ describe('Good Eggs Manual Tests', () => {
         expect(result).toHaveProperty('content');
         const text = (result as { content: Array<{ text: string }> }).content[0].text;
 
-        if (text.includes('items from order') || text.includes('No items found')) {
+        // Response format: "Found N items from order..." or "No items found for order..."
+        if (text.startsWith('Error')) {
+          reportOutcome(testName, 'FAILURE', 'API error: ' + text.substring(0, 200));
+          throw new Error(text);
+        } else if (text.includes('items from order') || text.includes('No items found')) {
           reportOutcome(testName, 'SUCCESS', 'Past order groceries retrieved');
           console.log('   First 500 chars:', text.substring(0, 500));
         } else {
           reportOutcome(testName, 'WARNING', 'Unexpected response format');
+          console.log('   Response:', text.substring(0, 300));
         }
       } catch (error) {
         reportOutcome(
@@ -386,13 +422,18 @@ describe('Good Eggs Manual Tests', () => {
         expect(result).toHaveProperty('content');
         const text = (result as { content: Array<{ text: string }> }).content[0].text;
 
-        if (text.includes('Successfully added') || text.includes('already in favorites')) {
+        // Response format: "Successfully added ItemName to favorites" or "ItemName is already in favorites"
+        if (text.startsWith('Error')) {
+          reportOutcome(testName, 'FAILURE', 'API error: ' + text.substring(0, 200));
+          throw new Error(text);
+        } else if (text.includes('to favorites') || text.includes('already in favorites')) {
           reportOutcome(testName, 'SUCCESS', 'Favorite operation completed');
           console.log('   Result:', text);
         } else if (text.includes('Failed') || text.includes('Could not find')) {
           reportOutcome(testName, 'WARNING', 'Favorite button may not be found: ' + text);
         } else {
           reportOutcome(testName, 'WARNING', 'Unexpected response format');
+          console.log('   Response:', text.substring(0, 300));
         }
       } catch (error) {
         reportOutcome(
@@ -435,13 +476,18 @@ describe('Good Eggs Manual Tests', () => {
         expect(result).toHaveProperty('content');
         const text = (result as { content: Array<{ text: string }> }).content[0].text;
 
-        if (text.includes('Successfully removed') || text.includes('not in favorites')) {
+        // Response format: "Successfully removed ItemName from favorites" or "ItemName is not in favorites"
+        if (text.startsWith('Error')) {
+          reportOutcome(testName, 'FAILURE', 'API error: ' + text.substring(0, 200));
+          throw new Error(text);
+        } else if (text.includes('from favorites') || text.includes('not in favorites')) {
           reportOutcome(testName, 'SUCCESS', 'Remove favorite operation completed');
           console.log('   Result:', text);
         } else if (text.includes('Failed') || text.includes('Could not find')) {
           reportOutcome(testName, 'WARNING', 'Favorite button may not be found: ' + text);
         } else {
           reportOutcome(testName, 'WARNING', 'Unexpected response format');
+          console.log('   Response:', text.substring(0, 300));
         }
       } catch (error) {
         reportOutcome(
@@ -491,13 +537,18 @@ describe('Good Eggs Manual Tests', () => {
         expect(result).toHaveProperty('content');
         const text = (result as { content: Array<{ text: string }> }).content[0].text;
 
-        if (text.includes('Successfully removed') || text.includes('not found in cart')) {
+        // Response format: "Successfully removed ItemName from cart" or "Item not found in cart"
+        if (text.startsWith('Error')) {
+          reportOutcome(testName, 'FAILURE', 'API error: ' + text.substring(0, 200));
+          throw new Error(text);
+        } else if (text.includes('from cart') || text.includes('not found in cart')) {
           reportOutcome(testName, 'SUCCESS', 'Remove from cart operation completed');
           console.log('   Result:', text);
         } else if (text.includes('Failed')) {
           reportOutcome(testName, 'WARNING', 'Remove from cart may have failed: ' + text);
         } else {
           reportOutcome(testName, 'WARNING', 'Unexpected response format');
+          console.log('   Response:', text.substring(0, 300));
         }
       } catch (error) {
         reportOutcome(

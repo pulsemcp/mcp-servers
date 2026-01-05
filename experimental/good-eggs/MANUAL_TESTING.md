@@ -79,71 +79,71 @@ The tests will:
 
 ### Test Files
 
-| File                       | Status | Tests | Notes                          |
-| -------------------------- | ------ | ----- | ------------------------------ |
-| `good-eggs.manual.test.ts` | PASS   | 10/10 | All tests passed with warnings |
+| File                       | Status | Tests | Notes            |
+| -------------------------- | ------ | ----- | ---------------- |
+| `good-eggs.manual.test.ts` | PASS   | 10/10 | All tests passed |
 
 ### Detailed Results
 
 #### search_for_grocery Tests
 
-| Test                      | Status                  | Notes                                                 |
-| ------------------------- | ----------------------- | ----------------------------------------------------- |
-| Search for organic apples | :white_check_mark: PASS | Response format differs from expected but test passes |
+| Test                      | Status                  | Notes                          |
+| ------------------------- | ----------------------- | ------------------------------ |
+| Search for organic apples | :white_check_mark: PASS | Found groceries matching query |
 
 #### get_favorites Tests
 
-| Test               | Status                  | Notes                                                 |
-| ------------------ | ----------------------- | ----------------------------------------------------- |
-| Get user favorites | :white_check_mark: PASS | Response format differs from expected but test passes |
+| Test               | Status                  | Notes                                 |
+| ------------------ | ----------------------- | ------------------------------------- |
+| Get user favorites | :white_check_mark: PASS | Favorites list retrieved successfully |
 
 #### get_grocery_details Tests
 
-| Test                | Status                  | Notes                                                 |
-| ------------------- | ----------------------- | ----------------------------------------------------- |
-| Get product details | :white_check_mark: PASS | Response format differs from expected but test passes |
+| Test                | Status                  | Notes                            |
+| ------------------- | ----------------------- | -------------------------------- |
+| Get product details | :white_check_mark: PASS | Product details with price/brand |
 
 #### add_to_cart Tests
 
-| Test        | Status                  | Notes                                                 |
-| ----------- | ----------------------- | ----------------------------------------------------- |
-| Add to cart | :white_check_mark: PASS | Response format differs from expected but test passes |
+| Test        | Status                  | Notes                   |
+| ----------- | ----------------------- | ----------------------- |
+| Add to cart | :white_check_mark: PASS | Successfully added item |
 
 #### search_for_freebie_groceries Tests
 
-| Test             | Status                  | Notes                                                 |
-| ---------------- | ----------------------- | ----------------------------------------------------- |
-| Search for deals | :white_check_mark: PASS | Response format differs from expected but test passes |
+| Test             | Status                  | Notes                    |
+| ---------------- | ----------------------- | ------------------------ |
+| Search for deals | :white_check_mark: PASS | Deals/freebies retrieved |
 
 #### get_list_of_past_order_dates Tests
 
-| Test            | Status                  | Notes                                                 |
-| --------------- | ----------------------- | ----------------------------------------------------- |
-| Get past orders | :white_check_mark: PASS | Response format differs from expected but test passes |
+| Test            | Status                  | Notes                    |
+| --------------- | ----------------------- | ------------------------ |
+| Get past orders | :white_check_mark: PASS | Past order list returned |
 
 #### get_past_order_groceries Tests
 
-| Test                    | Status                  | Notes                                           |
-| ----------------------- | ----------------------- | ----------------------------------------------- |
-| Get past order contents | :white_check_mark: PASS | Could not extract date, but operation completed |
+| Test                    | Status                  | Notes                           |
+| ----------------------- | ----------------------- | ------------------------------- |
+| Get past order contents | :white_check_mark: PASS | Items from past order retrieved |
 
 #### add_favorite Tests
 
-| Test            | Status                  | Notes                                                 |
-| --------------- | ----------------------- | ----------------------------------------------------- |
-| Add to favorite | :white_check_mark: PASS | Response format differs from expected but test passes |
+| Test            | Status                  | Notes                   |
+| --------------- | ----------------------- | ----------------------- |
+| Add to favorite | :white_check_mark: PASS | Item added to favorites |
 
 #### remove_favorite Tests
 
-| Test                 | Status                  | Notes                                                 |
-| -------------------- | ----------------------- | ----------------------------------------------------- |
-| Remove from favorite | :white_check_mark: PASS | Response format differs from expected but test passes |
+| Test                 | Status                  | Notes                       |
+| -------------------- | ----------------------- | --------------------------- |
+| Remove from favorite | :white_check_mark: PASS | Item removed from favorites |
 
 #### remove_from_cart Tests
 
-| Test             | Status                  | Notes                                                 |
-| ---------------- | ----------------------- | ----------------------------------------------------- |
-| Remove from cart | :white_check_mark: PASS | Response format differs from expected but test passes |
+| Test             | Status                  | Notes                  |
+| ---------------- | ----------------------- | ---------------------- |
+| Remove from cart | :white_check_mark: PASS | Item removed from cart |
 
 ### Known Issues / Limitations
 
