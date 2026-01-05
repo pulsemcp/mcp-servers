@@ -5,23 +5,26 @@ MCP server for Good Eggs grocery shopping automation using Playwright. Search fo
 ## Features
 
 - **Search Groceries** - Search for any grocery item on Good Eggs
-- **View Favorites** - Get your saved favorite items
+- **Manage Favorites** - Get, add, and remove favorite items
 - **Get Product Details** - View detailed information about any product
-- **Add to Cart** - Add items to your shopping cart with quantity support
-- **Browse Deals** - Find items on sale and freebies
+- **Shopping Cart** - Add and remove items from your shopping cart
+- **Find Freebies** - Find items priced at $0.00 on homepage and fresh-picks
 - **Past Orders** - View your order history and reorder items
 
 ## Tools
 
-| Tool                           | Description                                |
-| ------------------------------ | ------------------------------------------ |
-| `search_for_grocery`           | Search for groceries by keyword            |
-| `get_favorites`                | Get your favorite/saved grocery items      |
-| `get_grocery_details`          | Get detailed info about a specific product |
-| `add_to_cart`                  | Add a product to your shopping cart        |
-| `search_for_freebie_groceries` | Find deals and discounted items            |
-| `get_list_of_past_order_dates` | Get dates of your past orders              |
-| `get_past_order_groceries`     | Get items from a specific past order       |
+| Tool                           | Description                                         |
+| ------------------------------ | --------------------------------------------------- |
+| `search_for_grocery`           | Search for groceries by keyword                     |
+| `get_favorites`                | Get your favorite/saved grocery items               |
+| `get_grocery_details`          | Get detailed info about a specific product          |
+| `add_to_cart`                  | Add a product to your shopping cart                 |
+| `search_for_freebie_groceries` | Find free items ($0.00) on homepage and fresh-picks |
+| `get_list_of_past_order_dates` | Get dates of your past orders                       |
+| `get_past_order_groceries`     | Get items from a specific past order                |
+| `add_favorite`                 | Add a product to your favorites                     |
+| `remove_favorite`              | Remove a product from your favorites                |
+| `remove_from_cart`             | Remove a product from your shopping cart            |
 
 ## Quick Start
 
