@@ -60,52 +60,54 @@ The tests will:
 
 ## Latest Test Results
 
-**Test Date:** Not yet tested
-**Branch:** N/A
-**Commit:** N/A
-**Tested By:** N/A
-**Environment:** N/A
+**Test Date:** 2026-01-04
+**Branch:** tadasant/good-eggs-mcp-server
+**Commit:** e32ffb8
+**Tested By:** Claude Code
+**Environment:** macOS Darwin 25.1.0
 
 ### Summary
 
 | Metric      | Value |
 | ----------- | ----- |
-| Total Tests | 0     |
-| Passed      | 0     |
+| Total Tests | 4     |
+| Passed      | 4     |
 | Failed      | 0     |
-| Pass Rate   | N/A   |
+| Pass Rate   | 100%  |
+
+**Overall:** 4/4 tests passed - 100%
 
 ### Test Files
 
-| File                       | Status | Tests | Notes          |
-| -------------------------- | ------ | ----- | -------------- |
-| `good-eggs.manual.test.ts` | N/A    | 0/0   | Not yet tested |
+| File                       | Status | Tests | Notes                          |
+| -------------------------- | ------ | ----- | ------------------------------ |
+| `good-eggs.manual.test.ts` | PASS   | 4/4   | All tests passed with warnings |
 
 ### Detailed Results
 
 #### search_for_grocery Tests
 
-| Test                      | Status | Notes |
-| ------------------------- | ------ | ----- |
-| Search for organic apples | N/A    |       |
+| Test                      | Status                  | Notes                                                 |
+| ------------------------- | ----------------------- | ----------------------------------------------------- |
+| Search for organic apples | :white_check_mark: PASS | Response format differs from expected but test passes |
 
 #### get_favorites Tests
 
-| Test               | Status | Notes |
-| ------------------ | ------ | ----- |
-| Get user favorites | N/A    |       |
+| Test               | Status                  | Notes                                                 |
+| ------------------ | ----------------------- | ----------------------------------------------------- |
+| Get user favorites | :white_check_mark: PASS | Response format differs from expected but test passes |
 
 #### search_for_freebie_groceries Tests
 
-| Test             | Status | Notes |
-| ---------------- | ------ | ----- |
-| Search for deals | N/A    |       |
+| Test             | Status                  | Notes                                                 |
+| ---------------- | ----------------------- | ----------------------------------------------------- |
+| Search for deals | :white_check_mark: PASS | Response format differs from expected but test passes |
 
 #### get_list_of_past_order_dates Tests
 
-| Test            | Status | Notes |
-| --------------- | ------ | ----- |
-| Get past orders | N/A    |       |
+| Test            | Status                  | Notes                                                 |
+| --------------- | ----------------------- | ----------------------------------------------------- |
+| Get past orders | :white_check_mark: PASS | Response format differs from expected but test passes |
 
 ### Known Issues / Limitations
 
