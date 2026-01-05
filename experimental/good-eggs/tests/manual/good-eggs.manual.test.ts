@@ -68,7 +68,7 @@ describe('Good Eggs Manual Tests', () => {
 
   afterAll(async () => {
     if (client) {
-      await client.close();
+      await client.disconnect();
       client = null;
     }
   });

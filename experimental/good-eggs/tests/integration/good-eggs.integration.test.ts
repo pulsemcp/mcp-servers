@@ -18,7 +18,7 @@ describe('Good Eggs MCP Server Integration Tests', () => {
 
   afterEach(async () => {
     if (client) {
-      await client.close();
+      await client.disconnect();
       client = null;
     }
   });
