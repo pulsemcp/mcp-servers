@@ -19,6 +19,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `search_for_freebie_groceries` tool for finding deals
 - `get_list_of_past_order_dates` tool for order history
 - `get_past_order_groceries` tool for viewing past order items
+- `add_favorite` tool for adding items to favorites
+- `remove_favorite` tool for removing items from favorites
+- `remove_from_cart` tool for removing items from cart
 - Playwright-based browser automation with stealth mode
 - Automatic login on first tool use
 - Persistent browser session across tool calls

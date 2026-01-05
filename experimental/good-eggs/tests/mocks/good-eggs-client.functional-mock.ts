@@ -118,6 +118,30 @@ export function createMockGoodEggsClient(): IGoodEggsClient {
       ];
     },
 
+    addFavorite: async (_groceryUrl: string): Promise<CartResult> => {
+      return {
+        success: true,
+        message: 'Successfully added Organic Honeycrisp Apples to favorites',
+        itemName: 'Organic Honeycrisp Apples',
+      };
+    },
+
+    removeFavorite: async (_groceryUrl: string): Promise<CartResult> => {
+      return {
+        success: true,
+        message: 'Successfully removed Organic Honeycrisp Apples from favorites',
+        itemName: 'Organic Honeycrisp Apples',
+      };
+    },
+
+    removeFromCart: async (_groceryUrl: string): Promise<CartResult> => {
+      return {
+        success: true,
+        message: 'Successfully removed Organic Honeycrisp Apples from cart',
+        itemName: 'Organic Honeycrisp Apples',
+      };
+    },
+
     getCurrentUrl: async (): Promise<string> => {
       return 'https://www.goodeggs.com/home';
     },

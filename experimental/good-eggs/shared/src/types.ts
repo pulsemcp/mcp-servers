@@ -82,6 +82,24 @@ export const GetPastOrderGroceriesSchema = z.object({
     .describe('The date of the past order to get groceries from (e.g., "2024-01-15")'),
 });
 
+export const AddFavoriteSchema = z.object({
+  grocery_url: goodEggsUrlSchema.describe(
+    'The Good Eggs URL of the grocery item to add to favorites'
+  ),
+});
+
+export const RemoveFavoriteSchema = z.object({
+  grocery_url: goodEggsUrlSchema.describe(
+    'The Good Eggs URL of the grocery item to remove from favorites'
+  ),
+});
+
+export const RemoveFromCartSchema = z.object({
+  grocery_url: goodEggsUrlSchema.describe(
+    'The Good Eggs URL of the grocery item to remove from cart'
+  ),
+});
+
 // =============================================================================
 // Playwright Configuration
 // =============================================================================

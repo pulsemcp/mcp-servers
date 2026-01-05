@@ -150,4 +150,47 @@ describe('Good Eggs Tools', () => {
       );
     });
   });
+
+  describe('add_favorite', () => {
+    it('should add item to favorites', async () => {
+      const result = await callTool('add_favorite', {
+        grocery_url: 'https://www.goodeggs.com/product/123',
+      });
+
+      expect((result as { content: Array<{ text: string }> }).content[0].text).toContain(
+        'Successfully added'
+      );
+      expect((result as { content: Array<{ text: string }> }).content[0].text).toContain(
+        'favorites'
+      );
+    });
+  });
+
+  describe('remove_favorite', () => {
+    it('should remove item from favorites', async () => {
+      const result = await callTool('remove_favorite', {
+        grocery_url: 'https://www.goodeggs.com/product/123',
+      });
+
+      expect((result as { content: Array<{ text: string }> }).content[0].text).toContain(
+        'Successfully removed'
+      );
+      expect((result as { content: Array<{ text: string }> }).content[0].text).toContain(
+        'favorites'
+      );
+    });
+  });
+
+  describe('remove_from_cart', () => {
+    it('should remove item from cart', async () => {
+      const result = await callTool('remove_from_cart', {
+        grocery_url: 'https://www.goodeggs.com/product/123',
+      });
+
+      expect((result as { content: Array<{ text: string }> }).content[0].text).toContain(
+        'Successfully removed'
+      );
+      expect((result as { content: Array<{ text: string }> }).content[0].text).toContain('cart');
+    });
+  });
 });

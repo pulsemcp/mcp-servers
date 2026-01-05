@@ -208,4 +208,305 @@ describe('Good Eggs Manual Tests', () => {
       }
     }, 60000);
   });
+
+  describe('get_grocery_details', () => {
+    it('should get grocery details from real Good Eggs', async () => {
+      const testName = 'get_grocery_details - real product';
+
+      if (!client) {
+        reportOutcome(testName, 'WARNING', 'Skipped - no credentials provided');
+        return;
+      }
+
+      try {
+        // First search for a product to get a real URL
+        const searchResult = await client.callTool('search_for_grocery', {
+          query: 'milk',
+        });
+        const searchText = (searchResult as { content: Array<{ text: string }> }).content[0].text;
+
+        // Extract a URL from the search results
+        const urlMatch = searchText.match(/https:\/\/www\.goodeggs\.com\/[^\s]+/);
+        if (!urlMatch) {
+          reportOutcome(testName, 'WARNING', 'Could not find a product URL from search');
+          return;
+        }
+
+        const result = await client.callTool('get_grocery_details', {
+          grocery_url: urlMatch[0],
+        });
+
+        expect(result).toHaveProperty('content');
+        const text = (result as { content: Array<{ text: string }> }).content[0].text;
+
+        if (text.includes('Price:') || text.includes('Brand:')) {
+          reportOutcome(testName, 'SUCCESS', 'Product details retrieved');
+          console.log('   First 500 chars:', text.substring(0, 500));
+        } else {
+          reportOutcome(testName, 'WARNING', 'Unexpected response format');
+        }
+      } catch (error) {
+        reportOutcome(
+          testName,
+          'FAILURE',
+          error instanceof Error ? error.message : 'Unknown error'
+        );
+        throw error;
+      }
+    }, 90000);
+  });
+
+  describe('add_to_cart', () => {
+    it('should add item to cart on real Good Eggs', async () => {
+      const testName = 'add_to_cart - real add';
+
+      if (!client) {
+        reportOutcome(testName, 'WARNING', 'Skipped - no credentials provided');
+        return;
+      }
+
+      try {
+        // First search for a product to get a real URL
+        const searchResult = await client.callTool('search_for_grocery', {
+          query: 'banana',
+        });
+        const searchText = (searchResult as { content: Array<{ text: string }> }).content[0].text;
+
+        // Extract a URL from the search results
+        const urlMatch = searchText.match(/https:\/\/www\.goodeggs\.com\/[^\s]+/);
+        if (!urlMatch) {
+          reportOutcome(testName, 'WARNING', 'Could not find a product URL from search');
+          return;
+        }
+
+        const result = await client.callTool('add_to_cart', {
+          grocery_url: urlMatch[0],
+          quantity: 1,
+        });
+
+        expect(result).toHaveProperty('content');
+        const text = (result as { content: Array<{ text: string }> }).content[0].text;
+
+        if (text.includes('Successfully added') || text.includes('add to cart')) {
+          reportOutcome(testName, 'SUCCESS', 'Item added to cart');
+          console.log('   Result:', text);
+        } else if (text.includes('Failed')) {
+          reportOutcome(testName, 'WARNING', 'Add to cart may have failed: ' + text);
+        } else {
+          reportOutcome(testName, 'WARNING', 'Unexpected response format');
+        }
+      } catch (error) {
+        reportOutcome(
+          testName,
+          'FAILURE',
+          error instanceof Error ? error.message : 'Unknown error'
+        );
+        throw error;
+      }
+    }, 90000);
+  });
+
+  describe('get_past_order_groceries', () => {
+    it('should get groceries from past order on real Good Eggs', async () => {
+      const testName = 'get_past_order_groceries - real order';
+
+      if (!client) {
+        reportOutcome(testName, 'WARNING', 'Skipped - no credentials provided');
+        return;
+      }
+
+      try {
+        // First get past order dates
+        const datesResult = await client.callTool('get_list_of_past_order_dates', {});
+        const datesText = (datesResult as { content: Array<{ text: string }> }).content[0].text;
+
+        if (datesText.includes('No past orders')) {
+          reportOutcome(testName, 'WARNING', 'No past orders to test with');
+          return;
+        }
+
+        // Extract a date from the results (look for a pattern like "January 3, 2025")
+        const dateMatch = datesText.match(/\*\*([A-Za-z]+ \d+, \d{4})\*\*/);
+        if (!dateMatch) {
+          reportOutcome(testName, 'WARNING', 'Could not extract date from past orders');
+          return;
+        }
+
+        const result = await client.callTool('get_past_order_groceries', {
+          past_order_date: dateMatch[1],
+        });
+
+        expect(result).toHaveProperty('content');
+        const text = (result as { content: Array<{ text: string }> }).content[0].text;
+
+        if (text.includes('items from order') || text.includes('No items found')) {
+          reportOutcome(testName, 'SUCCESS', 'Past order groceries retrieved');
+          console.log('   First 500 chars:', text.substring(0, 500));
+        } else {
+          reportOutcome(testName, 'WARNING', 'Unexpected response format');
+        }
+      } catch (error) {
+        reportOutcome(
+          testName,
+          'FAILURE',
+          error instanceof Error ? error.message : 'Unknown error'
+        );
+        throw error;
+      }
+    }, 90000);
+  });
+
+  describe('add_favorite', () => {
+    it('should add item to favorites on real Good Eggs', async () => {
+      const testName = 'add_favorite - real add';
+
+      if (!client) {
+        reportOutcome(testName, 'WARNING', 'Skipped - no credentials provided');
+        return;
+      }
+
+      try {
+        // First search for a product to get a real URL
+        const searchResult = await client.callTool('search_for_grocery', {
+          query: 'avocado',
+        });
+        const searchText = (searchResult as { content: Array<{ text: string }> }).content[0].text;
+
+        // Extract a URL from the search results
+        const urlMatch = searchText.match(/https:\/\/www\.goodeggs\.com\/[^\s]+/);
+        if (!urlMatch) {
+          reportOutcome(testName, 'WARNING', 'Could not find a product URL from search');
+          return;
+        }
+
+        const result = await client.callTool('add_favorite', {
+          grocery_url: urlMatch[0],
+        });
+
+        expect(result).toHaveProperty('content');
+        const text = (result as { content: Array<{ text: string }> }).content[0].text;
+
+        if (text.includes('Successfully added') || text.includes('already in favorites')) {
+          reportOutcome(testName, 'SUCCESS', 'Favorite operation completed');
+          console.log('   Result:', text);
+        } else if (text.includes('Failed') || text.includes('Could not find')) {
+          reportOutcome(testName, 'WARNING', 'Favorite button may not be found: ' + text);
+        } else {
+          reportOutcome(testName, 'WARNING', 'Unexpected response format');
+        }
+      } catch (error) {
+        reportOutcome(
+          testName,
+          'FAILURE',
+          error instanceof Error ? error.message : 'Unknown error'
+        );
+        throw error;
+      }
+    }, 90000);
+  });
+
+  describe('remove_favorite', () => {
+    it('should remove item from favorites on real Good Eggs', async () => {
+      const testName = 'remove_favorite - real remove';
+
+      if (!client) {
+        reportOutcome(testName, 'WARNING', 'Skipped - no credentials provided');
+        return;
+      }
+
+      try {
+        // First search for a product to get a real URL
+        const searchResult = await client.callTool('search_for_grocery', {
+          query: 'avocado',
+        });
+        const searchText = (searchResult as { content: Array<{ text: string }> }).content[0].text;
+
+        // Extract a URL from the search results
+        const urlMatch = searchText.match(/https:\/\/www\.goodeggs\.com\/[^\s]+/);
+        if (!urlMatch) {
+          reportOutcome(testName, 'WARNING', 'Could not find a product URL from search');
+          return;
+        }
+
+        const result = await client.callTool('remove_favorite', {
+          grocery_url: urlMatch[0],
+        });
+
+        expect(result).toHaveProperty('content');
+        const text = (result as { content: Array<{ text: string }> }).content[0].text;
+
+        if (text.includes('Successfully removed') || text.includes('not in favorites')) {
+          reportOutcome(testName, 'SUCCESS', 'Remove favorite operation completed');
+          console.log('   Result:', text);
+        } else if (text.includes('Failed') || text.includes('Could not find')) {
+          reportOutcome(testName, 'WARNING', 'Favorite button may not be found: ' + text);
+        } else {
+          reportOutcome(testName, 'WARNING', 'Unexpected response format');
+        }
+      } catch (error) {
+        reportOutcome(
+          testName,
+          'FAILURE',
+          error instanceof Error ? error.message : 'Unknown error'
+        );
+        throw error;
+      }
+    }, 90000);
+  });
+
+  describe('remove_from_cart', () => {
+    it('should remove item from cart on real Good Eggs', async () => {
+      const testName = 'remove_from_cart - real remove';
+
+      if (!client) {
+        reportOutcome(testName, 'WARNING', 'Skipped - no credentials provided');
+        return;
+      }
+
+      try {
+        // First, add something to cart
+        const searchResult = await client.callTool('search_for_grocery', {
+          query: 'bread',
+        });
+        const searchText = (searchResult as { content: Array<{ text: string }> }).content[0].text;
+
+        // Extract a URL from the search results
+        const urlMatch = searchText.match(/https:\/\/www\.goodeggs\.com\/[^\s]+/);
+        if (!urlMatch) {
+          reportOutcome(testName, 'WARNING', 'Could not find a product URL from search');
+          return;
+        }
+
+        // Add to cart first
+        await client.callTool('add_to_cart', {
+          grocery_url: urlMatch[0],
+          quantity: 1,
+        });
+
+        // Now try to remove it
+        const result = await client.callTool('remove_from_cart', {
+          grocery_url: urlMatch[0],
+        });
+
+        expect(result).toHaveProperty('content');
+        const text = (result as { content: Array<{ text: string }> }).content[0].text;
+
+        if (text.includes('Successfully removed') || text.includes('not found in cart')) {
+          reportOutcome(testName, 'SUCCESS', 'Remove from cart operation completed');
+          console.log('   Result:', text);
+        } else if (text.includes('Failed')) {
+          reportOutcome(testName, 'WARNING', 'Remove from cart may have failed: ' + text);
+        } else {
+          reportOutcome(testName, 'WARNING', 'Unexpected response format');
+        }
+      } catch (error) {
+        reportOutcome(
+          testName,
+          'FAILURE',
+          error instanceof Error ? error.message : 'Unknown error'
+        );
+        throw error;
+      }
+    }, 120000);
+  });
 });

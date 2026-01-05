@@ -57,6 +57,21 @@ export interface IGoodEggsClient {
   getPastOrderGroceries(orderDate: string): Promise<GroceryItem[]>;
 
   /**
+   * Add an item to favorites
+   */
+  addFavorite(groceryUrl: string): Promise<CartResult>;
+
+  /**
+   * Remove an item from favorites
+   */
+  removeFavorite(groceryUrl: string): Promise<CartResult>;
+
+  /**
+   * Remove an item from the cart
+   */
+  removeFromCart(groceryUrl: string): Promise<CartResult>;
+
+  /**
    * Get the current page URL
    */
   getCurrentUrl(): Promise<string>;
@@ -583,6 +598,194 @@ export class GoodEggsClient implements IGoodEggsClient {
     });
 
     return items;
+  }
+
+  async addFavorite(groceryUrl: string): Promise<CartResult> {
+    const page = await this.ensureBrowser();
+
+    // Navigate to the product page if not already there
+    const currentUrl = page.url();
+    const normalizedGroceryUrl = groceryUrl.replace(BASE_URL, '');
+    const normalizedCurrentUrl = currentUrl.replace(BASE_URL, '');
+
+    if (!normalizedCurrentUrl.includes(normalizedGroceryUrl.split('/').pop() || '')) {
+      const fullUrl = groceryUrl.startsWith('http') ? groceryUrl : `${BASE_URL}${groceryUrl}`;
+      await page.goto(fullUrl, { waitUntil: 'networkidle' });
+    }
+
+    // Get the product name for the result
+    const itemName = await page.evaluate(() => {
+      const nameEl = document.querySelector('h1, [class*="product-name"], [class*="title"]');
+      return nameEl?.textContent?.trim() || 'Unknown item';
+    });
+
+    // Look for the favorite/heart button
+    const favoriteButton = await page.$(
+      'button[aria-label*="favorite"], button[aria-label*="heart"], button:has([class*="heart"]), [class*="favorite"] button, button[class*="favorite"]'
+    );
+
+    if (!favoriteButton) {
+      return {
+        success: false,
+        message: 'Could not find favorite button',
+        itemName,
+      };
+    }
+
+    // Check if already favorited (button might have "filled" or "active" state)
+    const isAlreadyFavorited = await page.evaluate((btn) => {
+      const classList = btn.className || '';
+      const ariaPressed = btn.getAttribute('aria-pressed');
+      return (
+        classList.includes('active') ||
+        classList.includes('filled') ||
+        classList.includes('favorited') ||
+        ariaPressed === 'true'
+      );
+    }, favoriteButton);
+
+    if (isAlreadyFavorited) {
+      return {
+        success: true,
+        message: `${itemName} is already in favorites`,
+        itemName,
+      };
+    }
+
+    await favoriteButton.click();
+    await page.waitForTimeout(500);
+
+    return {
+      success: true,
+      message: `Successfully added ${itemName} to favorites`,
+      itemName,
+    };
+  }
+
+  async removeFavorite(groceryUrl: string): Promise<CartResult> {
+    const page = await this.ensureBrowser();
+
+    // Navigate to the product page if not already there
+    const currentUrl = page.url();
+    const normalizedGroceryUrl = groceryUrl.replace(BASE_URL, '');
+    const normalizedCurrentUrl = currentUrl.replace(BASE_URL, '');
+
+    if (!normalizedCurrentUrl.includes(normalizedGroceryUrl.split('/').pop() || '')) {
+      const fullUrl = groceryUrl.startsWith('http') ? groceryUrl : `${BASE_URL}${groceryUrl}`;
+      await page.goto(fullUrl, { waitUntil: 'networkidle' });
+    }
+
+    // Get the product name for the result
+    const itemName = await page.evaluate(() => {
+      const nameEl = document.querySelector('h1, [class*="product-name"], [class*="title"]');
+      return nameEl?.textContent?.trim() || 'Unknown item';
+    });
+
+    // Look for the favorite/heart button
+    const favoriteButton = await page.$(
+      'button[aria-label*="favorite"], button[aria-label*="heart"], button:has([class*="heart"]), [class*="favorite"] button, button[class*="favorite"]'
+    );
+
+    if (!favoriteButton) {
+      return {
+        success: false,
+        message: 'Could not find favorite button',
+        itemName,
+      };
+    }
+
+    // Check if already favorited (button might have "filled" or "active" state)
+    const isFavorited = await page.evaluate((btn) => {
+      const classList = btn.className || '';
+      const ariaPressed = btn.getAttribute('aria-pressed');
+      return (
+        classList.includes('active') ||
+        classList.includes('filled') ||
+        classList.includes('favorited') ||
+        ariaPressed === 'true'
+      );
+    }, favoriteButton);
+
+    if (!isFavorited) {
+      return {
+        success: true,
+        message: `${itemName} is not in favorites`,
+        itemName,
+      };
+    }
+
+    await favoriteButton.click();
+    await page.waitForTimeout(500);
+
+    return {
+      success: true,
+      message: `Successfully removed ${itemName} from favorites`,
+      itemName,
+    };
+  }
+
+  async removeFromCart(groceryUrl: string): Promise<CartResult> {
+    const page = await this.ensureBrowser();
+
+    // Navigate to cart page
+    await page.goto(`${BASE_URL}/basket`, { waitUntil: 'networkidle' });
+    await page.waitForTimeout(1000);
+
+    // Try to find the item in the cart by its URL or name
+    // First, let's get the product name from the URL if possible
+    const productSlug = groceryUrl.split('/').pop() || '';
+
+    // Look for the item in the cart
+    const cartItems = await page.$$(
+      '[class*="cart-item"], [class*="basket-item"], [class*="line-item"]'
+    );
+
+    let itemFound = false;
+    let itemName = 'Unknown item';
+
+    for (const cartItem of cartItems) {
+      // Check if this cart item contains a link to our product
+      const itemLink = await cartItem.$(`a[href*="${productSlug}"]`);
+      if (itemLink) {
+        itemFound = true;
+
+        // Get the item name
+        const nameEl = await cartItem.$('[class*="name"], [class*="title"], h3, h4');
+        if (nameEl) {
+          itemName = (await nameEl.textContent()) || 'Unknown item';
+        }
+
+        // Find and click the remove button
+        const removeButton = await cartItem.$(
+          'button[aria-label*="remove"], button:has-text("Remove"), button:has-text("×"), [class*="remove"] button'
+        );
+
+        if (removeButton) {
+          await removeButton.click();
+          await page.waitForTimeout(500);
+
+          return {
+            success: true,
+            message: `Successfully removed ${itemName.trim()} from cart`,
+            itemName: itemName.trim(),
+          };
+        }
+      }
+    }
+
+    if (!itemFound) {
+      return {
+        success: false,
+        message: 'Item not found in cart',
+        itemName: productSlug,
+      };
+    }
+
+    return {
+      success: false,
+      message: 'Could not find remove button for item in cart',
+      itemName,
+    };
   }
 
   async getCurrentUrl(): Promise<string> {

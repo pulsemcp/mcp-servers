@@ -6,6 +6,9 @@ import {
   GetGroceryDetailsSchema,
   AddToCartSchema,
   GetPastOrderGroceriesSchema,
+  AddFavoriteSchema,
+  RemoveFavoriteSchema,
+  RemoveFromCartSchema,
 } from './types.js';
 
 // =============================================================================
@@ -85,6 +88,27 @@ Returns a list of items from that order including:
 
 Useful for reordering frequently purchased items.
 Requires the user to be logged in.`;
+
+const ADD_FAVORITE_DESCRIPTION = `Add a grocery item to your favorites.
+
+Provide the Good Eggs URL of the item to add to favorites.
+If the item is already in favorites, it will let you know.
+
+Returns confirmation of the action taken.`;
+
+const REMOVE_FAVORITE_DESCRIPTION = `Remove a grocery item from your favorites.
+
+Provide the Good Eggs URL of the item to remove from favorites.
+If the item is not in favorites, it will let you know.
+
+Returns confirmation of the action taken.`;
+
+const REMOVE_FROM_CART_DESCRIPTION = `Remove a grocery item from your shopping cart.
+
+Provide the Good Eggs URL of the item to remove from your cart.
+Navigates to the cart and removes the specified item.
+
+Returns confirmation of the removal or an error if the item is not in the cart.`;
 
 // =============================================================================
 // TOOL DEFINITIONS
@@ -493,6 +517,135 @@ export function createRegisterTools(clientFactory: ClientFactory) {
               {
                 type: 'text',
                 text: `Error getting past order groceries: ${error instanceof Error ? error.message : String(error)}`,
+              },
+            ],
+            isError: true,
+          };
+        }
+      },
+    },
+    {
+      name: 'add_favorite',
+      description: ADD_FAVORITE_DESCRIPTION,
+      inputSchema: {
+        type: 'object' as const,
+        properties: {
+          grocery_url: {
+            type: 'string',
+            description: 'The Good Eggs URL of the grocery item to add to favorites',
+          },
+        },
+        required: ['grocery_url'],
+      },
+      handler: async (args: unknown) => {
+        try {
+          const validated = AddFavoriteSchema.parse(args);
+          const goodEggsClient = await getClient();
+          const result = await goodEggsClient.addFavorite(validated.grocery_url);
+
+          return {
+            content: [
+              {
+                type: 'text',
+                text: result.success
+                  ? result.message
+                  : `Failed to add to favorites: ${result.message}`,
+              },
+            ],
+            isError: !result.success,
+          };
+        } catch (error) {
+          return {
+            content: [
+              {
+                type: 'text',
+                text: `Error adding to favorites: ${error instanceof Error ? error.message : String(error)}`,
+              },
+            ],
+            isError: true,
+          };
+        }
+      },
+    },
+    {
+      name: 'remove_favorite',
+      description: REMOVE_FAVORITE_DESCRIPTION,
+      inputSchema: {
+        type: 'object' as const,
+        properties: {
+          grocery_url: {
+            type: 'string',
+            description: 'The Good Eggs URL of the grocery item to remove from favorites',
+          },
+        },
+        required: ['grocery_url'],
+      },
+      handler: async (args: unknown) => {
+        try {
+          const validated = RemoveFavoriteSchema.parse(args);
+          const goodEggsClient = await getClient();
+          const result = await goodEggsClient.removeFavorite(validated.grocery_url);
+
+          return {
+            content: [
+              {
+                type: 'text',
+                text: result.success
+                  ? result.message
+                  : `Failed to remove from favorites: ${result.message}`,
+              },
+            ],
+            isError: !result.success,
+          };
+        } catch (error) {
+          return {
+            content: [
+              {
+                type: 'text',
+                text: `Error removing from favorites: ${error instanceof Error ? error.message : String(error)}`,
+              },
+            ],
+            isError: true,
+          };
+        }
+      },
+    },
+    {
+      name: 'remove_from_cart',
+      description: REMOVE_FROM_CART_DESCRIPTION,
+      inputSchema: {
+        type: 'object' as const,
+        properties: {
+          grocery_url: {
+            type: 'string',
+            description: 'The Good Eggs URL of the grocery item to remove from cart',
+          },
+        },
+        required: ['grocery_url'],
+      },
+      handler: async (args: unknown) => {
+        try {
+          const validated = RemoveFromCartSchema.parse(args);
+          const goodEggsClient = await getClient();
+          const result = await goodEggsClient.removeFromCart(validated.grocery_url);
+
+          return {
+            content: [
+              {
+                type: 'text',
+                text: result.success
+                  ? result.message
+                  : `Failed to remove from cart: ${result.message}`,
+              },
+            ],
+            isError: !result.success,
+          };
+        } catch (error) {
+          return {
+            content: [
+              {
+                type: 'text',
+                text: `Error removing from cart: ${error instanceof Error ? error.message : String(error)}`,
               },
             ],
             isError: true,
