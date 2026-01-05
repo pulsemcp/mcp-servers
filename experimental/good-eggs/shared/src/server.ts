@@ -449,8 +449,11 @@ export class GoodEggsClient implements IGoodEggsClient {
           const priceEl = container.querySelector('[class*="price"]');
           const priceText = priceEl?.textContent?.trim() || '';
 
-          // Only include items that are free ($0.00)
-          if (!priceText.includes('$0.00') && !priceText.includes('$0')) {
+          // Only include items that are truly free ($0.00 or $0)
+          // Must use exact matching to avoid false positives like $10.00, $20.50
+          const isFree =
+            /^\$0(\.00)?$/.test(priceText) || priceText === '$0.00' || priceText === '$0';
+          if (!isFree) {
             return;
           }
 
