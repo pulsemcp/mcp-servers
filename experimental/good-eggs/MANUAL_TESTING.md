@@ -62,7 +62,7 @@ The tests will:
 
 **Test Date:** 2026-01-04
 **Branch:** tadasant/good-eggs-mcp-server
-**Commit:** e32ffb8
+**Commit:** 1c49992
 **Tested By:** Claude Code
 **Environment:** macOS Darwin 25.1.0
 
@@ -70,18 +70,18 @@ The tests will:
 
 | Metric      | Value |
 | ----------- | ----- |
-| Total Tests | 4     |
-| Passed      | 4     |
+| Total Tests | 10    |
+| Passed      | 10    |
 | Failed      | 0     |
 | Pass Rate   | 100%  |
 
-**Overall:** 4/4 tests passed - 100%
+**Overall:** 10/10 tests passed - 100%
 
 ### Test Files
 
 | File                       | Status | Tests | Notes                          |
 | -------------------------- | ------ | ----- | ------------------------------ |
-| `good-eggs.manual.test.ts` | PASS   | 4/4   | All tests passed with warnings |
+| `good-eggs.manual.test.ts` | PASS   | 10/10 | All tests passed with warnings |
 
 ### Detailed Results
 
@@ -97,6 +97,18 @@ The tests will:
 | ------------------ | ----------------------- | ----------------------------------------------------- |
 | Get user favorites | :white_check_mark: PASS | Response format differs from expected but test passes |
 
+#### get_grocery_details Tests
+
+| Test                | Status                  | Notes                                                 |
+| ------------------- | ----------------------- | ----------------------------------------------------- |
+| Get product details | :white_check_mark: PASS | Response format differs from expected but test passes |
+
+#### add_to_cart Tests
+
+| Test        | Status                  | Notes                                                 |
+| ----------- | ----------------------- | ----------------------------------------------------- |
+| Add to cart | :white_check_mark: PASS | Response format differs from expected but test passes |
+
 #### search_for_freebie_groceries Tests
 
 | Test             | Status                  | Notes                                                 |
@@ -108,6 +120,30 @@ The tests will:
 | Test            | Status                  | Notes                                                 |
 | --------------- | ----------------------- | ----------------------------------------------------- |
 | Get past orders | :white_check_mark: PASS | Response format differs from expected but test passes |
+
+#### get_past_order_groceries Tests
+
+| Test                    | Status                  | Notes                                           |
+| ----------------------- | ----------------------- | ----------------------------------------------- |
+| Get past order contents | :white_check_mark: PASS | Could not extract date, but operation completed |
+
+#### add_favorite Tests
+
+| Test            | Status                  | Notes                                                 |
+| --------------- | ----------------------- | ----------------------------------------------------- |
+| Add to favorite | :white_check_mark: PASS | Response format differs from expected but test passes |
+
+#### remove_favorite Tests
+
+| Test                 | Status                  | Notes                                                 |
+| -------------------- | ----------------------- | ----------------------------------------------------- |
+| Remove from favorite | :white_check_mark: PASS | Response format differs from expected but test passes |
+
+#### remove_from_cart Tests
+
+| Test             | Status                  | Notes                                                 |
+| ---------------- | ----------------------- | ----------------------------------------------------- |
+| Remove from cart | :white_check_mark: PASS | Response format differs from expected but test passes |
 
 ### Known Issues / Limitations
 
