@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Configurable Playwright timeout support via `page.setDefaultTimeout()` and `page.setDefaultNavigationTimeout()`
+- New `NAVIGATION_TIMEOUT` environment variable (default: 60000ms) for page navigation operations like `page.goto()` and `page.reload()`
+- `TIMEOUT` environment variable now applies to all Playwright actions (click, fill, etc.), not just `browser_execute` code execution
+
 ## [0.0.1] - 2026-01-03
 
 ### Added

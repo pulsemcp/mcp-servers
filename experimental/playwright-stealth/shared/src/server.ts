@@ -85,6 +85,10 @@ export class PlaywrightClient implements IPlaywrightClient {
 
     this.page = await this.context.newPage();
 
+    // Apply timeout configuration to Playwright
+    this.page.setDefaultTimeout(this.config.timeout);
+    this.page.setDefaultNavigationTimeout(this.config.navigationTimeout);
+
     // Capture console messages
     this.page.on('console', (msg) => {
       this.consoleMessages.push(`[${msg.type()}] ${msg.text()}`);
@@ -203,11 +207,13 @@ export function createMCPServer() {
       (() => {
         const headless = process.env.HEADLESS !== 'false';
         const timeout = parseInt(process.env.TIMEOUT || '30000', 10);
+        const navigationTimeout = parseInt(process.env.NAVIGATION_TIMEOUT || '60000', 10);
 
         activeClient = new PlaywrightClient({
           stealthMode,
           headless,
           timeout,
+          navigationTimeout,
         });
         return activeClient;
       });

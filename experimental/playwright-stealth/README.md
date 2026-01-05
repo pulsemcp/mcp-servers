@@ -62,11 +62,12 @@ Add to your Claude Desktop config file:
 
 ### Environment Variables
 
-| Variable       | Description                                      | Default |
-| -------------- | ------------------------------------------------ | ------- |
-| `STEALTH_MODE` | Enable stealth mode with anti-detection measures | `false` |
-| `HEADLESS`     | Run browser in headless mode                     | `true`  |
-| `TIMEOUT`      | Default execution timeout in milliseconds        | `30000` |
+| Variable             | Description                                                                | Default |
+| -------------------- | -------------------------------------------------------------------------- | ------- |
+| `STEALTH_MODE`       | Enable stealth mode with anti-detection measures                           | `false` |
+| `HEADLESS`           | Run browser in headless mode                                               | `true`  |
+| `TIMEOUT`            | Default timeout for Playwright actions (click, fill, etc.) in milliseconds | `30000` |
+| `NAVIGATION_TIMEOUT` | Default timeout for page navigation (goto, reload, etc.) in milliseconds   | `60000` |
 
 ## Available Tools
 
