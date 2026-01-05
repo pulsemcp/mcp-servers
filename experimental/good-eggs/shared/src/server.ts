@@ -735,6 +735,15 @@ export class GoodEggsClient implements IGoodEggsClient {
     // First, let's get the product name from the URL if possible
     const productSlug = groceryUrl.split('/').pop() || '';
 
+    // Validate that we have a valid product slug to search for
+    if (!productSlug || productSlug.length < 3) {
+      return {
+        success: false,
+        message: 'Invalid grocery URL - could not extract product identifier',
+        itemName: groceryUrl,
+      };
+    }
+
     // Look for the item in the cart
     const cartItems = await page.$$(
       '[class*="cart-item"], [class*="basket-item"], [class*="line-item"]'

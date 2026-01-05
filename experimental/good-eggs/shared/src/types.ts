@@ -70,10 +70,12 @@ export const AddToCartSchema = z.object({
   grocery_url: goodEggsUrlSchema.describe('The Good Eggs URL of the grocery item to add to cart'),
   quantity: z
     .number()
+    .int('Quantity must be a whole number')
     .min(1)
+    .max(99, 'Quantity cannot exceed 99')
     .optional()
     .default(1)
-    .describe('Quantity to add (minimum 1, default: 1)'),
+    .describe('Quantity to add (minimum 1, maximum 99, default: 1)'),
 });
 
 export const GetPastOrderGroceriesSchema = z.object({

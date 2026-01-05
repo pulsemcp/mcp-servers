@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Added maximum quantity validation (1-99) with integer check to `add_to_cart` tool
+- Added validation for empty product identifiers in `remove_from_cart` tool
+
 ## [0.1.0] - 2026-01-04
 
 ### Added
