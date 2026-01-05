@@ -23,9 +23,9 @@ npm run test:manual
 
 ## Latest Test Results
 
-**Test Date:** 2026-01-03
-**Branch:** tadasant/playwright-stealth-mcp-server
-**Commit:** e0022b8
+**Test Date:** 2026-01-05
+**Branch:** claude/playwright-stealth-configurable-timeout
+**Commit:** b5a26ad
 **Tested By:** Claude
 
 ### Summary

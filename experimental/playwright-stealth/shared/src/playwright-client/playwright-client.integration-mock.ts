@@ -86,5 +86,6 @@ export function createMockPlaywrightClient(): IPlaywrightClient {
     stealthMode: false,
     headless: true,
     timeout: 30000,
+    navigationTimeout: 60000,
   });
 }

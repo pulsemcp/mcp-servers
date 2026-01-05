@@ -6,6 +6,7 @@ export interface PlaywrightConfig {
   stealthMode: boolean;
   headless: boolean;
   timeout: number;
+  navigationTimeout: number;
 }
 
 export interface ExecuteResult {
