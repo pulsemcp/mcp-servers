@@ -1,0 +1,37 @@
+# Changelog
+
+All notable changes to this project will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [Unreleased]
+
+### Changed
+
+- Added maximum quantity validation (1-99) with integer check to `add_to_cart` tool
+- Added validation for empty product identifiers in `remove_from_cart` tool
+- Fixed `search_for_freebie_groceries` to check homepage and /fresh-picks for $0.00 items instead of deals page
+
+## [0.1.0] - 2026-01-04
+
+### Added
+
+- Initial implementation of Good Eggs MCP server
+- `search_for_grocery` tool for searching grocery items
+- `get_favorites` tool for retrieving user's favorite items
+- `get_grocery_details` tool for product details
+- `add_to_cart` tool for adding items to shopping cart
+- `search_for_freebie_groceries` tool for finding deals
+- `get_list_of_past_order_dates` tool for order history
+- `get_past_order_groceries` tool for viewing past order items
+- `add_favorite` tool for adding items to favorites
+- `remove_favorite` tool for removing items from favorites
+- `remove_from_cart` tool for removing items from cart
+- Playwright-based browser automation with stealth mode
+- Automatic login on first tool use
+- Persistent browser session across tool calls
+- Smart page detection to minimize navigation
+- URL validation to ensure only Good Eggs URLs are accepted
+- Minimum quantity validation (quantity must be >= 1)
+- Explicit error handling when quantity cannot be set
