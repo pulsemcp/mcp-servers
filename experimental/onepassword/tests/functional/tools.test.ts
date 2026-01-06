@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { listVaultsTool } from '../../shared/src/tools/list-vaults-tool.js';
 import { listItemsTool } from '../../shared/src/tools/list-items-tool.js';
@@ -7,6 +7,11 @@ import { listItemsByTagTool } from '../../shared/src/tools/list-items-by-tag-too
 import { createLoginTool } from '../../shared/src/tools/create-login-tool.js';
 import { createSecureNoteTool } from '../../shared/src/tools/create-secure-note-tool.js';
 import { createMockOnePasswordClient } from '../mocks/onepassword-client.functional-mock.js';
+import {
+  OnePasswordNotFoundError,
+  OnePasswordAuthenticationError,
+  OnePasswordCommandError,
+} from '../../shared/src/types.js';
 
 describe('1Password Tools', () => {
   let mockServer: Server;
@@ -146,6 +151,71 @@ describe('1Password Tools', () => {
         'secret content',
         undefined
       );
+    });
+  });
+
+  // =============================================================================
+  // ERROR HANDLING TESTS
+  // =============================================================================
+  describe('Error Handling', () => {
+    it('should handle NotFoundError gracefully', async () => {
+      mockClient.getItem = vi
+        .fn()
+        .mockRejectedValue(new OnePasswordNotFoundError('item-123', 'item'));
+
+      const tool = getItemTool(mockServer, () => mockClient);
+      const result = await tool.handler({ itemId: 'item-123' });
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('item-123');
+    });
+
+    it('should handle AuthenticationError gracefully', async () => {
+      mockClient.getVaults = vi
+        .fn()
+        .mockRejectedValue(new OnePasswordAuthenticationError('Invalid service account token'));
+
+      const tool = listVaultsTool(mockServer, () => mockClient);
+      const result = await tool.handler({});
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('Invalid service account token');
+    });
+
+    it('should handle CommandError gracefully', async () => {
+      mockClient.listItems = vi
+        .fn()
+        .mockRejectedValue(new OnePasswordCommandError('CLI execution failed', 1));
+
+      const tool = listItemsTool(mockServer, () => mockClient);
+      const result = await tool.handler({ vaultId: 'vault-1' });
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('CLI execution failed');
+    });
+
+    it('should handle unknown errors gracefully', async () => {
+      mockClient.getVaults = vi.fn().mockRejectedValue(new Error('Unexpected error'));
+
+      const tool = listVaultsTool(mockServer, () => mockClient);
+      const result = await tool.handler({});
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('Unexpected error');
+    });
+
+    it('should reject invalid URL in create_login', async () => {
+      const tool = createLoginTool(mockServer, () => mockClient);
+      const result = await tool.handler({
+        vaultId: 'vault-1',
+        title: 'Test Login',
+        username: 'user',
+        password: 'pass',
+        url: 'not-a-valid-url', // Invalid URL
+      });
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('Error');
     });
   });
 });

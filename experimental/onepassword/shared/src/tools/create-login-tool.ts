@@ -16,7 +16,7 @@ export const CreateLoginSchema = z.object({
   title: z.string().min(1).describe(PARAM_DESCRIPTIONS.title),
   username: z.string().min(1).describe(PARAM_DESCRIPTIONS.username),
   password: z.string().min(1).describe(PARAM_DESCRIPTIONS.password),
-  url: z.string().optional().describe(PARAM_DESCRIPTIONS.url),
+  url: z.string().url().optional().describe(PARAM_DESCRIPTIONS.url),
   tags: z.array(z.string()).optional().describe(PARAM_DESCRIPTIONS.tags),
 });
 

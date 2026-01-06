@@ -83,14 +83,24 @@ interface ToolDefinition {
 
 /**
  * All available tools with their group assignments.
+ *
+ * Group behavior:
+ * - 'readonly': Grants access to read-only tools only
+ * - 'write': Grants access to ALL tools (read + write) since write operations
+ *            typically require reading items first (e.g., to find vault IDs)
+ *
+ * Examples:
+ * - ENABLED_TOOLGROUPS="readonly" -> Only list/get operations
+ * - ENABLED_TOOLGROUPS="write" -> All operations (read + write)
+ * - ENABLED_TOOLGROUPS="readonly,write" -> All operations
  */
 const ALL_TOOLS: ToolDefinition[] = [
-  // Read-only tools
+  // Read-only tools - available in both groups since write operations need to read first
   { factory: listVaultsTool, groups: ['readonly', 'write'] },
   { factory: listItemsTool, groups: ['readonly', 'write'] },
   { factory: getItemTool, groups: ['readonly', 'write'] },
   { factory: listItemsByTagTool, groups: ['readonly', 'write'] },
-  // Write tools
+  // Write-only tools - only available when 'write' group is enabled
   { factory: createLoginTool, groups: ['write'] },
   { factory: createSecureNoteTool, groups: ['write'] },
 ];

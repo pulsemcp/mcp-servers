@@ -3,7 +3,6 @@ import {
   ListResourcesRequestSchema,
   ReadResourceRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js';
-import { getServerState } from './state.js';
 
 // =============================================================================
 // RESOURCES IMPLEMENTATION
@@ -35,8 +34,6 @@ export function registerResources(server: Server) {
     // CONFIG RESOURCE - Server Status and Configuration
     // =========================================================================
     if (uri === 'onepassword://config') {
-      const state = getServerState();
-
       const config = {
         server: {
           name: 'onepassword-mcp-server',
@@ -50,10 +47,6 @@ export function registerResources(server: Server) {
             : 'not set',
           ENABLED_TOOLGROUPS: process.env.ENABLED_TOOLGROUPS || 'all (default)',
           SKIP_HEALTH_CHECKS: process.env.SKIP_HEALTH_CHECKS || 'false',
-        },
-        state: {
-          selectedResourceId: state.selectedResourceId || 'none',
-          isResourceLocked: state.isResourceLocked,
         },
         capabilities: {
           tools: true,

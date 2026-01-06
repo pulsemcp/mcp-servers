@@ -26,17 +26,5 @@ export {
   OnePasswordCommandError,
 } from './types.js';
 
-// State management exports
-export {
-  getSelectedResourceId,
-  hasSelectedResource,
-  isResourceLocked,
-  getServerState,
-  setSelectedResourceId,
-  clearSelectedResource,
-  initializeStateFromEnvironment,
-  resetState,
-} from './state.js';
-
 // Logging exports (re-exported for convenience)
 export { logServerStart, logError, logWarning, logDebug } from './logging.js';
