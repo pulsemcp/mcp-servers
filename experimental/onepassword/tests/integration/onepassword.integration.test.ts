@@ -35,13 +35,14 @@ describe('1Password MCP Server Integration Tests', () => {
       client = await createTestMCPClientWithMock(mockClient);
 
       const tools = await client.listTools();
-      expect(tools.length).toBeGreaterThanOrEqual(6);
+      expect(tools.length).toBeGreaterThanOrEqual(7);
 
       const toolNames = tools.map((t: { name: string }) => t.name);
       expect(toolNames).toContain('onepassword_list_vaults');
       expect(toolNames).toContain('onepassword_list_items');
       expect(toolNames).toContain('onepassword_get_item');
       expect(toolNames).toContain('onepassword_list_items_by_tag');
+      expect(toolNames).toContain('onepassword_unlock_item');
       expect(toolNames).toContain('onepassword_create_login');
       expect(toolNames).toContain('onepassword_create_secure_note');
     });

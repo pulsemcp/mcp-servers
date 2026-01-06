@@ -262,6 +262,45 @@ describe('1Password Tools', () => {
       expect(parseOnePasswordUrl('https://start.1password.com/open/i?a=ACC')).toBeNull();
       expect(parseOnePasswordUrl('https://start.1password.com/open/i?a=ACC&v=VAULT')).toBeNull();
     });
+
+    it('should reject malicious lookalike hostnames', () => {
+      // These should all be rejected as they're not legitimate 1password.com domains
+      expect(
+        parseOnePasswordUrl(
+          'https://evil1password.com/open/i?a=ACC&v=VAULT&i=ITEM&h=test.1password.com'
+        )
+      ).toBeNull();
+      expect(
+        parseOnePasswordUrl(
+          'https://1password.com.evil.com/open/i?a=ACC&v=VAULT&i=ITEM&h=test.1password.com'
+        )
+      ).toBeNull();
+      expect(
+        parseOnePasswordUrl(
+          'https://my.1password.com.attacker.com/open/i?a=ACC&v=VAULT&i=ITEM&h=test.1password.com'
+        )
+      ).toBeNull();
+    });
+
+    it('should reject URLs with wrong path', () => {
+      expect(
+        parseOnePasswordUrl(
+          'https://start.1password.com/evil/path?a=ACC&v=VAULT&i=ITEM&h=test.1password.com'
+        )
+      ).toBeNull();
+      expect(
+        parseOnePasswordUrl(
+          'https://start.1password.com/?a=ACC&v=VAULT&i=ITEM&h=test.1password.com'
+        )
+      ).toBeNull();
+    });
+
+    it('should accept legitimate 1password.com subdomains', () => {
+      const url = 'https://start.1password.com/open/i?a=ACC&v=VAULT&i=ITEM&h=test.1password.com';
+      const parsed = parseOnePasswordUrl(url);
+      expect(parsed).not.toBeNull();
+      expect(parsed!.itemId).toBe('ITEM');
+    });
   });
 
   // =============================================================================

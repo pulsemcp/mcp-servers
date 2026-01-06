@@ -27,7 +27,6 @@ By default, the get_item tool returns item metadata but redacts sensitive creden
 **Security:**
 - Items remain unlocked only for the current session (resets on server restart)
 - This provides an explicit consent mechanism before exposing credentials
-- Use lock_item to re-lock an item if needed
 
 **Returns:**
 - Confirmation of the unlocked item with its ID and title`;

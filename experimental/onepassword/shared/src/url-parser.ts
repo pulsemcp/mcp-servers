@@ -33,8 +33,15 @@ export function parseOnePasswordUrl(url: string): ParsedOnePasswordUrl | null {
   try {
     const parsed = new URL(url);
 
-    // Validate it's a 1Password URL
-    if (!parsed.hostname.includes('1password.com')) {
+    // Validate it's a legitimate 1Password URL
+    // Must end with .1password.com or be exactly 1password.com (to prevent evil1password.com attacks)
+    const hostname = parsed.hostname.toLowerCase();
+    if (!hostname.endsWith('.1password.com') && hostname !== '1password.com') {
+      return null;
+    }
+
+    // Validate the URL path (must be /open/i for item links)
+    if (parsed.pathname !== '/open/i') {
       return null;
     }
 
