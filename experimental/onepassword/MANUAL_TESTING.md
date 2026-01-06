@@ -42,9 +42,9 @@ npm run test:manual
 
 ## Latest Test Results
 
-**Test Date:** 2026-01-06 20:05 UTC
+**Test Date:** 2026-01-06 20:44 UTC
 **Branch:** tadasant/onepassword-mcp-server
-**Commit:** 9a7c264
+**Commit:** b2fd733
 **Tested By:** Claude
 **Environment:** Build verification only - no 1Password service account credentials available
 
@@ -58,7 +58,7 @@ npm run test:manual
 - Successfully built shared module
 - Successfully built local module
 - TypeScript compilation completed without errors
-- All 14 functional tests passed (9 happy path + 5 error handling)
+- All 26 functional tests passed
 - Package ready for version bump
 
 **Note:** Full manual testing with 1Password CLI and service account credentials was not performed. This is the initial implementation of the 1Password MCP server. The functional tests verify all tool logic with mocked responses.
@@ -67,17 +67,17 @@ npm run test:manual
 
 | Metric      | Value |
 | ----------- | ----- |
-| Total Tests | 14    |
-| Passed      | 14    |
+| Total Tests | 26    |
+| Passed      | 26    |
 | Failed      | 0     |
 | Pass Rate   | 100%  |
 
 ### Test Files
 
-| File                         | Status             | Tests | Notes                                    |
-| ---------------------------- | ------------------ | ----- | ---------------------------------------- |
-| `tools.test.ts`              | :white_check_mark: | 14    | All tool handlers + error handling tests |
-| `onepassword.manual.test.ts` | :hourglass: SKIP   | 4     | Skipped - no credentials available       |
+| File                         | Status             | Tests | Notes                                                 |
+| ---------------------------- | ------------------ | ----- | ----------------------------------------------------- |
+| `tools.test.ts`              | :white_check_mark: | 26    | Tools, URL parsing, unlock/lock, credential redaction |
+| `onepassword.manual.test.ts` | :hourglass: SKIP   | 4     | Skipped - no credentials available                    |
 
 ### Detailed Results
 
