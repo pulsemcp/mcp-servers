@@ -44,7 +44,7 @@ npm run test:manual
 
 **Test Date:** 2026-01-06 20:05 UTC
 **Branch:** tadasant/onepassword-mcp-server
-**Commit:** 0caef9b
+**Commit:** 2670fdc
 **Tested By:** Claude
 **Environment:** Build verification only - no 1Password service account credentials available
 
