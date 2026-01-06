@@ -42,30 +42,51 @@ npm run test:manual
 
 ## Latest Test Results
 
-**Test Date:** Not yet run
-**Branch:** -
-**Commit:** -
-**Tested By:** -
-**Environment:** -
+**Test Date:** 2026-01-06 20:05 UTC
+**Branch:** tadasant/onepassword-mcp-server
+**Commit:** 0caef9b
+**Tested By:** Claude
+**Environment:** Build verification only - no 1Password service account credentials available
 
-### Summary
+### Test Results
+
+**Type:** Build verification and functional tests only
+**Status:** :white_check_mark: Build successful, functional tests passed
+
+**Details:**
+
+- Successfully built shared module
+- Successfully built local module
+- TypeScript compilation completed without errors
+- All 9 functional tests passed (with mocked 1Password client)
+- Package ready for version bump
+
+**Note:** Full manual testing with 1Password CLI and service account credentials was not performed. This is the initial implementation of the 1Password MCP server. The functional tests verify all tool logic with mocked responses.
+
+### Functional Test Summary
 
 | Metric      | Value |
 | ----------- | ----- |
-| Total Tests | -     |
-| Passed      | -     |
-| Failed      | -     |
-| Pass Rate   | -     |
+| Total Tests | 9     |
+| Passed      | 9     |
+| Failed      | 0     |
+| Pass Rate   | 100%  |
 
 ### Test Files
 
-| File                         | Status | Tests | Notes |
-| ---------------------------- | ------ | ----- | ----- |
-| `onepassword.manual.test.ts` | -      | -     | -     |
+| File                         | Status             | Tests | Notes                                       |
+| ---------------------------- | ------------------ | ----- | ------------------------------------------- |
+| `tools.test.ts`              | :white_check_mark: | 9     | All tool handlers tested with mocked client |
+| `onepassword.manual.test.ts` | :hourglass: SKIP   | 4     | Skipped - no credentials available          |
 
 ### Detailed Results
 
-Manual tests require 1Password CLI and a service account with access to at least one vault.
+Manual tests require 1Password CLI and a service account with access to at least one vault. The manual test file includes tests for:
+
+- Listing vaults
+- Listing items in a vault
+- Getting item details
+- Creating logins (skipped by default)
 
 ---
 
