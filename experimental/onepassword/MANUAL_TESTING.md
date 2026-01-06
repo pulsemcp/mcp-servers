@@ -44,7 +44,7 @@ npm run test:manual
 
 **Test Date:** 2026-01-06 20:05 UTC
 **Branch:** tadasant/onepassword-mcp-server
-**Commit:** 2670fdc
+**Commit:** 9a7c264
 **Tested By:** Claude
 **Environment:** Build verification only - no 1Password service account credentials available
 
@@ -58,7 +58,7 @@ npm run test:manual
 - Successfully built shared module
 - Successfully built local module
 - TypeScript compilation completed without errors
-- All 9 functional tests passed (with mocked 1Password client)
+- All 14 functional tests passed (9 happy path + 5 error handling)
 - Package ready for version bump
 
 **Note:** Full manual testing with 1Password CLI and service account credentials was not performed. This is the initial implementation of the 1Password MCP server. The functional tests verify all tool logic with mocked responses.
@@ -67,17 +67,17 @@ npm run test:manual
 
 | Metric      | Value |
 | ----------- | ----- |
-| Total Tests | 9     |
-| Passed      | 9     |
+| Total Tests | 14    |
+| Passed      | 14    |
 | Failed      | 0     |
 | Pass Rate   | 100%  |
 
 ### Test Files
 
-| File                         | Status             | Tests | Notes                                       |
-| ---------------------------- | ------------------ | ----- | ------------------------------------------- |
-| `tools.test.ts`              | :white_check_mark: | 9     | All tool handlers tested with mocked client |
-| `onepassword.manual.test.ts` | :hourglass: SKIP   | 4     | Skipped - no credentials available          |
+| File                         | Status             | Tests | Notes                                    |
+| ---------------------------- | ------------------ | ----- | ---------------------------------------- |
+| `tools.test.ts`              | :white_check_mark: | 14    | All tool handlers + error handling tests |
+| `onepassword.manual.test.ts` | :hourglass: SKIP   | 4     | Skipped - no credentials available       |
 
 ### Detailed Results
 
