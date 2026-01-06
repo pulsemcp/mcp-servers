@@ -4,6 +4,7 @@ MCP server for interacting with 1Password via the CLI. Enables AI assistants to 
 
 ## Highlights
 
+- **Credential unlocking via URL** - Users must explicitly share a 1Password URL to unlock an item before credentials are exposed
 - Secure credential access via 1Password CLI
 - Service account authentication for automation
 - Read and write operations for vaults and items
@@ -22,14 +23,15 @@ MCP server for interacting with 1Password via the CLI. Enables AI assistants to 
 
 ### Tools
 
-| Tool                             | Group    | Description                    |
-| -------------------------------- | -------- | ------------------------------ |
-| `onepassword_list_vaults`        | readonly | List all accessible vaults     |
-| `onepassword_list_items`         | readonly | List items in a specific vault |
-| `onepassword_get_item`           | readonly | Get full details of an item    |
-| `onepassword_list_items_by_tag`  | readonly | Find items by tag              |
-| `onepassword_create_login`       | write    | Create a new login credential  |
-| `onepassword_create_secure_note` | write    | Create a new secure note       |
+| Tool                             | Group    | Description                                             |
+| -------------------------------- | -------- | ------------------------------------------------------- |
+| `onepassword_list_vaults`        | readonly | List all accessible vaults                              |
+| `onepassword_list_items`         | readonly | List items in a specific vault                          |
+| `onepassword_get_item`           | readonly | Get item details (credentials redacted unless unlocked) |
+| `onepassword_list_items_by_tag`  | readonly | Find items by tag                                       |
+| `onepassword_unlock_item`        | readonly | Unlock an item via 1Password URL for credential access  |
+| `onepassword_create_login`       | write    | Create a new login credential                           |
+| `onepassword_create_secure_note` | write    | Create a new secure note                                |
 
 ### Resources
 
@@ -101,10 +103,21 @@ Restart Claude Desktop and you should be ready to go!
 
 ## Security Considerations
 
+- **Credential Unlocking**: By default, `get_item` returns item metadata but redacts sensitive credentials. Users must explicitly share a 1Password URL via `unlock_item` to expose the actual credentials.
 - **Service Account Token**: Passed via environment variable, never logged
-- **Sensitive Data**: Item details including passwords are returned in API responses
 - **CLI Arguments**: Passwords for create operations are passed as CLI arguments (briefly visible in process list)
 - **Recommendation**: Use `readonly` tool group unless write access is specifically needed
+
+### How Credential Unlocking Works
+
+1. By default, `onepassword_get_item` returns item metadata but shows `[REDACTED - use unlock_item first]` for sensitive fields
+2. To access credentials, the user must:
+   - Copy the item's URL from 1Password (right-click → Copy Link)
+   - Provide the URL to `onepassword_unlock_item`
+3. Once unlocked, `onepassword_get_item` will return the full credentials for that item
+4. Unlocked items remain accessible only for the current session (resets on server restart)
+
+This provides an explicit consent mechanism - users must actively share a 1Password link to grant credential access.
 
 ## Development
 

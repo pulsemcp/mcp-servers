@@ -6,12 +6,20 @@ import { getItemTool } from '../../shared/src/tools/get-item-tool.js';
 import { listItemsByTagTool } from '../../shared/src/tools/list-items-by-tag-tool.js';
 import { createLoginTool } from '../../shared/src/tools/create-login-tool.js';
 import { createSecureNoteTool } from '../../shared/src/tools/create-secure-note-tool.js';
+import { unlockItemTool } from '../../shared/src/tools/unlock-item-tool.js';
 import { createMockOnePasswordClient } from '../mocks/onepassword-client.functional-mock.js';
 import {
   OnePasswordNotFoundError,
   OnePasswordAuthenticationError,
   OnePasswordCommandError,
 } from '../../shared/src/types.js';
+import { parseOnePasswordUrl, extractItemIdFromUrl } from '../../shared/src/url-parser.js';
+import {
+  unlockItem,
+  lockItem,
+  isItemUnlocked,
+  clearUnlockedItems,
+} from '../../shared/src/unlocked-items.js';
 
 describe('1Password Tools', () => {
   let mockServer: Server;
@@ -21,6 +29,8 @@ describe('1Password Tools', () => {
     // Minimal mock server for testing - we call tool handlers directly
     mockServer = {} as Server;
     mockClient = createMockOnePasswordClient();
+    // Clear unlocked items between tests
+    clearUnlockedItems();
   });
 
   describe('onepassword_list_vaults', () => {
@@ -216,6 +226,142 @@ describe('1Password Tools', () => {
 
       expect(result.isError).toBe(true);
       expect(result.content[0].text).toContain('Error');
+    });
+  });
+
+  // =============================================================================
+  // URL PARSING TESTS
+  // =============================================================================
+  describe('URL Parsing', () => {
+    it('should parse valid 1Password URL', () => {
+      const url =
+        'https://start.1password.com/open/i?a=ACCOUNT123&v=vault456&i=item789&h=my.1password.com';
+      const parsed = parseOnePasswordUrl(url);
+
+      expect(parsed).not.toBeNull();
+      expect(parsed!.accountId).toBe('ACCOUNT123');
+      expect(parsed!.vaultId).toBe('vault456');
+      expect(parsed!.itemId).toBe('item789');
+      expect(parsed!.host).toBe('my.1password.com');
+    });
+
+    it('should extract item ID from URL', () => {
+      const url = 'https://start.1password.com/open/i?a=ACC&v=VAULT&i=ITEMID&h=test.1password.com';
+      const itemId = extractItemIdFromUrl(url);
+
+      expect(itemId).toBe('ITEMID');
+    });
+
+    it('should return null for invalid URL', () => {
+      expect(parseOnePasswordUrl('not-a-url')).toBeNull();
+      expect(parseOnePasswordUrl('https://example.com')).toBeNull();
+      expect(parseOnePasswordUrl('https://start.1password.com/open/i')).toBeNull();
+    });
+
+    it('should return null for URL with missing parameters', () => {
+      expect(parseOnePasswordUrl('https://start.1password.com/open/i?a=ACC')).toBeNull();
+      expect(parseOnePasswordUrl('https://start.1password.com/open/i?a=ACC&v=VAULT')).toBeNull();
+    });
+  });
+
+  // =============================================================================
+  // UNLOCKED ITEMS TESTS
+  // =============================================================================
+  describe('Unlocked Items', () => {
+    it('should track unlocked items', () => {
+      expect(isItemUnlocked('item-1')).toBe(false);
+
+      unlockItem('item-1');
+      expect(isItemUnlocked('item-1')).toBe(true);
+
+      lockItem('item-1');
+      expect(isItemUnlocked('item-1')).toBe(false);
+    });
+
+    it('should be case-insensitive', () => {
+      unlockItem('ITEM-1');
+      expect(isItemUnlocked('item-1')).toBe(true);
+      expect(isItemUnlocked('ITEM-1')).toBe(true);
+    });
+  });
+
+  // =============================================================================
+  // UNLOCK ITEM TOOL TESTS
+  // =============================================================================
+  describe('onepassword_unlock_item', () => {
+    it('should unlock item from valid URL', async () => {
+      const tool = unlockItemTool(mockServer, () => mockClient);
+      const url =
+        'https://start.1password.com/open/i?a=ACC&v=vault-1&i=item-1&h=test.1password.com';
+      const result = await tool.handler({ url });
+
+      expect(result.isError).toBeFalsy();
+      expect(result.content[0].text).toContain('unlocked successfully');
+      expect(isItemUnlocked('item-1')).toBe(true);
+    });
+
+    it('should return error for invalid URL', async () => {
+      const tool = unlockItemTool(mockServer, () => mockClient);
+      const result = await tool.handler({ url: 'https://example.com' });
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('Invalid 1Password URL');
+    });
+
+    it('should indicate if item is already unlocked', async () => {
+      unlockItem('item-1');
+      const tool = unlockItemTool(mockServer, () => mockClient);
+      const url =
+        'https://start.1password.com/open/i?a=ACC&v=vault-1&i=item-1&h=test.1password.com';
+      const result = await tool.handler({ url });
+
+      expect(result.isError).toBeFalsy();
+      expect(result.content[0].text).toContain('already unlocked');
+    });
+  });
+
+  // =============================================================================
+  // GET ITEM WITH UNLOCK/LOCK TESTS
+  // =============================================================================
+  describe('onepassword_get_item with unlock/lock', () => {
+    it('should redact sensitive fields when item is locked', async () => {
+      const tool = getItemTool(mockServer, () => mockClient);
+      const result = await tool.handler({ itemId: 'item-1' });
+
+      const item = JSON.parse(result.content[0].text);
+      expect(item._unlocked).toBe(false);
+
+      // Check that password field is redacted
+      const passwordField = item.fields.find((f: { id: string }) => f.id === 'password');
+      expect(passwordField.value).toBe('[REDACTED - use unlock_item first]');
+    });
+
+    it('should show full credentials when item is unlocked', async () => {
+      unlockItem('item-1');
+
+      const tool = getItemTool(mockServer, () => mockClient);
+      const result = await tool.handler({ itemId: 'item-1' });
+
+      const item = JSON.parse(result.content[0].text);
+      expect(item._unlocked).toBe(true);
+
+      // Check that password field is NOT redacted
+      const passwordField = item.fields.find((f: { id: string }) => f.id === 'password');
+      expect(passwordField.value).toBe('testpass123');
+    });
+
+    it('should re-lock item and redact credentials again', async () => {
+      unlockItem('item-1');
+      lockItem('item-1');
+
+      const tool = getItemTool(mockServer, () => mockClient);
+      const result = await tool.handler({ itemId: 'item-1' });
+
+      const item = JSON.parse(result.content[0].text);
+      expect(item._unlocked).toBe(false);
+
+      const passwordField = item.fields.find((f: { id: string }) => f.id === 'password');
+      expect(passwordField.value).toBe('[REDACTED - use unlock_item first]');
     });
   });
 });
