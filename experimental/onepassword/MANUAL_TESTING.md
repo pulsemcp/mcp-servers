@@ -42,9 +42,9 @@ npm run test:manual
 
 ## Latest Test Results
 
-**Test Date:** 2026-01-06 20:44 UTC
+**Test Date:** 2026-01-06 20:52 UTC
 **Branch:** tadasant/onepassword-mcp-server
-**Commit:** b2fd733
+**Commit:** 07c1ccf
 **Tested By:** Claude
 **Environment:** Build verification only - no 1Password service account credentials available
 
@@ -58,7 +58,9 @@ npm run test:manual
 - Successfully built shared module
 - Successfully built local module
 - TypeScript compilation completed without errors
-- All 26 functional tests passed
+- All 29 functional tests passed (includes 3 new security tests for URL validation)
+- Strengthened URL hostname validation to prevent malicious lookalike domains
+- Added path validation for 1Password URLs
 - Package ready for version bump
 
 **Note:** Full manual testing with 1Password CLI and service account credentials was not performed. This is the initial implementation of the 1Password MCP server. The functional tests verify all tool logic with mocked responses.
@@ -67,17 +69,17 @@ npm run test:manual
 
 | Metric      | Value |
 | ----------- | ----- |
-| Total Tests | 26    |
-| Passed      | 26    |
+| Total Tests | 29    |
+| Passed      | 29    |
 | Failed      | 0     |
 | Pass Rate   | 100%  |
 
 ### Test Files
 
-| File                         | Status             | Tests | Notes                                                 |
-| ---------------------------- | ------------------ | ----- | ----------------------------------------------------- |
-| `tools.test.ts`              | :white_check_mark: | 26    | Tools, URL parsing, unlock/lock, credential redaction |
-| `onepassword.manual.test.ts` | :hourglass: SKIP   | 4     | Skipped - no credentials available                    |
+| File                         | Status             | Tests | Notes                                                                 |
+| ---------------------------- | ------------------ | ----- | --------------------------------------------------------------------- |
+| `tools.test.ts`              | :white_check_mark: | 29    | Tools, URL parsing, unlock/lock, credential redaction, security tests |
+| `onepassword.manual.test.ts` | :hourglass: SKIP   | 4     | Skipped - no credentials available                                    |
 
 ### Detailed Results
 
