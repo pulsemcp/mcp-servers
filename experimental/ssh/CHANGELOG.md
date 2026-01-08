@@ -1,0 +1,23 @@
+# Changelog
+
+All notable changes to this project will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [Unreleased]
+
+### Added
+
+- Initial implementation of SSH MCP server
+- SSH agent authentication support for passphrase-protected keys
+- Private key file authentication as fallback
+- `ssh_execute` tool for running commands on remote servers
+- `ssh_upload` tool for uploading files via SFTP
+- `ssh_download` tool for downloading files via SFTP
+- `ssh_list_directory` tool for browsing remote file systems
+- `ssh_connection_info` tool for checking connection configuration
+- Tool grouping system (readonly, write, admin) for access control
+- Configuration resource at `ssh://config` for debugging
+- Environment variable validation at startup
+- Comprehensive error handling with user-friendly messages
