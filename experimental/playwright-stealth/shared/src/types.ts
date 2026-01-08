@@ -37,4 +37,10 @@ export interface BrowserState {
   currentUrl?: string;
   title?: string;
   isOpen: boolean;
+  /** Whether stealth mode is enabled */
+  stealthMode?: boolean;
+  /** Whether browser is running in headless mode */
+  headless?: boolean;
+  /** Whether proxy is enabled for browser connections */
+  proxyEnabled?: boolean;
 }

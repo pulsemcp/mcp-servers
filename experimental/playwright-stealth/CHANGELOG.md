@@ -17,6 +17,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `proxyEnabled` field in `browser_get_state` response to show current proxy status
 - `logInfo` helper function for informational logging
 - `ignoreHTTPSErrors` enabled when proxy is configured (required for residential proxies that perform HTTPS inspection)
+- Extended `BrowserState` type with `stealthMode`, `headless`, and `proxyEnabled` fields
+
+### Security
+
+- Sanitized proxy URL logging to prevent credential leaks if URL contains embedded credentials
 
 ## [0.0.3] - 2026-01-08
 

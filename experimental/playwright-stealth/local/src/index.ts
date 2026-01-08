@@ -131,7 +131,9 @@ function validateEnvironment(): void {
     logWarning('config', `Custom timeout configured: ${timeout}ms`);
   }
   if (proxyUrl) {
-    logInfo('config', `Proxy configured: ${proxyUrl}`);
+    // Sanitize proxy URL to prevent credential leaks (in case URL contains embedded credentials)
+    const sanitizedUrl = proxyUrl.replace(/\/\/[^@]+@/, '//*****@');
+    logInfo('config', `Proxy configured: ${sanitizedUrl}`);
     if (process.env.PROXY_USERNAME) {
       logInfo('config', 'Proxy authentication enabled');
     }
