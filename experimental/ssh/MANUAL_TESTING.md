@@ -1,6 +1,6 @@
 # Manual Testing Results
 
-This file tracks the **most recent** manual test results for the NAME MCP server.
+This file tracks the **most recent** manual test results for the SSH MCP server.
 
 **Note:** Each new test run should overwrite the previous results. We only maintain the latest test results here.
 
@@ -17,12 +17,12 @@ This file tracks the **most recent** manual test results for the NAME MCP server
    git commit -m "Your changes"
    ```
 
-2. **Set up API credentials** - Ensure you have the necessary API credentials in your `.env` file:
+2. **Set up SSH credentials** - Ensure you have access to an SSH server for testing:
 
    ```bash
-   # Copy from .env.example and add your real API keys
+   # Copy from .env.example and configure your SSH settings
    cp .env.example .env
-   # Edit .env with your credentials
+   # Edit .env with your SSH_HOST, SSH_USERNAME, etc.
    ```
 
 ### First-Time Setup (or after clean checkout)
@@ -49,12 +49,6 @@ Once setup is complete, run manual tests:
 npm run test:manual
 ```
 
-To run a specific test file:
-
-```bash
-npm run test:manual -- tests/manual/your-test.manual.test.ts
-```
-
 The tests will:
 
 1. Build the project first (compiles TypeScript to JavaScript)
@@ -65,58 +59,87 @@ The tests will:
 
 ## Latest Test Results
 
-**Test Date:** YYYY-MM-DD
-**Branch:** branch-name
-**Commit:** `abc1234` (short hash)
-**Tested By:** Your Name
-**Environment:** Local development with API keys from .env
+**Test Date:** 2026-01-08
+**Branch:** tadasant/ssh-mcp-server
+**Commit:** b11f7fe (fix: correct lint paths and simplify ci:install)
+**Tested By:** Claude Code
+**Environment:** Functional tests only (no live SSH server available)
 
 ### Summary
 
 | Metric      | Value |
 | ----------- | ----- |
-| Total Tests | X     |
-| Passed      | Y     |
-| Failed      | Z     |
-| Pass Rate   | XX%   |
+| Total Tests | 17    |
+| Passed      | 17    |
+| Failed      | 0     |
+| Pass Rate   | 100%  |
 
 ### Test Files
 
-| File                  | Status                  | Tests | Notes                          |
-| --------------------- | ----------------------- | ----- | ------------------------------ |
-| `NAME.manual.test.ts` | :white_check_mark: PASS | X/Y   | All core functionality working |
+| File                         | Status                  | Tests | Notes                                           |
+| ---------------------------- | ----------------------- | ----- | ----------------------------------------------- |
+| `tools.test.ts` (functional) | :white_check_mark: PASS | 17/17 | All tool handlers tested with mocked SSH client |
 
 ### Detailed Results
 
-#### example_tool Tests
+#### ssh_execute Tests
 
-| Test                                 | Status                  | Notes                    |
-| ------------------------------------ | ----------------------- | ------------------------ |
-| Process message with plain format    | :white_check_mark: PASS | Response time: Xms       |
-| Process message with JSON format     | :white_check_mark: PASS |                          |
-| Process message with markdown format | :white_check_mark: PASS |                          |
-| Handle empty message                 | :white_check_mark: PASS | Returns validation error |
+| Test                              | Status                  | Notes                          |
+| --------------------------------- | ----------------------- | ------------------------------ |
+| Execute command and return result | :white_check_mark: PASS | Returns stdout/stderr/exitCode |
+| Pass cwd option when provided     | :white_check_mark: PASS | Working directory properly set |
+| Handle execution errors           | :white_check_mark: PASS | Returns isError: true          |
+| Validate input schema             | :white_check_mark: PASS | command is required            |
 
-#### search_items Tests
+#### ssh_upload Tests
 
-| Test                   | Status                  | Notes                     |
-| ---------------------- | ----------------------- | ------------------------- |
-| Search by query        | :white_check_mark: PASS | Returns paginated results |
-| Get item by ID         | :white_check_mark: PASS |                           |
-| Search with pagination | :white_check_mark: PASS | offset/limit working      |
-| Handle not found       | :white_check_mark: PASS | Returns helpful message   |
+| Test                     | Status                  | Notes                     |
+| ------------------------ | ----------------------- | ------------------------- |
+| Upload file successfully | :white_check_mark: PASS | SFTP upload works         |
+| Handle upload errors     | :white_check_mark: PASS | Permission denied handled |
+
+#### ssh_download Tests
+
+| Test                       | Status                  | Notes                  |
+| -------------------------- | ----------------------- | ---------------------- |
+| Download file successfully | :white_check_mark: PASS | SFTP download works    |
+| Handle download errors     | :white_check_mark: PASS | File not found handled |
+
+#### ssh_list_directory Tests
+
+| Test                    | Status                  | Notes                    |
+| ----------------------- | ----------------------- | ------------------------ |
+| List directory contents | :white_check_mark: PASS | Returns file/dir entries |
+| Handle listing errors   | :white_check_mark: PASS | Directory not found      |
+
+#### ssh_connection_info Tests
+
+| Test                             | Status                  | Notes                    |
+| -------------------------------- | ----------------------- | ------------------------ |
+| Return connection info           | :white_check_mark: PASS | Shows host/username/port |
+| Show not configured when missing | :white_check_mark: PASS | Graceful handling        |
+
+#### Tool Schema Tests
+
+| Test                      | Status                  | Notes                      |
+| ------------------------- | ----------------------- | -------------------------- |
+| executeTool schema        | :white_check_mark: PASS | name: ssh_execute          |
+| uploadTool schema         | :white_check_mark: PASS | requires localPath, remote |
+| downloadTool schema       | :white_check_mark: PASS | requires remotePath, local |
+| listDirectoryTool schema  | :white_check_mark: PASS | requires path              |
+| connectionInfoTool schema | :white_check_mark: PASS | no required params         |
 
 ### Known Issues / Limitations
 
-Document any issues discovered during manual testing:
-
-- None identified
+- Manual tests with a real SSH server are not yet implemented
+- Functional tests cover all tool handlers with mocked SSH client
+- Real SSH agent authentication not tested (requires SSH server with passphrase-protected keys)
 
 ### API Behavior Notes
 
-Document any API quirks or behaviors discovered:
-
-- None noted
+- SSH agent authentication is prioritized over private key file authentication
+- Each tool call creates a new SSH connection and disconnects after completion
+- The ssh2 library handles SSH agent communication via SSH_AUTH_SOCK
 
 ---
 
@@ -128,19 +151,6 @@ Document any API quirks or behaviors discovered:
 | :x: FAIL                | Test failed - needs investigation         |
 | :warning: WARN          | Test passed with warnings or known issues |
 | :hourglass: SKIP        | Test skipped (e.g., API unavailable)      |
-
----
-
-## Historical Notes
-
-<!--
-Add notes about significant findings from past test runs here.
-This helps track patterns and known issues over time.
-
-Example:
-- 2025-01-15: API rate limits caused intermittent failures - added retry logic
-- 2025-01-10: Discovered pagination bug when offset > total count
--->
 
 ---
 
