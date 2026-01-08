@@ -36,4 +36,6 @@ console.log('\nManual test setup complete!');
 console.log('You can now run: npm run test:manual');
 console.log('\nNote: Manual tests require GCS credentials:');
 console.log('  - GCS_BUCKET: Your GCS bucket name');
-console.log('  - GOOGLE_APPLICATION_CREDENTIALS: Path to service account key (optional if using ADC)');
+console.log(
+  '  - GOOGLE_APPLICATION_CREDENTIALS: Path to service account key (optional if using ADC)'
+);
