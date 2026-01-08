@@ -25,6 +25,12 @@ This file tracks the **most recent** manual test results for the SSH MCP server.
    # Edit .env with your SSH_HOST, SSH_USERNAME, etc.
    ```
 
+3. **Load your SSH key into the agent** (for passphrase-protected keys):
+
+   ```bash
+   ssh-add ~/.ssh/id_ed25519
+   ```
+
 ### First-Time Setup (or after clean checkout)
 
 If you're running manual tests for the first time or in a fresh worktree:
@@ -61,90 +67,87 @@ The tests will:
 
 **Test Date:** 2026-01-08
 **Branch:** tadasant/ssh-mcp-server
-**Commit:** 0704e67 (fix: address PR review feedback)
+**Commit:** b0403e4 (docs: update MANUAL_TESTING.md with new test results)
 **Tested By:** Claude Code
-**Environment:** Functional tests only (no live SSH server available)
+**Environment:** Real SSH server (AO Production via Tailscale) with passphrase-protected key via SSH agent
 
 ### Summary
 
 | Metric      | Value |
 | ----------- | ----- |
-| Total Tests | 22    |
-| Passed      | 22    |
+| Total Tests | 7     |
+| Passed      | 7     |
 | Failed      | 0     |
 | Pass Rate   | 100%  |
 
 ### Test Files
 
-| File                         | Status                  | Tests | Notes                                           |
-| ---------------------------- | ----------------------- | ----- | ----------------------------------------------- |
-| `tools.test.ts` (functional) | :white_check_mark: PASS | 22/22 | All tool handlers tested with mocked SSH client |
+| File                 | Status                  | Tests | Notes                               |
+| -------------------- | ----------------------- | ----- | ----------------------------------- |
+| `ssh.manual.test.ts` | :white_check_mark: PASS | 7/7   | All tests pass with real SSH server |
 
 ### Detailed Results
 
+#### SSH Agent Authentication Tests
+
+| Test                                                | Status                  | Notes                                               |
+| --------------------------------------------------- | ----------------------- | --------------------------------------------------- |
+| Connect via SSH agent with passphrase-protected key | :white_check_mark: PASS | Successfully connected using SSH_AUTH_SOCK (3455ms) |
+
 #### ssh_execute Tests
 
-| Test                              | Status                  | Notes                          |
-| --------------------------------- | ----------------------- | ------------------------------ |
-| Execute command and return result | :white_check_mark: PASS | Returns stdout/stderr/exitCode |
-| Pass cwd option when provided     | :white_check_mark: PASS | Working directory properly set |
-| Handle execution errors           | :white_check_mark: PASS | Returns isError: true          |
-| Validate input schema             | :white_check_mark: PASS | command is required            |
-| Error for missing command         | :white_check_mark: PASS | Zod validation error           |
-| Error for invalid command type    | :white_check_mark: PASS | Zod validation error           |
-
-#### ssh_upload Tests
-
-| Test                     | Status                  | Notes                     |
-| ------------------------ | ----------------------- | ------------------------- |
-| Upload file successfully | :white_check_mark: PASS | SFTP upload works         |
-| Handle upload errors     | :white_check_mark: PASS | Permission denied handled |
-| Error for missing paths  | :white_check_mark: PASS | Zod validation error      |
-
-#### ssh_download Tests
-
-| Test                       | Status                  | Notes                  |
-| -------------------------- | ----------------------- | ---------------------- |
-| Download file successfully | :white_check_mark: PASS | SFTP download works    |
-| Handle download errors     | :white_check_mark: PASS | File not found handled |
-| Error for missing paths    | :white_check_mark: PASS | Zod validation error   |
+| Test                              | Status                  | Notes                                             |
+| --------------------------------- | ----------------------- | ------------------------------------------------- |
+| Execute command and return result | :white_check_mark: PASS | `uname -a` returned Linux raspberrypi kernel info |
+| Execute command with working dir  | :white_check_mark: PASS | `pwd` with `cwd: /tmp` returned `/tmp`            |
+| Handle non-zero exit codes        | :white_check_mark: PASS | `exit 42` correctly returned exitCode: 42         |
 
 #### ssh_list_directory Tests
 
-| Test                    | Status                  | Notes                    |
-| ----------------------- | ----------------------- | ------------------------ |
-| List directory contents | :white_check_mark: PASS | Returns file/dir entries |
-| Handle listing errors   | :white_check_mark: PASS | Directory not found      |
-| Error for missing path  | :white_check_mark: PASS | Zod validation error     |
+| Test                | Status                  | Notes                                       |
+| ------------------- | ----------------------- | ------------------------------------------- |
+| List /tmp directory | :white_check_mark: PASS | Returned array of files with metadata       |
+| List root directory | :white_check_mark: PASS | Found standard dirs (tmp, srv, media, etc.) |
 
 #### ssh_connection_info Tests
 
-| Test                             | Status                  | Notes                    |
-| -------------------------------- | ----------------------- | ------------------------ |
-| Return connection info           | :white_check_mark: PASS | Shows host/username/port |
-| Show not configured when missing | :white_check_mark: PASS | Graceful handling        |
+| Test                          | Status                  | Notes                            |
+| ----------------------------- | ----------------------- | -------------------------------- |
+| Return connection information | :white_check_mark: PASS | Shows host, port, username, auth |
 
-#### Tool Schema Tests
+### Test Environment Details
 
-| Test                      | Status                  | Notes                      |
-| ------------------------- | ----------------------- | -------------------------- |
-| executeTool schema        | :white_check_mark: PASS | name: ssh_execute          |
-| uploadTool schema         | :white_check_mark: PASS | requires localPath, remote |
-| downloadTool schema       | :white_check_mark: PASS | requires remotePath, local |
-| listDirectoryTool schema  | :white_check_mark: PASS | requires path              |
-| connectionInfoTool schema | :white_check_mark: PASS | no required params         |
+- **SSH Server:** AO Production (100.81.151.113 via Tailscale)
+- **Server OS:** Linux raspberrypi 6.8.0-1043-raspi (Ubuntu, aarch64)
+- **Authentication:** SSH agent with passphrase-protected ed25519 key
+- **Connection Time:** ~3.5 seconds for first connection (includes agent auth)
+- **Subsequent Connections:** ~700-900ms per operation
+
+### Key Verification Points
+
+1. **SSH Agent Authentication Works** - The main goal of this MCP server is to support passphrase-protected keys via SSH agent. This is verified by the first test which confirms:
+   - SSH_AUTH_SOCK environment variable is properly detected
+   - Connection through SSH agent succeeds
+   - The passphrase-protected key (ed25519) works without exposing the passphrase
+
+2. **Command Execution** - Commands execute correctly with proper stdout/stderr/exitCode handling
+
+3. **SFTP Operations** - Directory listing works via SFTP protocol
+
+4. **Connection Info** - Properly reports configured authentication methods
 
 ### Known Issues / Limitations
 
-- Manual tests with a real SSH server are not yet implemented
-- Functional tests cover all tool handlers with mocked SSH client
-- Real SSH agent authentication not tested (requires SSH server with passphrase-protected keys)
+- File upload/download tests not included (would require write permissions and cleanup)
+- Tests only run against one server (AO Production)
+- Connection times are network-dependent
 
 ### API Behavior Notes
 
 - SSH agent authentication is prioritized over private key file authentication
 - Each tool call creates a new SSH connection and disconnects after completion
 - The ssh2 library handles SSH agent communication via SSH_AUTH_SOCK
+- Connection timeout defaults to 30 seconds
 
 ---
 
