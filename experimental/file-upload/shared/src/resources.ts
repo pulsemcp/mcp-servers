@@ -7,7 +7,7 @@ import {
 // =============================================================================
 // RESOURCES IMPLEMENTATION
 // =============================================================================
-// The file-upload server is stateless and doesn't maintain resources.
+// The remote-filesystem server is stateless and doesn't maintain resources.
 // This file provides the basic resource handlers but returns an empty list.
 // =============================================================================
 
@@ -17,7 +17,7 @@ export function registerResources(server: Server) {
     return {
       resources: [
         {
-          uri: 'file-upload://config',
+          uri: 'remote-filesystem://config',
           name: 'Server Configuration',
           description:
             'Current server configuration and status. Useful for debugging and verifying setup.',
@@ -31,10 +31,10 @@ export function registerResources(server: Server) {
   server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
     const { uri } = request.params;
 
-    if (uri === 'file-upload://config') {
+    if (uri === 'remote-filesystem://config') {
       const config = {
         server: {
-          name: 'file-upload-mcp-server',
+          name: 'remote-filesystem-mcp-server',
           version: '0.1.0',
           transport: 'stdio',
         },
@@ -44,19 +44,23 @@ export function registerResources(server: Server) {
           GOOGLE_APPLICATION_CREDENTIALS: process.env.GOOGLE_APPLICATION_CREDENTIALS
             ? '***configured***'
             : 'not set',
-          GCS_BASE_PATH: process.env.GCS_BASE_PATH || 'not set',
-          GCS_MAKE_PUBLIC: process.env.GCS_MAKE_PUBLIC || 'true (default)',
+          GCS_CLIENT_EMAIL: process.env.GCS_CLIENT_EMAIL ? '***configured***' : 'not set',
+          GCS_PRIVATE_KEY: process.env.GCS_PRIVATE_KEY ? '***configured***' : 'not set',
+          GCS_ROOT_PATH: process.env.GCS_ROOT_PATH || 'not set',
+          GCS_MAKE_PUBLIC: process.env.GCS_MAKE_PUBLIC || 'false (default)',
+          ENABLED_TOOLGROUPS: process.env.ENABLED_TOOLGROUPS || 'all (default)',
         },
         capabilities: {
-          tools: ['upload_to_gcs'],
+          tools: ['upload', 'download', 'list_files', 'modify', 'delete_file'],
           resources: true,
+          toolGroups: ['readonly', 'readwrite'],
         },
       };
 
       return {
         contents: [
           {
-            uri: 'file-upload://config',
+            uri: 'remote-filesystem://config',
             mimeType: 'application/json',
             text: JSON.stringify(config, null, 2),
           },

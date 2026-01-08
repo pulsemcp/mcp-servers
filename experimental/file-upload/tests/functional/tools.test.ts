@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { createFunctionalMockGCSClient } from '../mocks/gcs-client.functional-mock.js';
 
-describe('upload_to_gcs tool', () => {
+describe('upload tool', () => {
   let mockClient: ReturnType<typeof createFunctionalMockGCSClient>;
 
   beforeEach(() => {
@@ -11,16 +11,16 @@ describe('upload_to_gcs tool', () => {
 
   describe('parameter validation', () => {
     it('should require source parameter', async () => {
-      const { UploadToGCSSchema } = await import('../../shared/src/tools/upload-to-gcs.js');
+      const { UploadSchema } = await import('../../shared/src/tools/upload.js');
 
-      expect(() => UploadToGCSSchema.parse({})).toThrow();
-      expect(() => UploadToGCSSchema.parse({ source: '' })).toThrow();
+      expect(() => UploadSchema.parse({})).toThrow();
+      expect(() => UploadSchema.parse({ source: '' })).toThrow();
     });
 
     it('should accept valid file:// URI', async () => {
-      const { UploadToGCSSchema } = await import('../../shared/src/tools/upload-to-gcs.js');
+      const { UploadSchema } = await import('../../shared/src/tools/upload.js');
 
-      const result = UploadToGCSSchema.parse({
+      const result = UploadSchema.parse({
         source: 'file:///tmp/test.png',
       });
 
@@ -28,60 +28,71 @@ describe('upload_to_gcs tool', () => {
     });
 
     it('should accept base64 string', async () => {
-      const { UploadToGCSSchema } = await import('../../shared/src/tools/upload-to-gcs.js');
+      const { UploadSchema } = await import('../../shared/src/tools/upload.js');
 
       const base64Data = Buffer.from('test content').toString('base64');
-      const result = UploadToGCSSchema.parse({
+      const result = UploadSchema.parse({
         source: base64Data,
       });
 
       expect(result.source).toBe(base64Data);
     });
 
-    it('should accept optional filename', async () => {
-      const { UploadToGCSSchema } = await import('../../shared/src/tools/upload-to-gcs.js');
+    it('should accept optional path', async () => {
+      const { UploadSchema } = await import('../../shared/src/tools/upload.js');
 
-      const result = UploadToGCSSchema.parse({
+      const result = UploadSchema.parse({
         source: 'file:///tmp/test.png',
-        filename: 'custom-name.png',
+        path: 'screenshots/custom-name.png',
       });
 
-      expect(result.filename).toBe('custom-name.png');
+      expect(result.path).toBe('screenshots/custom-name.png');
     });
 
     it('should accept optional contentType', async () => {
-      const { UploadToGCSSchema } = await import('../../shared/src/tools/upload-to-gcs.js');
+      const { UploadSchema } = await import('../../shared/src/tools/upload.js');
 
-      const result = UploadToGCSSchema.parse({
+      const result = UploadSchema.parse({
         source: 'file:///tmp/test.png',
         contentType: 'image/jpeg',
       });
 
       expect(result.contentType).toBe('image/jpeg');
     });
+
+    it('should accept optional makePublic', async () => {
+      const { UploadSchema } = await import('../../shared/src/tools/upload.js');
+
+      const result = UploadSchema.parse({
+        source: 'file:///tmp/test.png',
+        makePublic: true,
+      });
+
+      expect(result.makePublic).toBe(true);
+    });
   });
 
   describe('tool factory', () => {
     it('should create tool with correct name', async () => {
-      const { uploadToGCSTool } = await import('../../shared/src/tools/upload-to-gcs.js');
+      const { uploadTool } = await import('../../shared/src/tools/upload.js');
       const server = new Server(
         { name: 'test-server', version: '0.0.1' },
         { capabilities: { tools: {} } }
       );
 
-      const tool = uploadToGCSTool(server, () => mockClient);
+      const tool = uploadTool(server, () => mockClient);
 
-      expect(tool.name).toBe('upload_to_gcs');
+      expect(tool.name).toBe('upload');
     });
 
     it('should create tool with correct input schema', async () => {
-      const { uploadToGCSTool } = await import('../../shared/src/tools/upload-to-gcs.js');
+      const { uploadTool } = await import('../../shared/src/tools/upload.js');
       const server = new Server(
         { name: 'test-server', version: '0.0.1' },
         { capabilities: { tools: {} } }
       );
 
-      const tool = uploadToGCSTool(server, () => mockClient);
+      const tool = uploadTool(server, () => mockClient);
 
       expect(tool.inputSchema.type).toBe('object');
       expect(tool.inputSchema.properties.source).toBeDefined();
@@ -91,18 +102,18 @@ describe('upload_to_gcs tool', () => {
 
   describe('handler', () => {
     it('should call upload for base64 data', async () => {
-      const { uploadToGCSTool } = await import('../../shared/src/tools/upload-to-gcs.js');
+      const { uploadTool } = await import('../../shared/src/tools/upload.js');
       const server = new Server(
         { name: 'test-server', version: '0.0.1' },
         { capabilities: { tools: {} } }
       );
 
-      const tool = uploadToGCSTool(server, () => mockClient);
+      const tool = uploadTool(server, () => mockClient);
       const base64Data = Buffer.from('test content').toString('base64');
 
       const result = await tool.handler({
         source: base64Data,
-        filename: 'test.txt',
+        path: 'test.txt',
       });
 
       expect(mockClient.upload).toHaveBeenCalled();
@@ -111,17 +122,17 @@ describe('upload_to_gcs tool', () => {
 
       const parsed = JSON.parse(result.content[0].text);
       expect(parsed.url).toContain('test-bucket');
-      expect(parsed.bucket).toBe('test-bucket');
+      expect(parsed.path).toBe('test.txt');
     });
 
     it('should call uploadFile for file:// URIs', async () => {
-      const { uploadToGCSTool } = await import('../../shared/src/tools/upload-to-gcs.js');
+      const { uploadTool } = await import('../../shared/src/tools/upload.js');
       const server = new Server(
         { name: 'test-server', version: '0.0.1' },
         { capabilities: { tools: {} } }
       );
 
-      const tool = uploadToGCSTool(server, () => mockClient);
+      const tool = uploadTool(server, () => mockClient);
 
       const result = await tool.handler({
         source: 'file:///tmp/test.png',
@@ -132,13 +143,13 @@ describe('upload_to_gcs tool', () => {
     });
 
     it('should return error for invalid arguments', async () => {
-      const { uploadToGCSTool } = await import('../../shared/src/tools/upload-to-gcs.js');
+      const { uploadTool } = await import('../../shared/src/tools/upload.js');
       const server = new Server(
         { name: 'test-server', version: '0.0.1' },
         { capabilities: { tools: {} } }
       );
 
-      const tool = uploadToGCSTool(server, () => mockClient);
+      const tool = uploadTool(server, () => mockClient);
 
       const result = await tool.handler({});
 
@@ -147,7 +158,7 @@ describe('upload_to_gcs tool', () => {
     });
 
     it('should return error when upload fails', async () => {
-      const { uploadToGCSTool } = await import('../../shared/src/tools/upload-to-gcs.js');
+      const { uploadTool } = await import('../../shared/src/tools/upload.js');
       const server = new Server(
         { name: 'test-server', version: '0.0.1' },
         { capabilities: { tools: {} } }
@@ -155,7 +166,7 @@ describe('upload_to_gcs tool', () => {
 
       mockClient.upload.mockRejectedValueOnce(new Error('Upload failed'));
 
-      const tool = uploadToGCSTool(server, () => mockClient);
+      const tool = uploadTool(server, () => mockClient);
 
       const result = await tool.handler({
         source: Buffer.from('test').toString('base64'),
@@ -163,6 +174,162 @@ describe('upload_to_gcs tool', () => {
 
       expect(result.isError).toBe(true);
       expect(result.content[0].text).toContain('Upload failed');
+    });
+  });
+});
+
+describe('download tool', () => {
+  let mockClient: ReturnType<typeof createFunctionalMockGCSClient>;
+
+  beforeEach(() => {
+    mockClient = createFunctionalMockGCSClient();
+  });
+
+  describe('parameter validation', () => {
+    it('should require path parameter', async () => {
+      const { DownloadSchema } = await import('../../shared/src/tools/download.js');
+
+      expect(() => DownloadSchema.parse({})).toThrow();
+      expect(() => DownloadSchema.parse({ path: '' })).toThrow();
+    });
+
+    it('should accept valid path', async () => {
+      const { DownloadSchema } = await import('../../shared/src/tools/download.js');
+
+      const result = DownloadSchema.parse({
+        path: 'screenshots/test.png',
+      });
+
+      expect(result.path).toBe('screenshots/test.png');
+    });
+
+    it('should accept optional asBase64', async () => {
+      const { DownloadSchema } = await import('../../shared/src/tools/download.js');
+
+      const result = DownloadSchema.parse({
+        path: 'test.png',
+        asBase64: true,
+      });
+
+      expect(result.asBase64).toBe(true);
+    });
+  });
+
+  describe('handler', () => {
+    it('should call download with path', async () => {
+      const { downloadTool } = await import('../../shared/src/tools/download.js');
+      const server = new Server(
+        { name: 'test-server', version: '0.0.1' },
+        { capabilities: { tools: {} } }
+      );
+
+      const tool = downloadTool(server, () => mockClient);
+
+      const result = await tool.handler({
+        path: 'test.txt',
+      });
+
+      expect(mockClient.download).toHaveBeenCalledWith('test.txt', expect.any(Object));
+      expect(result.isError).toBeUndefined();
+    });
+  });
+});
+
+describe('list_files tool', () => {
+  let mockClient: ReturnType<typeof createFunctionalMockGCSClient>;
+
+  beforeEach(() => {
+    mockClient = createFunctionalMockGCSClient();
+  });
+
+  describe('handler', () => {
+    it('should call list', async () => {
+      const { listFilesTool } = await import('../../shared/src/tools/list.js');
+      const server = new Server(
+        { name: 'test-server', version: '0.0.1' },
+        { capabilities: { tools: {} } }
+      );
+
+      const tool = listFilesTool(server, () => mockClient);
+
+      const result = await tool.handler({});
+
+      expect(mockClient.list).toHaveBeenCalled();
+      expect(result.isError).toBeUndefined();
+    });
+  });
+});
+
+describe('modify tool', () => {
+  let mockClient: ReturnType<typeof createFunctionalMockGCSClient>;
+
+  beforeEach(() => {
+    mockClient = createFunctionalMockGCSClient();
+  });
+
+  describe('parameter validation', () => {
+    it('should require path parameter', async () => {
+      const { ModifySchema } = await import('../../shared/src/tools/modify.js');
+
+      expect(() => ModifySchema.parse({})).toThrow();
+    });
+  });
+
+  describe('handler', () => {
+    it('should call modify with path and options', async () => {
+      const { modifyTool } = await import('../../shared/src/tools/modify.js');
+      const server = new Server(
+        { name: 'test-server', version: '0.0.1' },
+        { capabilities: { tools: {} } }
+      );
+
+      const tool = modifyTool(server, () => mockClient);
+
+      const result = await tool.handler({
+        path: 'test.txt',
+        makePublic: true,
+      });
+
+      expect(mockClient.modify).toHaveBeenCalledWith(
+        'test.txt',
+        expect.objectContaining({ makePublic: true })
+      );
+      expect(result.isError).toBeUndefined();
+    });
+  });
+});
+
+describe('delete_file tool', () => {
+  let mockClient: ReturnType<typeof createFunctionalMockGCSClient>;
+
+  beforeEach(() => {
+    mockClient = createFunctionalMockGCSClient();
+  });
+
+  describe('parameter validation', () => {
+    it('should require path parameter', async () => {
+      const { DeleteSchema } = await import('../../shared/src/tools/delete.js');
+
+      expect(() => DeleteSchema.parse({})).toThrow();
+    });
+  });
+
+  describe('handler', () => {
+    it('should call delete with path', async () => {
+      const { deleteFileTool } = await import('../../shared/src/tools/delete.js');
+      const server = new Server(
+        { name: 'test-server', version: '0.0.1' },
+        { capabilities: { tools: {} } }
+      );
+
+      const tool = deleteFileTool(server, () => mockClient);
+
+      const result = await tool.handler({
+        path: 'test.txt',
+      });
+
+      expect(mockClient.delete).toHaveBeenCalledWith('test.txt');
+      expect(result.isError).toBeUndefined();
     });
   });
 });

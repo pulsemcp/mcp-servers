@@ -7,7 +7,7 @@ import { fileURLToPath } from 'url';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const SERVER_PATH = join(__dirname, '../../local/build/index.integration-with-mock.js');
 
-describe('file-upload MCP server integration', () => {
+describe('remote-filesystem MCP server integration', () => {
   let serverProcess: ChildProcess;
   let sendRequest: (method: string, params?: unknown) => Promise<unknown>;
   let requestId = 0;
@@ -16,6 +16,9 @@ describe('file-upload MCP server integration', () => {
     serverProcess = spawn('node', [SERVER_PATH], {
       stdio: ['pipe', 'pipe', 'pipe'],
     });
+
+    // Wait for server to start
+    await new Promise((resolve) => setTimeout(resolve, 500));
 
     const rl = createInterface({ input: serverProcess.stdout! });
     const pendingRequests = new Map<
@@ -73,26 +76,30 @@ describe('file-upload MCP server integration', () => {
   });
 
   describe('tools/list', () => {
-    it('should list upload_to_gcs tool', async () => {
+    it('should list all remote-filesystem tools', async () => {
       const result = (await sendRequest('tools/list', {})) as { tools: Array<{ name: string }> };
 
       expect(result.tools).toBeDefined();
-      expect(result.tools.length).toBeGreaterThan(0);
+      expect(result.tools.length).toBe(5);
 
-      const uploadTool = result.tools.find((t) => t.name === 'upload_to_gcs');
-      expect(uploadTool).toBeDefined();
+      const toolNames = result.tools.map((t) => t.name);
+      expect(toolNames).toContain('upload');
+      expect(toolNames).toContain('download');
+      expect(toolNames).toContain('list_files');
+      expect(toolNames).toContain('modify');
+      expect(toolNames).toContain('delete_file');
     });
   });
 
-  describe('tools/call upload_to_gcs', () => {
+  describe('tools/call upload', () => {
     it('should upload base64 data successfully', async () => {
       const base64Data = Buffer.from('test image content').toString('base64');
 
       const result = (await sendRequest('tools/call', {
-        name: 'upload_to_gcs',
+        name: 'upload',
         arguments: {
           source: base64Data,
-          filename: 'test-image.png',
+          path: 'test-image.png',
           contentType: 'image/png',
         },
       })) as { content: Array<{ type: string; text: string }> };
@@ -102,8 +109,41 @@ describe('file-upload MCP server integration', () => {
 
       const parsed = JSON.parse(result.content[0].text);
       expect(parsed.url).toContain('storage.googleapis.com');
-      expect(parsed.bucket).toBe('test-bucket');
-      expect(parsed.path).toContain('test-image.png');
+      expect(parsed.path).toBe('test-image.png');
+    });
+  });
+
+  describe('tools/call download', () => {
+    it('should return error for non-existent file', async () => {
+      // The mock client returns File not found error for files that don't exist
+      // Since each tool call gets a fresh client instance, we test error handling
+      const result = (await sendRequest('tools/call', {
+        name: 'download',
+        arguments: {
+          path: 'non-existent-file.txt',
+        },
+      })) as { content: Array<{ type: string; text: string }>; isError?: boolean };
+
+      expect(result.content).toBeDefined();
+      expect(result.content[0].type).toBe('text');
+      // The download tool returns an error message for non-existent files
+      expect(result.content[0].text).toContain('Error');
+    });
+  });
+
+  describe('tools/call list_files', () => {
+    it('should list files successfully', async () => {
+      const result = (await sendRequest('tools/call', {
+        name: 'list_files',
+        arguments: {},
+      })) as { content: Array<{ type: string; text: string }> };
+
+      expect(result.content).toBeDefined();
+      expect(result.content[0].type).toBe('text');
+
+      const parsed = JSON.parse(result.content[0].text);
+      expect(parsed.files).toBeDefined();
+      expect(Array.isArray(parsed.files)).toBe(true);
     });
   });
 
@@ -114,7 +154,7 @@ describe('file-upload MCP server integration', () => {
       };
 
       expect(result.resources).toBeDefined();
-      const configResource = result.resources.find((r) => r.uri === 'file-upload://config');
+      const configResource = result.resources.find((r) => r.uri === 'remote-filesystem://config');
       expect(configResource).toBeDefined();
     });
   });
@@ -122,15 +162,19 @@ describe('file-upload MCP server integration', () => {
   describe('resources/read', () => {
     it('should read config resource', async () => {
       const result = (await sendRequest('resources/read', {
-        uri: 'file-upload://config',
+        uri: 'remote-filesystem://config',
       })) as { contents: Array<{ text: string }> };
 
       expect(result.contents).toBeDefined();
       expect(result.contents[0].text).toBeDefined();
 
       const config = JSON.parse(result.contents[0].text);
-      expect(config.server.name).toBe('file-upload-mcp-server');
-      expect(config.capabilities.tools).toContain('upload_to_gcs');
+      expect(config.server.name).toBe('remote-filesystem-mcp-server');
+      expect(config.capabilities.tools).toContain('upload');
+      expect(config.capabilities.tools).toContain('download');
+      expect(config.capabilities.tools).toContain('list_files');
+      expect(config.capabilities.tools).toContain('modify');
+      expect(config.capabilities.tools).toContain('delete_file');
     });
   });
 });
