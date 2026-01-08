@@ -17,13 +17,13 @@ An MCP server for remote filesystem operations on cloud storage providers. Curre
 ## Installation
 
 ```bash
-npm install file-upload-mcp-server
+npm install remote-filesystem-mcp-server
 ```
 
 Or run directly with npx:
 
 ```bash
-npx file-upload-mcp-server
+npx remote-filesystem-mcp-server
 ```
 
 ## Configuration
@@ -50,7 +50,7 @@ npx file-upload-mcp-server
   "mcpServers": {
     "remote-filesystem": {
       "command": "npx",
-      "args": ["-y", "file-upload-mcp-server"],
+      "args": ["-y", "remote-filesystem-mcp-server"],
       "env": {
         "GCS_BUCKET": "your-bucket-name",
         "GCS_CLIENT_EMAIL": "sa@project.iam.gserviceaccount.com",

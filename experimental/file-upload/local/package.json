@@ -1,11 +1,11 @@
 {
-  "name": "file-upload-mcp-server",
+  "name": "remote-filesystem-mcp-server",
   "version": "0.1.0",
-  "description": "MCP server for uploading files to cloud storage (GCS, S3, etc.)",
+  "description": "MCP server for remote filesystem operations on cloud storage (GCS, S3, etc.)",
   "main": "build/index.js",
   "type": "module",
   "bin": {
-    "file-upload-mcp-server": "./build/index.js"
+    "remote-filesystem-mcp-server": "./build/index.js"
   },
   "files": [
     "build/**/*.js",
