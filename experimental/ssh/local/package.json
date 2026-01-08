@@ -1,11 +1,11 @@
 {
-  "name": "@pulsemcp/ssh",
+  "name": "ssh-agent-mcp-server",
   "version": "0.1.0",
   "description": "MCP server for SSH remote server management with SSH agent authentication support",
   "main": "build/index.js",
   "type": "module",
   "bin": {
-    "ssh-mcp-server": "./build/index.js"
+    "ssh-agent-mcp-server": "./build/index.js"
   },
   "files": [
     "build/**/*.js",

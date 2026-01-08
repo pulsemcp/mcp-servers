@@ -61,13 +61,13 @@ Control which tools are available via the `ENABLED_TOOLGROUPS` environment varia
 ### Installation
 
 ```bash
-npx @pulsemcp/ssh
+npx ssh-agent-mcp-server
 ```
 
 Or install globally:
 
 ```bash
-npm install -g @pulsemcp/ssh
+npm install -g ssh-agent-mcp-server
 ```
 
 ### Configuration
@@ -96,7 +96,7 @@ Windows: `%APPDATA%\Claude\claude_desktop_config.json`
   "mcpServers": {
     "ssh": {
       "command": "npx",
-      "args": ["-y", "@pulsemcp/ssh"],
+      "args": ["-y", "ssh-agent-mcp-server"],
       "env": {
         "SSH_HOST": "192.168.1.100",
         "SSH_USERNAME": "deploy",
