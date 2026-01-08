@@ -6,7 +6,9 @@ import type { IPlaywrightClient } from '../../shared/src/server.js';
 import type { ExecuteResult, BrowserState, PlaywrightConfig } from '../../shared/src/types.js';
 import { vi } from 'vitest';
 
-export function createFunctionalMockClient(): IPlaywrightClient {
+export function createFunctionalMockClient(options?: {
+  proxyEnabled?: boolean;
+}): IPlaywrightClient {
   return {
     execute: vi.fn().mockResolvedValue({
       success: true,
@@ -32,6 +34,14 @@ export function createFunctionalMockClient(): IPlaywrightClient {
       stealthMode: false,
       headless: true,
       timeout: 30000,
+      navigationTimeout: 60000,
+      proxy: options?.proxyEnabled
+        ? {
+            server: 'http://proxy.example.com:8080',
+            username: 'testuser',
+            password: 'testpass',
+          }
+        : undefined,
     } as PlaywrightConfig),
   };
 }

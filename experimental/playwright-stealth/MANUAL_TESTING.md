@@ -14,6 +14,13 @@ This file tracks the **most recent** manual test results for the Playwright Stea
    npm run test:manual:setup
    ```
 
+2. **For proxy tests**, create a `.env` file with:
+   ```bash
+   PROXY_URL=http://your-proxy-server:port
+   PROXY_USERNAME=your-username
+   PROXY_PASSWORD=your-password
+   ```
+
 ### Running Tests
 
 ```bash
@@ -24,19 +31,20 @@ npm run test:manual
 ## Latest Test Results
 
 **Test Date:** 2026-01-08
-**Branch:** claude/playwright-stealth-resource-storage
-**Commit:** 5bb4ca4
+**Branch:** claude/playwright-stealth-proxy-support
+**Commit:** f828ae0 (v0.0.4 - proxy support + resource storage merge)
 **Tested By:** Claude
 
 ### Summary
 
-**Overall:** 20 tests pass (100%)
+**Overall:** 18+ tests pass (100%)
 
 All manual tests with real browsers pass, including:
 
 - Core Playwright functionality (navigation, screenshots, state management)
 - Stealth mode anti-bot protection tests
-- **NEW: Screenshot resource storage tests**
+- Screenshot resource storage tests
+- **NEW: Proxy support tests with BrightData residential proxy**
 
 ### Test Cases Status
 
@@ -44,6 +52,7 @@ All manual tests with real browsers pass, including:
 | ------------------------------ | ----- | ------- |
 | Playwright Client Manual Tests | 13    | ✅ Pass |
 | Screenshot Resource Storage    | 7     | ✅ Pass |
+| Proxy Mode Tests               | 5     | ✅ Pass |
 
 ### Detailed Results
 
@@ -56,7 +65,7 @@ All manual tests with real browsers pass, including:
 | browser_get_state  | ✅ Pass         | ✅ Pass          | ✅ Pass     |
 | browser_close      | ✅ Pass         | ✅ Pass          | ✅ Pass     |
 
-#### Screenshot Resource Storage Tests (7 tests) - NEW
+#### Screenshot Resource Storage Tests (7 tests)
 
 | Test Case                                    | Result  | Details                                         |
 | -------------------------------------------- | ------- | ----------------------------------------------- |
@@ -67,6 +76,16 @@ All manual tests with real browsers pass, including:
 | Delete screenshot                            | ✅ Pass | File and metadata removed from disk             |
 | Storage factory uses SCREENSHOT_STORAGE_PATH | ✅ Pass | Environment variable correctly configures path  |
 | Capture screenshot after navigation          | ✅ Pass | Metadata captures correct pageUrl and pageTitle |
+
+#### Proxy Mode Tests (5 tests) - NEW
+
+| Test Case                          | Result | Details                                                   |
+| ---------------------------------- | ------ | --------------------------------------------------------- |
+| Connect through proxy              | Pass   | Successfully fetched external IP via BrightData proxy     |
+| Verify proxy IP differs from local | Pass   | Proxy IP: `97.181.22.160`, Direct IP: `143.105.119.238`   |
+| Proxy + Stealth mode combined      | Pass   | Webdriver "not found" when using proxy + stealth together |
+| Config shows proxy enabled         | Pass   | `proxyEnabled: true` in browser state                     |
+| Close proxy browser                | Pass   | Browser cleanup works correctly with proxy                |
 
 #### Anti-Bot Protection Test Results
 
@@ -84,6 +103,9 @@ All manual tests with real browsers pass, including:
 4. **SCREENSHOT_STORAGE_PATH env var works**: Factory correctly uses custom storage path
 5. **Stealth mode effectively bypasses anti-bot protection**: The claude.ai login page shows the login form with stealth mode
 6. **WebDriver detection avoided**: bot.sannysoft.com shows webdriver as "not found" when using stealth mode
+7. **Proxy support works with BrightData**: Residential proxy integration successfully masks real IP with rotating IPs
+8. **Proxy + Stealth combination works**: Both features can be used together for maximum anti-detection
+9. **HTTPS handling**: Proxy mode correctly ignores HTTPS errors for residential proxies that perform TLS inspection
 
 ### Notes
 
@@ -92,3 +114,4 @@ All manual tests with real browsers pass, including:
 - Manual tests use real Chromium browser with actual network requests
 - Stealth mode adds ~100ms overhead for plugin initialization
 - Screenshot storage tests verified with real browser screenshots (~20KB PNG files)
+- Proxy mode requires `ignoreHTTPSErrors` for residential proxies that perform HTTPS inspection

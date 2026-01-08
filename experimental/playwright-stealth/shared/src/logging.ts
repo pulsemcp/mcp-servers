@@ -30,6 +30,13 @@ export function logWarning(context: string, message: string): void {
 }
 
 /**
+ * Log an informational message
+ */
+export function logInfo(context: string, message: string): void {
+  console.error(`[INFO] ${context}: ${message}`);
+}
+
+/**
  * Log debug information (only in development)
  */
 export function logDebug(context: string, message: string): void {

@@ -26,6 +26,7 @@ describe('Playwright Client Manual Tests', () => {
         stealthMode: false,
         headless: true,
         timeout: 30000,
+        navigationTimeout: 60000,
       });
 
       const result = await client.execute(`
@@ -72,6 +73,7 @@ describe('Playwright Client Manual Tests', () => {
         stealthMode: true,
         headless: true,
         timeout: 30000,
+        navigationTimeout: 60000,
       });
 
       const result = await client.execute(`
@@ -128,6 +130,7 @@ describe('Playwright Client Manual Tests', () => {
         stealthMode: false,
         headless: true,
         timeout: 30000,
+        navigationTimeout: 60000,
       });
 
       const result = await client.execute(`
@@ -160,6 +163,7 @@ describe('Playwright Client Manual Tests', () => {
         stealthMode: true,
         headless: true,
         timeout: 30000,
+        navigationTimeout: 60000,
       });
 
       const result = await client.execute(`
@@ -198,6 +202,7 @@ describe('Playwright Client Manual Tests', () => {
         stealthMode: false,
         headless: true,
         timeout: 5000,
+        navigationTimeout: 5000,
       });
 
       const result = await client.execute(`
@@ -218,6 +223,136 @@ describe('Playwright Client Manual Tests', () => {
 
       expect(result.success).toBe(false);
       expect(result.error).toContain('timed out');
+    });
+  });
+
+  describe('Proxy Mode', () => {
+    // These tests require PROXY_URL, PROXY_USERNAME, PROXY_PASSWORD env vars
+    const proxyUrl = process.env.PROXY_URL;
+    const proxyUsername = process.env.PROXY_USERNAME;
+    const proxyPassword = process.env.PROXY_PASSWORD;
+
+    const skipProxy = !proxyUrl;
+
+    it.skipIf(skipProxy)('should connect through proxy and get external IP', async () => {
+      console.log('Proxy URL:', proxyUrl);
+      console.log('Proxy Username:', proxyUsername);
+      console.log('Proxy Password:', proxyPassword ? '***' : '(not set)');
+
+      client = new PlaywrightClient({
+        stealthMode: false,
+        headless: true,
+        timeout: 60000,
+        navigationTimeout: 60000,
+        proxy: {
+          server: proxyUrl!,
+          username: proxyUsername,
+          password: proxyPassword,
+        },
+      });
+
+      const result = await client.execute(`
+        await page.goto('https://httpbin.org/ip', { timeout: 30000 });
+        const body = await page.textContent('body');
+        return JSON.parse(body);
+      `);
+
+      console.log('Proxy test result:', result);
+      if (!result.success) {
+        console.log('Proxy error:', result.error);
+        console.log('Console output:', result.consoleOutput);
+      }
+
+      expect(result.success).toBe(true);
+      console.log('Proxy IP result:', result.result);
+      // The response should have an "origin" field with the proxy IP
+      expect(result.result).toContain('origin');
+    });
+
+    it.skipIf(skipProxy)('should verify proxy IP differs from local IP', async () => {
+      // First get the proxy IP
+      const proxyResult = await client!.execute(`
+        await page.goto('https://httpbin.org/ip', { timeout: 30000 });
+        const body = await page.textContent('body');
+        return JSON.parse(body);
+      `);
+
+      await client!.close();
+
+      // Now get the direct IP (without proxy)
+      const directClient = new PlaywrightClient({
+        stealthMode: false,
+        headless: true,
+        timeout: 60000,
+        navigationTimeout: 60000,
+      });
+
+      const directResult = await directClient.execute(`
+        await page.goto('https://httpbin.org/ip', { timeout: 30000 });
+        const body = await page.textContent('body');
+        return JSON.parse(body);
+      `);
+
+      await directClient.close();
+
+      console.log('Proxy IP:', proxyResult.result);
+      console.log('Direct IP:', directResult.result);
+
+      expect(proxyResult.success).toBe(true);
+      expect(directResult.success).toBe(true);
+      // IPs should be different (proxy should mask our real IP)
+      expect(proxyResult.result).not.toBe(directResult.result);
+
+      client = null;
+    });
+
+    it.skipIf(skipProxy)('should work with proxy + stealth mode combined', async () => {
+      client = new PlaywrightClient({
+        stealthMode: true,
+        headless: true,
+        timeout: 60000,
+        navigationTimeout: 60000,
+        proxy: {
+          server: proxyUrl!,
+          username: proxyUsername,
+          password: proxyPassword,
+        },
+      });
+
+      const result = await client.execute(`
+        await page.goto('https://bot.sannysoft.com', { timeout: 30000 });
+        await page.waitForTimeout(2000);
+
+        // Get webdriver detection result
+        const webdriverResult = await page.evaluate(() => {
+          const rows = document.querySelectorAll('table tr');
+          for (const row of rows) {
+            const cells = row.querySelectorAll('td');
+            if (cells.length >= 2 && cells[0].textContent?.includes('Webdriver')) {
+              return cells[1].textContent?.trim() || 'unknown';
+            }
+          }
+          return 'not found';
+        });
+
+        return webdriverResult;
+      `);
+
+      expect(result.success).toBe(true);
+      console.log('Proxy + Stealth webdriver detection result:', result.result);
+    });
+
+    it.skipIf(skipProxy)('should verify config shows proxy enabled', async () => {
+      const config = client!.getConfig();
+
+      expect(config.proxy).toBeDefined();
+      expect(config.proxy?.server).toBe(proxyUrl);
+      expect(config.stealthMode).toBe(true);
+    });
+
+    it.skipIf(skipProxy)('should close proxy browser', async () => {
+      await client?.close();
+      client = null;
     });
   });
 });

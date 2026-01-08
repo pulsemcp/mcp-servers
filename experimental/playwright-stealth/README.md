@@ -60,6 +60,25 @@ Add to your Claude Desktop config file:
 }
 ```
 
+**With Proxy** (e.g., BrightData Residential Proxy):
+
+```json
+{
+  "mcpServers": {
+    "playwright-proxy": {
+      "command": "npx",
+      "args": ["-y", "playwright-stealth-mcp-server"],
+      "env": {
+        "STEALTH_MODE": "true",
+        "PROXY_URL": "http://brd.superproxy.io:22225",
+        "PROXY_USERNAME": "brd-customer-XXXXX-zone-residential",
+        "PROXY_PASSWORD": "your-password"
+      }
+    }
+  }
+}
+```
+
 ### Environment Variables
 
 | Variable                  | Description                                                                | Default                       |
@@ -69,6 +88,10 @@ Add to your Claude Desktop config file:
 | `TIMEOUT`                 | Default timeout for Playwright actions (click, fill, etc.) in milliseconds | `30000`                       |
 | `NAVIGATION_TIMEOUT`      | Default timeout for page navigation (goto, reload, etc.) in milliseconds   | `60000`                       |
 | `SCREENSHOT_STORAGE_PATH` | Directory for storing screenshots                                          | `/tmp/playwright-screenshots` |
+| `PROXY_URL`               | Proxy server URL (e.g., `http://proxy.example.com:8080`)                   | -                             |
+| `PROXY_USERNAME`          | Proxy authentication username                                              | -                             |
+| `PROXY_PASSWORD`          | Proxy authentication password                                              | -                             |
+| `PROXY_BYPASS`            | Comma-separated list of hosts to bypass proxy                              | -                             |
 
 ## Available Tools
 
@@ -200,6 +223,24 @@ Stealth mode includes:
 - User-Agent normalization
 - Plugin/mime type spoofing
 - Navigator property patching
+
+## When to Use Proxy
+
+Configure proxy settings when:
+
+- Scraping sites that rate-limit by IP address
+- Accessing geo-restricted content
+- Avoiding IP-based blocks or bans
+- Rotating IPs for large-scale data collection
+
+The server supports HTTP/HTTPS proxies with optional authentication, making it compatible with:
+
+- **BrightData** (Residential, Datacenter, ISP proxies)
+- **Oxylabs**, **Smartproxy**, and other residential proxy providers
+- Self-hosted proxy servers
+- Corporate HTTP proxies
+
+**Note:** When proxy is configured, the server performs a health check on startup to verify the proxy connection works. If the health check fails, the server will exit with an error.
 
 ## Development
 
