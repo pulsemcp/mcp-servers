@@ -2,6 +2,7 @@ import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { ListToolsRequestSchema, CallToolRequestSchema } from '@modelcontextprotocol/sdk/types.js';
 import { ClientFactory } from './server.js';
 import { z } from 'zod';
+import { ScreenshotStorageFactory } from './storage/index.js';
 
 // =============================================================================
 // TOOL SCHEMAS
@@ -14,6 +15,12 @@ const ExecuteSchema = z.object({
 
 const ScreenshotSchema = z.object({
   fullPage: z.boolean().optional().describe('Capture the full scrollable page. Default: false'),
+  resultHandling: z
+    .enum(['saveAndReturn', 'saveOnly'])
+    .optional()
+    .describe(
+      "How to handle the screenshot result. 'saveAndReturn' (default) saves to storage and returns inline base64, 'saveOnly' saves to storage and returns only the resource URI"
+    ),
 });
 
 // =============================================================================
@@ -64,15 +71,23 @@ await page.click('button[type="submit"]');
 
 const SCREENSHOT_DESCRIPTION = `Take a screenshot of the current page.
 
-Captures the visible viewport or full page as a PNG image encoded in base64.
+Captures the visible viewport or full page as a PNG image. Screenshots are saved to filesystem storage and can be accessed later via MCP resources.
+
+**Parameters:**
+- \`fullPage\`: Whether to capture the full scrollable page (default: false)
+- \`resultHandling\`: How to handle the result:
+  - \`saveAndReturn\` (default): Saves to storage AND returns inline base64 image
+  - \`saveOnly\`: Saves to storage and returns only the resource URI (more efficient for large screenshots)
 
 **Returns:**
-- Base64-encoded PNG image data
+- With \`saveAndReturn\`: Inline base64 PNG image data plus a resource_link to the saved file
+- With \`saveOnly\`: A resource_link with the \`file://\` URI to the saved screenshot
 
 **Use cases:**
 - Verify page state after navigation
 - Debug automation issues
-- Capture visual content for analysis`;
+- Capture visual content for analysis
+- Store screenshots for later reference via MCP resources`;
 
 const GET_STATE_DESCRIPTION = `Get the current browser state.
 
@@ -191,20 +206,66 @@ export function createRegisterTools(clientFactory: ClientFactory) {
             type: 'boolean',
             description: 'Capture the full scrollable page. Default: false',
           },
+          resultHandling: {
+            type: 'string',
+            enum: ['saveAndReturn', 'saveOnly'],
+            description:
+              "How to handle the screenshot result. 'saveAndReturn' (default) saves to storage and returns inline base64, 'saveOnly' saves to storage and returns only the resource URI",
+          },
         },
       },
       handler: async (args: unknown) => {
         try {
           const validated = ScreenshotSchema.parse(args);
-          const base64 = await getClient().screenshot({
+          const client = getClient();
+          const base64 = await client.screenshot({
             fullPage: validated.fullPage,
           });
 
+          // Get page metadata for the screenshot
+          const state = await client.getState();
+
+          // Save to storage
+          const storage = await ScreenshotStorageFactory.create();
+          const uri = await storage.write(base64, {
+            pageUrl: state.currentUrl,
+            pageTitle: state.title,
+            fullPage: validated.fullPage ?? false,
+          });
+
+          const resultHandling = validated.resultHandling ?? 'saveAndReturn';
+
+          // Generate a name from the URI for the resource link
+          const fileName = uri.split('/').pop() || 'screenshot.png';
+
+          if (resultHandling === 'saveOnly') {
+            // Return only the resource link
+            return {
+              content: [
+                {
+                  type: 'resource_link',
+                  uri,
+                  name: fileName,
+                  description: `Screenshot saved to ${uri}`,
+                  mimeType: 'image/png',
+                },
+              ],
+            };
+          }
+
+          // Default: saveAndReturn - return both inline image and resource link
           return {
             content: [
               {
                 type: 'image',
                 data: base64,
+                mimeType: 'image/png',
+              },
+              {
+                type: 'resource_link',
+                uri,
+                name: fileName,
+                description: `Screenshot also saved to ${uri}`,
                 mimeType: 'image/png',
               },
             ],

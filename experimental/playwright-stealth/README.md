@@ -62,12 +62,13 @@ Add to your Claude Desktop config file:
 
 ### Environment Variables
 
-| Variable             | Description                                                                | Default |
-| -------------------- | -------------------------------------------------------------------------- | ------- |
-| `STEALTH_MODE`       | Enable stealth mode with anti-detection measures                           | `false` |
-| `HEADLESS`           | Run browser in headless mode                                               | `true`  |
-| `TIMEOUT`            | Default timeout for Playwright actions (click, fill, etc.) in milliseconds | `30000` |
-| `NAVIGATION_TIMEOUT` | Default timeout for page navigation (goto, reload, etc.) in milliseconds   | `60000` |
+| Variable                  | Description                                                                | Default                       |
+| ------------------------- | -------------------------------------------------------------------------- | ----------------------------- |
+| `STEALTH_MODE`            | Enable stealth mode with anti-detection measures                           | `false`                       |
+| `HEADLESS`                | Run browser in headless mode                                               | `true`                        |
+| `TIMEOUT`                 | Default timeout for Playwright actions (click, fill, etc.) in milliseconds | `30000`                       |
+| `NAVIGATION_TIMEOUT`      | Default timeout for page navigation (goto, reload, etc.) in milliseconds   | `60000`                       |
+| `SCREENSHOT_STORAGE_PATH` | Directory for storing screenshots                                          | `/tmp/playwright-screenshots` |
 
 ## Available Tools
 
@@ -90,11 +91,19 @@ return title;
 
 ### `browser_screenshot`
 
-Take a screenshot of the current page.
+Take a screenshot of the current page. Screenshots are saved to filesystem storage and can be accessed later via MCP resources.
 
 **Parameters:**
 
 - `fullPage` (optional): Capture full scrollable page. Default: `false`
+- `resultHandling` (optional): How to handle the result:
+  - `saveAndReturn` (default): Saves to storage AND returns inline base64 image
+  - `saveOnly`: Saves to storage and returns only the resource URI (more efficient for large screenshots)
+
+**Returns:**
+
+- With `saveAndReturn`: Inline base64 PNG image plus a `resource_link` with the file URI
+- With `saveOnly`: Only a `resource_link` with the `file://` URI to the saved screenshot
 
 ### `browser_get_state`
 
@@ -103,6 +112,15 @@ Get the current browser state including URL, title, and configuration.
 ### `browser_close`
 
 Close the browser session. A new browser will be launched on the next `browser_execute` call.
+
+## MCP Resources
+
+The server exposes saved screenshots as MCP resources. Clients can use:
+
+- `resources/list`: List all saved screenshots with their URIs and metadata
+- `resources/read`: Read a screenshot by its `file://` URI
+
+This allows clients to access previously captured screenshots without needing to take new ones.
 
 ## Usage Examples
 

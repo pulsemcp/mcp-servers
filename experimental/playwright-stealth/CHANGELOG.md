@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.0.3] - 2026-01-08
+
+### Added
+
+- Screenshot resource storage: Screenshots are now saved to filesystem storage and accessible via MCP resources
+- New `SCREENSHOT_STORAGE_PATH` environment variable to configure screenshot storage location (default: `/tmp/playwright-screenshots`)
+- New `resultHandling` parameter for `browser_screenshot` tool:
+  - `saveAndReturn` (default): Saves to storage AND returns inline base64 image
+  - `saveOnly`: Saves to storage and returns only the resource URI (more efficient for large screenshots)
+- MCP Resources support: Clients can list and read saved screenshots via `resources/list` and `resources/read` handlers
+- Resource links are returned from `browser_screenshot` tool with `file://` URIs
+
 ## [0.0.2] - 2026-01-05
 
 ### Added
