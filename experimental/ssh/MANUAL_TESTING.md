@@ -67,7 +67,7 @@ The tests will:
 
 **Test Date:** 2026-01-08
 **Branch:** tadasant/ssh-mcp-server
-**Commit:** b0403e4 (docs: update MANUAL_TESTING.md with new test results)
+**Commit:** fb90944 (fix: exclude manual tests from default test run)
 **Tested By:** Claude Code
 **Environment:** Real SSH server (AO Production via Tailscale) with passphrase-protected key via SSH agent
 
