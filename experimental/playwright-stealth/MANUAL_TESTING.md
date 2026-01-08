@@ -32,7 +32,7 @@ npm run test:manual
 
 **Test Date:** 2026-01-08
 **Branch:** claude/playwright-stealth-proxy-support
-**Commit:** 9303057 (proxy support tests on top of 0.0.3 resource storage)
+**Commit:** f828ae0 (v0.0.4 - proxy support + resource storage merge)
 **Tested By:** Claude
 
 ### Summary
