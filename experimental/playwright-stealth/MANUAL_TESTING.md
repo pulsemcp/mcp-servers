@@ -31,8 +31,8 @@ npm run test:manual
 ## Latest Test Results
 
 **Test Date:** 2026-01-08
-**Branch:** main (proxy support feature)
-**Commit:** (pending - run after commit)
+**Branch:** claude/playwright-stealth-proxy-support
+**Commit:** 9303057
 **Tested By:** Claude
 
 ### Summary

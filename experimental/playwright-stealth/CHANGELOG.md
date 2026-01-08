@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.0.3] - 2026-01-08
+
 ### Added
 
 - Proxy support via `PROXY_URL`, `PROXY_USERNAME`, `PROXY_PASSWORD`, and `PROXY_BYPASS` environment variables
@@ -14,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Proxy health check on startup to verify connection before accepting requests
 - `proxyEnabled` field in `browser_get_state` response to show current proxy status
 - `logInfo` helper function for informational logging
+- `ignoreHTTPSErrors` enabled when proxy is configured (required for residential proxies that perform HTTPS inspection)
 
 ## [0.0.2] - 2026-01-05
 
