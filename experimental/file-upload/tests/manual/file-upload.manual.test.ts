@@ -264,7 +264,8 @@ describe('remote-filesystem manual tests', () => {
       const modifiedInfo = await client.modify('private-test.txt', { makePrivate: true });
 
       expect(modifiedInfo.isPublic).toBe(false);
-      expect(modifiedInfo.url).toContain('X-Goog-Signature');
+      // Private files use signed URLs with Signature query parameter
+      expect(modifiedInfo.url).toContain('Signature=');
 
       console.log('Made file private:', modifiedInfo);
     });

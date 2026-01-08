@@ -4,66 +4,56 @@ This file tracks the results of manual testing against real GCS credentials.
 
 ## Latest Test Run
 
-**Date:** 2026-01-08 20:15 UTC
+**Date:** 2026-01-08 23:41 UTC
 **Branch:** claude/file-upload-mcp-server
-**Commit:** 12067ab (tests run against uncommitted refactor changes)
+**Commit:** 61b9f34
 **Tested By:** Claude
-**Environment:** Real GCS bucket with inline credentials
+**Environment:** Real GCS bucket with fine-grained access control and inline credentials
 
 ### Test Results
 
 **Type:** Full manual testing with real GCS credentials
-**Status:** :white_check_mark: Core functionality verified (15/18 tests passed)
+**Status:** :white_check_mark: All tests passed (18/18)
 
 **Details:**
 
-- All upload operations work correctly (PNG, text, from disk)
+- All upload operations work correctly (PNG, text, from disk, public/private)
 - Download works for both text and binary (base64) content
 - List files and directories works correctly
 - GetInfo retrieves correct metadata
 - Delete successfully removes files
 - Exists correctly detects file presence/absence
 - Content type detection and override works
-- Modify content type works
-
-**Known Limitations:**
-
-- 3 tests failed due to bucket having **uniform bucket-level access** enabled
-- ACL-related operations (makePublic/makePrivate) require object-level ACLs
-- This is expected behavior - not a code bug
+- Modify operations work (makePublic, makePrivate, contentType)
 
 ### Manual Test Summary
 
 | Metric      | Value |
 | ----------- | ----- |
 | Total Tests | 18    |
-| Passed      | 15    |
-| Failed      | 3     |
-| Pass Rate   | 83%   |
+| Passed      | 18    |
+| Failed      | 0     |
+| Pass Rate   | 100%  |
 
 ### Test Breakdown
 
-| Test Suite             | Status             | Tests | Notes                                       |
-| ---------------------- | ------------------ | ----- | ------------------------------------------- |
-| upload                 | :warning: Partial  | 2/3   | Public upload fails (uniform bucket access) |
-| uploadFile             | :white_check_mark: | 1/1   | Upload from disk works                      |
-| download               | :white_check_mark: | 2/2   | Text and base64 download work               |
-| list                   | :white_check_mark: | 2/2   | Files and directories listing works         |
-| getInfo                | :white_check_mark: | 1/1   | File metadata retrieval works               |
-| modify                 | :warning: Partial  | 1/3   | Content type works, ACL changes fail        |
-| delete                 | :white_check_mark: | 1/1   | File deletion works                         |
-| exists                 | :white_check_mark: | 2/2   | Existence check works                       |
-| content type detection | :white_check_mark: | 3/3   | Auto-detect and override work               |
+| Test Suite             | Status             | Tests | Notes                         |
+| ---------------------- | ------------------ | ----- | ----------------------------- |
+| upload                 | :white_check_mark: | 3/3   | PNG, text, and public upload  |
+| uploadFile             | :white_check_mark: | 1/1   | Upload from disk works        |
+| download               | :white_check_mark: | 2/2   | Text and base64 download work |
+| list                   | :white_check_mark: | 2/2   | Files and directories listing |
+| getInfo                | :white_check_mark: | 1/1   | File metadata retrieval works |
+| modify                 | :white_check_mark: | 3/3   | Public, private, content type |
+| delete                 | :white_check_mark: | 1/1   | File deletion works           |
+| exists                 | :white_check_mark: | 2/2   | Existence check works         |
+| content type detection | :white_check_mark: | 3/3   | Auto-detect and override work |
 
-### Failed Tests Detail
+### Notes
 
-All 3 failures are due to the same GCS bucket configuration:
-
-```
-Error: Cannot update access control for an object when uniform bucket-level access is enabled.
-```
-
-This is expected behavior when the GCS bucket has **uniform bucket-level access** enabled. To use per-object ACLs (makePublic/makePrivate), the bucket must be configured with **fine-grained** access control.
+- Bucket configured with **fine-grained** access control (required for per-object ACLs)
+- Default is private (`GCS_MAKE_PUBLIC=false` or unset)
+- Signed URLs generated for private files with 7-day expiry
 
 ---
 
@@ -102,6 +92,17 @@ npm run test:manual
 ---
 
 ## Previous Test Runs
+
+### 2026-01-08 20:15 UTC
+
+**Branch:** claude/file-upload-mcp-server
+**Commit:** 12067ab
+**Type:** Full manual testing with real GCS credentials
+**Status:** :warning: Core functionality verified (15/18 tests passed)
+
+- 3 tests failed due to bucket having uniform bucket-level access enabled
+- ACL-related operations (makePublic/makePrivate) require fine-grained access control
+- This was bucket configuration, not a code bug
 
 ### 2026-01-08 17:00 UTC
 
