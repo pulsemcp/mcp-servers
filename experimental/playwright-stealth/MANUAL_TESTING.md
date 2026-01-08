@@ -32,16 +32,31 @@ npm run test:manual
 
 **Test Date:** 2026-01-08
 **Branch:** claude/playwright-stealth-proxy-support
-**Commit:** 9303057
+**Commit:** 9303057 (proxy support tests on top of 0.0.3 resource storage)
 **Tested By:** Claude
 
 ### Summary
 
-**Overall:** 18 tests pass (100%)
+**Overall:** 18+ tests pass (100%)
 
-All manual tests with real browsers pass, including stealth mode anti-bot protection tests and proxy tests with BrightData residential proxy.
+All manual tests with real browsers pass, including:
+
+- Core Playwright functionality (navigation, screenshots, state management)
+- Stealth mode anti-bot protection tests
+- Screenshot resource storage tests
+- **NEW: Proxy support tests with BrightData residential proxy**
 
 ### Test Cases Status
+
+| Test Suite                     | Tests | Status  |
+| ------------------------------ | ----- | ------- |
+| Playwright Client Manual Tests | 13    | ✅ Pass |
+| Screenshot Resource Storage    | 7     | ✅ Pass |
+| Proxy Mode Tests               | 5     | ✅ Pass |
+
+### Detailed Results
+
+#### Playwright Client Tests (13 tests)
 
 | Tool               | Functional Test | Integration Test | Manual Test |
 | ------------------ | --------------- | ---------------- | ----------- |
@@ -50,15 +65,19 @@ All manual tests with real browsers pass, including stealth mode anti-bot protec
 | browser_get_state  | ✅ Pass         | ✅ Pass          | ✅ Pass     |
 | browser_close      | ✅ Pass         | ✅ Pass          | ✅ Pass     |
 
-### Anti-Bot Protection Test Results
+#### Screenshot Resource Storage Tests (7 tests)
 
-| Test Case                             | Result  | Details                                                       |
-| ------------------------------------- | ------- | ------------------------------------------------------------- |
-| claude.ai login WITHOUT stealth mode  | Blocked | `isBlocked: true`, `hasLoginForm: false` - protection active  |
-| claude.ai login WITH stealth mode     | Success | `isBlocked: true` (cf- markers), `hasLoginForm: true` - works |
-| bot.sannysoft.com webdriver detection | Pass    | Webdriver not detected with stealth mode                      |
+| Test Case                                    | Result  | Details                                         |
+| -------------------------------------------- | ------- | ----------------------------------------------- |
+| Save real screenshot to storage              | ✅ Pass | Screenshot saved as PNG file (~20KB)            |
+| Save full-page screenshot to storage         | ✅ Pass | Metadata correctly records fullPage: true       |
+| Read back saved screenshot                   | ✅ Pass | Base64 content matches original                 |
+| List saved screenshots                       | ✅ Pass | Returns resources sorted by timestamp (desc)    |
+| Delete screenshot                            | ✅ Pass | File and metadata removed from disk             |
+| Storage factory uses SCREENSHOT_STORAGE_PATH | ✅ Pass | Environment variable correctly configures path  |
+| Capture screenshot after navigation          | ✅ Pass | Metadata captures correct pageUrl and pageTitle |
 
-### Proxy Test Results
+#### Proxy Mode Tests (5 tests) - NEW
 
 | Test Case                          | Result | Details                                                   |
 | ---------------------------------- | ------ | --------------------------------------------------------- |
@@ -66,15 +85,27 @@ All manual tests with real browsers pass, including stealth mode anti-bot protec
 | Verify proxy IP differs from local | Pass   | Proxy IP: `97.181.22.160`, Direct IP: `143.105.119.238`   |
 | Proxy + Stealth mode combined      | Pass   | Webdriver "not found" when using proxy + stealth together |
 | Config shows proxy enabled         | Pass   | `proxyEnabled: true` in browser state                     |
+| Close proxy browser                | Pass   | Browser cleanup works correctly with proxy                |
+
+#### Anti-Bot Protection Test Results
+
+| Test Case                             | Result  | Details                                                       |
+| ------------------------------------- | ------- | ------------------------------------------------------------- |
+| claude.ai login WITHOUT stealth mode  | Blocked | `isBlocked: true`, `hasLoginForm: false` - protection active  |
+| claude.ai login WITH stealth mode     | Success | `isBlocked: true` (cf- markers), `hasLoginForm: true` - works |
+| bot.sannysoft.com webdriver detection | Pass    | Webdriver not detected with stealth mode                      |
 
 ### Key Findings
 
-1. **Stealth mode effectively bypasses anti-bot protection**: The claude.ai login page shows the login form with stealth mode (`hasLoginForm: true`), but blocks it without stealth (`hasLoginForm: false`)
-2. **WebDriver detection avoided**: bot.sannysoft.com shows webdriver as "not found" when using stealth mode
-3. **Proxy support works with BrightData**: Residential proxy integration successfully masks real IP with rotating IPs
-4. **Proxy + Stealth combination works**: Both features can be used together for maximum anti-detection
-5. **HTTPS handling**: Proxy mode correctly ignores HTTPS errors for residential proxies that perform TLS inspection
-6. **All core functionality works**: Navigation, screenshots, state management, and browser cleanup all function correctly
+1. **Screenshot resource storage works correctly**: Screenshots are saved to filesystem with proper metadata (pageUrl, pageTitle, timestamp, fullPage)
+2. **File format verified**: Screenshots saved as valid PNG files (~20KB for example.com)
+3. **Metadata persistence verified**: JSON metadata files created alongside PNG files
+4. **SCREENSHOT_STORAGE_PATH env var works**: Factory correctly uses custom storage path
+5. **Stealth mode effectively bypasses anti-bot protection**: The claude.ai login page shows the login form with stealth mode
+6. **WebDriver detection avoided**: bot.sannysoft.com shows webdriver as "not found" when using stealth mode
+7. **Proxy support works with BrightData**: Residential proxy integration successfully masks real IP with rotating IPs
+8. **Proxy + Stealth combination works**: Both features can be used together for maximum anti-detection
+9. **HTTPS handling**: Proxy mode correctly ignores HTTPS errors for residential proxies that perform TLS inspection
 
 ### Notes
 
@@ -82,4 +113,5 @@ All manual tests with real browsers pass, including stealth mode anti-bot protec
 - Integration tests verify MCP protocol compliance
 - Manual tests use real Chromium browser with actual network requests
 - Stealth mode adds ~100ms overhead for plugin initialization
+- Screenshot storage tests verified with real browser screenshots (~20KB PNG files)
 - Proxy mode requires `ignoreHTTPSErrors` for residential proxies that perform HTTPS inspection

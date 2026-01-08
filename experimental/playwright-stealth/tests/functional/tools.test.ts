@@ -1,12 +1,17 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { createFunctionalMockClient } from '../mocks/playwright-client.functional-mock.js';
 import { createRegisterTools } from '../../shared/src/tools.js';
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import type { IPlaywrightClient } from '../../shared/src/server.js';
+import { ScreenshotStorageFactory } from '../../shared/src/storage/index.js';
+import { promises as fs } from 'fs';
+import os from 'os';
+import path from 'path';
 
 describe('Playwright Stealth Tools', () => {
   let mockClient: IPlaywrightClient;
   let server: Server;
+  let testStoragePath: string;
 
   // Type for handler functions
   type ToolsListHandler = (req: { method: string; params: unknown }) => Promise<{
@@ -16,12 +21,27 @@ describe('Playwright Stealth Tools', () => {
     method: string;
     params: { name: string; arguments: unknown };
   }) => Promise<{
-    content: Array<{ type: string; text?: string; data?: string; mimeType?: string }>;
+    content: Array<{
+      type: string;
+      text?: string;
+      data?: string;
+      mimeType?: string;
+      uri?: string;
+      name?: string;
+      description?: string;
+    }>;
     isError?: boolean;
   }>;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     mockClient = createFunctionalMockClient();
+
+    // Create a unique test storage directory
+    testStoragePath = path.join(os.tmpdir(), `playwright-test-${Date.now()}`);
+    process.env.SCREENSHOT_STORAGE_PATH = testStoragePath;
+
+    // Reset the storage factory to use the new path
+    ScreenshotStorageFactory.reset();
 
     // Create a real Server instance
     server = new Server({ name: 'test', version: '1.0.0' }, { capabilities: { tools: {} } });
@@ -29,6 +49,17 @@ describe('Playwright Stealth Tools', () => {
     // Register tools
     const registerTools = createRegisterTools(() => mockClient);
     registerTools(server);
+  });
+
+  afterEach(async () => {
+    // Clean up test storage directory
+    try {
+      await fs.rm(testStoragePath, { recursive: true, force: true });
+    } catch {
+      // Ignore cleanup errors
+    }
+    delete process.env.SCREENSHOT_STORAGE_PATH;
+    ScreenshotStorageFactory.reset();
   });
 
   // Helper to get handlers from server internals
@@ -133,7 +164,7 @@ describe('Playwright Stealth Tools', () => {
   });
 
   describe('browser_screenshot', () => {
-    it('should take screenshot with default options', async () => {
+    it('should take screenshot with default options (saveAndReturn)', async () => {
       const handler = getCallToolHandler();
       const result = await handler({
         method: 'tools/call',
@@ -145,7 +176,12 @@ describe('Playwright Stealth Tools', () => {
 
       expect(result.isError).toBeFalsy();
       expect(mockClient.screenshot).toHaveBeenCalledWith({ fullPage: undefined });
+
+      // Should return both image and resource_link with saveAndReturn (default)
+      expect(result.content).toHaveLength(2);
       expect(result.content[0].type).toBe('image');
+      expect(result.content[1].type).toBe('resource_link');
+      expect(result.content[1].uri).toMatch(/^file:\/\//);
     });
 
     it('should support fullPage option', async () => {
@@ -159,6 +195,45 @@ describe('Playwright Stealth Tools', () => {
       });
 
       expect(mockClient.screenshot).toHaveBeenCalledWith({ fullPage: true });
+    });
+
+    it('should support saveOnly resultHandling', async () => {
+      const handler = getCallToolHandler();
+      const result = await handler({
+        method: 'tools/call',
+        params: {
+          name: 'browser_screenshot',
+          arguments: { resultHandling: 'saveOnly' },
+        },
+      });
+
+      expect(result.isError).toBeFalsy();
+
+      // Should return only resource_link with saveOnly
+      expect(result.content).toHaveLength(1);
+      expect(result.content[0].type).toBe('resource_link');
+      expect(result.content[0].uri).toMatch(/^file:\/\//);
+    });
+
+    it('should save screenshot to storage', async () => {
+      const handler = getCallToolHandler();
+      const result = await handler({
+        method: 'tools/call',
+        params: {
+          name: 'browser_screenshot',
+          arguments: { resultHandling: 'saveOnly' },
+        },
+      });
+
+      // Verify the file was saved
+      const uri = result.content[0].uri;
+      expect(uri).toBeDefined();
+      const filePath = uri!.replace('file://', '');
+      const fileExists = await fs
+        .access(filePath)
+        .then(() => true)
+        .catch(() => false);
+      expect(fileExists).toBe(true);
     });
   });
 

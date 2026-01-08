@@ -1,5 +1,6 @@
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { createRegisterTools } from './tools.js';
+import { registerResources } from './resources.js';
 import type { ExecuteResult, BrowserState, PlaywrightConfig, ProxyConfig } from './types.js';
 
 /**
@@ -203,11 +204,12 @@ export function createMCPServer(proxyConfig?: ProxyConfig) {
   const server = new Server(
     {
       name: 'playwright-stealth-mcp-server',
-      version: '0.0.1',
+      version: '0.0.4',
     },
     {
       capabilities: {
         tools: {},
+        resources: {},
       },
     }
   );
@@ -236,6 +238,9 @@ export function createMCPServer(proxyConfig?: ProxyConfig) {
 
     const registerTools = createRegisterTools(factory);
     registerTools(server);
+
+    // Register resources handlers for screenshot storage
+    registerResources(server);
   };
 
   const cleanup = async () => {
