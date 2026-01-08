@@ -13,7 +13,7 @@ export const UploadToolSchema = z.object({
   remotePath: z.string().describe(PARAM_DESCRIPTIONS.remotePath),
 });
 
-export function uploadTool(server: Server, clientFactory: ClientFactory) {
+export function uploadTool(_server: Server, clientFactory: ClientFactory) {
   return {
     name: 'ssh_upload',
     description: `Upload a file from the local machine to the remote SSH server via SFTP.
@@ -33,14 +33,11 @@ export function uploadTool(server: Server, clientFactory: ClientFactory) {
       required: ['localPath', 'remotePath'],
     },
     handler: async (args: unknown) => {
+      const client = clientFactory();
       try {
         const validatedArgs = UploadToolSchema.parse(args);
-        const client = clientFactory();
 
         await client.upload(validatedArgs.localPath, validatedArgs.remotePath);
-
-        // Disconnect after upload
-        client.disconnect();
 
         return {
           content: [
@@ -60,6 +57,8 @@ export function uploadTool(server: Server, clientFactory: ClientFactory) {
           ],
           isError: true,
         };
+      } finally {
+        client.disconnect();
       }
     },
   };

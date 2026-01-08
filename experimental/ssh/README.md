@@ -7,11 +7,20 @@ This server solves a common problem with SSH MCP servers: support for passphrase
 ## Highlights
 
 - **SSH Agent Authentication** - Seamlessly works with passphrase-protected SSH keys via SSH agent
-- **Private Key File Support** - Fallback to direct private key authentication
+- **Private Key File Support** - Alternative authentication via direct private key file
 - **Command Execution** - Run shell commands on remote servers
 - **File Transfer** - Upload and download files via SFTP
 - **Directory Listing** - Browse remote file systems
 - **Tool Groups** - Control which tools are available (readonly, write, admin)
+
+## Authentication Priority
+
+The server supports multiple authentication methods and will use them in this order:
+
+1. **SSH Agent** (recommended) - If `SSH_AUTH_SOCK` is set or auto-detected
+2. **Private Key File** - If `SSH_PRIVATE_KEY_PATH` is set
+
+Both methods can be configured simultaneously. If SSH agent authentication is available, it takes priority. The private key file method is used as a fallback or when the agent is not available.
 
 ## Capabilities
 

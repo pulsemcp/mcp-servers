@@ -15,7 +15,7 @@ export const ExecuteToolSchema = z.object({
   timeout: z.number().optional().describe(PARAM_DESCRIPTIONS.timeout),
 });
 
-export function executeTool(server: Server, clientFactory: ClientFactory) {
+export function executeTool(_server: Server, clientFactory: ClientFactory) {
   return {
     name: 'ssh_execute',
     description: `Execute a command on the remote SSH server.
@@ -37,17 +37,14 @@ export function executeTool(server: Server, clientFactory: ClientFactory) {
       required: ['command'],
     },
     handler: async (args: unknown) => {
+      const client = clientFactory();
       try {
         const validatedArgs = ExecuteToolSchema.parse(args);
-        const client = clientFactory();
 
         const result = await client.execute(validatedArgs.command, {
           cwd: validatedArgs.cwd,
           timeout: validatedArgs.timeout,
         });
-
-        // Disconnect after command execution
-        client.disconnect();
 
         return {
           content: [
@@ -75,6 +72,8 @@ export function executeTool(server: Server, clientFactory: ClientFactory) {
           ],
           isError: true,
         };
+      } finally {
+        client.disconnect();
       }
     },
   };

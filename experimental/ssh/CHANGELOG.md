@@ -19,5 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `ssh_connection_info` tool for checking connection configuration
 - Tool grouping system (readonly, write, admin) for access control
 - Configuration resource at `ssh://config` for debugging
-- Environment variable validation at startup
+- Environment variable validation at startup (port, timeout validation)
 - Comprehensive error handling with user-friendly messages
+- Input validation with Zod schemas for all tool parameters
+- Proper resource cleanup (SSH connections always disconnected via try/finally)

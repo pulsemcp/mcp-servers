@@ -10,7 +10,7 @@ export const ListDirectoryToolSchema = z.object({
   path: z.string().describe(PARAM_DESCRIPTIONS.path),
 });
 
-export function listDirectoryTool(server: Server, clientFactory: ClientFactory) {
+export function listDirectoryTool(_server: Server, clientFactory: ClientFactory) {
   return {
     name: 'ssh_list_directory',
     description: `List the contents of a directory on the remote SSH server via SFTP.
@@ -29,14 +29,11 @@ export function listDirectoryTool(server: Server, clientFactory: ClientFactory) 
       required: ['path'],
     },
     handler: async (args: unknown) => {
+      const client = clientFactory();
       try {
         const validatedArgs = ListDirectoryToolSchema.parse(args);
-        const client = clientFactory();
 
         const entries = await client.listDirectory(validatedArgs.path);
-
-        // Disconnect after listing
-        client.disconnect();
 
         // Format entries for display
         const formattedEntries = entries.map((entry) => ({
@@ -65,6 +62,8 @@ export function listDirectoryTool(server: Server, clientFactory: ClientFactory) 
           ],
           isError: true,
         };
+      } finally {
+        client.disconnect();
       }
     },
   };

@@ -25,14 +25,36 @@ export function createSSHConfigFromEnv(): SSHConfig {
     throw new Error('SSH_HOST and SSH_USERNAME environment variables must be configured');
   }
 
+  // Parse and validate port
+  let port = 22;
+  if (process.env.SSH_PORT) {
+    port = parseInt(process.env.SSH_PORT, 10);
+    if (isNaN(port) || port < 1 || port > 65535) {
+      throw new Error(
+        `Invalid SSH_PORT: ${process.env.SSH_PORT}. Must be a number between 1 and 65535.`
+      );
+    }
+  }
+
+  // Parse and validate timeout
+  let timeout = 30000;
+  if (process.env.SSH_TIMEOUT) {
+    timeout = parseInt(process.env.SSH_TIMEOUT, 10);
+    if (isNaN(timeout) || timeout < 0) {
+      throw new Error(
+        `Invalid SSH_TIMEOUT: ${process.env.SSH_TIMEOUT}. Must be a non-negative number.`
+      );
+    }
+  }
+
   return {
     host,
-    port: process.env.SSH_PORT ? parseInt(process.env.SSH_PORT, 10) : 22,
+    port,
     username,
     privateKeyPath: process.env.SSH_PRIVATE_KEY_PATH,
     passphrase: process.env.SSH_PASSPHRASE,
     agentSocket: process.env.SSH_AUTH_SOCK,
-    timeout: process.env.SSH_TIMEOUT ? parseInt(process.env.SSH_TIMEOUT, 10) : 30000,
+    timeout,
   };
 }
 

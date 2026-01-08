@@ -99,6 +99,36 @@ describe('SSH Tools', () => {
         required: ['command'],
       });
     });
+
+    it('should return error for missing command parameter', async () => {
+      const tool = executeTool(server, () => mockClient);
+      const result = await tool.handler({});
+
+      expect(result).toMatchObject({
+        isError: true,
+        content: [
+          {
+            type: 'text',
+            text: expect.stringContaining('Error executing command'),
+          },
+        ],
+      });
+    });
+
+    it('should return error for invalid command type', async () => {
+      const tool = executeTool(server, () => mockClient);
+      const result = await tool.handler({ command: 123 });
+
+      expect(result).toMatchObject({
+        isError: true,
+        content: [
+          {
+            type: 'text',
+            text: expect.stringContaining('Error executing command'),
+          },
+        ],
+      });
+    });
   });
 
   describe('ssh_upload', () => {
@@ -139,6 +169,21 @@ describe('SSH Tools', () => {
           },
         ],
         isError: true,
+      });
+    });
+
+    it('should return error for missing required paths', async () => {
+      const tool = uploadTool(server, () => mockClient);
+      const result = await tool.handler({ localPath: '/local/file.txt' });
+
+      expect(result).toMatchObject({
+        isError: true,
+        content: [
+          {
+            type: 'text',
+            text: expect.stringContaining('Error uploading file'),
+          },
+        ],
       });
     });
   });
@@ -183,6 +228,21 @@ describe('SSH Tools', () => {
         isError: true,
       });
     });
+
+    it('should return error for missing required paths', async () => {
+      const tool = downloadTool(server, () => mockClient);
+      const result = await tool.handler({ remotePath: '/remote/file.txt' });
+
+      expect(result).toMatchObject({
+        isError: true,
+        content: [
+          {
+            type: 'text',
+            text: expect.stringContaining('Error downloading file'),
+          },
+        ],
+      });
+    });
   });
 
   describe('ssh_list_directory', () => {
@@ -217,6 +277,21 @@ describe('SSH Tools', () => {
           },
         ],
         isError: true,
+      });
+    });
+
+    it('should return error for missing path parameter', async () => {
+      const tool = listDirectoryTool(server, () => mockClient);
+      const result = await tool.handler({});
+
+      expect(result).toMatchObject({
+        isError: true,
+        content: [
+          {
+            type: 'text',
+            text: expect.stringContaining('Error listing directory'),
+          },
+        ],
       });
     });
   });

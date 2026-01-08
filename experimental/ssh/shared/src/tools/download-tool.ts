@@ -12,7 +12,7 @@ export const DownloadToolSchema = z.object({
   localPath: z.string().describe(PARAM_DESCRIPTIONS.localPath),
 });
 
-export function downloadTool(server: Server, clientFactory: ClientFactory) {
+export function downloadTool(_server: Server, clientFactory: ClientFactory) {
   return {
     name: 'ssh_download',
     description: `Download a file from the remote SSH server to the local machine via SFTP.
@@ -32,14 +32,11 @@ export function downloadTool(server: Server, clientFactory: ClientFactory) {
       required: ['remotePath', 'localPath'],
     },
     handler: async (args: unknown) => {
+      const client = clientFactory();
       try {
         const validatedArgs = DownloadToolSchema.parse(args);
-        const client = clientFactory();
 
         await client.download(validatedArgs.remotePath, validatedArgs.localPath);
-
-        // Disconnect after download
-        client.disconnect();
 
         return {
           content: [
@@ -59,6 +56,8 @@ export function downloadTool(server: Server, clientFactory: ClientFactory) {
           ],
           isError: true,
         };
+      } finally {
+        client.disconnect();
       }
     },
   };
