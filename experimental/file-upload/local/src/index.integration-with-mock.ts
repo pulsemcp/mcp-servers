@@ -15,7 +15,7 @@ async function main() {
   const mockClientFactory = () =>
     new MockGCSClient({
       bucket: 'test-bucket',
-      basePath: 'test-uploads/',
+      rootPath: 'test-uploads',
       makePublic: true,
     });
 
@@ -24,7 +24,7 @@ async function main() {
   const transport = new StdioServerTransport();
   await server.connect(transport);
 
-  logServerStart('file-upload (integration mock)');
+  logServerStart('remote-filesystem (integration mock)');
 }
 
 main().catch((error) => {

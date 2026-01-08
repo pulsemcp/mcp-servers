@@ -12,63 +12,68 @@ const PARAM_DESCRIPTIONS = {
     '1) A file:// URI pointing to a local file (e.g., "file:///tmp/screenshots/image.png"), or ' +
     '2) A base64-encoded string of the file contents. ' +
     'Use file:// URIs when uploading from MCP resources or local files.',
-  filename:
-    'Optional custom filename for the uploaded file (without path). ' +
+  path:
+    'Destination path in the remote filesystem (relative to root). ' +
     'If not provided, a timestamp-based filename will be generated. ' +
-    'Example: "screenshot-2024-01-15.png"',
+    'Example: "screenshots/pr-123.png" or "reports/2024/summary.pdf"',
   contentType:
-    'Optional MIME type for the file. If not provided, will be inferred from the filename extension. ' +
+    'Optional MIME type for the file. If not provided, will be inferred from the path extension. ' +
     'Common types: "image/png", "image/jpeg", "application/pdf", "text/plain"',
+  makePublic:
+    'Whether to make the file publicly accessible. ' +
+    'If not specified, uses the server default (GCS_MAKE_PUBLIC env var).',
 } as const;
 
 // =============================================================================
 // SCHEMA DEFINITION
 // =============================================================================
 
-export const UploadToGCSSchema = z.object({
+export const UploadSchema = z.object({
   source: z.string().min(1).describe(PARAM_DESCRIPTIONS.source),
-  filename: z.string().optional().describe(PARAM_DESCRIPTIONS.filename),
+  path: z.string().optional().describe(PARAM_DESCRIPTIONS.path),
   contentType: z.string().optional().describe(PARAM_DESCRIPTIONS.contentType),
+  makePublic: z.boolean().optional().describe(PARAM_DESCRIPTIONS.makePublic),
 });
 
 // =============================================================================
 // TOOL DESCRIPTION
 // =============================================================================
 
-const TOOL_DESCRIPTION = `Upload a file to Google Cloud Storage and get a public URL.
+const TOOL_DESCRIPTION = `Upload a file to the remote filesystem.
 
-This tool accepts either a file:// URI pointing to a local file, or base64-encoded file contents. It uploads the data to the configured GCS bucket and returns a public URL.
+This tool accepts either a file:// URI pointing to a local file, or base64-encoded file contents. It uploads the data to the configured storage and returns file info including a URL.
 
 **Input formats:**
 - \`file://\` URI: Points to a local file (e.g., from MCP resources)
 - Base64 string: Raw file contents encoded in base64
 
 **Returns:**
-- \`url\`: Public URL to access the uploaded file
-- \`bucket\`: GCS bucket name
-- \`path\`: Full path within the bucket
+- \`path\`: Path in the remote filesystem
+- \`url\`: URL to access the file (public or signed)
 - \`size\`: File size in bytes
 - \`contentType\`: MIME type of the file
+- \`isPublic\`: Whether the file is publicly accessible
 
 **Use cases:**
-- Upload screenshots from playwright-stealth to share in PRs
-- Upload generated reports or documents to cloud storage
-- Make local files accessible via URL
+- Upload screenshots to share in PRs
+- Upload generated reports or documents
+- Store files for later retrieval
 
 **Example:**
 \`\`\`
-upload_to_gcs({
-  source: "file:///tmp/playwright-screenshots/page-1736300000000.png",
-  filename: "pr-screenshot.png"
+upload({
+  source: "file:///tmp/screenshots/page.png",
+  path: "screenshots/pr-123.png",
+  makePublic: true
 })
 \`\`\``;
 
 /**
- * Factory function for creating the upload_to_gcs tool
+ * Factory function for creating the upload tool
  */
-export function uploadToGCSTool(_server: Server, clientFactory: () => IGCSClient) {
+export function uploadTool(_server: Server, clientFactory: () => IGCSClient) {
   return {
-    name: 'upload_to_gcs',
+    name: 'upload',
     description: TOOL_DESCRIPTION,
     inputSchema: {
       type: 'object' as const,
@@ -77,21 +82,25 @@ export function uploadToGCSTool(_server: Server, clientFactory: () => IGCSClient
           type: 'string',
           description: PARAM_DESCRIPTIONS.source,
         },
-        filename: {
+        path: {
           type: 'string',
-          description: PARAM_DESCRIPTIONS.filename,
+          description: PARAM_DESCRIPTIONS.path,
         },
         contentType: {
           type: 'string',
           description: PARAM_DESCRIPTIONS.contentType,
+        },
+        makePublic: {
+          type: 'boolean',
+          description: PARAM_DESCRIPTIONS.makePublic,
         },
       },
       required: ['source'],
     },
     handler: async (args: unknown) => {
       try {
-        const validatedArgs = UploadToGCSSchema.parse(args);
-        const { source, filename, contentType } = validatedArgs;
+        const validatedArgs = UploadSchema.parse(args);
+        const { source, path, contentType, makePublic } = validatedArgs;
 
         const client = clientFactory();
 
@@ -101,14 +110,16 @@ export function uploadToGCSTool(_server: Server, clientFactory: () => IGCSClient
           // Handle file:// URI - read from local filesystem
           const filePath = source.replace('file://', '');
           result = await client.uploadFile(filePath, {
-            filename,
+            path,
             contentType,
+            makePublic,
           });
         } else {
           // Assume base64-encoded data
           result = await client.upload(source, {
-            filename,
+            path,
             contentType,
+            makePublic,
           });
         }
 
@@ -116,17 +127,7 @@ export function uploadToGCSTool(_server: Server, clientFactory: () => IGCSClient
           content: [
             {
               type: 'text',
-              text: JSON.stringify(
-                {
-                  url: result.url,
-                  bucket: result.bucket,
-                  path: result.path,
-                  size: result.size,
-                  contentType: result.contentType,
-                },
-                null,
-                2
-              ),
+              text: JSON.stringify(result, null, 2),
             },
           ],
         };
@@ -136,7 +137,7 @@ export function uploadToGCSTool(_server: Server, clientFactory: () => IGCSClient
           content: [
             {
               type: 'text',
-              text: `Error uploading to GCS: ${message}`,
+              text: `Error uploading file: ${message}`,
             },
           ],
           isError: true,

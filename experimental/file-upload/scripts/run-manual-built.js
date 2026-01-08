@@ -7,10 +7,14 @@
 import { execSync } from 'child_process';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
+import { config } from 'dotenv';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const rootDir = join(__dirname, '..');
+
+// Load .env file from project root
+config({ path: join(rootDir, '.env') });
 
 console.log('Building project before running manual tests...\n');
 

@@ -8,7 +8,7 @@ export type ClientFactory = () => IGCSClient;
 export function createMCPServer() {
   const server = new Server(
     {
-      name: 'file-upload-mcp-server',
+      name: 'remote-filesystem-mcp-server',
       version: '0.1.0',
     },
     {
@@ -33,9 +33,14 @@ export function createMCPServer() {
         return new GCSClient({
           bucket,
           projectId: process.env.GCS_PROJECT_ID,
+          // Support both key file and inline credentials
           keyFilename: process.env.GOOGLE_APPLICATION_CREDENTIALS,
-          basePath: process.env.GCS_BASE_PATH,
-          makePublic: process.env.GCS_MAKE_PUBLIC !== 'false',
+          clientEmail: process.env.GCS_CLIENT_EMAIL,
+          privateKey: process.env.GCS_PRIVATE_KEY,
+          // Root path constraint
+          rootPath: process.env.GCS_ROOT_PATH,
+          // Default public setting
+          makePublic: process.env.GCS_MAKE_PUBLIC === 'true',
         });
       });
 
