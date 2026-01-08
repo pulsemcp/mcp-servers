@@ -23,9 +23,9 @@ npm run test:manual
 
 ## Latest Test Results
 
-**Test Date:** 2026-01-05
-**Branch:** claude/playwright-stealth-configurable-timeout
-**Commit:** b5a26ad
+**Test Date:** 2026-01-08
+**Branch:** claude/playwright-stealth-resource-storage
+**Commit:** e8a5557
 **Tested By:** Claude
 
 ### Summary
