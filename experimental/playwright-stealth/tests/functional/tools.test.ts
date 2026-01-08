@@ -182,6 +182,30 @@ describe('Playwright Stealth Tools', () => {
       expect(state.title).toBe('Example Domain');
       expect(state.isOpen).toBe(true);
       expect(state.stealthMode).toBe(false);
+      expect(state.proxyEnabled).toBe(false);
+    });
+
+    it('should show proxy enabled when configured', async () => {
+      // Create a new mock client with proxy enabled
+      mockClient = createFunctionalMockClient({ proxyEnabled: true });
+
+      // Re-register tools with the new client
+      server = new Server({ name: 'test', version: '1.0.0' }, { capabilities: { tools: {} } });
+      const registerTools = createRegisterTools(() => mockClient);
+      registerTools(server);
+
+      const handler = getCallToolHandler();
+      const result = await handler({
+        method: 'tools/call',
+        params: {
+          name: 'browser_get_state',
+          arguments: {},
+        },
+      });
+
+      expect(result.isError).toBeFalsy();
+      const state = JSON.parse(result.content[0].text!);
+      expect(state.proxyEnabled).toBe(true);
     });
   });
 

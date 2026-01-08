@@ -1,6 +1,6 @@
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { createRegisterTools } from './tools.js';
-import type { ExecuteResult, BrowserState, PlaywrightConfig } from './types.js';
+import type { ExecuteResult, BrowserState, PlaywrightConfig, ProxyConfig } from './types.js';
 
 /**
  * Playwright client interface
@@ -52,6 +52,16 @@ export class PlaywrightClient implements IPlaywrightClient {
       return this.page;
     }
 
+    // Build proxy options for Playwright if configured
+    const proxyOptions = this.config.proxy
+      ? {
+          server: this.config.proxy.server,
+          username: this.config.proxy.username,
+          password: this.config.proxy.password,
+          bypass: this.config.proxy.bypass,
+        }
+      : undefined;
+
     if (this.config.stealthMode) {
       // Use playwright-extra with stealth plugin
       const { chromium } = await import('playwright-extra');
@@ -66,6 +76,7 @@ export class PlaywrightClient implements IPlaywrightClient {
           '--disable-dev-shm-usage',
           '--no-sandbox',
         ],
+        proxy: proxyOptions,
       });
     } else {
       // Use standard playwright
@@ -73,6 +84,7 @@ export class PlaywrightClient implements IPlaywrightClient {
 
       this.browser = await chromium.launch({
         headless: this.config.headless,
+        proxy: proxyOptions,
       });
     }
 
@@ -81,6 +93,9 @@ export class PlaywrightClient implements IPlaywrightClient {
       userAgent: this.config.stealthMode
         ? 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
         : undefined,
+      // Ignore HTTPS errors when using proxy (required for residential proxies like BrightData
+      // which perform HTTPS inspection and may re-sign certificates)
+      ignoreHTTPSErrors: !!this.config.proxy,
     });
 
     this.page = await this.context.newPage();
@@ -182,7 +197,7 @@ export class PlaywrightClient implements IPlaywrightClient {
 
 export type ClientFactory = () => IPlaywrightClient;
 
-export function createMCPServer() {
+export function createMCPServer(proxyConfig?: ProxyConfig) {
   const stealthMode = process.env.STEALTH_MODE === 'true';
 
   const server = new Server(
@@ -214,6 +229,7 @@ export function createMCPServer() {
           headless,
           timeout,
           navigationTimeout,
+          proxy: proxyConfig,
         });
         return activeClient;
       });

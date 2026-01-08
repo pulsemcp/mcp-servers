@@ -243,6 +243,7 @@ export function createRegisterTools(clientFactory: ClientFactory) {
                     ...state,
                     stealthMode: config.stealthMode,
                     headless: config.headless,
+                    proxyEnabled: !!config.proxy,
                   },
                   null,
                   2
