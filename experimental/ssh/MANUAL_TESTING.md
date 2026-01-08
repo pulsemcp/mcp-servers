@@ -61,7 +61,7 @@ The tests will:
 
 **Test Date:** 2026-01-08
 **Branch:** tadasant/ssh-mcp-server
-**Commit:** b11f7fe (fix: correct lint paths and simplify ci:install)
+**Commit:** 0704e67 (fix: address PR review feedback)
 **Tested By:** Claude Code
 **Environment:** Functional tests only (no live SSH server available)
 
@@ -69,8 +69,8 @@ The tests will:
 
 | Metric      | Value |
 | ----------- | ----- |
-| Total Tests | 17    |
-| Passed      | 17    |
+| Total Tests | 22    |
+| Passed      | 22    |
 | Failed      | 0     |
 | Pass Rate   | 100%  |
 
@@ -78,7 +78,7 @@ The tests will:
 
 | File                         | Status                  | Tests | Notes                                           |
 | ---------------------------- | ----------------------- | ----- | ----------------------------------------------- |
-| `tools.test.ts` (functional) | :white_check_mark: PASS | 17/17 | All tool handlers tested with mocked SSH client |
+| `tools.test.ts` (functional) | :white_check_mark: PASS | 22/22 | All tool handlers tested with mocked SSH client |
 
 ### Detailed Results
 
@@ -90,6 +90,8 @@ The tests will:
 | Pass cwd option when provided     | :white_check_mark: PASS | Working directory properly set |
 | Handle execution errors           | :white_check_mark: PASS | Returns isError: true          |
 | Validate input schema             | :white_check_mark: PASS | command is required            |
+| Error for missing command         | :white_check_mark: PASS | Zod validation error           |
+| Error for invalid command type    | :white_check_mark: PASS | Zod validation error           |
 
 #### ssh_upload Tests
 
@@ -97,6 +99,7 @@ The tests will:
 | ------------------------ | ----------------------- | ------------------------- |
 | Upload file successfully | :white_check_mark: PASS | SFTP upload works         |
 | Handle upload errors     | :white_check_mark: PASS | Permission denied handled |
+| Error for missing paths  | :white_check_mark: PASS | Zod validation error      |
 
 #### ssh_download Tests
 
@@ -104,6 +107,7 @@ The tests will:
 | -------------------------- | ----------------------- | ---------------------- |
 | Download file successfully | :white_check_mark: PASS | SFTP download works    |
 | Handle download errors     | :white_check_mark: PASS | File not found handled |
+| Error for missing paths    | :white_check_mark: PASS | Zod validation error   |
 
 #### ssh_list_directory Tests
 
@@ -111,6 +115,7 @@ The tests will:
 | ----------------------- | ----------------------- | ------------------------ |
 | List directory contents | :white_check_mark: PASS | Returns file/dir entries |
 | Handle listing errors   | :white_check_mark: PASS | Directory not found      |
+| Error for missing path  | :white_check_mark: PASS | Zod validation error     |
 
 #### ssh_connection_info Tests
 
