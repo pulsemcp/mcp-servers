@@ -11,7 +11,7 @@
   "type": "module",
   "scripts": {
     "install-all": "npm install && cd local && npm install && cd ../shared && npm install",
-    "ci:install": "npm ci && cd shared && npm ci && cd ../local && npm ci && cd ../../../libs/test-mcp-client && npm ci --ignore-scripts",
+    "ci:install": "npm ci && cd ../../libs/test-mcp-client && npm ci --ignore-scripts",
     "build": "node ../../scripts/build-mcp-server.js",
     "build:test": "node ../../scripts/build-mcp-server.js && cd ../../libs/test-mcp-client && npm run build",
     "clean": "find . -name '*.js' -not -path './node_modules/*' -not -path './*/node_modules/*' -not -path './local/build/*' -not -path './shared/build/*' -not -path './*/build/*' -delete && find . -name '*.js.map' -not -path './node_modules/*' -not -path './*/node_modules/*' -not -path './local/build/*' -not -path './shared/build/*' -not -path './*/build/*' -delete",
@@ -24,10 +24,10 @@
     "test:manual:setup": "node scripts/setup-manual-tests.js",
     "test:manual": "node scripts/run-manual-built.js",
     "test:all": "npm run test:run && npm run test:integration",
-    "lint": "cd .. && npm run lint",
-    "lint:fix": "cd .. && npm run lint:fix",
-    "format": "cd .. && npm run format",
-    "format:check": "cd .. && npm run format:check"
+    "lint": "cd ../.. && npm run lint",
+    "lint:fix": "cd ../.. && npm run lint:fix",
+    "format": "cd ../.. && npm run format",
+    "format:check": "cd ../.. && npm run format:check"
   },
   "repository": {
     "type": "git",
