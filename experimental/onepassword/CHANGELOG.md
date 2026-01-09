@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-01-09
+
 ### Security
 
 - **BREAKING**: Remove item IDs from all tool responses to prevent constructing unlock URLs without explicit user action through the 1Password app (fixes #221)

@@ -42,9 +42,9 @@ npm run test:manual
 
 ## Latest Test Results
 
-**Test Date:** 2026-01-06 20:52 UTC
-**Branch:** tadasant/onepassword-mcp-server
-**Commit:** 07c1ccf
+**Test Date:** 2026-01-09 10:16 UTC
+**Branch:** claude-opus-4/fix-onepassword-data-exposure-221
+**Commit:** a6ecad9
 **Tested By:** Claude
 **Environment:** Build verification only - no 1Password service account credentials available
 
@@ -58,12 +58,12 @@ npm run test:manual
 - Successfully built shared module
 - Successfully built local module
 - TypeScript compilation completed without errors
-- All 29 functional tests passed (includes 3 new security tests for URL validation)
-- Strengthened URL hostname validation to prevent malicious lookalike domains
-- Added path validation for 1Password URLs
+- All 29 functional tests passed
+- **Security fix verified:** IDs are no longer exposed in tool responses (fixes #221)
+- **Security tests added:** Verified unlock_item response doesn't expose IDs
 - Package ready for version bump
 
-**Note:** Full manual testing with 1Password CLI and service account credentials was not performed. This is the initial implementation of the 1Password MCP server. The functional tests verify all tool logic with mocked responses.
+**Note:** Full manual testing with 1Password CLI and service account credentials was not performed. The functional tests verify all tool logic with mocked responses, including the security fixes for issue #221.
 
 ### Functional Test Summary
 
@@ -76,10 +76,10 @@ npm run test:manual
 
 ### Test Files
 
-| File                         | Status             | Tests | Notes                                                                 |
-| ---------------------------- | ------------------ | ----- | --------------------------------------------------------------------- |
-| `tools.test.ts`              | :white_check_mark: | 29    | Tools, URL parsing, unlock/lock, credential redaction, security tests |
-| `onepassword.manual.test.ts` | :hourglass: SKIP   | 4     | Skipped - no credentials available                                    |
+| File                         | Status             | Tests | Notes                                                                      |
+| ---------------------------- | ------------------ | ----- | -------------------------------------------------------------------------- |
+| `tools.test.ts`              | :white_check_mark: | 29    | Tools, URL parsing, unlock/lock, credential redaction, ID removal security |
+| `onepassword.manual.test.ts` | :hourglass: SKIP   | 4     | Skipped - no credentials available                                         |
 
 ### Detailed Results
 

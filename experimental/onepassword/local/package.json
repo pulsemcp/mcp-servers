@@ -1,6 +1,6 @@
 {
   "name": "onepassword-mcp-server",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "MCP server for interacting with 1Password via the CLI",
   "main": "build/index.js",
   "type": "module",
