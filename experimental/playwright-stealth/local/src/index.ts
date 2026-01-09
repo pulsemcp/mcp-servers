@@ -84,6 +84,21 @@ function validateEnvironment(): void {
       defaultValue: 'false',
     },
     {
+      name: 'STEALTH_USER_AGENT',
+      description: 'Custom User-Agent string for stealth mode (overrides default)',
+      defaultValue: undefined,
+    },
+    {
+      name: 'STEALTH_MASK_LINUX',
+      description: 'Mask Linux platform as Windows in stealth mode (true/false)',
+      defaultValue: 'true',
+    },
+    {
+      name: 'STEALTH_LOCALE',
+      description: 'Custom locale for Accept-Language header (e.g., en-US,en)',
+      defaultValue: 'en-US,en',
+    },
+    {
       name: 'HEADLESS',
       description: 'Run browser in headless mode (true/false)',
       defaultValue: 'true',
@@ -123,6 +138,16 @@ function validateEnvironment(): void {
 
   if (stealthMode) {
     logWarning('config', 'Stealth mode enabled - using anti-detection measures');
+    // Log stealth-specific configuration
+    if (process.env.STEALTH_USER_AGENT) {
+      logInfo('config', `Custom User-Agent: ${process.env.STEALTH_USER_AGENT}`);
+    }
+    if (process.env.STEALTH_MASK_LINUX === 'false') {
+      logInfo('config', 'Linux platform masking disabled');
+    }
+    if (process.env.STEALTH_LOCALE) {
+      logInfo('config', `Custom locale: ${process.env.STEALTH_LOCALE}`);
+    }
   }
   if (!headless) {
     logWarning('config', 'Running in non-headless mode - browser window will be visible');

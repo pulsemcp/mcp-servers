@@ -68,7 +68,24 @@ export class PlaywrightClient implements IPlaywrightClient {
       const { chromium } = await import('playwright-extra');
       const StealthPlugin = (await import('puppeteer-extra-plugin-stealth')).default;
 
-      chromium.use(StealthPlugin());
+      // Configure stealth plugin with custom user-agent-override settings
+      const stealth = StealthPlugin();
+
+      // Remove default user-agent-override evasion to reconfigure with custom options
+      stealth.enabledEvasions.delete('user-agent-override');
+      chromium.use(stealth);
+
+      // Add user-agent-override evasion with configurable options
+      const UserAgentOverridePlugin = (
+        await import('puppeteer-extra-plugin-stealth/evasions/user-agent-override/index.js')
+      ).default;
+      chromium.use(
+        UserAgentOverridePlugin({
+          userAgent: this.config.stealthUserAgent,
+          locale: this.config.stealthLocale ?? 'en-US,en',
+          maskLinux: this.config.stealthMaskLinux ?? true,
+        })
+      );
 
       this.browser = await chromium.launch({
         headless: this.config.headless,
@@ -91,9 +108,9 @@ export class PlaywrightClient implements IPlaywrightClient {
 
     this.context = await this.browser.newContext({
       viewport: { width: 1920, height: 1080 },
-      userAgent: this.config.stealthMode
-        ? 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-        : undefined,
+      // In stealth mode, let the plugin's user-agent-override handle the user agent
+      // In non-stealth mode, use the provided user agent if any
+      userAgent: this.config.stealthMode ? undefined : this.config.stealthUserAgent,
       // Ignore HTTPS errors when using proxy (required for residential proxies like BrightData
       // which perform HTTPS inspection and may re-sign certificates)
       ignoreHTTPSErrors: !!this.config.proxy,
@@ -204,7 +221,7 @@ export function createMCPServer(proxyConfig?: ProxyConfig) {
   const server = new Server(
     {
       name: 'playwright-stealth-mcp-server',
-      version: '0.0.4',
+      version: '0.0.5',
     },
     {
       capabilities: {
@@ -225,6 +242,12 @@ export function createMCPServer(proxyConfig?: ProxyConfig) {
         const headless = process.env.HEADLESS !== 'false';
         const timeout = parseInt(process.env.TIMEOUT || '30000', 10);
         const navigationTimeout = parseInt(process.env.NAVIGATION_TIMEOUT || '60000', 10);
+        const stealthUserAgent = process.env.STEALTH_USER_AGENT;
+        const stealthMaskLinux =
+          process.env.STEALTH_MASK_LINUX === undefined
+            ? undefined
+            : process.env.STEALTH_MASK_LINUX !== 'false';
+        const stealthLocale = process.env.STEALTH_LOCALE;
 
         activeClient = new PlaywrightClient({
           stealthMode,
@@ -232,6 +255,9 @@ export function createMCPServer(proxyConfig?: ProxyConfig) {
           timeout,
           navigationTimeout,
           proxy: proxyConfig,
+          stealthUserAgent,
+          stealthMaskLinux,
+          stealthLocale,
         });
         return activeClient;
       });

@@ -24,6 +24,12 @@ export interface PlaywrightConfig {
   navigationTimeout: number;
   /** Optional proxy configuration */
   proxy?: ProxyConfig;
+  /** Custom User-Agent string for stealth mode (overrides default Windows UA) */
+  stealthUserAgent?: string;
+  /** Whether to mask Linux platform in stealth mode (default: true) */
+  stealthMaskLinux?: boolean;
+  /** Custom locale for stealth mode (default: 'en-US,en') */
+  stealthLocale?: string;
 }
 
 export interface ExecuteResult {

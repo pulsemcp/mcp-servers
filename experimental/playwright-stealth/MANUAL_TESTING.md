@@ -31,8 +31,8 @@ npm run test:manual
 ## Latest Test Results
 
 **Test Date:** 2026-01-08
-**Branch:** claude/playwright-stealth-proxy-support
-**Commit:** f828ae0 (v0.0.4 - proxy support + resource storage merge)
+**Branch:** claude-opus-4-5/stealth-fingerprinting-config
+**Commit:** 08d63a0 (v0.0.5 - configurable browser fingerprinting)
 **Tested By:** Claude
 
 ### Summary
@@ -44,7 +44,18 @@ All manual tests with real browsers pass, including:
 - Core Playwright functionality (navigation, screenshots, state management)
 - Stealth mode anti-bot protection tests
 - Screenshot resource storage tests
-- **NEW: Proxy support tests with BrightData residential proxy**
+- Proxy support tests with BrightData residential proxy
+- **NEW: Configurable fingerprinting options (STEALTH_USER_AGENT, STEALTH_MASK_LINUX, STEALTH_LOCALE)**
+
+### New in v0.0.5
+
+The fingerprinting configuration feature adds environment variables that configure the stealth plugin's user-agent-override evasion:
+
+- `STEALTH_USER_AGENT`: Custom User-Agent string
+- `STEALTH_MASK_LINUX`: Control Linux platform masking (default: true)
+- `STEALTH_LOCALE`: Custom locale for Accept-Language header
+
+This resolves fingerprint mismatch issues in Docker/Linux environments where the User-Agent showed Windows but `navigator.platform` exposed Linux.
 
 ### Test Cases Status
 
