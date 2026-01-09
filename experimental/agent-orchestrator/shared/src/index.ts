@@ -14,6 +14,15 @@ export {
   type IAgentOrchestratorClient as AgentOrchestratorClientInterface,
 } from './orchestrator-client/orchestrator-client.js';
 
+// Health check exports
+export {
+  checkApiHealth,
+  getErrorHint,
+  parseHealthCheckTimeout,
+  DEFAULT_HEALTH_CHECK_TIMEOUT,
+  MAX_HEALTH_CHECK_TIMEOUT,
+} from './health-check.js';
+
 // Type exports
 export type {
   Session,

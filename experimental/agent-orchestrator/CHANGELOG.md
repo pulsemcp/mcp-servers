@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.2] - 2026-01-09
+
+### Added
+
+- API connectivity health check on startup to fail fast when REST API is unreachable
+- `HEALTH_CHECK_TIMEOUT` environment variable to configure health check timeout (default: 10 seconds)
+- Helpful error hints for common connection issues (auth failures, timeouts, connection refused, DNS errors)
+
 ## [0.1.1] - 2025-12-14
 
 ### Added
