@@ -1,7 +1,7 @@
 {
-  "name": "file-upload-mcp-server-shared",
+  "name": "remote-filesystem-mcp-server-shared",
   "version": "0.1.0",
-  "description": "Shared code for file-upload MCP server implementations",
+  "description": "Shared code for remote-filesystem MCP server implementations",
   "main": "build/index.js",
   "type": "module",
   "scripts": {
@@ -22,7 +22,8 @@
   },
   "keywords": [
     "mcp",
-    "file-upload",
+    "remote-filesystem",
+    "cloud-storage",
     "gcs",
     "google-cloud-storage"
   ],

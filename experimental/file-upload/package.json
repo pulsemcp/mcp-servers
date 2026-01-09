@@ -1,7 +1,7 @@
 {
-  "name": "file-upload-mcp-server",
+  "name": "remote-filesystem-mcp-server",
   "version": "0.1.0",
-  "description": "MCP server for uploading files to cloud storage (GCS, S3, etc.)",
+  "description": "MCP server for remote filesystem operations on cloud storage (GCS, S3, etc.)",
   "author": "PulseMCP",
   "license": "MIT",
   "workspaces": [
