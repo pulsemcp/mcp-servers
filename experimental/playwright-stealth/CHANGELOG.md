@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Configurable browser fingerprinting for stealth mode:
+  - `STEALTH_USER_AGENT`: Custom User-Agent string to override the default
+  - `STEALTH_MASK_LINUX`: Control whether Linux platform is masked as Windows (default: true)
+  - `STEALTH_LOCALE`: Custom locale for Accept-Language header (default: en-US,en)
+- Resolves fingerprint mismatch issues when running in Docker/Linux environments where the User-Agent header showed Windows but `navigator.platform` exposed the real OS, triggering bot detection
+
 ## [0.0.4] - 2026-01-08
 
 ### Added

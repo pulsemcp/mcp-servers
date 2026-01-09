@@ -84,6 +84,9 @@ Add to your Claude Desktop config file:
 | Variable                  | Description                                                                | Default                       |
 | ------------------------- | -------------------------------------------------------------------------- | ----------------------------- |
 | `STEALTH_MODE`            | Enable stealth mode with anti-detection measures                           | `false`                       |
+| `STEALTH_USER_AGENT`      | Custom User-Agent string (stealth mode only)                               | Browser default               |
+| `STEALTH_MASK_LINUX`      | Mask Linux platform as Windows (stealth mode only)                         | `true`                        |
+| `STEALTH_LOCALE`          | Custom locale for Accept-Language header (stealth mode only)               | `en-US,en`                    |
 | `HEADLESS`                | Run browser in headless mode                                               | `true`                        |
 | `TIMEOUT`                 | Default timeout for Playwright actions (click, fill, etc.) in milliseconds | `30000`                       |
 | `NAVIGATION_TIMEOUT`      | Default timeout for page navigation (goto, reload, etc.) in milliseconds   | `60000`                       |
@@ -223,6 +226,35 @@ Stealth mode includes:
 - User-Agent normalization
 - Plugin/mime type spoofing
 - Navigator property patching
+
+### Fingerprint Configuration
+
+When running in Docker/Linux environments, bot detection systems may identify a fingerprint mismatch between the User-Agent header and other browser signals like `navigator.platform`. Use these environment variables to configure consistent fingerprints:
+
+**Example: macOS Fingerprint (for Docker/Linux)**
+
+```json
+{
+  "mcpServers": {
+    "playwright-stealth": {
+      "command": "npx",
+      "args": ["-y", "playwright-stealth-mcp-server"],
+      "env": {
+        "STEALTH_MODE": "true",
+        "STEALTH_USER_AGENT": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        "STEALTH_MASK_LINUX": "false"
+      }
+    }
+  }
+}
+```
+
+**Why this matters:**
+
+- By default, stealth mode masks Linux as Windows in the User-Agent
+- However, `navigator.platform` still reports the actual OS (e.g., "Linux x86_64")
+- This mismatch triggers bot detection on sites with comprehensive fingerprinting
+- Setting `STEALTH_MASK_LINUX=false` and providing a consistent User-Agent prevents this mismatch
 
 ## When to Use Proxy
 

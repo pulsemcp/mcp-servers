@@ -12,6 +12,9 @@ build/
 !local/setup-dev.js
 !local/prepare-publish.js
 
+# Keep type declaration files that are source (not generated)
+!shared/src/*.d.ts
+
 # Environment files
 .env
 .env.local
