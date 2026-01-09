@@ -53,12 +53,13 @@ Control which tools are available via the `ENABLED_TOOLGROUPS` environment varia
 
 ### Environment Variables
 
-| Variable                      | Required | Description                       | Default     |
-| ----------------------------- | -------- | --------------------------------- | ----------- |
-| `AGENT_ORCHESTRATOR_BASE_URL` | Yes      | Base URL for the orchestrator API | -           |
-| `AGENT_ORCHESTRATOR_API_KEY`  | Yes      | API key for authentication        | -           |
-| `ENABLED_TOOLGROUPS`          | No       | Comma-separated tool groups       | All enabled |
-| `SKIP_HEALTH_CHECKS`          | No       | Skip API validation at startup    | `false`     |
+| Variable                      | Required | Description                            | Default     |
+| ----------------------------- | -------- | -------------------------------------- | ----------- |
+| `AGENT_ORCHESTRATOR_BASE_URL` | Yes      | Base URL for the orchestrator API      | -           |
+| `AGENT_ORCHESTRATOR_API_KEY`  | Yes      | API key for authentication             | -           |
+| `ENABLED_TOOLGROUPS`          | No       | Comma-separated tool groups            | All enabled |
+| `SKIP_HEALTH_CHECKS`          | No       | Skip API connectivity check at startup | `false`     |
+| `HEALTH_CHECK_TIMEOUT`        | No       | Health check timeout in milliseconds   | `10000`     |
 
 ### Claude Desktop
 

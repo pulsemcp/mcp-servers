@@ -1,7 +1,12 @@
 #!/usr/bin/env node
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
-import { createMCPServer } from '../shared/index.js';
-import { logServerStart, logError, logWarning } from '../shared/logging.js';
+import {
+  createMCPServer,
+  checkApiHealth,
+  getErrorHint,
+  parseHealthCheckTimeout,
+} from '../shared/index.js';
+import { logServerStart, logError, logWarning, logDebug } from '../shared/logging.js';
 
 // =============================================================================
 // ENVIRONMENT VALIDATION
@@ -31,8 +36,13 @@ function validateEnvironment(): void {
     },
     {
       name: 'SKIP_HEALTH_CHECKS',
-      description: 'Skip API validation at startup',
+      description: 'Skip API connectivity check at startup (set to "true" to skip)',
       defaultValue: 'false',
+    },
+    {
+      name: 'HEALTH_CHECK_TIMEOUT',
+      description: 'Health check timeout in milliseconds',
+      defaultValue: '10000',
     },
   ];
 
@@ -84,8 +94,35 @@ async function performHealthChecks(): Promise<void> {
     return;
   }
 
-  // For agent-orchestrator, we could add a health check by calling the sessions endpoint
-  // For now, we skip complex validation since the API might not always be available
+  logDebug('healthcheck', 'Performing API connectivity health check...');
+
+  // Parse health check timeout using shared utility
+  const healthCheckTimeout = parseHealthCheckTimeout(process.env.HEALTH_CHECK_TIMEOUT, (msg) =>
+    logWarning('healthcheck', msg)
+  );
+
+  const baseUrl = process.env.AGENT_ORCHESTRATOR_BASE_URL!;
+  const apiKey = process.env.AGENT_ORCHESTRATOR_API_KEY!;
+
+  try {
+    await checkApiHealth(baseUrl, apiKey, healthCheckTimeout);
+    logDebug('healthcheck', `Health check passed - connected to ${baseUrl}`);
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+
+    // Provide helpful error messages based on common failure scenarios
+    const hint = getErrorHint(errorMessage, healthCheckTimeout);
+
+    logError('healthcheck', `API connectivity health check failed: ${errorMessage}${hint}`);
+    console.error('\n----------------------------------------');
+    console.error('API connectivity health check failed!');
+    console.error(`Error: ${errorMessage}${hint}`);
+    console.error('\nTo skip health checks, set:');
+    console.error('  SKIP_HEALTH_CHECKS=true');
+    console.error('----------------------------------------\n');
+
+    process.exit(1);
+  }
 }
 
 // =============================================================================
