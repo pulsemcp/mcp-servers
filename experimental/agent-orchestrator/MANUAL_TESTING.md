@@ -65,15 +65,15 @@ The tests will:
 
 ## Latest Test Results
 
-**Test Date:** 2025-12-14
-**Branch:** tadasant/add-change-mcp-servers-action
-**Commit:** 18b0299
+**Test Date:** 2026-01-09
+**Branch:** tadasant/agent-orchestrator-health-check
+**Commit:** 2605d2f
 **Tested By:** Claude Code (automated)
 **Environment:** macOS, agent-orchestrator running on localhost:3000
 
 ### Summary
 
-**Overall:** :white_check_mark: SUCCESS - All 18 functional tests pass (100%)
+**Overall:** :white_check_mark: SUCCESS - All 19 functional tests pass (100%)
 
 | Test Category     | Status             | Tests |
 | ----------------- | ------------------ | ----- |
@@ -82,7 +82,7 @@ The tests will:
 | get_session       | :white_check_mark: | 5/5   |
 | start_session     | :white_check_mark: | 1/1   |
 | action_session    | :white_check_mark: | 7/7   |
-| Resources         | :white_check_mark: | 0/0   |
+| Health Check      | :white_check_mark: | 1/1   |
 
 ### Functionality Verified
 
@@ -92,6 +92,7 @@ The tests will:
 - :white_check_mark: **startSessionWorks** - Create new sessions
 - :white_check_mark: **actionSessionWorks** - Archive/unarchive sessions
 - :white_check_mark: **changeMcpServersWorks** - Update MCP servers for a session
+- :white_check_mark: **healthCheckWorks** - API connectivity health check on startup
 
 ### Test Details
 
@@ -102,9 +103,10 @@ The tests will:
 - `start_session` - Create and start a new session
 - `action_session` - Perform actions (follow_up, pause, restart, archive, unarchive, change_mcp_servers)
 
-**Additional tests:**
+**New in 0.1.2:**
 
-- Functional tests: 18 pass (added 2 tests for change_mcp_servers action)
+- Added API connectivity health check on startup (fail-fast behavior)
+- Functional tests: 19 pass
 
 ---
 
