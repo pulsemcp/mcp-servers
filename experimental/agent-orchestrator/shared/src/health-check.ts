@@ -10,12 +10,7 @@ export const MAX_HEALTH_CHECK_TIMEOUT = 300000; // 5 minutes max
  * Get a helpful hint based on the error message to guide users in troubleshooting.
  */
 export function getErrorHint(errorMessage: string, timeout: number): string {
-  // Check for timeout errors
-  if (errorMessage.toLowerCase().includes('timeout')) {
-    return `\nHint: Connection timed out after ${timeout}ms. Check that the API server is running and reachable.`;
-  }
-
-  // Check for authentication errors
+  // Check for authentication errors first (most common initial setup issue)
   if (
     errorMessage.includes('401') ||
     errorMessage.includes('403') ||
@@ -23,6 +18,11 @@ export function getErrorHint(errorMessage: string, timeout: number): string {
     errorMessage.toLowerCase().includes('forbidden')
   ) {
     return '\nHint: Authentication failed. Check that AGENT_ORCHESTRATOR_API_KEY is correct.';
+  }
+
+  // Check for timeout errors
+  if (errorMessage.toLowerCase().includes('timeout')) {
+    return `\nHint: Connection timed out after ${timeout}ms. Check that the API server is running and reachable.`;
   }
 
   // Check for connection refused (specific error codes)
@@ -99,7 +99,14 @@ export async function checkApiHealth(
   const normalizedBaseUrl = baseUrl.trim().replace(/\/$/, '');
 
   // Use the sessions endpoint with minimal data to verify connectivity
-  const url = new URL(`${normalizedBaseUrl}/api/v1/sessions`);
+  let url: URL;
+  try {
+    url = new URL(`${normalizedBaseUrl}/api/v1/sessions`);
+  } catch {
+    throw new Error(
+      'Invalid URL: Check that AGENT_ORCHESTRATOR_BASE_URL is a valid URL (e.g., http://localhost:3000)'
+    );
+  }
   url.searchParams.set('per_page', '1');
 
   const controller = new AbortController();
