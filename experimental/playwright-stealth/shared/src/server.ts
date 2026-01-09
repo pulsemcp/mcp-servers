@@ -221,7 +221,7 @@ export function createMCPServer(proxyConfig?: ProxyConfig) {
   const server = new Server(
     {
       name: 'playwright-stealth-mcp-server',
-      version: '0.0.4',
+      version: '0.0.5',
     },
     {
       capabilities: {
