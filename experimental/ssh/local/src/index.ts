@@ -1,7 +1,13 @@
 #!/usr/bin/env node
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
-import { createMCPServer } from '../shared/index.js';
-import { logServerStart, logError, logWarning } from '../shared/logging.js';
+import {
+  createMCPServer,
+  createSSHConfigFromEnv,
+  SSHClient,
+  getErrorHint,
+  parseHealthCheckTimeout,
+} from '../shared/index.js';
+import { logServerStart, logError, logWarning, logDebug } from '../shared/logging.js';
 
 // =============================================================================
 // ENVIRONMENT VALIDATION
@@ -54,6 +60,16 @@ function validateEnvironment(): void {
       name: 'ENABLED_TOOLGROUPS',
       description: 'Comma-separated list of tool groups to enable (readonly,write,admin)',
       defaultValue: 'all groups enabled',
+    },
+    {
+      name: 'SKIP_HEALTH_CHECKS',
+      description: 'Skip SSH connection health check on startup (set to "true" to skip)',
+      defaultValue: 'false',
+    },
+    {
+      name: 'HEALTH_CHECK_TIMEOUT',
+      description: 'Health check connection timeout in milliseconds',
+      defaultValue: '10000',
     },
   ];
 
@@ -110,7 +126,7 @@ function validateEnvironment(): void {
 // HEALTH CHECKS (Optional)
 // =============================================================================
 // Validates SSH connectivity before starting the server.
-// Set SKIP_HEALTH_CHECKS=true to disable (useful for testing).
+// Set SKIP_HEALTH_CHECKS=true to disable (useful for testing or lazy-connection scenarios).
 // =============================================================================
 
 async function performHealthChecks(): Promise<void> {
@@ -119,8 +135,46 @@ async function performHealthChecks(): Promise<void> {
     return;
   }
 
-  // Health check is optional for SSH - connection will be established on first tool call
-  // This avoids issues with SSH agent not being available during server startup
+  logDebug('healthcheck', 'Performing SSH connection health check...');
+
+  // Parse health check timeout using shared utility
+  const healthCheckTimeout = parseHealthCheckTimeout(process.env.HEALTH_CHECK_TIMEOUT, (msg) =>
+    logWarning('healthcheck', msg)
+  );
+
+  // Create SSH config with health check timeout
+  const sshConfig = createSSHConfigFromEnv();
+  const healthCheckConfig = {
+    ...sshConfig,
+    timeout: healthCheckTimeout,
+  };
+
+  const client = new SSHClient(healthCheckConfig);
+
+  try {
+    await client.connect();
+    logDebug(
+      'healthcheck',
+      `Health check passed - connected to ${sshConfig.host}:${sshConfig.port || 22}`
+    );
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+
+    // Provide helpful error messages based on common failure scenarios
+    const hint = getErrorHint(errorMessage, healthCheckTimeout);
+
+    logError('healthcheck', `SSH connection health check failed: ${errorMessage}${hint}`);
+    console.error('\n----------------------------------------');
+    console.error('SSH connection health check failed!');
+    console.error(`Error: ${errorMessage}${hint}`);
+    console.error('\nTo skip health checks (e.g., for lazy connection scenarios), set:');
+    console.error('  SKIP_HEALTH_CHECKS=true');
+    console.error('----------------------------------------\n');
+
+    process.exit(1);
+  } finally {
+    client.disconnect();
+  }
 }
 
 // =============================================================================

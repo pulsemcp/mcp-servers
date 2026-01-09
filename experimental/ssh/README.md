@@ -8,6 +8,7 @@ This server solves a common problem with SSH MCP servers: support for passphrase
 
 - **SSH Agent Authentication** - Seamlessly works with passphrase-protected SSH keys via SSH agent
 - **Private Key File Support** - Alternative authentication via direct private key file
+- **Startup Health Check** - Verifies SSH connectivity on startup with clear error messages
 - **Command Execution** - Run shell commands on remote servers
 - **File Transfer** - Upload and download files via SFTP
 - **Directory Listing** - Browse remote file systems
@@ -56,6 +57,28 @@ Control which tools are available via the `ENABLED_TOOLGROUPS` environment varia
 - `ENABLED_TOOLGROUPS="readonly,write"` - Allow file transfers but no command execution
 - Not set - All tools enabled (default)
 
+### Startup Health Check
+
+The server performs an SSH connection health check on startup to verify that the configured credentials and host are valid. This provides immediate feedback if there are configuration issues, rather than discovering them during workflow.
+
+**Benefits:**
+
+- **Faster feedback**: Configuration errors surface at startup rather than mid-workflow
+- **Clearer error messages**: Startup failures include hints for common issues
+- **Improved user experience**: Eliminates ambiguity about server operational status
+
+**Configuration:**
+
+- `SKIP_HEALTH_CHECKS=true` - Skip the health check (useful for lazy connection scenarios)
+- `HEALTH_CHECK_TIMEOUT=10000` - Customize the health check timeout (default: 10 seconds)
+
+**Error hints provided for:**
+
+- Authentication failures (SSH key not loaded, wrong key)
+- Connection timeouts (host unreachable)
+- Connection refused (SSH server not running)
+- DNS resolution errors (invalid hostname)
+
 ## Quick Start
 
 ### Installation
@@ -74,16 +97,18 @@ npm install -g ssh-agent-mcp-server
 
 #### Environment Variables
 
-| Variable               | Required | Description                              | Default       |
-| ---------------------- | -------- | ---------------------------------------- | ------------- |
-| `SSH_HOST`             | Yes      | Hostname or IP address of the SSH server | -             |
-| `SSH_USERNAME`         | Yes      | Username for SSH authentication          | -             |
-| `SSH_PORT`             | No       | SSH port number                          | `22`          |
-| `SSH_AUTH_SOCK`        | No       | Path to SSH agent socket                 | Auto-detected |
-| `SSH_PRIVATE_KEY_PATH` | No       | Path to private key file                 | -             |
-| `SSH_PASSPHRASE`       | No       | Passphrase for encrypted private key     | -             |
-| `SSH_TIMEOUT`          | No       | Connection timeout in milliseconds       | `30000`       |
-| `ENABLED_TOOLGROUPS`   | No       | Comma-separated tool groups              | All enabled   |
+| Variable               | Required | Description                                 | Default       |
+| ---------------------- | -------- | ------------------------------------------- | ------------- |
+| `SSH_HOST`             | Yes      | Hostname or IP address of the SSH server    | -             |
+| `SSH_USERNAME`         | Yes      | Username for SSH authentication             | -             |
+| `SSH_PORT`             | No       | SSH port number                             | `22`          |
+| `SSH_AUTH_SOCK`        | No       | Path to SSH agent socket                    | Auto-detected |
+| `SSH_PRIVATE_KEY_PATH` | No       | Path to private key file                    | -             |
+| `SSH_PASSPHRASE`       | No       | Passphrase for encrypted private key        | -             |
+| `SSH_TIMEOUT`          | No       | Connection timeout in milliseconds          | `30000`       |
+| `ENABLED_TOOLGROUPS`   | No       | Comma-separated tool groups                 | All enabled   |
+| `SKIP_HEALTH_CHECKS`   | No       | Skip SSH connection health check on startup | `false`       |
+| `HEALTH_CHECK_TIMEOUT` | No       | Health check timeout in milliseconds        | `10000`       |
 
 ### Claude Desktop Configuration
 
