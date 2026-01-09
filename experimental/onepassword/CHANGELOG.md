@@ -11,10 +11,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **BREAKING**: Remove item IDs from all tool responses to prevent constructing unlock URLs without explicit user action through the 1Password app (fixes #221)
 - **BREAKING**: Filter `additional_information` field from list responses to prevent Secure Note content leakage
-- **BREAKING**: Remove vault IDs from list responses; only vault names are now returned
+- **BREAKING**: Remove vault IDs from list item responses (vault IDs are still returned by `onepassword_list_vaults` as they're required for API operations)
 - **BREAKING**: Remove field IDs from item detail responses; only field labels are now returned
 - Item lookups via `onepassword_get_item` now work with titles instead of IDs
 - The unlock mechanism via 1Password URLs remains the exclusive credential exposure pathway
+- The `onepassword_unlock_item` response no longer echoes item IDs or vault IDs
 
 ## [0.1.0]
 

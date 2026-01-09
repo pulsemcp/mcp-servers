@@ -337,7 +337,7 @@ describe('1Password Tools', () => {
   // UNLOCK ITEM TOOL TESTS
   // =============================================================================
   describe('onepassword_unlock_item', () => {
-    it('should unlock item from valid URL', async () => {
+    it('should unlock item from valid URL without exposing IDs', async () => {
       const tool = unlockItemTool(mockServer, () => mockClient);
       const url =
         'https://start.1password.com/open/i?a=ACC&v=vault-1&i=item-1&h=test.1password.com';
@@ -346,6 +346,11 @@ describe('1Password Tools', () => {
       expect(result.isError).toBeFalsy();
       expect(result.content[0].text).toContain('unlocked successfully');
       expect(isItemUnlocked('item-1')).toBe(true);
+      // Security: IDs should NOT be exposed in the response message
+      expect(result.content[0].text).not.toContain('item-1');
+      expect(result.content[0].text).not.toContain('vault-1');
+      // Should contain the title instead
+      expect(result.content[0].text).toContain('Test Login');
     });
 
     it('should return error for invalid URL', async () => {

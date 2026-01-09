@@ -29,7 +29,7 @@ By default, the get_item tool returns item metadata but redacts sensitive creden
 - This provides an explicit consent mechanism before exposing credentials
 
 **Returns:**
-- Confirmation of the unlocked item with its ID and title`;
+- Confirmation of the unlocked item with its title`;
 
 /**
  * Tool for unlocking items via 1Password URL
@@ -68,13 +68,22 @@ export function unlockItemTool(_server: Server, clientFactory: () => IOnePasswor
 
         const { itemId, vaultId } = parsed;
 
-        // Check if already unlocked
+        // Check if already unlocked (need to fetch title first for message)
         if (isItemUnlocked(itemId)) {
+          // Try to get the title for a better message
+          const client = clientFactory();
+          let itemTitle = 'the item';
+          try {
+            const item = await client.getItem(itemId, vaultId);
+            itemTitle = `"${item.title}"`;
+          } catch {
+            // Item might not be accessible
+          }
           return {
             content: [
               {
                 type: 'text',
-                text: `Item ${itemId} is already unlocked. You can now use get_item to retrieve its credentials.`,
+                text: `${itemTitle} is already unlocked. You can now use get_item to retrieve its credentials.`,
               },
             ],
           };
@@ -100,10 +109,8 @@ export function unlockItemTool(_server: Server, clientFactory: () => IOnePasswor
               type: 'text',
               text:
                 `✓ Item unlocked successfully!\n\n` +
-                `**Item ID:** ${itemId}\n` +
-                `**Title:** ${itemTitle}\n` +
-                `**Vault ID:** ${vaultId}\n\n` +
-                `You can now use \`onepassword_get_item\` with item ID "${itemId}" to retrieve the full credentials.\n\n` +
+                `**Title:** ${itemTitle}\n\n` +
+                `You can now use \`onepassword_get_item\` with the item title "${itemTitle}" to retrieve the full credentials.\n\n` +
                 `Currently ${getUnlockedItemCount()} item(s) unlocked in this session.`,
             },
           ],
