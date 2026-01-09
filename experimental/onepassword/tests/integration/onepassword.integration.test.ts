@@ -58,7 +58,7 @@ describe('1Password MCP Server Integration Tests', () => {
       expect(vaults[0].name).toBe('Personal');
     });
 
-    it('should list items in a vault', async () => {
+    it('should list items in a vault without exposing IDs', async () => {
       const mockClient = createIntegrationMockOnePasswordClient({});
       client = await createTestMCPClientWithMock(mockClient);
 
@@ -69,20 +69,27 @@ describe('1Password MCP Server Integration Tests', () => {
 
       expect(items).toHaveLength(2);
       expect(items[0].title).toBe('Test Login');
+      // Security: items should NOT have IDs exposed
+      expect(items[0].id).toBeUndefined();
+      expect(items[1].id).toBeUndefined();
     });
 
-    it('should get item details', async () => {
+    it('should get item details by title without exposing IDs', async () => {
       const mockClient = createIntegrationMockOnePasswordClient({});
       client = await createTestMCPClientWithMock(mockClient);
 
+      // Use title instead of ID (since IDs are no longer exposed)
       const result = await client.callTool('onepassword_get_item', {
-        itemId: 'item-1',
+        itemId: 'Test Login',
       });
       const item = JSON.parse((result as { content: { text: string }[] }).content[0].text);
 
-      expect(item.id).toBe('item-1');
+      // Security: response should NOT have ID exposed
+      expect(item.id).toBeUndefined();
       expect(item.title).toBe('Test Login');
       expect(item.fields).toBeDefined();
+      // Fields should also not have IDs
+      expect(item.fields[0].id).toBeUndefined();
     });
 
     it('should create a login item', async () => {

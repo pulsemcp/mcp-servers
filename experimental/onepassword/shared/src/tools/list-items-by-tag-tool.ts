@@ -18,10 +18,12 @@ Filters items across vaults (or within a specific vault) by tag. Useful for orga
 
 **Returns:**
 - Array of items with the specified tag, each with:
-  - id: Unique item identifier
   - title: Item name
   - category: Item type
+  - vault: Vault name (optional)
   - tags: All tags on the item
+
+**Security Note:** Item IDs are intentionally omitted. To access credentials, use the onepassword_unlock_item tool with a URL copied from the 1Password app.
 
 **Use cases:**
 - Find all items tagged for a specific project or environment

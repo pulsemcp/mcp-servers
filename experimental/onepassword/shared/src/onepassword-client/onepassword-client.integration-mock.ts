@@ -5,11 +5,35 @@ import type {
   OnePasswordItemDetails,
 } from '../types.js';
 
+/**
+ * Internal item type that includes IDs (for mock storage and lookup)
+ */
+interface MockItem {
+  id: string;
+  title: string;
+  category: string;
+  vault?: { id: string; name: string };
+  tags?: string[];
+}
+
 interface MockData {
   vaults?: OnePasswordVault[];
-  items?: Record<string, OnePasswordItem[]>; // keyed by vault ID
+  items?: Record<string, MockItem[]>; // keyed by vault ID (internal format with IDs)
   itemDetails?: Record<string, OnePasswordItemDetails>; // keyed by item ID
   [key: string]: unknown;
+}
+
+/**
+ * Sanitize an internal mock item to the public OnePasswordItem format (no IDs)
+ */
+function sanitizeMockItem(item: MockItem): OnePasswordItem {
+  return {
+    title: item.title,
+    category: item.category,
+    vault: item.vault ? { name: item.vault.name } : undefined,
+    tags: item.tags,
+    // Intentionally omit: id
+  };
 }
 
 /**
@@ -25,7 +49,8 @@ export function createIntegrationMockOnePasswordClient(
     { id: 'vault-2', name: 'Work' },
   ];
 
-  const defaultItems: Record<string, OnePasswordItem[]> = {
+  // Internal mock items (with IDs for storage/lookup, but sanitized before returning)
+  const defaultItems: Record<string, MockItem[]> = {
     'vault-1': [
       { id: 'item-1', title: 'Test Login', category: 'LOGIN' },
       { id: 'item-2', title: 'API Key', category: 'SECURE_NOTE', tags: ['api', 'production'] },
@@ -78,15 +103,25 @@ export function createIntegrationMockOnePasswordClient(
       return vaults;
     },
 
-    async getItem(itemId: string, vaultId?: string): Promise<OnePasswordItemDetails> {
-      const item = itemDetails[itemId];
+    async getItem(itemIdOrTitle: string, vaultId?: string): Promise<OnePasswordItemDetails> {
+      // First try to find by ID (for internal unlock mechanism)
+      let item: OnePasswordItemDetails | undefined = itemDetails[itemIdOrTitle];
+
+      // If not found by ID, try to find by title
       if (!item) {
-        const error = new Error(`Item "${itemId}" not found`) as Error & { name: string };
+        const allDetails = Object.values(itemDetails);
+        item = allDetails.find((i) => i.title === itemIdOrTitle);
+      }
+
+      if (!item) {
+        const error = new Error(`Item "${itemIdOrTitle}" not found`) as Error & { name: string };
         error.name = 'OnePasswordNotFoundError';
         throw error;
       }
       if (vaultId && item.vault.id !== vaultId) {
-        const error = new Error(`Item "${itemId}" not found in vault "${vaultId}"`) as Error & {
+        const error = new Error(
+          `Item "${itemIdOrTitle}" not found in vault "${vaultId}"`
+        ) as Error & {
           name: string;
         };
         error.name = 'OnePasswordNotFoundError';
@@ -96,11 +131,13 @@ export function createIntegrationMockOnePasswordClient(
     },
 
     async listItems(vaultId: string): Promise<OnePasswordItem[]> {
-      return items[vaultId] || [];
+      const mockItems = items[vaultId] || [];
+      // Sanitize items to remove IDs before returning
+      return mockItems.map(sanitizeMockItem);
     },
 
     async listItemsByTag(tag: string, vaultId?: string): Promise<OnePasswordItem[]> {
-      let allItems: OnePasswordItem[] = [];
+      let allItems: MockItem[] = [];
 
       if (vaultId) {
         allItems = items[vaultId] || [];
@@ -110,7 +147,8 @@ export function createIntegrationMockOnePasswordClient(
         }
       }
 
-      return allItems.filter((item) => item.tags?.includes(tag));
+      // Filter by tag then sanitize to remove IDs
+      return allItems.filter((item) => item.tags?.includes(tag)).map(sanitizeMockItem);
     },
 
     async createLogin(

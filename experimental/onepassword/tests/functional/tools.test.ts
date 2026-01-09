@@ -67,14 +67,21 @@ describe('1Password Tools', () => {
   });
 
   describe('onepassword_get_item', () => {
-    it('should get item details', async () => {
+    it('should get item details without exposing IDs', async () => {
       const tool = getItemTool(mockServer, () => mockClient);
       const result = await tool.handler({ itemId: 'item-1' });
 
       const item = JSON.parse(result.content[0].text);
-      expect(item.id).toBe('item-1');
+      // Security: IDs should be stripped from response
+      expect(item.id).toBeUndefined();
       expect(item.title).toBe('Test Login');
       expect(item.fields).toBeDefined();
+      // Fields should also not have IDs
+      expect(item.fields[0].id).toBeUndefined();
+      expect(item.fields[0].label).toBe('username');
+      // Vault should only have name, not ID
+      expect(item.vault.name).toBe('Personal');
+      expect(item.vault.id).toBeUndefined();
       expect(mockClient.getItem).toHaveBeenCalledWith('item-1', undefined);
     });
 
@@ -99,7 +106,7 @@ describe('1Password Tools', () => {
   });
 
   describe('onepassword_create_login', () => {
-    it('should create a new login item', async () => {
+    it('should create a new login item without exposing IDs', async () => {
       const tool = createLoginTool(mockServer, () => mockClient);
       const result = await tool.handler({
         vaultId: 'vault-1',
@@ -109,7 +116,8 @@ describe('1Password Tools', () => {
       });
 
       const item = JSON.parse(result.content[0].text);
-      expect(item.id).toBe('item-new');
+      // Security: ID should be stripped from response
+      expect(item.id).toBeUndefined();
       expect(item.category).toBe('LOGIN');
       expect(mockClient.createLogin).toHaveBeenCalledWith(
         'vault-1',
@@ -144,7 +152,7 @@ describe('1Password Tools', () => {
   });
 
   describe('onepassword_create_secure_note', () => {
-    it('should create a new secure note', async () => {
+    it('should create a new secure note without exposing IDs', async () => {
       const tool = createSecureNoteTool(mockServer, () => mockClient);
       const result = await tool.handler({
         vaultId: 'vault-1',
@@ -153,7 +161,8 @@ describe('1Password Tools', () => {
       });
 
       const item = JSON.parse(result.content[0].text);
-      expect(item.id).toBe('item-note');
+      // Security: ID should be stripped from response
+      expect(item.id).toBeUndefined();
       expect(item.category).toBe('SECURE_NOTE');
       expect(mockClient.createSecureNote).toHaveBeenCalledWith(
         'vault-1',
@@ -370,8 +379,8 @@ describe('1Password Tools', () => {
       const item = JSON.parse(result.content[0].text);
       expect(item._unlocked).toBe(false);
 
-      // Check that password field is redacted
-      const passwordField = item.fields.find((f: { id: string }) => f.id === 'password');
+      // Check that password field is redacted (using label since id is stripped)
+      const passwordField = item.fields.find((f: { label: string }) => f.label === 'password');
       expect(passwordField.value).toBe('[REDACTED - use unlock_item first]');
     });
 
@@ -384,8 +393,8 @@ describe('1Password Tools', () => {
       const item = JSON.parse(result.content[0].text);
       expect(item._unlocked).toBe(true);
 
-      // Check that password field is NOT redacted
-      const passwordField = item.fields.find((f: { id: string }) => f.id === 'password');
+      // Check that password field is NOT redacted (using label since id is stripped)
+      const passwordField = item.fields.find((f: { label: string }) => f.label === 'password');
       expect(passwordField.value).toBe('testpass123');
     });
 
@@ -399,7 +408,7 @@ describe('1Password Tools', () => {
       const item = JSON.parse(result.content[0].text);
       expect(item._unlocked).toBe(false);
 
-      const passwordField = item.fields.find((f: { id: string }) => f.id === 'password');
+      const passwordField = item.fields.find((f: { label: string }) => f.label === 'password');
       expect(passwordField.value).toBe('[REDACTED - use unlock_item first]');
     });
   });
