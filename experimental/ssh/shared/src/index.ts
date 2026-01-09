@@ -38,3 +38,11 @@ export {
 
 // Logging exports (re-exported for convenience)
 export { logServerStart, logError, logWarning, logDebug } from './logging.js';
+
+// Health check utilities
+export {
+  getErrorHint,
+  parseHealthCheckTimeout,
+  DEFAULT_HEALTH_CHECK_TIMEOUT,
+  MAX_HEALTH_CHECK_TIMEOUT,
+} from './health-check.js';

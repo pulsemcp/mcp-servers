@@ -1,6 +1,12 @@
 #!/usr/bin/env node
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
-import { createMCPServer, createSSHConfigFromEnv, SSHClient } from '../shared/index.js';
+import {
+  createMCPServer,
+  createSSHConfigFromEnv,
+  SSHClient,
+  getErrorHint,
+  parseHealthCheckTimeout,
+} from '../shared/index.js';
 import { logServerStart, logError, logWarning, logDebug } from '../shared/logging.js';
 
 // =============================================================================
@@ -123,8 +129,6 @@ function validateEnvironment(): void {
 // Set SKIP_HEALTH_CHECKS=true to disable (useful for testing or lazy-connection scenarios).
 // =============================================================================
 
-const DEFAULT_HEALTH_CHECK_TIMEOUT = 10000;
-
 async function performHealthChecks(): Promise<void> {
   if (process.env.SKIP_HEALTH_CHECKS === 'true') {
     logWarning('healthcheck', 'Health checks skipped (SKIP_HEALTH_CHECKS=true)');
@@ -133,19 +137,10 @@ async function performHealthChecks(): Promise<void> {
 
   logDebug('healthcheck', 'Performing SSH connection health check...');
 
-  // Parse health check timeout
-  let healthCheckTimeout = DEFAULT_HEALTH_CHECK_TIMEOUT;
-  if (process.env.HEALTH_CHECK_TIMEOUT) {
-    const parsed = parseInt(process.env.HEALTH_CHECK_TIMEOUT, 10);
-    if (!isNaN(parsed) && parsed > 0) {
-      healthCheckTimeout = parsed;
-    } else {
-      logWarning(
-        'healthcheck',
-        `Invalid HEALTH_CHECK_TIMEOUT: ${process.env.HEALTH_CHECK_TIMEOUT}. Using default: ${DEFAULT_HEALTH_CHECK_TIMEOUT}ms`
-      );
-    }
-  }
+  // Parse health check timeout using shared utility
+  const healthCheckTimeout = parseHealthCheckTimeout(process.env.HEALTH_CHECK_TIMEOUT, (msg) =>
+    logWarning('healthcheck', msg)
+  );
 
   // Create SSH config with health check timeout
   const sshConfig = createSSHConfigFromEnv();
@@ -166,18 +161,7 @@ async function performHealthChecks(): Promise<void> {
     const errorMessage = error instanceof Error ? error.message : String(error);
 
     // Provide helpful error messages based on common failure scenarios
-    let hint = '';
-    if (errorMessage.includes('authentication') || errorMessage.includes('auth')) {
-      hint =
-        '\nHint: Check that your SSH key is loaded in the SSH agent (ssh-add -l) or that SSH_PRIVATE_KEY_PATH is correct.';
-    } else if (errorMessage.includes('timeout')) {
-      hint = `\nHint: Connection timed out after ${healthCheckTimeout}ms. Check that the host is reachable and the port is correct.`;
-    } else if (errorMessage.includes('ECONNREFUSED') || errorMessage.includes('connect')) {
-      hint =
-        '\nHint: Connection refused. Check that the SSH server is running and the host/port are correct.';
-    } else if (errorMessage.includes('ENOTFOUND') || errorMessage.includes('getaddrinfo')) {
-      hint = '\nHint: Could not resolve hostname. Check that SSH_HOST is correct.';
-    }
+    const hint = getErrorHint(errorMessage, healthCheckTimeout);
 
     logError('healthcheck', `SSH connection health check failed: ${errorMessage}${hint}`);
     console.error('\n----------------------------------------');
