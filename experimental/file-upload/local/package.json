@@ -40,7 +40,8 @@
   },
   "keywords": [
     "mcp",
-    "file-upload",
+    "remote-filesystem",
+    "cloud-storage",
     "gcs",
     "google-cloud-storage"
   ],

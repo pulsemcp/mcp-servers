@@ -1,8 +1,8 @@
-# CLAUDE.md - File Upload MCP Server
+# CLAUDE.md - Remote Filesystem MCP Server
 
 ## Overview
 
-This is an MCP server for uploading files to cloud storage providers. It currently supports Google Cloud Storage (GCS) with plans to add S3, Cloudflare R2, and other providers.
+This is an MCP server for remote filesystem operations on cloud storage providers. It currently supports Google Cloud Storage (GCS) with plans to add S3, Cloudflare R2, and other providers.
 
 ## Architecture
 
@@ -24,15 +24,17 @@ file-upload/
 
 ## Key Design Decisions
 
-1. **Stateless Operation**: The server doesn't maintain any state. Each upload is independent.
+1. **Stateless Operation**: The server doesn't maintain any state. Each operation is independent.
 
 2. **Dual Input Modes**: Accepts either:
    - `file://` URIs for local files (works with MCP resources)
    - Base64-encoded data for direct uploads
 
-3. **No Resource Storage**: Unlike pulse-fetch, this server doesn't store uploaded files as MCP resources. It's a pure upload service.
+3. **Full CRUD Operations**: Supports upload, download, list, modify, and delete operations.
 
-4. **Public by Default**: Files are made public by default for easy URL sharing. Set `GCS_MAKE_PUBLIC=false` for signed URLs.
+4. **Private by Default**: Files are private by default for security. Set `GCS_MAKE_PUBLIC=true` for public access.
+
+5. **Root Path Constraint**: `GCS_ROOT_PATH` restricts all operations to a specific directory within the bucket.
 
 ## Testing
 
@@ -51,6 +53,9 @@ npm run test:manual
 
 - `GCS_BUCKET` (required): Target bucket name
 - `GCS_PROJECT_ID`: Google Cloud project
-- `GOOGLE_APPLICATION_CREDENTIALS`: Path to service account key
-- `GCS_BASE_PATH`: Prefix for all uploads
-- `GCS_MAKE_PUBLIC`: Whether to make files public (default: true)
+- `GCS_CLIENT_EMAIL`: Service account email (inline credentials)
+- `GCS_PRIVATE_KEY`: Service account private key (inline credentials)
+- `GOOGLE_APPLICATION_CREDENTIALS`: Path to service account key file
+- `GCS_ROOT_PATH`: Root path prefix - restricts access within bucket
+- `GCS_MAKE_PUBLIC`: Whether to make files public (default: false)
+- `ENABLED_TOOLGROUPS`: Comma-separated list: `readonly`, `readwrite` (default: all)
