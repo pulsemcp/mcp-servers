@@ -65,11 +65,13 @@ The tests will:
 
 ## Latest Test Results
 
-**Test Date:** 2026-01-08
-**Branch:** tadasant/ssh-mcp-server
-**Commit:** 13134db (fix: exclude manual tests from default test run)
+**Test Date:** 2026-01-09
+**Branch:** claude-code/ssh-health-check-startup
+**Commit:** efa88ff (refactor(ssh): improve health check based on review feedback)
 **Tested By:** Claude Code
 **Environment:** Real SSH server (AO Production via Tailscale) with passphrase-protected key via SSH agent
+
+> **Note:** The health check feature (0.1.1) has been verified via comprehensive functional tests covering all error hint scenarios. The core SSH functionality (connection, command execution, SFTP) was previously tested on commit 13134db and remains unchanged.
 
 ### Summary
 
