@@ -13,18 +13,20 @@ export const ListItemsSchema = z.object({
 
 const TOOL_DESCRIPTION = `List all items in a specific 1Password vault.
 
-Returns a list of items with their IDs, titles, and categories. Use item IDs when calling onepassword_get_item to retrieve full details.
+Returns a list of items with their titles and categories. Use item titles when calling onepassword_get_item to retrieve full details.
 
 **Returns:**
 - Array of items, each with:
-  - id: Unique item identifier
   - title: Item name
   - category: Item type (LOGIN, SECURE_NOTE, etc.)
+  - vault: Vault name (optional)
   - tags: Optional array of tags
+
+**Security Note:** Item IDs are intentionally omitted. To access credentials, use the onepassword_unlock_item tool with a URL copied from the 1Password app.
 
 **Use cases:**
 - Browse items in a vault to find what you need
-- Get item IDs for retrieving full details
+- Get item titles for retrieving full details
 - See categories and tags for organization`;
 
 /**

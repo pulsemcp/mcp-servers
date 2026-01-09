@@ -1,6 +1,11 @@
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { z } from 'zod';
-import { IOnePasswordClient } from '../types.js';
+import {
+  IOnePasswordClient,
+  OnePasswordItemDetails,
+  OnePasswordSafeItemDetails,
+  OnePasswordSafeField,
+} from '../types.js';
 
 const PARAM_DESCRIPTIONS = {
   vaultId: 'The ID of the vault to create the secure note in.',
@@ -21,7 +26,9 @@ const TOOL_DESCRIPTION = `Create a new secure note in 1Password.
 Stores arbitrary text content securely. Useful for API keys, tokens, certificates, or any secret that doesn't fit the login format.
 
 **Returns:**
-- The created item with all its details including the generated ID
+- The created item with its details (title, category, vault name)
+
+**Security Note:** Item IDs are intentionally omitted from the response.
 
 **Use cases:**
 - Store API keys and tokens
@@ -30,6 +37,31 @@ Stores arbitrary text content securely. Useful for API keys, tokens, certificate
 - Store any sensitive text information
 
 **Note:** The content is passed as a CLI argument which may briefly appear in process lists.`;
+
+/**
+ * Sanitize item details by removing all internal IDs
+ */
+function sanitizeItemDetails(item: OnePasswordItemDetails): OnePasswordSafeItemDetails {
+  return {
+    title: item.title,
+    category: item.category,
+    vault: {
+      name: item.vault.name,
+    },
+    tags: item.tags,
+    fields: item.fields?.map(
+      (f): OnePasswordSafeField => ({
+        type: f.type,
+        purpose: f.purpose,
+        label: f.label,
+        value: f.value,
+      })
+    ),
+    urls: item.urls,
+    created_at: item.created_at,
+    updated_at: item.updated_at,
+  };
+}
 
 /**
  * Tool for creating secure notes
@@ -72,11 +104,14 @@ export function createSecureNoteTool(_server: Server, clientFactory: () => IOneP
           validatedArgs.tags
         );
 
+        // Sanitize response to remove IDs
+        const sanitizedItem = sanitizeItemDetails(item);
+
         return {
           content: [
             {
               type: 'text',
-              text: JSON.stringify(item, null, 2),
+              text: JSON.stringify(sanitizedItem, null, 2),
             },
           ],
         };

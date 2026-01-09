@@ -11,14 +11,31 @@ export interface OnePasswordVault {
 }
 
 /**
- * Represents a 1Password item in list format (minimal info)
+ * Raw item from 1Password CLI (may contain additional sensitive fields)
  */
-export interface OnePasswordItem {
+export interface OnePasswordRawItem {
   id: string;
   title: string;
   category: string;
   vault?: {
     id: string;
+    name: string;
+  };
+  tags?: string[];
+  additional_information?: string;
+  // Other fields that CLI may return
+  [key: string]: unknown;
+}
+
+/**
+ * Represents a 1Password item in list format (safe fields only, no IDs)
+ * Item IDs are intentionally omitted to prevent constructing unlock URLs
+ * without explicit user action through the 1Password app.
+ */
+export interface OnePasswordItem {
+  title: string;
+  category: string;
+  vault?: {
     name: string;
   };
   tags?: string[];
@@ -54,7 +71,7 @@ export interface OnePasswordURL {
 }
 
 /**
- * Full details of a 1Password item
+ * Full details of a 1Password item (from CLI - internal use only)
  */
 export interface OnePasswordItemDetails {
   id: string;
@@ -67,6 +84,34 @@ export interface OnePasswordItemDetails {
   tags?: string[];
   fields?: OnePasswordField[];
   sections?: OnePasswordSection[];
+  urls?: OnePasswordURL[];
+  created_at?: string;
+  updated_at?: string;
+}
+
+/**
+ * Sanitized field for API response (no internal IDs)
+ */
+export interface OnePasswordSafeField {
+  type: string;
+  purpose?: string;
+  label: string;
+  value?: string;
+}
+
+/**
+ * Sanitized item details for API response (no internal IDs)
+ * Item IDs are intentionally omitted to prevent constructing unlock URLs
+ * without explicit user action through the 1Password app.
+ */
+export interface OnePasswordSafeItemDetails {
+  title: string;
+  category: string;
+  vault: {
+    name: string;
+  };
+  tags?: string[];
+  fields?: OnePasswordSafeField[];
   urls?: OnePasswordURL[];
   created_at?: string;
   updated_at?: string;
