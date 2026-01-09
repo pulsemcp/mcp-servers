@@ -81,20 +81,20 @@ Add to your Claude Desktop config file:
 
 ### Environment Variables
 
-| Variable                  | Description                                                                | Default                       |
-| ------------------------- | -------------------------------------------------------------------------- | ----------------------------- |
-| `STEALTH_MODE`            | Enable stealth mode with anti-detection measures                           | `false`                       |
-| `STEALTH_USER_AGENT`      | Custom User-Agent string (stealth mode only)                               | Browser default               |
-| `STEALTH_MASK_LINUX`      | Mask Linux platform as Windows (stealth mode only)                         | `true`                        |
-| `STEALTH_LOCALE`          | Custom locale for Accept-Language header (stealth mode only)               | `en-US,en`                    |
-| `HEADLESS`                | Run browser in headless mode                                               | `true`                        |
-| `TIMEOUT`                 | Default timeout for Playwright actions (click, fill, etc.) in milliseconds | `30000`                       |
-| `NAVIGATION_TIMEOUT`      | Default timeout for page navigation (goto, reload, etc.) in milliseconds   | `60000`                       |
-| `SCREENSHOT_STORAGE_PATH` | Directory for storing screenshots                                          | `/tmp/playwright-screenshots` |
-| `PROXY_URL`               | Proxy server URL (e.g., `http://proxy.example.com:8080`)                   | -                             |
-| `PROXY_USERNAME`          | Proxy authentication username                                              | -                             |
-| `PROXY_PASSWORD`          | Proxy authentication password                                              | -                             |
-| `PROXY_BYPASS`            | Comma-separated list of hosts to bypass proxy                              | -                             |
+| Variable                  | Description                                                                       | Default                       |
+| ------------------------- | --------------------------------------------------------------------------------- | ----------------------------- |
+| `STEALTH_MODE`            | Enable stealth mode with anti-detection measures                                  | `false`                       |
+| `STEALTH_USER_AGENT`      | Custom User-Agent string (stealth mode only)                                      | Browser default               |
+| `STEALTH_MASK_LINUX`      | Mask Linux in User-Agent as Windows; set to `false` to avoid fingerprint mismatch | `true`                        |
+| `STEALTH_LOCALE`          | Custom locale for Accept-Language header (stealth mode only)                      | `en-US,en`                    |
+| `HEADLESS`                | Run browser in headless mode                                                      | `true`                        |
+| `TIMEOUT`                 | Default timeout for Playwright actions (click, fill, etc.) in milliseconds        | `30000`                       |
+| `NAVIGATION_TIMEOUT`      | Default timeout for page navigation (goto, reload, etc.) in milliseconds          | `60000`                       |
+| `SCREENSHOT_STORAGE_PATH` | Directory for storing screenshots                                                 | `/tmp/playwright-screenshots` |
+| `PROXY_URL`               | Proxy server URL (e.g., `http://proxy.example.com:8080`)                          | -                             |
+| `PROXY_USERNAME`          | Proxy authentication username                                                     | -                             |
+| `PROXY_PASSWORD`          | Proxy authentication password                                                     | -                             |
+| `PROXY_BYPASS`            | Comma-separated list of hosts to bypass proxy                                     | -                             |
 
 ## Available Tools
 
@@ -251,10 +251,11 @@ When running in Docker/Linux environments, bot detection systems may identify a 
 
 **Why this matters:**
 
-- By default, stealth mode masks Linux as Windows in the User-Agent
+- By default, stealth mode masks Linux as Windows in the User-Agent header only
 - However, `navigator.platform` still reports the actual OS (e.g., "Linux x86_64")
-- This mismatch triggers bot detection on sites with comprehensive fingerprinting
-- Setting `STEALTH_MASK_LINUX=false` and providing a consistent User-Agent prevents this mismatch
+- This mismatch between User-Agent and platform triggers bot detection
+- Setting `STEALTH_MASK_LINUX=false` disables this masking, allowing the real platform to show
+- Combined with a custom `STEALTH_USER_AGENT`, you can present a consistent fingerprint
 
 ## When to Use Proxy
 

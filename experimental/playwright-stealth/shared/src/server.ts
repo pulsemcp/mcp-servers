@@ -108,9 +108,9 @@ export class PlaywrightClient implements IPlaywrightClient {
 
     this.context = await this.browser.newContext({
       viewport: { width: 1920, height: 1080 },
-      // Let the stealth plugin's user-agent-override handle the user agent
-      // Only set explicitly if provided via STEALTH_USER_AGENT
-      userAgent: this.config.stealthUserAgent,
+      // In stealth mode, let the plugin's user-agent-override handle the user agent
+      // In non-stealth mode, use the provided user agent if any
+      userAgent: this.config.stealthMode ? undefined : this.config.stealthUserAgent,
       // Ignore HTTPS errors when using proxy (required for residential proxies like BrightData
       // which perform HTTPS inspection and may re-sign certificates)
       ignoreHTTPSErrors: !!this.config.proxy,
