@@ -20,14 +20,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Machine management tools:
   - `list_machines` - List all machines in an app
   - `get_machine` - Get details for a specific machine
+  - `get_machine_events` - Get event log for debugging
   - `create_machine` - Create a new machine with Docker image
   - `update_machine` - Update machine configuration
   - `delete_machine` - Delete a machine
   - `start_machine` - Start a stopped machine
   - `stop_machine` - Stop a running machine
+  - `restart_machine` - Restart a machine (stop + start)
+  - `suspend_machine` - Suspend a machine (save state)
+  - `wait_machine` - Wait for machine to reach a state
 - Tool grouping system for permission-based access control
   - `readonly` group for list/get operations
-  - `write` group for create/update/start/stop operations
+  - `write` group for create/update/start/stop/restart/suspend/wait operations
   - `admin` group for delete operations
 - Environment variable validation at startup
 - Health checks for API credential validation

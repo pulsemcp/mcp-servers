@@ -11,6 +11,10 @@ import { updateMachineTool } from '../../shared/src/tools/update-machine.js';
 import { deleteMachineTool } from '../../shared/src/tools/delete-machine.js';
 import { startMachineTool } from '../../shared/src/tools/start-machine.js';
 import { stopMachineTool } from '../../shared/src/tools/stop-machine.js';
+import { restartMachineTool } from '../../shared/src/tools/restart-machine.js';
+import { suspendMachineTool } from '../../shared/src/tools/suspend-machine.js';
+import { waitMachineTool } from '../../shared/src/tools/wait-machine.js';
+import { getMachineEventsTool } from '../../shared/src/tools/get-machine-events.js';
 import { createMockFlyIOClient } from '../mocks/fly-io-client.functional-mock.js';
 
 describe('Tools', () => {
@@ -196,6 +200,84 @@ describe('Tools', () => {
 
       expect(result.content[0].text).toContain('Successfully stopped');
       expect(mockClient.stopMachine).toHaveBeenCalledWith('test-app', 'test-machine-id');
+    });
+  });
+
+  describe('restart_machine', () => {
+    it('should restart a machine', async () => {
+      const tool = restartMachineTool(mockServer, () => mockClient);
+      const result = await tool.handler({
+        app_name: 'test-app',
+        machine_id: 'test-machine-id',
+      });
+
+      expect(result.content[0].text).toContain('Successfully restarted');
+      expect(mockClient.restartMachine).toHaveBeenCalledWith('test-app', 'test-machine-id');
+    });
+  });
+
+  describe('suspend_machine', () => {
+    it('should suspend a machine', async () => {
+      const tool = suspendMachineTool(mockServer, () => mockClient);
+      const result = await tool.handler({
+        app_name: 'test-app',
+        machine_id: 'test-machine-id',
+      });
+
+      expect(result.content[0].text).toContain('Successfully suspended');
+      expect(mockClient.suspendMachine).toHaveBeenCalledWith('test-app', 'test-machine-id');
+    });
+  });
+
+  describe('wait_machine', () => {
+    it('should wait for a machine to reach a state', async () => {
+      const tool = waitMachineTool(mockServer, () => mockClient);
+      const result = await tool.handler({
+        app_name: 'test-app',
+        machine_id: 'test-machine-id',
+        state: 'started',
+      });
+
+      expect(result.content[0].text).toContain('reached state');
+      expect(mockClient.waitMachine).toHaveBeenCalledWith(
+        'test-app',
+        'test-machine-id',
+        'started',
+        undefined
+      );
+    });
+
+    it('should accept a timeout parameter', async () => {
+      const tool = waitMachineTool(mockServer, () => mockClient);
+      const result = await tool.handler({
+        app_name: 'test-app',
+        machine_id: 'test-machine-id',
+        state: 'stopped',
+        timeout: 30,
+      });
+
+      expect(result.content[0].text).toContain('reached state');
+      expect(mockClient.waitMachine).toHaveBeenCalledWith(
+        'test-app',
+        'test-machine-id',
+        'stopped',
+        30
+      );
+    });
+  });
+
+  describe('get_machine_events', () => {
+    it('should get machine events', async () => {
+      const tool = getMachineEventsTool(mockServer, () => mockClient);
+      const result = await tool.handler({
+        app_name: 'test-app',
+        machine_id: 'test-machine-id',
+      });
+
+      expect(result.content[0].text).toContain('Events for machine');
+      expect(result.content[0].text).toContain('start');
+      expect(result.content[0].text).toContain('exit');
+      expect(mockClient.getMachine).toHaveBeenCalledWith('test-app', 'test-machine-id');
     });
   });
 });

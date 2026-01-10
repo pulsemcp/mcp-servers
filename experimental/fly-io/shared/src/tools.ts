@@ -12,6 +12,10 @@ import { updateMachineTool } from './tools/update-machine.js';
 import { deleteMachineTool } from './tools/delete-machine.js';
 import { startMachineTool } from './tools/start-machine.js';
 import { stopMachineTool } from './tools/stop-machine.js';
+import { restartMachineTool } from './tools/restart-machine.js';
+import { suspendMachineTool } from './tools/suspend-machine.js';
+import { waitMachineTool } from './tools/wait-machine.js';
+import { getMachineEventsTool } from './tools/get-machine-events.js';
 
 // =============================================================================
 // TOOL GROUPING SYSTEM
@@ -102,11 +106,15 @@ const ALL_TOOLS: ToolDefinition[] = [
   // Machine tools - readonly
   { factory: listMachinesTool, groups: ['readonly', 'write', 'admin'] },
   { factory: getMachineTool, groups: ['readonly', 'write', 'admin'] },
+  { factory: getMachineEventsTool, groups: ['readonly', 'write', 'admin'] },
   // Machine tools - write
   { factory: createMachineTool, groups: ['write', 'admin'] },
   { factory: updateMachineTool, groups: ['write', 'admin'] },
   { factory: startMachineTool, groups: ['write', 'admin'] },
   { factory: stopMachineTool, groups: ['write', 'admin'] },
+  { factory: restartMachineTool, groups: ['write', 'admin'] },
+  { factory: suspendMachineTool, groups: ['write', 'admin'] },
+  { factory: waitMachineTool, groups: ['write', 'admin'] },
   // Machine tools - admin
   { factory: deleteMachineTool, groups: ['admin'] },
 ];

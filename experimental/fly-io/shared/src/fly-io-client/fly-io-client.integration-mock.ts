@@ -5,6 +5,7 @@ import type {
   CreateAppRequest,
   CreateMachineRequest,
   UpdateMachineRequest,
+  MachineState,
 } from '../types.js';
 
 /**
@@ -175,6 +176,41 @@ export function createIntegrationMockFlyIOClient(
       }
       machine.state = 'stopped';
       machine.updated_at = new Date().toISOString();
+    },
+
+    async restartMachine(appName: string, machineId: string): Promise<void> {
+      const appMachines = machines[appName] || [];
+      const machine = appMachines.find((m) => m.id === machineId);
+      if (!machine) {
+        throw new Error(`Machine not found: ${machineId}`);
+      }
+      // Simulate restart by stopping then starting
+      machine.state = 'started';
+      machine.updated_at = new Date().toISOString();
+    },
+
+    async suspendMachine(appName: string, machineId: string): Promise<void> {
+      const appMachines = machines[appName] || [];
+      const machine = appMachines.find((m) => m.id === machineId);
+      if (!machine) {
+        throw new Error(`Machine not found: ${machineId}`);
+      }
+      machine.state = 'suspended';
+      machine.updated_at = new Date().toISOString();
+    },
+
+    async waitMachine(
+      appName: string,
+      machineId: string,
+      _state: MachineState,
+      _timeout?: number
+    ): Promise<void> {
+      const appMachines = machines[appName] || [];
+      const machine = appMachines.find((m) => m.id === machineId);
+      if (!machine) {
+        throw new Error(`Machine not found: ${machineId}`);
+      }
+      // In mock, just return immediately (state is already reached)
     },
   };
 

@@ -3,6 +3,30 @@
  */
 
 /**
+ * Machine event from Fly.io API
+ */
+export interface MachineEvent {
+  id: string;
+  type: string;
+  status: string;
+  source: string;
+  timestamp: number;
+  request?: {
+    exit_event?: {
+      requested_stop?: boolean;
+      restarting?: boolean;
+      guest_exit_code?: number;
+      guest_signal?: number;
+      guest_error?: string;
+      exit_code?: number;
+      signal?: number;
+      error?: string;
+      oom_killed?: boolean;
+    };
+  };
+}
+
+/**
  * Fly.io Machine represents a VM instance
  */
 export interface Machine {
@@ -16,6 +40,7 @@ export interface Machine {
   image_ref?: ImageRef;
   created_at: string;
   updated_at: string;
+  events?: MachineEvent[];
 }
 
 /**
@@ -133,4 +158,23 @@ export interface CreateAppRequest {
 export interface ListAppsResponse {
   total_apps: number;
   apps: App[];
+}
+
+/**
+ * Valid machine states for wait operations
+ */
+export type MachineState =
+  | 'created'
+  | 'starting'
+  | 'started'
+  | 'stopping'
+  | 'stopped'
+  | 'suspended'
+  | 'destroyed';
+
+/**
+ * Wait machine response
+ */
+export interface WaitMachineResponse {
+  ok: boolean;
 }

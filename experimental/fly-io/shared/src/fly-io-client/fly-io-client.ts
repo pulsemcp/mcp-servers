@@ -4,6 +4,7 @@ import type {
   CreateAppRequest,
   CreateMachineRequest,
   UpdateMachineRequest,
+  MachineState,
 } from '../types.js';
 
 /**
@@ -29,6 +30,14 @@ export interface IFlyIOClient {
   deleteMachine(appName: string, machineId: string, force?: boolean): Promise<void>;
   startMachine(appName: string, machineId: string): Promise<void>;
   stopMachine(appName: string, machineId: string): Promise<void>;
+  restartMachine(appName: string, machineId: string): Promise<void>;
+  suspendMachine(appName: string, machineId: string): Promise<void>;
+  waitMachine(
+    appName: string,
+    machineId: string,
+    state: MachineState,
+    timeout?: number
+  ): Promise<void>;
 }
 
 /**
@@ -104,5 +113,25 @@ export class FlyIOClient implements IFlyIOClient {
   async stopMachine(appName: string, machineId: string): Promise<void> {
     const { stopMachine } = await import('./lib/stop-machine.js');
     return stopMachine(this.baseUrl, this.headers, appName, machineId);
+  }
+
+  async restartMachine(appName: string, machineId: string): Promise<void> {
+    const { restartMachine } = await import('./lib/restart-machine.js');
+    return restartMachine(this.baseUrl, this.headers, appName, machineId);
+  }
+
+  async suspendMachine(appName: string, machineId: string): Promise<void> {
+    const { suspendMachine } = await import('./lib/suspend-machine.js');
+    return suspendMachine(this.baseUrl, this.headers, appName, machineId);
+  }
+
+  async waitMachine(
+    appName: string,
+    machineId: string,
+    state: MachineState,
+    timeout?: number
+  ): Promise<void> {
+    const { waitMachine } = await import('./lib/wait-machine.js');
+    return waitMachine(this.baseUrl, this.headers, appName, machineId, state, timeout);
   }
 }

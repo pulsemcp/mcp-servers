@@ -6,7 +6,9 @@ MCP server for managing Fly.io machines and applications. This server provides t
 
 - Manage Fly.io applications and machines via MCP
 - Full CRUD operations for apps and machines
-- Start, stop, and update running machines
+- Start, stop, restart, and suspend machines
+- Get machine event logs for debugging
+- Wait for machine state transitions
 - Deploy Docker images to Fly.io
 - Tool grouping for permission-based access control
 - Health checks for API credential validation
@@ -15,19 +17,23 @@ MCP server for managing Fly.io machines and applications. This server provides t
 
 ### Tools
 
-| Tool             | Group                  | Description                              |
-| ---------------- | ---------------------- | ---------------------------------------- |
-| `list_apps`      | readonly, write, admin | List all Fly.io applications             |
-| `get_app`        | readonly, write, admin | Get details for a specific app           |
-| `create_app`     | write, admin           | Create a new Fly.io application          |
-| `delete_app`     | admin                  | Delete an application                    |
-| `list_machines`  | readonly, write, admin | List all machines in an app              |
-| `get_machine`    | readonly, write, admin | Get details for a specific machine       |
-| `create_machine` | write, admin           | Create a new machine with a Docker image |
-| `update_machine` | write, admin           | Update a machine's configuration         |
-| `delete_machine` | admin                  | Delete a machine                         |
-| `start_machine`  | write, admin           | Start a stopped machine                  |
-| `stop_machine`   | write, admin           | Stop a running machine                   |
+| Tool                 | Group                  | Description                                 |
+| -------------------- | ---------------------- | ------------------------------------------- |
+| `list_apps`          | readonly, write, admin | List all Fly.io applications                |
+| `get_app`            | readonly, write, admin | Get details for a specific app              |
+| `create_app`         | write, admin           | Create a new Fly.io application             |
+| `delete_app`         | admin                  | Delete an application                       |
+| `list_machines`      | readonly, write, admin | List all machines in an app                 |
+| `get_machine`        | readonly, write, admin | Get details for a specific machine          |
+| `get_machine_events` | readonly, write, admin | Get event log for a machine (for debugging) |
+| `create_machine`     | write, admin           | Create a new machine with a Docker image    |
+| `update_machine`     | write, admin           | Update a machine's configuration            |
+| `delete_machine`     | admin                  | Delete a machine                            |
+| `start_machine`      | write, admin           | Start a stopped machine                     |
+| `stop_machine`       | write, admin           | Stop a running machine                      |
+| `restart_machine`    | write, admin           | Restart a machine (stop then start)         |
+| `suspend_machine`    | write, admin           | Suspend a machine (save state to disk)      |
+| `wait_machine`       | write, admin           | Wait for a machine to reach a state         |
 
 ### Tool Groups
 
@@ -111,6 +117,18 @@ in different regions (lax and lhr).
 
 ```
 Update all machines in my-web-app to use the nginx:1.25 image.
+```
+
+### Debug a crashed machine
+
+```
+Get the events for machine abc123 in my-web-app to see why it crashed.
+```
+
+### Restart a stuck machine
+
+```
+Restart machine abc123 in my-web-app to clear its state.
 ```
 
 ## Development

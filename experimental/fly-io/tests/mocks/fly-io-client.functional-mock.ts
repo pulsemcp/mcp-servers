@@ -1,6 +1,6 @@
 import { vi } from 'vitest';
 import type { IFlyIOClient } from '../../shared/src/fly-io-client/fly-io-client.js';
-import type { App, Machine } from '../../shared/src/types.js';
+import type { App, Machine, MachineEvent } from '../../shared/src/types.js';
 
 const mockApp: App = {
   id: 'test-app-id',
@@ -12,6 +12,29 @@ const mockApp: App = {
   },
   machine_count: 2,
 };
+
+const mockEvents: MachineEvent[] = [
+  {
+    id: 'event-1',
+    type: 'start',
+    status: 'started',
+    source: 'flyd',
+    timestamp: 1704067200,
+  },
+  {
+    id: 'event-2',
+    type: 'exit',
+    status: 'stopped',
+    source: 'flyd',
+    timestamp: 1704070800,
+    request: {
+      exit_event: {
+        exit_code: 0,
+        requested_stop: true,
+      },
+    },
+  },
+];
 
 const mockMachine: Machine = {
   id: 'test-machine-id',
@@ -31,6 +54,7 @@ const mockMachine: Machine = {
   },
   created_at: '2025-01-01T00:00:00Z',
   updated_at: '2025-01-01T00:00:00Z',
+  events: mockEvents,
 };
 
 export function createMockFlyIOClient(): IFlyIOClient {
@@ -49,7 +73,10 @@ export function createMockFlyIOClient(): IFlyIOClient {
     deleteMachine: vi.fn().mockResolvedValue(undefined),
     startMachine: vi.fn().mockResolvedValue(undefined),
     stopMachine: vi.fn().mockResolvedValue(undefined),
+    restartMachine: vi.fn().mockResolvedValue(undefined),
+    suspendMachine: vi.fn().mockResolvedValue(undefined),
+    waitMachine: vi.fn().mockResolvedValue(undefined),
   };
 }
 
-export { mockApp, mockMachine };
+export { mockApp, mockMachine, mockEvents };
