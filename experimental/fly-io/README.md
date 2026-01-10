@@ -60,7 +60,6 @@ Control which tools are available via the `ENABLED_TOOLGROUPS` environment varia
 | Variable             | Required | Description                           | Default     |
 | -------------------- | -------- | ------------------------------------- | ----------- |
 | `FLY_IO_API_TOKEN`   | Yes      | API token for Fly.io authentication   | -           |
-| `FLY_IO_APP_NAME`    | No       | Scope operations to a specific app    | all apps    |
 | `ENABLED_TOOLGROUPS` | No       | Comma-separated tool groups to enable | All enabled |
 | `SKIP_HEALTH_CHECKS` | No       | Skip API validation at startup        | `false`     |
 

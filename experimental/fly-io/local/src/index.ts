@@ -20,11 +20,6 @@ function validateEnvironment(): void {
 
   const optional: { name: string; description: string; defaultValue?: string }[] = [
     {
-      name: 'FLY_IO_APP_NAME',
-      description: 'Optional: Scope operations to a specific app',
-      defaultValue: 'not set (all apps)',
-    },
-    {
       name: 'ENABLED_TOOLGROUPS',
       description: 'Comma-separated list of tool groups to enable (readonly,write,admin)',
       defaultValue: 'all groups enabled',
@@ -68,10 +63,6 @@ function validateEnvironment(): void {
   // Log warnings for common configuration issues
   if (process.env.ENABLED_TOOLGROUPS) {
     logWarning('config', `Tool groups filter active: ${process.env.ENABLED_TOOLGROUPS}`);
-  }
-
-  if (process.env.FLY_IO_APP_NAME) {
-    logWarning('config', `Operations scoped to app: ${process.env.FLY_IO_APP_NAME}`);
   }
 }
 
