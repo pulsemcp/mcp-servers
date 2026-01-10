@@ -48,7 +48,7 @@ npm run test:manual
 
 **Test Date:** 2026-01-10
 **Branch:** tadasant/fly-io-mcp-server
-**Commit:** 78212e8
+**Commit:** 177c058
 **Tested By:** Claude
 **Environment:** macOS, Node.js 18, Test Environment
 
@@ -56,8 +56,8 @@ npm run test:manual
 
 | Metric      | Value |
 | ----------- | ----- |
-| Total Tests | 16    |
-| Passed      | 16    |
+| Total Tests | 21    |
+| Passed      | 21    |
 | Failed      | 0     |
 | Pass Rate   | 100%  |
 
@@ -65,15 +65,16 @@ npm run test:manual
 
 | File                    | Status                  | Tests | Notes                                                           |
 | ----------------------- | ----------------------- | ----- | --------------------------------------------------------------- |
-| `tools.test.ts`         | :white_check_mark: PASS | 13/13 | All functional tests pass with mocked client                    |
+| `tools.test.ts`         | :white_check_mark: PASS | 18/18 | All functional tests pass with mocked client                    |
 | `fly-io.manual.test.ts` | :warning: WARN          | 3/3   | Tests pass (skipped - no API token, expected for initial setup) |
 
 ### Details
 
-Initial release of the Fly.io MCP server with app and machine management:
+Fly.io MCP server with complete app and machine management:
 
-- All 11 tools implemented and tested
+- All 15 tools implemented and tested
 - Tool grouping system (readonly, write, admin) verified
+- New tools: restart_machine, suspend_machine, wait_machine, get_machine_events
 - Environment variable validation at startup working
 - Manual tests require FLY_IO_API_TOKEN - gracefully skip when not set
 
