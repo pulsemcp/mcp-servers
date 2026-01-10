@@ -48,7 +48,7 @@ npm run test:manual
 
 **Test Date:** 2026-01-10
 **Branch:** tadasant/fly-io-mcp-server
-**Commit:** c859c92
+**Commit:** 78212e8
 **Tested By:** Claude
 **Environment:** macOS, Node.js 18, Test Environment
 
