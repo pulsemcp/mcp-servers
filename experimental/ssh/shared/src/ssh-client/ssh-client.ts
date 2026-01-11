@@ -194,22 +194,23 @@ export class SSHClient implements ISSHClient {
 
     return new Promise((resolve, reject) => {
       // Priority: per-command timeout > config default > 60 seconds
-      const timeout = options?.timeout || this.config.commandTimeout || 60000;
+      // Use nullish coalescing to properly handle timeout=0
+      const timeout = options?.timeout ?? this.config.commandTimeout ?? 60000;
       let timeoutId: ReturnType<typeof setTimeout> | null = null;
       let stdout = '';
       let stderr = '';
+
+      // Declare stream variable for use in resetTimeout
+      let stream: ClientChannel | null = null;
 
       // Helper to reset the activity timeout
       const resetTimeout = () => {
         if (timeoutId) clearTimeout(timeoutId);
         timeoutId = setTimeout(() => {
-          stream.close();
+          if (stream) stream.close();
           reject(new Error(`Command timeout after ${timeout}ms of inactivity`));
         }, timeout);
       };
-
-      // Declare stream variable for use in resetTimeout
-      let stream: ClientChannel;
 
       this.client.exec(fullCommand, (err, execStream) => {
         if (err) {
