@@ -67,6 +67,19 @@ describe('SSH Tools', () => {
       });
     });
 
+    it('should pass timeout option when provided', async () => {
+      const tool = executeTool(server, () => mockClient);
+      await tool.handler({
+        command: 'long-running-command',
+        timeout: 300000,
+      });
+
+      expect(mockClient.execute).toHaveBeenCalledWith('long-running-command', {
+        cwd: undefined,
+        timeout: 300000,
+      });
+    });
+
     it('should handle execution errors', async () => {
       (mockClient.execute as ReturnType<typeof vi.fn>).mockRejectedValue(
         new Error('Connection refused')

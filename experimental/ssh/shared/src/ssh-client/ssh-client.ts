@@ -1,4 +1,4 @@
-import { Client, ConnectConfig } from 'ssh2';
+import { Client, ConnectConfig, ClientChannel } from 'ssh2';
 import * as fs from 'fs';
 import * as path from 'path';
 import { logDebug, logError } from '../logging.js';
@@ -18,6 +18,8 @@ export interface SSHConfig {
   agentSocket?: string;
   /** Connection timeout in milliseconds */
   timeout?: number;
+  /** Default command execution timeout in milliseconds (activity-based) */
+  commandTimeout?: number;
 }
 
 /**
@@ -173,7 +175,11 @@ export class SSHClient implements ISSHClient {
   }
 
   /**
-   * Execute a command on the remote server
+   * Execute a command on the remote server.
+   *
+   * The timeout is activity-based: it resets whenever stdout or stderr data is received.
+   * This allows long-running commands that produce periodic output to complete successfully,
+   * while still timing out commands that hang with no activity.
    */
   async execute(command: string, options?: ExecuteOptions): Promise<CommandResult> {
     if (!this.connected) {
@@ -187,28 +193,45 @@ export class SSHClient implements ISSHClient {
     }
 
     return new Promise((resolve, reject) => {
-      const timeout = options?.timeout || 60000;
+      // Priority: per-command timeout > config default > 60 seconds
+      const timeout = options?.timeout || this.config.commandTimeout || 60000;
       let timeoutId: ReturnType<typeof setTimeout> | null = null;
       let stdout = '';
       let stderr = '';
 
-      this.client.exec(fullCommand, (err, stream) => {
+      // Helper to reset the activity timeout
+      const resetTimeout = () => {
+        if (timeoutId) clearTimeout(timeoutId);
+        timeoutId = setTimeout(() => {
+          stream.close();
+          reject(new Error(`Command timeout after ${timeout}ms of inactivity`));
+        }, timeout);
+      };
+
+      // Declare stream variable for use in resetTimeout
+      let stream: ClientChannel;
+
+      this.client.exec(fullCommand, (err, execStream) => {
         if (err) {
           reject(err);
           return;
         }
 
-        timeoutId = setTimeout(() => {
-          stream.close();
-          reject(new Error(`Command timeout after ${timeout}ms`));
-        }, timeout);
+        stream = execStream;
+
+        // Start the initial activity timeout
+        resetTimeout();
 
         stream.on('data', (data: Buffer) => {
           stdout += data.toString();
+          // Reset timeout on activity
+          resetTimeout();
         });
 
         stream.stderr.on('data', (data: Buffer) => {
           stderr += data.toString();
+          // Reset timeout on activity
+          resetTimeout();
         });
 
         stream.on('close', (code: number) => {
