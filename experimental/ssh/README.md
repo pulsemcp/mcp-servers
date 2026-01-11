@@ -97,18 +97,19 @@ npm install -g ssh-agent-mcp-server
 
 #### Environment Variables
 
-| Variable               | Required | Description                                 | Default       |
-| ---------------------- | -------- | ------------------------------------------- | ------------- |
-| `SSH_HOST`             | Yes      | Hostname or IP address of the SSH server    | -             |
-| `SSH_USERNAME`         | Yes      | Username for SSH authentication             | -             |
-| `SSH_PORT`             | No       | SSH port number                             | `22`          |
-| `SSH_AUTH_SOCK`        | No       | Path to SSH agent socket                    | Auto-detected |
-| `SSH_PRIVATE_KEY_PATH` | No       | Path to private key file                    | -             |
-| `SSH_PASSPHRASE`       | No       | Passphrase for encrypted private key        | -             |
-| `SSH_TIMEOUT`          | No       | Connection timeout in milliseconds          | `30000`       |
-| `ENABLED_TOOLGROUPS`   | No       | Comma-separated tool groups                 | All enabled   |
-| `SKIP_HEALTH_CHECKS`   | No       | Skip SSH connection health check on startup | `false`       |
-| `HEALTH_CHECK_TIMEOUT` | No       | Health check timeout in milliseconds        | `10000`       |
+| Variable               | Required | Description                                      | Default       |
+| ---------------------- | -------- | ------------------------------------------------ | ------------- |
+| `SSH_HOST`             | Yes      | Hostname or IP address of the SSH server         | -             |
+| `SSH_USERNAME`         | Yes      | Username for SSH authentication                  | -             |
+| `SSH_PORT`             | No       | SSH port number                                  | `22`          |
+| `SSH_AUTH_SOCK`        | No       | Path to SSH agent socket                         | Auto-detected |
+| `SSH_PRIVATE_KEY_PATH` | No       | Path to private key file                         | -             |
+| `SSH_PASSPHRASE`       | No       | Passphrase for encrypted private key             | -             |
+| `SSH_TIMEOUT`          | No       | Connection timeout in milliseconds               | `30000`       |
+| `SSH_COMMAND_TIMEOUT`  | No       | Default command activity timeout in milliseconds | `60000`       |
+| `ENABLED_TOOLGROUPS`   | No       | Comma-separated tool groups                      | All enabled   |
+| `SKIP_HEALTH_CHECKS`   | No       | Skip SSH connection health check on startup      | `false`       |
+| `HEALTH_CHECK_TIMEOUT` | No       | Health check timeout in milliseconds             | `10000`       |
 
 ### Claude Desktop Configuration
 
@@ -176,7 +177,16 @@ Execute a command on the remote server.
 
 - `command` (required): Shell command to execute
 - `cwd` (optional): Working directory
-- `timeout` (optional): Command timeout in ms
+- `timeout` (optional): Activity timeout in milliseconds (default: 60000 or `SSH_COMMAND_TIMEOUT`)
+
+**Activity-based Timeout:**
+
+The timeout is activity-based rather than absolute. It resets whenever stdout or stderr output is received from the command. This allows long-running commands that produce periodic output (like builds, deployments, or `claude -p` commands) to complete successfully, while still timing out commands that hang with no activity.
+
+For commands with delayed initial output (10-30+ seconds before any output), you can:
+
+1. Increase the default timeout via `SSH_COMMAND_TIMEOUT` environment variable
+2. Pass a higher `timeout` parameter for specific commands
 
 **Example:**
 
@@ -184,6 +194,15 @@ Execute a command on the remote server.
 {
   "command": "ls -la /var/log",
   "cwd": "/home/user"
+}
+```
+
+**Example with extended timeout for long-running commands:**
+
+```json
+{
+  "command": "npm run build",
+  "timeout": 300000
 }
 ```
 

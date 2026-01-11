@@ -36,13 +36,24 @@ export function createSSHConfigFromEnv(): SSHConfig {
     }
   }
 
-  // Parse and validate timeout
+  // Parse and validate connection timeout
   let timeout = 30000;
   if (process.env.SSH_TIMEOUT) {
     timeout = parseInt(process.env.SSH_TIMEOUT, 10);
     if (isNaN(timeout) || timeout < 0) {
       throw new Error(
         `Invalid SSH_TIMEOUT: ${process.env.SSH_TIMEOUT}. Must be a non-negative number.`
+      );
+    }
+  }
+
+  // Parse and validate command timeout (activity-based)
+  let commandTimeout: number | undefined;
+  if (process.env.SSH_COMMAND_TIMEOUT) {
+    commandTimeout = parseInt(process.env.SSH_COMMAND_TIMEOUT, 10);
+    if (isNaN(commandTimeout) || commandTimeout < 0) {
+      throw new Error(
+        `Invalid SSH_COMMAND_TIMEOUT: ${process.env.SSH_COMMAND_TIMEOUT}. Must be a non-negative number.`
       );
     }
   }
@@ -55,6 +66,7 @@ export function createSSHConfigFromEnv(): SSHConfig {
     passphrase: process.env.SSH_PASSPHRASE,
     agentSocket: process.env.SSH_AUTH_SOCK,
     timeout,
+    commandTimeout,
   };
 }
 

@@ -6,7 +6,7 @@ const PARAM_DESCRIPTIONS = {
   command: 'The shell command to execute on the remote server. Example: "ls -la /var/log"',
   cwd: 'Working directory on the remote server. The command will be executed from this directory. Example: "/home/user/project"',
   timeout:
-    'Command execution timeout in milliseconds. Commands exceeding this timeout will be terminated. Default: 60000 (1 minute)',
+    'Activity timeout in milliseconds. The timeout resets whenever stdout or stderr output is received, allowing long-running commands that produce periodic output to complete. Commands with no output for this duration will be terminated. Default: 60000 (1 minute), or SSH_COMMAND_TIMEOUT if configured.',
 } as const;
 
 export const ExecuteToolSchema = z.object({
