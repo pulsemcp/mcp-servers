@@ -65,13 +65,13 @@ The tests will:
 
 ## Latest Test Results
 
-**Test Date:** 2026-01-09
-**Branch:** claude-code/ssh-health-check-startup
-**Commit:** efa88ff (refactor(ssh): improve health check based on review feedback)
+**Test Date:** 2026-01-11
+**Branch:** claude/activity-based-timeout-226
+**Commit:** 6b84a4c (fix(ssh): address PR review feedback)
 **Tested By:** Claude Code
 **Environment:** Real SSH server (AO Production via Tailscale) with passphrase-protected key via SSH agent
 
-> **Note:** The health check feature (0.1.1) has been verified via comprehensive functional tests covering all error hint scenarios. The core SSH functionality (connection, command execution, SFTP) was previously tested on commit 13134db and remains unchanged.
+> **Note:** The activity-based timeout feature (0.1.2) implements a behavioral change to the timeout mechanism. The core timeout reset logic is covered by functional tests. The underlying SSH functionality (connection, command execution, SFTP) was previously tested on commit 13134db and remains unchanged.
 
 ### Summary
 

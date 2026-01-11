@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.2] - 2026-01-11
+
 ### Added
 
 - Activity-based timeout for command execution: timeout now resets whenever stdout or stderr output is received, allowing long-running commands with periodic output to complete successfully
