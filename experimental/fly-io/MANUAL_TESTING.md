@@ -46,9 +46,9 @@ npm run test:manual
 
 ## Latest Test Results
 
-**Test Date:** 2026-01-10
+**Test Date:** 2026-01-12
 **Branch:** tadasant/fly-io-mcp-server
-**Commit:** 177c058
+**Commit:** fc6c7b5
 **Tested By:** Claude
 **Environment:** macOS, Node.js 18, Test Environment
 
@@ -56,8 +56,8 @@ npm run test:manual
 
 | Metric      | Value |
 | ----------- | ----- |
-| Total Tests | 21    |
-| Passed      | 21    |
+| Total Tests | 25    |
+| Passed      | 25    |
 | Failed      | 0     |
 | Pass Rate   | 100%  |
 
@@ -65,17 +65,18 @@ npm run test:manual
 
 | File                    | Status                  | Tests | Notes                                                           |
 | ----------------------- | ----------------------- | ----- | --------------------------------------------------------------- |
-| `tools.test.ts`         | :white_check_mark: PASS | 18/18 | All functional tests pass with mocked client                    |
+| `tools.test.ts`         | :white_check_mark: PASS | 22/22 | All functional tests pass with mocked client                    |
 | `fly-io.manual.test.ts` | :warning: WARN          | 3/3   | Tests pass (skipped - no API token, expected for initial setup) |
 
 ### Details
 
-Fly.io MCP server with complete app and machine management:
+Fly.io MCP server refactored to use fly CLI:
 
-- All 15 tools implemented and tested
+- All 17 tools implemented and tested (added get_logs, machine_exec)
+- Refactored to shell out to fly CLI instead of REST API
 - Tool grouping system (readonly, write, admin) verified
-- New tools: restart_machine, suspend_machine, wait_machine, get_machine_events
-- Environment variable validation at startup working
+- New tools: get_logs, machine_exec for CLI-only features
+- Removed REST API lib/ directory
 - Manual tests require FLY_IO_API_TOKEN - gracefully skip when not set
 
 ---
