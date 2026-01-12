@@ -7,11 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **BREAKING**: Fixed product link selector to match Good Eggs' actual URL format (`/producer/product/id` instead of `/product/`)
+- Fixed page navigation timeouts by using `domcontentloaded` instead of `networkidle` (Good Eggs has persistent connections that prevent networkidle from completing)
+- Products are now correctly extracted using the `js-product-link` CSS class
+- Added URL validation to ensure product links have the expected 3-segment path structure
+
 ### Changed
 
 - Added maximum quantity validation (1-99) with integer check to `add_to_cart` tool
 - Added validation for empty product identifiers in `remove_from_cart` tool
 - Fixed `search_for_freebie_groceries` to check homepage and /fresh-picks for $0.00 items instead of deals page
+- Increased wait times after page load (from 1s to 3s) to allow React components to render
 
 ## [0.1.0] - 2026-01-04
 
