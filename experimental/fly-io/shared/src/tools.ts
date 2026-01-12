@@ -16,6 +16,8 @@ import { restartMachineTool } from './tools/restart-machine.js';
 import { suspendMachineTool } from './tools/suspend-machine.js';
 import { waitMachineTool } from './tools/wait-machine.js';
 import { getMachineEventsTool } from './tools/get-machine-events.js';
+import { getLogsTool } from './tools/get-logs.js';
+import { machineExecTool } from './tools/machine-exec.js';
 
 // =============================================================================
 // TOOL GROUPING SYSTEM
@@ -99,6 +101,7 @@ const ALL_TOOLS: ToolDefinition[] = [
   // App tools - readonly
   { factory: listAppsTool, groups: ['readonly', 'write', 'admin'] },
   { factory: getAppTool, groups: ['readonly', 'write', 'admin'] },
+  { factory: getLogsTool, groups: ['readonly', 'write', 'admin'] },
   // App tools - write
   { factory: createAppTool, groups: ['write', 'admin'] },
   // App tools - admin
@@ -115,6 +118,7 @@ const ALL_TOOLS: ToolDefinition[] = [
   { factory: restartMachineTool, groups: ['write', 'admin'] },
   { factory: suspendMachineTool, groups: ['write', 'admin'] },
   { factory: waitMachineTool, groups: ['write', 'admin'] },
+  { factory: machineExecTool, groups: ['write', 'admin'] },
   // Machine tools - admin
   { factory: deleteMachineTool, groups: ['admin'] },
 ];

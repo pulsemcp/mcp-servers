@@ -10,6 +10,8 @@ MCP server for managing Fly.io machines and applications. This server provides t
 - Get machine event logs for debugging
 - Wait for machine state transitions
 - Deploy Docker images to Fly.io
+- **Retrieve application logs** with region and machine filtering
+- **Execute commands on running machines**
 - Tool grouping for permission-based access control
 - Health checks for API credential validation
 
@@ -34,6 +36,8 @@ MCP server for managing Fly.io machines and applications. This server provides t
 | `restart_machine`    | write, admin           | Restart a machine (stop then start)         |
 | `suspend_machine`    | write, admin           | Suspend a machine (save state to disk)      |
 | `wait_machine`       | write, admin           | Wait for a machine to reach a state         |
+| `get_logs`           | readonly, write, admin | Get application logs                        |
+| `machine_exec`       | write, admin           | Execute a command on a machine              |
 
 ### Tool Groups
 
@@ -57,7 +61,8 @@ Control which tools are available via the `ENABLED_TOOLGROUPS` environment varia
 
 1. A Fly.io account - [Sign up at fly.io](https://fly.io)
 2. A Fly.io API token - [Create one here](https://fly.io/user/personal_access_tokens)
-3. Node.js 18+ installed
+3. **Fly.io CLI (`fly`) installed** - [Install instructions](https://fly.io/docs/hands-on/install-flyctl/)
+4. Node.js 18+ installed
 
 ### Configuration
 
@@ -131,6 +136,18 @@ Get the events for machine abc123 in my-web-app to see why it crashed.
 Restart machine abc123 in my-web-app to clear its state.
 ```
 
+### View application logs
+
+```
+Get the logs for my-web-app to see what's happening.
+```
+
+### Execute a command on a machine
+
+```
+Run "ls -la /app" on machine abc123 in my-web-app to see the app files.
+```
+
 ## Development
 
 ### Setup
@@ -183,13 +200,17 @@ npm run lint:fix
 npm run format
 ```
 
-## API Reference
+## Architecture
 
-This server uses the [Fly.io Machines API](https://fly.io/docs/machines/api/).
+This server uses the **Fly.io CLI (`fly`)** for all operations instead of the REST API directly. This approach:
+
+- Ensures consistent behavior across all tools
+- Enables CLI-only features like logs and command execution
+- Simplifies authentication (uses `FLY_API_TOKEN` environment variable)
 
 ### Rate Limits
 
-The Fly.io API enforces rate limiting:
+The Fly.io API enforces rate limiting (applied by the CLI):
 
 - General: 1 request/second/action (burst: 3 req/s)
 - Get Machine: 5 req/s (burst: 10 req/s)
@@ -209,8 +230,9 @@ fly-io/
 │   │   ├── server.ts     # Server factory
 │   │   ├── tools.ts      # Tool registration
 │   │   ├── tools/        # Individual tool implementations
-│   │   ├── fly-io-client/  # Fly.io API client
-│   │   │   └── lib/      # API method implementations
+│   │   ├── fly-io-client/  # Fly.io CLI client
+│   │   │   ├── fly-cli-client.ts   # CLI wrapper
+│   │   │   └── fly-io-client.ts    # Interface & exports
 │   │   ├── logging.ts
 │   │   └── types.ts
 │   └── package.json

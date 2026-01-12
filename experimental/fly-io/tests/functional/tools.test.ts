@@ -15,6 +15,8 @@ import { restartMachineTool } from '../../shared/src/tools/restart-machine.js';
 import { suspendMachineTool } from '../../shared/src/tools/suspend-machine.js';
 import { waitMachineTool } from '../../shared/src/tools/wait-machine.js';
 import { getMachineEventsTool } from '../../shared/src/tools/get-machine-events.js';
+import { getLogsTool } from '../../shared/src/tools/get-logs.js';
+import { machineExecTool } from '../../shared/src/tools/machine-exec.js';
 import { createMockFlyIOClient } from '../mocks/fly-io-client.functional-mock.js';
 
 describe('Tools', () => {
@@ -278,6 +280,73 @@ describe('Tools', () => {
       expect(result.content[0].text).toContain('start');
       expect(result.content[0].text).toContain('exit');
       expect(mockClient.getMachine).toHaveBeenCalledWith('test-app', 'test-machine-id');
+    });
+  });
+
+  describe('get_logs', () => {
+    it('should get logs for an app', async () => {
+      const tool = getLogsTool(mockServer, () => mockClient);
+      const result = await tool.handler({
+        app_name: 'test-app',
+      });
+
+      expect(result.content[0].text).toContain('Application started');
+      expect(mockClient.getLogs).toHaveBeenCalledWith('test-app', {
+        region: undefined,
+        machineId: undefined,
+      });
+    });
+
+    it('should accept region and machine_id filters', async () => {
+      const tool = getLogsTool(mockServer, () => mockClient);
+      const result = await tool.handler({
+        app_name: 'test-app',
+        region: 'iad',
+        machine_id: 'test-machine-id',
+      });
+
+      expect(result.content[0].text).toContain('Application started');
+      expect(mockClient.getLogs).toHaveBeenCalledWith('test-app', {
+        region: 'iad',
+        machineId: 'test-machine-id',
+      });
+    });
+  });
+
+  describe('machine_exec', () => {
+    it('should execute a command on a machine', async () => {
+      const tool = machineExecTool(mockServer, () => mockClient);
+      const result = await tool.handler({
+        app_name: 'test-app',
+        machine_id: 'test-machine-id',
+        command: 'ls -la',
+      });
+
+      expect(result.content[0].text).toContain('command output');
+      expect(mockClient.execCommand).toHaveBeenCalledWith(
+        'test-app',
+        'test-machine-id',
+        'ls -la',
+        undefined
+      );
+    });
+
+    it('should accept a timeout parameter', async () => {
+      const tool = machineExecTool(mockServer, () => mockClient);
+      const result = await tool.handler({
+        app_name: 'test-app',
+        machine_id: 'test-machine-id',
+        command: 'long-running-command',
+        timeout: 60,
+      });
+
+      expect(result.content[0].text).toContain('command output');
+      expect(mockClient.execCommand).toHaveBeenCalledWith(
+        'test-app',
+        'test-machine-id',
+        'long-running-command',
+        60
+      );
     });
   });
 });

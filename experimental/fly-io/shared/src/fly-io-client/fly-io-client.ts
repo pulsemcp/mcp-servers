@@ -6,6 +6,9 @@ import type {
   UpdateMachineRequest,
   MachineState,
 } from '../types.js';
+import { FlyCLIClient, type LogsOptions } from './fly-cli-client.js';
+
+export { FlyCLIClient, type LogsOptions };
 
 /**
  * Interface for Fly.io API client
@@ -38,57 +41,56 @@ export interface IFlyIOClient {
     state: MachineState,
     timeout?: number
   ): Promise<void>;
+
+  // CLI-specific operations (logs and exec)
+  getLogs(appName: string, options?: LogsOptions): Promise<string>;
+  execCommand(
+    appName: string,
+    machineId: string,
+    command: string,
+    timeout?: number
+  ): Promise<string>;
 }
 
 /**
- * Fly.io API client implementation
+ * Fly.io client implementation using the fly CLI
+ * All operations shell out to the `fly` command
  */
 export class FlyIOClient implements IFlyIOClient {
-  private baseUrl: string;
-  private headers: Record<string, string>;
+  private client: FlyCLIClient;
 
-  constructor(apiToken: string, baseUrl: string = 'https://api.machines.dev') {
-    this.baseUrl = baseUrl;
-    this.headers = {
-      Authorization: `Bearer ${apiToken}`,
-    };
+  constructor(apiToken: string) {
+    this.client = new FlyCLIClient(apiToken);
   }
 
   // App operations
   async listApps(orgSlug?: string): Promise<App[]> {
-    const { listApps } = await import('./lib/list-apps.js');
-    return listApps(this.baseUrl, this.headers, orgSlug);
+    return this.client.listApps(orgSlug);
   }
 
   async getApp(appName: string): Promise<App> {
-    const { getApp } = await import('./lib/get-app.js');
-    return getApp(this.baseUrl, this.headers, appName);
+    return this.client.getApp(appName);
   }
 
   async createApp(request: CreateAppRequest): Promise<App> {
-    const { createApp } = await import('./lib/create-app.js');
-    return createApp(this.baseUrl, this.headers, request);
+    return this.client.createApp(request);
   }
 
   async deleteApp(appName: string, force: boolean = false): Promise<void> {
-    const { deleteApp } = await import('./lib/delete-app.js');
-    return deleteApp(this.baseUrl, this.headers, appName, force);
+    return this.client.deleteApp(appName, force);
   }
 
   // Machine operations
   async listMachines(appName: string): Promise<Machine[]> {
-    const { listMachines } = await import('./lib/list-machines.js');
-    return listMachines(this.baseUrl, this.headers, appName);
+    return this.client.listMachines(appName);
   }
 
   async getMachine(appName: string, machineId: string): Promise<Machine> {
-    const { getMachine } = await import('./lib/get-machine.js');
-    return getMachine(this.baseUrl, this.headers, appName, machineId);
+    return this.client.getMachine(appName, machineId);
   }
 
   async createMachine(appName: string, request: CreateMachineRequest): Promise<Machine> {
-    const { createMachine } = await import('./lib/create-machine.js');
-    return createMachine(this.baseUrl, this.headers, appName, request);
+    return this.client.createMachine(appName, request);
   }
 
   async updateMachine(
@@ -96,33 +98,27 @@ export class FlyIOClient implements IFlyIOClient {
     machineId: string,
     request: UpdateMachineRequest
   ): Promise<Machine> {
-    const { updateMachine } = await import('./lib/update-machine.js');
-    return updateMachine(this.baseUrl, this.headers, appName, machineId, request);
+    return this.client.updateMachine(appName, machineId, request);
   }
 
   async deleteMachine(appName: string, machineId: string, force: boolean = false): Promise<void> {
-    const { deleteMachine } = await import('./lib/delete-machine.js');
-    return deleteMachine(this.baseUrl, this.headers, appName, machineId, force);
+    return this.client.deleteMachine(appName, machineId, force);
   }
 
   async startMachine(appName: string, machineId: string): Promise<void> {
-    const { startMachine } = await import('./lib/start-machine.js');
-    return startMachine(this.baseUrl, this.headers, appName, machineId);
+    return this.client.startMachine(appName, machineId);
   }
 
   async stopMachine(appName: string, machineId: string): Promise<void> {
-    const { stopMachine } = await import('./lib/stop-machine.js');
-    return stopMachine(this.baseUrl, this.headers, appName, machineId);
+    return this.client.stopMachine(appName, machineId);
   }
 
   async restartMachine(appName: string, machineId: string): Promise<void> {
-    const { restartMachine } = await import('./lib/restart-machine.js');
-    return restartMachine(this.baseUrl, this.headers, appName, machineId);
+    return this.client.restartMachine(appName, machineId);
   }
 
   async suspendMachine(appName: string, machineId: string): Promise<void> {
-    const { suspendMachine } = await import('./lib/suspend-machine.js');
-    return suspendMachine(this.baseUrl, this.headers, appName, machineId);
+    return this.client.suspendMachine(appName, machineId);
   }
 
   async waitMachine(
@@ -131,7 +127,20 @@ export class FlyIOClient implements IFlyIOClient {
     state: MachineState,
     timeout?: number
   ): Promise<void> {
-    const { waitMachine } = await import('./lib/wait-machine.js');
-    return waitMachine(this.baseUrl, this.headers, appName, machineId, state, timeout);
+    return this.client.waitMachine(appName, machineId, state, timeout);
+  }
+
+  // CLI-specific operations
+  async getLogs(appName: string, options?: LogsOptions): Promise<string> {
+    return this.client.getLogs(appName, options);
+  }
+
+  async execCommand(
+    appName: string,
+    machineId: string,
+    command: string,
+    timeout?: number
+  ): Promise<string> {
+    return this.client.execCommand(appName, machineId, command, timeout);
   }
 }

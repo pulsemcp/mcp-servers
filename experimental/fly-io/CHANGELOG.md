@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **BREAKING**: Refactored to use `fly` CLI instead of REST API
+  - All operations now shell out to the `fly` command
+  - Requires `fly` CLI to be installed and available in PATH
+  - Provides consistency across all tools and enables CLI-only features
+
+### Added
+
+- `get_logs` tool - Retrieve application logs with region and machine filtering
+- `machine_exec` tool - Execute commands on running machines
+
 ## [0.1.0] - 2026-01-10
 
 ### Added

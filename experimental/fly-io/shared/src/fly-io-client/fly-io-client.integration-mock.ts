@@ -212,6 +212,33 @@ export function createIntegrationMockFlyIOClient(
       }
       // In mock, just return immediately (state is already reached)
     },
+
+    // CLI-specific operations
+    async getLogs(
+      appName: string,
+      _options?: { region?: string; machineId?: string }
+    ): Promise<string> {
+      // Check if app exists
+      const app = apps.find((a) => a.name === appName);
+      if (!app) {
+        throw new Error(`App not found: ${appName}`);
+      }
+      return `2025-01-01T00:00:00Z app[mock-machine-id] INFO: Application started on ${appName}`;
+    },
+
+    async execCommand(
+      appName: string,
+      machineId: string,
+      command: string,
+      _timeout?: number
+    ): Promise<string> {
+      const appMachines = machines[appName] || [];
+      const machine = appMachines.find((m) => m.id === machineId);
+      if (!machine) {
+        throw new Error(`Machine not found: ${machineId}`);
+      }
+      return `Executed: ${command}`;
+    },
   };
 
   return client;

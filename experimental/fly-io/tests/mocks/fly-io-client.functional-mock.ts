@@ -76,6 +76,12 @@ export function createMockFlyIOClient(): IFlyIOClient {
     restartMachine: vi.fn().mockResolvedValue(undefined),
     suspendMachine: vi.fn().mockResolvedValue(undefined),
     waitMachine: vi.fn().mockResolvedValue(undefined),
+
+    // CLI-specific operations
+    getLogs: vi
+      .fn()
+      .mockResolvedValue('2025-01-01T00:00:00Z app[test-machine-id] INFO: Application started'),
+    execCommand: vi.fn().mockResolvedValue('command output'),
   };
 }
 
