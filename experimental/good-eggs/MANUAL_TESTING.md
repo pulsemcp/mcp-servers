@@ -87,63 +87,63 @@ The tests will:
 
 #### search_for_grocery Tests
 
-| Test                      | Status                  | Notes                                    |
-| ------------------------- | ----------------------- | ---------------------------------------- |
-| Search for organic apples | :white_check_mark: PASS | Found 98 groceries for "organic apples"  |
+| Test                      | Status                  | Notes                                   |
+| ------------------------- | ----------------------- | --------------------------------------- |
+| Search for organic apples | :white_check_mark: PASS | Found 98 groceries for "organic apples" |
 
 #### get_favorites Tests
 
-| Test               | Status                  | Notes                                 |
-| ------------------ | ----------------------- | ------------------------------------- |
-| Get user favorites | :white_check_mark: PASS | Found 33 favorite items               |
+| Test               | Status                  | Notes                   |
+| ------------------ | ----------------------- | ----------------------- |
+| Get user favorites | :white_check_mark: PASS | Found 33 favorite items |
 
 #### get_grocery_details Tests
 
-| Test                | Status                  | Notes                            |
-| ------------------- | ----------------------- | -------------------------------- |
-| Get product details | :white_check_mark: PASS | Product details retrieved        |
+| Test                | Status                  | Notes                     |
+| ------------------- | ----------------------- | ------------------------- |
+| Get product details | :white_check_mark: PASS | Product details retrieved |
 
 #### add_to_cart Tests
 
-| Test        | Status                  | Notes                                 |
-| ----------- | ----------------------- | ------------------------------------- |
-| Add to cart | :white_check_mark: PASS | Successfully added item to cart       |
+| Test        | Status                  | Notes                           |
+| ----------- | ----------------------- | ------------------------------- |
+| Add to cart | :white_check_mark: PASS | Successfully added item to cart |
 
 #### search_for_freebie_groceries Tests
 
-| Test             | Status                  | Notes                                |
-| ---------------- | ----------------------- | ------------------------------------ |
-| Search for deals | :white_check_mark: PASS | No free items currently available    |
+| Test             | Status                  | Notes                             |
+| ---------------- | ----------------------- | --------------------------------- |
+| Search for deals | :white_check_mark: PASS | No free items currently available |
 
 #### get_list_of_past_order_dates Tests
 
-| Test            | Status                  | Notes                    |
-| --------------- | ----------------------- | ------------------------ |
-| Get past orders | :white_check_mark: PASS | No past orders found     |
+| Test            | Status                  | Notes                |
+| --------------- | ----------------------- | -------------------- |
+| Get past orders | :white_check_mark: PASS | No past orders found |
 
 #### get_past_order_groceries Tests
 
-| Test                    | Status              | Notes                           |
-| ----------------------- | ------------------- | ------------------------------- |
-| Get past order contents | :warning: WARN      | Skipped - no past orders to test |
+| Test                    | Status         | Notes                            |
+| ----------------------- | -------------- | -------------------------------- |
+| Get past order contents | :warning: WARN | Skipped - no past orders to test |
 
 #### add_favorite Tests
 
-| Test            | Status                  | Notes                                           |
-| --------------- | ----------------------- | ----------------------------------------------- |
-| Add to favorite | :white_check_mark: PASS | Favorite button not found (UI-specific issue)   |
+| Test            | Status                  | Notes                                         |
+| --------------- | ----------------------- | --------------------------------------------- |
+| Add to favorite | :white_check_mark: PASS | Favorite button not found (UI-specific issue) |
 
 #### remove_favorite Tests
 
-| Test                 | Status                  | Notes                                           |
-| -------------------- | ----------------------- | ----------------------------------------------- |
-| Remove from favorite | :white_check_mark: PASS | Favorite button not found (UI-specific issue)   |
+| Test                 | Status                  | Notes                                         |
+| -------------------- | ----------------------- | --------------------------------------------- |
+| Remove from favorite | :white_check_mark: PASS | Favorite button not found (UI-specific issue) |
 
 #### remove_from_cart Tests
 
-| Test             | Status                  | Notes                                          |
-| ---------------- | ----------------------- | ---------------------------------------------- |
-| Remove from cart | :white_check_mark: PASS | Remove button not found (cart UI may differ)   |
+| Test             | Status                  | Notes                                        |
+| ---------------- | ----------------------- | -------------------------------------------- |
+| Remove from cart | :white_check_mark: PASS | Remove button not found (cart UI may differ) |
 
 ### Known Issues / Limitations
 
