@@ -4,10 +4,10 @@ This file tracks manual testing results for the Google Calendar MCP server again
 
 ## Latest Test Run
 
-**Status**: ⚠️ NOT YET TESTED
-**Date**: 2026-01-12
-**Commit**: 4c0f583
-**Tester**: Initial implementation - manual testing pending
+**Status:** ⚠️ NOT YET TESTED
+**Date:** 2026-01-12
+**Commit:** 4c0f583
+**Tester:** Initial implementation - manual testing pending
 
 ### Notes
 
