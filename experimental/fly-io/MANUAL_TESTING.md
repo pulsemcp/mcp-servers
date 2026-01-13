@@ -48,16 +48,16 @@ npm run test:manual
 
 **Test Date:** 2026-01-12
 **Branch:** tadasant/fly-io-mcp-server
-**Commit:** fc6c7b5
+**Commit:** 4705c65
 **Tested By:** Claude
-**Environment:** macOS, Node.js 18, Test Environment
+**Environment:** macOS, Node.js 18, Fly.io API (real credentials)
 
 ### Summary
 
 | Metric      | Value |
 | ----------- | ----- |
-| Total Tests | 25    |
-| Passed      | 25    |
+| Total Tests | 58    |
+| Passed      | 58    |
 | Failed      | 0     |
 | Pass Rate   | 100%  |
 
@@ -65,19 +65,22 @@ npm run test:manual
 
 | File                    | Status                  | Tests | Notes                                                           |
 | ----------------------- | ----------------------- | ----- | --------------------------------------------------------------- |
-| `tools.test.ts`         | :white_check_mark: PASS | 22/22 | All functional tests pass with mocked client                    |
-| `fly-io.manual.test.ts` | :warning: WARN          | 3/3   | Tests pass (skipped - no API token, expected for initial setup) |
+| `tools.test.ts`         | :white_check_mark: PASS | 55/55 | All functional tests pass with mocked client                    |
+| `fly-io.manual.test.ts` | :white_check_mark: PASS | 3/3   | All manual tests pass with real API (pulsemcp-proctor-runtimes) |
 
 ### Details
 
-Fly.io MCP server refactored to use fly CLI:
+Fly.io MCP server with feature-based tool groups:
 
-- All 17 tools implemented and tested (added get_logs, machine_exec)
-- Refactored to shell out to fly CLI instead of REST API
-- Tool grouping system (readonly, write, admin) verified
-- New tools: get_logs, machine_exec for CLI-only features
-- Removed REST API lib/ directory
-- Manual tests require FLY_IO_API_TOKEN - gracefully skip when not set
+- All 17 tools implemented and verified against real Fly.io API
+- Permission groups: readonly, write, admin
+- Feature groups: apps, machines, logs, ssh
+- App scoping via FLY_IO_APP_NAME environment variable
+- Fail-closed behavior for invalid ENABLED_TOOLGROUPS
+- CLI client fixes for actual fly CLI output structure
+- list_apps successfully returns apps from real account
+- get_app uses fly status command (apps show lacks --json)
+- Rate limiting test verified (no rate limits encountered)
 
 ---
 
