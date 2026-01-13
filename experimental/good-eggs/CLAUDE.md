@@ -72,11 +72,16 @@ Key URLs used by the client:
 
 The client uses flexible selectors to handle Good Eggs' React-based UI:
 
-- Product cards: `a[href*="/product/"], a[href*="goodeggs"]`
-- Names: `h2, h3, [class*="title"], [class*="name"]`
+- Product cards: `a.js-product-link` (Good Eggs uses this class for product links)
+- Product URLs: `/<producer>/<product-slug>/<product-id>` (e.g., `/cloversfbay/organic-whole-milk/53fe295358ed090200000f2d`)
+- Names: `h2, h3, [class*="title"], [class*="name"]` (fallback to link text)
 - Brands: `[class*="brand"], [class*="producer"]`
 - Prices: `[class*="price"]`
 - Add to cart: `button:has-text("ADD TO BASKET")`
+
+## Page Navigation
+
+Good Eggs has persistent network connections (analytics, WebSockets) that prevent Playwright's `networkidle` wait strategy from completing. All page navigations use `domcontentloaded` instead, followed by a 3-second wait for React components to render.
 
 ## Logging
 
