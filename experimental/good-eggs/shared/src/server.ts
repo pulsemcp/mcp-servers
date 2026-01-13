@@ -897,6 +897,12 @@ export class GoodEggsClient implements IGoodEggsClient {
 
 export type ClientFactory = () => IGoodEggsClient;
 
+/**
+ * Callback invoked when background login fails
+ * @param error The error that caused login to fail
+ */
+export type LoginFailedCallback = (error: Error) => void;
+
 export function createMCPServer() {
   const server = new Server(
     {
@@ -913,32 +919,102 @@ export function createMCPServer() {
   // Track active client for cleanup
   let activeClient: IGoodEggsClient | null = null;
 
+  // Track background login state
+  let loginPromise: Promise<void> | null = null;
+  let loginFailed = false;
+  let loginError: Error | null = null;
+  let onLoginFailed: LoginFailedCallback | null = null;
+
+  /**
+   * Create the client instance (but don't initialize/login yet)
+   */
+  const createClient = (): IGoodEggsClient => {
+    const username = process.env.GOOD_EGGS_USERNAME;
+    const password = process.env.GOOD_EGGS_PASSWORD;
+    const headless = process.env.HEADLESS !== 'false';
+    const timeout = parseInt(process.env.TIMEOUT || '30000', 10);
+
+    if (!username || !password) {
+      throw new Error(
+        'GOOD_EGGS_USERNAME and GOOD_EGGS_PASSWORD environment variables must be configured'
+      );
+    }
+
+    activeClient = new GoodEggsClient({
+      username,
+      password,
+      headless,
+      timeout,
+    });
+    return activeClient;
+  };
+
+  /**
+   * Start background login process
+   * This should be called after the server is connected to start authentication
+   * without blocking the stdio connection.
+   *
+   * @param onFailed Callback invoked if login fails - use this to close the server
+   */
+  const startBackgroundLogin = (onFailed?: LoginFailedCallback): void => {
+    if (loginPromise) {
+      // Already started
+      return;
+    }
+
+    onLoginFailed = onFailed || null;
+
+    // Create client if not already created
+    if (!activeClient) {
+      createClient();
+    }
+
+    // Start login in background
+    loginPromise = activeClient!.initialize().catch((error) => {
+      loginFailed = true;
+      loginError = error instanceof Error ? error : new Error(String(error));
+
+      // Invoke callback to notify about login failure
+      if (onLoginFailed) {
+        onLoginFailed(loginError);
+      }
+
+      // Re-throw to make the promise rejected
+      throw loginError;
+    });
+  };
+
+  /**
+   * Get a client that is ready to use (login completed)
+   * If background login was started, this waits for it to complete.
+   * If not started, this will initialize synchronously (blocking).
+   */
+  const getReadyClient = async (): Promise<IGoodEggsClient> => {
+    // If login already failed, throw immediately
+    if (loginFailed && loginError) {
+      throw new Error(`Login failed: ${loginError.message}`);
+    }
+
+    // If background login is in progress, wait for it
+    if (loginPromise) {
+      await loginPromise;
+      return activeClient!;
+    }
+
+    // No background login started - create and initialize client now (legacy behavior)
+    if (!activeClient) {
+      createClient();
+    }
+    await activeClient!.initialize();
+    return activeClient!;
+  };
+
   const registerHandlers = async (server: Server, clientFactory?: ClientFactory) => {
-    // Use provided factory or create default client
-    const factory =
-      clientFactory ||
-      (() => {
-        const username = process.env.GOOD_EGGS_USERNAME;
-        const password = process.env.GOOD_EGGS_PASSWORD;
-        const headless = process.env.HEADLESS !== 'false';
-        const timeout = parseInt(process.env.TIMEOUT || '30000', 10);
+    // Use provided factory or create our managed client getter
+    const factory = clientFactory || (() => activeClient || createClient());
 
-        if (!username || !password) {
-          throw new Error(
-            'GOOD_EGGS_USERNAME and GOOD_EGGS_PASSWORD environment variables must be configured'
-          );
-        }
-
-        activeClient = new GoodEggsClient({
-          username,
-          password,
-          headless,
-          timeout,
-        });
-        return activeClient;
-      });
-
-    const registerTools = createRegisterTools(factory);
+    // Create tools with a special async getter that waits for background login
+    const registerTools = createRegisterTools(factory, getReadyClient);
     registerTools(server);
   };
 
@@ -947,7 +1023,11 @@ export function createMCPServer() {
       await activeClient.close();
       activeClient = null;
     }
+    // Reset login state
+    loginPromise = null;
+    loginFailed = false;
+    loginError = null;
   };
 
-  return { server, registerHandlers, cleanup };
+  return { server, registerHandlers, cleanup, startBackgroundLogin };
 }

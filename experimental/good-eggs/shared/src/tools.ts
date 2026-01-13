@@ -126,12 +126,28 @@ interface Tool {
   }>;
 }
 
-export function createRegisterTools(clientFactory: ClientFactory) {
+/**
+ * Async getter that returns a ready-to-use client (login completed)
+ */
+export type GetReadyClientFn = () => Promise<IGoodEggsClient>;
+
+export function createRegisterTools(
+  clientFactory: ClientFactory,
+  getReadyClient?: GetReadyClientFn
+) {
   // Create a single client instance that persists across calls
   let client: IGoodEggsClient | null = null;
   let isInitialized = false;
 
+  // If getReadyClient is provided (background login mode), use it
+  // Otherwise fall back to lazy initialization (legacy behavior)
   const getClient = async (): Promise<IGoodEggsClient> => {
+    if (getReadyClient) {
+      // Use the provided getter that handles background login
+      return getReadyClient();
+    }
+
+    // Legacy behavior: lazy initialization
     if (!client) {
       client = clientFactory();
     }

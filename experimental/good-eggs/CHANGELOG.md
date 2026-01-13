@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Background login initialization: Playwright login now starts immediately when the MCP server connection is established, without blocking the stdio connection
+- If background login fails, the server shuts down with an appropriate error message
+- All tool calls now wait for the background login to complete before executing
+
 ## [0.1.1] - 2026-01-12
 
 ### Fixed
