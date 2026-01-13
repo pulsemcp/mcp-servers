@@ -131,38 +131,49 @@ export class FlyCLIClient implements IFlyIOClientExtended {
     }
 
     const output = await this.execFly(args);
-    const apps =
-      this.parseJson<
-        Array<{ Name: string; Organization: string; Status: string; Deployed?: string }>
-      >(output);
+    // CLI returns Organization as an object with Name and Slug properties
+    const apps = this.parseJson<
+      Array<{
+        ID?: string;
+        Name: string;
+        Organization: { Name: string; Slug: string } | null;
+        Status: string;
+        Deployed?: boolean;
+      }>
+    >(output);
 
     return apps.map((app) => ({
-      id: app.Name, // CLI doesn't return ID, use name
+      id: app.ID || app.Name,
       name: app.Name,
       status: app.Status?.toLowerCase() || 'unknown',
       organization: {
-        name: app.Organization,
-        slug: app.Organization.toLowerCase().replace(/\s+/g, '-'),
+        name: app.Organization?.Name || '',
+        slug: app.Organization?.Slug || '',
       },
     }));
   }
 
   async getApp(appName: string): Promise<App> {
-    const args = ['apps', 'show', appName];
+    // Use fly status instead of fly apps show (which doesn't support --json)
+    const args = ['status', '-a', appName];
     const output = await this.execFly(args);
-    const app = this.parseJson<{ Name: string; Owner: string; Status: string; Machines?: number }>(
-      output
-    );
+    const app = this.parseJson<{
+      ID: string;
+      Name: string;
+      Status: string;
+      Organization: { Name?: string; Slug: string } | null;
+      Machines?: Array<unknown>;
+    }>(output);
 
     return {
-      id: app.Name,
+      id: app.ID || app.Name,
       name: app.Name,
       status: app.Status?.toLowerCase() || 'unknown',
       organization: {
-        name: app.Owner,
-        slug: app.Owner?.toLowerCase().replace(/\s+/g, '-') || '',
+        name: app.Organization?.Name || app.Organization?.Slug || '',
+        slug: app.Organization?.Slug || '',
       },
-      machine_count: app.Machines,
+      machine_count: app.Machines?.length,
     };
   }
 
