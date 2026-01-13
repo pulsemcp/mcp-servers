@@ -597,10 +597,6 @@ export class GoodEggsClient implements IGoodEggsClient {
         while (sibling && !sibling.classList.contains('reorder-page__grid__header')) {
           const productLinks = sibling.querySelectorAll('a.js-product-link');
           itemCount += productLinks.length;
-          // Also check if the sibling itself is a product container
-          if (sibling.querySelector('a.js-product-link')) {
-            // Already counted above
-          }
           sibling = sibling.nextElementSibling;
         }
 
@@ -634,6 +630,8 @@ export class GoodEggsClient implements IGoodEggsClient {
     // Extract items from the specific order date section
     // The reorder page displays all orders with their products inline (not as separate pages)
     const items = await page.evaluate((targetDate) => {
+      // ProductItem interface is duplicated here because page.evaluate runs in browser context
+      // and cannot access TypeScript types from the Node.js context
       interface ProductItem {
         url: string;
         name: string;
