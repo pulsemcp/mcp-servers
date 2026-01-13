@@ -573,23 +573,40 @@ export class GoodEggsClient implements IGoodEggsClient {
     const orders = await page.evaluate(() => {
       const orderList: PastOrder[] = [];
 
-      // Look for order date elements
-      const orderElements = document.querySelectorAll(
-        '[class*="order"], [class*="history"] > div, [class*="past-order"]'
-      );
+      // Good Eggs reorder page uses 'reorder-page__grid__header' class for order date headers
+      // Each header contains a <p> element with text like "Delivered Saturday, January 10th"
+      const headerElements = document.querySelectorAll('.reorder-page__grid__header');
 
-      orderElements.forEach((el) => {
-        const dateEl = el.querySelector('[class*="date"], time');
-        const totalEl = el.querySelector('[class*="total"], [class*="price"]');
-        const countEl = el.querySelector('[class*="count"], [class*="items"]');
-
+      headerElements.forEach((header) => {
+        const dateEl = header.querySelector('p');
         const dateText = dateEl?.textContent?.trim();
+
         if (!dateText) return;
 
+        // Skip non-order headers like "Based on your shopping" recommendations section
+        if (!dateText.includes('Delivered')) return;
+
+        // Extract just the date part (e.g., "Saturday, January 10th" from "Delivered Saturday, January 10th")
+        const dateMatch = dateText.match(/Delivered\s+(.+)/);
+        const cleanDate = dateMatch ? dateMatch[1] : dateText;
+
+        // Count the products in this order section
+        // The products follow the header in the DOM as sibling elements with js-product-link
+        let itemCount = 0;
+        let sibling = header.nextElementSibling;
+        while (sibling && !sibling.classList.contains('reorder-page__grid__header')) {
+          const productLinks = sibling.querySelectorAll('a.js-product-link');
+          itemCount += productLinks.length;
+          // Also check if the sibling itself is a product container
+          if (sibling.querySelector('a.js-product-link')) {
+            // Already counted above
+          }
+          sibling = sibling.nextElementSibling;
+        }
+
         orderList.push({
-          date: dateText,
-          total: totalEl?.textContent?.trim() || undefined,
-          itemCount: countEl?.textContent ? parseInt(countEl.textContent) : undefined,
+          date: cleanDate,
+          itemCount: itemCount > 0 ? itemCount : undefined,
         });
       });
 
@@ -614,61 +631,113 @@ export class GoodEggsClient implements IGoodEggsClient {
       throw new Error('Not logged in. Cannot access past orders.');
     }
 
-    // Try to click on the specific order date
-    const orderLink = await page.$(`text=${orderDate}`);
-    if (orderLink) {
-      await orderLink.click();
-      await page.waitForTimeout(2000);
-    }
+    // Extract items from the specific order date section
+    // The reorder page displays all orders with their products inline (not as separate pages)
+    const items = await page.evaluate((targetDate) => {
+      interface ProductItem {
+        url: string;
+        name: string;
+        brand: string;
+        price: string;
+        imageUrl?: string;
+      }
 
-    // Extract items from the order
-    const items = await page.evaluate(() => {
-      const products: GroceryItem[] = [];
+      const products: ProductItem[] = [];
       const seen = new Set<string>();
 
-      // Good Eggs uses 'js-product-link' class for product links
-      const productElements = document.querySelectorAll('a.js-product-link');
+      // Find all order headers
+      const headerElements = Array.from(
+        document.querySelectorAll('.reorder-page__grid__header')
+      ) as Element[];
 
-      productElements.forEach((el) => {
-        const link = el as HTMLAnchorElement;
-        const href = link.href;
+      // Find the header that matches our target date
+      let targetHeader: Element | null = null;
+      for (const header of headerElements) {
+        const dateEl = header.querySelector('p');
+        const dateText = dateEl?.textContent?.trim() || '';
+        // Check if this header matches (could be exact match or partial match)
+        if (
+          dateText.includes(targetDate) ||
+          targetDate.includes(dateText.replace('Delivered ', ''))
+        ) {
+          targetHeader = header;
+          break;
+        }
+      }
 
-        if (!href || seen.has(href) || href.includes('/reorder') || href.includes('/signin')) {
-          return;
+      if (!targetHeader) {
+        return products;
+      }
+
+      // Get the parent container that holds all the products for this order
+      // Products are siblings of the header within the same grid section
+      const parent = targetHeader.parentElement;
+      if (!parent) {
+        return products;
+      }
+
+      // Find all product links within this section (between this header and the next one)
+      let foundHeader = false;
+      const children = Array.from(parent.children) as Element[];
+
+      for (const child of children) {
+        if (child === targetHeader) {
+          foundHeader = true;
+          continue;
         }
 
-        // Validate URL structure
-        const urlPath = new URL(href).pathname;
-        const segments = urlPath.split('/').filter((s) => s.length > 0);
-        if (segments.length < 3) {
-          return;
+        // Stop when we hit the next header
+        if (foundHeader && child.classList.contains('reorder-page__grid__header')) {
+          break;
         }
 
-        const container = link.closest('div[class*="product"], article, [class*="card"]') || link;
-
-        const nameEl = container.querySelector('h2, h3, [class*="title"], [class*="name"]');
-        const brandEl = container.querySelector('[class*="brand"], [class*="producer"]');
-        const priceEl = container.querySelector('[class*="price"]');
-        const imgEl = container.querySelector('img');
-
-        let name = nameEl?.textContent?.trim();
-        if (!name || name.length < 3) {
-          name = link.textContent?.trim();
+        if (!foundHeader) {
+          continue;
         }
-        if (!name || name.length < 3) return;
 
-        seen.add(href);
-        products.push({
-          url: href,
-          name: name,
-          brand: brandEl?.textContent?.trim() || '',
-          price: priceEl?.textContent?.trim() || '',
-          imageUrl: imgEl?.src || undefined,
+        // Extract product links from this child element
+        const productLinks = child.querySelectorAll('a.js-product-link');
+        productLinks.forEach((el: Element) => {
+          const link = el as HTMLAnchorElement;
+          const href = link.href;
+
+          if (!href || seen.has(href) || href.includes('/reorder') || href.includes('/signin')) {
+            return;
+          }
+
+          // Validate URL structure
+          const urlPath = new URL(href).pathname;
+          const segments = urlPath.split('/').filter((s: string) => s.length > 0);
+          if (segments.length < 3) {
+            return;
+          }
+
+          const container = link.closest('div[class*="product"], article, [class*="card"]') || link;
+
+          const nameEl = container.querySelector('h2, h3, [class*="title"], [class*="name"]');
+          const brandEl = container.querySelector('[class*="brand"], [class*="producer"]');
+          const priceEl = container.querySelector('[class*="price"]');
+          const imgEl = container.querySelector('img');
+
+          let name = nameEl?.textContent?.trim();
+          if (!name || name.length < 3) {
+            name = link.textContent?.trim();
+          }
+          if (!name || name.length < 3) return;
+
+          seen.add(href);
+          products.push({
+            url: href,
+            name: name,
+            brand: brandEl?.textContent?.trim() || '',
+            price: priceEl?.textContent?.trim() || '',
+            imageUrl: (imgEl as HTMLImageElement)?.src || undefined,
+          });
         });
-      });
+      }
 
       return products;
-    });
+    }, orderDate);
 
     return items;
   }
