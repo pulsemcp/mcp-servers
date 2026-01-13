@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.3] - 2026-01-13
+
 ### Fixed
 
 - Fixed `get_list_of_past_order_dates` to correctly identify order date headers on the Good Eggs reorder page using the `.reorder-page__grid__header` CSS selector
