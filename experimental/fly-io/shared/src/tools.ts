@@ -161,7 +161,9 @@ export function createRegisterTools(
     : options || {};
 
   const groups = opts.enabledGroups || parseEnabledToolGroups(process.env.ENABLED_TOOLGROUPS);
-  const scopedAppName = opts.scopedAppName ?? process.env.FLY_IO_APP_NAME;
+  // Validate scopedAppName - treat empty strings as undefined
+  const rawScopedAppName = opts.scopedAppName ?? process.env.FLY_IO_APP_NAME;
+  const scopedAppName = rawScopedAppName?.trim() || undefined;
 
   return (server: Server) => {
     // Filter tools by enabled groups
@@ -232,12 +234,14 @@ export function createRegisterTools(
       let processedArgs = args;
       if (scopedAppName && toolEntry.requiresAppName) {
         const argsObj = (args || {}) as Record<string, unknown>;
-        if (argsObj.app_name && argsObj.app_name !== scopedAppName) {
+        const providedAppName = argsObj.app_name as string | undefined;
+        // Compare case-insensitively since Fly.io app names are normalized to lowercase
+        if (providedAppName && providedAppName.toLowerCase() !== scopedAppName.toLowerCase()) {
           return {
             content: [
               {
                 type: 'text',
-                text: `Error: This server is scoped to app "${scopedAppName}". Cannot operate on app "${argsObj.app_name}".`,
+                text: `Error: This server is scoped to app "${scopedAppName}". Cannot operate on app "${providedAppName}".`,
               },
             ],
             isError: true,

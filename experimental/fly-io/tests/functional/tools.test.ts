@@ -459,6 +459,48 @@ describe('App Scoping (FLY_IO_APP_NAME)', () => {
       expect(result.content[0].text).toContain('Cannot operate on app "different-app"');
       expect(mockClient.listMachines).not.toHaveBeenCalled();
     });
+
+    it('should allow case-insensitive app_name matching', async () => {
+      setupServer('my-scoped-app');
+      await callToolHandler({
+        params: { name: 'list_machines', arguments: { app_name: 'MY-SCOPED-APP' } },
+      });
+
+      expect(mockClient.listMachines).toHaveBeenCalledWith('my-scoped-app');
+    });
+
+    it('should preserve other required params while making app_name optional', async () => {
+      setupServer('my-scoped-app');
+      const result = await listToolsHandler();
+
+      const machineExec = result.tools.find((t) => t.name === 'machine_exec');
+      const schema = machineExec?.inputSchema as { required?: string[] };
+      // app_name should NOT be required
+      expect(schema.required || []).not.toContain('app_name');
+      // But machine_id and command should still be required
+      expect(schema.required).toContain('machine_id');
+      expect(schema.required).toContain('command');
+    });
+  });
+
+  describe('when FLY_IO_APP_NAME is empty string', () => {
+    it('should treat empty string as unset', async () => {
+      setupServer('');
+      const result = await listToolsHandler();
+
+      // Should have all tools including app management
+      const toolNames = result.tools.map((t) => t.name);
+      expect(toolNames).toContain('list_apps');
+      expect(toolNames).toContain('get_app');
+    });
+
+    it('should treat whitespace-only string as unset', async () => {
+      setupServer('   ');
+      const result = await listToolsHandler();
+
+      const toolNames = result.tools.map((t) => t.name);
+      expect(toolNames).toContain('list_apps');
+    });
   });
 
   describe('when FLY_IO_APP_NAME is not set', () => {
