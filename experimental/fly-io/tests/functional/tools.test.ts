@@ -352,6 +352,200 @@ describe('Tools', () => {
   });
 });
 
+describe('Feature Groups (ENABLED_TOOLGROUPS)', () => {
+  let mockClient: ReturnType<typeof createMockFlyIOClient>;
+  let listToolsHandler: () => Promise<{
+    tools: Array<{ name: string; description: string; inputSchema: object }>;
+  }>;
+
+  beforeEach(() => {
+    mockClient = createMockFlyIOClient();
+    listToolsHandler = undefined as unknown as typeof listToolsHandler;
+  });
+
+  const setupServer = (enabledGroups?: string[]) => {
+    const mockServer = {
+      setRequestHandler: vi.fn((schema: unknown, handler: (req: unknown) => Promise<unknown>) => {
+        const schemaObj = schema as {
+          def?: { shape?: { method?: { def?: { values?: string[] } } } };
+        };
+        const method = schemaObj?.def?.shape?.method?.def?.values?.[0];
+        if (method === 'tools/list') {
+          listToolsHandler = handler as typeof listToolsHandler;
+        }
+      }),
+    } as unknown as Server;
+
+    const registerTools = createRegisterTools(() => mockClient, {
+      enabledGroups: enabledGroups as never,
+    });
+    registerTools(mockServer);
+  };
+
+  describe('when no groups specified (default)', () => {
+    it('should include all tools', async () => {
+      setupServer(undefined);
+      const result = await listToolsHandler();
+
+      const toolNames = result.tools.map((t) => t.name);
+      expect(toolNames).toContain('list_apps');
+      expect(toolNames).toContain('list_machines');
+      expect(toolNames).toContain('get_logs');
+      expect(toolNames).toContain('machine_exec');
+      expect(toolNames).toContain('delete_app');
+      expect(toolNames).toContain('delete_machine');
+    });
+  });
+
+  describe('permission groups', () => {
+    it('should filter to readonly tools', async () => {
+      setupServer(['readonly']);
+      const result = await listToolsHandler();
+
+      const toolNames = result.tools.map((t) => t.name);
+      // Readonly tools should be present
+      expect(toolNames).toContain('list_apps');
+      expect(toolNames).toContain('get_app');
+      expect(toolNames).toContain('list_machines');
+      expect(toolNames).toContain('get_machine');
+      expect(toolNames).toContain('get_logs');
+      // Write and admin tools should NOT be present
+      expect(toolNames).not.toContain('create_app');
+      expect(toolNames).not.toContain('delete_app');
+      expect(toolNames).not.toContain('start_machine');
+      expect(toolNames).not.toContain('machine_exec');
+    });
+
+    it('should filter to readonly,write tools', async () => {
+      setupServer(['readonly', 'write']);
+      const result = await listToolsHandler();
+
+      const toolNames = result.tools.map((t) => t.name);
+      // Readonly and write tools should be present
+      expect(toolNames).toContain('list_apps');
+      expect(toolNames).toContain('create_app');
+      expect(toolNames).toContain('start_machine');
+      expect(toolNames).toContain('machine_exec');
+      // Admin tools should NOT be present
+      expect(toolNames).not.toContain('delete_app');
+      expect(toolNames).not.toContain('delete_machine');
+    });
+  });
+
+  describe('feature groups', () => {
+    it('should filter to apps feature only', async () => {
+      setupServer(['apps']);
+      const result = await listToolsHandler();
+
+      const toolNames = result.tools.map((t) => t.name);
+      // App tools should be present
+      expect(toolNames).toContain('list_apps');
+      expect(toolNames).toContain('get_app');
+      expect(toolNames).toContain('create_app');
+      expect(toolNames).toContain('delete_app');
+      // Non-app tools should NOT be present
+      expect(toolNames).not.toContain('list_machines');
+      expect(toolNames).not.toContain('get_logs');
+      expect(toolNames).not.toContain('machine_exec');
+    });
+
+    it('should filter to machines feature only', async () => {
+      setupServer(['machines']);
+      const result = await listToolsHandler();
+
+      const toolNames = result.tools.map((t) => t.name);
+      // Machine tools should be present
+      expect(toolNames).toContain('list_machines');
+      expect(toolNames).toContain('get_machine');
+      expect(toolNames).toContain('create_machine');
+      expect(toolNames).toContain('delete_machine');
+      // Non-machine tools should NOT be present
+      expect(toolNames).not.toContain('list_apps');
+      expect(toolNames).not.toContain('get_logs');
+      expect(toolNames).not.toContain('machine_exec');
+    });
+
+    it('should filter to logs feature only', async () => {
+      setupServer(['logs']);
+      const result = await listToolsHandler();
+
+      const toolNames = result.tools.map((t) => t.name);
+      expect(toolNames).toContain('get_logs');
+      expect(toolNames).not.toContain('list_apps');
+      expect(toolNames).not.toContain('list_machines');
+      expect(toolNames).not.toContain('machine_exec');
+    });
+
+    it('should filter to ssh feature only', async () => {
+      setupServer(['ssh']);
+      const result = await listToolsHandler();
+
+      const toolNames = result.tools.map((t) => t.name);
+      expect(toolNames).toContain('machine_exec');
+      expect(toolNames).not.toContain('list_apps');
+      expect(toolNames).not.toContain('list_machines');
+      expect(toolNames).not.toContain('get_logs');
+    });
+
+    it('should combine multiple features', async () => {
+      setupServer(['machines', 'logs']);
+      const result = await listToolsHandler();
+
+      const toolNames = result.tools.map((t) => t.name);
+      expect(toolNames).toContain('list_machines');
+      expect(toolNames).toContain('get_logs');
+      expect(toolNames).not.toContain('list_apps');
+      expect(toolNames).not.toContain('machine_exec');
+    });
+  });
+
+  describe('combined permission and feature groups', () => {
+    it('should filter by both permission and feature', async () => {
+      setupServer(['readonly', 'machines']);
+      const result = await listToolsHandler();
+
+      const toolNames = result.tools.map((t) => t.name);
+      // Readonly machine tools should be present
+      expect(toolNames).toContain('list_machines');
+      expect(toolNames).toContain('get_machine');
+      expect(toolNames).toContain('get_machine_events');
+      // Write machine tools should NOT be present
+      expect(toolNames).not.toContain('create_machine');
+      expect(toolNames).not.toContain('start_machine');
+      // App tools should NOT be present
+      expect(toolNames).not.toContain('list_apps');
+    });
+
+    it('should filter to readonly apps and logs', async () => {
+      setupServer(['readonly', 'apps', 'logs']);
+      const result = await listToolsHandler();
+
+      const toolNames = result.tools.map((t) => t.name);
+      // Readonly app tools should be present
+      expect(toolNames).toContain('list_apps');
+      expect(toolNames).toContain('get_app');
+      // Readonly logs should be present
+      expect(toolNames).toContain('get_logs');
+      // Write/admin app tools should NOT be present
+      expect(toolNames).not.toContain('create_app');
+      expect(toolNames).not.toContain('delete_app');
+      // Machine tools should NOT be present
+      expect(toolNames).not.toContain('list_machines');
+    });
+
+    it('should filter to write ssh only', async () => {
+      setupServer(['write', 'ssh']);
+      const result = await listToolsHandler();
+
+      const toolNames = result.tools.map((t) => t.name);
+      // Write ssh (machine_exec) should be present
+      expect(toolNames).toContain('machine_exec');
+      // Nothing else should be present
+      expect(toolNames.length).toBe(1);
+    });
+  });
+});
+
 describe('App Scoping (FLY_IO_APP_NAME)', () => {
   let mockClient: ReturnType<typeof createMockFlyIOClient>;
   let listToolsHandler: () => Promise<{

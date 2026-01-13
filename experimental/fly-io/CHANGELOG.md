@@ -25,6 +25,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Restricts all machine operations to the configured app
   - Makes app_name parameter optional (auto-injected)
   - Blocks cross-app operations with clear error messages
+- Feature-based tool groups in addition to permission groups
+  - `apps` group for app management tools
+  - `machines` group for machine management tools
+  - `logs` group for log retrieval tools
+  - `ssh` group for remote execution tools
+  - Groups can be combined (e.g., `ENABLED_TOOLGROUPS="readonly,machines"` for read-only machine access)
 
 ## [0.1.0] - 2026-01-10
 

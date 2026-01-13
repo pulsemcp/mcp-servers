@@ -25,8 +25,25 @@ import { machineExecTool } from './tools/machine-exec.js';
 // Tool groups allow enabling/disabling categories of tools via environment variables.
 // This is useful for permission-based access control or feature flags.
 //
+// Two types of groups are supported and can be combined:
+//
+// 1. PERMISSION GROUPS (what operations are allowed):
+//    - 'readonly': Read-only operations (list, get)
+//    - 'write': Write operations (create, update, start, stop)
+//    - 'admin': Administrative operations (delete)
+//
+// 2. FEATURE GROUPS (what features are enabled):
+//    - 'apps': App management tools (list_apps, get_app, create_app, delete_app)
+//    - 'machines': Machine management tools (list, get, create, update, delete, start, stop, etc.)
+//    - 'logs': Log retrieval tools (get_logs)
+//    - 'ssh': Remote execution tools (machine_exec)
+//
 // Usage: Set ENABLED_TOOLGROUPS environment variable to a comma-separated list
-// Example: ENABLED_TOOLGROUPS="readonly,write" (excludes 'admin' tools)
+// Examples:
+//   ENABLED_TOOLGROUPS="readonly,write" (excludes 'admin' tools, all features enabled)
+//   ENABLED_TOOLGROUPS="machines,logs" (all permissions, only machines and logs features)
+//   ENABLED_TOOLGROUPS="readonly,machines" (read-only access to machines only)
+//
 // Default: All groups enabled when not specified
 //
 // APP SCOPING
@@ -38,14 +55,23 @@ import { machineExecTool } from './tools/machine-exec.js';
 // =============================================================================
 
 /**
- * Available tool groups.
- * - 'readonly': Read-only operations (list, get)
- * - 'write': Write operations (create, update, start, stop)
- * - 'admin': Administrative operations (delete)
+ * Permission-based tool groups (what operations are allowed)
  */
-export type ToolGroup = 'readonly' | 'write' | 'admin';
+export type PermissionGroup = 'readonly' | 'write' | 'admin';
 
-const ALL_TOOL_GROUPS: ToolGroup[] = ['readonly', 'write', 'admin'];
+/**
+ * Feature-based tool groups (what features are enabled)
+ */
+export type FeatureGroup = 'apps' | 'machines' | 'logs' | 'ssh';
+
+/**
+ * All available tool groups (both permission and feature based)
+ */
+export type ToolGroup = PermissionGroup | FeatureGroup;
+
+const ALL_PERMISSION_GROUPS: PermissionGroup[] = ['readonly', 'write', 'admin'];
+const ALL_FEATURE_GROUPS: FeatureGroup[] = ['apps', 'machines', 'logs', 'ssh'];
+const ALL_TOOL_GROUPS: ToolGroup[] = [...ALL_PERMISSION_GROUPS, ...ALL_FEATURE_GROUPS];
 
 /**
  * Parse enabled tool groups from environment variable.
@@ -97,7 +123,10 @@ type ToolFactory = (server: Server, clientFactory: ClientFactory) => Tool;
 
 interface ToolDefinition {
   factory: ToolFactory;
-  groups: ToolGroup[];
+  /** Permission groups this tool belongs to (readonly, write, admin) */
+  permissionGroups: PermissionGroup[];
+  /** Feature group this tool belongs to (apps, machines, logs, ssh) */
+  featureGroup: FeatureGroup;
   /** If true, this tool manages apps and will be disabled when FLY_IO_APP_NAME is set */
   isAppManagement?: boolean;
   /** If true, this tool has an app_name parameter that should be scoped when FLY_IO_APP_NAME is set */
@@ -106,30 +135,117 @@ interface ToolDefinition {
 
 /**
  * All available tools with their group assignments.
- * Tools can belong to multiple groups.
+ * Each tool has permission groups (what operations are allowed) and a feature group (what feature it belongs to).
  */
 const ALL_TOOLS: ToolDefinition[] = [
   // App management tools (disabled when FLY_IO_APP_NAME is set)
-  { factory: listAppsTool, groups: ['readonly', 'write', 'admin'], isAppManagement: true },
-  { factory: getAppTool, groups: ['readonly', 'write', 'admin'], isAppManagement: true },
-  { factory: createAppTool, groups: ['write', 'admin'], isAppManagement: true },
-  { factory: deleteAppTool, groups: ['admin'], isAppManagement: true },
+  {
+    factory: listAppsTool,
+    permissionGroups: ['readonly', 'write', 'admin'],
+    featureGroup: 'apps',
+    isAppManagement: true,
+  },
+  {
+    factory: getAppTool,
+    permissionGroups: ['readonly', 'write', 'admin'],
+    featureGroup: 'apps',
+    isAppManagement: true,
+  },
+  {
+    factory: createAppTool,
+    permissionGroups: ['write', 'admin'],
+    featureGroup: 'apps',
+    isAppManagement: true,
+  },
+  {
+    factory: deleteAppTool,
+    permissionGroups: ['admin'],
+    featureGroup: 'apps',
+    isAppManagement: true,
+  },
   // Machine tools - readonly (require app_name, scoped when FLY_IO_APP_NAME is set)
-  { factory: listMachinesTool, groups: ['readonly', 'write', 'admin'], requiresAppName: true },
-  { factory: getMachineTool, groups: ['readonly', 'write', 'admin'], requiresAppName: true },
-  { factory: getMachineEventsTool, groups: ['readonly', 'write', 'admin'], requiresAppName: true },
-  { factory: getLogsTool, groups: ['readonly', 'write', 'admin'], requiresAppName: true },
+  {
+    factory: listMachinesTool,
+    permissionGroups: ['readonly', 'write', 'admin'],
+    featureGroup: 'machines',
+    requiresAppName: true,
+  },
+  {
+    factory: getMachineTool,
+    permissionGroups: ['readonly', 'write', 'admin'],
+    featureGroup: 'machines',
+    requiresAppName: true,
+  },
+  {
+    factory: getMachineEventsTool,
+    permissionGroups: ['readonly', 'write', 'admin'],
+    featureGroup: 'machines',
+    requiresAppName: true,
+  },
   // Machine tools - write (require app_name, scoped when FLY_IO_APP_NAME is set)
-  { factory: createMachineTool, groups: ['write', 'admin'], requiresAppName: true },
-  { factory: updateMachineTool, groups: ['write', 'admin'], requiresAppName: true },
-  { factory: startMachineTool, groups: ['write', 'admin'], requiresAppName: true },
-  { factory: stopMachineTool, groups: ['write', 'admin'], requiresAppName: true },
-  { factory: restartMachineTool, groups: ['write', 'admin'], requiresAppName: true },
-  { factory: suspendMachineTool, groups: ['write', 'admin'], requiresAppName: true },
-  { factory: waitMachineTool, groups: ['write', 'admin'], requiresAppName: true },
-  { factory: machineExecTool, groups: ['write', 'admin'], requiresAppName: true },
+  {
+    factory: createMachineTool,
+    permissionGroups: ['write', 'admin'],
+    featureGroup: 'machines',
+    requiresAppName: true,
+  },
+  {
+    factory: updateMachineTool,
+    permissionGroups: ['write', 'admin'],
+    featureGroup: 'machines',
+    requiresAppName: true,
+  },
+  {
+    factory: startMachineTool,
+    permissionGroups: ['write', 'admin'],
+    featureGroup: 'machines',
+    requiresAppName: true,
+  },
+  {
+    factory: stopMachineTool,
+    permissionGroups: ['write', 'admin'],
+    featureGroup: 'machines',
+    requiresAppName: true,
+  },
+  {
+    factory: restartMachineTool,
+    permissionGroups: ['write', 'admin'],
+    featureGroup: 'machines',
+    requiresAppName: true,
+  },
+  {
+    factory: suspendMachineTool,
+    permissionGroups: ['write', 'admin'],
+    featureGroup: 'machines',
+    requiresAppName: true,
+  },
+  {
+    factory: waitMachineTool,
+    permissionGroups: ['write', 'admin'],
+    featureGroup: 'machines',
+    requiresAppName: true,
+  },
   // Machine tools - admin (require app_name, scoped when FLY_IO_APP_NAME is set)
-  { factory: deleteMachineTool, groups: ['admin'], requiresAppName: true },
+  {
+    factory: deleteMachineTool,
+    permissionGroups: ['admin'],
+    featureGroup: 'machines',
+    requiresAppName: true,
+  },
+  // Logs tools
+  {
+    factory: getLogsTool,
+    permissionGroups: ['readonly', 'write', 'admin'],
+    featureGroup: 'logs',
+    requiresAppName: true,
+  },
+  // SSH/exec tools
+  {
+    factory: machineExecTool,
+    permissionGroups: ['write', 'admin'],
+    featureGroup: 'ssh',
+    requiresAppName: true,
+  },
 ];
 
 /**
@@ -166,8 +282,26 @@ export function createRegisterTools(
   const scopedAppName = rawScopedAppName?.trim() || undefined;
 
   return (server: Server) => {
-    // Filter tools by enabled groups
-    let filteredTools = ALL_TOOLS.filter((def) => def.groups.some((g) => groups.includes(g)));
+    // Separate enabled groups into permission and feature groups
+    const enabledPermissions = groups.filter((g): g is PermissionGroup =>
+      ALL_PERMISSION_GROUPS.includes(g as PermissionGroup)
+    );
+    const enabledFeatures = groups.filter((g): g is FeatureGroup =>
+      ALL_FEATURE_GROUPS.includes(g as FeatureGroup)
+    );
+
+    // If no permission groups specified, enable all permissions
+    // If no feature groups specified, enable all features
+    const effectivePermissions =
+      enabledPermissions.length > 0 ? enabledPermissions : ALL_PERMISSION_GROUPS;
+    const effectiveFeatures = enabledFeatures.length > 0 ? enabledFeatures : ALL_FEATURE_GROUPS;
+
+    // Filter tools: must match at least one permission group AND the feature group must be enabled
+    let filteredTools = ALL_TOOLS.filter(
+      (def) =>
+        def.permissionGroups.some((p) => effectivePermissions.includes(p)) &&
+        effectiveFeatures.includes(def.featureGroup)
+    );
 
     // When app is scoped, remove app management tools
     if (scopedAppName) {

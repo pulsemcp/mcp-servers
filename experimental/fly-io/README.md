@@ -19,25 +19,25 @@ MCP server for managing Fly.io machines and applications. This server provides t
 
 ### Tools
 
-| Tool                 | Group                  | Description                                 |
-| -------------------- | ---------------------- | ------------------------------------------- |
-| `list_apps`          | readonly, write, admin | List all Fly.io applications                |
-| `get_app`            | readonly, write, admin | Get details for a specific app              |
-| `create_app`         | write, admin           | Create a new Fly.io application             |
-| `delete_app`         | admin                  | Delete an application                       |
-| `list_machines`      | readonly, write, admin | List all machines in an app                 |
-| `get_machine`        | readonly, write, admin | Get details for a specific machine          |
-| `get_machine_events` | readonly, write, admin | Get event log for a machine (for debugging) |
-| `create_machine`     | write, admin           | Create a new machine with a Docker image    |
-| `update_machine`     | write, admin           | Update a machine's configuration            |
-| `delete_machine`     | admin                  | Delete a machine                            |
-| `start_machine`      | write, admin           | Start a stopped machine                     |
-| `stop_machine`       | write, admin           | Stop a running machine                      |
-| `restart_machine`    | write, admin           | Restart a machine (stop then start)         |
-| `suspend_machine`    | write, admin           | Suspend a machine (save state to disk)      |
-| `wait_machine`       | write, admin           | Wait for a machine to reach a state         |
-| `get_logs`           | readonly, write, admin | Get application logs                        |
-| `machine_exec`       | write, admin           | Execute a command on a machine              |
+| Tool                 | Permissions            | Feature  | Description                                 |
+| -------------------- | ---------------------- | -------- | ------------------------------------------- |
+| `list_apps`          | readonly, write, admin | apps     | List all Fly.io applications                |
+| `get_app`            | readonly, write, admin | apps     | Get details for a specific app              |
+| `create_app`         | write, admin           | apps     | Create a new Fly.io application             |
+| `delete_app`         | admin                  | apps     | Delete an application                       |
+| `list_machines`      | readonly, write, admin | machines | List all machines in an app                 |
+| `get_machine`        | readonly, write, admin | machines | Get details for a specific machine          |
+| `get_machine_events` | readonly, write, admin | machines | Get event log for a machine (for debugging) |
+| `create_machine`     | write, admin           | machines | Create a new machine with a Docker image    |
+| `update_machine`     | write, admin           | machines | Update a machine's configuration            |
+| `delete_machine`     | admin                  | machines | Delete a machine                            |
+| `start_machine`      | write, admin           | machines | Start a stopped machine                     |
+| `stop_machine`       | write, admin           | machines | Stop a running machine                      |
+| `restart_machine`    | write, admin           | machines | Restart a machine (stop then start)         |
+| `suspend_machine`    | write, admin           | machines | Suspend a machine (save state to disk)      |
+| `wait_machine`       | write, admin           | machines | Wait for a machine to reach a state         |
+| `get_logs`           | readonly, write, admin | logs     | Get application logs                        |
+| `machine_exec`       | write, admin           | ssh      | Execute a command on a machine              |
 
 ### Security Considerations
 
@@ -49,7 +49,9 @@ The `machine_exec` tool allows executing arbitrary commands on Fly.io machines. 
 
 ### Tool Groups
 
-Control which tools are available via the `ENABLED_TOOLGROUPS` environment variable:
+Control which tools are available via the `ENABLED_TOOLGROUPS` environment variable. Two types of groups are supported and can be combined:
+
+#### Permission Groups (what operations are allowed)
 
 | Group      | Description                                      |
 | ---------- | ------------------------------------------------ |
@@ -57,10 +59,21 @@ Control which tools are available via the `ENABLED_TOOLGROUPS` environment varia
 | `write`    | Write operations (create, update, start, stop)   |
 | `admin`    | Administrative operations (delete apps/machines) |
 
+#### Feature Groups (what features are enabled)
+
+| Group      | Description                                                               |
+| ---------- | ------------------------------------------------------------------------- |
+| `apps`     | App management tools (list_apps, get_app, create_app, delete_app)         |
+| `machines` | Machine management tools (list, get, create, update, delete, start, stop) |
+| `logs`     | Log retrieval tools (get_logs)                                            |
+| `ssh`      | Remote execution tools (machine_exec)                                     |
+
 **Examples:**
 
-- `ENABLED_TOOLGROUPS="readonly"` - Only read operations
-- `ENABLED_TOOLGROUPS="readonly,write"` - Read and write, no delete
+- `ENABLED_TOOLGROUPS="readonly"` - Only read operations (all features)
+- `ENABLED_TOOLGROUPS="readonly,write"` - Read and write, no delete (all features)
+- `ENABLED_TOOLGROUPS="machines,logs"` - All permissions, only machines and logs features
+- `ENABLED_TOOLGROUPS="readonly,machines"` - Read-only access to machines only
 - Not set - All tools enabled (default)
 
 ### App Scoping
