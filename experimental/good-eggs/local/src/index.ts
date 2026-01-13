@@ -84,7 +84,7 @@ async function main() {
   validateEnvironment();
 
   // Step 2: Create server using factory
-  const { server, registerHandlers, cleanup } = createMCPServer();
+  const { server, registerHandlers, cleanup, startBackgroundLogin } = createMCPServer();
 
   // Step 3: Register all handlers (tools)
   await registerHandlers(server);
@@ -104,6 +104,26 @@ async function main() {
   await server.connect(transport);
 
   logServerStart('Good Eggs');
+
+  // Step 6: Start background login process
+  // This kicks off Playwright and performs login without blocking the stdio connection.
+  // If login fails, the server will close with an error.
+  logWarning('login', 'Starting background login to Good Eggs...');
+
+  startBackgroundLogin((error: Error) => {
+    // Login failed - log error and exit
+    logError('login', `Background login failed: ${error.message}`);
+    logError('login', 'Server shutting down due to authentication failure.');
+
+    // Clean up and exit with error
+    cleanup()
+      .catch((cleanupError) => {
+        logError('cleanup', `Error during cleanup: ${cleanupError}`);
+      })
+      .finally(() => {
+        process.exit(1);
+      });
+  });
 }
 
 // Run the server

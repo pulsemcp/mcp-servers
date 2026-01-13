@@ -137,7 +137,9 @@ export class GoodEggsClient implements IGoodEggsClient {
     this.page = await this.context.newPage();
 
     // Navigate to login page
-    await this.page.goto(`${BASE_URL}/signin`, { waitUntil: 'networkidle' });
+    // Use domcontentloaded instead of networkidle - Good Eggs has persistent connections that prevent networkidle
+    await this.page.goto(`${BASE_URL}/signin`, { waitUntil: 'domcontentloaded' });
+    await this.page.waitForTimeout(2000);
 
     // Fill in login credentials
     await this.page.fill('input[name="email"], input[type="email"]', this.config.username);
@@ -164,29 +166,49 @@ export class GoodEggsClient implements IGoodEggsClient {
     const page = await this.ensureBrowser();
 
     // Navigate to search page
+    // Use domcontentloaded instead of networkidle - Good Eggs has persistent connections
     await page.goto(`${BASE_URL}/search?q=${encodeURIComponent(query)}`, {
-      waitUntil: 'networkidle',
+      waitUntil: 'domcontentloaded',
     });
 
-    // Wait for products to load
-    await page.waitForTimeout(1000);
+    // Wait for React to render the product list
+    await page.waitForTimeout(3000);
 
     // Extract product information from the page
     const items = await page.evaluate(() => {
       const products: GroceryItem[] = [];
-
-      // Find all product cards/links by looking for product name elements
-      const productElements = document.querySelectorAll(
-        'a[href*="/product/"], a[href*="goodeggs"]'
-      );
       const seen = new Set<string>();
+
+      // Good Eggs uses 'js-product-link' class for product links
+      // URL format: /producer-slug/product-slug/product-id (e.g., /cloversfbay/organic-whole-milk/53fe295358ed090200000f2d)
+      const productElements = document.querySelectorAll('a.js-product-link');
 
       productElements.forEach((el) => {
         const link = el as HTMLAnchorElement;
         const href = link.href;
 
-        // Skip if not a product link or already seen
-        if (!href || seen.has(href) || href.includes('/search') || href.includes('/signin')) {
+        // Skip if already seen or not a valid product URL
+        if (!href || seen.has(href)) {
+          return;
+        }
+
+        // Validate URL structure: should have at least 3 path segments after domain
+        const urlPath = new URL(href).pathname;
+        const segments = urlPath.split('/').filter((s) => s.length > 0);
+        if (segments.length < 3) {
+          return;
+        }
+
+        // Skip navigation pages
+        if (
+          href.includes('/search') ||
+          href.includes('/signin') ||
+          href.includes('/home') ||
+          href.includes('/basket') ||
+          href.includes('/account') ||
+          href.includes('/favorites') ||
+          href.includes('/reorder')
+        ) {
           return;
         }
 
@@ -201,7 +223,11 @@ export class GoodEggsClient implements IGoodEggsClient {
         const discountEl = container.querySelector('[class*="off"], [class*="discount"]');
         const imgEl = container.querySelector('img');
 
-        const name = nameEl?.textContent?.trim();
+        // Get name from element or from the link text itself
+        let name = nameEl?.textContent?.trim();
+        if (!name || name.length < 3) {
+          name = link.textContent?.trim();
+        }
         if (!name || name.length < 3) return;
 
         seen.add(href);
@@ -225,10 +251,11 @@ export class GoodEggsClient implements IGoodEggsClient {
     const page = await this.ensureBrowser();
 
     // Navigate to favorites page
-    await page.goto(`${BASE_URL}/favorites`, { waitUntil: 'networkidle' });
+    // Use domcontentloaded instead of networkidle - Good Eggs has persistent connections
+    await page.goto(`${BASE_URL}/favorites`, { waitUntil: 'domcontentloaded' });
 
-    // Wait for page to load
-    await page.waitForTimeout(1000);
+    // Wait for React to render
+    await page.waitForTimeout(3000);
 
     // Check if we're redirected to signin
     if (page.url().includes('/signin')) {
@@ -240,15 +267,21 @@ export class GoodEggsClient implements IGoodEggsClient {
       const products: GroceryItem[] = [];
       const seen = new Set<string>();
 
-      const productElements = document.querySelectorAll(
-        'a[href*="/product/"], a[href*="goodeggs"]'
-      );
+      // Good Eggs uses 'js-product-link' class for product links
+      const productElements = document.querySelectorAll('a.js-product-link');
 
       productElements.forEach((el) => {
         const link = el as HTMLAnchorElement;
         const href = link.href;
 
         if (!href || seen.has(href) || href.includes('/favorites') || href.includes('/signin')) {
+          return;
+        }
+
+        // Validate URL structure
+        const urlPath = new URL(href).pathname;
+        const segments = urlPath.split('/').filter((s) => s.length > 0);
+        if (segments.length < 3) {
           return;
         }
 
@@ -259,7 +292,10 @@ export class GoodEggsClient implements IGoodEggsClient {
         const priceEl = container.querySelector('[class*="price"]');
         const imgEl = container.querySelector('img');
 
-        const name = nameEl?.textContent?.trim();
+        let name = nameEl?.textContent?.trim();
+        if (!name || name.length < 3) {
+          name = link.textContent?.trim();
+        }
         if (!name || name.length < 3) return;
 
         seen.add(href);
@@ -285,12 +321,13 @@ export class GoodEggsClient implements IGoodEggsClient {
     const currentUrl = page.url();
     if (!currentUrl.includes(groceryUrl) && !groceryUrl.includes(currentUrl)) {
       // Navigate to the product page
+      // Use domcontentloaded instead of networkidle - Good Eggs has persistent connections
       const fullUrl = groceryUrl.startsWith('http') ? groceryUrl : `${BASE_URL}${groceryUrl}`;
-      await page.goto(fullUrl, { waitUntil: 'networkidle' });
+      await page.goto(fullUrl, { waitUntil: 'domcontentloaded' });
     }
 
-    // Wait for page content to load
-    await page.waitForTimeout(1000);
+    // Wait for React to render
+    await page.waitForTimeout(3000);
 
     // Extract product details
     const details = await page.evaluate((url) => {
@@ -345,8 +382,10 @@ export class GoodEggsClient implements IGoodEggsClient {
 
     if (!normalizedCurrentUrl.includes(normalizedGroceryUrl.split('/').pop() || '')) {
       // Navigate to the product page
+      // Use domcontentloaded instead of networkidle - Good Eggs has persistent connections
       const fullUrl = groceryUrl.startsWith('http') ? groceryUrl : `${BASE_URL}${groceryUrl}`;
-      await page.goto(fullUrl, { waitUntil: 'networkidle' });
+      await page.goto(fullUrl, { waitUntil: 'domcontentloaded' });
+      await page.waitForTimeout(3000);
     }
 
     // Get the product name for the result
@@ -425,10 +464,8 @@ export class GoodEggsClient implements IGoodEggsClient {
         const products: GroceryItem[] = [];
         const seenUrls = new Set<string>();
 
-        // Find all product links
-        const productElements = document.querySelectorAll(
-          'a[href*="/product/"], a[href*="goodeggs"]'
-        );
+        // Good Eggs uses 'js-product-link' class for product links
+        const productElements = document.querySelectorAll('a.js-product-link');
 
         productElements.forEach((el) => {
           const link = el as HTMLAnchorElement;
@@ -440,6 +477,13 @@ export class GoodEggsClient implements IGoodEggsClient {
             href.includes('/fresh-picks') ||
             href.includes('/signin')
           ) {
+            return;
+          }
+
+          // Validate URL structure
+          const urlPath = new URL(href).pathname;
+          const segments = urlPath.split('/').filter((s) => s.length > 0);
+          if (segments.length < 3) {
             return;
           }
 
@@ -461,7 +505,10 @@ export class GoodEggsClient implements IGoodEggsClient {
           const brandEl = container.querySelector('[class*="brand"], [class*="producer"]');
           const imgEl = container.querySelector('img');
 
-          const name = nameEl?.textContent?.trim();
+          let name = nameEl?.textContent?.trim();
+          if (!name || name.length < 3) {
+            name = link.textContent?.trim();
+          }
           if (!name || name.length < 3) return;
 
           seenUrls.add(href);
@@ -480,8 +527,9 @@ export class GoodEggsClient implements IGoodEggsClient {
     };
 
     // Check homepage for free items
-    await page.goto(BASE_URL, { waitUntil: 'networkidle' });
-    await page.waitForTimeout(1000);
+    // Use domcontentloaded instead of networkidle - Good Eggs has persistent connections
+    await page.goto(BASE_URL, { waitUntil: 'domcontentloaded' });
+    await page.waitForTimeout(3000);
 
     const homePageItems = await extractFreeItems();
     for (const item of homePageItems) {
@@ -492,8 +540,8 @@ export class GoodEggsClient implements IGoodEggsClient {
     }
 
     // Check /fresh-picks page for free items
-    await page.goto(`${BASE_URL}/fresh-picks`, { waitUntil: 'networkidle' });
-    await page.waitForTimeout(1000);
+    await page.goto(`${BASE_URL}/fresh-picks`, { waitUntil: 'domcontentloaded' });
+    await page.waitForTimeout(3000);
 
     const freshPicksItems = await extractFreeItems();
     for (const item of freshPicksItems) {
@@ -510,10 +558,11 @@ export class GoodEggsClient implements IGoodEggsClient {
     const page = await this.ensureBrowser();
 
     // Navigate to reorder/past orders page
-    await page.goto(`${BASE_URL}/reorder`, { waitUntil: 'networkidle' });
+    // Use domcontentloaded instead of networkidle - Good Eggs has persistent connections
+    await page.goto(`${BASE_URL}/reorder`, { waitUntil: 'domcontentloaded' });
 
-    // Wait for page to load
-    await page.waitForTimeout(1000);
+    // Wait for React to render
+    await page.waitForTimeout(3000);
 
     // Check if we're redirected to signin
     if (page.url().includes('/signin')) {
@@ -555,8 +604,9 @@ export class GoodEggsClient implements IGoodEggsClient {
 
     // First, go to reorder page
     if (!page.url().includes('/reorder')) {
-      await page.goto(`${BASE_URL}/reorder`, { waitUntil: 'networkidle' });
-      await page.waitForTimeout(1000);
+      // Use domcontentloaded instead of networkidle - Good Eggs has persistent connections
+      await page.goto(`${BASE_URL}/reorder`, { waitUntil: 'domcontentloaded' });
+      await page.waitForTimeout(3000);
     }
 
     // Check if we're redirected to signin
@@ -568,7 +618,7 @@ export class GoodEggsClient implements IGoodEggsClient {
     const orderLink = await page.$(`text=${orderDate}`);
     if (orderLink) {
       await orderLink.click();
-      await page.waitForTimeout(1000);
+      await page.waitForTimeout(2000);
     }
 
     // Extract items from the order
@@ -576,15 +626,21 @@ export class GoodEggsClient implements IGoodEggsClient {
       const products: GroceryItem[] = [];
       const seen = new Set<string>();
 
-      const productElements = document.querySelectorAll(
-        'a[href*="/product/"], a[href*="goodeggs"]'
-      );
+      // Good Eggs uses 'js-product-link' class for product links
+      const productElements = document.querySelectorAll('a.js-product-link');
 
       productElements.forEach((el) => {
         const link = el as HTMLAnchorElement;
         const href = link.href;
 
         if (!href || seen.has(href) || href.includes('/reorder') || href.includes('/signin')) {
+          return;
+        }
+
+        // Validate URL structure
+        const urlPath = new URL(href).pathname;
+        const segments = urlPath.split('/').filter((s) => s.length > 0);
+        if (segments.length < 3) {
           return;
         }
 
@@ -595,7 +651,10 @@ export class GoodEggsClient implements IGoodEggsClient {
         const priceEl = container.querySelector('[class*="price"]');
         const imgEl = container.querySelector('img');
 
-        const name = nameEl?.textContent?.trim();
+        let name = nameEl?.textContent?.trim();
+        if (!name || name.length < 3) {
+          name = link.textContent?.trim();
+        }
         if (!name || name.length < 3) return;
 
         seen.add(href);
@@ -623,8 +682,10 @@ export class GoodEggsClient implements IGoodEggsClient {
     const normalizedCurrentUrl = currentUrl.replace(BASE_URL, '');
 
     if (!normalizedCurrentUrl.includes(normalizedGroceryUrl.split('/').pop() || '')) {
+      // Use domcontentloaded instead of networkidle - Good Eggs has persistent connections
       const fullUrl = groceryUrl.startsWith('http') ? groceryUrl : `${BASE_URL}${groceryUrl}`;
-      await page.goto(fullUrl, { waitUntil: 'networkidle' });
+      await page.goto(fullUrl, { waitUntil: 'domcontentloaded' });
+      await page.waitForTimeout(3000);
     }
 
     // Get the product name for the result
@@ -685,8 +746,10 @@ export class GoodEggsClient implements IGoodEggsClient {
     const normalizedCurrentUrl = currentUrl.replace(BASE_URL, '');
 
     if (!normalizedCurrentUrl.includes(normalizedGroceryUrl.split('/').pop() || '')) {
+      // Use domcontentloaded instead of networkidle - Good Eggs has persistent connections
       const fullUrl = groceryUrl.startsWith('http') ? groceryUrl : `${BASE_URL}${groceryUrl}`;
-      await page.goto(fullUrl, { waitUntil: 'networkidle' });
+      await page.goto(fullUrl, { waitUntil: 'domcontentloaded' });
+      await page.waitForTimeout(3000);
     }
 
     // Get the product name for the result
@@ -742,8 +805,9 @@ export class GoodEggsClient implements IGoodEggsClient {
     const page = await this.ensureBrowser();
 
     // Navigate to cart page
-    await page.goto(`${BASE_URL}/basket`, { waitUntil: 'networkidle' });
-    await page.waitForTimeout(1000);
+    // Use domcontentloaded instead of networkidle - Good Eggs has persistent connections
+    await page.goto(`${BASE_URL}/basket`, { waitUntil: 'domcontentloaded' });
+    await page.waitForTimeout(3000);
 
     // Try to find the item in the cart by its URL or name
     // First, let's get the product name from the URL if possible
@@ -833,6 +897,12 @@ export class GoodEggsClient implements IGoodEggsClient {
 
 export type ClientFactory = () => IGoodEggsClient;
 
+/**
+ * Callback invoked when background login fails
+ * @param error The error that caused login to fail
+ */
+export type LoginFailedCallback = (error: Error) => void;
+
 export function createMCPServer() {
   const server = new Server(
     {
@@ -849,32 +919,102 @@ export function createMCPServer() {
   // Track active client for cleanup
   let activeClient: IGoodEggsClient | null = null;
 
+  // Track background login state
+  let loginPromise: Promise<void> | null = null;
+  let loginFailed = false;
+  let loginError: Error | null = null;
+  let onLoginFailed: LoginFailedCallback | null = null;
+
+  /**
+   * Create the client instance (but don't initialize/login yet)
+   */
+  const createClient = (): IGoodEggsClient => {
+    const username = process.env.GOOD_EGGS_USERNAME;
+    const password = process.env.GOOD_EGGS_PASSWORD;
+    const headless = process.env.HEADLESS !== 'false';
+    const timeout = parseInt(process.env.TIMEOUT || '30000', 10);
+
+    if (!username || !password) {
+      throw new Error(
+        'GOOD_EGGS_USERNAME and GOOD_EGGS_PASSWORD environment variables must be configured'
+      );
+    }
+
+    activeClient = new GoodEggsClient({
+      username,
+      password,
+      headless,
+      timeout,
+    });
+    return activeClient;
+  };
+
+  /**
+   * Start background login process
+   * This should be called after the server is connected to start authentication
+   * without blocking the stdio connection.
+   *
+   * @param onFailed Callback invoked if login fails - use this to close the server
+   */
+  const startBackgroundLogin = (onFailed?: LoginFailedCallback): void => {
+    if (loginPromise) {
+      // Already started
+      return;
+    }
+
+    onLoginFailed = onFailed || null;
+
+    // Create client if not already created
+    if (!activeClient) {
+      createClient();
+    }
+
+    // Start login in background
+    loginPromise = activeClient!.initialize().catch((error) => {
+      loginFailed = true;
+      loginError = error instanceof Error ? error : new Error(String(error));
+
+      // Invoke callback to notify about login failure
+      if (onLoginFailed) {
+        onLoginFailed(loginError);
+      }
+
+      // Re-throw to make the promise rejected
+      throw loginError;
+    });
+  };
+
+  /**
+   * Get a client that is ready to use (login completed)
+   * If background login was started, this waits for it to complete.
+   * If not started, this will initialize synchronously (blocking).
+   */
+  const getReadyClient = async (): Promise<IGoodEggsClient> => {
+    // If login already failed, throw immediately
+    if (loginFailed && loginError) {
+      throw new Error(`Login failed: ${loginError.message}`);
+    }
+
+    // If background login is in progress, wait for it
+    if (loginPromise) {
+      await loginPromise;
+      return activeClient!;
+    }
+
+    // No background login started - create and initialize client now (legacy behavior)
+    if (!activeClient) {
+      createClient();
+    }
+    await activeClient!.initialize();
+    return activeClient!;
+  };
+
   const registerHandlers = async (server: Server, clientFactory?: ClientFactory) => {
-    // Use provided factory or create default client
-    const factory =
-      clientFactory ||
-      (() => {
-        const username = process.env.GOOD_EGGS_USERNAME;
-        const password = process.env.GOOD_EGGS_PASSWORD;
-        const headless = process.env.HEADLESS !== 'false';
-        const timeout = parseInt(process.env.TIMEOUT || '30000', 10);
+    // Use provided factory or create our managed client getter
+    const factory = clientFactory || (() => activeClient || createClient());
 
-        if (!username || !password) {
-          throw new Error(
-            'GOOD_EGGS_USERNAME and GOOD_EGGS_PASSWORD environment variables must be configured'
-          );
-        }
-
-        activeClient = new GoodEggsClient({
-          username,
-          password,
-          headless,
-          timeout,
-        });
-        return activeClient;
-      });
-
-    const registerTools = createRegisterTools(factory);
+    // Create tools with a special async getter that waits for background login
+    const registerTools = createRegisterTools(factory, getReadyClient);
     registerTools(server);
   };
 
@@ -883,7 +1023,11 @@ export function createMCPServer() {
       await activeClient.close();
       activeClient = null;
     }
+    // Reset login state
+    loginPromise = null;
+    loginFailed = false;
+    loginError = null;
   };
 
-  return { server, registerHandlers, cleanup };
+  return { server, registerHandlers, cleanup, startBackgroundLogin };
 }

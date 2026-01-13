@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.2] - 2026-01-11
+
+### Added
+
+- Activity-based timeout for command execution: timeout now resets whenever stdout or stderr output is received, allowing long-running commands with periodic output to complete successfully
+- `SSH_COMMAND_TIMEOUT` environment variable to configure the default command activity timeout (default: 60000ms)
+
+### Changed
+
+- **BREAKING**: Timeout error messages now indicate "inactivity" to clarify the activity-based behavior (e.g., "Command timeout after 60000ms of inactivity")
+
 ## [0.1.1] - 2026-01-09
 
 ### Added
