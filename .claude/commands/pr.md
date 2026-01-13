@@ -14,8 +14,10 @@ Follow this checklist when executing this:
 - [ ] Run pre-commit checklist (see below)
 - [ ] Push it
 - [ ] Open a PR
-- [ ] Wait for the PR to successfully pass CI
-- [ ] If it fails CI, investigate the failure, fix it. Repeat until CI is passing
+- [ ] Perform self-code review of the PR diff
+- [ ] Action any issues found during review
+- [ ] Wait for CI to complete using the `wait-for-CI` skill
+- [ ] If CI fails, investigate the failure, fix it. Repeat until CI is passing
 - [ ] Think about what you learned during this PR creation process. Add any useful insights to the "Claude Learnings" section in the appropriate CLAUDE.md file (could be root or subdirectory)
 - [ ] Surface the PR link back to the user
 
@@ -78,6 +80,19 @@ git diff --cached
 
 Immediately check if there are any merge conflicts. Resolve them by following [merge_conflicts.md](./merge_conflicts.md).
 
+#### Self-Code Review
+
+Before waiting for CI, perform a self-code review of your PR diff:
+
+1. Review the diff on GitHub or via `gh pr diff`
+2. Look for:
+   - Logic errors or bugs
+   - Missing edge cases
+   - Code style issues
+   - Unnecessary changes or debug code
+   - Security concerns
+3. Fix any issues found and push the fixes
+
 #### CI Monitoring
 
-After creating the PR with no merge conflicts, monitor CI status and fix any failures by following [ensure_ci_success.md](./ensure_ci_success.md).
+After completing your self-review (and actioning any issues), monitor CI status and fix any failures by following [ensure_ci_success.md](./ensure_ci_success.md).
