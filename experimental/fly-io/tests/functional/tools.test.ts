@@ -17,7 +17,7 @@ import { waitMachineTool } from '../../shared/src/tools/wait-machine.js';
 import { getMachineEventsTool } from '../../shared/src/tools/get-machine-events.js';
 import { getLogsTool } from '../../shared/src/tools/get-logs.js';
 import { machineExecTool } from '../../shared/src/tools/machine-exec.js';
-import { createRegisterTools } from '../../shared/src/tools.js';
+import { createRegisterTools, parseEnabledToolGroups } from '../../shared/src/tools.js';
 import { createMockFlyIOClient } from '../mocks/fly-io-client.functional-mock.js';
 
 describe('Tools', () => {
@@ -349,6 +349,70 @@ describe('Tools', () => {
         60
       );
     });
+  });
+});
+
+describe('parseEnabledToolGroups', () => {
+  it('should return all groups when no parameter is provided', () => {
+    const result = parseEnabledToolGroups();
+    expect(result).toContain('readonly');
+    expect(result).toContain('write');
+    expect(result).toContain('admin');
+    expect(result).toContain('apps');
+    expect(result).toContain('machines');
+    expect(result).toContain('logs');
+    expect(result).toContain('ssh');
+  });
+
+  it('should return all groups when empty string is provided', () => {
+    const result = parseEnabledToolGroups('');
+    expect(result).toContain('readonly');
+    expect(result).toContain('admin');
+    expect(result).toContain('machines');
+  });
+
+  it('should parse valid permission groups', () => {
+    const result = parseEnabledToolGroups('readonly,write');
+    expect(result).toContain('readonly');
+    expect(result).toContain('write');
+    expect(result).not.toContain('admin');
+  });
+
+  it('should parse valid feature groups', () => {
+    const result = parseEnabledToolGroups('apps,logs');
+    expect(result).toContain('apps');
+    expect(result).toContain('logs');
+    expect(result).not.toContain('machines');
+  });
+
+  it('should handle case-insensitivity', () => {
+    const result = parseEnabledToolGroups('READONLY,MACHINES');
+    expect(result).toContain('readonly');
+    expect(result).toContain('machines');
+  });
+
+  it('should handle whitespace around group names', () => {
+    const result = parseEnabledToolGroups('  readonly , write  ');
+    expect(result).toContain('readonly');
+    expect(result).toContain('write');
+  });
+
+  it('should filter out invalid groups while keeping valid ones', () => {
+    const result = parseEnabledToolGroups('readonly,invalid_group,machines');
+    expect(result).toContain('readonly');
+    expect(result).toContain('machines');
+    expect(result).not.toContain('invalid_group');
+    expect(result.length).toBe(2);
+  });
+
+  it('should throw error when all groups are invalid (fail-closed)', () => {
+    expect(() => parseEnabledToolGroups('invalid1,invalid2')).toThrow(
+      /Invalid ENABLED_TOOLGROUPS.*No valid tool groups found/
+    );
+  });
+
+  it('should throw error with valid groups listed in error message', () => {
+    expect(() => parseEnabledToolGroups('foo,bar')).toThrow(/readonly, write, admin/);
   });
 });
 

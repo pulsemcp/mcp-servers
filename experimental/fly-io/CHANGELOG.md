@@ -31,6 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `logs` group for log retrieval tools
   - `ssh` group for remote execution tools
   - Groups can be combined (e.g., `ENABLED_TOOLGROUPS="readonly,machines"` for read-only machine access)
+- Fail-closed behavior for invalid ENABLED_TOOLGROUPS configuration (throws error instead of enabling all tools)
 
 ## [0.1.0] - 2026-01-10
 

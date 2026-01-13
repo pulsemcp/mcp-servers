@@ -89,10 +89,10 @@ export function parseEnabledToolGroups(enabledGroupsParam?: string): ToolGroup[]
   );
 
   if (validGroups.length === 0) {
-    console.error(
-      `Warning: No valid tool groups found in "${enabledGroupsParam}". Valid groups: ${ALL_TOOL_GROUPS.join(', ')}`
+    throw new Error(
+      `Invalid ENABLED_TOOLGROUPS: No valid tool groups found in "${enabledGroupsParam}". ` +
+        `Valid groups: ${ALL_TOOL_GROUPS.join(', ')}`
     );
-    return ALL_TOOL_GROUPS;
   }
 
   return validGroups;
