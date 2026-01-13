@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { listAppsTool } from '../../shared/src/tools/list-apps.js';
 import { getAppTool } from '../../shared/src/tools/get-app.js';
@@ -17,6 +17,7 @@ import { waitMachineTool } from '../../shared/src/tools/wait-machine.js';
 import { getMachineEventsTool } from '../../shared/src/tools/get-machine-events.js';
 import { getLogsTool } from '../../shared/src/tools/get-logs.js';
 import { machineExecTool } from '../../shared/src/tools/machine-exec.js';
+import { createRegisterTools } from '../../shared/src/tools.js';
 import { createMockFlyIOClient } from '../mocks/fly-io-client.functional-mock.js';
 
 describe('Tools', () => {
@@ -347,6 +348,139 @@ describe('Tools', () => {
         'long-running-command',
         60
       );
+    });
+  });
+});
+
+describe('App Scoping (FLY_IO_APP_NAME)', () => {
+  let mockClient: ReturnType<typeof createMockFlyIOClient>;
+  let listToolsHandler: () => Promise<{
+    tools: Array<{ name: string; description: string; inputSchema: object }>;
+  }>;
+  let callToolHandler: (request: {
+    params: { name: string; arguments?: unknown };
+  }) => Promise<{ content: Array<{ type: string; text: string }>; isError?: boolean }>;
+
+  beforeEach(() => {
+    mockClient = createMockFlyIOClient();
+    // Reset handlers
+    listToolsHandler = undefined as unknown as typeof listToolsHandler;
+    callToolHandler = undefined as unknown as typeof callToolHandler;
+  });
+
+  const setupServer = (scopedAppName?: string) => {
+    const mockServer = {
+      setRequestHandler: vi.fn((schema: unknown, handler: (req: unknown) => Promise<unknown>) => {
+        // Extract method name from zod schema: schema.def.shape.method.def.values[0]
+        const schemaObj = schema as {
+          def?: { shape?: { method?: { def?: { values?: string[] } } } };
+        };
+        const method = schemaObj?.def?.shape?.method?.def?.values?.[0];
+        if (method === 'tools/list') {
+          listToolsHandler = handler as typeof listToolsHandler;
+        } else if (method === 'tools/call') {
+          callToolHandler = handler as typeof callToolHandler;
+        }
+      }),
+    } as unknown as Server;
+
+    const registerTools = createRegisterTools(() => mockClient, { scopedAppName });
+    registerTools(mockServer);
+  };
+
+  describe('when FLY_IO_APP_NAME is set', () => {
+    it('should disable app management tools', async () => {
+      setupServer('my-scoped-app');
+      const result = await listToolsHandler();
+
+      const toolNames = result.tools.map((t) => t.name);
+      expect(toolNames).not.toContain('list_apps');
+      expect(toolNames).not.toContain('get_app');
+      expect(toolNames).not.toContain('create_app');
+      expect(toolNames).not.toContain('delete_app');
+    });
+
+    it('should keep machine tools enabled', async () => {
+      setupServer('my-scoped-app');
+      const result = await listToolsHandler();
+
+      const toolNames = result.tools.map((t) => t.name);
+      expect(toolNames).toContain('list_machines');
+      expect(toolNames).toContain('get_machine');
+      expect(toolNames).toContain('create_machine');
+      expect(toolNames).toContain('start_machine');
+      expect(toolNames).toContain('get_logs');
+      expect(toolNames).toContain('machine_exec');
+    });
+
+    it('should update tool descriptions to note scoping', async () => {
+      setupServer('my-scoped-app');
+      const result = await listToolsHandler();
+
+      const listMachines = result.tools.find((t) => t.name === 'list_machines');
+      expect(listMachines?.description).toContain('scoped to app "my-scoped-app"');
+    });
+
+    it('should make app_name optional in schema', async () => {
+      setupServer('my-scoped-app');
+      const result = await listToolsHandler();
+
+      const listMachines = result.tools.find((t) => t.name === 'list_machines');
+      const schema = listMachines?.inputSchema as { required?: string[] };
+      expect(schema.required || []).not.toContain('app_name');
+    });
+
+    it('should inject app_name when not provided', async () => {
+      setupServer('my-scoped-app');
+      await callToolHandler({
+        params: { name: 'list_machines', arguments: {} },
+      });
+
+      expect(mockClient.listMachines).toHaveBeenCalledWith('my-scoped-app');
+    });
+
+    it('should allow matching app_name', async () => {
+      setupServer('my-scoped-app');
+      await callToolHandler({
+        params: { name: 'list_machines', arguments: { app_name: 'my-scoped-app' } },
+      });
+
+      expect(mockClient.listMachines).toHaveBeenCalledWith('my-scoped-app');
+    });
+
+    it('should reject mismatched app_name', async () => {
+      setupServer('my-scoped-app');
+      const result = await callToolHandler({
+        params: { name: 'list_machines', arguments: { app_name: 'different-app' } },
+      });
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('scoped to app "my-scoped-app"');
+      expect(result.content[0].text).toContain('Cannot operate on app "different-app"');
+      expect(mockClient.listMachines).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('when FLY_IO_APP_NAME is not set', () => {
+    it('should include all tools', async () => {
+      setupServer(undefined);
+      const result = await listToolsHandler();
+
+      const toolNames = result.tools.map((t) => t.name);
+      expect(toolNames).toContain('list_apps');
+      expect(toolNames).toContain('get_app');
+      expect(toolNames).toContain('create_app');
+      expect(toolNames).toContain('delete_app');
+      expect(toolNames).toContain('list_machines');
+    });
+
+    it('should require app_name for machine tools', async () => {
+      setupServer(undefined);
+      const result = await listToolsHandler();
+
+      const listMachines = result.tools.find((t) => t.name === 'list_machines');
+      const schema = listMachines?.inputSchema as { required?: string[] };
+      expect(schema.required).toContain('app_name');
     });
   });
 });

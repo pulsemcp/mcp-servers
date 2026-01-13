@@ -28,6 +28,13 @@ import { machineExecTool } from './tools/machine-exec.js';
 // Usage: Set ENABLED_TOOLGROUPS environment variable to a comma-separated list
 // Example: ENABLED_TOOLGROUPS="readonly,write" (excludes 'admin' tools)
 // Default: All groups enabled when not specified
+//
+// APP SCOPING
+// =============================================================================
+// When FLY_IO_APP_NAME is set, the server operates in "scoped mode":
+// - All app management tools (list_apps, get_app, create_app, delete_app) are disabled
+// - Machine tools are restricted to the configured app only
+// - The app_name parameter becomes optional and defaults to the configured app
 // =============================================================================
 
 /**
@@ -91,6 +98,10 @@ type ToolFactory = (server: Server, clientFactory: ClientFactory) => Tool;
 interface ToolDefinition {
   factory: ToolFactory;
   groups: ToolGroup[];
+  /** If true, this tool manages apps and will be disabled when FLY_IO_APP_NAME is set */
+  isAppManagement?: boolean;
+  /** If true, this tool has an app_name parameter that should be scoped when FLY_IO_APP_NAME is set */
+  requiresAppName?: boolean;
 }
 
 /**
@@ -98,30 +109,36 @@ interface ToolDefinition {
  * Tools can belong to multiple groups.
  */
 const ALL_TOOLS: ToolDefinition[] = [
-  // App tools - readonly
-  { factory: listAppsTool, groups: ['readonly', 'write', 'admin'] },
-  { factory: getAppTool, groups: ['readonly', 'write', 'admin'] },
-  { factory: getLogsTool, groups: ['readonly', 'write', 'admin'] },
-  // App tools - write
-  { factory: createAppTool, groups: ['write', 'admin'] },
-  // App tools - admin
-  { factory: deleteAppTool, groups: ['admin'] },
-  // Machine tools - readonly
-  { factory: listMachinesTool, groups: ['readonly', 'write', 'admin'] },
-  { factory: getMachineTool, groups: ['readonly', 'write', 'admin'] },
-  { factory: getMachineEventsTool, groups: ['readonly', 'write', 'admin'] },
-  // Machine tools - write
-  { factory: createMachineTool, groups: ['write', 'admin'] },
-  { factory: updateMachineTool, groups: ['write', 'admin'] },
-  { factory: startMachineTool, groups: ['write', 'admin'] },
-  { factory: stopMachineTool, groups: ['write', 'admin'] },
-  { factory: restartMachineTool, groups: ['write', 'admin'] },
-  { factory: suspendMachineTool, groups: ['write', 'admin'] },
-  { factory: waitMachineTool, groups: ['write', 'admin'] },
-  { factory: machineExecTool, groups: ['write', 'admin'] },
-  // Machine tools - admin
-  { factory: deleteMachineTool, groups: ['admin'] },
+  // App management tools (disabled when FLY_IO_APP_NAME is set)
+  { factory: listAppsTool, groups: ['readonly', 'write', 'admin'], isAppManagement: true },
+  { factory: getAppTool, groups: ['readonly', 'write', 'admin'], isAppManagement: true },
+  { factory: createAppTool, groups: ['write', 'admin'], isAppManagement: true },
+  { factory: deleteAppTool, groups: ['admin'], isAppManagement: true },
+  // Machine tools - readonly (require app_name, scoped when FLY_IO_APP_NAME is set)
+  { factory: listMachinesTool, groups: ['readonly', 'write', 'admin'], requiresAppName: true },
+  { factory: getMachineTool, groups: ['readonly', 'write', 'admin'], requiresAppName: true },
+  { factory: getMachineEventsTool, groups: ['readonly', 'write', 'admin'], requiresAppName: true },
+  { factory: getLogsTool, groups: ['readonly', 'write', 'admin'], requiresAppName: true },
+  // Machine tools - write (require app_name, scoped when FLY_IO_APP_NAME is set)
+  { factory: createMachineTool, groups: ['write', 'admin'], requiresAppName: true },
+  { factory: updateMachineTool, groups: ['write', 'admin'], requiresAppName: true },
+  { factory: startMachineTool, groups: ['write', 'admin'], requiresAppName: true },
+  { factory: stopMachineTool, groups: ['write', 'admin'], requiresAppName: true },
+  { factory: restartMachineTool, groups: ['write', 'admin'], requiresAppName: true },
+  { factory: suspendMachineTool, groups: ['write', 'admin'], requiresAppName: true },
+  { factory: waitMachineTool, groups: ['write', 'admin'], requiresAppName: true },
+  { factory: machineExecTool, groups: ['write', 'admin'], requiresAppName: true },
+  // Machine tools - admin (require app_name, scoped when FLY_IO_APP_NAME is set)
+  { factory: deleteMachineTool, groups: ['admin'], requiresAppName: true },
 ];
+
+/**
+ * Configuration options for tool registration
+ */
+export interface RegisterToolsOptions {
+  enabledGroups?: ToolGroup[];
+  scopedAppName?: string;
+}
 
 /**
  * Creates a function to register all tools with the server.
@@ -131,26 +148,74 @@ const ALL_TOOLS: ToolDefinition[] = [
  * a factory pattern that accepts the server and clientFactory as parameters.
  *
  * @param clientFactory - Factory function that creates client instances
- * @param enabledGroups - Optional array of enabled tool groups (defaults to all)
+ * @param options - Optional configuration (enabledGroups, scopedAppName)
  * @returns Function that registers all tools with a server
  */
-export function createRegisterTools(clientFactory: ClientFactory, enabledGroups?: ToolGroup[]) {
-  const groups = enabledGroups || parseEnabledToolGroups(process.env.ENABLED_TOOLGROUPS);
+export function createRegisterTools(
+  clientFactory: ClientFactory,
+  options?: ToolGroup[] | RegisterToolsOptions
+) {
+  // Handle both old signature (ToolGroup[]) and new signature (RegisterToolsOptions)
+  const opts: RegisterToolsOptions = Array.isArray(options)
+    ? { enabledGroups: options }
+    : options || {};
+
+  const groups = opts.enabledGroups || parseEnabledToolGroups(process.env.ENABLED_TOOLGROUPS);
+  const scopedAppName = opts.scopedAppName ?? process.env.FLY_IO_APP_NAME;
 
   return (server: Server) => {
-    // Filter tools by enabled groups and create instances
-    const tools = ALL_TOOLS.filter((def) => def.groups.some((g) => groups.includes(g))).map((def) =>
-      def.factory(server, clientFactory)
-    );
+    // Filter tools by enabled groups
+    let filteredTools = ALL_TOOLS.filter((def) => def.groups.some((g) => groups.includes(g)));
+
+    // When app is scoped, remove app management tools
+    if (scopedAppName) {
+      filteredTools = filteredTools.filter((def) => !def.isAppManagement);
+    }
+
+    // Create tool instances
+    const toolInstances = filteredTools.map((def) => ({
+      tool: def.factory(server, clientFactory),
+      requiresAppName: def.requiresAppName,
+    }));
 
     // List available tools
     server.setRequestHandler(ListToolsRequestSchema, async () => {
       return {
-        tools: tools.map((tool) => ({
-          name: tool.name,
-          description: tool.description,
-          inputSchema: tool.inputSchema,
-        })),
+        tools: toolInstances.map(({ tool, requiresAppName }) => {
+          // When scoped, modify the schema to make app_name optional and add note to description
+          if (scopedAppName && requiresAppName) {
+            const modifiedSchema = { ...tool.inputSchema };
+            // Remove app_name from required array
+            if (modifiedSchema.required) {
+              modifiedSchema.required = modifiedSchema.required.filter(
+                (r: string) => r !== 'app_name'
+              );
+              if (modifiedSchema.required.length === 0) {
+                delete modifiedSchema.required;
+              }
+            }
+            // Update app_name description to indicate it's scoped
+            if (modifiedSchema.properties?.app_name) {
+              modifiedSchema.properties = {
+                ...modifiedSchema.properties,
+                app_name: {
+                  ...(modifiedSchema.properties.app_name as object),
+                  description: `Optional. Defaults to "${scopedAppName}" (configured via FLY_IO_APP_NAME).`,
+                },
+              };
+            }
+            return {
+              name: tool.name,
+              description: `${tool.description}\n\n**Note:** This server is scoped to app "${scopedAppName}".`,
+              inputSchema: modifiedSchema,
+            };
+          }
+          return {
+            name: tool.name,
+            description: tool.description,
+            inputSchema: tool.inputSchema,
+          };
+        }),
       };
     });
 
@@ -158,12 +223,31 @@ export function createRegisterTools(clientFactory: ClientFactory, enabledGroups?
     server.setRequestHandler(CallToolRequestSchema, async (request) => {
       const { name, arguments: args } = request.params;
 
-      const tool = tools.find((t) => t.name === name);
-      if (!tool) {
+      const toolEntry = toolInstances.find((t) => t.tool.name === name);
+      if (!toolEntry) {
         throw new Error(`Unknown tool: ${name}`);
       }
 
-      return await tool.handler(args);
+      // When scoped, inject or validate app_name
+      let processedArgs = args;
+      if (scopedAppName && toolEntry.requiresAppName) {
+        const argsObj = (args || {}) as Record<string, unknown>;
+        if (argsObj.app_name && argsObj.app_name !== scopedAppName) {
+          return {
+            content: [
+              {
+                type: 'text',
+                text: `Error: This server is scoped to app "${scopedAppName}". Cannot operate on app "${argsObj.app_name}".`,
+              },
+            ],
+            isError: true,
+          };
+        }
+        // Inject the scoped app name
+        processedArgs = { ...argsObj, app_name: scopedAppName };
+      }
+
+      return await toolEntry.tool.handler(processedArgs);
     });
   };
 }

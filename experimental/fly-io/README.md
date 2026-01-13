@@ -63,6 +63,21 @@ Control which tools are available via the `ENABLED_TOOLGROUPS` environment varia
 - `ENABLED_TOOLGROUPS="readonly,write"` - Read and write, no delete
 - Not set - All tools enabled (default)
 
+### App Scoping
+
+When `FLY_IO_APP_NAME` is set, the server operates in "scoped mode":
+
+- **App management tools are disabled**: `list_apps`, `get_app`, `create_app`, `delete_app` are not available
+- **Machine tools are restricted**: All machine operations only work on the configured app
+- **app_name becomes optional**: Machine tools will automatically use the scoped app
+- **Cross-app operations are blocked**: Attempting to operate on a different app returns an error
+
+This is useful for:
+
+- Restricting access to a single application
+- Simplifying tool usage (no need to specify app_name)
+- Preventing accidental operations on wrong apps
+
 ## Quick Start
 
 ### Prerequisites
@@ -76,11 +91,12 @@ Control which tools are available via the `ENABLED_TOOLGROUPS` environment varia
 
 #### Environment Variables
 
-| Variable             | Required | Description                           | Default     |
-| -------------------- | -------- | ------------------------------------- | ----------- |
-| `FLY_IO_API_TOKEN`   | Yes      | API token for Fly.io authentication   | -           |
-| `ENABLED_TOOLGROUPS` | No       | Comma-separated tool groups to enable | All enabled |
-| `SKIP_HEALTH_CHECKS` | No       | Skip API validation at startup        | `false`     |
+| Variable             | Required | Description                                            | Default     |
+| -------------------- | -------- | ------------------------------------------------------ | ----------- |
+| `FLY_IO_API_TOKEN`   | Yes      | API token for Fly.io authentication                    | -           |
+| `FLY_IO_APP_NAME`    | No       | Scope server to a single app (disables app management) | -           |
+| `ENABLED_TOOLGROUPS` | No       | Comma-separated tool groups to enable                  | All enabled |
+| `SKIP_HEALTH_CHECKS` | No       | Skip API validation at startup                         | `false`     |
 
 ### Claude Desktop Configuration
 
@@ -96,6 +112,23 @@ Windows: `%APPDATA%\Claude\claude_desktop_config.json`
       "args": ["-y", "fly-io-mcp-server"],
       "env": {
         "FLY_IO_API_TOKEN": "fo_your_token_here"
+      }
+    }
+  }
+}
+```
+
+**With app scoping** (restricts to a single app):
+
+```json
+{
+  "mcpServers": {
+    "fly-io": {
+      "command": "npx",
+      "args": ["-y", "fly-io-mcp-server"],
+      "env": {
+        "FLY_IO_API_TOKEN": "fo_your_token_here",
+        "FLY_IO_APP_NAME": "my-production-app"
       }
     }
   }

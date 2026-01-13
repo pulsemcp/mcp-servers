@@ -20,6 +20,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `get_logs` tool - Retrieve application logs with region and machine filtering
 - `machine_exec` tool - Execute commands on running machines
 - Security considerations section in README documenting `machine_exec` risks
+- `FLY_IO_APP_NAME` environment variable for app scoping
+  - When set, disables app management tools (list_apps, get_app, create_app, delete_app)
+  - Restricts all machine operations to the configured app
+  - Makes app_name parameter optional (auto-injected)
+  - Blocks cross-app operations with clear error messages
 
 ## [0.1.0] - 2026-01-10
 
