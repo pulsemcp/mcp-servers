@@ -13,11 +13,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - All operations now shell out to the `fly` command
   - Requires `fly` CLI to be installed and available in PATH
   - Provides consistency across all tools and enables CLI-only features
+  - Uses `execFile` instead of `exec` to prevent command injection vulnerabilities
 
 ### Added
 
 - `get_logs` tool - Retrieve application logs with region and machine filtering
 - `machine_exec` tool - Execute commands on running machines
+- Security considerations section in README documenting `machine_exec` risks
 
 ## [0.1.0] - 2026-01-10
 

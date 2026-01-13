@@ -1,4 +1,4 @@
-import { exec } from 'child_process';
+import { execFile } from 'child_process';
 import { promisify } from 'util';
 import type {
   App,
@@ -9,7 +9,7 @@ import type {
   MachineState,
 } from '../types.js';
 
-const execAsync = promisify(exec);
+const execFileAsync = promisify(execFile);
 
 /**
  * Extended interface for Fly.io client with CLI-specific features
@@ -55,7 +55,6 @@ export interface IFlyIOClientExtended {
 export interface LogsOptions {
   region?: string;
   machineId?: string;
-  lines?: number;
 }
 
 /**
@@ -70,18 +69,19 @@ export class FlyCLIClient implements IFlyIOClientExtended {
   }
 
   /**
-   * Execute a fly CLI command
+   * Execute a fly CLI command using execFile (not shell) to prevent command injection
    */
   private async execFly(
     args: string[],
     options: { json?: boolean; timeout?: number } = {}
   ): Promise<string> {
     const { json = true, timeout = 30000 } = options;
-    const jsonFlag = json ? ['--json'] : [];
-    const command = ['fly', ...args, ...jsonFlag].join(' ');
+    const allArgs = json ? [...args, '--json'] : args;
 
     try {
-      const { stdout, stderr } = await execAsync(command, {
+      // Use execFile instead of exec to prevent shell command injection
+      // Arguments are passed as an array, not concatenated into a shell string
+      const { stdout, stderr } = await execFileAsync('fly', allArgs, {
         env: {
           ...process.env,
           FLY_API_TOKEN: this.apiToken,

@@ -39,6 +39,14 @@ MCP server for managing Fly.io machines and applications. This server provides t
 | `get_logs`           | readonly, write, admin | Get application logs                        |
 | `machine_exec`       | write, admin           | Execute a command on a machine              |
 
+### Security Considerations
+
+The `machine_exec` tool allows executing arbitrary commands on Fly.io machines. This is a powerful capability that should be used with caution:
+
+- Consider using `ENABLED_TOOLGROUPS="readonly"` or `ENABLED_TOOLGROUPS="readonly,write"` to disable administrative tools including `machine_exec`
+- The server requires the `fly` CLI to be installed, which means it has access to execute shell commands
+- All operations are authenticated via your `FLY_IO_API_TOKEN`
+
 ### Tool Groups
 
 Control which tools are available via the `ENABLED_TOOLGROUPS` environment variable:
