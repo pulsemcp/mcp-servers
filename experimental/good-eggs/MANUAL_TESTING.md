@@ -61,10 +61,10 @@ The tests will:
 ## Latest Test Results
 
 **Test Date:** 2026-01-13
-**Branch:** claude/fix-good-eggs-product-selector
-**Commit:** ec8ff49
+**Branch:** tadasant/fix-good-eggs-past-orders
+**Commit:** 0af75b8
 **Tested By:** Claude Code
-**Environment:** Linux 6.8.0-1044-raspi (arm64)
+**Environment:** Darwin 25.1.0 (arm64)
 
 ### Summary
 
@@ -105,9 +105,9 @@ The tests will:
 
 #### add_to_cart Tests
 
-| Test        | Status                  | Notes                           |
-| ----------- | ----------------------- | ------------------------------- |
-| Add to cart | :white_check_mark: PASS | Successfully added item to cart |
+| Test        | Status         | Notes                             |
+| ----------- | -------------- | --------------------------------- |
+| Add to cart | :warning: WARN | Could not find add to cart button |
 
 #### search_for_freebie_groceries Tests
 
@@ -117,15 +117,15 @@ The tests will:
 
 #### get_list_of_past_order_dates Tests
 
-| Test            | Status                  | Notes                |
-| --------------- | ----------------------- | -------------------- |
-| Get past orders | :white_check_mark: PASS | No past orders found |
+| Test            | Status                  | Notes                                                     |
+| --------------- | ----------------------- | --------------------------------------------------------- |
+| Get past orders | :white_check_mark: PASS | **FIXED:** Found 8 past orders with dates and item counts |
 
 #### get_past_order_groceries Tests
 
-| Test                    | Status         | Notes                            |
-| ----------------------- | -------------- | -------------------------------- |
-| Get past order contents | :warning: WARN | Skipped - no past orders to test |
+| Test                    | Status         | Notes                                              |
+| ----------------------- | -------------- | -------------------------------------------------- |
+| Get past order contents | :warning: WARN | Could not extract date from past orders (UI issue) |
 
 #### add_favorite Tests
 
