@@ -4,6 +4,24 @@ import { registerResources } from './resources.js';
 import type { ExecuteResult, BrowserState, PlaywrightConfig, ProxyConfig } from './types.js';
 
 /**
+ * Maximum allowed dimension for screenshots in pixels.
+ * Claude's API rejects images where either dimension exceeds 8000 pixels.
+ */
+export const MAX_SCREENSHOT_DIMENSION = 8000;
+
+/**
+ * Screenshot result containing the image data and metadata
+ */
+export interface ScreenshotResult {
+  /** Base64-encoded PNG image data */
+  data: string;
+  /** Whether the screenshot was clipped due to dimension limits */
+  wasClipped: boolean;
+  /** Warning message if the screenshot was limited */
+  warning?: string;
+}
+
+/**
  * Playwright client interface
  * Defines all methods for browser automation
  */
@@ -14,9 +32,11 @@ export interface IPlaywrightClient {
   execute(code: string, options?: { timeout?: number }): Promise<ExecuteResult>;
 
   /**
-   * Take a screenshot of the current page
+   * Take a screenshot of the current page.
+   * Screenshots are automatically limited to MAX_SCREENSHOT_DIMENSION pixels.
+   * If fullPage is requested but would exceed the limit, the screenshot is clipped.
    */
-  screenshot(options?: { fullPage?: boolean }): Promise<string>;
+  screenshot(options?: { fullPage?: boolean }): Promise<ScreenshotResult>;
 
   /**
    * Get the current browser state
@@ -173,13 +193,57 @@ export class PlaywrightClient implements IPlaywrightClient {
     }
   }
 
-  async screenshot(options?: { fullPage?: boolean }): Promise<string> {
+  async screenshot(options?: { fullPage?: boolean }): Promise<ScreenshotResult> {
     const page = await this.ensureBrowser();
+    const fullPage = options?.fullPage ?? false;
+
+    // Check page dimensions before taking a full-page screenshot
+    if (fullPage) {
+      // Get page dimensions from the browser context
+      const dimensions = await page.evaluate(() => ({
+        scrollWidth: document.documentElement.scrollWidth,
+        scrollHeight: document.documentElement.scrollHeight,
+        viewportWidth: window.innerWidth,
+        viewportHeight: window.innerHeight,
+      }));
+
+      // Check if either dimension would exceed the limit
+      if (
+        dimensions.scrollWidth > MAX_SCREENSHOT_DIMENSION ||
+        dimensions.scrollHeight > MAX_SCREENSHOT_DIMENSION
+      ) {
+        // Calculate a safe clip region that respects the max dimension
+        const clipWidth = Math.min(dimensions.scrollWidth, MAX_SCREENSHOT_DIMENSION);
+        const clipHeight = Math.min(dimensions.scrollHeight, MAX_SCREENSHOT_DIMENSION);
+
+        const buffer = await page.screenshot({
+          type: 'png',
+          clip: {
+            x: 0,
+            y: 0,
+            width: clipWidth,
+            height: clipHeight,
+          },
+        });
+
+        return {
+          data: buffer.toString('base64'),
+          wasClipped: true,
+          warning: `Full page screenshot would exceed ${MAX_SCREENSHOT_DIMENSION}px limit (page is ${dimensions.scrollWidth}x${dimensions.scrollHeight}px). Screenshot was clipped to ${clipWidth}x${clipHeight}px.`,
+        };
+      }
+    }
+
+    // Take normal screenshot (viewport or full page within limits)
     const buffer = await page.screenshot({
-      fullPage: options?.fullPage ?? false,
+      fullPage,
       type: 'png',
     });
-    return buffer.toString('base64');
+
+    return {
+      data: buffer.toString('base64'),
+      wasClipped: false,
+    };
   }
 
   async getState(): Promise<BrowserState> {

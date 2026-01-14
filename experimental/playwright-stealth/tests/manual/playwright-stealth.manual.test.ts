@@ -1,5 +1,5 @@
 import { describe, it, expect, afterAll } from 'vitest';
-import { PlaywrightClient } from '../../shared/src/server.js';
+import { PlaywrightClient, MAX_SCREENSHOT_DIMENSION } from '../../shared/src/server.js';
 
 /**
  * Manual tests for Playwright Stealth MCP Server
@@ -39,13 +39,14 @@ describe('Playwright Client Manual Tests', () => {
     });
 
     it('should take a screenshot', async () => {
-      const screenshot = await client!.screenshot();
+      const screenshotResult = await client!.screenshot();
 
-      expect(screenshot).toBeDefined();
-      expect(screenshot.length).toBeGreaterThan(100);
+      expect(screenshotResult).toBeDefined();
+      expect(screenshotResult.data.length).toBeGreaterThan(100);
+      expect(screenshotResult.wasClipped).toBe(false);
 
       // Verify it's valid base64
-      const buffer = Buffer.from(screenshot, 'base64');
+      const buffer = Buffer.from(screenshotResult.data, 'base64');
       expect(buffer.length).toBeGreaterThan(0);
     });
 
@@ -63,6 +64,83 @@ describe('Playwright Client Manual Tests', () => {
       const state = await client!.getState();
       expect(state.isOpen).toBe(false);
 
+      client = null;
+    });
+  });
+
+  describe('Screenshot Dimension Limiting', () => {
+    it('should clip full-page screenshots that exceed dimension limits', async () => {
+      client = new PlaywrightClient({
+        stealthMode: false,
+        headless: true,
+        timeout: 30000,
+        navigationTimeout: 60000,
+      });
+
+      // Create a page with height exceeding the max dimension
+      const targetHeight = MAX_SCREENSHOT_DIMENSION + 2000; // 10000px
+      await client.execute(`
+        await page.goto('about:blank');
+        await page.setContent(\`
+          <html>
+            <body style="margin: 0; padding: 0;">
+              <div style="width: 100%; height: ${targetHeight}px; background: linear-gradient(to bottom, red, blue);">
+                Tall page for testing screenshot clipping
+              </div>
+            </body>
+          </html>
+        \`);
+      `);
+
+      // Take a full-page screenshot
+      const screenshotResult = await client.screenshot({ fullPage: true });
+
+      expect(screenshotResult.wasClipped).toBe(true);
+      expect(screenshotResult.warning).toBeDefined();
+      expect(screenshotResult.warning).toContain(`${MAX_SCREENSHOT_DIMENSION}px limit`);
+      expect(screenshotResult.data.length).toBeGreaterThan(100);
+
+      console.log('Screenshot clipping warning:', screenshotResult.warning);
+    });
+
+    it('should not clip screenshots within dimension limits', async () => {
+      // Navigate to a normal page with reasonable height
+      await client!.execute(`
+        await page.goto('https://example.com');
+      `);
+
+      // Take a full-page screenshot
+      const screenshotResult = await client!.screenshot({ fullPage: true });
+
+      expect(screenshotResult.wasClipped).toBe(false);
+      expect(screenshotResult.warning).toBeUndefined();
+      expect(screenshotResult.data.length).toBeGreaterThan(100);
+    });
+
+    it('should not clip viewport-only screenshots regardless of page size', async () => {
+      // Create a tall page again
+      await client!.execute(`
+        await page.setContent(\`
+          <html>
+            <body style="margin: 0; padding: 0;">
+              <div style="width: 100%; height: 15000px; background: green;">
+                Very tall page
+              </div>
+            </body>
+          </html>
+        \`);
+      `);
+
+      // Take a viewport-only screenshot (fullPage: false)
+      const screenshotResult = await client!.screenshot({ fullPage: false });
+
+      // Viewport screenshot should never be clipped
+      expect(screenshotResult.wasClipped).toBe(false);
+      expect(screenshotResult.warning).toBeUndefined();
+    });
+
+    it('should clean up after dimension limit tests', async () => {
+      await client?.close();
       client = null;
     });
   });

@@ -30,40 +30,38 @@ npm run test:manual
 
 ## Latest Test Results
 
-**Test Date:** 2026-01-08
-**Branch:** claude-opus-4-5/stealth-fingerprinting-config
-**Commit:** 08d63a0 (v0.0.5 - configurable browser fingerprinting)
+**Test Date:** 2026-01-14
+**Branch:** tadasant/playwright-screenshot-size-limit
+**Commit:** d2e975b (v0.0.6 - screenshot dimension limiting)
 **Tested By:** Claude
 
 ### Summary
 
-**Overall:** 18+ tests pass (100%)
+**Overall:** 33 tests pass (100%)
 
-All manual tests with real browsers pass, including:
+All functional and integration tests pass, including:
 
 - Core Playwright functionality (navigation, screenshots, state management)
 - Stealth mode anti-bot protection tests
 - Screenshot resource storage tests
-- Proxy support tests with BrightData residential proxy
-- **NEW: Configurable fingerprinting options (STEALTH_USER_AGENT, STEALTH_MASK_LINUX, STEALTH_LOCALE)**
+- **NEW: Screenshot dimension limiting to prevent API errors**
 
-### New in v0.0.5
+### New in v0.0.6
 
-The fingerprinting configuration feature adds environment variables that configure the stealth plugin's user-agent-override evasion:
+The screenshot dimension limiting feature prevents API errors when screenshots exceed 8000 pixels:
 
-- `STEALTH_USER_AGENT`: Custom User-Agent string
-- `STEALTH_MASK_LINUX`: Control Linux platform masking (default: true)
-- `STEALTH_LOCALE`: Custom locale for Accept-Language header
-
-This resolves fingerprint mismatch issues in Docker/Linux environments where the User-Agent showed Windows but `navigator.platform` exposed Linux.
+- `MAX_SCREENSHOT_DIMENSION` constant (8000px) enforces the limit
+- `ScreenshotResult` interface with `wasClipped` and `warning` fields
+- Full-page screenshots exceeding the limit are automatically clipped
+- Warning included in response when clipping occurs
 
 ### Test Cases Status
 
-| Test Suite                     | Tests | Status  |
-| ------------------------------ | ----- | ------- |
-| Playwright Client Manual Tests | 13    | ✅ Pass |
-| Screenshot Resource Storage    | 7     | ✅ Pass |
-| Proxy Mode Tests               | 5     | ✅ Pass |
+| Test Suite          | Tests | Status  |
+| ------------------- | ----- | ------- |
+| Functional Tests    | 33    | ✅ Pass |
+| Integration Tests   | 6     | ✅ Pass |
+| Screenshot Clipping | 2     | ✅ Pass |
 
 ### Detailed Results
 

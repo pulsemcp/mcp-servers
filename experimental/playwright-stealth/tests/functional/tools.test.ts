@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { createFunctionalMockClient } from '../mocks/playwright-client.functional-mock.js';
 import { createRegisterTools } from '../../shared/src/tools.js';
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
-import type { IPlaywrightClient } from '../../shared/src/server.js';
+import type { IPlaywrightClient, ScreenshotResult } from '../../shared/src/server.js';
 import { ScreenshotStorageFactory } from '../../shared/src/storage/index.js';
 import { promises as fs } from 'fs';
 import os from 'os';
@@ -234,6 +234,52 @@ describe('Playwright Stealth Tools', () => {
         .then(() => true)
         .catch(() => false);
       expect(fileExists).toBe(true);
+    });
+
+    it('should include warning when screenshot is clipped', async () => {
+      // Mock a clipped screenshot result
+      vi.mocked(mockClient.screenshot).mockResolvedValueOnce({
+        data: 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
+        wasClipped: true,
+        warning:
+          'Full page screenshot would exceed 8000px limit (page is 1920x12000px). Screenshot was clipped to 1920x8000px.',
+      } as ScreenshotResult);
+
+      const handler = getCallToolHandler();
+      const result = await handler({
+        method: 'tools/call',
+        params: {
+          name: 'browser_screenshot',
+          arguments: { fullPage: true },
+        },
+      });
+
+      expect(result.isError).toBeFalsy();
+      // First content should be the warning text
+      expect(result.content[0].type).toBe('text');
+      expect(result.content[0].text).toContain('Warning:');
+      expect(result.content[0].text).toContain('8000px limit');
+      // Second content should be the image
+      expect(result.content[1].type).toBe('image');
+      // Third content should be the resource link
+      expect(result.content[2].type).toBe('resource_link');
+    });
+
+    it('should not include warning when screenshot is not clipped', async () => {
+      const handler = getCallToolHandler();
+      const result = await handler({
+        method: 'tools/call',
+        params: {
+          name: 'browser_screenshot',
+          arguments: { fullPage: true },
+        },
+      });
+
+      expect(result.isError).toBeFalsy();
+      // No warning, so first content should be the image
+      expect(result.content[0].type).toBe('image');
+      expect(result.content[1].type).toBe('resource_link');
+      expect(result.content).toHaveLength(2);
     });
   });
 
