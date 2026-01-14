@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.0.6] - 2026-01-14
+
 ### Added
 
 - Screenshot dimension limit: Screenshots are now automatically limited to 8000 pixels in any dimension to comply with Claude's API limits

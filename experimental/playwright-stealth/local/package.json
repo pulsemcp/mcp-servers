@@ -1,6 +1,6 @@
 {
   "name": "playwright-stealth-mcp-server",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "description": "Local implementation of Playwright Stealth MCP server",
   "mcpName": "com.pulsemcp.servers/playwright-stealth",
   "main": "build/index.js",
