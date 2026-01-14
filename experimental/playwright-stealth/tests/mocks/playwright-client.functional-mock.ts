@@ -2,7 +2,7 @@
  * Functional mock for unit tests
  * Provides controllable behavior for testing tool implementations
  */
-import type { IPlaywrightClient } from '../../shared/src/server.js';
+import type { IPlaywrightClient, ScreenshotResult } from '../../shared/src/server.js';
 import type { ExecuteResult, BrowserState, PlaywrightConfig } from '../../shared/src/types.js';
 import { vi } from 'vitest';
 
@@ -16,11 +16,10 @@ export function createFunctionalMockClient(options?: {
       consoleOutput: [],
     } as ExecuteResult),
 
-    screenshot: vi
-      .fn()
-      .mockResolvedValue(
-        'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=='
-      ),
+    screenshot: vi.fn().mockResolvedValue({
+      data: 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
+      wasClipped: false,
+    } as ScreenshotResult),
 
     getState: vi.fn().mockResolvedValue({
       currentUrl: 'https://example.com',

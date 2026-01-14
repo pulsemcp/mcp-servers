@@ -2,7 +2,7 @@
  * Mock Playwright client for integration tests
  * Simulates browser behavior without launching a real browser
  */
-import type { IPlaywrightClient } from '../server.js';
+import type { IPlaywrightClient, ScreenshotResult } from '../server.js';
 import type { ExecuteResult, BrowserState, PlaywrightConfig } from '../types.js';
 
 export class MockPlaywrightClient implements IPlaywrightClient {
@@ -63,9 +63,12 @@ export class MockPlaywrightClient implements IPlaywrightClient {
     };
   }
 
-  async screenshot(): Promise<string> {
+  async screenshot(): Promise<ScreenshotResult> {
     // Return a minimal valid PNG as base64 (1x1 transparent pixel)
-    return 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
+    return {
+      data: 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
+      wasClipped: false,
+    };
   }
 
   async getState(): Promise<BrowserState> {

@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Screenshot dimension limit: Screenshots are now automatically limited to 8000 pixels in any dimension to comply with Claude's API limits
+- When a full-page screenshot would exceed the limit, it is automatically clipped from the top-left corner and a warning is included in the response
+- New `ScreenshotResult` interface with `wasClipped` and `warning` fields to indicate when screenshots were limited
+- Exported `MAX_SCREENSHOT_DIMENSION` constant (8000px) for reference
+
 ## [0.0.5] - 2026-01-08
 
 ### Added

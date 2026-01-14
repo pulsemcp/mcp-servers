@@ -83,6 +83,9 @@ Captures the visible viewport or full page as a PNG image. Screenshots are saved
 - With \`saveAndReturn\`: Inline base64 PNG image data plus a resource_link to the saved file
 - With \`saveOnly\`: A resource_link with the \`file://\` URI to the saved screenshot
 
+**Dimension Limits:**
+Screenshots are limited to 8000 pixels in any dimension. If a full-page screenshot would exceed this limit, it is automatically clipped from the top-left corner and a warning is included in the response.
+
 **Use cases:**
 - Verify page state after navigation
 - Debug automation issues
@@ -218,7 +221,7 @@ export function createRegisterTools(clientFactory: ClientFactory) {
         try {
           const validated = ScreenshotSchema.parse(args);
           const client = getClient();
-          const base64 = await client.screenshot({
+          const screenshotResult = await client.screenshot({
             fullPage: validated.fullPage,
           });
 
@@ -227,7 +230,7 @@ export function createRegisterTools(clientFactory: ClientFactory) {
 
           // Save to storage
           const storage = await ScreenshotStorageFactory.create();
-          const uri = await storage.write(base64, {
+          const uri = await storage.write(screenshotResult.data, {
             pageUrl: state.currentUrl,
             pageTitle: state.title,
             fullPage: validated.fullPage ?? false,
@@ -238,38 +241,53 @@ export function createRegisterTools(clientFactory: ClientFactory) {
           // Generate a name from the URI for the resource link
           const fileName = uri.split('/').pop() || 'screenshot.png';
 
+          // Build content array
+          const content: Array<{
+            type: string;
+            text?: string;
+            data?: string;
+            mimeType?: string;
+            uri?: string;
+            name?: string;
+            description?: string;
+          }> = [];
+
+          // Add warning if screenshot was clipped
+          if (screenshotResult.wasClipped && screenshotResult.warning) {
+            content.push({
+              type: 'text',
+              text: `Warning: ${screenshotResult.warning}`,
+            });
+          }
+
           if (resultHandling === 'saveOnly') {
-            // Return only the resource link
-            return {
-              content: [
-                {
-                  type: 'resource_link',
-                  uri,
-                  name: fileName,
-                  description: `Screenshot saved to ${uri}`,
-                  mimeType: 'image/png',
-                },
-              ],
-            };
+            // Return only the resource link (with warning if present)
+            content.push({
+              type: 'resource_link',
+              uri,
+              name: fileName,
+              description: `Screenshot saved to ${uri}`,
+              mimeType: 'image/png',
+            });
+            return { content };
           }
 
           // Default: saveAndReturn - return both inline image and resource link
-          return {
-            content: [
-              {
-                type: 'image',
-                data: base64,
-                mimeType: 'image/png',
-              },
-              {
-                type: 'resource_link',
-                uri,
-                name: fileName,
-                description: `Screenshot also saved to ${uri}`,
-                mimeType: 'image/png',
-              },
-            ],
-          };
+          content.push(
+            {
+              type: 'image',
+              data: screenshotResult.data,
+              mimeType: 'image/png',
+            },
+            {
+              type: 'resource_link',
+              uri,
+              name: fileName,
+              description: `Screenshot also saved to ${uri}`,
+              mimeType: 'image/png',
+            }
+          );
+          return { content };
         } catch (error) {
           return {
             content: [
