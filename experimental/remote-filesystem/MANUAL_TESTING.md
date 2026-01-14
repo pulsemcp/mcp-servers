@@ -4,11 +4,12 @@ This file tracks the results of manual testing against real GCS credentials.
 
 ## Latest Test Run
 
-**Date:** 2026-01-08 23:41 UTC
-**Branch:** claude/file-upload-mcp-server
-**Commit:** 61b9f34
+**Date:** 2026-01-14
+**Branch:** claude/rename-file-upload-to-remote-filesystem
+**Commit:** 2d9267a
 **Tested By:** Claude
 **Environment:** Real GCS bucket with fine-grained access control and inline credentials
+**Note:** Directory rename only - no code changes. Original tests from 2026-01-08 (commit 61b9f34) remain valid.
 
 ### Test Results
 

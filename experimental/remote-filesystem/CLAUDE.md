@@ -9,7 +9,7 @@ This is an MCP server for remote filesystem operations on cloud storage provider
 The server follows the standard workspace structure:
 
 ```
-file-upload/
+remote-filesystem/
 ├── shared/           # Core logic (publishable)
 │   └── src/
 │       ├── gcs-client/   # GCS client implementation
