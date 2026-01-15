@@ -13,6 +13,8 @@ export interface GroceryItem {
   discount?: string;
   unit?: string;
   imageUrl?: string;
+  quantity?: string;
+  quantityOrdered?: number;
 }
 
 export interface GroceryDetails {

@@ -615,10 +615,13 @@ export class GoodEggsClient implements IGoodEggsClient {
   async getPastOrderGroceries(orderDate: string): Promise<GroceryItem[]> {
     const page = await this.ensureBrowser();
 
-    // First, go to reorder page
-    if (!page.url().includes('/reorder')) {
-      // Use domcontentloaded instead of networkidle - Good Eggs has persistent connections
-      await page.goto(`${BASE_URL}/reorder`, { waitUntil: 'domcontentloaded' });
+    // First, go to account orders page to find the order ID
+    // Check if we're on the orders list page (not a specific order details page)
+    const currentUrl = page.url();
+    const isOnOrdersList =
+      currentUrl.includes('/account/orders') && !/\/account\/orders\/[^/]+/.test(currentUrl);
+    if (!isOnOrdersList) {
+      await page.goto(`${BASE_URL}/account/orders`, { waitUntil: 'domcontentloaded' });
       await page.waitForTimeout(3000);
     }
 
@@ -627,115 +630,140 @@ export class GoodEggsClient implements IGoodEggsClient {
       throw new Error('Not logged in. Cannot access past orders.');
     }
 
-    // Extract items from the specific order date section
-    // The reorder page displays all orders with their products inline (not as separate pages)
-    const items = await page.evaluate((targetDate) => {
-      // ProductItem interface is duplicated here because page.evaluate runs in browser context
-      // and cannot access TypeScript types from the Node.js context
+    // Find the order that matches the date and get its URL
+    const orderUrl = await page.evaluate((targetDate) => {
+      // Try to find by looking at the page structure for order links
+      const orderLinks = Array.from(document.querySelectorAll('a[href*="/account/orders/"]'));
+      for (const link of orderLinks) {
+        const linkEl = link as HTMLAnchorElement;
+        // Get the parent container to check the date
+        const container = linkEl.closest('[class*="card"], [class*="row"], div') || linkEl;
+        const text = container.textContent || '';
+
+        // Check if this order matches our target date
+        // Dates can be like "Saturday 1/10", "January 10th", etc.
+        if (text.includes(targetDate)) {
+          return linkEl.href;
+        }
+
+        // Try more flexible date matching
+        // Extract date components from targetDate and compare
+        const datePatterns = [
+          /(\d{1,2})\/(\d{1,2})/, // 1/10
+          /([A-Za-z]+)\s+(\d{1,2})/, // January 10
+          /(\d{1,2})(?:st|nd|rd|th)/, // 10th
+        ];
+
+        for (const pattern of datePatterns) {
+          const targetMatch = targetDate.match(pattern);
+          const textMatch = text.match(pattern);
+          if (targetMatch && textMatch && targetMatch[0] === textMatch[0]) {
+            return linkEl.href;
+          }
+        }
+      }
+
+      return null;
+    }, orderDate);
+
+    if (!orderUrl) {
+      // Fallback: try clicking on "Order Details" for a matching date
+      const clickedUrl = await page.evaluate((targetDate) => {
+        const cards = Array.from(
+          document.querySelectorAll('[class*="single-order"], [class*="order-summary"], div')
+        );
+        for (const card of cards) {
+          const text = card.textContent || '';
+          if (text.includes(targetDate)) {
+            // This card contains the target date, look for Order Details link
+            const detailsLink = card.querySelector(
+              'a[href*="/account/orders/"]'
+            ) as HTMLAnchorElement;
+            if (detailsLink) {
+              return detailsLink.href;
+            }
+          }
+        }
+        return null;
+      }, orderDate);
+
+      if (!clickedUrl) {
+        return [];
+      }
+
+      await page.goto(clickedUrl, { waitUntil: 'domcontentloaded' });
+      await page.waitForTimeout(2000);
+    } else {
+      await page.goto(orderUrl, { waitUntil: 'domcontentloaded' });
+      await page.waitForTimeout(2000);
+    }
+
+    // Now we're on the order details page - extract items with quantity ordered
+    const items = await page.evaluate(() => {
       interface ProductItem {
         url: string;
         name: string;
         brand: string;
         price: string;
         imageUrl?: string;
+        quantity?: string;
+        quantityOrdered?: number;
       }
 
       const products: ProductItem[] = [];
-      const seen = new Set<string>();
 
-      // Find all order headers
-      const headerElements = Array.from(
-        document.querySelectorAll('.reorder-page__grid__header')
-      ) as Element[];
+      // Find all line items on the order details page
+      const lineItems = document.querySelectorAll('.single-order-page__line-item');
 
-      // Find the header that matches our target date
-      let targetHeader: Element | null = null;
-      for (const header of headerElements) {
-        const dateEl = header.querySelector('p');
-        const dateText = dateEl?.textContent?.trim() || '';
-        // Check if this header matches (could be exact match or partial match)
-        if (
-          dateText.includes(targetDate) ||
-          targetDate.includes(dateText.replace('Delivered ', ''))
-        ) {
-          targetHeader = header;
-          break;
-        }
-      }
+      lineItems.forEach((item) => {
+        // Extract quantity ordered (the number on the left)
+        const quantityOrderedEl = item.querySelector(
+          '.single-order-page__line-item-quantity-value'
+        );
+        const quantityOrdered = parseInt(quantityOrderedEl?.textContent?.trim() || '1', 10) || 1;
 
-      if (!targetHeader) {
-        return products;
-      }
+        // Extract product name and URL
+        const nameLink = item.querySelector(
+          '.single-order-page__line-item-details-name a'
+        ) as HTMLAnchorElement;
+        const name = nameLink?.textContent?.trim() || '';
+        const url = nameLink?.href || '';
 
-      // Get the parent container that holds all the products for this order
-      // Products are siblings of the header within the same grid section
-      const parent = targetHeader.parentElement;
-      if (!parent) {
-        return products;
-      }
+        // Extract brand
+        const brandEl = item.querySelector('.single-order-page__line-item-details-vendor-name a');
+        const brand = brandEl?.textContent?.trim() || '';
 
-      // Find all product links within this section (between this header and the next one)
-      let foundHeader = false;
-      const children = Array.from(parent.children) as Element[];
+        // Extract unit (e.g., "1 bunch", "1 lb")
+        const unitEl = item.querySelector('.single-order-page__line-item-details-unit-quantity');
+        const unit = unitEl?.textContent?.trim() || '';
 
-      for (const child of children) {
-        if (child === targetHeader) {
-          foundHeader = true;
-          continue;
-        }
+        // Extract price
+        const priceEl = item.querySelector('.summary-item__price');
+        const price = priceEl?.textContent?.trim() || '';
 
-        // Stop when we hit the next header
-        if (foundHeader && child.classList.contains('reorder-page__grid__header')) {
-          break;
-        }
+        // Extract image URL
+        const imageDiv = item.querySelector(
+          '.single-order-page__line-item-image-image'
+        ) as HTMLElement;
+        const bgImage = imageDiv?.style?.backgroundImage || '';
+        const imageMatch = bgImage.match(/url\(["']?([^"')]+)["']?\)/);
+        const imageUrl = imageMatch ? imageMatch[1] : undefined;
 
-        if (!foundHeader) {
-          continue;
-        }
-
-        // Extract product links from this child element
-        const productLinks = child.querySelectorAll('a.js-product-link');
-        productLinks.forEach((el: Element) => {
-          const link = el as HTMLAnchorElement;
-          const href = link.href;
-
-          if (!href || seen.has(href) || href.includes('/reorder') || href.includes('/signin')) {
-            return;
-          }
-
-          // Validate URL structure
-          const urlPath = new URL(href).pathname;
-          const segments = urlPath.split('/').filter((s: string) => s.length > 0);
-          if (segments.length < 3) {
-            return;
-          }
-
-          const container = link.closest('div[class*="product"], article, [class*="card"]') || link;
-
-          const nameEl = container.querySelector('h2, h3, [class*="title"], [class*="name"]');
-          const brandEl = container.querySelector('[class*="brand"], [class*="producer"]');
-          const priceEl = container.querySelector('[class*="price"]');
-          const imgEl = container.querySelector('img');
-
-          let name = nameEl?.textContent?.trim();
-          if (!name || name.length < 3) {
-            name = link.textContent?.trim();
-          }
-          if (!name || name.length < 3) return;
-
-          seen.add(href);
+        if (name && url) {
           products.push({
-            url: href,
-            name: name,
-            brand: brandEl?.textContent?.trim() || '',
-            price: priceEl?.textContent?.trim() || '',
-            imageUrl: (imgEl as HTMLImageElement)?.src || undefined,
+            url,
+            name,
+            brand,
+            price,
+            quantity: unit, // unit of sale (e.g., "1 bunch")
+            quantityOrdered, // number ordered (e.g., 2)
+            imageUrl,
           });
-        });
-      }
+        }
+      });
 
       return products;
-    }, orderDate);
+    });
 
     return items;
   }

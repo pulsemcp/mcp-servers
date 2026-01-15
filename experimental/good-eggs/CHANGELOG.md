@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.4] - 2026-01-15
+
+### Added
+
+- Added `quantityOrdered` field to `get_past_order_groceries` output showing how many units were ordered (e.g., 2)
+- Added `quantity` field (unit of sale) to `get_past_order_groceries` output showing the unit size (e.g., "1 bunch", "1 lb", "15 oz")
+- Price is now included in `get_past_order_groceries` output
+
+### Changed
+
+- Switched `get_past_order_groceries` from using the `/reorder` page to the `/account/orders/{orderId}` page for more accurate order details including actual quantities ordered
+
 ## [0.1.3] - 2026-01-13
 
 ### Fixed

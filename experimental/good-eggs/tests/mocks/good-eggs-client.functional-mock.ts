@@ -108,12 +108,16 @@ export function createMockGoodEggsClient(): IGoodEggsClient {
           name: 'Celebration Truffles',
           brand: 'Good Eggs Select',
           price: '$34.49',
+          quantity: '1 box',
+          quantityOrdered: 1,
         },
         {
           url: 'https://www.goodeggs.com/product/past2',
           name: 'Organic Red Bell Pepper',
           brand: 'From Our Farmers',
           price: '$3.99',
+          quantity: '1 count',
+          quantityOrdered: 2,
         },
       ];
     },

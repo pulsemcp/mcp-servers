@@ -60,11 +60,11 @@ The tests will:
 
 ## Latest Test Results
 
-**Test Date:** 2026-01-13
-**Branch:** tadasant/fix-good-eggs-past-orders
-**Commit:** a1ad769
+**Test Date:** 2026-01-15
+**Branch:** tadasant/good-eggs-quantity-price
+**Commit:** ab17da2
 **Tested By:** Claude Code
-**Environment:** Darwin 25.1.0 (arm64)
+**Environment:** Linux 6.8.0-90-generic
 
 ### Summary
 
@@ -117,15 +117,23 @@ The tests will:
 
 #### get_list_of_past_order_dates Tests
 
-| Test            | Status                  | Notes                                                     |
-| --------------- | ----------------------- | --------------------------------------------------------- |
-| Get past orders | :white_check_mark: PASS | **FIXED:** Found 8 past orders with dates and item counts |
+| Test            | Status                  | Notes               |
+| --------------- | ----------------------- | ------------------- |
+| Get past orders | :white_check_mark: PASS | Found 8 past orders |
 
 #### get_past_order_groceries Tests
 
-| Test                    | Status         | Notes                                              |
-| ----------------------- | -------------- | -------------------------------------------------- |
-| Get past order contents | :warning: WARN | Could not extract date from past orders (UI issue) |
+| Test                    | Status         | Notes                                                                         |
+| ----------------------- | -------------- | ----------------------------------------------------------------------------- |
+| Get past order contents | :warning: WARN | Could not extract date from past orders (test regex issue, not functionality) |
+
+**Note:** The `get_past_order_groceries` functionality was verified directly using browser automation on the `/account/orders/{id}` page. Successfully extracts:
+
+- Product name (e.g., "Organic Nantes Carrots")
+- Brand (e.g., "Sunrise Organic Farms")
+- Price (e.g., "$2.99")
+- Quantity ordered (e.g., 1, 2) - **NEW in v0.1.4** - the actual number of units ordered
+- Unit of sale (e.g., "1 bunch", "1 lb", "15 oz") - **NEW in v0.1.4**
 
 #### add_favorite Tests
 
@@ -161,6 +169,7 @@ The tests will:
 - Product URLs use format: `/<producer>/<product-slug>/<product-id>`
 - Product links use CSS class `js-product-link`
 - `networkidle` doesn't work due to persistent connections - use `domcontentloaded` instead
+- Product tiles use `.product-tile` container class for all product info including price/quantity
 
 ---
 
