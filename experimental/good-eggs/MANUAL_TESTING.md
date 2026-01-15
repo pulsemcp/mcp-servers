@@ -62,7 +62,7 @@ The tests will:
 
 **Test Date:** 2026-01-15
 **Branch:** tadasant/good-eggs-quantity-price
-**Commit:** a6426bf
+**Commit:** ab17da2
 **Tested By:** Claude Code
 **Environment:** Linux 6.8.0-90-generic
 
@@ -127,12 +127,13 @@ The tests will:
 | ----------------------- | -------------- | ----------------------------------------------------------------------------- |
 | Get past order contents | :warning: WARN | Could not extract date from past orders (test regex issue, not functionality) |
 
-**Note:** The `get_past_order_groceries` functionality was verified directly using browser automation. Successfully extracts:
+**Note:** The `get_past_order_groceries` functionality was verified directly using browser automation on the `/account/orders/{id}` page. Successfully extracts:
 
 - Product name (e.g., "Organic Nantes Carrots")
 - Brand (e.g., "Sunrise Organic Farms")
 - Price (e.g., "$2.99")
-- Quantity (e.g., "1 bunch", "1 lb", "15 oz") - **NEW in v0.1.4**
+- Quantity ordered (e.g., 1, 2) - **NEW in v0.1.4** - the actual number of units ordered
+- Unit of sale (e.g., "1 bunch", "1 lb", "15 oz") - **NEW in v0.1.4**
 
 #### add_favorite Tests
 
