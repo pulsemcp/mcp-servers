@@ -513,7 +513,7 @@ export function createRegisterTools(
           const formattedResults = results
             .map(
               (item, i) =>
-                `${i + 1}. **${item.name}**\n   Brand: ${item.brand || 'N/A'}\n   Price: ${item.price || 'N/A'}\n   URL: ${item.url}`
+                `${i + 1}. **${item.name}**\n   Brand: ${item.brand || 'N/A'}\n   Quantity: ${item.quantity || 'N/A'}\n   Price: ${item.price || 'N/A'}\n   URL: ${item.url}`
             )
             .join('\n\n');
 

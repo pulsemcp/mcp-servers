@@ -638,6 +638,7 @@ export class GoodEggsClient implements IGoodEggsClient {
         brand: string;
         price: string;
         imageUrl?: string;
+        quantity?: string;
       }
 
       const products: ProductItem[] = [];
@@ -710,12 +711,40 @@ export class GoodEggsClient implements IGoodEggsClient {
             return;
           }
 
-          const container = link.closest('div[class*="product"], article, [class*="card"]') || link;
+          // Use .product-tile as the container - it contains all product info including price and quantity
+          const container =
+            link.closest('.product-tile') ||
+            link.closest('div[class*="product"], article, [class*="card"]') ||
+            link;
 
-          const nameEl = container.querySelector('h2, h3, [class*="title"], [class*="name"]');
-          const brandEl = container.querySelector('[class*="brand"], [class*="producer"]');
-          const priceEl = container.querySelector('[class*="price"]');
+          // Use specific selectors for product name to avoid picking up container divs
+          const nameEl = container.querySelector(
+            'h5.product-tile__product-name, h2, h3, [class*="title"]'
+          );
+          const brandEl = container.querySelector(
+            '.product-tile__producer-name, [class*="brand"], [class*="producer"]'
+          );
           const imgEl = container.querySelector('img');
+
+          // Extract price from split-price elements (more reliable than general price class)
+          const dollarsEl = container.querySelector('.split-price__dollars');
+          const centsEl = container.querySelector('.split-price__cents');
+          let price = '';
+          if (dollarsEl && centsEl) {
+            price = `$${dollarsEl.textContent?.trim() || '0'}${centsEl.textContent?.trim() || ''}`;
+          } else {
+            // Fallback to general price element
+            const priceEl = container.querySelector(
+              '[data-testid="product-tile__final-price"], [class*="price"]'
+            );
+            price = priceEl?.textContent?.trim() || '';
+          }
+
+          // Extract quantity from purchase-unit element
+          const quantityEl = container.querySelector(
+            '[data-testid="product-tile__purchase-unit"], .product-tile__purchase-unit'
+          );
+          const quantity = quantityEl?.textContent?.trim() || '';
 
           let name = nameEl?.textContent?.trim();
           if (!name || name.length < 3) {
@@ -728,8 +757,9 @@ export class GoodEggsClient implements IGoodEggsClient {
             url: href,
             name: name,
             brand: brandEl?.textContent?.trim() || '',
-            price: priceEl?.textContent?.trim() || '',
+            price: price,
             imageUrl: (imgEl as HTMLImageElement)?.src || undefined,
+            quantity: quantity || undefined,
           });
         });
       }

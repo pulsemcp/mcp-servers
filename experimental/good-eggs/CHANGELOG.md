@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.4] - 2026-01-15
+
+### Added
+
+- Added `quantity` field to `get_past_order_groceries` output showing the quantity/unit ordered (e.g., "1 bunch", "1 lb", "15 oz")
+- Improved price extraction for past order groceries using the `split-price` elements for more accurate price formatting (e.g., "$2.99" instead of raw text)
+
+### Fixed
+
+- Fixed product name extraction for past order groceries to use specific `.product-tile__product-name` selector, avoiding concatenation of brand and discount text into the name
+- Fixed brand extraction to use `.product-tile__producer-name` selector for more accurate results
+- Fixed container selection for past order product tiles to use `.product-tile` class for reliable extraction of all product data
+
 ## [0.1.3] - 2026-01-13
 
 ### Fixed
