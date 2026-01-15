@@ -616,7 +616,11 @@ export class GoodEggsClient implements IGoodEggsClient {
     const page = await this.ensureBrowser();
 
     // First, go to account orders page to find the order ID
-    if (!page.url().includes('/account/orders')) {
+    // Check if we're on the orders list page (not a specific order details page)
+    const currentUrl = page.url();
+    const isOnOrdersList =
+      currentUrl.includes('/account/orders') && !/\/account\/orders\/[^/]+/.test(currentUrl);
+    if (!isOnOrdersList) {
       await page.goto(`${BASE_URL}/account/orders`, { waitUntil: 'domcontentloaded' });
       await page.waitForTimeout(3000);
     }
@@ -638,7 +642,7 @@ export class GoodEggsClient implements IGoodEggsClient {
 
         // Check if this order matches our target date
         // Dates can be like "Saturday 1/10", "January 10th", etc.
-        if (text.includes(targetDate) || targetDate.includes(text.trim())) {
+        if (text.includes(targetDate)) {
           return linkEl.href;
         }
 
@@ -670,18 +674,13 @@ export class GoodEggsClient implements IGoodEggsClient {
         );
         for (const card of cards) {
           const text = card.textContent || '';
-          if (text.includes(targetDate) || text.includes('Order Details')) {
-            // Check if this card contains both the date and Order Details link
-            const dateMatch =
-              text.includes(targetDate) ||
-              (targetDate.includes('/') && text.match(new RegExp(targetDate.replace('/', '/'))));
-            if (dateMatch) {
-              const detailsLink = card.querySelector(
-                'a[href*="/account/orders/"]'
-              ) as HTMLAnchorElement;
-              if (detailsLink) {
-                return detailsLink.href;
-              }
+          if (text.includes(targetDate)) {
+            // This card contains the target date, look for Order Details link
+            const detailsLink = card.querySelector(
+              'a[href*="/account/orders/"]'
+            ) as HTMLAnchorElement;
+            if (detailsLink) {
+              return detailsLink.href;
             }
           }
         }
@@ -721,7 +720,7 @@ export class GoodEggsClient implements IGoodEggsClient {
         const quantityOrderedEl = item.querySelector(
           '.single-order-page__line-item-quantity-value'
         );
-        const quantityOrdered = parseInt(quantityOrderedEl?.textContent?.trim() || '1', 10);
+        const quantityOrdered = parseInt(quantityOrderedEl?.textContent?.trim() || '1', 10) || 1;
 
         // Extract product name and URL
         const nameLink = item.querySelector(
