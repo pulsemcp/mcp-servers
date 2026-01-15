@@ -82,6 +82,7 @@ Provide the past_order_date (from get_list_of_past_order_dates) to see what was 
 Returns a list of items from that order including:
 - Product URL
 - Product name and brand
+- Quantity ordered (e.g., "1 bunch", "1 lb", "15 oz")
 - Price at time of order
 
 Useful for reordering frequently purchased items.
