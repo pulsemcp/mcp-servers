@@ -11,14 +11,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Added `quantity` field to `get_past_order_groceries` output showing the quantity/unit ordered (e.g., "1 bunch", "1 lb", "15 oz")
-- Improved price extraction for past order groceries using the `split-price` elements for more accurate price formatting (e.g., "$2.99" instead of raw text)
+- Added `quantityOrdered` field to `get_past_order_groceries` output showing how many units were ordered (e.g., 2)
+- Added `quantity` field (unit of sale) to `get_past_order_groceries` output showing the unit size (e.g., "1 bunch", "1 lb", "15 oz")
+- Price is now included in `get_past_order_groceries` output
 
-### Fixed
+### Changed
 
-- Fixed product name extraction for past order groceries to use specific `.product-tile__product-name` selector, avoiding concatenation of brand and discount text into the name
-- Fixed brand extraction to use `.product-tile__producer-name` selector for more accurate results
-- Fixed container selection for past order product tiles to use `.product-tile` class for reliable extraction of all product data
+- Switched `get_past_order_groceries` from using the `/reorder` page to the `/account/orders/{orderId}` page for more accurate order details including actual quantities ordered
 
 ## [0.1.3] - 2026-01-13
 

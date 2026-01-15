@@ -82,7 +82,8 @@ Provide the past_order_date (from get_list_of_past_order_dates) to see what was 
 Returns a list of items from that order including:
 - Product URL
 - Product name and brand
-- Quantity ordered (e.g., "1 bunch", "1 lb", "15 oz")
+- Quantity ordered (e.g., 2 if you ordered 2 of something)
+- Unit of sale (e.g., "1 bunch", "1 lb", "15 oz")
 - Price at time of order
 
 Useful for reordering frequently purchased items.
@@ -514,7 +515,7 @@ export function createRegisterTools(
           const formattedResults = results
             .map(
               (item, i) =>
-                `${i + 1}. **${item.name}**\n   Brand: ${item.brand || 'N/A'}\n   Quantity: ${item.quantity || 'N/A'}\n   Price: ${item.price || 'N/A'}\n   URL: ${item.url}`
+                `${i + 1}. **${item.name}**\n   Brand: ${item.brand || 'N/A'}\n   Quantity Ordered: ${item.quantityOrdered || 1}\n   Unit: ${item.quantity || 'N/A'}\n   Price: ${item.price || 'N/A'}\n   URL: ${item.url}`
             )
             .join('\n\n');
 

@@ -14,6 +14,7 @@ export interface GroceryItem {
   unit?: string;
   imageUrl?: string;
   quantity?: string;
+  quantityOrdered?: number;
 }
 
 export interface GroceryDetails {

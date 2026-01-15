@@ -140,17 +140,19 @@ describe('Good Eggs Tools', () => {
   });
 
   describe('get_past_order_groceries', () => {
-    it('should return items from past order with quantity and price', async () => {
+    it('should return items from past order with quantity ordered, unit, and price', async () => {
       const result = await callTool('get_past_order_groceries', {
         past_order_date: 'January 3, 2025',
       });
 
       const text = (result as { content: Array<{ text: string }> }).content[0].text;
       expect(text).toContain('items from order');
-      expect(text).toContain('Quantity:');
+      expect(text).toContain('Quantity Ordered:');
+      expect(text).toContain('Unit:');
       expect(text).toContain('Price:');
-      expect(text).toContain('1 box');
-      expect(text).toContain('$34.49');
+      expect(text).toContain('1 box'); // unit of sale
+      expect(text).toContain('$34.49'); // price
+      expect(text).toContain('Quantity Ordered: 2'); // quantityOrdered for second item
     });
   });
 
