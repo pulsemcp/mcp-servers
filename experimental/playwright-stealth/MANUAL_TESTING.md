@@ -30,9 +30,9 @@ npm run test:manual
 
 ## Latest Test Results
 
-**Test Date:** 2026-01-14
-**Branch:** tadasant/playwright-screenshot-size-limit
-**Commit:** d2e975b (v0.0.6 - screenshot dimension limiting)
+**Test Date:** 2026-01-16
+**Branch:** tadasant/playwright-permissions
+**Commit:** a3d68e0 (v0.0.7 - browser permissions support)
 **Tested By:** Claude
 
 ### Summary
@@ -44,16 +44,18 @@ All functional and integration tests pass, including:
 - Core Playwright functionality (navigation, screenshots, state management)
 - Stealth mode anti-bot protection tests
 - Screenshot resource storage tests
-- **NEW: Screenshot dimension limiting to prevent API errors**
+- Screenshot dimension limiting to prevent API errors
+- **NEW: Browser permissions support**
 
-### New in v0.0.6
+### New in v0.0.7
 
-The screenshot dimension limiting feature prevents API errors when screenshots exceed 8000 pixels:
+Browser permissions support enables testing of features requiring permissions:
 
-- `MAX_SCREENSHOT_DIMENSION` constant (8000px) enforces the limit
-- `ScreenshotResult` interface with `wasClipped` and `warning` fields
-- Full-page screenshots exceeding the limit are automatically clipped
-- Warning included in response when clipping occurs
+- All 16 browser permissions granted by default (notifications, geolocation, camera, etc.)
+- `BROWSER_PERMISSIONS` env var to constrain which permissions are granted
+- `permissions` field in `browser_get_state` response shows granted permissions
+- `ALL_BROWSER_PERMISSIONS` constant and `BrowserPermission` type exported
+- Try-catch around `grantPermissions()` for graceful handling of unsupported permissions
 
 ### Test Cases Status
 
