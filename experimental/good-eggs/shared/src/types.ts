@@ -15,6 +15,17 @@ export interface GroceryItem {
   imageUrl?: string;
   quantity?: string;
   quantityOrdered?: number;
+  isFavorite?: boolean;
+}
+
+export interface CartItem {
+  url: string;
+  name: string;
+  brand: string;
+  price: string;
+  unit?: string;
+  quantity: number;
+  imageUrl?: string;
 }
 
 export interface GroceryDetails {

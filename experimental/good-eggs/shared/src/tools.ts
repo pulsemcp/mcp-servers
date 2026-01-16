@@ -22,6 +22,7 @@ Returns a list of grocery items matching your search query, including:
 - Product name and brand
 - Price information
 - Any discounts/deals
+- Whether the item is in your favorites
 
 **Example queries:**
 - "organic apples"
@@ -110,6 +111,17 @@ Navigates to the cart and removes the specified item.
 
 Returns confirmation of the removal or an error if the item is not in the cart.`;
 
+const GET_CART_DESCRIPTION = `Get the contents of your Good Eggs shopping cart.
+
+Returns a list of all items currently in your cart, including:
+- Product URL (for use with other tools)
+- Product name and brand
+- Quantity in cart
+- Unit size (e.g., "6 count", "24 oz")
+- Current price
+
+Useful for reviewing what's in your cart before checkout.`;
+
 // =============================================================================
 // TOOL DEFINITIONS
 // =============================================================================
@@ -194,7 +206,7 @@ export function createRegisterTools(
           const formattedResults = results
             .map(
               (item, i) =>
-                `${i + 1}. **${item.name}**\n   Brand: ${item.brand || 'N/A'}\n   Price: ${item.price || 'N/A'}${item.discount ? `\n   Discount: ${item.discount}` : ''}\n   URL: ${item.url}`
+                `${i + 1}. **${item.name}**${item.isFavorite ? ' ❤️' : ''}\n   Brand: ${item.brand || 'N/A'}\n   Price: ${item.price || 'N/A'}${item.discount ? `\n   Discount: ${item.discount}` : ''}${item.isFavorite !== undefined ? `\n   Favorite: ${item.isFavorite ? 'Yes' : 'No'}` : ''}\n   URL: ${item.url}`
             )
             .join('\n\n');
 
@@ -662,6 +674,60 @@ export function createRegisterTools(
               {
                 type: 'text',
                 text: `Error removing from cart: ${error instanceof Error ? error.message : String(error)}`,
+              },
+            ],
+            isError: true,
+          };
+        }
+      },
+    },
+    {
+      name: 'get_cart',
+      description: GET_CART_DESCRIPTION,
+      inputSchema: {
+        type: 'object' as const,
+        properties: {},
+      },
+      handler: async () => {
+        try {
+          const goodEggsClient = await getClient();
+          const results = await goodEggsClient.getCart();
+
+          if (results.length === 0) {
+            return {
+              content: [
+                {
+                  type: 'text',
+                  text: 'Your cart is empty. Add items to your cart on Good Eggs to see them here.',
+                },
+              ],
+            };
+          }
+
+          const formattedResults = results
+            .map(
+              (item, i) =>
+                `${i + 1}. **${item.name}**\n   Brand: ${item.brand || 'N/A'}\n   Quantity: ${item.quantity}\n   Unit: ${item.unit || 'N/A'}\n   Price: ${item.price || 'N/A'}\n   URL: ${item.url}`
+            )
+            .join('\n\n');
+
+          // Calculate total items
+          const totalItems = results.reduce((sum, item) => sum + item.quantity, 0);
+
+          return {
+            content: [
+              {
+                type: 'text',
+                text: `Your cart has ${results.length} product${results.length === 1 ? '' : 's'} (${totalItems} total item${totalItems === 1 ? '' : 's'}):\n\n${formattedResults}`,
+              },
+            ],
+          };
+        } catch (error) {
+          return {
+            content: [
+              {
+                type: 'text',
+                text: `Error getting cart: ${error instanceof Error ? error.message : String(error)}`,
               },
             ],
             isError: true,

@@ -560,4 +560,41 @@ describe('Good Eggs Manual Tests', () => {
       }
     }, 120000);
   });
+
+  describe('get_cart', () => {
+    it('should get cart contents from real Good Eggs', async () => {
+      const testName = 'get_cart - real cart';
+
+      if (!client) {
+        reportOutcome(testName, 'WARNING', 'Skipped - no credentials provided');
+        return;
+      }
+
+      try {
+        const result = await client.callTool('get_cart', {});
+
+        expect(result).toHaveProperty('content');
+        const text = (result as { content: Array<{ text: string }> }).content[0].text;
+
+        // Response format: "Your cart has N products..." or "Your cart is empty..."
+        if (text.startsWith('Error')) {
+          reportOutcome(testName, 'FAILURE', 'API error: ' + text.substring(0, 200));
+          throw new Error(text);
+        } else if (text.includes('Your cart has') || text.includes('Your cart is empty')) {
+          reportOutcome(testName, 'SUCCESS', 'Cart contents retrieved');
+          console.log('   First 500 chars:', text.substring(0, 500));
+        } else {
+          reportOutcome(testName, 'WARNING', 'Unexpected response format');
+          console.log('   Response:', text.substring(0, 300));
+        }
+      } catch (error) {
+        reportOutcome(
+          testName,
+          'FAILURE',
+          error instanceof Error ? error.message : 'Unknown error'
+        );
+        throw error;
+      }
+    }, 60000);
+  });
 });

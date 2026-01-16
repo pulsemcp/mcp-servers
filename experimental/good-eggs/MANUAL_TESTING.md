@@ -60,9 +60,9 @@ The tests will:
 
 ## Latest Test Results
 
-**Test Date:** 2026-01-15
-**Branch:** tadasant/good-eggs-quantity-price
-**Commit:** ab17da2
+**Test Date:** 2026-01-16
+**Branch:** main
+**Commit:** 2d222d8
 **Tested By:** Claude Code
 **Environment:** Linux 6.8.0-90-generic
 
@@ -70,26 +70,26 @@ The tests will:
 
 | Metric      | Value |
 | ----------- | ----- |
-| Total Tests | 10    |
-| Passed      | 10    |
+| Total Tests | 11    |
+| Passed      | 11    |
 | Failed      | 0     |
 | Pass Rate   | 100%  |
 
-**Overall:** 10/10 tests passed - 100%
+**Overall:** 11/11 tests passed - 100%
 
 ### Test Files
 
 | File                       | Status | Tests | Notes            |
 | -------------------------- | ------ | ----- | ---------------- |
-| `good-eggs.manual.test.ts` | PASS   | 10/10 | All tests passed |
+| `good-eggs.manual.test.ts` | PASS   | 11/11 | All tests passed |
 
 ### Detailed Results
 
 #### search_for_grocery Tests
 
-| Test                      | Status                  | Notes                                   |
-| ------------------------- | ----------------------- | --------------------------------------- |
-| Search for organic apples | :white_check_mark: PASS | Found 98 groceries for "organic apples" |
+| Test                      | Status                  | Notes                                                                                |
+| ------------------------- | ----------------------- | ------------------------------------------------------------------------------------ |
+| Search for organic apples | :white_check_mark: PASS | Found 98 groceries for "organic apples" - **NEW: includes `Favorite: Yes/No` field** |
 
 #### get_favorites Tests
 
@@ -132,8 +132,8 @@ The tests will:
 - Product name (e.g., "Organic Nantes Carrots")
 - Brand (e.g., "Sunrise Organic Farms")
 - Price (e.g., "$2.99")
-- Quantity ordered (e.g., 1, 2) - **NEW in v0.1.4** - the actual number of units ordered
-- Unit of sale (e.g., "1 bunch", "1 lb", "15 oz") - **NEW in v0.1.4**
+- Quantity ordered (e.g., 1, 2)
+- Unit of sale (e.g., "1 bunch", "1 lb", "15 oz")
 
 #### add_favorite Tests
 
@@ -152,6 +152,12 @@ The tests will:
 | Test             | Status                  | Notes                                        |
 | ---------------- | ----------------------- | -------------------------------------------- |
 | Remove from cart | :white_check_mark: PASS | Remove button not found (cart UI may differ) |
+
+#### get_cart Tests
+
+| Test                         | Status                  | Notes                                                                                  |
+| ---------------------------- | ----------------------- | -------------------------------------------------------------------------------------- |
+| Get cart - **NEW in v0.1.5** | :white_check_mark: PASS | Found 2 products (2 total items) - Six Organic & Fair Trade Bananas, Country Sourdough |
 
 ### Known Issues / Limitations
 

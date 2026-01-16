@@ -38,7 +38,7 @@ describe('Good Eggs Tools', () => {
   });
 
   describe('search_for_grocery', () => {
-    it('should search for groceries and return results', async () => {
+    it('should search for groceries and return results with favorite status', async () => {
       const result = await callTool('search_for_grocery', { query: 'apples' });
 
       expect(result).toMatchObject({
@@ -48,12 +48,12 @@ describe('Good Eggs Tools', () => {
           },
         ],
       });
-      expect((result as { content: Array<{ text: string }> }).content[0].text).toContain(
-        'Found 2 groceries'
-      );
-      expect((result as { content: Array<{ text: string }> }).content[0].text).toContain(
-        'Organic Honeycrisp Apples'
-      );
+      const text = (result as { content: Array<{ text: string }> }).content[0].text;
+      expect(text).toContain('Found 2 groceries');
+      expect(text).toContain('Organic Honeycrisp Apples');
+      // Check that favorite status is included
+      expect(text).toContain('Favorite: Yes');
+      expect(text).toContain('Favorite: No');
     });
 
     it('should handle no results', async () => {
@@ -196,6 +196,32 @@ describe('Good Eggs Tools', () => {
         'Successfully removed'
       );
       expect((result as { content: Array<{ text: string }> }).content[0].text).toContain('cart');
+    });
+  });
+
+  describe('get_cart', () => {
+    it('should return cart contents', async () => {
+      const result = await callTool('get_cart', {});
+
+      const text = (result as { content: Array<{ text: string }> }).content[0].text;
+      expect(text).toContain('Your cart has 2 products');
+      expect(text).toContain('3 total items'); // 2 + 1 quantities
+      expect(text).toContain('Organic Honeycrisp Apples');
+      expect(text).toContain('Organic Milk');
+      expect(text).toContain('Quantity: 2');
+      expect(text).toContain('Quantity: 1');
+      expect(text).toContain('Unit: 3 count');
+      expect(text).toContain('Unit: 1 gallon');
+    });
+
+    it('should handle empty cart', async () => {
+      mockClient.getCart = async () => [];
+
+      const result = await callTool('get_cart', {});
+
+      expect((result as { content: Array<{ text: string }> }).content[0].text).toContain(
+        'Your cart is empty'
+      );
     });
   });
 });

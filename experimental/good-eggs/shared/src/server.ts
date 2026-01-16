@@ -6,6 +6,7 @@ import type {
   GroceryDetails,
   PastOrder,
   CartResult,
+  CartItem,
 } from './types.js';
 
 const BASE_URL = 'https://www.goodeggs.com';
@@ -70,6 +71,11 @@ export interface IGoodEggsClient {
    * Remove an item from the cart
    */
   removeFromCart(groceryUrl: string): Promise<CartResult>;
+
+  /**
+   * Get current cart contents
+   */
+  getCart(): Promise<CartItem[]>;
 
   /**
    * Get the current page URL
@@ -179,12 +185,15 @@ export class GoodEggsClient implements IGoodEggsClient {
       const products: GroceryItem[] = [];
       const seen = new Set<string>();
 
-      // Good Eggs uses 'js-product-link' class for product links
-      // URL format: /producer-slug/product-slug/product-id (e.g., /cloversfbay/organic-whole-milk/53fe295358ed090200000f2d)
-      const productElements = document.querySelectorAll('a.js-product-link');
+      // Good Eggs product tiles have the structure with product-tile class at root
+      // Each tile contains a favorite indicator and product links
+      const productTiles = document.querySelectorAll('.product-tile');
 
-      productElements.forEach((el) => {
-        const link = el as HTMLAnchorElement;
+      productTiles.forEach((tile) => {
+        // Find the product link within this tile
+        const link = tile.querySelector('a.js-product-link') as HTMLAnchorElement;
+        if (!link) return;
+
         const href = link.href;
 
         // Skip if already seen or not a valid product URL
@@ -212,16 +221,19 @@ export class GoodEggsClient implements IGoodEggsClient {
           return;
         }
 
-        // Try to find product info within or near this element
-        const container = link.closest('div[class*="product"], article, [class*="card"]') || link;
+        // Check favorite status from the tile
+        // Favorited items have: class="product-tile__favorite favorited"
+        // Non-favorited items have: class="product-tile__favorite not-favorited"
+        const favoriteEl = tile.querySelector('.product-tile__favorite');
+        const isFavorite = favoriteEl?.classList.contains('favorited') ?? false;
 
         const nameEl =
-          container.querySelector('h2, h3, [class*="title"], [class*="name"]') ||
-          link.querySelector('h2, h3');
-        const brandEl = container.querySelector('[class*="brand"], [class*="producer"]');
-        const priceEl = container.querySelector('[class*="price"]');
-        const discountEl = container.querySelector('[class*="off"], [class*="discount"]');
-        const imgEl = container.querySelector('img');
+          tile.querySelector('h2, h3, h4, h5, [class*="product-name"]') ||
+          link.querySelector('h2, h3, h4, h5');
+        const brandEl = tile.querySelector('[class*="producer-name"], [class*="brand"]');
+        const priceEl = tile.querySelector('[data-testid="product-tile__final-price"]');
+        const discountEl = tile.querySelector('[data-testid="discount-amount"]');
+        const imgEl = tile.querySelector('img');
 
         // Get name from element or from the link text itself
         let name = nameEl?.textContent?.trim();
@@ -238,6 +250,7 @@ export class GoodEggsClient implements IGoodEggsClient {
           price: priceEl?.textContent?.trim() || '',
           discount: discountEl?.textContent?.trim() || undefined,
           imageUrl: imgEl?.src || undefined,
+          isFavorite: isFavorite,
         });
       });
 
@@ -968,6 +981,71 @@ export class GoodEggsClient implements IGoodEggsClient {
       message: 'Could not find remove button for item in cart',
       itemName,
     };
+  }
+
+  async getCart(): Promise<CartItem[]> {
+    const page = await this.ensureBrowser();
+
+    // Navigate to basket page
+    // Use domcontentloaded instead of networkidle - Good Eggs has persistent connections
+    await page.goto(`${BASE_URL}/basket`, { waitUntil: 'domcontentloaded' });
+    await page.waitForTimeout(3000);
+
+    // Extract cart items from the basket page
+    const items = await page.evaluate((baseUrl) => {
+      const cartItems: CartItem[] = [];
+
+      // Good Eggs uses 'js-basket-item summary-item' for cart items
+      const basketItems = document.querySelectorAll('.js-basket-item');
+
+      basketItems.forEach((item) => {
+        const nameLink = item.querySelector('.summary-item__name a') as HTMLAnchorElement;
+        const producerLink = item.querySelector('.summary-item__producer a');
+        const unitEl = item.querySelector('.summary-item__unit');
+        const quantitySelect = item.querySelector(
+          '.summary-item__quantity select'
+        ) as HTMLSelectElement;
+        const priceEl = item.querySelector('.summary-item__price');
+        const imgEl = item.querySelector('.summary-item__photo img') as HTMLImageElement;
+
+        if (!nameLink) return;
+
+        // Get quantity from the selected option or default to 1
+        let quantity = 1;
+        if (quantitySelect) {
+          const selectedOption = quantitySelect.querySelector(
+            'option[selected]'
+          ) as HTMLOptionElement;
+          quantity = parseInt(selectedOption?.value || quantitySelect.value || '1', 10);
+        }
+
+        // Build full URL
+        const relativeUrl = nameLink.getAttribute('href') || '';
+        const fullUrl = relativeUrl.startsWith('http') ? relativeUrl : `${baseUrl}${relativeUrl}`;
+
+        // Parse price - might contain original and sale price like "$2.99$3.54"
+        let price = priceEl?.textContent?.trim() || '';
+        // Extract just the current price (first price value)
+        const priceMatch = price.match(/\$[\d.]+/);
+        if (priceMatch) {
+          price = priceMatch[0];
+        }
+
+        cartItems.push({
+          url: fullUrl,
+          name: nameLink.textContent?.trim() || 'Unknown item',
+          brand: producerLink?.textContent?.trim() || '',
+          unit: unitEl?.textContent?.trim() || undefined,
+          quantity: quantity,
+          price: price,
+          imageUrl: imgEl?.src || undefined,
+        });
+      });
+
+      return cartItems;
+    }, BASE_URL);
+
+    return items;
   }
 
   async getCurrentUrl(): Promise<string> {
