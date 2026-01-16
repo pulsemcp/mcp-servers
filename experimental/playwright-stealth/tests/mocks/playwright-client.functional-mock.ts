@@ -4,6 +4,7 @@
  */
 import type { IPlaywrightClient, ScreenshotResult } from '../../shared/src/server.js';
 import type { ExecuteResult, BrowserState, PlaywrightConfig } from '../../shared/src/types.js';
+import { ALL_BROWSER_PERMISSIONS } from '../../shared/src/types.js';
 import { vi } from 'vitest';
 
 export function createFunctionalMockClient(options?: {
@@ -25,6 +26,7 @@ export function createFunctionalMockClient(options?: {
       currentUrl: 'https://example.com',
       title: 'Example Domain',
       isOpen: true,
+      permissions: [...ALL_BROWSER_PERMISSIONS],
     } as BrowserState),
 
     close: vi.fn().mockResolvedValue(undefined),

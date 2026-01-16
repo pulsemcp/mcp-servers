@@ -309,6 +309,10 @@ If you need to restrict permissions (e.g., for security testing or to simulate a
 
 This will grant only the specified permissions. All other permission requests will be denied.
 
+**Note:** Invalid permission names are silently ignored with a warning in the server logs. If a permission is not recognized, it will be skipped.
+
+**Browser Compatibility:** Permission support varies by browser. This server uses Chromium by default, where all listed permissions are supported. If using Firefox or WebKit, some permissions may not work.
+
 ### Testing Web Push Notifications
 
 With the default configuration (all permissions granted), you can test web push notifications:

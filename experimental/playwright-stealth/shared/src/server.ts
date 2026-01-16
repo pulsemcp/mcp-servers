@@ -1,6 +1,7 @@
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { createRegisterTools } from './tools.js';
 import { registerResources } from './resources.js';
+import { logWarning } from './logging.js';
 import type {
   ExecuteResult,
   BrowserState,
@@ -146,7 +147,14 @@ export class PlaywrightClient implements IPlaywrightClient {
     // Grant browser permissions (defaults to all permissions if not specified)
     const permissionsToGrant = this.config.permissions ?? [...ALL_BROWSER_PERMISSIONS];
     if (permissionsToGrant.length > 0) {
-      await this.context.grantPermissions(permissionsToGrant);
+      try {
+        await this.context.grantPermissions(permissionsToGrant);
+      } catch (error) {
+        // Some permissions may not be supported in all browsers/versions
+        // Log a warning but continue - the browser will still function
+        const message = error instanceof Error ? error.message : String(error);
+        logWarning('permissions', `Failed to grant some permissions: ${message}`);
+      }
     }
 
     this.page = await this.context.newPage();
