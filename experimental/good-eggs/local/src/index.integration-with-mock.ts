@@ -16,6 +16,7 @@ import type {
   GroceryDetails,
   PastOrder,
   CartResult,
+  CartItem,
   GoodEggsConfig,
 } from '../shared/types.js';
 
@@ -44,12 +45,14 @@ function createMockGoodEggsClient(): IGoodEggsClient {
           brand: 'From Our Farmers',
           price: '$4.99',
           discount: '16% OFF',
+          isFavorite: true,
         },
         {
           url: 'https://www.goodeggs.com/product/456',
           name: 'Organic Fuji Apples',
           brand: 'Hikari Farms',
           price: '$2.99',
+          isFavorite: false,
         },
       ];
     },
@@ -142,6 +145,19 @@ function createMockGoodEggsClient(): IGoodEggsClient {
         message: 'Successfully removed Organic Honeycrisp Apples from cart',
         itemName: 'Organic Honeycrisp Apples',
       };
+    },
+
+    getCart: async (): Promise<CartItem[]> => {
+      return [
+        {
+          url: 'https://www.goodeggs.com/product/123',
+          name: 'Organic Honeycrisp Apples',
+          brand: 'From Our Farmers',
+          price: '$4.99',
+          unit: '3 count',
+          quantity: 2,
+        },
+      ];
     },
 
     getCurrentUrl: async (): Promise<string> => {

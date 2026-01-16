@@ -15,6 +15,7 @@ export type {
   GroceryDetails,
   PastOrder,
   CartResult,
+  CartItem,
   GoodEggsConfig,
 } from './types.js';
 

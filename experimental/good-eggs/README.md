@@ -4,27 +4,28 @@ MCP server for Good Eggs grocery shopping automation using Playwright. Search fo
 
 ## Features
 
-- **Search Groceries** - Search for any grocery item on Good Eggs
+- **Search Groceries** - Search for any grocery item on Good Eggs (includes favorite status)
 - **Manage Favorites** - Get, add, and remove favorite items
 - **Get Product Details** - View detailed information about any product
-- **Shopping Cart** - Add and remove items from your shopping cart
+- **Shopping Cart** - View, add, and remove items from your shopping cart
 - **Find Freebies** - Find items priced at $0.00 on homepage and fresh-picks
 - **Past Orders** - View your order history and reorder items
 
 ## Tools
 
-| Tool                           | Description                                         |
-| ------------------------------ | --------------------------------------------------- |
-| `search_for_grocery`           | Search for groceries by keyword                     |
-| `get_favorites`                | Get your favorite/saved grocery items               |
-| `get_grocery_details`          | Get detailed info about a specific product          |
-| `add_to_cart`                  | Add a product to your shopping cart                 |
-| `search_for_freebie_groceries` | Find free items ($0.00) on homepage and fresh-picks |
-| `get_list_of_past_order_dates` | Get dates of your past orders                       |
-| `get_past_order_groceries`     | Get items from a specific past order                |
-| `add_favorite`                 | Add a product to your favorites                     |
-| `remove_favorite`              | Remove a product from your favorites                |
-| `remove_from_cart`             | Remove a product from your shopping cart            |
+| Tool                           | Description                                          |
+| ------------------------------ | ---------------------------------------------------- |
+| `search_for_grocery`           | Search for groceries by keyword (includes favorites) |
+| `get_favorites`                | Get your favorite/saved grocery items                |
+| `get_grocery_details`          | Get detailed info about a specific product           |
+| `add_to_cart`                  | Add a product to your shopping cart                  |
+| `get_cart`                     | View the contents of your shopping cart              |
+| `remove_from_cart`             | Remove a product from your shopping cart             |
+| `search_for_freebie_groceries` | Find free items ($0.00) on homepage and fresh-picks  |
+| `get_list_of_past_order_dates` | Get dates of your past orders                        |
+| `get_past_order_groceries`     | Get items from a specific past order                 |
+| `add_favorite`                 | Add a product to your favorites                      |
+| `remove_favorite`              | Remove a product from your favorites                 |
 
 ## Quick Start
 
@@ -98,6 +99,13 @@ Restart Claude Desktop to connect.
 ```
 "Add 2 of those apples to my cart"
 "Put the organic milk in my basket"
+```
+
+### View your cart
+
+```
+"What's in my cart?"
+"Show me my basket"
 ```
 
 ### Check deals

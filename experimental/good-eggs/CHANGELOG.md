@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.5] - 2026-01-16
+
+### Added
+
+- Added `get_cart` tool to view the contents of your shopping cart, including product names, quantities, unit sizes, and prices
+- Added `isFavorite` field to `search_for_grocery` results showing whether each item is in your favorites list
+- Search results now display a heart emoji (❤️) next to favorited items
+
+### Changed
+
+- Updated search results formatting to include "Favorite: Yes/No" indicator
+- Improved product tile parsing to use the `.product-tile` container for better data extraction
+
 ## [0.1.4] - 2026-01-15
 
 ### Added

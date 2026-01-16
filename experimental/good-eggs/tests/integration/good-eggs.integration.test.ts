@@ -38,7 +38,7 @@ describe('Good Eggs MCP Server Integration Tests', () => {
       client = await createTestMCPClient();
 
       const tools = await client.listTools();
-      expect(tools.length).toBe(7);
+      expect(tools.length).toBe(11);
 
       const toolNames = tools.map((t) => t.name);
       expect(toolNames).toContain('search_for_grocery');
@@ -48,6 +48,10 @@ describe('Good Eggs MCP Server Integration Tests', () => {
       expect(toolNames).toContain('search_for_freebie_groceries');
       expect(toolNames).toContain('get_list_of_past_order_dates');
       expect(toolNames).toContain('get_past_order_groceries');
+      expect(toolNames).toContain('add_favorite');
+      expect(toolNames).toContain('remove_favorite');
+      expect(toolNames).toContain('remove_from_cart');
+      expect(toolNames).toContain('get_cart');
     });
 
     it('should have correct input schemas for search_for_grocery', async () => {
