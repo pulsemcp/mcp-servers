@@ -3,6 +3,31 @@
  */
 
 /**
+ * All permissions that Playwright supports granting to browser contexts.
+ * Note: Not all permissions work in all browsers or browser versions.
+ */
+export const ALL_BROWSER_PERMISSIONS = [
+  'accelerometer',
+  'ambient-light-sensor',
+  'background-sync',
+  'camera',
+  'clipboard-read',
+  'clipboard-write',
+  'geolocation',
+  'gyroscope',
+  'local-fonts',
+  'magnetometer',
+  'microphone',
+  'midi',
+  'midi-sysex',
+  'notifications',
+  'payment-handler',
+  'storage-access',
+] as const;
+
+export type BrowserPermission = (typeof ALL_BROWSER_PERMISSIONS)[number];
+
+/**
  * Proxy configuration for browser connections
  * Compatible with BrightData Residential Proxies and other HTTP/HTTPS proxies
  */
@@ -30,6 +55,11 @@ export interface PlaywrightConfig {
   stealthMaskLinux?: boolean;
   /** Custom locale for stealth mode (default: 'en-US,en') */
   stealthLocale?: string;
+  /**
+   * Browser permissions to grant. Defaults to ALL_BROWSER_PERMISSIONS if not specified.
+   * Use BROWSER_PERMISSIONS env var to constrain permissions (comma-separated list).
+   */
+  permissions?: BrowserPermission[];
 }
 
 export interface ExecuteResult {
@@ -49,4 +79,6 @@ export interface BrowserState {
   headless?: boolean;
   /** Whether proxy is enabled for browser connections */
   proxyEnabled?: boolean;
+  /** Permissions granted to the browser context */
+  permissions?: BrowserPermission[];
 }

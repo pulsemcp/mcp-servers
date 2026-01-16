@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.0.7] - 2026-01-16
+
+### Added
+
+- Browser permissions support: All browser permissions (notifications, geolocation, camera, microphone, clipboard, etc.) are now granted by default
+- New `BROWSER_PERMISSIONS` environment variable to constrain which permissions are granted (comma-separated list)
+- When `BROWSER_PERMISSIONS` is not set, all 16 supported permissions are granted automatically
+- `permissions` field added to `browser_get_state` response to show currently granted permissions
+- New `ALL_BROWSER_PERMISSIONS` constant exported from types for reference
+- New `BrowserPermission` type for type-safe permission handling
+
 ## [0.0.6] - 2026-01-14
 
 ### Added

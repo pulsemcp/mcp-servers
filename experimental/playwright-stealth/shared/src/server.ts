@@ -1,7 +1,14 @@
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { createRegisterTools } from './tools.js';
 import { registerResources } from './resources.js';
-import type { ExecuteResult, BrowserState, PlaywrightConfig, ProxyConfig } from './types.js';
+import type {
+  ExecuteResult,
+  BrowserState,
+  PlaywrightConfig,
+  ProxyConfig,
+  BrowserPermission,
+} from './types.js';
+import { ALL_BROWSER_PERMISSIONS } from './types.js';
 
 /**
  * Maximum allowed dimension for screenshots in pixels.
@@ -136,6 +143,12 @@ export class PlaywrightClient implements IPlaywrightClient {
       ignoreHTTPSErrors: !!this.config.proxy,
     });
 
+    // Grant browser permissions (defaults to all permissions if not specified)
+    const permissionsToGrant = this.config.permissions ?? [...ALL_BROWSER_PERMISSIONS];
+    if (permissionsToGrant.length > 0) {
+      await this.context.grantPermissions(permissionsToGrant);
+    }
+
     this.page = await this.context.newPage();
 
     // Apply timeout configuration to Playwright
@@ -256,6 +269,7 @@ export class PlaywrightClient implements IPlaywrightClient {
         currentUrl: this.page.url(),
         title: await this.page.title(),
         isOpen: true,
+        permissions: this.config.permissions ?? [...ALL_BROWSER_PERMISSIONS],
       };
     } catch {
       return { isOpen: false };
@@ -279,13 +293,23 @@ export class PlaywrightClient implements IPlaywrightClient {
 
 export type ClientFactory = () => IPlaywrightClient;
 
-export function createMCPServer(proxyConfig?: ProxyConfig) {
+/**
+ * Options for creating the MCP server
+ */
+export interface CreateMCPServerOptions {
+  /** Proxy configuration for browser connections */
+  proxy?: ProxyConfig;
+  /** Browser permissions to grant. If undefined, all permissions are granted. */
+  permissions?: BrowserPermission[];
+}
+
+export function createMCPServer(options?: CreateMCPServerOptions) {
   const stealthMode = process.env.STEALTH_MODE === 'true';
 
   const server = new Server(
     {
       name: 'playwright-stealth-mcp-server',
-      version: '0.0.5',
+      version: '0.0.7',
     },
     {
       capabilities: {
@@ -318,10 +342,11 @@ export function createMCPServer(proxyConfig?: ProxyConfig) {
           headless,
           timeout,
           navigationTimeout,
-          proxy: proxyConfig,
+          proxy: options?.proxy,
           stealthUserAgent,
           stealthMaskLinux,
           stealthLocale,
+          permissions: options?.permissions,
         });
         return activeClient;
       });

@@ -2,7 +2,49 @@
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { createMCPServer } from '../shared/index.js';
 import { logServerStart, logError, logWarning, logInfo } from '../shared/logging.js';
-import type { ProxyConfig } from '../shared/types.js';
+import type { ProxyConfig, BrowserPermission } from '../shared/types.js';
+import { ALL_BROWSER_PERMISSIONS } from '../shared/types.js';
+
+// =============================================================================
+// PERMISSIONS CONFIGURATION
+// =============================================================================
+
+/**
+ * Parse browser permissions from environment variable.
+ * If BROWSER_PERMISSIONS is not set, returns undefined (which means grant all permissions).
+ * If BROWSER_PERMISSIONS is set, returns the parsed list of permissions.
+ * Invalid permissions are logged as warnings and skipped.
+ */
+function parseBrowserPermissions(): BrowserPermission[] | undefined {
+  const permissionsEnv = process.env.BROWSER_PERMISSIONS;
+  if (!permissionsEnv) {
+    // No constraint specified - will grant all permissions by default
+    return undefined;
+  }
+
+  const requestedPermissions = permissionsEnv.split(',').map((p) => p.trim().toLowerCase());
+  const validPermissions: BrowserPermission[] = [];
+  const invalidPermissions: string[] = [];
+
+  for (const perm of requestedPermissions) {
+    if (perm === '') continue;
+    if (ALL_BROWSER_PERMISSIONS.includes(perm as BrowserPermission)) {
+      validPermissions.push(perm as BrowserPermission);
+    } else {
+      invalidPermissions.push(perm);
+    }
+  }
+
+  if (invalidPermissions.length > 0) {
+    logWarning(
+      'config',
+      `Unknown browser permissions ignored: ${invalidPermissions.join(', ')}. ` +
+        `Valid permissions: ${ALL_BROWSER_PERMISSIONS.join(', ')}`
+    );
+  }
+
+  return validPermissions;
+}
 
 // =============================================================================
 // PROXY CONFIGURATION
@@ -128,6 +170,12 @@ function validateEnvironment(): void {
       description: 'Comma-separated list of hosts to bypass proxy',
       defaultValue: undefined,
     },
+    {
+      name: 'BROWSER_PERMISSIONS',
+      description:
+        'Comma-separated list of browser permissions to grant. If not set, ALL permissions are granted.',
+      defaultValue: 'all (notifications, geolocation, camera, microphone, clipboard-read, etc.)',
+    },
   ];
 
   // Log configuration
@@ -135,6 +183,7 @@ function validateEnvironment(): void {
   const headless = process.env.HEADLESS !== 'false';
   const timeout = process.env.TIMEOUT || '30000';
   const proxyUrl = process.env.PROXY_URL;
+  const browserPermissions = process.env.BROWSER_PERMISSIONS;
 
   if (stealthMode) {
     logWarning('config', 'Stealth mode enabled - using anti-detection measures');
@@ -162,6 +211,11 @@ function validateEnvironment(): void {
     if (process.env.PROXY_USERNAME) {
       logInfo('config', 'Proxy authentication enabled');
     }
+  }
+  if (browserPermissions) {
+    logInfo('config', `Browser permissions constrained to: ${browserPermissions}`);
+  } else {
+    logInfo('config', 'Browser permissions: all (default)');
   }
 
   // Show optional configuration if DEBUG is set
@@ -194,7 +248,10 @@ async function main() {
   // Step 2: Build proxy configuration if provided
   const proxyConfig = buildProxyConfig();
 
-  // Step 3: If proxy is configured, perform health check
+  // Step 3: Parse browser permissions (undefined = all permissions granted)
+  const browserPermissions = parseBrowserPermissions();
+
+  // Step 4: If proxy is configured, perform health check
   if (proxyConfig) {
     try {
       await healthCheckProxy(proxyConfig);
@@ -208,13 +265,16 @@ async function main() {
     }
   }
 
-  // Step 4: Create server using factory, passing proxy config
-  const { server, registerHandlers, cleanup } = createMCPServer(proxyConfig);
+  // Step 5: Create server using factory, passing proxy config and permissions
+  const { server, registerHandlers, cleanup } = createMCPServer({
+    proxy: proxyConfig,
+    permissions: browserPermissions,
+  });
 
-  // Step 5: Register all handlers (tools)
+  // Step 6: Register all handlers (tools)
   await registerHandlers(server);
 
-  // Step 6: Set up graceful shutdown
+  // Step 7: Set up graceful shutdown
   const handleShutdown = async () => {
     logWarning('shutdown', 'Received shutdown signal, closing browser...');
     await cleanup();
@@ -224,7 +284,7 @@ async function main() {
   process.on('SIGINT', handleShutdown);
   process.on('SIGTERM', handleShutdown);
 
-  // Step 7: Start server with stdio transport
+  // Step 8: Start server with stdio transport
   const transport = new StdioServerTransport();
   await server.connect(transport);
 

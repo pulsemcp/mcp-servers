@@ -9,6 +9,7 @@ A Model Context Protocol (MCP) server for browser automation using Playwright wi
 - **Persistent Sessions**: Browser session persists across tool calls for multi-step automation
 - **Screenshot Support**: Capture page screenshots for visual verification
 - **Code Execution**: Run arbitrary Playwright code with access to the `page` object
+- **Full Permissions**: All browser permissions (notifications, geolocation, camera, etc.) granted by default for testing web apps
 
 ## Installation
 
@@ -95,6 +96,7 @@ Add to your Claude Desktop config file:
 | `PROXY_USERNAME`          | Proxy authentication username                                                     | -                             |
 | `PROXY_PASSWORD`          | Proxy authentication password                                                     | -                             |
 | `PROXY_BYPASS`            | Comma-separated list of hosts to bypass proxy                                     | -                             |
+| `BROWSER_PERMISSIONS`     | Comma-separated list of browser permissions to grant (see below)                  | All permissions               |
 
 ## Available Tools
 
@@ -274,6 +276,61 @@ The server supports HTTP/HTTPS proxies with optional authentication, making it c
 - Corporate HTTP proxies
 
 **Note:** When proxy is configured, the server performs a health check on startup to verify the proxy connection works. If the health check fails, the server will exit with an error.
+
+## Browser Permissions
+
+By default, the server grants **all** browser permissions to the browser context. This enables testing of features that require permissions such as:
+
+- **Web Push Notifications** (`notifications`)
+- **Geolocation** (`geolocation`)
+- **Camera/Microphone** (`camera`, `microphone`)
+- **Clipboard** (`clipboard-read`, `clipboard-write`)
+- **MIDI devices** (`midi`, `midi-sysex`)
+- **Sensors** (`accelerometer`, `gyroscope`, `magnetometer`, `ambient-light-sensor`)
+- **Other** (`background-sync`, `local-fonts`, `payment-handler`, `storage-access`)
+
+### Constraining Permissions
+
+If you need to restrict permissions (e.g., for security testing or to simulate a user who denies permissions), use the `BROWSER_PERMISSIONS` environment variable:
+
+```json
+{
+  "mcpServers": {
+    "playwright": {
+      "command": "npx",
+      "args": ["-y", "playwright-stealth-mcp-server"],
+      "env": {
+        "BROWSER_PERMISSIONS": "notifications,clipboard-read,clipboard-write"
+      }
+    }
+  }
+}
+```
+
+This will grant only the specified permissions. All other permission requests will be denied.
+
+### Testing Web Push Notifications
+
+With the default configuration (all permissions granted), you can test web push notifications:
+
+```javascript
+// Check if notifications are supported and granted
+const permission = await page.evaluate(() => Notification.permission);
+console.log('Notification permission:', permission); // Should be "granted"
+
+// Request notification permission (will auto-grant)
+await page.evaluate(async () => {
+  const result = await Notification.requestPermission();
+  console.log('Permission result:', result);
+});
+
+// Create a test notification
+await page.evaluate(() => {
+  new Notification('Test Notification', {
+    body: 'This is a test notification from Playwright',
+  });
+});
+```
 
 ## Development
 
