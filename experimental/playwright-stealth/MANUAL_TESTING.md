@@ -32,7 +32,7 @@ npm run test:manual
 
 **Test Date:** 2026-01-16
 **Branch:** tadasant/playwright-permissions
-**Commit:** 78413fd (v0.0.7 - browser permissions support)
+**Commit:** a3d68e0 (v0.0.7 - browser permissions support)
 **Tested By:** Claude
 
 ### Summary
