@@ -34,7 +34,9 @@ Example response:
 Use cases:
 - Get detailed information about a specific unofficial mirror by ID or name
 - Review the JSON data before linking to an MCP server
-- Check the current state of an unofficial mirror before updating`,
+- Check the current state of an unofficial mirror before updating
+
+Note: Either id or name must be provided.`,
     inputSchema: {
       type: 'object',
       properties: {

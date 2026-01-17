@@ -49,7 +49,9 @@ Use cases:
 - Find configurations for a specific unofficial mirror (by ID or name)
 - Find all configurations for an MCP server (by ID or slug)
 - Search for configurations by title
-- Review configuration templates before using them`,
+- Review configuration templates before using them
+
+Note: When filtering by mcp_server_slug/mcp_server_id, returns up to 100 mirrors and their MCP JSONs.`,
     inputSchema: {
       type: 'object',
       properties: {
