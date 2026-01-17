@@ -342,3 +342,176 @@ export interface OfficialMirrorQueueActionResponse {
   message: string;
   queue_item: OfficialMirrorQueueItem;
 }
+
+// Unofficial Mirror Types (REST API)
+export interface UnofficialMirror {
+  id: number;
+  name: string;
+  version: string;
+  jsonb_data: Record<string, unknown>;
+  datetime_ingested?: string;
+  mcp_server_id?: number | null;
+  mcp_server_slug?: string | null;
+  previous_name?: string | null;
+  next_name?: string | null;
+  proctor_results_count?: number;
+  mcp_jsons_count?: number;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface UnofficialMirrorsResponse {
+  mirrors: UnofficialMirror[];
+  pagination?: {
+    current_page: number;
+    total_pages: number;
+    total_count: number;
+    has_next?: boolean;
+    limit?: number;
+  };
+}
+
+export interface CreateUnofficialMirrorParams {
+  name: string;
+  version: string;
+  jsonb_data: Record<string, unknown> | string;
+  mcp_server_id?: number;
+  previous_name?: string;
+  next_name?: string;
+}
+
+export interface UpdateUnofficialMirrorParams {
+  name?: string;
+  version?: string;
+  jsonb_data?: Record<string, unknown> | string;
+  mcp_server_id?: number | null;
+  previous_name?: string | null;
+  next_name?: string | null;
+}
+
+// Official Mirror Types (REST API - separate from queue)
+export interface OfficialMirrorRest {
+  id: number;
+  name: string;
+  version: string;
+  official_version_id?: string;
+  jsonb_data: Record<string, unknown>;
+  datetime_ingested?: string;
+  mcp_server_id?: number | null;
+  mcp_server_slug?: string | null;
+  processed?: boolean;
+  processing_failure_reason?: string | null;
+  queue_id?: number | null;
+  queue_status?: string | null;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface OfficialMirrorsResponse {
+  mirrors: OfficialMirrorRest[];
+  pagination?: {
+    current_page: number;
+    total_pages: number;
+    total_count: number;
+    has_next?: boolean;
+    limit?: number;
+  };
+}
+
+// Tenant Types
+export interface Tenant {
+  id: number;
+  slug: string;
+  is_admin: boolean;
+  enrichments?: Record<string, unknown>;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface TenantsResponse {
+  tenants: Tenant[];
+  pagination?: {
+    current_page: number;
+    total_pages: number;
+    total_count: number;
+    has_next?: boolean;
+    limit?: number;
+  };
+}
+
+// Secret Types
+export interface Secret {
+  id: number;
+  slug: string;
+  onepassword_item_id: string;
+  title?: string;
+  description?: string;
+  mcp_servers_count?: number;
+  mcp_server_slugs?: string[];
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface SecretsResponse {
+  secrets: Secret[];
+  pagination?: {
+    current_page: number;
+    total_pages: number;
+    total_count: number;
+    has_next?: boolean;
+    limit?: number;
+  };
+}
+
+export interface CreateSecretParams {
+  slug: string;
+  onepassword_item_id: string;
+  title?: string;
+  description?: string;
+}
+
+export interface UpdateSecretParams {
+  slug?: string;
+  onepassword_item_id?: string;
+  title?: string;
+  description?: string;
+}
+
+// MCP JSON Types
+export interface McpJson {
+  id: number;
+  mcp_servers_unofficial_mirror_id: number;
+  unofficial_mirror_name?: string;
+  unofficial_mirror_version?: string;
+  title: string;
+  description?: string;
+  value: Record<string, unknown>;
+  server_key?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface McpJsonsResponse {
+  mcp_jsons: McpJson[];
+  pagination?: {
+    current_page: number;
+    total_pages: number;
+    total_count: number;
+    has_next?: boolean;
+    limit?: number;
+  };
+}
+
+export interface CreateMcpJsonParams {
+  mcp_servers_unofficial_mirror_id: number;
+  title: string;
+  value: Record<string, unknown> | string;
+  description?: string;
+}
+
+export interface UpdateMcpJsonParams {
+  mcp_servers_unofficial_mirror_id?: number;
+  title?: string;
+  value?: Record<string, unknown> | string;
+  description?: string;
+}

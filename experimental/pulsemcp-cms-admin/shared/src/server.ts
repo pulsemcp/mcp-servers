@@ -19,6 +19,23 @@ import type {
   OfficialMirrorQueueResponse,
   OfficialMirrorQueueItemDetail,
   OfficialMirrorQueueActionResponse,
+  // New REST API types
+  UnofficialMirror,
+  UnofficialMirrorsResponse,
+  CreateUnofficialMirrorParams,
+  UpdateUnofficialMirrorParams,
+  OfficialMirrorRest,
+  OfficialMirrorsResponse,
+  Tenant,
+  TenantsResponse,
+  Secret,
+  SecretsResponse,
+  CreateSecretParams,
+  UpdateSecretParams,
+  McpJson,
+  McpJsonsResponse,
+  CreateMcpJsonParams,
+  UpdateMcpJsonParams,
 } from './types.js';
 
 // PulseMCP Admin API client interface
@@ -125,6 +142,74 @@ export interface IPulseMCPAdminClient {
   addOfficialMirrorToRegularQueue(id: number): Promise<OfficialMirrorQueueActionResponse>;
 
   unlinkOfficialMirrorQueueItem(id: number): Promise<OfficialMirrorQueueActionResponse>;
+
+  // Unofficial Mirror REST API methods
+  getUnofficialMirrors(params?: {
+    q?: string;
+    mcp_server_id?: number;
+    limit?: number;
+    offset?: number;
+  }): Promise<UnofficialMirrorsResponse>;
+
+  getUnofficialMirror(id: number): Promise<UnofficialMirror>;
+
+  createUnofficialMirror(params: CreateUnofficialMirrorParams): Promise<UnofficialMirror>;
+
+  updateUnofficialMirror(
+    id: number,
+    params: UpdateUnofficialMirrorParams
+  ): Promise<UnofficialMirror>;
+
+  deleteUnofficialMirror(id: number): Promise<{ success: boolean; message: string }>;
+
+  // Official Mirror REST API methods (read-only)
+  getOfficialMirrors(params?: {
+    q?: string;
+    mcp_server_id?: number;
+    status?: string;
+    processed?: boolean;
+    limit?: number;
+    offset?: number;
+  }): Promise<OfficialMirrorsResponse>;
+
+  getOfficialMirror(id: number): Promise<OfficialMirrorRest>;
+
+  // Tenant REST API methods (read-only)
+  getTenants(params?: {
+    q?: string;
+    is_admin?: boolean;
+    limit?: number;
+    offset?: number;
+  }): Promise<TenantsResponse>;
+
+  getTenant(idOrSlug: number | string): Promise<Tenant>;
+
+  // Secret REST API methods
+  getSecrets(params?: { q?: string; limit?: number; offset?: number }): Promise<SecretsResponse>;
+
+  getSecret(idOrSlug: number | string): Promise<Secret>;
+
+  createSecret(params: CreateSecretParams): Promise<Secret>;
+
+  updateSecret(idOrSlug: number | string, params: UpdateSecretParams): Promise<Secret>;
+
+  deleteSecret(idOrSlug: number | string): Promise<{ success: boolean; message: string }>;
+
+  // MCP JSON REST API methods
+  getMcpJsons(params?: {
+    unofficial_mirror_id?: number;
+    q?: string;
+    limit?: number;
+    offset?: number;
+  }): Promise<McpJsonsResponse>;
+
+  getMcpJson(id: number): Promise<McpJson>;
+
+  createMcpJson(params: CreateMcpJsonParams): Promise<McpJson>;
+
+  updateMcpJson(id: number, params: UpdateMcpJsonParams): Promise<McpJson>;
+
+  deleteMcpJson(id: number): Promise<{ success: boolean; message: string }>;
 }
 
 // PulseMCP Admin API client implementation
@@ -351,6 +436,149 @@ export class PulseMCPAdminClient implements IPulseMCPAdminClient {
       './pulsemcp-admin-client/lib/unlink-official-mirror-queue-item.js'
     );
     return unlinkOfficialMirrorQueueItem(this.apiKey, this.baseUrl, id);
+  }
+
+  // Unofficial Mirror REST API methods
+  async getUnofficialMirrors(params?: {
+    q?: string;
+    mcp_server_id?: number;
+    limit?: number;
+    offset?: number;
+  }): Promise<UnofficialMirrorsResponse> {
+    const { getUnofficialMirrors } = await import(
+      './pulsemcp-admin-client/lib/get-unofficial-mirrors.js'
+    );
+    return getUnofficialMirrors(this.apiKey, this.baseUrl, params);
+  }
+
+  async getUnofficialMirror(id: number): Promise<UnofficialMirror> {
+    const { getUnofficialMirror } = await import(
+      './pulsemcp-admin-client/lib/get-unofficial-mirror.js'
+    );
+    return getUnofficialMirror(this.apiKey, this.baseUrl, id);
+  }
+
+  async createUnofficialMirror(params: CreateUnofficialMirrorParams): Promise<UnofficialMirror> {
+    const { createUnofficialMirror } = await import(
+      './pulsemcp-admin-client/lib/create-unofficial-mirror.js'
+    );
+    return createUnofficialMirror(this.apiKey, this.baseUrl, params);
+  }
+
+  async updateUnofficialMirror(
+    id: number,
+    params: UpdateUnofficialMirrorParams
+  ): Promise<UnofficialMirror> {
+    const { updateUnofficialMirror } = await import(
+      './pulsemcp-admin-client/lib/update-unofficial-mirror.js'
+    );
+    return updateUnofficialMirror(this.apiKey, this.baseUrl, id, params);
+  }
+
+  async deleteUnofficialMirror(id: number): Promise<{ success: boolean; message: string }> {
+    const { deleteUnofficialMirror } = await import(
+      './pulsemcp-admin-client/lib/delete-unofficial-mirror.js'
+    );
+    return deleteUnofficialMirror(this.apiKey, this.baseUrl, id);
+  }
+
+  // Official Mirror REST API methods (read-only)
+  async getOfficialMirrors(params?: {
+    q?: string;
+    mcp_server_id?: number;
+    status?: string;
+    processed?: boolean;
+    limit?: number;
+    offset?: number;
+  }): Promise<OfficialMirrorsResponse> {
+    const { getOfficialMirrors } = await import(
+      './pulsemcp-admin-client/lib/get-official-mirrors.js'
+    );
+    return getOfficialMirrors(this.apiKey, this.baseUrl, params);
+  }
+
+  async getOfficialMirror(id: number): Promise<OfficialMirrorRest> {
+    const { getOfficialMirror } = await import(
+      './pulsemcp-admin-client/lib/get-official-mirror.js'
+    );
+    return getOfficialMirror(this.apiKey, this.baseUrl, id);
+  }
+
+  // Tenant REST API methods (read-only)
+  async getTenants(params?: {
+    q?: string;
+    is_admin?: boolean;
+    limit?: number;
+    offset?: number;
+  }): Promise<TenantsResponse> {
+    const { getTenants } = await import('./pulsemcp-admin-client/lib/get-tenants.js');
+    return getTenants(this.apiKey, this.baseUrl, params);
+  }
+
+  async getTenant(idOrSlug: number | string): Promise<Tenant> {
+    const { getTenant } = await import('./pulsemcp-admin-client/lib/get-tenant.js');
+    return getTenant(this.apiKey, this.baseUrl, idOrSlug);
+  }
+
+  // Secret REST API methods
+  async getSecrets(params?: {
+    q?: string;
+    limit?: number;
+    offset?: number;
+  }): Promise<SecretsResponse> {
+    const { getSecrets } = await import('./pulsemcp-admin-client/lib/get-secrets.js');
+    return getSecrets(this.apiKey, this.baseUrl, params);
+  }
+
+  async getSecret(idOrSlug: number | string): Promise<Secret> {
+    const { getSecret } = await import('./pulsemcp-admin-client/lib/get-secret.js');
+    return getSecret(this.apiKey, this.baseUrl, idOrSlug);
+  }
+
+  async createSecret(params: CreateSecretParams): Promise<Secret> {
+    const { createSecret } = await import('./pulsemcp-admin-client/lib/create-secret.js');
+    return createSecret(this.apiKey, this.baseUrl, params);
+  }
+
+  async updateSecret(idOrSlug: number | string, params: UpdateSecretParams): Promise<Secret> {
+    const { updateSecret } = await import('./pulsemcp-admin-client/lib/update-secret.js');
+    return updateSecret(this.apiKey, this.baseUrl, idOrSlug, params);
+  }
+
+  async deleteSecret(idOrSlug: number | string): Promise<{ success: boolean; message: string }> {
+    const { deleteSecret } = await import('./pulsemcp-admin-client/lib/delete-secret.js');
+    return deleteSecret(this.apiKey, this.baseUrl, idOrSlug);
+  }
+
+  // MCP JSON REST API methods
+  async getMcpJsons(params?: {
+    unofficial_mirror_id?: number;
+    q?: string;
+    limit?: number;
+    offset?: number;
+  }): Promise<McpJsonsResponse> {
+    const { getMcpJsons } = await import('./pulsemcp-admin-client/lib/get-mcp-jsons.js');
+    return getMcpJsons(this.apiKey, this.baseUrl, params);
+  }
+
+  async getMcpJson(id: number): Promise<McpJson> {
+    const { getMcpJson } = await import('./pulsemcp-admin-client/lib/get-mcp-json.js');
+    return getMcpJson(this.apiKey, this.baseUrl, id);
+  }
+
+  async createMcpJson(params: CreateMcpJsonParams): Promise<McpJson> {
+    const { createMcpJson } = await import('./pulsemcp-admin-client/lib/create-mcp-json.js');
+    return createMcpJson(this.apiKey, this.baseUrl, params);
+  }
+
+  async updateMcpJson(id: number, params: UpdateMcpJsonParams): Promise<McpJson> {
+    const { updateMcpJson } = await import('./pulsemcp-admin-client/lib/update-mcp-json.js');
+    return updateMcpJson(this.apiKey, this.baseUrl, id, params);
+  }
+
+  async deleteMcpJson(id: number): Promise<{ success: boolean; message: string }> {
+    const { deleteMcpJson } = await import('./pulsemcp-admin-client/lib/delete-mcp-json.js');
+    return deleteMcpJson(this.apiKey, this.baseUrl, id);
   }
 }
 

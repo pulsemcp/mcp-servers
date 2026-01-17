@@ -1,6 +1,6 @@
 {
   "name": "pulsemcp-cms-admin-mcp-server",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "Local implementation of PulseMCP CMS Admin MCP server",
   "mcpName": "com.pulsemcp.servers/pulsemcp-cms-admin",
   "main": "build/index.js",

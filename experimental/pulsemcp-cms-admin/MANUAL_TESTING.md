@@ -3,14 +3,36 @@
 ## Latest Test Results
 
 **Date:** 2026-01-17
-**Commit:** ccedc95
-**Version:** 0.5.0
-**API Environment:** Staging (https://admin.staging.pulsemcp.com)
+**Commit:** 13daf9f
+**Version:** 0.6.0
+**API Environment:** Staging (https://staging.pulsemcp.com)
 **API Key:** Admin API key (read/write)
 
 ## Test Results Summary
 
-### Overall: ✅ 47/47 Tests PASSING (100%)
+### Overall: ✅ 47/47 Existing Tests PASSING + 18 New REST API Tools (Awaiting Backend)
+
+**Note:** v0.6.0 adds 18 new REST API tools for managing PulseMCP admin resources. These tools are implemented and ready but are **awaiting backend API deployment** (pulsemcp/pulsemcp PR #1799):
+
+**New Tool Groups Added:**
+
+- `unofficial_mirrors` / `unofficial_mirrors_readonly`: CRUD operations for unofficial mirrors
+- `official_mirrors_readonly`: Read operations for official mirrors from MCP Registry
+- `tenants_readonly`: Read operations for tenants
+- `secrets` / `secrets_readonly`: CRUD operations for 1Password secret references
+- `mcp_jsons` / `mcp_jsons_readonly`: CRUD operations for MCP JSON configurations
+
+**New Tools (18 total):**
+
+- Unofficial Mirrors: `get_unofficial_mirrors`, `get_unofficial_mirror`, `create_unofficial_mirror`, `update_unofficial_mirror`, `delete_unofficial_mirror`
+- Official Mirrors: `get_official_mirrors`, `get_official_mirror`
+- Tenants: `get_tenants`, `get_tenant`
+- Secrets: `get_secrets`, `get_secret`, `create_secret`, `update_secret`, `delete_secret`
+- MCP JSONs: `get_mcp_jsons`, `get_mcp_json`, `create_mcp_json`, `update_mcp_json`, `delete_mcp_json`
+
+All new tools follow the established patterns from existing tools with comprehensive TypeScript types, Zod validation, and error handling. The backend REST API endpoints from PR #1799 need to be deployed before these tools can be tested against a live environment.
+
+**Existing tools continue to pass all tests (47/47).**
 
 **Note:** v0.5.0 refactors tool group organization:
 
