@@ -5,6 +5,7 @@ import type { ClientFactory } from '../server.js';
 const PARAM_DESCRIPTIONS = {
   q: 'Search query to filter by name',
   mcp_server_id: 'Filter by linked MCP server ID',
+  mcp_server_slug: 'Filter by linked MCP server slug (convenience alternative to mcp_server_id)',
   limit: 'Results per page, range 1-100. Default: 30',
   offset: 'Pagination offset. Default: 0',
 } as const;
@@ -12,6 +13,7 @@ const PARAM_DESCRIPTIONS = {
 const GetUnofficialMirrorsSchema = z.object({
   q: z.string().optional().describe(PARAM_DESCRIPTIONS.q),
   mcp_server_id: z.number().optional().describe(PARAM_DESCRIPTIONS.mcp_server_id),
+  mcp_server_slug: z.string().optional().describe(PARAM_DESCRIPTIONS.mcp_server_slug),
   limit: z.number().min(1).max(100).optional().describe(PARAM_DESCRIPTIONS.limit),
   offset: z.number().min(0).optional().describe(PARAM_DESCRIPTIONS.offset),
 });
@@ -40,13 +42,14 @@ Example response:
 Use cases:
 - Browse unofficial mirrors to find community-submitted server definitions
 - Search for specific mirrors by name
-- Filter mirrors by linked MCP server ID
+- Filter mirrors by linked MCP server ID or slug
 - Review mirrors before linking them to official MCP servers`,
     inputSchema: {
       type: 'object',
       properties: {
         q: { type: 'string', description: PARAM_DESCRIPTIONS.q },
         mcp_server_id: { type: 'number', description: PARAM_DESCRIPTIONS.mcp_server_id },
+        mcp_server_slug: { type: 'string', description: PARAM_DESCRIPTIONS.mcp_server_slug },
         limit: { type: 'number', minimum: 1, maximum: 100, description: PARAM_DESCRIPTIONS.limit },
         offset: { type: 'number', minimum: 0, description: PARAM_DESCRIPTIONS.offset },
       },
@@ -56,7 +59,19 @@ Use cases:
       const client = clientFactory();
 
       try {
-        const response = await client.getUnofficialMirrors(validatedArgs);
+        // Resolve mcp_server_slug to mcp_server_id if provided
+        let mcpServerId = validatedArgs.mcp_server_id;
+        if (validatedArgs.mcp_server_slug && !mcpServerId) {
+          const mcpServer = await client.getMCPServerBySlug(validatedArgs.mcp_server_slug);
+          mcpServerId = mcpServer.id;
+        }
+
+        const response = await client.getUnofficialMirrors({
+          q: validatedArgs.q,
+          mcp_server_id: mcpServerId,
+          limit: validatedArgs.limit,
+          offset: validatedArgs.offset,
+        });
 
         let content = `Found ${response.mirrors.length} unofficial mirrors`;
         if (response.pagination) {

@@ -167,6 +167,29 @@ describe('REST API Tools - Manual Tests with Real API', () => {
       console.log('Unofficial mirrors page 1:', text.substring(0, 500));
     });
 
+    it('get_unofficial_mirrors - should support mcp_server_slug convenience param', async () => {
+      // Try filtering by a known MCP server slug
+      const result = await client.callTool('get_unofficial_mirrors', {
+        mcp_server_slug: 'filesystem',
+        limit: 5,
+      });
+
+      // Don't fail if no results - just log
+      const text = result.content[0].text;
+      console.log('Unofficial mirrors by mcp_server_slug:', text.substring(0, 500));
+    });
+
+    it('get_unofficial_mirror - should support name lookup', async () => {
+      // Try looking up by name instead of ID
+      const result = await client.callTool('get_unofficial_mirror', {
+        name: '@modelcontextprotocol/server-filesystem',
+      });
+
+      // Don't fail if not found - just log
+      const text = result.content[0].text;
+      console.log('Unofficial mirror by name:', text.substring(0, 500));
+    });
+
     it('create_unofficial_mirror - should create a new unofficial mirror', async () => {
       const testName = `test-mirror-${Date.now()}`;
       const result = await client.callTool('create_unofficial_mirror', {
@@ -525,6 +548,28 @@ describe('REST API Tools - Manual Tests with Real API', () => {
       expect(result.isError).toBeFalsy();
       const text = result.content[0].text;
       console.log('MCP JSONs for mirror:', text.substring(0, 500));
+    });
+
+    it('get_mcp_jsons - should support unofficial_mirror_name convenience param', async () => {
+      // Try filtering by unofficial mirror name
+      const result = await client.callTool('get_mcp_jsons', {
+        unofficial_mirror_name: '@modelcontextprotocol/server-filesystem',
+      });
+
+      // Don't fail if no results - just log
+      const text = result.content[0].text;
+      console.log('MCP JSONs by unofficial_mirror_name:', text.substring(0, 500));
+    });
+
+    it('get_mcp_jsons - should support mcp_server_slug convenience param', async () => {
+      // Try filtering by MCP server slug - gets all MCP JSONs for all unofficial mirrors linked to this server
+      const result = await client.callTool('get_mcp_jsons', {
+        mcp_server_slug: 'filesystem',
+      });
+
+      // Don't fail if no results - just log
+      const text = result.content[0].text;
+      console.log('MCP JSONs by mcp_server_slug:', text.substring(0, 500));
     });
 
     it('create_mcp_json - should create a new MCP JSON', async () => {
