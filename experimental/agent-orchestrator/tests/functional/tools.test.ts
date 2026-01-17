@@ -5,6 +5,10 @@ import { searchSessionsTool } from '../../shared/src/tools/search-sessions.js';
 import { startSessionTool } from '../../shared/src/tools/start-session.js';
 import { getSessionTool } from '../../shared/src/tools/get-session.js';
 import { actionSessionTool } from '../../shared/src/tools/action-session.js';
+import {
+  getAvailableMcpServersTool,
+  clearMcpServersCache,
+} from '../../shared/src/tools/get-available-mcp-servers.js';
 
 describe('Tools', () => {
   let mockServer: Server;
@@ -286,6 +290,91 @@ describe('Tools', () => {
     });
   });
 
+  describe('get_available_mcp_servers', () => {
+    beforeEach(() => {
+      // Clear the cache before each test
+      clearMcpServersCache();
+    });
+
+    it('should fetch available MCP servers', async () => {
+      const tool = getAvailableMcpServersTool(mockServer, clientFactory);
+
+      const result = await tool.handler({});
+
+      expect(result).toMatchObject({
+        content: [{ type: 'text' }],
+      });
+      expect((result as { content: Array<{ text: string }> }).content[0].text).toContain(
+        'Available MCP Servers'
+      );
+      expect((result as { content: Array<{ text: string }> }).content[0].text).toContain(
+        'GitHub Development'
+      );
+      expect((result as { content: Array<{ text: string }> }).content[0].text).toContain(
+        'github-development'
+      );
+      expect((result as { content: Array<{ text: string }> }).content[0].text).toContain('Slack');
+      expect(mockClient.getMcpServers).toHaveBeenCalledTimes(1);
+    });
+
+    it('should use cache on subsequent calls', async () => {
+      const tool = getAvailableMcpServersTool(mockServer, clientFactory);
+
+      // First call
+      await tool.handler({});
+      expect(mockClient.getMcpServers).toHaveBeenCalledTimes(1);
+
+      // Second call should use cache
+      const result = await tool.handler({});
+      expect(mockClient.getMcpServers).toHaveBeenCalledTimes(1); // Still 1
+
+      expect((result as { content: Array<{ text: string }> }).content[0].text).toContain(
+        'Returned from cache'
+      );
+    });
+
+    it('should refresh cache when force_refresh is true', async () => {
+      const tool = getAvailableMcpServersTool(mockServer, clientFactory);
+
+      // First call populates cache
+      await tool.handler({});
+      expect(mockClient.getMcpServers).toHaveBeenCalledTimes(1);
+
+      // Second call with force_refresh should fetch again
+      const result = await tool.handler({ force_refresh: true });
+      expect(mockClient.getMcpServers).toHaveBeenCalledTimes(2);
+
+      expect((result as { content: Array<{ text: string }> }).content[0].text).not.toContain(
+        'Returned from cache'
+      );
+    });
+
+    it('should handle empty MCP servers list', async () => {
+      mockClient.getMcpServers = vi.fn().mockResolvedValue([]);
+
+      const tool = getAvailableMcpServersTool(mockServer, clientFactory);
+
+      const result = await tool.handler({});
+
+      expect((result as { content: Array<{ text: string }> }).content[0].text).toContain(
+        'No MCP servers available'
+      );
+    });
+
+    it('should handle API errors gracefully', async () => {
+      mockClient.getMcpServers = vi.fn().mockRejectedValue(new Error('API connection failed'));
+
+      const tool = getAvailableMcpServersTool(mockServer, clientFactory);
+
+      const result = await tool.handler({});
+
+      expect(result.isError).toBe(true);
+      expect((result as { content: Array<{ text: string }> }).content[0].text).toContain(
+        'API connection failed'
+      );
+    });
+  });
+
   describe('tool definitions', () => {
     it('should have correct tool definitions', () => {
       const tools = [
@@ -293,14 +382,16 @@ describe('Tools', () => {
         startSessionTool(mockServer, clientFactory),
         getSessionTool(mockServer, clientFactory),
         actionSessionTool(mockServer, clientFactory),
+        getAvailableMcpServersTool(mockServer, clientFactory),
       ];
 
-      expect(tools).toHaveLength(4);
+      expect(tools).toHaveLength(5);
       const toolNames = tools.map((t) => t.name);
       expect(toolNames).toContain('search_sessions');
       expect(toolNames).toContain('start_session');
       expect(toolNames).toContain('get_session');
       expect(toolNames).toContain('action_session');
+      expect(toolNames).toContain('get_available_mcp_servers');
     });
   });
 });

@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- New `get_available_mcp_servers` tool to list available MCP servers for use with `start_session`
+- Results are cached in memory for the session with optional `force_refresh` parameter
+- Updated `start_session` tool description to reference `get_available_mcp_servers`
+
 ## [0.1.2] - 2026-01-09
 
 ### Added

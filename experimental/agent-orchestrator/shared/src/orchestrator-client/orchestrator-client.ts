@@ -25,6 +25,8 @@ import type {
   SessionStatus,
   LogLevel,
   SubagentStatus,
+  MCPServerInfo,
+  MCPServersResponse,
 } from '../types.js';
 
 /**
@@ -120,6 +122,9 @@ export interface IAgentOrchestratorClient {
   ): Promise<SubagentTranscript>;
 
   deleteSubagentTranscript(sessionId: string | number, transcriptId: number): Promise<void>;
+
+  // MCP Servers
+  getMcpServers(): Promise<MCPServerInfo[]>;
 }
 
 /** Default timeout for API requests in milliseconds */
@@ -391,5 +396,11 @@ export class AgentOrchestratorClient implements IAgentOrchestratorClient {
       'DELETE',
       `/sessions/${sessionId}/subagent_transcripts/${transcriptId}`
     );
+  }
+
+  // MCP Servers
+  async getMcpServers(): Promise<MCPServerInfo[]> {
+    const response = await this.request<MCPServersResponse>('GET', '/mcp_servers');
+    return response.mcp_servers;
   }
 }

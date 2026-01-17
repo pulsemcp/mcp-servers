@@ -124,6 +124,18 @@ export interface ApiError {
   messages?: string[];
 }
 
+// MCP Server info
+export interface MCPServerInfo {
+  name: string;
+  title: string;
+  description: string;
+}
+
+// MCP Servers response
+export interface MCPServersResponse {
+  mcp_servers: MCPServerInfo[];
+}
+
 // Create session request
 export interface CreateSessionRequest {
   agent_type?: string;
