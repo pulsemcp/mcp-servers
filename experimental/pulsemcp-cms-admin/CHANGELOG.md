@@ -6,6 +6,37 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-01-17
+
+### Changed
+
+- **BREAKING**: Simplified tool group system with new environment variables
+  - Tool groups: `newsletter`, `server_queue`, `official_queue` (removed `_readonly` and `_all` suffixes)
+  - New `TOOL_GROUPS` env var replaces `PULSEMCP_ADMIN_ENABLED_TOOLGROUPS`
+  - New `TOOL_GROUP_FILTERS` env var with `readonly` filter to exclude write operations
+  - Legacy `PULSEMCP_ADMIN_ENABLED_TOOLGROUPS` env var still works for backwards compatibility
+  - Legacy group names (`server_queue_readonly`, `server_queue_all`, etc.) are automatically mapped to new names
+
+### Migration Guide
+
+**If you were using `PULSEMCP_ADMIN_ENABLED_TOOLGROUPS`:**
+
+| Old Configuration                                                                       | New Configuration                                                                                                         |
+| --------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| `PULSEMCP_ADMIN_ENABLED_TOOLGROUPS=newsletter`                                          | `TOOL_GROUPS=newsletter`                                                                                                  |
+| `PULSEMCP_ADMIN_ENABLED_TOOLGROUPS=server_queue_all`                                    | `TOOL_GROUPS=server_queue`                                                                                                |
+| `PULSEMCP_ADMIN_ENABLED_TOOLGROUPS=server_queue_readonly`                               | `TOOL_GROUPS=server_queue` + `TOOL_GROUP_FILTERS=readonly`                                                                |
+| `PULSEMCP_ADMIN_ENABLED_TOOLGROUPS=official_queue_all`                                  | `TOOL_GROUPS=official_queue`                                                                                              |
+| `PULSEMCP_ADMIN_ENABLED_TOOLGROUPS=official_queue_readonly`                             | `TOOL_GROUPS=official_queue` + `TOOL_GROUP_FILTERS=readonly`                                                              |
+| `PULSEMCP_ADMIN_ENABLED_TOOLGROUPS=newsletter,server_queue_all,official_queue_readonly` | `TOOL_GROUPS=newsletter,server_queue,official_queue` + `TOOL_GROUP_FILTERS=readonly` (for official_queue only - see note) |
+
+**Note:** The `readonly` filter applies to ALL enabled groups. If you need different access levels per group, run multiple server instances with different configurations.
+
+**No changes required if:**
+
+- You weren't setting any tool group environment variables (all tools enabled by default)
+- You want to keep using legacy env var names (they still work)
+
 ## [0.4.4] - 2025-12-29
 
 ### Fixed

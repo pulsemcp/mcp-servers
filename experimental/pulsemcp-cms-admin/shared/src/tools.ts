@@ -24,17 +24,17 @@ import { unlinkOfficialMirrorQueueItem } from './tools/unlink-official-mirror-qu
  * Tool group definitions - groups of related tools that can be enabled/disabled together
  *
  * - newsletter: All newsletter-related tools (posts, authors, images)
- * - server_queue_readonly: Read-only server queue tools (search, get drafts)
- * - server_queue_all: All server queue tools including write operations (search, get drafts, save)
- * - official_queue_readonly: Read-only official mirror queue tools (list, get)
- * - official_queue_all: All official mirror queue tools including write operations (approve, reject, unlink)
+ * - server_queue: Server queue tools (search, get drafts, providers, save, notifications)
+ * - official_queue: Official mirror queue tools (list, get, approve, reject, unlink)
  */
-export type ToolGroup =
-  | 'newsletter'
-  | 'server_queue_readonly'
-  | 'server_queue_all'
-  | 'official_queue_readonly'
-  | 'official_queue_all';
+export type ToolGroup = 'newsletter' | 'server_queue' | 'official_queue';
+
+/**
+ * Tool group filter definitions - filters that can be applied to enabled tool groups
+ *
+ * - readonly: Filters out write operations, keeping only read-only tools
+ */
+export type ToolGroupFilter = 'readonly';
 
 interface Tool {
   name: string;
@@ -50,74 +50,134 @@ interface Tool {
 
 interface ToolDefinition {
   factory: (server: Server, clientFactory: ClientFactory) => Tool;
-  groups: ToolGroup[];
+  group: ToolGroup;
+  /** If true, this tool is filtered out when the 'readonly' filter is active */
+  isWriteOperation: boolean;
 }
 
 const ALL_TOOLS: ToolDefinition[] = [
-  { factory: getNewsletterPosts, groups: ['newsletter'] },
-  { factory: getNewsletterPost, groups: ['newsletter'] },
-  { factory: draftNewsletterPost, groups: ['newsletter'] },
-  { factory: updateNewsletterPost, groups: ['newsletter'] },
-  { factory: uploadImage, groups: ['newsletter'] },
-  { factory: getAuthors, groups: ['newsletter'] },
-  { factory: searchMCPImplementations, groups: ['server_queue_readonly', 'server_queue_all'] },
-  { factory: getDraftMCPImplementations, groups: ['server_queue_readonly', 'server_queue_all'] },
-  { factory: saveMCPImplementation, groups: ['server_queue_all'] },
-  { factory: sendMCPImplementationPostingNotification, groups: ['server_queue_all'] },
-  { factory: findProviders, groups: ['server_queue_readonly', 'server_queue_all'] },
+  // Newsletter tools (all are write operations except get_newsletter_posts/post and get_authors)
+  { factory: getNewsletterPosts, group: 'newsletter', isWriteOperation: false },
+  { factory: getNewsletterPost, group: 'newsletter', isWriteOperation: false },
+  { factory: draftNewsletterPost, group: 'newsletter', isWriteOperation: true },
+  { factory: updateNewsletterPost, group: 'newsletter', isWriteOperation: true },
+  { factory: uploadImage, group: 'newsletter', isWriteOperation: true },
+  { factory: getAuthors, group: 'newsletter', isWriteOperation: false },
+  // Server queue tools
+  { factory: searchMCPImplementations, group: 'server_queue', isWriteOperation: false },
+  { factory: getDraftMCPImplementations, group: 'server_queue', isWriteOperation: false },
+  { factory: saveMCPImplementation, group: 'server_queue', isWriteOperation: true },
+  {
+    factory: sendMCPImplementationPostingNotification,
+    group: 'server_queue',
+    isWriteOperation: true,
+  },
+  { factory: findProviders, group: 'server_queue', isWriteOperation: false },
   // Official mirror queue tools
+  { factory: getOfficialMirrorQueueItems, group: 'official_queue', isWriteOperation: false },
+  { factory: getOfficialMirrorQueueItem, group: 'official_queue', isWriteOperation: false },
+  { factory: approveOfficialMirrorQueueItem, group: 'official_queue', isWriteOperation: true },
   {
-    factory: getOfficialMirrorQueueItems,
-    groups: ['official_queue_readonly', 'official_queue_all'],
+    factory: approveOfficialMirrorQueueItemWithoutModifying,
+    group: 'official_queue',
+    isWriteOperation: true,
   },
-  {
-    factory: getOfficialMirrorQueueItem,
-    groups: ['official_queue_readonly', 'official_queue_all'],
-  },
-  { factory: approveOfficialMirrorQueueItem, groups: ['official_queue_all'] },
-  { factory: approveOfficialMirrorQueueItemWithoutModifying, groups: ['official_queue_all'] },
-  { factory: rejectOfficialMirrorQueueItem, groups: ['official_queue_all'] },
-  { factory: addOfficialMirrorToRegularQueue, groups: ['official_queue_all'] },
-  { factory: unlinkOfficialMirrorQueueItem, groups: ['official_queue_all'] },
+  { factory: rejectOfficialMirrorQueueItem, group: 'official_queue', isWriteOperation: true },
+  { factory: addOfficialMirrorToRegularQueue, group: 'official_queue', isWriteOperation: true },
+  { factory: unlinkOfficialMirrorQueueItem, group: 'official_queue', isWriteOperation: true },
 ];
 
 /**
+ * All valid tool groups
+ */
+const VALID_TOOL_GROUPS: ToolGroup[] = ['newsletter', 'server_queue', 'official_queue'];
+
+/**
+ * All valid tool group filters
+ */
+const VALID_TOOL_GROUP_FILTERS: ToolGroupFilter[] = ['readonly'];
+
+/**
  * Parse enabled tool groups from environment variable or parameter
- * @param enabledGroupsParam - Comma-separated list of tool groups (e.g., "newsletter,server_queue_all")
+ * @param enabledGroupsParam - Comma-separated list of tool groups (e.g., "newsletter,server_queue")
  * @returns Array of enabled tool groups
  */
 export function parseEnabledToolGroups(enabledGroupsParam?: string): ToolGroup[] {
-  const groupsStr = enabledGroupsParam || process.env.PULSEMCP_ADMIN_ENABLED_TOOLGROUPS || '';
+  // Check new env var first, then fall back to legacy env var for backwards compatibility
+  const groupsStr =
+    enabledGroupsParam ||
+    process.env.TOOL_GROUPS ||
+    process.env.PULSEMCP_ADMIN_ENABLED_TOOLGROUPS ||
+    '';
 
   if (!groupsStr) {
     // Default: all groups enabled
-    return [
-      'newsletter',
-      'server_queue_readonly',
-      'server_queue_all',
-      'official_queue_readonly',
-      'official_queue_all',
-    ];
+    return [...VALID_TOOL_GROUPS];
   }
 
   const groups = groupsStr.split(',').map((g) => g.trim());
   const validGroups: ToolGroup[] = [];
 
   for (const group of groups) {
-    if (
-      group === 'newsletter' ||
-      group === 'server_queue_readonly' ||
-      group === 'server_queue_all' ||
-      group === 'official_queue_readonly' ||
-      group === 'official_queue_all'
-    ) {
-      validGroups.push(group);
-    } else {
+    // Handle legacy group names for backwards compatibility
+    const normalizedGroup = normalizeLegacyToolGroup(group);
+    if (normalizedGroup && !validGroups.includes(normalizedGroup)) {
+      validGroups.push(normalizedGroup);
+    } else if (!normalizedGroup) {
       console.warn(`Unknown tool group: ${group}`);
     }
   }
 
   return validGroups;
+}
+
+/**
+ * Normalize legacy tool group names to new names
+ * @param group - Tool group name (possibly legacy)
+ * @returns Normalized tool group name or null if invalid
+ */
+function normalizeLegacyToolGroup(group: string): ToolGroup | null {
+  // New group names
+  if (VALID_TOOL_GROUPS.includes(group as ToolGroup)) {
+    return group as ToolGroup;
+  }
+
+  // Legacy group names mapping
+  const legacyMapping: Record<string, ToolGroup> = {
+    server_queue_readonly: 'server_queue',
+    server_queue_all: 'server_queue',
+    official_queue_readonly: 'official_queue',
+    official_queue_all: 'official_queue',
+  };
+
+  return legacyMapping[group] || null;
+}
+
+/**
+ * Parse tool group filters from environment variable or parameter
+ * @param filtersParam - Comma-separated list of filters (e.g., "readonly")
+ * @returns Array of active filters
+ */
+export function parseToolGroupFilters(filtersParam?: string): ToolGroupFilter[] {
+  const filtersStr = filtersParam || process.env.TOOL_GROUP_FILTERS || '';
+
+  if (!filtersStr) {
+    // Default: no filters active
+    return [];
+  }
+
+  const filters = filtersStr.split(',').map((f) => f.trim());
+  const validFilters: ToolGroupFilter[] = [];
+
+  for (const filter of filters) {
+    if (VALID_TOOL_GROUP_FILTERS.includes(filter as ToolGroupFilter)) {
+      validFilters.push(filter as ToolGroupFilter);
+    } else {
+      console.warn(`Unknown tool group filter: ${filter}`);
+    }
+  }
+
+  return validFilters;
 }
 
 /**
@@ -127,29 +187,42 @@ export function parseEnabledToolGroups(enabledGroupsParam?: string): ToolGroup[]
  * Each tool is defined in its own file under the `tools/` directory and follows
  * a factory pattern that accepts the server and clientFactory as parameters.
  *
- * Tool groups can be enabled/disabled via the PULSEMCP_ADMIN_ENABLED_TOOLGROUPS
- * environment variable (comma-separated list, e.g., "newsletter,server_queue_readonly").
- * If not set, all tool groups are enabled by default.
+ * Tool groups can be enabled/disabled via the TOOL_GROUPS environment variable
+ * (comma-separated list, e.g., "newsletter,server_queue"). If not set, all tool
+ * groups are enabled by default.
+ *
+ * Tool group filters can be applied via the TOOL_GROUP_FILTERS environment variable
+ * (comma-separated list, e.g., "readonly"). If not set, no filters are applied.
  *
  * Available tool groups:
  * - newsletter: All newsletter-related tools
- * - server_queue_readonly: Read-only server queue tools (search, get drafts)
- * - server_queue_all: All server queue tools including write operations
- * - official_queue_readonly: Read-only official mirror queue tools (list, get)
- * - official_queue_all: All official mirror queue tools including write operations
+ * - server_queue: MCP implementation queue tools (search, drafts, save, notifications)
+ * - official_queue: Official mirror queue tools (list, get, approve, reject, unlink)
+ *
+ * Available filters:
+ * - readonly: Filters out write operations, keeping only read-only tools
  *
  * @param clientFactory - Factory function that creates client instances
  * @param enabledGroups - Optional comma-separated list of enabled tool groups (overrides env var)
+ * @param activeFilters - Optional comma-separated list of active filters (overrides env var)
  * @returns Function that registers all tools with a server
  */
-export function createRegisterTools(clientFactory: ClientFactory, enabledGroups?: string) {
+export function createRegisterTools(
+  clientFactory: ClientFactory,
+  enabledGroups?: string,
+  activeFilters?: string
+) {
   return (server: Server) => {
     const enabledToolGroups = parseEnabledToolGroups(enabledGroups);
+    const filters = parseToolGroupFilters(activeFilters);
 
     // Filter tools based on enabled groups
-    const enabledTools = ALL_TOOLS.filter((toolDef) =>
-      toolDef.groups.some((group) => enabledToolGroups.includes(group))
-    );
+    let enabledTools = ALL_TOOLS.filter((toolDef) => enabledToolGroups.includes(toolDef.group));
+
+    // Apply readonly filter if active
+    if (filters.includes('readonly')) {
+      enabledTools = enabledTools.filter((toolDef) => !toolDef.isWriteOperation);
+    }
 
     // Create tool instances
     const tools = enabledTools.map((toolDef) => toolDef.factory(server, clientFactory));
