@@ -230,7 +230,7 @@ describe('PulseMCP CMS Admin - Toolgroups Integration Tests', () => {
     });
   });
 
-  describe('official_queue with readonly filter', () => {
+  describe('official_queue_readonly group', () => {
     let client: TestMCPClient;
 
     beforeAll(async () => {
@@ -243,8 +243,7 @@ describe('PulseMCP CMS Admin - Toolgroups Integration Tests', () => {
         serverPath: serverPath,
         env: {
           ...process.env,
-          TOOL_GROUPS: 'official_queue',
-          TOOL_GROUP_FILTERS: 'readonly',
+          TOOL_GROUPS: 'official_queue_readonly',
           PULSEMCP_MOCK_DATA: JSON.stringify({}),
         },
       });
@@ -288,14 +287,12 @@ describe('PulseMCP CMS Admin - Toolgroups Integration Tests', () => {
         serverPath: serverPath,
         env: {
           ...process.env,
-          // Don't set TOOL_GROUPS - should default to all
+          // Don't set TOOL_GROUPS - should default to all base groups
           PULSEMCP_MOCK_DATA: JSON.stringify({}),
         },
       });
-      // Ensure the env vars are not set
+      // Ensure the env var is not set
       delete client['env']?.TOOL_GROUPS;
-      delete client['env']?.TOOL_GROUP_FILTERS;
-      delete client['env']?.PULSEMCP_ADMIN_ENABLED_TOOLGROUPS;
       await client.connect();
     });
 
@@ -330,7 +327,7 @@ describe('PulseMCP CMS Admin - Toolgroups Integration Tests', () => {
     });
   });
 
-  describe('readonly filter with all groups', () => {
+  describe('all _readonly groups', () => {
     let client: TestMCPClient;
 
     beforeAll(async () => {
@@ -343,7 +340,7 @@ describe('PulseMCP CMS Admin - Toolgroups Integration Tests', () => {
         serverPath: serverPath,
         env: {
           ...process.env,
-          TOOL_GROUP_FILTERS: 'readonly',
+          TOOL_GROUPS: 'newsletter_readonly,server_queue_readonly,official_queue_readonly',
           PULSEMCP_MOCK_DATA: JSON.stringify({}),
         },
       });
@@ -379,6 +376,57 @@ describe('PulseMCP CMS Admin - Toolgroups Integration Tests', () => {
       expect(toolNames).not.toContain('draft_newsletter_post');
       expect(toolNames).not.toContain('save_mcp_implementation');
       expect(toolNames).not.toContain('approve_official_mirror_queue_item');
+    });
+  });
+
+  describe('mixed base and _readonly groups', () => {
+    let client: TestMCPClient;
+
+    beforeAll(async () => {
+      const serverPath = path.join(
+        __dirname,
+        '../../local/build/local/src/index.integration-with-mock.js'
+      );
+
+      client = new TestMCPClient({
+        serverPath: serverPath,
+        env: {
+          ...process.env,
+          // Full access to newsletter, read-only to server_queue, no official_queue
+          TOOL_GROUPS: 'newsletter,server_queue_readonly',
+          PULSEMCP_MOCK_DATA: JSON.stringify({}),
+        },
+      });
+      await client.connect();
+    });
+
+    afterAll(async () => {
+      await client.disconnect();
+    });
+
+    it('should allow different access levels per group', async () => {
+      const tools = await client.listTools();
+
+      // 6 newsletter (all) + 3 server_queue (read-only) = 9 tools
+      expect(tools.tools).toHaveLength(9);
+      const toolNames = tools.tools.map((t) => t.name);
+
+      // Newsletter write tools should be present (full access)
+      expect(toolNames).toContain('draft_newsletter_post');
+      expect(toolNames).toContain('update_newsletter_post');
+      expect(toolNames).toContain('upload_image');
+
+      // Server queue read tools should be present
+      expect(toolNames).toContain('search_mcp_implementations');
+      expect(toolNames).toContain('get_draft_mcp_implementations');
+      expect(toolNames).toContain('find_providers');
+
+      // Server queue write tools should NOT be present (read-only)
+      expect(toolNames).not.toContain('save_mcp_implementation');
+      expect(toolNames).not.toContain('send_impl_posted_notif');
+
+      // Official queue tools should NOT be present (not enabled)
+      expect(toolNames).not.toContain('get_official_mirror_queue_items');
     });
   });
 });

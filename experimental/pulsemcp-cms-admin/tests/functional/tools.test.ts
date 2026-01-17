@@ -15,11 +15,7 @@ import { approveOfficialMirrorQueueItemWithoutModifying } from '../../shared/src
 import { rejectOfficialMirrorQueueItem } from '../../shared/src/tools/reject-official-mirror-queue-item.js';
 import { addOfficialMirrorToRegularQueue } from '../../shared/src/tools/add-official-mirror-to-regular-queue.js';
 import { unlinkOfficialMirrorQueueItem } from '../../shared/src/tools/unlink-official-mirror-queue-item.js';
-import {
-  parseEnabledToolGroups,
-  parseToolGroupFilters,
-  createRegisterTools,
-} from '../../shared/src/tools.js';
+import { parseEnabledToolGroups, createRegisterTools } from '../../shared/src/tools.js';
 import type {
   IPulseMCPAdminClient,
   Post,
@@ -698,6 +694,11 @@ describe('Newsletter Tools', () => {
       expect(groups).toEqual(['newsletter']);
     });
 
+    it('should parse readonly variants', () => {
+      const groups = parseEnabledToolGroups('newsletter_readonly,server_queue_readonly');
+      expect(groups).toEqual(['newsletter_readonly', 'server_queue_readonly']);
+    });
+
     it('should handle whitespace in group names', () => {
       const groups = parseEnabledToolGroups('newsletter , server_queue , official_queue ');
       expect(groups).toEqual(['newsletter', 'server_queue', 'official_queue']);
@@ -708,12 +709,12 @@ describe('Newsletter Tools', () => {
       expect(groups).toEqual(['newsletter', 'server_queue']);
     });
 
-    it('should return all groups when empty string provided', () => {
+    it('should return all base groups when empty string provided', () => {
       const groups = parseEnabledToolGroups('');
       expect(groups).toEqual(['newsletter', 'server_queue', 'official_queue']);
     });
 
-    it('should return all groups when no parameter provided', () => {
+    it('should return all base groups when no parameter provided', () => {
       const groups = parseEnabledToolGroups();
       expect(groups).toEqual(['newsletter', 'server_queue', 'official_queue']);
     });
@@ -733,56 +734,14 @@ describe('Newsletter Tools', () => {
       }
     });
 
-    it('should warn for invalid group names', () => {
-      const groups = parseEnabledToolGroups('server_queue_readonly,official_queue_all');
-      expect(groups).toEqual([]);
-    });
-
     it('should deduplicate groups', () => {
       const groups = parseEnabledToolGroups('newsletter,newsletter,server_queue');
       expect(groups).toEqual(['newsletter', 'server_queue']);
     });
-  });
 
-  describe('parseToolGroupFilters', () => {
-    it('should parse valid filters from parameter', () => {
-      const filters = parseToolGroupFilters('readonly');
-      expect(filters).toEqual(['readonly']);
-    });
-
-    it('should return empty array when no parameter provided', () => {
-      const filters = parseToolGroupFilters();
-      expect(filters).toEqual([]);
-    });
-
-    it('should return empty array when empty string provided', () => {
-      const filters = parseToolGroupFilters('');
-      expect(filters).toEqual([]);
-    });
-
-    it('should filter out invalid filter names', () => {
-      const filters = parseToolGroupFilters('readonly,invalid_filter');
-      expect(filters).toEqual(['readonly']);
-    });
-
-    it('should read from TOOL_GROUP_FILTERS env var', () => {
-      const originalEnv = process.env.TOOL_GROUP_FILTERS;
-      process.env.TOOL_GROUP_FILTERS = 'readonly';
-
-      const filters = parseToolGroupFilters();
-      expect(filters).toEqual(['readonly']);
-
-      // Restore original env
-      if (originalEnv) {
-        process.env.TOOL_GROUP_FILTERS = originalEnv;
-      } else {
-        delete process.env.TOOL_GROUP_FILTERS;
-      }
-    });
-
-    it('should deduplicate filters', () => {
-      const filters = parseToolGroupFilters('readonly,readonly');
-      expect(filters).toEqual(['readonly']);
+    it('should allow mixing base and readonly groups', () => {
+      const groups = parseEnabledToolGroups('newsletter,server_queue_readonly,official_queue');
+      expect(groups).toEqual(['newsletter', 'server_queue_readonly', 'official_queue']);
     });
   });
 
@@ -906,14 +865,14 @@ describe('Newsletter Tools', () => {
       expect(result.tools).toHaveLength(18); // 6 newsletter + 5 server_queue + 7 official_queue
     });
 
-    it('should filter out write tools when readonly filter is active', async () => {
+    it('should register only read-only newsletter tools when newsletter_readonly group is enabled', async () => {
       const mockServer = new Server(
         { name: 'test', version: '1.0.0' },
         { capabilities: { tools: {} } }
       );
       const clientFactory = () => createMockClient2();
 
-      const registerTools = createRegisterTools(clientFactory, 'newsletter', 'readonly');
+      const registerTools = createRegisterTools(clientFactory, 'newsletter_readonly');
       registerTools(mockServer);
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -933,7 +892,7 @@ describe('Newsletter Tools', () => {
       expect(toolNames).not.toContain('upload_image');
     });
 
-    it('should filter out write tools across all groups when readonly filter is active', async () => {
+    it('should register only read-only tools when all _readonly groups are enabled', async () => {
       const mockServer = new Server(
         { name: 'test', version: '1.0.0' },
         { capabilities: { tools: {} } }
@@ -942,8 +901,7 @@ describe('Newsletter Tools', () => {
 
       const registerTools = createRegisterTools(
         clientFactory,
-        'newsletter,server_queue,official_queue',
-        'readonly'
+        'newsletter_readonly,server_queue_readonly,official_queue_readonly'
       );
       registerTools(mockServer);
 
@@ -964,6 +922,35 @@ describe('Newsletter Tools', () => {
       expect(toolNames).not.toContain('draft_newsletter_post');
       expect(toolNames).not.toContain('save_mcp_implementation');
       expect(toolNames).not.toContain('approve_official_mirror_queue_item');
+    });
+
+    it('should allow mixing base and readonly groups for different access levels', async () => {
+      const mockServer = new Server(
+        { name: 'test', version: '1.0.0' },
+        { capabilities: { tools: {} } }
+      );
+      const clientFactory = () => createMockClient2();
+
+      // Full access to newsletter, read-only to server_queue
+      const registerTools = createRegisterTools(clientFactory, 'newsletter,server_queue_readonly');
+      registerTools(mockServer);
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const handlers = (mockServer as any)._requestHandlers;
+      const listToolsHandler = handlers.get('tools/list');
+      const result = await listToolsHandler({ method: 'tools/list', params: {} });
+
+      // 6 newsletter (all) + 3 server_queue read = 9 tools
+      expect(result.tools).toHaveLength(9);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const toolNames = result.tools.map((t: any) => t.name);
+      // Newsletter write tools should be present
+      expect(toolNames).toContain('draft_newsletter_post');
+      expect(toolNames).toContain('update_newsletter_post');
+      // Server queue read tools should be present
+      expect(toolNames).toContain('search_mcp_implementations');
+      // Server queue write tools should NOT be present
+      expect(toolNames).not.toContain('save_mcp_implementation');
     });
   });
 
@@ -1969,14 +1956,14 @@ describe('Newsletter Tools', () => {
       expect(toolNames).toContain('unlink_official_mirror_queue_item');
     });
 
-    it('should only register read-only tools when official_queue is enabled with readonly filter', async () => {
+    it('should only register read-only tools when official_queue_readonly is enabled', async () => {
       const mockServer = new Server(
         { name: 'test', version: '1.0.0' },
         { capabilities: { tools: {} } }
       );
       const clientFactory = () => createMockClient();
 
-      const registerTools = createRegisterTools(clientFactory, 'official_queue', 'readonly');
+      const registerTools = createRegisterTools(clientFactory, 'official_queue_readonly');
       registerTools(mockServer);
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any

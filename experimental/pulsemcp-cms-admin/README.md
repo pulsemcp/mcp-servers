@@ -29,9 +29,7 @@ This is an MCP ([Model Context Protocol](https://modelcontextprotocol.io/)) Serv
 
 **MCP Implementation Search**: Search for MCP servers and clients in the PulseMCP registry.
 
-**Tool Groups**: Enable/disable tool groups (newsletter, server_queue, official_queue) via `TOOL_GROUPS` environment variable.
-
-**Tool Group Filters**: Filter tools (e.g., `readonly` to exclude write operations) via `TOOL_GROUP_FILTERS` environment variable.
+**Tool Groups**: Enable/disable tool groups via `TOOL_GROUPS` environment variable. Each group has a base variant (full access) and a `_readonly` variant (read-only access).
 
 **Draft Control**: Manage draft posts before publishing to the newsletter.
 
@@ -62,35 +60,46 @@ This server is built and tested on macOS with Claude Desktop. It should work wit
 
 # Tool Groups
 
-This server organizes tools into groups that can be selectively enabled or disabled:
+This server organizes tools into groups that can be selectively enabled or disabled. Each group has two variants:
 
-- **newsletter** (6 tools): Newsletter management, image uploads, and author retrieval
+- **Base group** (e.g., `newsletter`): Full read + write access
+- **Readonly group** (e.g., `newsletter_readonly`): Read-only access
+
+## Available Groups
+
+| Group                     | Tools | Description                                  |
+| ------------------------- | ----- | -------------------------------------------- |
+| `newsletter`              | 6     | Full newsletter management (read + write)    |
+| `newsletter_readonly`     | 3     | Newsletter read-only (get posts, authors)    |
+| `server_queue`            | 5     | Full MCP implementation queue (read + write) |
+| `server_queue_readonly`   | 3     | MCP implementation queue read-only           |
+| `official_queue`          | 7     | Full official mirror queue (read + write)    |
+| `official_queue_readonly` | 2     | Official mirror queue read-only              |
+
+### Tools by Group
+
+- **newsletter** / **newsletter_readonly**:
   - Read-only: `get_newsletter_posts`, `get_newsletter_post`, `get_authors`
   - Write: `draft_newsletter_post`, `update_newsletter_post`, `upload_image`
-- **server_queue** (5 tools): MCP implementation queue tools
+- **server_queue** / **server_queue_readonly**:
   - Read-only: `search_mcp_implementations`, `get_draft_mcp_implementations`, `find_providers`
   - Write: `save_mcp_implementation`, `send_impl_posted_notif`
-- **official_queue** (7 tools): Official mirror queue tools
+- **official_queue** / **official_queue_readonly**:
   - Read-only: `get_official_mirror_queue_items`, `get_official_mirror_queue_item`
   - Write: `approve_official_mirror_queue_item`, `approve_mirror_no_modify`, `reject_official_mirror_queue_item`, `add_official_mirror_to_regular_queue`, `unlink_official_mirror_queue_item`
 
 ## Environment Variables
 
-| Variable             | Description                                 | Default            |
-| -------------------- | ------------------------------------------- | ------------------ |
-| `TOOL_GROUPS`        | Comma-separated list of enabled tool groups | All groups enabled |
-| `TOOL_GROUP_FILTERS` | Comma-separated list of active filters      | No filters         |
-
-## Available Filters
-
-- **readonly**: Filters out write operations, keeping only read-only tools
+| Variable      | Description                                 | Default                                                    |
+| ------------- | ------------------------------------------- | ---------------------------------------------------------- |
+| `TOOL_GROUPS` | Comma-separated list of enabled tool groups | `newsletter,server_queue,official_queue` (all base groups) |
 
 ## Examples
 
-Enable all tools (default):
+Enable all tools with full access (default):
 
 ```bash
-# No environment variables needed - all groups enabled, no filters
+# No environment variables needed - all base groups enabled
 ```
 
 Enable only newsletter tools:
@@ -99,17 +108,23 @@ Enable only newsletter tools:
 TOOL_GROUPS=newsletter
 ```
 
-Enable server_queue with read-only filter:
+Enable server_queue with read-only access:
 
 ```bash
-TOOL_GROUPS=server_queue
-TOOL_GROUP_FILTERS=readonly
+TOOL_GROUPS=server_queue_readonly
 ```
 
-Enable all groups but filter to read-only:
+Enable all groups with read-only access:
 
 ```bash
-TOOL_GROUP_FILTERS=readonly
+TOOL_GROUPS=newsletter_readonly,server_queue_readonly,official_queue_readonly
+```
+
+Mix full and read-only access per group:
+
+```bash
+# Full newsletter access, read-only server_queue, no official_queue
+TOOL_GROUPS=newsletter,server_queue_readonly
 ```
 
 # Usage Tips
@@ -123,7 +138,7 @@ TOOL_GROUP_FILTERS=readonly
 - Use MCP server/client slugs for featured content (e.g., "github-mcp", "claude-desktop")
 - Use `search_mcp_implementations` to discover MCP servers and clients in the PulseMCP registry
 - Enable or disable specific tool groups by setting `TOOL_GROUPS` environment variable
-- Apply filters like `readonly` via `TOOL_GROUP_FILTERS` environment variable
+- Use `_readonly` suffixes to restrict groups to read-only operations (e.g., `server_queue_readonly`)
 - Use the `remote` array parameter in `save_mcp_implementation` to configure remote endpoints for MCP servers (transport, host_platform, authentication_method, etc.)
 - Use the `canonical` array parameter in `save_mcp_implementation` to set canonical URLs with scope (domain, subdomain, subfolder, or url)
 - Remote endpoints allow specifying how MCP servers can be accessed (direct URL, setup URL, authentication method, cost, etc.)
@@ -234,8 +249,7 @@ Add to your Claude Desktop configuration:
       "args": ["/path/to/pulsemcp-cms-admin/local/build/index.js"],
       "env": {
         "PULSEMCP_ADMIN_API_KEY": "your-api-key-here",
-        "TOOL_GROUPS": "newsletter,server_queue,official_queue",
-        "TOOL_GROUP_FILTERS": ""
+        "TOOL_GROUPS": "newsletter,server_queue,official_queue"
       }
     }
   }
@@ -252,7 +266,7 @@ For read-only access:
       "args": ["/path/to/pulsemcp-cms-admin/local/build/index.js"],
       "env": {
         "PULSEMCP_ADMIN_API_KEY": "your-api-key-here",
-        "TOOL_GROUP_FILTERS": "readonly"
+        "TOOL_GROUPS": "newsletter_readonly,server_queue_readonly,official_queue_readonly"
       }
     }
   }

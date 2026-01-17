@@ -23,18 +23,25 @@ import { unlinkOfficialMirrorQueueItem } from './tools/unlink-official-mirror-qu
 /**
  * Tool group definitions - groups of related tools that can be enabled/disabled together
  *
- * - newsletter: All newsletter-related tools (posts, authors, images)
- * - server_queue: Server queue tools (search, get drafts, providers, save, notifications)
- * - official_queue: Official mirror queue tools (list, get, approve, reject, unlink)
- */
-export type ToolGroup = 'newsletter' | 'server_queue' | 'official_queue';
-
-/**
- * Tool group filter definitions - filters that can be applied to enabled tool groups
+ * Each group has two variants:
+ * - Base group (e.g., 'newsletter'): Includes all tools (read + write operations)
+ * - Readonly group (e.g., 'newsletter_readonly'): Includes only read operations
  *
- * - readonly: Filters out write operations, keeping only read-only tools
+ * Groups:
+ * - newsletter / newsletter_readonly: Newsletter-related tools (posts, authors, images)
+ * - server_queue / server_queue_readonly: Server queue tools (search, drafts, providers, save, notifications)
+ * - official_queue / official_queue_readonly: Official mirror queue tools (list, get, approve, reject, unlink)
  */
-export type ToolGroupFilter = 'readonly';
+export type ToolGroup =
+  | 'newsletter'
+  | 'newsletter_readonly'
+  | 'server_queue'
+  | 'server_queue_readonly'
+  | 'official_queue'
+  | 'official_queue_readonly';
+
+/** Base groups without _readonly suffix */
+type BaseToolGroup = 'newsletter' | 'server_queue' | 'official_queue';
 
 interface Tool {
   name: string;
@@ -50,8 +57,9 @@ interface Tool {
 
 interface ToolDefinition {
   factory: (server: Server, clientFactory: ClientFactory) => Tool;
-  group: ToolGroup;
-  /** If true, this tool is filtered out when the 'readonly' filter is active */
+  /** The base group this tool belongs to (without _readonly suffix) */
+  group: BaseToolGroup;
+  /** If true, this tool is excluded from _readonly groups */
   isWriteOperation: boolean;
 }
 
@@ -88,26 +96,33 @@ const ALL_TOOLS: ToolDefinition[] = [
 ];
 
 /**
- * All valid tool groups
+ * All valid tool groups (base groups and their _readonly variants)
  */
-const VALID_TOOL_GROUPS: ToolGroup[] = ['newsletter', 'server_queue', 'official_queue'];
+const VALID_TOOL_GROUPS: ToolGroup[] = [
+  'newsletter',
+  'newsletter_readonly',
+  'server_queue',
+  'server_queue_readonly',
+  'official_queue',
+  'official_queue_readonly',
+];
 
 /**
- * All valid tool group filters
+ * Base groups (without _readonly suffix) - used for default "all groups" behavior
  */
-const VALID_TOOL_GROUP_FILTERS: ToolGroupFilter[] = ['readonly'];
+const BASE_TOOL_GROUPS: BaseToolGroup[] = ['newsletter', 'server_queue', 'official_queue'];
 
 /**
  * Parse enabled tool groups from environment variable or parameter
- * @param enabledGroupsParam - Comma-separated list of tool groups (e.g., "newsletter,server_queue")
+ * @param enabledGroupsParam - Comma-separated list of tool groups (e.g., "newsletter,server_queue_readonly")
  * @returns Array of enabled tool groups
  */
 export function parseEnabledToolGroups(enabledGroupsParam?: string): ToolGroup[] {
   const groupsStr = enabledGroupsParam || process.env.TOOL_GROUPS || '';
 
   if (!groupsStr) {
-    // Default: all groups enabled
-    return [...VALID_TOOL_GROUPS];
+    // Default: all base groups enabled (full read+write access)
+    return [...BASE_TOOL_GROUPS];
   }
 
   const groups = groupsStr.split(',').map((g) => g.trim());
@@ -128,33 +143,26 @@ export function parseEnabledToolGroups(enabledGroupsParam?: string): ToolGroup[]
 }
 
 /**
- * Parse tool group filters from environment variable or parameter
- * @param filtersParam - Comma-separated list of filters (e.g., "readonly")
- * @returns Array of active filters
+ * Check if a tool should be included based on enabled groups
+ * @param toolDef - The tool definition to check
+ * @param enabledGroups - Array of enabled tool groups
+ * @returns true if the tool should be included
  */
-export function parseToolGroupFilters(filtersParam?: string): ToolGroupFilter[] {
-  const filtersStr = filtersParam || process.env.TOOL_GROUP_FILTERS || '';
+function shouldIncludeTool(toolDef: ToolDefinition, enabledGroups: ToolGroup[]): boolean {
+  const baseGroup = toolDef.group;
+  const readonlyGroup = `${baseGroup}_readonly` as ToolGroup;
 
-  if (!filtersStr) {
-    // Default: no filters active
-    return [];
+  // Check if the base group (full access) is enabled
+  if (enabledGroups.includes(baseGroup as ToolGroup)) {
+    return true;
   }
 
-  const filters = filtersStr.split(',').map((f) => f.trim());
-  const validFilters: ToolGroupFilter[] = [];
-
-  for (const filter of filters) {
-    if (
-      VALID_TOOL_GROUP_FILTERS.includes(filter as ToolGroupFilter) &&
-      !validFilters.includes(filter as ToolGroupFilter)
-    ) {
-      validFilters.push(filter as ToolGroupFilter);
-    } else if (!VALID_TOOL_GROUP_FILTERS.includes(filter as ToolGroupFilter)) {
-      console.warn(`Unknown tool group filter: ${filter}`);
-    }
+  // Check if the readonly group is enabled (only include read operations)
+  if (enabledGroups.includes(readonlyGroup) && !toolDef.isWriteOperation) {
+    return true;
   }
 
-  return validFilters;
+  return false;
 }
 
 /**
@@ -165,41 +173,29 @@ export function parseToolGroupFilters(filtersParam?: string): ToolGroupFilter[] 
  * a factory pattern that accepts the server and clientFactory as parameters.
  *
  * Tool groups can be enabled/disabled via the TOOL_GROUPS environment variable
- * (comma-separated list, e.g., "newsletter,server_queue"). If not set, all tool
- * groups are enabled by default.
- *
- * Tool group filters can be applied via the TOOL_GROUP_FILTERS environment variable
- * (comma-separated list, e.g., "readonly"). If not set, no filters are applied.
+ * (comma-separated list, e.g., "newsletter,server_queue_readonly"). If not set, all
+ * base tool groups are enabled by default (full read+write access).
  *
  * Available tool groups:
- * - newsletter: All newsletter-related tools
- * - server_queue: MCP implementation queue tools (search, drafts, save, notifications)
- * - official_queue: Official mirror queue tools (list, get, approve, reject, unlink)
- *
- * Available filters:
- * - readonly: Filters out write operations, keeping only read-only tools
+ * - newsletter: All newsletter-related tools (read + write)
+ * - newsletter_readonly: Newsletter tools (read only)
+ * - server_queue: MCP implementation queue tools (read + write)
+ * - server_queue_readonly: MCP implementation queue tools (read only)
+ * - official_queue: Official mirror queue tools (read + write)
+ * - official_queue_readonly: Official mirror queue tools (read only)
  *
  * @param clientFactory - Factory function that creates client instances
  * @param enabledGroups - Optional comma-separated list of enabled tool groups (overrides env var)
- * @param activeFilters - Optional comma-separated list of active filters (overrides env var)
  * @returns Function that registers all tools with a server
  */
-export function createRegisterTools(
-  clientFactory: ClientFactory,
-  enabledGroups?: string,
-  activeFilters?: string
-) {
+export function createRegisterTools(clientFactory: ClientFactory, enabledGroups?: string) {
   return (server: Server) => {
     const enabledToolGroups = parseEnabledToolGroups(enabledGroups);
-    const filters = parseToolGroupFilters(activeFilters);
 
     // Filter tools based on enabled groups
-    let enabledTools = ALL_TOOLS.filter((toolDef) => enabledToolGroups.includes(toolDef.group));
-
-    // Apply readonly filter if active
-    if (filters.includes('readonly')) {
-      enabledTools = enabledTools.filter((toolDef) => !toolDef.isWriteOperation);
-    }
+    const enabledTools = ALL_TOOLS.filter((toolDef) =>
+      shouldIncludeTool(toolDef, enabledToolGroups)
+    );
 
     // Create tool instances
     const tools = enabledTools.map((toolDef) => toolDef.factory(server, clientFactory));
