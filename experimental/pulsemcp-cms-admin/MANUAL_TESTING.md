@@ -3,7 +3,7 @@
 ## Latest Test Results
 
 **Date:** 2026-01-17
-**Commit:** 13daf9f
+**Commit:** 5ef28b1
 **Version:** 0.6.0
 **API Environment:** Staging (https://staging.pulsemcp.com)
 **API Key:** Admin API key (read/write)
