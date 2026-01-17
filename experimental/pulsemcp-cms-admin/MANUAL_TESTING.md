@@ -55,7 +55,7 @@ All manual tests pass against staging API (`npm run test:manual`). The v0.4.0 re
 - `add_official_mirror_to_regular_queue` - Convert to draft ✅ Verified against staging
 - `unlink_official_mirror_queue_item` - Unlink from server ✅ Verified against staging
 
-These tools use the same API client patterns, form-encoded POST requests for actions, and error handling as the existing server queue tools. Functional tests (85 tests) verify the tool structure, parameter validation, and output formatting.
+These tools use the same API client patterns, form-encoded POST requests for actions, and error handling as the existing server queue tools. Functional tests (104 tests) verify the tool structure, parameter validation, and output formatting.
 
 ### Tool Test Results
 
