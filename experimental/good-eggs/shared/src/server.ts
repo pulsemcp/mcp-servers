@@ -951,10 +951,10 @@ export class GoodEggsClient implements IGoodEggsClient {
         }
 
         // Find and click the remove button
-        // Good Eggs uses a quantity dropdown with a "Remove" option
-        // Or a dedicated remove button - let's try both approaches
+        // Good Eggs may have a dedicated remove button or use a quantity dropdown
+        // We try the remove button first, then fall back to the quantity dropdown
 
-        // First, try to find a direct remove button
+        // First, try to find a direct remove button (future-proofing in case Good Eggs adds one)
         const removeButton = await cartItem.$(
           'button[aria-label*="remove"], button[aria-label*="Remove"], .summary-item__remove, [class*="remove-button"]'
         );
@@ -970,18 +970,22 @@ export class GoodEggsClient implements IGoodEggsClient {
           };
         }
 
-        // If no remove button, try using the quantity dropdown to select "Remove" (value 0)
+        // Fallback: use the quantity dropdown with value "0" to remove the item
+        // Good Eggs quantity dropdowns have a "Remove" option with value="0"
         const quantitySelect = await cartItem.$('.summary-item__quantity select');
         if (quantitySelect) {
-          // Set quantity to 0 which typically removes the item
-          await quantitySelect.selectOption('0');
-          await page.waitForTimeout(1000);
+          try {
+            await quantitySelect.selectOption('0');
+            await page.waitForTimeout(1000);
 
-          return {
-            success: true,
-            message: `Successfully removed ${itemName.trim()} from cart`,
-            itemName: itemName.trim(),
-          };
+            return {
+              success: true,
+              message: `Successfully removed ${itemName.trim()} from cart`,
+              itemName: itemName.trim(),
+            };
+          } catch {
+            // If selectOption('0') fails (e.g., no "0" option exists), continue to error path
+          }
         }
       }
     }
