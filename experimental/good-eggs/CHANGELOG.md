@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.6] - 2026-01-17
+
+### Fixed
+
+- Fixed `remove_from_cart` tool to use correct CSS selectors matching Good Eggs' actual page structure (`.js-basket-item` and `.summary-item__*` classes)
+- `remove_from_cart` now tries both a direct remove button and setting quantity to 0 via the quantity dropdown
+
 ## [0.1.5] - 2026-01-16
 
 ### Added

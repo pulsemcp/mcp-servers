@@ -930,29 +930,33 @@ export class GoodEggsClient implements IGoodEggsClient {
       };
     }
 
-    // Look for the item in the cart
-    const cartItems = await page.$$(
-      '[class*="cart-item"], [class*="basket-item"], [class*="line-item"]'
-    );
+    // Look for the item in the cart using the same selectors as getCart()
+    // Good Eggs uses 'js-basket-item' class for cart items
+    const cartItems = await page.$$('.js-basket-item');
 
     let itemFound = false;
     let itemName = 'Unknown item';
 
     for (const cartItem of cartItems) {
       // Check if this cart item contains a link to our product
+      // Good Eggs uses .summary-item__name a for the product link
       const itemLink = await cartItem.$(`a[href*="${productSlug}"]`);
       if (itemLink) {
         itemFound = true;
 
-        // Get the item name
-        const nameEl = await cartItem.$('[class*="name"], [class*="title"], h3, h4');
+        // Get the item name using Good Eggs selector
+        const nameEl = await cartItem.$('.summary-item__name a');
         if (nameEl) {
           itemName = (await nameEl.textContent()) || 'Unknown item';
         }
 
         // Find and click the remove button
+        // Good Eggs may have a dedicated remove button or use a quantity dropdown
+        // We try the remove button first, then fall back to the quantity dropdown
+
+        // First, try to find a direct remove button (future-proofing in case Good Eggs adds one)
         const removeButton = await cartItem.$(
-          'button[aria-label*="remove"], button:has-text("Remove"), button:has-text("×"), [class*="remove"] button'
+          'button[aria-label*="remove"], button[aria-label*="Remove"], .summary-item__remove, [class*="remove-button"]'
         );
 
         if (removeButton) {
@@ -964,6 +968,24 @@ export class GoodEggsClient implements IGoodEggsClient {
             message: `Successfully removed ${itemName.trim()} from cart`,
             itemName: itemName.trim(),
           };
+        }
+
+        // Fallback: use the quantity dropdown with value "0" to remove the item
+        // Good Eggs quantity dropdowns have a "Remove" option with value="0"
+        const quantitySelect = await cartItem.$('.summary-item__quantity select');
+        if (quantitySelect) {
+          try {
+            await quantitySelect.selectOption('0');
+            await page.waitForTimeout(1000);
+
+            return {
+              success: true,
+              message: `Successfully removed ${itemName.trim()} from cart`,
+              itemName: itemName.trim(),
+            };
+          } catch {
+            // If selectOption('0') fails (e.g., no "0" option exists), continue to error path
+          }
         }
       }
     }
