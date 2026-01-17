@@ -2,15 +2,24 @@
 
 ## Latest Test Results
 
-**Date:** 2025-12-29
-**Commit:** ccdade8
-**Version:** 0.4.4
+**Date:** 2026-01-17
+**Commit:** ccedc95
+**Version:** 0.5.0
 **API Environment:** Staging (https://admin.staging.pulsemcp.com)
 **API Key:** Admin API key (read/write)
 
 ## Test Results Summary
 
 ### Overall: ✅ 47/47 Tests PASSING (100%)
+
+**Note:** v0.5.0 refactors tool group organization with full backwards compatibility:
+
+- Tool groups simplified from 5 to 3: `newsletter`, `server_queue`, `official_queue`
+- New `TOOL_GROUPS` env var (replaces `PULSEMCP_ADMIN_ENABLED_TOOLGROUPS`, legacy still works)
+- New `TOOL_GROUP_FILTERS` env var with `readonly` filter support
+- Legacy group names (`server_queue_readonly`, `server_queue_all`, etc.) automatically mapped to new names
+
+This is an internal refactoring of tool organization - no API changes or functional differences. All tools continue to work identically; only the configuration mechanism has changed. Existing manual tests remain valid as they test tool functionality which is unaffected.
 
 **Note:** v0.4.4 fixes empty validation error messages in `save_mcp_implementation`:
 
