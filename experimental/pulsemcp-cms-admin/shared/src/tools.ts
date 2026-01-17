@@ -170,9 +170,12 @@ export function parseToolGroupFilters(filtersParam?: string): ToolGroupFilter[] 
   const validFilters: ToolGroupFilter[] = [];
 
   for (const filter of filters) {
-    if (VALID_TOOL_GROUP_FILTERS.includes(filter as ToolGroupFilter)) {
+    if (
+      VALID_TOOL_GROUP_FILTERS.includes(filter as ToolGroupFilter) &&
+      !validFilters.includes(filter as ToolGroupFilter)
+    ) {
       validFilters.push(filter as ToolGroupFilter);
-    } else {
+    } else if (!VALID_TOOL_GROUP_FILTERS.includes(filter as ToolGroupFilter)) {
       console.warn(`Unknown tool group filter: ${filter}`);
     }
   }

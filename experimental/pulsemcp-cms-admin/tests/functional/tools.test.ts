@@ -799,6 +799,36 @@ describe('Newsletter Tools', () => {
         delete process.env.TOOL_GROUP_FILTERS;
       }
     });
+
+    it('should deduplicate filters', () => {
+      const filters = parseToolGroupFilters('readonly,readonly');
+      expect(filters).toEqual(['readonly']);
+    });
+  });
+
+  describe('parseEnabledToolGroups env var precedence', () => {
+    it('should prioritize TOOL_GROUPS over PULSEMCP_ADMIN_ENABLED_TOOLGROUPS', () => {
+      const originalNewEnv = process.env.TOOL_GROUPS;
+      const originalLegacyEnv = process.env.PULSEMCP_ADMIN_ENABLED_TOOLGROUPS;
+
+      process.env.TOOL_GROUPS = 'newsletter';
+      process.env.PULSEMCP_ADMIN_ENABLED_TOOLGROUPS = 'server_queue';
+
+      const groups = parseEnabledToolGroups();
+      expect(groups).toEqual(['newsletter']);
+
+      // Restore original env
+      if (originalNewEnv) {
+        process.env.TOOL_GROUPS = originalNewEnv;
+      } else {
+        delete process.env.TOOL_GROUPS;
+      }
+      if (originalLegacyEnv) {
+        process.env.PULSEMCP_ADMIN_ENABLED_TOOLGROUPS = originalLegacyEnv;
+      } else {
+        delete process.env.PULSEMCP_ADMIN_ENABLED_TOOLGROUPS;
+      }
+    });
   });
 
   describe('createRegisterTools with toolgroups filtering', () => {
