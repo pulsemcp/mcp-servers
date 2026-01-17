@@ -2,15 +2,23 @@
 
 ## Latest Test Results
 
-**Date:** 2025-12-29
-**Commit:** ccdade8
-**Version:** 0.4.4
+**Date:** 2026-01-17
+**Commit:** ccedc95
+**Version:** 0.5.0
 **API Environment:** Staging (https://admin.staging.pulsemcp.com)
 **API Key:** Admin API key (read/write)
 
 ## Test Results Summary
 
 ### Overall: ✅ 47/47 Tests PASSING (100%)
+
+**Note:** v0.5.0 refactors tool group organization:
+
+- Each group now has two variants: base (e.g., `newsletter`) and readonly (e.g., `newsletter_readonly`)
+- New `TOOL_GROUPS` env var (replaces `PULSEMCP_ADMIN_ENABLED_TOOLGROUPS`)
+- Mix and match base and readonly groups for different access levels per group
+
+This is an internal refactoring of tool organization - no API changes or functional differences. All tools continue to work identically; only the configuration mechanism has changed. Existing manual tests remain valid as they test tool functionality which is unaffected.
 
 **Note:** v0.4.4 fixes empty validation error messages in `save_mcp_implementation`:
 
@@ -47,7 +55,7 @@ All manual tests pass against staging API (`npm run test:manual`). The v0.4.0 re
 - `add_official_mirror_to_regular_queue` - Convert to draft ✅ Verified against staging
 - `unlink_official_mirror_queue_item` - Unlink from server ✅ Verified against staging
 
-These tools use the same API client patterns, form-encoded POST requests for actions, and error handling as the existing server queue tools. Functional tests (85 tests) verify the tool structure, parameter validation, and output formatting.
+These tools use the same API client patterns, form-encoded POST requests for actions, and error handling as the existing server queue tools. Functional tests (104 tests) verify the tool structure, parameter validation, and output formatting.
 
 ### Tool Test Results
 

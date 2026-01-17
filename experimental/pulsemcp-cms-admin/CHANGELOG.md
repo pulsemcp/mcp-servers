@@ -6,6 +6,34 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-01-17
+
+### Changed
+
+- **BREAKING**: Simplified tool group system with new environment variables
+  - Each tool group has two variants: base (read + write) and `_readonly` (read only)
+  - Tool groups: `newsletter`, `newsletter_readonly`, `server_queue`, `server_queue_readonly`, `official_queue`, `official_queue_readonly`
+  - New `TOOL_GROUPS` env var (replaces `PULSEMCP_ADMIN_ENABLED_TOOLGROUPS`)
+  - Mix and match base and readonly groups for different access levels per group
+
+### Migration Guide
+
+**If you were using `PULSEMCP_ADMIN_ENABLED_TOOLGROUPS`:**
+
+| Old Configuration                                           | New Configuration                     |
+| ----------------------------------------------------------- | ------------------------------------- |
+| `PULSEMCP_ADMIN_ENABLED_TOOLGROUPS=newsletter`              | `TOOL_GROUPS=newsletter`              |
+| `PULSEMCP_ADMIN_ENABLED_TOOLGROUPS=server_queue_all`        | `TOOL_GROUPS=server_queue`            |
+| `PULSEMCP_ADMIN_ENABLED_TOOLGROUPS=server_queue_readonly`   | `TOOL_GROUPS=server_queue_readonly`   |
+| `PULSEMCP_ADMIN_ENABLED_TOOLGROUPS=official_queue_all`      | `TOOL_GROUPS=official_queue`          |
+| `PULSEMCP_ADMIN_ENABLED_TOOLGROUPS=official_queue_readonly` | `TOOL_GROUPS=official_queue_readonly` |
+
+**New feature:** You can now have different access levels per group by mixing base and readonly groups:
+
+- `TOOL_GROUPS=newsletter,server_queue_readonly` - Full newsletter access, read-only server queue
+
+**No changes required if:** You weren't setting any tool group environment variables (all tools enabled by default)
+
 ## [0.4.4] - 2025-12-29
 
 ### Fixed
