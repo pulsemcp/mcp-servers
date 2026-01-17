@@ -12,12 +12,11 @@
 
 ### Overall: ✅ 47/47 Tests PASSING (100%)
 
-**Note:** v0.5.0 refactors tool group organization with full backwards compatibility:
+**Note:** v0.5.0 refactors tool group organization:
 
 - Tool groups simplified from 5 to 3: `newsletter`, `server_queue`, `official_queue`
-- New `TOOL_GROUPS` env var (replaces `PULSEMCP_ADMIN_ENABLED_TOOLGROUPS`, legacy still works)
+- New `TOOL_GROUPS` env var (replaces `PULSEMCP_ADMIN_ENABLED_TOOLGROUPS`)
 - New `TOOL_GROUP_FILTERS` env var with `readonly` filter support
-- Legacy group names (`server_queue_readonly`, `server_queue_all`, etc.) automatically mapped to new names
 
 This is an internal refactoring of tool organization - no API changes or functional differences. All tools continue to work identically; only the configuration mechanism has changed. Existing manual tests remain valid as they test tool functionality which is unaffected.
 

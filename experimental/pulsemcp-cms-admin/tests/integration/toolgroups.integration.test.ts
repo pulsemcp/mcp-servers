@@ -381,43 +381,4 @@ describe('PulseMCP CMS Admin - Toolgroups Integration Tests', () => {
       expect(toolNames).not.toContain('approve_official_mirror_queue_item');
     });
   });
-
-  describe('legacy env var backwards compatibility', () => {
-    let client: TestMCPClient;
-
-    beforeAll(async () => {
-      const serverPath = path.join(
-        __dirname,
-        '../../local/build/local/src/index.integration-with-mock.js'
-      );
-
-      client = new TestMCPClient({
-        serverPath: serverPath,
-        env: {
-          ...process.env,
-          PULSEMCP_ADMIN_ENABLED_TOOLGROUPS: 'newsletter',
-          PULSEMCP_MOCK_DATA: JSON.stringify({}),
-        },
-      });
-      await client.connect();
-    });
-
-    afterAll(async () => {
-      await client.disconnect();
-    });
-
-    it('should support legacy PULSEMCP_ADMIN_ENABLED_TOOLGROUPS env var', async () => {
-      const tools = await client.listTools();
-
-      expect(tools.tools).toHaveLength(6);
-      const toolNames = tools.tools.map((t) => t.name);
-
-      // Newsletter tools should be present
-      expect(toolNames).toContain('get_newsletter_posts');
-      expect(toolNames).toContain('get_newsletter_post');
-
-      // Server queue tools should NOT be present
-      expect(toolNames).not.toContain('search_mcp_implementations');
-    });
-  });
 });

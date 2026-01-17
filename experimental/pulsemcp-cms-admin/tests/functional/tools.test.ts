@@ -733,34 +733,14 @@ describe('Newsletter Tools', () => {
       }
     });
 
-    it('should map legacy group names to new names', () => {
+    it('should warn for invalid group names', () => {
       const groups = parseEnabledToolGroups('server_queue_readonly,official_queue_all');
-      expect(groups).toEqual(['server_queue', 'official_queue']);
+      expect(groups).toEqual([]);
     });
 
-    it('should deduplicate when legacy names map to same group', () => {
-      const groups = parseEnabledToolGroups('server_queue_readonly,server_queue_all');
-      expect(groups).toEqual(['server_queue']);
-    });
-
-    it('should support legacy PULSEMCP_ADMIN_ENABLED_TOOLGROUPS env var', () => {
-      const originalNewEnv = process.env.TOOL_GROUPS;
-      const originalLegacyEnv = process.env.PULSEMCP_ADMIN_ENABLED_TOOLGROUPS;
-      delete process.env.TOOL_GROUPS;
-      process.env.PULSEMCP_ADMIN_ENABLED_TOOLGROUPS = 'newsletter';
-
-      const groups = parseEnabledToolGroups();
-      expect(groups).toEqual(['newsletter']);
-
-      // Restore original env
-      if (originalNewEnv) {
-        process.env.TOOL_GROUPS = originalNewEnv;
-      }
-      if (originalLegacyEnv) {
-        process.env.PULSEMCP_ADMIN_ENABLED_TOOLGROUPS = originalLegacyEnv;
-      } else {
-        delete process.env.PULSEMCP_ADMIN_ENABLED_TOOLGROUPS;
-      }
+    it('should deduplicate groups', () => {
+      const groups = parseEnabledToolGroups('newsletter,newsletter,server_queue');
+      expect(groups).toEqual(['newsletter', 'server_queue']);
     });
   });
 
@@ -803,31 +783,6 @@ describe('Newsletter Tools', () => {
     it('should deduplicate filters', () => {
       const filters = parseToolGroupFilters('readonly,readonly');
       expect(filters).toEqual(['readonly']);
-    });
-  });
-
-  describe('parseEnabledToolGroups env var precedence', () => {
-    it('should prioritize TOOL_GROUPS over PULSEMCP_ADMIN_ENABLED_TOOLGROUPS', () => {
-      const originalNewEnv = process.env.TOOL_GROUPS;
-      const originalLegacyEnv = process.env.PULSEMCP_ADMIN_ENABLED_TOOLGROUPS;
-
-      process.env.TOOL_GROUPS = 'newsletter';
-      process.env.PULSEMCP_ADMIN_ENABLED_TOOLGROUPS = 'server_queue';
-
-      const groups = parseEnabledToolGroups();
-      expect(groups).toEqual(['newsletter']);
-
-      // Restore original env
-      if (originalNewEnv) {
-        process.env.TOOL_GROUPS = originalNewEnv;
-      } else {
-        delete process.env.TOOL_GROUPS;
-      }
-      if (originalLegacyEnv) {
-        process.env.PULSEMCP_ADMIN_ENABLED_TOOLGROUPS = originalLegacyEnv;
-      } else {
-        delete process.env.PULSEMCP_ADMIN_ENABLED_TOOLGROUPS;
-      }
     });
   });
 
@@ -1984,16 +1939,6 @@ describe('Newsletter Tools', () => {
     it('should include official_queue group in default', () => {
       const groups = parseEnabledToolGroups();
       expect(groups).toContain('official_queue');
-    });
-
-    it('should map legacy official_queue_readonly to official_queue', () => {
-      const groups = parseEnabledToolGroups('official_queue_readonly');
-      expect(groups).toEqual(['official_queue']);
-    });
-
-    it('should map legacy official_queue_all to official_queue', () => {
-      const groups = parseEnabledToolGroups('official_queue_all');
-      expect(groups).toEqual(['official_queue']);
     });
   });
 

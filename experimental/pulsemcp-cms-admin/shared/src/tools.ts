@@ -103,12 +103,7 @@ const VALID_TOOL_GROUP_FILTERS: ToolGroupFilter[] = ['readonly'];
  * @returns Array of enabled tool groups
  */
 export function parseEnabledToolGroups(enabledGroupsParam?: string): ToolGroup[] {
-  // Check new env var first, then fall back to legacy env var for backwards compatibility
-  const groupsStr =
-    enabledGroupsParam ||
-    process.env.TOOL_GROUPS ||
-    process.env.PULSEMCP_ADMIN_ENABLED_TOOLGROUPS ||
-    '';
+  const groupsStr = enabledGroupsParam || process.env.TOOL_GROUPS || '';
 
   if (!groupsStr) {
     // Default: all groups enabled
@@ -119,38 +114,17 @@ export function parseEnabledToolGroups(enabledGroupsParam?: string): ToolGroup[]
   const validGroups: ToolGroup[] = [];
 
   for (const group of groups) {
-    // Handle legacy group names for backwards compatibility
-    const normalizedGroup = normalizeLegacyToolGroup(group);
-    if (normalizedGroup && !validGroups.includes(normalizedGroup)) {
-      validGroups.push(normalizedGroup);
-    } else if (!normalizedGroup) {
+    if (
+      VALID_TOOL_GROUPS.includes(group as ToolGroup) &&
+      !validGroups.includes(group as ToolGroup)
+    ) {
+      validGroups.push(group as ToolGroup);
+    } else if (!VALID_TOOL_GROUPS.includes(group as ToolGroup)) {
       console.warn(`Unknown tool group: ${group}`);
     }
   }
 
   return validGroups;
-}
-
-/**
- * Normalize legacy tool group names to new names
- * @param group - Tool group name (possibly legacy)
- * @returns Normalized tool group name or null if invalid
- */
-function normalizeLegacyToolGroup(group: string): ToolGroup | null {
-  // New group names
-  if (VALID_TOOL_GROUPS.includes(group as ToolGroup)) {
-    return group as ToolGroup;
-  }
-
-  // Legacy group names mapping
-  const legacyMapping: Record<string, ToolGroup> = {
-    server_queue_readonly: 'server_queue',
-    server_queue_all: 'server_queue',
-    official_queue_readonly: 'official_queue',
-    official_queue_all: 'official_queue',
-  };
-
-  return legacyMapping[group] || null;
 }
 
 /**
