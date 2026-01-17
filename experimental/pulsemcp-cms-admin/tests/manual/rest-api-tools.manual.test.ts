@@ -66,7 +66,7 @@ describe('REST API Tools - Manual Tests with Real API', () => {
 
     if (createdSecretId && client) {
       try {
-        await client.callTool('delete_secret', { id: createdSecretId });
+        await client.callTool('delete_secret', { id_or_slug: createdSecretId });
         console.log('Cleaned up secret:', createdSecretId);
       } catch {
         console.log('Could not clean up secret:', createdSecretId);
@@ -146,7 +146,7 @@ describe('REST API Tools - Manual Tests with Real API', () => {
 
     it('get_unofficial_mirrors - should support search', async () => {
       const result = await client.callTool('get_unofficial_mirrors', {
-        search: 'test',
+        q: 'test',
       });
 
       expect(result.isError).toBeFalsy();
@@ -158,8 +158,8 @@ describe('REST API Tools - Manual Tests with Real API', () => {
 
     it('get_unofficial_mirrors - should support pagination', async () => {
       const result = await client.callTool('get_unofficial_mirrors', {
-        page: 1,
-        per_page: 5,
+        limit: 5,
+        offset: 0,
       });
 
       expect(result.isError).toBeFalsy();
@@ -171,8 +171,12 @@ describe('REST API Tools - Manual Tests with Real API', () => {
       const testName = `test-mirror-${Date.now()}`;
       const result = await client.callTool('create_unofficial_mirror', {
         name: testName,
-        source_url: 'https://github.com/test-org/test-mcp-server',
         version: '1.0.0',
+        jsonb_data: {
+          name: 'Test MCP Server',
+          description: 'A test server for manual testing',
+          source_url: 'https://github.com/test-org/test-mcp-server',
+        },
       });
 
       expect(result.isError).toBeFalsy();
@@ -217,7 +221,6 @@ describe('REST API Tools - Manual Tests with Real API', () => {
       const result = await client.callTool('update_unofficial_mirror', {
         id: createdUnofficialMirrorId,
         version: '1.0.1',
-        description: 'Updated via manual test',
       });
 
       expect(result.isError).toBeFalsy();
@@ -332,7 +335,7 @@ describe('REST API Tools - Manual Tests with Real API', () => {
 
     it('get_tenants - should support search', async () => {
       const result = await client.callTool('get_tenants', {
-        search: 'admin',
+        q: 'admin',
       });
 
       expect(result.isError).toBeFalsy();
@@ -357,7 +360,7 @@ describe('REST API Tools - Manual Tests with Real API', () => {
       }
 
       const result = await client.callTool('get_tenant', {
-        id: existingTenantId,
+        id_or_slug: existingTenantId,
       });
 
       expect(result.isError).toBeFalsy();
@@ -370,7 +373,7 @@ describe('REST API Tools - Manual Tests with Real API', () => {
     it('get_tenant - should get a tenant by slug', async () => {
       // Try fetching a known tenant slug - skip if not found
       const result = await client.callTool('get_tenant', {
-        slug: 'pulsemcp',
+        id_or_slug: 'pulsemcp',
       });
 
       // Don't fail if tenant not found - just log
@@ -395,7 +398,7 @@ describe('REST API Tools - Manual Tests with Real API', () => {
 
     it('get_secrets - should support search', async () => {
       const result = await client.callTool('get_secrets', {
-        search: 'api',
+        q: 'api',
       });
 
       expect(result.isError).toBeFalsy();
@@ -404,11 +407,11 @@ describe('REST API Tools - Manual Tests with Real API', () => {
     });
 
     it('create_secret - should create a new secret', async () => {
-      const testName = `test-secret-${Date.now()}`;
+      const testSlug = `test-secret-${Date.now()}`;
       const result = await client.callTool('create_secret', {
-        name: testName,
-        slug: testName.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
-        onepassword_reference: 'op://Test Vault/Test Item/password',
+        slug: testSlug,
+        onepassword_item_id: 'op://Test Vault/Test Item/password',
+        title: 'Test Secret',
       });
 
       expect(result.isError).toBeFalsy();
@@ -432,7 +435,7 @@ describe('REST API Tools - Manual Tests with Real API', () => {
       }
 
       const result = await client.callTool('get_secret', {
-        id: createdSecretId,
+        id_or_slug: createdSecretId,
       });
 
       expect(result.isError).toBeFalsy();
@@ -449,8 +452,8 @@ describe('REST API Tools - Manual Tests with Real API', () => {
       }
 
       const result = await client.callTool('update_secret', {
-        id: createdSecretId,
-        name: 'Updated Test Secret',
+        id_or_slug: createdSecretId,
+        title: 'Updated Test Secret',
       });
 
       expect(result.isError).toBeFalsy();
@@ -467,7 +470,7 @@ describe('REST API Tools - Manual Tests with Real API', () => {
       }
 
       const result = await client.callTool('delete_secret', {
-        id: createdSecretId,
+        id_or_slug: createdSecretId,
       });
 
       expect(result.isError).toBeFalsy();
@@ -486,7 +489,7 @@ describe('REST API Tools - Manual Tests with Real API', () => {
 
     // First, get an unofficial mirror ID to use for MCP JSON tests
     it('setup - get an unofficial mirror for MCP JSON tests', async () => {
-      const result = await client.callTool('get_unofficial_mirrors', { per_page: 1 });
+      const result = await client.callTool('get_unofficial_mirrors', { limit: 1 });
 
       const text = result.content[0].text;
       const idMatch = text.match(/\*\*ID:\*\* (\d+)/);
