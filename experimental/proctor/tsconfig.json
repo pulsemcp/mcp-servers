@@ -1,19 +1,19 @@
 {
   "compilerOptions": {
-    "target": "es2022",
-    "module": "nodenext",
-    "moduleResolution": "nodenext",
+    "target": "ES2022",
+    "module": "Node16",
+    "lib": ["ES2022"],
+    "outDir": "./build",
+    "rootDir": "./",
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
-    "lib": ["es2022"],
-    "types": ["node"]
+    "resolveJsonModule": true,
+    "moduleResolution": "node16",
+    "allowJs": true,
+    "noEmit": true
   },
-  "references": [
-    { "path": "./shared" },
-    { "path": "./local" },
-    { "path": "./tests" }
-  ],
-  "files": []
+  "include": ["**/*.ts"],
+  "exclude": ["node_modules", "**/build/**"]
 }
