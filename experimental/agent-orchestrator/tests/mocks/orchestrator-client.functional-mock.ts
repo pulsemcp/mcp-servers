@@ -1,6 +1,6 @@
 import { vi } from 'vitest';
 import type { IAgentOrchestratorClient } from '../../shared/src/orchestrator-client/orchestrator-client.js';
-import type { Session, Log, SubagentTranscript } from '../../shared/src/types.js';
+import type { Session, Log, SubagentTranscript, MCPServerInfo } from '../../shared/src/types.js';
 
 const defaultSession: Session = {
   id: 1,
@@ -54,6 +54,19 @@ const defaultTranscript: SubagentTranscript = {
   created_at: '2025-01-15T14:31:00Z',
   updated_at: '2025-01-15T14:31:45Z',
 };
+
+const defaultMcpServers: MCPServerInfo[] = [
+  {
+    name: 'github-development',
+    title: 'GitHub Development',
+    description: 'Interact with GitHub repositories, issues, and pull requests',
+  },
+  {
+    name: 'slack',
+    title: 'Slack',
+    description: 'Send and receive messages in Slack workspaces',
+  },
+];
 
 export function createMockOrchestratorClient(): IAgentOrchestratorClient {
   return {
@@ -154,5 +167,7 @@ export function createMockOrchestratorClient(): IAgentOrchestratorClient {
     }),
 
     deleteSubagentTranscript: vi.fn().mockResolvedValue(undefined),
+
+    getMcpServers: vi.fn().mockResolvedValue(defaultMcpServers),
   };
 }

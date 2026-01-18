@@ -2,11 +2,12 @@ import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { ListToolsRequestSchema, CallToolRequestSchema } from '@modelcontextprotocol/sdk/types.js';
 import { ClientFactory } from './server.js';
 
-// Simplified tool surface - 4 tools
+// Simplified tool surface - 5 tools
 import { searchSessionsTool } from './tools/search-sessions.js';
 import { startSessionTool } from './tools/start-session.js';
 import { getSessionTool } from './tools/get-session.js';
 import { actionSessionTool } from './tools/action-session.js';
+import { getAvailableMcpServersTool } from './tools/get-available-mcp-servers.js';
 
 // =============================================================================
 // TOOL GROUPING SYSTEM
@@ -91,11 +92,13 @@ interface ToolDefinition {
  * - start_session: Create a new session
  * - get_session: Get detailed session info with optional logs/transcripts
  * - action_session: Perform actions (follow_up, pause, restart, archive, unarchive)
+ * - get_available_mcp_servers: List available MCP servers for use with start_session
  */
 const ALL_TOOLS: ToolDefinition[] = [
   // Read operations
   { factory: searchSessionsTool, groups: ['readonly', 'write', 'admin'] },
   { factory: getSessionTool, groups: ['readonly', 'write', 'admin'] },
+  { factory: getAvailableMcpServersTool, groups: ['readonly', 'write', 'admin'] },
 
   // Write operations
   { factory: startSessionTool, groups: ['write', 'admin'] },

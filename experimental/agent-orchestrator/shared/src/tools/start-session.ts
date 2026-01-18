@@ -54,7 +54,9 @@ const TOOL_DESCRIPTION = `Start a new agent session in the Agent Orchestrator.
 - Start a new agent task on a repository
 - Create a session to work on a specific branch
 - Set up an agent with specific MCP servers enabled
-- Create a session with custom metadata for tracking`;
+- Create a session with custom metadata for tracking
+
+**Tip:** Use get_available_mcp_servers first to see available options for the mcp_servers parameter.`;
 
 export function startSessionTool(_server: Server, clientFactory: () => IAgentOrchestratorClient) {
   return {
