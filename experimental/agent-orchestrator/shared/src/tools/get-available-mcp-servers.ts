@@ -1,7 +1,7 @@
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { z } from 'zod';
 import type { IAgentOrchestratorClient } from '../orchestrator-client/orchestrator-client.js';
-import type { MCPServerInfo } from '../types.js';
+import type { MCPServerInfo, ConfigsResponse } from '../types.js';
 
 export const GetAvailableMcpServersSchema = z.object({
   force_refresh: z
@@ -16,23 +16,41 @@ Returns server names, titles, and descriptions for each available MCP server.
 
 **Use this tool** before calling start_session to see available options for the mcp_servers parameter.
 
-**Caching:** Results are cached in memory for the session. Use force_refresh=true to fetch fresh data.`;
+**Caching:** Results are cached in memory for the session. Use force_refresh=true to fetch fresh data.
 
-// Module-level cache for MCP servers
-let mcpServersCache: MCPServerInfo[] | null = null;
+**Note:** Consider using \`get_configs\` instead to fetch all static configuration (MCP servers, agent roots, stop conditions) in a single call.`;
+
+// Module-level cache for configs (shared with get_configs tool)
+let configsCache: ConfigsResponse | null = null;
 
 /**
- * Clear the MCP servers cache (useful for testing)
+ * Clear the configs cache (useful for testing)
  */
-export function clearMcpServersCache(): void {
-  mcpServersCache = null;
+export function clearConfigsCache(): void {
+  configsCache = null;
 }
 
 /**
  * Get the current cache state (useful for testing)
  */
+export function getConfigsCache(): ConfigsResponse | null {
+  return configsCache;
+}
+
+/**
+ * Update the configs cache (used by get_configs tool to share cache)
+ */
+export function setConfigsCache(configs: ConfigsResponse): void {
+  configsCache = configs;
+}
+
+// Legacy exports for backwards compatibility with tests
+export function clearMcpServersCache(): void {
+  clearConfigsCache();
+}
+
 export function getMcpServersCache(): MCPServerInfo[] | null {
-  return mcpServersCache;
+  return configsCache?.mcp_servers ?? null;
 }
 
 export function getAvailableMcpServersTool(
@@ -58,18 +76,18 @@ export function getAvailableMcpServersTool(
         const forceRefresh = validatedArgs.force_refresh ?? false;
 
         // Use cached data if available and not forcing refresh
-        if (mcpServersCache !== null && !forceRefresh) {
-          return formatResponse(mcpServersCache, true);
+        if (configsCache !== null && !forceRefresh) {
+          return formatResponse(configsCache.mcp_servers, true);
         }
 
-        // Fetch fresh data
+        // Fetch fresh data using unified configs endpoint
         const client = clientFactory();
-        const mcpServers = await client.getMcpServers();
+        const configs = await client.getConfigs();
 
         // Update cache
-        mcpServersCache = mcpServers;
+        configsCache = configs;
 
-        return formatResponse(mcpServers, false);
+        return formatResponse(configs.mcp_servers, false);
       } catch (error) {
         return {
           content: [

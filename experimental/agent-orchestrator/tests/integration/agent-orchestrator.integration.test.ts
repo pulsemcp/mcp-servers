@@ -31,19 +31,21 @@ describe('Agent Orchestrator MCP Server Integration Tests', () => {
   });
 
   describe('Tools', () => {
-    it('should list available tools (simplified 4-tool API)', async () => {
+    it('should list available tools', async () => {
       const mockClient = createIntegrationMockOrchestratorClient({});
       client = await createTestMCPClientWithMock(mockClient);
 
       const result = await client.listTools();
       const tools = result.tools;
-      expect(tools.length).toBe(4);
+      expect(tools.length).toBe(6);
 
       const toolNames = tools.map((t: { name: string }) => t.name);
       expect(toolNames).toContain('search_sessions');
       expect(toolNames).toContain('get_session');
       expect(toolNames).toContain('start_session');
       expect(toolNames).toContain('action_session');
+      expect(toolNames).toContain('get_available_mcp_servers');
+      expect(toolNames).toContain('get_configs');
     });
 
     it('should execute search_sessions tool', async () => {

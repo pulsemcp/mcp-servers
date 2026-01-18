@@ -136,6 +136,32 @@ export interface MCPServersResponse {
   mcp_servers: MCPServerInfo[];
 }
 
+// Agent Root info (preconfigured repository settings)
+export interface AgentRootInfo {
+  name: string;
+  title: string;
+  description: string;
+  git_root: string;
+  default_branch?: string;
+  default_subdirectory?: string;
+  default_stop_condition?: string;
+  default_mcp_servers?: string[];
+}
+
+// Stop Condition info (session completion criteria)
+export interface StopConditionInfo {
+  id: string;
+  name: string;
+  description: string;
+}
+
+// Unified configs response (from GET /api/v1/configs)
+export interface ConfigsResponse {
+  mcp_servers: MCPServerInfo[];
+  agent_roots: AgentRootInfo[];
+  stop_conditions: StopConditionInfo[];
+}
+
 // Create session request
 export interface CreateSessionRequest {
   agent_type?: string;

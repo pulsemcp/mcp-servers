@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-01-18
+
+### Added
+
+- New `get_configs` tool to fetch all static configuration in a single call:
+  - MCP servers (name, title, description)
+  - Agent roots (preconfigured repository settings with defaults)
+  - Stop conditions (session completion criteria)
+- Unified configs endpoint support via new `getConfigs()` client method (uses `/api/v1/configs`)
+- Shared caching between `get_configs` and `get_available_mcp_servers` tools
+
+### Changed
+
+- `get_available_mcp_servers` tool now uses the unified `/api/v1/configs` endpoint instead of `/api/v1/mcp_servers`
+- Cache is now shared between `get_configs` and `get_available_mcp_servers` to avoid redundant API calls
+
+## [0.1.3] - 2026-01-18
+
 ### Added
 
 - New `get_available_mcp_servers` tool to list available MCP servers for use with `start_session`

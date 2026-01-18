@@ -7,8 +7,9 @@ import { getSessionTool } from '../../shared/src/tools/get-session.js';
 import { actionSessionTool } from '../../shared/src/tools/action-session.js';
 import {
   getAvailableMcpServersTool,
-  clearMcpServersCache,
+  clearConfigsCache,
 } from '../../shared/src/tools/get-available-mcp-servers.js';
+import { getConfigsTool } from '../../shared/src/tools/get-configs.js';
 
 describe('Tools', () => {
   let mockServer: Server;
@@ -293,10 +294,10 @@ describe('Tools', () => {
   describe('get_available_mcp_servers', () => {
     beforeEach(() => {
       // Clear the cache before each test
-      clearMcpServersCache();
+      clearConfigsCache();
     });
 
-    it('should fetch available MCP servers', async () => {
+    it('should fetch available MCP servers using configs endpoint', async () => {
       const tool = getAvailableMcpServersTool(mockServer, clientFactory);
 
       const result = await tool.handler({});
@@ -314,7 +315,8 @@ describe('Tools', () => {
         'github-development'
       );
       expect((result as { content: Array<{ text: string }> }).content[0].text).toContain('Slack');
-      expect(mockClient.getMcpServers).toHaveBeenCalledTimes(1);
+      // Now uses getConfigs instead of getMcpServers
+      expect(mockClient.getConfigs).toHaveBeenCalledTimes(1);
     });
 
     it('should use cache on subsequent calls', async () => {
@@ -322,11 +324,11 @@ describe('Tools', () => {
 
       // First call
       await tool.handler({});
-      expect(mockClient.getMcpServers).toHaveBeenCalledTimes(1);
+      expect(mockClient.getConfigs).toHaveBeenCalledTimes(1);
 
       // Second call should use cache
       const result = await tool.handler({});
-      expect(mockClient.getMcpServers).toHaveBeenCalledTimes(1); // Still 1
+      expect(mockClient.getConfigs).toHaveBeenCalledTimes(1); // Still 1
 
       expect((result as { content: Array<{ text: string }> }).content[0].text).toContain(
         'Returned from cache'
@@ -338,11 +340,11 @@ describe('Tools', () => {
 
       // First call populates cache
       await tool.handler({});
-      expect(mockClient.getMcpServers).toHaveBeenCalledTimes(1);
+      expect(mockClient.getConfigs).toHaveBeenCalledTimes(1);
 
       // Second call with force_refresh should fetch again
       const result = await tool.handler({ force_refresh: true });
-      expect(mockClient.getMcpServers).toHaveBeenCalledTimes(2);
+      expect(mockClient.getConfigs).toHaveBeenCalledTimes(2);
 
       expect((result as { content: Array<{ text: string }> }).content[0].text).not.toContain(
         'Returned from cache'
@@ -350,7 +352,11 @@ describe('Tools', () => {
     });
 
     it('should handle empty MCP servers list', async () => {
-      mockClient.getMcpServers = vi.fn().mockResolvedValue([]);
+      mockClient.getConfigs = vi.fn().mockResolvedValue({
+        mcp_servers: [],
+        agent_roots: [],
+        stop_conditions: [],
+      });
 
       const tool = getAvailableMcpServersTool(mockServer, clientFactory);
 
@@ -362,9 +368,123 @@ describe('Tools', () => {
     });
 
     it('should handle API errors gracefully', async () => {
-      mockClient.getMcpServers = vi.fn().mockRejectedValue(new Error('API connection failed'));
+      mockClient.getConfigs = vi.fn().mockRejectedValue(new Error('API connection failed'));
 
       const tool = getAvailableMcpServersTool(mockServer, clientFactory);
+
+      const result = await tool.handler({});
+
+      expect(result.isError).toBe(true);
+      expect((result as { content: Array<{ text: string }> }).content[0].text).toContain(
+        'API connection failed'
+      );
+    });
+  });
+
+  describe('get_configs', () => {
+    beforeEach(() => {
+      // Clear the cache before each test
+      clearConfigsCache();
+    });
+
+    it('should fetch all configs', async () => {
+      const tool = getConfigsTool(mockServer, clientFactory);
+
+      const result = await tool.handler({});
+
+      expect(result).toMatchObject({
+        content: [{ type: 'text' }],
+      });
+      const text = (result as { content: Array<{ text: string }> }).content[0].text;
+
+      // Check MCP Servers section
+      expect(text).toContain('## MCP Servers');
+      expect(text).toContain('GitHub Development');
+      expect(text).toContain('github-development');
+
+      // Check Agent Roots section
+      expect(text).toContain('## Agent Roots');
+      expect(text).toContain('MCP Servers');
+      expect(text).toContain('mcp-servers');
+      expect(text).toContain('pulsemcp/mcp-servers.git');
+
+      // Check Stop Conditions section
+      expect(text).toContain('## Stop Conditions');
+      expect(text).toContain('PR Merged');
+      expect(text).toContain('pr_merged');
+
+      expect(mockClient.getConfigs).toHaveBeenCalledTimes(1);
+    });
+
+    it('should use cache on subsequent calls', async () => {
+      const tool = getConfigsTool(mockServer, clientFactory);
+
+      // First call
+      await tool.handler({});
+      expect(mockClient.getConfigs).toHaveBeenCalledTimes(1);
+
+      // Second call should use cache
+      const result = await tool.handler({});
+      expect(mockClient.getConfigs).toHaveBeenCalledTimes(1); // Still 1
+
+      expect((result as { content: Array<{ text: string }> }).content[0].text).toContain(
+        'Returned from cache'
+      );
+    });
+
+    it('should share cache with get_available_mcp_servers', async () => {
+      // First call get_configs
+      const configsTool = getConfigsTool(mockServer, clientFactory);
+      await configsTool.handler({});
+      expect(mockClient.getConfigs).toHaveBeenCalledTimes(1);
+
+      // Then call get_available_mcp_servers - should use shared cache
+      const mcpServersTool = getAvailableMcpServersTool(mockServer, clientFactory);
+      const result = await mcpServersTool.handler({});
+      expect(mockClient.getConfigs).toHaveBeenCalledTimes(1); // Still 1
+
+      expect((result as { content: Array<{ text: string }> }).content[0].text).toContain(
+        'Returned from cache'
+      );
+    });
+
+    it('should refresh cache when force_refresh is true', async () => {
+      const tool = getConfigsTool(mockServer, clientFactory);
+
+      // First call populates cache
+      await tool.handler({});
+      expect(mockClient.getConfigs).toHaveBeenCalledTimes(1);
+
+      // Second call with force_refresh should fetch again
+      const result = await tool.handler({ force_refresh: true });
+      expect(mockClient.getConfigs).toHaveBeenCalledTimes(2);
+
+      expect((result as { content: Array<{ text: string }> }).content[0].text).not.toContain(
+        'Returned from cache'
+      );
+    });
+
+    it('should handle empty configs', async () => {
+      mockClient.getConfigs = vi.fn().mockResolvedValue({
+        mcp_servers: [],
+        agent_roots: [],
+        stop_conditions: [],
+      });
+
+      const tool = getConfigsTool(mockServer, clientFactory);
+
+      const result = await tool.handler({});
+      const text = (result as { content: Array<{ text: string }> }).content[0].text;
+
+      expect(text).toContain('No MCP servers available');
+      expect(text).toContain('No agent roots configured');
+      expect(text).toContain('No stop conditions defined');
+    });
+
+    it('should handle API errors gracefully', async () => {
+      mockClient.getConfigs = vi.fn().mockRejectedValue(new Error('API connection failed'));
+
+      const tool = getConfigsTool(mockServer, clientFactory);
 
       const result = await tool.handler({});
 
@@ -383,15 +503,17 @@ describe('Tools', () => {
         getSessionTool(mockServer, clientFactory),
         actionSessionTool(mockServer, clientFactory),
         getAvailableMcpServersTool(mockServer, clientFactory),
+        getConfigsTool(mockServer, clientFactory),
       ];
 
-      expect(tools).toHaveLength(5);
+      expect(tools).toHaveLength(6);
       const toolNames = tools.map((t) => t.name);
       expect(toolNames).toContain('search_sessions');
       expect(toolNames).toContain('start_session');
       expect(toolNames).toContain('get_session');
       expect(toolNames).toContain('action_session');
       expect(toolNames).toContain('get_available_mcp_servers');
+      expect(toolNames).toContain('get_configs');
     });
   });
 });
