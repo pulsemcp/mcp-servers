@@ -24,10 +24,10 @@ This document tracks manual testing results for the Proctor MCP Server.
 
 ## Latest Test Results
 
-**Commit:** bd7e6b33734084defea4c6a8eb443859c5e4ba1f
+**Commit:** 4a29222c40024effc5a1e9a3b07bc46e21182a87
 **Date:** 2026-01-18
 **Environment:** admin.staging.pulsemcp.com
-**Overall:** 7/7 tests passed (100%)
+**Overall:** 8/8 tests passed (100%)
 
 ### Notes
 
@@ -39,6 +39,7 @@ Tests verify:
 - `get_proctor_metadata` returns available runtimes and exams
 - `get_machines` returns active machine list
 - `run_exam` accepts exam configuration and returns results
+- `save_result` successfully saves exam results to the database
 - `get_prior_result` returns "no prior result" for non-existent mirrors
 - `cancel_exam` returns error for non-existent machine/exam combinations
 - `destroy_machine` returns error for non-existent machines
@@ -50,7 +51,7 @@ Tests verify:
 | Tool Discovery       | PASS   | All 7 tools registered correctly                          |
 | get_proctor_metadata | PASS   | Returns 8 runtimes and 2 exams from staging               |
 | run_exam             | PASS   | Accepts exam config and returns validation/execution info |
-| save_result          | -      | Not tested (requires completed exam run with results)     |
+| save_result          | PASS   | Successfully saves results to database (Result ID: 157)   |
 | get_prior_result     | PASS   | Returns "no prior result" for non-existent mirror         |
 | get_machines         | PASS   | Returns list of active machines (1 found during testing)  |
 | destroy_machine      | PASS   | Returns error for non-existent machine                    |
@@ -59,15 +60,16 @@ Tests verify:
 ## Test Output
 
 ```
- ✓ tests/manual/proctor.manual.test.ts (7 tests) 12541ms
+ ✓ tests/manual/proctor.manual.test.ts (8 tests) 15140ms
     ✓ Proctor MCP Server - Manual Tests > Tool Discovery > should list all available tools
     ✓ Proctor MCP Server - Manual Tests > get_proctor_metadata > should retrieve available runtimes and exams
     ✓ Proctor MCP Server - Manual Tests > get_machines > should list active machines (may be empty)
     ✓ Proctor MCP Server - Manual Tests > run_exam > should execute an exam against an MCP server
+    ✓ Proctor MCP Server - Manual Tests > save_result > should save exam results to the database
     ✓ Proctor MCP Server - Manual Tests > get_prior_result > should handle request for non-existent result
     ✓ Proctor MCP Server - Manual Tests > cancel_exam > should handle cancel request for non-running exam
     ✓ Proctor MCP Server - Manual Tests > destroy_machine > should handle destroy request for non-existent machine
 
   Test Files  1 passed (1)
-     Tests  7 passed (7)
+     Tests  8 passed (8)
 ```

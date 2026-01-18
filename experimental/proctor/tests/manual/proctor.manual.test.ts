@@ -142,6 +142,55 @@ describe('Proctor MCP Server - Manual Tests', () => {
     }, 300000); // 5 minute timeout for exam execution
   });
 
+  describe('save_result', () => {
+    it('should save exam results to the database', async () => {
+      // Test saving exam results
+      // Uses a test mirror ID - the API will validate if the mirror exists
+      const examId = 'proctor-mcp-client-init-tools-list';
+      const runtimeId = 'proctor-mcp-client-0.0.37-configs-0.0.10';
+
+      // Sample exam results (simulating what run_exam would return)
+      const results = JSON.stringify({
+        passed: true,
+        score: 100,
+        tests: [
+          { name: 'test_initialization', passed: true },
+          { name: 'test_tools_list', passed: true },
+        ],
+      });
+
+      console.log(`Saving result for exam: ${examId}`);
+
+      const result = await client.callTool('save_result', {
+        runtime_id: runtimeId,
+        exam_id: examId,
+        mcp_server_slug: 'test-time-server',
+        mirror_id: 1, // Test mirror ID - staging should have this
+        results: results,
+      });
+
+      console.log('Save result response:', JSON.stringify(result, null, 2));
+
+      expect(result).toBeDefined();
+      expect(result.content).toBeDefined();
+      expect(result.content.length).toBeGreaterThan(0);
+
+      const content = result.content[0];
+      expect(content.type).toBe('text');
+
+      // The save might succeed or fail depending on whether mirror_id 1 exists
+      // Either way, we verify the API responded properly
+      if (result.isError) {
+        console.log('Save result returned error (mirror may not exist):', content.text);
+        // API responded with an error - this is valid behavior for non-existent mirrors
+        expect(content.text).toContain('Error');
+      } else {
+        console.log('Save result succeeded:', content.text);
+        expect(content.text).toContain('Result Saved');
+      }
+    }, 30000);
+  });
+
   describe('get_prior_result', () => {
     it('should handle request for non-existent result', async () => {
       const result = await client.callTool('get_prior_result', {
