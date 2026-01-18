@@ -1,7 +1,8 @@
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { z } from 'zod';
 import type { IAgentOrchestratorClient } from '../orchestrator-client/orchestrator-client.js';
-import type { MCPServerInfo, ConfigsResponse } from '../types.js';
+import type { MCPServerInfo } from '../types.js';
+import { getConfigsCache, setConfigsCache, clearConfigsCache } from '../cache/configs-cache.js';
 
 export const GetAvailableMcpServersSchema = z.object({
   force_refresh: z
@@ -20,29 +21,8 @@ Returns server names, titles, and descriptions for each available MCP server.
 
 **Note:** Consider using \`get_configs\` instead to fetch all static configuration (MCP servers, agent roots, stop conditions) in a single call.`;
 
-// Module-level cache for configs (shared with get_configs tool)
-let configsCache: ConfigsResponse | null = null;
-
-/**
- * Clear the configs cache (useful for testing)
- */
-export function clearConfigsCache(): void {
-  configsCache = null;
-}
-
-/**
- * Get the current cache state (useful for testing)
- */
-export function getConfigsCache(): ConfigsResponse | null {
-  return configsCache;
-}
-
-/**
- * Update the configs cache (used by get_configs tool to share cache)
- */
-export function setConfigsCache(configs: ConfigsResponse): void {
-  configsCache = configs;
-}
+// Re-export cache functions for backwards compatibility
+export { clearConfigsCache, getConfigsCache, setConfigsCache };
 
 // Legacy exports for backwards compatibility with tests
 export function clearMcpServersCache(): void {
@@ -50,7 +30,7 @@ export function clearMcpServersCache(): void {
 }
 
 export function getMcpServersCache(): MCPServerInfo[] | null {
-  return configsCache?.mcp_servers ?? null;
+  return getConfigsCache()?.mcp_servers ?? null;
 }
 
 export function getAvailableMcpServersTool(
@@ -76,16 +56,17 @@ export function getAvailableMcpServersTool(
         const forceRefresh = validatedArgs.force_refresh ?? false;
 
         // Use cached data if available and not forcing refresh
-        if (configsCache !== null && !forceRefresh) {
-          return formatResponse(configsCache.mcp_servers, true);
+        const cachedConfigs = getConfigsCache();
+        if (cachedConfigs !== null && !forceRefresh) {
+          return formatResponse(cachedConfigs.mcp_servers, true);
         }
 
         // Fetch fresh data using unified configs endpoint
         const client = clientFactory();
         const configs = await client.getConfigs();
 
-        // Update cache
-        configsCache = configs;
+        // Update shared cache
+        setConfigsCache(configs);
 
         return formatResponse(configs.mcp_servers, false);
       } catch (error) {

@@ -239,6 +239,23 @@ describe('Agent Orchestrator MCP Server Integration Tests', () => {
       expect(result.content[0].text).toContain('Agent started processing');
       expect(result.content[0].text).toContain('Found an error');
     });
+
+    it('should execute get_configs tool', async () => {
+      const mockClient = createIntegrationMockOrchestratorClient({});
+      client = await createTestMCPClientWithMock(mockClient);
+
+      const result = await client.callTool('get_configs', {});
+
+      expect(result.content).toBeDefined();
+      expect(result.content[0].type).toBe('text');
+      expect(result.content[0].text).toContain('MCP Servers');
+      expect(result.content[0].text).toContain('Agent Roots');
+      expect(result.content[0].text).toContain('Stop Conditions');
+      // Verify mock data is present
+      expect(result.content[0].text).toContain('GitHub Development');
+      expect(result.content[0].text).toContain('mcp-servers');
+      expect(result.content[0].text).toContain('PR Merged');
+    });
   });
 
   describe('Resources', () => {

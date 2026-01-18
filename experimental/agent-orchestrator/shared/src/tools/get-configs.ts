@@ -2,7 +2,7 @@ import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { z } from 'zod';
 import type { IAgentOrchestratorClient } from '../orchestrator-client/orchestrator-client.js';
 import type { ConfigsResponse, AgentRootInfo, StopConditionInfo, MCPServerInfo } from '../types.js';
-import { getConfigsCache, setConfigsCache } from './get-available-mcp-servers.js';
+import { getConfigsCache, setConfigsCache } from '../cache/configs-cache.js';
 
 export const GetConfigsSchema = z.object({
   force_refresh: z
