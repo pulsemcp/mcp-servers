@@ -327,7 +327,7 @@ export function createRegisterTools(clientFactory: ClientFactory) {
                     stealthMode: config.stealthMode,
                     headless: config.headless,
                     proxyEnabled: !!config.proxy,
-                    ignoreHttpsErrors: config.ignoreHttpsErrors ?? !!config.proxy,
+                    ignoreHttpsErrors: config.ignoreHttpsErrors ?? true,
                   },
                   null,
                   2
