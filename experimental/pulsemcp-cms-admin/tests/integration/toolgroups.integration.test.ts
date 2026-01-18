@@ -303,7 +303,8 @@ describe('PulseMCP CMS Admin - Toolgroups Integration Tests', () => {
     it('should register all tools by default', async () => {
       const tools = await client.listTools();
 
-      expect(tools.tools).toHaveLength(18); // 6 newsletter + 5 server_queue + 7 official_queue
+      // 6 newsletter + 5 server_queue + 7 official_queue + 5 unofficial_mirrors + 2 official_mirrors + 2 tenants + 5 mcp_jsons = 32 tools
+      expect(tools.tools).toHaveLength(32);
       const toolNames = tools.tools.map((t) => t.name);
 
       // Newsletter tools
@@ -324,6 +325,28 @@ describe('PulseMCP CMS Admin - Toolgroups Integration Tests', () => {
       expect(toolNames).toContain('reject_official_mirror_queue_item');
       expect(toolNames).toContain('add_official_mirror_to_regular_queue');
       expect(toolNames).toContain('unlink_official_mirror_queue_item');
+
+      // Unofficial mirrors tools
+      expect(toolNames).toContain('get_unofficial_mirrors');
+      expect(toolNames).toContain('get_unofficial_mirror');
+      expect(toolNames).toContain('create_unofficial_mirror');
+      expect(toolNames).toContain('update_unofficial_mirror');
+      expect(toolNames).toContain('delete_unofficial_mirror');
+
+      // Official mirrors tools (read-only)
+      expect(toolNames).toContain('get_official_mirrors');
+      expect(toolNames).toContain('get_official_mirror');
+
+      // Tenants tools (read-only)
+      expect(toolNames).toContain('get_tenants');
+      expect(toolNames).toContain('get_tenant');
+
+      // MCP JSONs tools
+      expect(toolNames).toContain('get_mcp_jsons');
+      expect(toolNames).toContain('get_mcp_json');
+      expect(toolNames).toContain('create_mcp_json');
+      expect(toolNames).toContain('update_mcp_json');
+      expect(toolNames).toContain('delete_mcp_json');
     });
   });
 
