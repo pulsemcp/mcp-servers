@@ -8,7 +8,7 @@ This document tracks manual testing results for the Proctor MCP Server.
 
    ```bash
    export PROCTOR_API_KEY="your-api-key"
-   export PROCTOR_BASE_URL="https://staging.pulsemcp.com"  # or production URL
+   export PROCTOR_API_URL="https://admin.staging.pulsemcp.com"  # or https://admin.pulsemcp.com for production
    ```
 
 2. Run the manual test setup:
