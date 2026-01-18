@@ -54,6 +54,7 @@ The 18 new REST API tools have been manually tested against the staging API:
 
 - ✅ `get_unofficial_mirrors` with `mcp_server_slug` - Works (error correctly shows "MCP server not found" for non-existent slugs)
 - ✅ `get_unofficial_mirror` with `name` - Works (correctly shows "No unofficial mirror found" when no match)
+- ✅ `get_official_mirror` with `name` - Works (correctly shows "No official mirror found" when no match)
 - ✅ `get_mcp_jsons` with `unofficial_mirror_name` - Works (correctly shows error when no match)
 - ✅ `get_mcp_jsons` with `mcp_server_slug` - Works (correctly shows error when no match)
 
@@ -132,6 +133,7 @@ Tools support multiple lookup methods for single-call operations:
 
 - `get_unofficial_mirrors`: Filter by `mcp_server_slug` (alternative to `mcp_server_id`)
 - `get_unofficial_mirror`: Lookup by `name` (alternative to `id`)
+- `get_official_mirror`: Lookup by `name` (alternative to `id`)
 - `get_mcp_jsons`: Filter by `unofficial_mirror_name`, `mcp_server_id`, or `mcp_server_slug`
 
 **Note:** v0.5.0 refactors tool group organization:
@@ -434,7 +436,7 @@ All v0.6.0 features tested and working against staging API:
 3. Tenants read: ✅ Working
 4. Secrets CRUD: ✅ Working
 5. MCP JSONs read: ✅ Working
-6. Convenience parameters: ✅ Working (mcp_server_slug, name, unofficial_mirror_name)
+6. Convenience parameters: ✅ Working (mcp_server_slug, name for unofficial/official mirrors, unofficial_mirror_name)
 7. Remote endpoint submission: ✅ Working
 8. Canonical URL submission: ✅ Working
 9. Combined updates: ✅ Working

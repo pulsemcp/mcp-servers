@@ -4,16 +4,22 @@ import type { ClientFactory } from '../server.js';
 
 const PARAM_DESCRIPTIONS = {
   id: 'The ID of the official mirror to retrieve',
+  name: 'The name of the official mirror (e.g., "@anthropic/claude-code"). If multiple mirrors match, returns the first one.',
 } as const;
 
-const GetOfficialMirrorSchema = z.object({
-  id: z.number().describe(PARAM_DESCRIPTIONS.id),
-});
+const GetOfficialMirrorSchema = z
+  .object({
+    id: z.number().optional().describe(PARAM_DESCRIPTIONS.id),
+    name: z.string().optional().describe(PARAM_DESCRIPTIONS.name),
+  })
+  .refine((data) => data.id !== undefined || data.name !== undefined, {
+    message: 'Either id or name must be provided',
+  });
 
 export function getOfficialMirror(_server: Server, clientFactory: ClientFactory) {
   return {
     name: 'get_official_mirror',
-    description: `Retrieve a single official mirror by its ID. Returns detailed information including the full JSON data.
+    description: `Retrieve a single official mirror by its ID or name. Returns detailed information including the full JSON data.
 
 Example response:
 {
@@ -28,22 +34,37 @@ Example response:
 }
 
 Use cases:
-- Get detailed information about a specific official mirror
+- Get detailed information about a specific official mirror by ID or name
 - Review the JSON data from the MCP Registry
-- Check processing status and failure reasons`,
+- Check processing status and failure reasons
+
+Note: Either id or name must be provided.`,
     inputSchema: {
       type: 'object',
       properties: {
         id: { type: 'number', description: PARAM_DESCRIPTIONS.id },
+        name: { type: 'string', description: PARAM_DESCRIPTIONS.name },
       },
-      required: ['id'],
     },
     handler: async (args: unknown) => {
       const validatedArgs = GetOfficialMirrorSchema.parse(args);
       const client = clientFactory();
 
       try {
-        const mirror = await client.getOfficialMirror(validatedArgs.id);
+        let mirror;
+        if (validatedArgs.id !== undefined) {
+          mirror = await client.getOfficialMirror(validatedArgs.id);
+        } else if (validatedArgs.name) {
+          // Search by name and get the first result
+          const response = await client.getOfficialMirrors({ q: validatedArgs.name, limit: 1 });
+          if (response.mirrors.length === 0) {
+            throw new Error(`No official mirror found with name matching "${validatedArgs.name}"`);
+          }
+          // Get full details for the first match
+          mirror = await client.getOfficialMirror(response.mirrors[0].id);
+        } else {
+          throw new Error('Either id or name must be provided');
+        }
 
         let content = `**Official Mirror Details**\n\n`;
         content += `**ID:** ${mirror.id}\n`;
