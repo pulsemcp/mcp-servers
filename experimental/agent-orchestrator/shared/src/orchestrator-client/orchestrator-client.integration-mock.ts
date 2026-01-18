@@ -23,6 +23,7 @@ import type {
   SessionStatus,
   LogLevel,
   SubagentStatus,
+  MCPServerInfo,
 } from '../types.js';
 
 interface MockData {
@@ -500,6 +501,21 @@ export function createIntegrationMockOrchestratorClient(
         throw new Error(`API Error (404): Subagent transcript not found`);
       }
       mockData.subagentTranscripts?.splice(index, 1);
+    },
+
+    async getMcpServers(): Promise<MCPServerInfo[]> {
+      return [
+        {
+          name: 'github-development',
+          title: 'GitHub Development',
+          description: 'Interact with GitHub repositories, issues, and pull requests',
+        },
+        {
+          name: 'slack',
+          title: 'Slack',
+          description: 'Send and receive messages in Slack workspaces',
+        },
+      ];
     },
   };
 }
