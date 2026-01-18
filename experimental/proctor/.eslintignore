@@ -1,0 +1,8 @@
+node_modules/
+build/
+local/build/
+shared/build/
+*.js
+vitest.config.ts
+vitest.config.integration.ts
+vitest.config.manual.ts
