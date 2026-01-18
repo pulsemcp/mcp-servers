@@ -817,5 +817,134 @@ export function createMockPulseMCPAdminClient(mockData: MockData): IPulseMCPAdmi
         },
       };
     },
+
+    // Unofficial Mirror REST API methods (stub implementations)
+    async getUnofficialMirrors() {
+      return { mirrors: [], pagination: { current_page: 1, total_pages: 1, total_count: 0 } };
+    },
+
+    async getUnofficialMirror(id) {
+      return {
+        id,
+        name: 'test-mirror',
+        version: '1.0.0',
+        jsonb_data: {},
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+    },
+
+    async createUnofficialMirror(params) {
+      return {
+        id: 1,
+        name: params.name,
+        version: params.version,
+        jsonb_data:
+          typeof params.jsonb_data === 'string' ? JSON.parse(params.jsonb_data) : params.jsonb_data,
+        mcp_server_id: params.mcp_server_id || null,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+    },
+
+    async updateUnofficialMirror(id, params) {
+      return {
+        id,
+        name: params.name || 'test-mirror',
+        version: params.version || '1.0.0',
+        jsonb_data: params.jsonb_data
+          ? typeof params.jsonb_data === 'string'
+            ? JSON.parse(params.jsonb_data)
+            : params.jsonb_data
+          : {},
+        mcp_server_id: params.mcp_server_id || null,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+    },
+
+    async deleteUnofficialMirror() {
+      return { success: true, message: 'Unofficial mirror deleted' };
+    },
+
+    // Official Mirror REST API methods (stub implementations)
+    async getOfficialMirrors() {
+      return { mirrors: [], pagination: { current_page: 1, total_pages: 1, total_count: 0 } };
+    },
+
+    async getOfficialMirror(id) {
+      return {
+        id,
+        name: 'test-official-mirror',
+        version: '1.0.0',
+        jsonb_data: {},
+        processed: true,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+    },
+
+    // Tenant REST API methods (stub implementations)
+    async getTenants() {
+      return { tenants: [], pagination: { current_page: 1, total_pages: 1, total_count: 0 } };
+    },
+
+    async getTenant(idOrSlug) {
+      return {
+        id: typeof idOrSlug === 'number' ? idOrSlug : 1,
+        slug: typeof idOrSlug === 'string' ? idOrSlug : 'test-tenant',
+        is_admin: false,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+    },
+
+    // MCP JSON REST API methods (stub implementations)
+    async getMcpJsons() {
+      return { mcp_jsons: [], pagination: { current_page: 1, total_pages: 1, total_count: 0 } };
+    },
+
+    async getMcpJson(id) {
+      return {
+        id,
+        mcp_servers_unofficial_mirror_id: 1,
+        title: 'Test MCP JSON',
+        value: {},
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+    },
+
+    async createMcpJson(params) {
+      return {
+        id: 1,
+        mcp_servers_unofficial_mirror_id: params.mcp_servers_unofficial_mirror_id,
+        title: params.title,
+        value: typeof params.value === 'string' ? JSON.parse(params.value) : params.value,
+        description: params.description,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+    },
+
+    async updateMcpJson(id, params) {
+      return {
+        id,
+        mcp_servers_unofficial_mirror_id: params.mcp_servers_unofficial_mirror_id || 1,
+        title: params.title || 'Test MCP JSON',
+        value: params.value
+          ? typeof params.value === 'string'
+            ? JSON.parse(params.value)
+            : params.value
+          : {},
+        description: params.description,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+    },
+
+    async deleteMcpJson() {
+      return { success: true, message: 'MCP JSON deleted' };
+    },
   };
 }

@@ -6,6 +6,53 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Added
+
+- Added convenience parameters to REST API tools for single-call operations:
+  - `get_unofficial_mirrors`: Added `mcp_server_slug` as alternative to `mcp_server_id` for filtering by linked MCP server
+  - `get_unofficial_mirror`: Added `name` as alternative to `id` for looking up by mirror name (e.g., "@modelcontextprotocol/server-filesystem")
+  - `get_official_mirror`: Added `name` as alternative to `id` for looking up by mirror name (e.g., "@anthropic/claude-code")
+  - `get_mcp_jsons`: Added `unofficial_mirror_name`, `mcp_server_id`, and `mcp_server_slug` parameters to find MCP JSON configs by mirror name or linked MCP server
+
+### Removed
+
+- Removed secrets management tools (`secrets` / `secrets_readonly` tool groups):
+  - `get_secrets`, `get_secret`, `create_secret`, `update_secret`, `delete_secret`
+  - These tools are no longer needed in this MCP server
+
+## [0.6.0] - 2026-01-17
+
+### Added
+
+- Added new REST API tools for managing PulseMCP admin resources:
+  - **Unofficial Mirrors** (`unofficial_mirrors` / `unofficial_mirrors_readonly` groups):
+    - `get_unofficial_mirrors`: List unofficial mirrors with search and pagination
+    - `get_unofficial_mirror`: Get detailed information about a specific unofficial mirror
+    - `create_unofficial_mirror`: Create new unofficial mirror entries
+    - `update_unofficial_mirror`: Update existing unofficial mirrors
+    - `delete_unofficial_mirror`: Delete unofficial mirrors
+  - **Official Mirrors** (`official_mirrors_readonly` group):
+    - `get_official_mirrors`: List official mirrors from MCP Registry with filtering by status, processed state, and linked server
+    - `get_official_mirror`: Get detailed information about a specific official mirror
+  - **Tenants** (`tenants_readonly` group):
+    - `get_tenants`: List tenants with search and admin status filtering
+    - `get_tenant`: Get detailed tenant information by ID or slug
+  - **Secrets** (`secrets` / `secrets_readonly` groups):
+    - `get_secrets`: List 1Password secret references with usage information
+    - `get_secret`: Get detailed secret information by ID or slug
+    - `create_secret`: Create new 1Password secret references
+    - `update_secret`: Update existing secrets
+    - `delete_secret`: Delete secrets
+  - **MCP JSONs** (`mcp_jsons` / `mcp_jsons_readonly` groups):
+    - `get_mcp_jsons`: List MCP JSON configurations with filtering by unofficial mirror
+    - `get_mcp_json`: Get detailed MCP JSON configuration
+    - `create_mcp_json`: Create new MCP JSON configurations
+    - `update_mcp_json`: Update existing MCP JSON configurations
+    - `delete_mcp_json`: Delete MCP JSON configurations
+- Added comprehensive TypeScript types for all new REST API resources
+- Added 15 new API client methods for the new endpoints
+- New tool groups are enabled by default alongside existing groups
+
 ## [0.5.0] - 2026-01-17
 
 ### Changed

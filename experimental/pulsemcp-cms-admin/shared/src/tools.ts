@@ -19,6 +19,24 @@ import { approveOfficialMirrorQueueItemWithoutModifying } from './tools/approve-
 import { rejectOfficialMirrorQueueItem } from './tools/reject-official-mirror-queue-item.js';
 import { addOfficialMirrorToRegularQueue } from './tools/add-official-mirror-to-regular-queue.js';
 import { unlinkOfficialMirrorQueueItem } from './tools/unlink-official-mirror-queue-item.js';
+// Unofficial mirrors tools
+import { getUnofficialMirrors } from './tools/get-unofficial-mirrors.js';
+import { getUnofficialMirror } from './tools/get-unofficial-mirror.js';
+import { createUnofficialMirror } from './tools/create-unofficial-mirror.js';
+import { updateUnofficialMirror } from './tools/update-unofficial-mirror.js';
+import { deleteUnofficialMirror } from './tools/delete-unofficial-mirror.js';
+// Official mirrors REST tools (read-only)
+import { getOfficialMirrors } from './tools/get-official-mirrors.js';
+import { getOfficialMirror } from './tools/get-official-mirror.js';
+// Tenant tools (read-only)
+import { getTenants } from './tools/get-tenants.js';
+import { getTenant } from './tools/get-tenant.js';
+// MCP JSON tools
+import { getMcpJsons } from './tools/get-mcp-jsons.js';
+import { getMcpJson } from './tools/get-mcp-json.js';
+import { createMcpJson } from './tools/create-mcp-json.js';
+import { updateMcpJson } from './tools/update-mcp-json.js';
+import { deleteMcpJson } from './tools/delete-mcp-json.js';
 
 /**
  * Tool group definitions - groups of related tools that can be enabled/disabled together
@@ -31,6 +49,10 @@ import { unlinkOfficialMirrorQueueItem } from './tools/unlink-official-mirror-qu
  * - newsletter / newsletter_readonly: Newsletter-related tools (posts, authors, images)
  * - server_queue / server_queue_readonly: Server queue tools (search, drafts, providers, save, notifications)
  * - official_queue / official_queue_readonly: Official mirror queue tools (list, get, approve, reject, unlink)
+ * - unofficial_mirrors / unofficial_mirrors_readonly: Unofficial mirror CRUD tools
+ * - official_mirrors_readonly: Official mirrors read-only tools (REST API)
+ * - tenants_readonly: Tenant read-only tools
+ * - mcp_jsons / mcp_jsons_readonly: MCP JSON configuration tools
  */
 export type ToolGroup =
   | 'newsletter'
@@ -38,10 +60,25 @@ export type ToolGroup =
   | 'server_queue'
   | 'server_queue_readonly'
   | 'official_queue'
-  | 'official_queue_readonly';
+  | 'official_queue_readonly'
+  | 'unofficial_mirrors'
+  | 'unofficial_mirrors_readonly'
+  | 'official_mirrors'
+  | 'official_mirrors_readonly'
+  | 'tenants'
+  | 'tenants_readonly'
+  | 'mcp_jsons'
+  | 'mcp_jsons_readonly';
 
 /** Base groups without _readonly suffix */
-type BaseToolGroup = 'newsletter' | 'server_queue' | 'official_queue';
+type BaseToolGroup =
+  | 'newsletter'
+  | 'server_queue'
+  | 'official_queue'
+  | 'unofficial_mirrors'
+  | 'official_mirrors'
+  | 'tenants'
+  | 'mcp_jsons';
 
 interface Tool {
   name: string;
@@ -93,6 +130,24 @@ const ALL_TOOLS: ToolDefinition[] = [
   { factory: rejectOfficialMirrorQueueItem, group: 'official_queue', isWriteOperation: true },
   { factory: addOfficialMirrorToRegularQueue, group: 'official_queue', isWriteOperation: true },
   { factory: unlinkOfficialMirrorQueueItem, group: 'official_queue', isWriteOperation: true },
+  // Unofficial mirrors tools (CRUD)
+  { factory: getUnofficialMirrors, group: 'unofficial_mirrors', isWriteOperation: false },
+  { factory: getUnofficialMirror, group: 'unofficial_mirrors', isWriteOperation: false },
+  { factory: createUnofficialMirror, group: 'unofficial_mirrors', isWriteOperation: true },
+  { factory: updateUnofficialMirror, group: 'unofficial_mirrors', isWriteOperation: true },
+  { factory: deleteUnofficialMirror, group: 'unofficial_mirrors', isWriteOperation: true },
+  // Official mirrors REST tools (read-only)
+  { factory: getOfficialMirrors, group: 'official_mirrors', isWriteOperation: false },
+  { factory: getOfficialMirror, group: 'official_mirrors', isWriteOperation: false },
+  // Tenant tools (read-only)
+  { factory: getTenants, group: 'tenants', isWriteOperation: false },
+  { factory: getTenant, group: 'tenants', isWriteOperation: false },
+  // MCP JSON tools (CRUD)
+  { factory: getMcpJsons, group: 'mcp_jsons', isWriteOperation: false },
+  { factory: getMcpJson, group: 'mcp_jsons', isWriteOperation: false },
+  { factory: createMcpJson, group: 'mcp_jsons', isWriteOperation: true },
+  { factory: updateMcpJson, group: 'mcp_jsons', isWriteOperation: true },
+  { factory: deleteMcpJson, group: 'mcp_jsons', isWriteOperation: true },
 ];
 
 /**
@@ -105,12 +160,26 @@ const VALID_TOOL_GROUPS: ToolGroup[] = [
   'server_queue_readonly',
   'official_queue',
   'official_queue_readonly',
+  'unofficial_mirrors',
+  'unofficial_mirrors_readonly',
+  'official_mirrors_readonly',
+  'tenants_readonly',
+  'mcp_jsons',
+  'mcp_jsons_readonly',
 ];
 
 /**
  * Base groups (without _readonly suffix) - used for default "all groups" behavior
  */
-const BASE_TOOL_GROUPS: BaseToolGroup[] = ['newsletter', 'server_queue', 'official_queue'];
+const BASE_TOOL_GROUPS: BaseToolGroup[] = [
+  'newsletter',
+  'server_queue',
+  'official_queue',
+  'unofficial_mirrors',
+  'official_mirrors',
+  'tenants',
+  'mcp_jsons',
+];
 
 /**
  * Parse enabled tool groups from environment variable or parameter
@@ -183,6 +252,12 @@ function shouldIncludeTool(toolDef: ToolDefinition, enabledGroups: ToolGroup[]):
  * - server_queue_readonly: MCP implementation queue tools (read only)
  * - official_queue: Official mirror queue tools (read + write)
  * - official_queue_readonly: Official mirror queue tools (read only)
+ * - unofficial_mirrors: Unofficial mirror CRUD tools (read + write)
+ * - unofficial_mirrors_readonly: Unofficial mirror tools (read only)
+ * - official_mirrors_readonly: Official mirrors REST API tools (read only)
+ * - tenants_readonly: Tenant tools (read only)
+ * - mcp_jsons: MCP JSON configuration tools (read + write)
+ * - mcp_jsons_readonly: MCP JSON tools (read only)
  *
  * @param clientFactory - Factory function that creates client instances
  * @param enabledGroups - Optional comma-separated list of enabled tool groups (overrides env var)

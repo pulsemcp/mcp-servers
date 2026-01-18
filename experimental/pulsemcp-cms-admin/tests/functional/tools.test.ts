@@ -711,12 +711,28 @@ describe('Newsletter Tools', () => {
 
     it('should return all base groups when empty string provided', () => {
       const groups = parseEnabledToolGroups('');
-      expect(groups).toEqual(['newsletter', 'server_queue', 'official_queue']);
+      expect(groups).toEqual([
+        'newsletter',
+        'server_queue',
+        'official_queue',
+        'unofficial_mirrors',
+        'official_mirrors',
+        'tenants',
+        'mcp_jsons',
+      ]);
     });
 
     it('should return all base groups when no parameter provided', () => {
       const groups = parseEnabledToolGroups();
-      expect(groups).toEqual(['newsletter', 'server_queue', 'official_queue']);
+      expect(groups).toEqual([
+        'newsletter',
+        'server_queue',
+        'official_queue',
+        'unofficial_mirrors',
+        'official_mirrors',
+        'tenants',
+        'mcp_jsons',
+      ]);
     });
 
     it('should prioritize parameter over environment variable', () => {
@@ -862,7 +878,8 @@ describe('Newsletter Tools', () => {
       const listToolsHandler = handlers.get('tools/list');
       const result = await listToolsHandler({ method: 'tools/list', params: {} });
 
-      expect(result.tools).toHaveLength(18); // 6 newsletter + 5 server_queue + 7 official_queue
+      // 6 newsletter + 5 server_queue + 7 official_queue + 5 unofficial_mirrors + 2 official_mirrors + 2 tenants + 5 mcp_jsons = 32 tools
+      expect(result.tools).toHaveLength(32);
     });
 
     it('should register only read-only newsletter tools when newsletter_readonly group is enabled', async () => {
