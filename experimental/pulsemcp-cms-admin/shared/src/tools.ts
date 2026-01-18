@@ -31,12 +31,6 @@ import { getOfficialMirror } from './tools/get-official-mirror.js';
 // Tenant tools (read-only)
 import { getTenants } from './tools/get-tenants.js';
 import { getTenant } from './tools/get-tenant.js';
-// Secret tools
-import { getSecrets } from './tools/get-secrets.js';
-import { getSecret } from './tools/get-secret.js';
-import { createSecret } from './tools/create-secret.js';
-import { updateSecret } from './tools/update-secret.js';
-import { deleteSecret } from './tools/delete-secret.js';
 // MCP JSON tools
 import { getMcpJsons } from './tools/get-mcp-jsons.js';
 import { getMcpJson } from './tools/get-mcp-json.js';
@@ -58,7 +52,6 @@ import { deleteMcpJson } from './tools/delete-mcp-json.js';
  * - unofficial_mirrors / unofficial_mirrors_readonly: Unofficial mirror CRUD tools
  * - official_mirrors_readonly: Official mirrors read-only tools (REST API)
  * - tenants_readonly: Tenant read-only tools
- * - secrets / secrets_readonly: Secret management tools
  * - mcp_jsons / mcp_jsons_readonly: MCP JSON configuration tools
  */
 export type ToolGroup =
@@ -74,8 +67,6 @@ export type ToolGroup =
   | 'official_mirrors_readonly'
   | 'tenants'
   | 'tenants_readonly'
-  | 'secrets'
-  | 'secrets_readonly'
   | 'mcp_jsons'
   | 'mcp_jsons_readonly';
 
@@ -87,7 +78,6 @@ type BaseToolGroup =
   | 'unofficial_mirrors'
   | 'official_mirrors'
   | 'tenants'
-  | 'secrets'
   | 'mcp_jsons';
 
 interface Tool {
@@ -152,12 +142,6 @@ const ALL_TOOLS: ToolDefinition[] = [
   // Tenant tools (read-only)
   { factory: getTenants, group: 'tenants', isWriteOperation: false },
   { factory: getTenant, group: 'tenants', isWriteOperation: false },
-  // Secret tools (CRUD)
-  { factory: getSecrets, group: 'secrets', isWriteOperation: false },
-  { factory: getSecret, group: 'secrets', isWriteOperation: false },
-  { factory: createSecret, group: 'secrets', isWriteOperation: true },
-  { factory: updateSecret, group: 'secrets', isWriteOperation: true },
-  { factory: deleteSecret, group: 'secrets', isWriteOperation: true },
   // MCP JSON tools (CRUD)
   { factory: getMcpJsons, group: 'mcp_jsons', isWriteOperation: false },
   { factory: getMcpJson, group: 'mcp_jsons', isWriteOperation: false },
@@ -180,8 +164,6 @@ const VALID_TOOL_GROUPS: ToolGroup[] = [
   'unofficial_mirrors_readonly',
   'official_mirrors_readonly',
   'tenants_readonly',
-  'secrets',
-  'secrets_readonly',
   'mcp_jsons',
   'mcp_jsons_readonly',
 ];
@@ -196,7 +178,6 @@ const BASE_TOOL_GROUPS: BaseToolGroup[] = [
   'unofficial_mirrors',
   'official_mirrors',
   'tenants',
-  'secrets',
   'mcp_jsons',
 ];
 
@@ -275,8 +256,6 @@ function shouldIncludeTool(toolDef: ToolDefinition, enabledGroups: ToolGroup[]):
  * - unofficial_mirrors_readonly: Unofficial mirror tools (read only)
  * - official_mirrors_readonly: Official mirrors REST API tools (read only)
  * - tenants_readonly: Tenant tools (read only)
- * - secrets: Secret management tools (read + write)
- * - secrets_readonly: Secret tools (read only)
  * - mcp_jsons: MCP JSON configuration tools (read + write)
  * - mcp_jsons_readonly: MCP JSON tools (read only)
  *

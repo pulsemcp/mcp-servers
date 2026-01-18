@@ -17,7 +17,6 @@ dotenv.config({ path: path.join(__dirname, '../../.env') });
  * - Unofficial Mirrors: CRUD operations
  * - Official Mirrors: Read operations
  * - Tenants: Read operations
- * - Secrets: CRUD operations
  * - MCP JSONs: CRUD operations
  *
  * Required Environment Variables:
@@ -30,7 +29,6 @@ describe('REST API Tools - Manual Tests with Real API', () => {
 
   // Track created resources for cleanup
   let createdUnofficialMirrorId: number | null = null;
-  let createdSecretId: number | null = null;
   let createdMcpJsonId: number | null = null;
 
   beforeAll(async () => {
@@ -61,15 +59,6 @@ describe('REST API Tools - Manual Tests with Real API', () => {
         console.log('Cleaned up MCP JSON:', createdMcpJsonId);
       } catch {
         console.log('Could not clean up MCP JSON:', createdMcpJsonId);
-      }
-    }
-
-    if (createdSecretId && client) {
-      try {
-        await client.callTool('delete_secret', { id_or_slug: createdSecretId });
-        console.log('Cleaned up secret:', createdSecretId);
-      } catch {
-        console.log('Could not clean up secret:', createdSecretId);
       }
     }
 
@@ -105,13 +94,6 @@ describe('REST API Tools - Manual Tests with Real API', () => {
       expect(toolNames).toContain('get_tenants');
       expect(toolNames).toContain('get_tenant');
 
-      // Secrets
-      expect(toolNames).toContain('get_secrets');
-      expect(toolNames).toContain('get_secret');
-      expect(toolNames).toContain('create_secret');
-      expect(toolNames).toContain('update_secret');
-      expect(toolNames).toContain('delete_secret');
-
       // MCP JSONs
       expect(toolNames).toContain('get_mcp_jsons');
       expect(toolNames).toContain('get_mcp_json');
@@ -122,7 +104,7 @@ describe('REST API Tools - Manual Tests with Real API', () => {
       console.log(
         'All new REST API tools available:',
         toolNames.filter((name) =>
-          ['unofficial_mirror', 'official_mirror', 'tenant', 'secret', 'mcp_json'].some((substr) =>
+          ['unofficial_mirror', 'official_mirror', 'tenant', 'mcp_json'].some((substr) =>
             name.includes(substr)
           )
         )
@@ -402,108 +384,6 @@ describe('REST API Tools - Manual Tests with Real API', () => {
       // Don't fail if tenant not found - just log
       const text = result.content[0].text;
       console.log('Tenant by slug result:', text.substring(0, 300));
-    });
-  });
-
-  describe('Secrets', () => {
-    it('get_secrets - should list secrets', async () => {
-      const result = await client.callTool('get_secrets', {});
-
-      expect(result.isError).toBeFalsy();
-      expect(result.content).toHaveLength(1);
-      expect(result.content[0].type).toBe('text');
-
-      const text = result.content[0].text;
-      console.log('Secrets list:', text.substring(0, 500));
-
-      expect(text).toMatch(/Found \d+ secret/);
-    });
-
-    it('get_secrets - should support search', async () => {
-      const result = await client.callTool('get_secrets', {
-        q: 'api',
-      });
-
-      expect(result.isError).toBeFalsy();
-      const text = result.content[0].text;
-      console.log('Secrets search results:', text.substring(0, 500));
-    });
-
-    it('create_secret - should create a new secret', async () => {
-      const testSlug = `test-secret-${Date.now()}`;
-      const result = await client.callTool('create_secret', {
-        slug: testSlug,
-        onepassword_item_id: 'op://Test Vault/Test Item/password',
-        title: 'Test Secret',
-      });
-
-      expect(result.isError).toBeFalsy();
-      const text = result.content[0].text;
-      console.log('Created secret:', text);
-
-      expect(text).toContain('Successfully created secret');
-
-      // Extract ID for cleanup
-      const idMatch = text.match(/\*\*ID:\*\* (\d+)/);
-      if (idMatch) {
-        createdSecretId = parseInt(idMatch[1], 10);
-        console.log('Created secret ID:', createdSecretId);
-      }
-    });
-
-    it('get_secret - should get a specific secret', async () => {
-      if (!createdSecretId) {
-        console.log('Skipping - no secret ID available');
-        return;
-      }
-
-      const result = await client.callTool('get_secret', {
-        id_or_slug: createdSecretId,
-      });
-
-      expect(result.isError).toBeFalsy();
-      const text = result.content[0].text;
-      console.log('Secret details:', text);
-
-      expect(text).toContain('Secret Details');
-    });
-
-    it('update_secret - should update a secret', async () => {
-      if (!createdSecretId) {
-        console.log('Skipping - no secret ID available');
-        return;
-      }
-
-      const result = await client.callTool('update_secret', {
-        id_or_slug: createdSecretId,
-        title: 'Updated Test Secret',
-      });
-
-      expect(result.isError).toBeFalsy();
-      const text = result.content[0].text;
-      console.log('Updated secret:', text);
-
-      expect(text).toContain('Successfully updated secret');
-    });
-
-    it('delete_secret - should delete a secret', async () => {
-      if (!createdSecretId) {
-        console.log('Skipping - no secret ID available');
-        return;
-      }
-
-      const result = await client.callTool('delete_secret', {
-        id_or_slug: createdSecretId,
-      });
-
-      expect(result.isError).toBeFalsy();
-      const text = result.content[0].text;
-      console.log('Deleted secret:', text);
-
-      expect(text).toContain('Successfully deleted secret');
-
-      // Mark as cleaned up
-      createdSecretId = null;
     });
   });
 

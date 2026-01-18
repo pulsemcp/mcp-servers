@@ -439,44 +439,6 @@ export interface TenantsResponse {
   };
 }
 
-// Secret Types
-export interface Secret {
-  id: number;
-  slug: string;
-  onepassword_item_id: string;
-  title?: string;
-  description?: string;
-  mcp_servers_count?: number;
-  mcp_server_slugs?: string[];
-  created_at?: string;
-  updated_at?: string;
-}
-
-export interface SecretsResponse {
-  secrets: Secret[];
-  pagination?: {
-    current_page: number;
-    total_pages: number;
-    total_count: number;
-    has_next?: boolean;
-    limit?: number;
-  };
-}
-
-export interface CreateSecretParams {
-  slug: string;
-  onepassword_item_id: string;
-  title?: string;
-  description?: string;
-}
-
-export interface UpdateSecretParams {
-  slug?: string;
-  onepassword_item_id?: string;
-  title?: string;
-  description?: string;
-}
-
 // MCP JSON Types
 export interface McpJson {
   id: number;

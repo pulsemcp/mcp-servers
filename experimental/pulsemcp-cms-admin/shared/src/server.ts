@@ -28,10 +28,6 @@ import type {
   OfficialMirrorsResponse,
   Tenant,
   TenantsResponse,
-  Secret,
-  SecretsResponse,
-  CreateSecretParams,
-  UpdateSecretParams,
   McpJson,
   McpJsonsResponse,
   CreateMcpJsonParams,
@@ -183,17 +179,6 @@ export interface IPulseMCPAdminClient {
   }): Promise<TenantsResponse>;
 
   getTenant(idOrSlug: number | string): Promise<Tenant>;
-
-  // Secret REST API methods
-  getSecrets(params?: { q?: string; limit?: number; offset?: number }): Promise<SecretsResponse>;
-
-  getSecret(idOrSlug: number | string): Promise<Secret>;
-
-  createSecret(params: CreateSecretParams): Promise<Secret>;
-
-  updateSecret(idOrSlug: number | string, params: UpdateSecretParams): Promise<Secret>;
-
-  deleteSecret(idOrSlug: number | string): Promise<{ success: boolean; message: string }>;
 
   // MCP JSON REST API methods
   getMcpJsons(params?: {
@@ -518,36 +503,6 @@ export class PulseMCPAdminClient implements IPulseMCPAdminClient {
   async getTenant(idOrSlug: number | string): Promise<Tenant> {
     const { getTenant } = await import('./pulsemcp-admin-client/lib/get-tenant.js');
     return getTenant(this.apiKey, this.baseUrl, idOrSlug);
-  }
-
-  // Secret REST API methods
-  async getSecrets(params?: {
-    q?: string;
-    limit?: number;
-    offset?: number;
-  }): Promise<SecretsResponse> {
-    const { getSecrets } = await import('./pulsemcp-admin-client/lib/get-secrets.js');
-    return getSecrets(this.apiKey, this.baseUrl, params);
-  }
-
-  async getSecret(idOrSlug: number | string): Promise<Secret> {
-    const { getSecret } = await import('./pulsemcp-admin-client/lib/get-secret.js');
-    return getSecret(this.apiKey, this.baseUrl, idOrSlug);
-  }
-
-  async createSecret(params: CreateSecretParams): Promise<Secret> {
-    const { createSecret } = await import('./pulsemcp-admin-client/lib/create-secret.js');
-    return createSecret(this.apiKey, this.baseUrl, params);
-  }
-
-  async updateSecret(idOrSlug: number | string, params: UpdateSecretParams): Promise<Secret> {
-    const { updateSecret } = await import('./pulsemcp-admin-client/lib/update-secret.js');
-    return updateSecret(this.apiKey, this.baseUrl, idOrSlug, params);
-  }
-
-  async deleteSecret(idOrSlug: number | string): Promise<{ success: boolean; message: string }> {
-    const { deleteSecret } = await import('./pulsemcp-admin-client/lib/delete-secret.js');
-    return deleteSecret(this.apiKey, this.baseUrl, idOrSlug);
   }
 
   // MCP JSON REST API methods

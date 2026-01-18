@@ -14,6 +14,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   - `get_official_mirror`: Added `name` as alternative to `id` for looking up by mirror name (e.g., "@anthropic/claude-code")
   - `get_mcp_jsons`: Added `unofficial_mirror_name`, `mcp_server_id`, and `mcp_server_slug` parameters to find MCP JSON configs by mirror name or linked MCP server
 
+### Removed
+
+- Removed secrets management tools (`secrets` / `secrets_readonly` tool groups):
+  - `get_secrets`, `get_secret`, `create_secret`, `update_secret`, `delete_secret`
+  - These tools are no longer needed in this MCP server
+
 ## [0.6.0] - 2026-01-17
 
 ### Added

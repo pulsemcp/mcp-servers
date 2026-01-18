@@ -10,11 +10,11 @@
 
 ## Test Results Summary
 
-### Overall: ✅ 34/34 REST API Tool Tests PASSING
+### Overall: ✅ 28/28 REST API Tool Tests PASSING
 
 **v0.6.0 REST API Tools - All Tested and Verified:**
 
-The 18 new REST API tools have been manually tested against the staging API:
+The 13 REST API tools have been manually tested against the staging API:
 
 **Unofficial Mirrors (5 tools):**
 
@@ -33,14 +33,6 @@ The 18 new REST API tools have been manually tested against the staging API:
 
 - ✅ `get_tenants` - List with search/is_admin filters working (7 total records)
 - ✅ `get_tenant` - Skipped (slug lookup returns 404 for "pulsemcp" - may need exact match)
-
-**Secrets (5 tools):**
-
-- ✅ `get_secrets` - List with search working (39 total records)
-- ✅ `get_secret` - Get by ID working
-- ✅ `create_secret` - Create working (creates then cleans up)
-- ✅ `update_secret` - Update working (title field updated)
-- ✅ `delete_secret` - Delete working
 
 **MCP JSONs (5 tools):**
 
@@ -89,20 +81,6 @@ Found 7 tenants (page 1 of 1, total: 7):
    Created: 11/30/2025
 ```
 
-**get_secrets Response:**
-
-```
-Found 30 secrets (page 1 of 2, total: 39):
-
-1. **exa-token** (ID: 68)
-   1Password: re4pkuyzp7wvqpty7jw6apk5rm
-   Used by 1 server(s): exa
-
-2. **snowflake-password** (ID: 67)
-   1Password: xj45lbbt5ktaj3uqkixotwafyu
-   Used by 1 server(s): snowflake
-```
-
 **create_unofficial_mirror Response:**
 
 ```
@@ -116,7 +94,7 @@ Successfully created unofficial mirror!
 
 ## What's New in v0.6.0
 
-### REST API Tools for Admin Resources (18 new tools)
+### REST API Tools for Admin Resources (13 tools)
 
 Added comprehensive CRUD tools for managing PulseMCP admin resources:
 
@@ -125,7 +103,6 @@ Added comprehensive CRUD tools for managing PulseMCP admin resources:
 - `unofficial_mirrors` / `unofficial_mirrors_readonly`: CRUD operations for unofficial mirrors
 - `official_mirrors_readonly`: Read operations for official mirrors from MCP Registry
 - `tenants_readonly`: Read operations for tenants
-- `secrets` / `secrets_readonly`: CRUD operations for 1Password secret references
 - `mcp_jsons` / `mcp_jsons_readonly`: CRUD operations for MCP JSON configurations
 
 **Convenience Parameters:**
@@ -183,11 +160,10 @@ These tools use the same API client patterns, form-encoded POST requests for act
 
 ### Tool Test Results
 
-1. **REST API Tools** (rest-api-tools.manual.test.ts): ✅ 34/34 PASSING
+1. **REST API Tools** (rest-api-tools.manual.test.ts): ✅ 28/28 PASSING
    - Unofficial mirrors CRUD (8 tests)
    - Official mirrors read (4 tests)
    - Tenants read (5 tests)
-   - Secrets CRUD (6 tests)
    - MCP JSONs CRUD (7 tests)
    - Convenience parameters (4 tests)
 
@@ -434,20 +410,19 @@ All v0.6.0 features tested and working against staging API:
 1. Unofficial mirrors CRUD: ✅ Working
 2. Official mirrors read: ✅ Working
 3. Tenants read: ✅ Working
-4. Secrets CRUD: ✅ Working
-5. MCP JSONs read: ✅ Working
-6. Convenience parameters: ✅ Working (mcp_server_slug, name for unofficial/official mirrors, unofficial_mirror_name)
-7. Remote endpoint submission: ✅ Working
-8. Canonical URL submission: ✅ Working
-9. Combined updates: ✅ Working
-10. Form data encoding: ✅ Correct
-11. API integration: ✅ Verified
-12. find_providers tool: ✅ Working
-13. Implementation ID in search results: ✅ Added (output format change, no API changes)
-14. Customizable email content: ✅ Added (tool parameter addition, no API changes)
-15. Official mirror queue tools: ✅ Added (7 new tools following existing patterns)
+4. MCP JSONs read: ✅ Working
+5. Convenience parameters: ✅ Working (mcp_server_slug, name for unofficial/official mirrors, unofficial_mirror_name)
+6. Remote endpoint submission: ✅ Working
+7. Canonical URL submission: ✅ Working
+8. Combined updates: ✅ Working
+9. Form data encoding: ✅ Correct
+10. API integration: ✅ Verified
+11. find_providers tool: ✅ Working
+12. Implementation ID in search results: ✅ Added (output format change, no API changes)
+13. Customizable email content: ✅ Added (tool parameter addition, no API changes)
+14. Official mirror queue tools: ✅ Added (7 new tools following existing patterns)
 
-100% of REST API tool tests passing (34/34) with real staging data. All 104 functional tests passing.
+100% of REST API tool tests passing (28/28) with real staging data. All functional tests passing.
 
 ### Bug Fixes Verified
 

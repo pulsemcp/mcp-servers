@@ -899,49 +899,6 @@ export function createMockPulseMCPAdminClient(mockData: MockData): IPulseMCPAdmi
       };
     },
 
-    // Secret REST API methods (stub implementations)
-    async getSecrets() {
-      return { secrets: [], pagination: { current_page: 1, total_pages: 1, total_count: 0 } };
-    },
-
-    async getSecret(idOrSlug) {
-      return {
-        id: typeof idOrSlug === 'number' ? idOrSlug : 1,
-        slug: typeof idOrSlug === 'string' ? idOrSlug : 'test-secret',
-        onepassword_item_id: 'op://vault/item/field',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      };
-    },
-
-    async createSecret(params) {
-      return {
-        id: 1,
-        slug: params.slug,
-        onepassword_item_id: params.onepassword_item_id,
-        title: params.title,
-        description: params.description,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      };
-    },
-
-    async updateSecret(idOrSlug, params) {
-      return {
-        id: typeof idOrSlug === 'number' ? idOrSlug : 1,
-        slug: params.slug || (typeof idOrSlug === 'string' ? idOrSlug : 'test-secret'),
-        onepassword_item_id: params.onepassword_item_id || 'op://vault/item/field',
-        title: params.title,
-        description: params.description,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      };
-    },
-
-    async deleteSecret() {
-      return { success: true, message: 'Secret deleted' };
-    },
-
     // MCP JSON REST API methods (stub implementations)
     async getMcpJsons() {
       return { mcp_jsons: [], pagination: { current_page: 1, total_pages: 1, total_count: 0 } };
