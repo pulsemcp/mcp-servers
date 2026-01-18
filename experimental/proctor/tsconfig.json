@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+    "target": "es2022",
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "lib": ["es2022"],
+    "types": ["node"]
+  },
+  "references": [
+    { "path": "./shared" },
+    { "path": "./local" },
+    { "path": "./tests" }
+  ],
+  "files": []
+}
