@@ -66,8 +66,8 @@ The tests will:
 ## Latest Test Results
 
 **Test Date:** 2026-01-18
-**Branch:** tadasant/agent-orchestrator-unified-configs
-**Commit:** 0fbe3c0
+**Branch:** agent-orchestrator/improve-start-session-docs
+**Commit:** 0be44d5
 **Tested By:** Claude Code (automated)
 **Environment:** CI, unit tests and integration tests
 
