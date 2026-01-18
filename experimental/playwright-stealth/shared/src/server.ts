@@ -139,9 +139,10 @@ export class PlaywrightClient implements IPlaywrightClient {
       // In stealth mode, let the plugin's user-agent-override handle the user agent
       // In non-stealth mode, use the provided user agent if any
       userAgent: this.config.stealthMode ? undefined : this.config.stealthUserAgent,
-      // Ignore HTTPS errors when using proxy (required for residential proxies like BrightData
-      // which perform HTTPS inspection and may re-sign certificates)
-      ignoreHTTPSErrors: !!this.config.proxy,
+      // Ignore HTTPS errors when:
+      // 1. Explicitly enabled via IGNORE_HTTPS_ERRORS env var, OR
+      // 2. Using proxy (required for residential proxies that perform HTTPS inspection)
+      ignoreHTTPSErrors: this.config.ignoreHttpsErrors ?? !!this.config.proxy,
     });
 
     // Grant browser permissions (defaults to all permissions if not specified)
@@ -309,6 +310,12 @@ export interface CreateMCPServerOptions {
   proxy?: ProxyConfig;
   /** Browser permissions to grant. If undefined, all permissions are granted. */
   permissions?: BrowserPermission[];
+  /**
+   * Whether to ignore HTTPS errors (certificate validation failures).
+   * Useful in Docker environments where SSL certificates may not match hostnames.
+   * When undefined, HTTPS errors are only ignored if proxy is configured.
+   */
+  ignoreHttpsErrors?: boolean;
 }
 
 export function createMCPServer(options?: CreateMCPServerOptions) {
@@ -317,7 +324,7 @@ export function createMCPServer(options?: CreateMCPServerOptions) {
   const server = new Server(
     {
       name: 'playwright-stealth-mcp-server',
-      version: '0.0.7',
+      version: '0.0.8',
     },
     {
       capabilities: {
@@ -355,6 +362,7 @@ export function createMCPServer(options?: CreateMCPServerOptions) {
           stealthMaskLinux,
           stealthLocale,
           permissions: options?.permissions,
+          ignoreHttpsErrors: options?.ignoreHttpsErrors,
         });
         return activeClient;
       });

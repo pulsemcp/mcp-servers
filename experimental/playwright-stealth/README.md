@@ -97,6 +97,7 @@ Add to your Claude Desktop config file:
 | `PROXY_PASSWORD`          | Proxy authentication password                                                     | -                             |
 | `PROXY_BYPASS`            | Comma-separated list of hosts to bypass proxy                                     | -                             |
 | `BROWSER_PERMISSIONS`     | Comma-separated list of browser permissions to grant (see below)                  | All permissions               |
+| `IGNORE_HTTPS_ERRORS`     | Ignore HTTPS certificate errors (set to `false` for stricter security)            | `true`                        |
 
 ## Available Tools
 
@@ -276,6 +277,33 @@ The server supports HTTP/HTTPS proxies with optional authentication, making it c
 - Corporate HTTP proxies
 
 **Note:** When proxy is configured, the server performs a health check on startup to verify the proxy connection works. If the health check fails, the server will exit with an error.
+
+## HTTPS Certificate Errors
+
+By default, the server ignores HTTPS certificate errors (`IGNORE_HTTPS_ERRORS=true`). This is convenient for common automation scenarios:
+
+- **Docker environments** where SSL certificates may not match hostnames
+- **Corporate networks** with MITM proxies that re-sign certificates
+- **Self-signed certificates** in development or staging environments
+- **Residential proxies** that perform HTTPS inspection
+
+To enable strict certificate validation, set `IGNORE_HTTPS_ERRORS=false`:
+
+```json
+{
+  "mcpServers": {
+    "playwright": {
+      "command": "npx",
+      "args": ["-y", "playwright-stealth-mcp-server"],
+      "env": {
+        "IGNORE_HTTPS_ERRORS": "false"
+      }
+    }
+  }
+}
+```
+
+**Security Note:** For production environments where certificate validation is important, set `IGNORE_HTTPS_ERRORS=false` to protect against man-in-the-middle attacks.
 
 ## Browser Permissions
 

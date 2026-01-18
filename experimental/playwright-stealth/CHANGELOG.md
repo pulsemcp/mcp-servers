@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.0.8] - 2026-01-18
+
+### Added
+
+- New `IGNORE_HTTPS_ERRORS` environment variable to control HTTPS certificate validation
+- Default is `true` (ignore errors) for convenience in Docker, corporate proxies, and self-signed cert environments
+- Set `IGNORE_HTTPS_ERRORS=false` to enable strict certificate validation for production use
+- `ignoreHttpsErrors` field added to `browser_get_state` response to show current HTTPS error handling setting
+
 ## [0.0.7] - 2026-01-16
 
 ### Added

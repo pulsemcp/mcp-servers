@@ -99,7 +99,11 @@ Returns information about the current browser session including the URL, page ti
 **Returns:**
 - \`currentUrl\`: Current page URL
 - \`title\`: Current page title
-- \`isOpen\`: Whether a browser session is active`;
+- \`isOpen\`: Whether a browser session is active
+- \`stealthMode\`: Whether stealth mode is enabled
+- \`headless\`: Whether running in headless mode
+- \`proxyEnabled\`: Whether a proxy is configured
+- \`ignoreHttpsErrors\`: Whether HTTPS certificate errors are being ignored`;
 
 const CLOSE_DESCRIPTION = `Close the browser session.
 
@@ -323,6 +327,7 @@ export function createRegisterTools(clientFactory: ClientFactory) {
                     stealthMode: config.stealthMode,
                     headless: config.headless,
                     proxyEnabled: !!config.proxy,
+                    ignoreHttpsErrors: config.ignoreHttpsErrors ?? !!config.proxy,
                   },
                   null,
                   2

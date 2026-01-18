@@ -30,9 +30,9 @@ npm run test:manual
 
 ## Latest Test Results
 
-**Test Date:** 2026-01-16
-**Branch:** tadasant/playwright-permissions
-**Commit:** a3d68e0 (v0.0.7 - browser permissions support)
+**Test Date:** 2026-01-18
+**Branch:** claude/playwright-ignore-https-errors
+**Commit:** 370adef (v0.0.8 - add IGNORE_HTTPS_ERRORS env var)
 **Tested By:** Claude
 
 ### Summary
@@ -45,17 +45,16 @@ All functional and integration tests pass, including:
 - Stealth mode anti-bot protection tests
 - Screenshot resource storage tests
 - Screenshot dimension limiting to prevent API errors
-- **NEW: Browser permissions support**
+- Browser permissions support
+- **NEW: IGNORE_HTTPS_ERRORS environment variable support**
 
-### New in v0.0.7
+### New in v0.0.8
 
-Browser permissions support enables testing of features requiring permissions:
+IGNORE_HTTPS_ERRORS environment variable for controlling HTTPS certificate validation:
 
-- All 16 browser permissions granted by default (notifications, geolocation, camera, etc.)
-- `BROWSER_PERMISSIONS` env var to constrain which permissions are granted
-- `permissions` field in `browser_get_state` response shows granted permissions
-- `ALL_BROWSER_PERMISSIONS` constant and `BrowserPermission` type exported
-- Try-catch around `grantPermissions()` for graceful handling of unsupported permissions
+- New `IGNORE_HTTPS_ERRORS` env var to control HTTPS certificate validation
+- Default is `true` (ignore errors) for convenience in Docker, corporate proxies, and self-signed cert environments
+- Set `IGNORE_HTTPS_ERRORS=false` to enable strict certificate validation for production use
 
 ### Test Cases Status
 

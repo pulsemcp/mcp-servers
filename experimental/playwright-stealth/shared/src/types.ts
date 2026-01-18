@@ -60,6 +60,13 @@ export interface PlaywrightConfig {
    * Use BROWSER_PERMISSIONS env var to constrain permissions (comma-separated list).
    */
   permissions?: BrowserPermission[];
+  /**
+   * Whether to ignore HTTPS errors (certificate validation failures).
+   * Useful in Docker environments where SSL certificates may not match hostnames.
+   * Automatically enabled when proxy is configured.
+   * Use IGNORE_HTTPS_ERRORS env var to enable explicitly.
+   */
+  ignoreHttpsErrors?: boolean;
 }
 
 export interface ExecuteResult {
