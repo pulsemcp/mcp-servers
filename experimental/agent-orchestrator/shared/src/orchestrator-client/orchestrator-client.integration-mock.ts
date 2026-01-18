@@ -24,6 +24,7 @@ import type {
   LogLevel,
   SubagentStatus,
   MCPServerInfo,
+  ConfigsResponse,
 } from '../types.js';
 
 interface MockData {
@@ -516,6 +517,45 @@ export function createIntegrationMockOrchestratorClient(
           description: 'Send and receive messages in Slack workspaces',
         },
       ];
+    },
+
+    async getConfigs(): Promise<ConfigsResponse> {
+      return {
+        mcp_servers: [
+          {
+            name: 'github-development',
+            title: 'GitHub Development',
+            description: 'Interact with GitHub repositories, issues, and pull requests',
+          },
+          {
+            name: 'slack',
+            title: 'Slack',
+            description: 'Send and receive messages in Slack workspaces',
+          },
+        ],
+        agent_roots: [
+          {
+            name: 'mcp-servers',
+            title: 'MCP Servers',
+            description: 'PulseMCP MCP servers monorepo',
+            git_root: 'https://github.com/pulsemcp/mcp-servers.git',
+            default_branch: 'main',
+            default_mcp_servers: ['github-development'],
+          },
+        ],
+        stop_conditions: [
+          {
+            id: 'pr_merged',
+            name: 'PR Merged',
+            description: 'Stop when the pull request is merged',
+          },
+          {
+            id: 'ci_passing',
+            name: 'CI Passing',
+            description: 'Stop when CI checks pass',
+          },
+        ],
+      };
     },
   };
 }

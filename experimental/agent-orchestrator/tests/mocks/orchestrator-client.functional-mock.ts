@@ -1,6 +1,14 @@
 import { vi } from 'vitest';
 import type { IAgentOrchestratorClient } from '../../shared/src/orchestrator-client/orchestrator-client.js';
-import type { Session, Log, SubagentTranscript, MCPServerInfo } from '../../shared/src/types.js';
+import type {
+  Session,
+  Log,
+  SubagentTranscript,
+  MCPServerInfo,
+  AgentRootInfo,
+  StopConditionInfo,
+  ConfigsResponse,
+} from '../../shared/src/types.js';
 
 const defaultSession: Session = {
   id: 1,
@@ -67,6 +75,36 @@ const defaultMcpServers: MCPServerInfo[] = [
     description: 'Send and receive messages in Slack workspaces',
   },
 ];
+
+const defaultAgentRoots: AgentRootInfo[] = [
+  {
+    name: 'mcp-servers',
+    title: 'MCP Servers',
+    description: 'PulseMCP MCP servers monorepo',
+    git_root: 'https://github.com/pulsemcp/mcp-servers.git',
+    default_branch: 'main',
+    default_mcp_servers: ['github-development'],
+  },
+];
+
+const defaultStopConditions: StopConditionInfo[] = [
+  {
+    id: 'pr_merged',
+    name: 'PR Merged',
+    description: 'Stop when the pull request is merged',
+  },
+  {
+    id: 'ci_passing',
+    name: 'CI Passing',
+    description: 'Stop when CI checks pass',
+  },
+];
+
+const defaultConfigs: ConfigsResponse = {
+  mcp_servers: defaultMcpServers,
+  agent_roots: defaultAgentRoots,
+  stop_conditions: defaultStopConditions,
+};
 
 export function createMockOrchestratorClient(): IAgentOrchestratorClient {
   return {
@@ -169,5 +207,7 @@ export function createMockOrchestratorClient(): IAgentOrchestratorClient {
     deleteSubagentTranscript: vi.fn().mockResolvedValue(undefined),
 
     getMcpServers: vi.fn().mockResolvedValue(defaultMcpServers),
+
+    getConfigs: vi.fn().mockResolvedValue(defaultConfigs),
   };
 }

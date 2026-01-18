@@ -27,6 +27,7 @@ import type {
   SubagentStatus,
   MCPServerInfo,
   MCPServersResponse,
+  ConfigsResponse,
 } from '../types.js';
 
 /**
@@ -125,6 +126,9 @@ export interface IAgentOrchestratorClient {
 
   // MCP Servers
   getMcpServers(): Promise<MCPServerInfo[]>;
+
+  // Unified Configs
+  getConfigs(): Promise<ConfigsResponse>;
 }
 
 /** Default timeout for API requests in milliseconds */
@@ -402,5 +406,10 @@ export class AgentOrchestratorClient implements IAgentOrchestratorClient {
   async getMcpServers(): Promise<MCPServerInfo[]> {
     const response = await this.request<MCPServersResponse>('GET', '/mcp_servers');
     return response.mcp_servers;
+  }
+
+  // Unified Configs
+  async getConfigs(): Promise<ConfigsResponse> {
+    return this.request<ConfigsResponse>('GET', '/configs');
   }
 }
