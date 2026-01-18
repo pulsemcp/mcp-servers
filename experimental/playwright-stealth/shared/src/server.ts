@@ -139,10 +139,9 @@ export class PlaywrightClient implements IPlaywrightClient {
       // In stealth mode, let the plugin's user-agent-override handle the user agent
       // In non-stealth mode, use the provided user agent if any
       userAgent: this.config.stealthMode ? undefined : this.config.stealthUserAgent,
-      // Ignore HTTPS errors when:
-      // 1. Explicitly enabled via IGNORE_HTTPS_ERRORS env var, OR
-      // 2. Using proxy (required for residential proxies that perform HTTPS inspection)
-      ignoreHTTPSErrors: this.config.ignoreHttpsErrors ?? !!this.config.proxy,
+      // Ignore HTTPS errors by default (convenient for Docker, staging environments, self-signed certs)
+      // Set IGNORE_HTTPS_ERRORS=false for strict certificate validation in production
+      ignoreHTTPSErrors: this.config.ignoreHttpsErrors ?? true,
     });
 
     // Grant browser permissions (defaults to all permissions if not specified)
@@ -312,8 +311,8 @@ export interface CreateMCPServerOptions {
   permissions?: BrowserPermission[];
   /**
    * Whether to ignore HTTPS errors (certificate validation failures).
-   * Useful in Docker environments where SSL certificates may not match hostnames.
-   * When undefined, HTTPS errors are only ignored if proxy is configured.
+   * Defaults to true for convenience (Docker, staging environments, self-signed certs).
+   * Set to false for strict certificate validation in production environments.
    */
   ignoreHttpsErrors?: boolean;
 }
@@ -324,7 +323,7 @@ export function createMCPServer(options?: CreateMCPServerOptions) {
   const server = new Server(
     {
       name: 'playwright-stealth-mcp-server',
-      version: '0.0.8',
+      version: '0.0.9',
     },
     {
       capabilities: {

@@ -62,9 +62,8 @@ export interface PlaywrightConfig {
   permissions?: BrowserPermission[];
   /**
    * Whether to ignore HTTPS errors (certificate validation failures).
-   * Useful in Docker environments where SSL certificates may not match hostnames.
-   * Automatically enabled when proxy is configured.
-   * Use IGNORE_HTTPS_ERRORS env var to enable explicitly.
+   * Defaults to true for convenience (Docker, staging environments, self-signed certs).
+   * Set to false for strict certificate validation in production environments.
    */
   ignoreHttpsErrors?: boolean;
 }
