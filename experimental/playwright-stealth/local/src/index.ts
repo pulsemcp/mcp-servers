@@ -176,6 +176,12 @@ function validateEnvironment(): void {
         'Comma-separated list of browser permissions to grant. If not set, ALL permissions are granted.',
       defaultValue: 'all (notifications, geolocation, camera, microphone, clipboard-read, etc.)',
     },
+    {
+      name: 'IGNORE_HTTPS_ERRORS',
+      description:
+        'Ignore HTTPS certificate errors (true/false). Useful in Docker or self-signed cert environments.',
+      defaultValue: 'false',
+    },
   ];
 
   // Log configuration
@@ -216,6 +222,9 @@ function validateEnvironment(): void {
     logInfo('config', `Browser permissions constrained to: ${browserPermissions}`);
   } else {
     logInfo('config', 'Browser permissions: all (default)');
+  }
+  if (process.env.IGNORE_HTTPS_ERRORS === 'true') {
+    logWarning('config', 'HTTPS certificate error checking disabled');
   }
 
   // Show optional configuration if DEBUG is set
@@ -265,16 +274,25 @@ async function main() {
     }
   }
 
-  // Step 5: Create server using factory, passing proxy config and permissions
+  // Step 5: Parse IGNORE_HTTPS_ERRORS setting (undefined = use proxy-based default)
+  const ignoreHttpsErrors =
+    process.env.IGNORE_HTTPS_ERRORS === 'true'
+      ? true
+      : process.env.IGNORE_HTTPS_ERRORS === 'false'
+        ? false
+        : undefined;
+
+  // Step 6: Create server using factory, passing proxy config, permissions, and HTTPS error handling
   const { server, registerHandlers, cleanup } = createMCPServer({
     proxy: proxyConfig,
     permissions: browserPermissions,
+    ignoreHttpsErrors,
   });
 
-  // Step 6: Register all handlers (tools)
+  // Step 7: Register all handlers (tools)
   await registerHandlers(server);
 
-  // Step 7: Set up graceful shutdown
+  // Step 8: Set up graceful shutdown
   const handleShutdown = async () => {
     logWarning('shutdown', 'Received shutdown signal, closing browser...');
     await cleanup();
@@ -284,7 +302,7 @@ async function main() {
   process.on('SIGINT', handleShutdown);
   process.on('SIGTERM', handleShutdown);
 
-  // Step 8: Start server with stdio transport
+  // Step 9: Start server with stdio transport
   const transport = new StdioServerTransport();
   await server.connect(transport);
 

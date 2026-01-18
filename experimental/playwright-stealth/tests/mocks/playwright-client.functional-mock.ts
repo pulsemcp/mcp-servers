@@ -9,6 +9,7 @@ import { vi } from 'vitest';
 
 export function createFunctionalMockClient(options?: {
   proxyEnabled?: boolean;
+  ignoreHttpsErrors?: boolean;
 }): IPlaywrightClient {
   return {
     execute: vi.fn().mockResolvedValue({
@@ -43,6 +44,7 @@ export function createFunctionalMockClient(options?: {
             password: 'testpass',
           }
         : undefined,
+      ignoreHttpsErrors: options?.ignoreHttpsErrors,
     } as PlaywrightConfig),
   };
 }
