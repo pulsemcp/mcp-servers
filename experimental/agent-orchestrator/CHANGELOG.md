@@ -16,12 +16,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Agent roots (preconfigured repository settings with defaults)
   - Stop conditions (session completion criteria)
 - Unified configs endpoint support via new `getConfigs()` client method (uses `/api/v1/configs`)
-- Shared caching between `get_configs` and `get_available_mcp_servers` tools
+- New MCP resources for individual config types:
+  - `agent-orchestrator://configs/mcp-servers` - List of available MCP servers
+  - `agent-orchestrator://configs/agent-roots` - Preconfigured repository settings
+  - `agent-orchestrator://configs/stop-conditions` - Session completion criteria
+- Shared caching between `get_configs` tool and config resources
 
-### Changed
+### Removed
 
-- `get_available_mcp_servers` tool now uses the unified `/api/v1/configs` endpoint instead of `/api/v1/mcp_servers`
-- Cache is now shared between `get_configs` and `get_available_mcp_servers` to avoid redundant API calls
+- **BREAKING:** `get_available_mcp_servers` tool removed - use `get_configs` tool or `agent-orchestrator://configs/mcp-servers` resource instead
 
 ## [0.1.3] - 2026-01-18
 

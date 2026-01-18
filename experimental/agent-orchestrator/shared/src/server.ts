@@ -1,5 +1,5 @@
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
-import { registerResources } from './resources.js';
+import { createRegisterResources } from './resources.js';
 import { createRegisterTools } from './tools.js';
 import {
   AgentOrchestratorClient,
@@ -15,7 +15,7 @@ export function createMCPServer() {
   const server = new Server(
     {
       name: 'agent-orchestrator-mcp-server',
-      version: '0.1.0',
+      version: '0.2.0',
     },
     {
       capabilities: {
@@ -44,6 +44,7 @@ export function createMCPServer() {
         return new AgentOrchestratorClient(baseUrl, apiKey);
       });
 
+    const registerResources = createRegisterResources(factory);
     registerResources(server);
     const registerTools = createRegisterTools(factory);
     registerTools(server);
