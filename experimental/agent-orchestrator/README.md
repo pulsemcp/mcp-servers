@@ -4,9 +4,10 @@ MCP server for PulseMCP's agent-orchestrator: a Claude Code + MCP-powered agent-
 
 ## Highlights
 
-- Simplified 4-tool interface for full agent session management
+- Simplified 5-tool interface for full agent session management
 - Search, filter, and retrieve sessions with optional logs and transcripts
 - Session lifecycle actions (pause, restart, archive, unarchive, follow_up, change_mcp_servers)
+- Static configuration access via tools and MCP resources
 - Tool grouping system for permission-based access control
 - TypeScript with strict type checking
 - Comprehensive testing setup (functional, integration, manual)
@@ -19,14 +20,18 @@ MCP server for PulseMCP's agent-orchestrator: a Claude Code + MCP-powered agent-
 | ----------------- | -------- | ---------------------------------------------------------------------------------- |
 | `search_sessions` | readonly | Search/list sessions with optional ID lookup, query, and status filter             |
 | `get_session`     | readonly | Get detailed session info with optional logs and transcripts                       |
+| `get_configs`     | readonly | Fetch all static configuration (MCP servers, agent roots, stop conditions)         |
 | `start_session`   | write    | Create and start a new agent session                                               |
 | `action_session`  | write    | Perform actions: follow_up, pause, restart, archive, unarchive, change_mcp_servers |
 
 ### Resources
 
-| Resource                      | Description                                     |
-| ----------------------------- | ----------------------------------------------- |
-| `agent-orchestrator://config` | Server configuration and status (for debugging) |
+| Resource                                       | Description                                     |
+| ---------------------------------------------- | ----------------------------------------------- |
+| `agent-orchestrator://config`                  | Server configuration and status (for debugging) |
+| `agent-orchestrator://configs/mcp-servers`     | List of available MCP servers for sessions      |
+| `agent-orchestrator://configs/agent-roots`     | Preconfigured repository settings with defaults |
+| `agent-orchestrator://configs/stop-conditions` | Session completion criteria definitions         |
 
 ### Tool Groups
 

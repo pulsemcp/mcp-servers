@@ -1,5 +1,5 @@
 // Core server exports
-export { registerResources } from './resources.js';
+export { createRegisterResources } from './resources.js';
 export {
   registerTools,
   createRegisterTools,

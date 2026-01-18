@@ -37,10 +37,3 @@ export function getConfigsCache(): ConfigsResponse | null {
 export function setConfigsCache(configs: ConfigsResponse): void {
   configsCache = configs;
 }
-
-/**
- * Check if the cache contains data.
- */
-export function hasConfigsCache(): boolean {
-  return configsCache !== null;
-}

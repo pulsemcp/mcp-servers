@@ -190,15 +190,3 @@ async function fetchConfigs(clientFactory: ClientFactory) {
   setConfigsCache(configs);
   return configs;
 }
-
-// Keep the original registerResources for backward compatibility
-export function registerResources(server: Server) {
-  // This maintains compatibility but doesn't use dependency injection for configs
-  const factory = () => {
-    throw new Error(
-      'No client factory provided - use createRegisterResources for dependency injection'
-    );
-  };
-  const register = createRegisterResources(factory);
-  register(server);
-}

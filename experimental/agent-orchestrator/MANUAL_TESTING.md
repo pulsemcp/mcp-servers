@@ -73,19 +73,17 @@ The tests will:
 
 ### Summary
 
-**Overall:** :white_check_mark: SUCCESS - All 61 functional tests pass, 9 integration tests pass (100%)
+**Overall:** :white_check_mark: SUCCESS - All 24 functional tests pass, 13 integration tests pass (100%)
 
-| Test Category             | Status             | Tests |
-| ------------------------- | ------------------ | ----- |
-| Tool Registration         | :white_check_mark: | 1/1   |
-| search_sessions           | :white_check_mark: | 4/4   |
-| get_session               | :white_check_mark: | 5/5   |
-| start_session             | :white_check_mark: | 1/1   |
-| action_session            | :white_check_mark: | 7/7   |
-| Health Check              | :white_check_mark: | 31/31 |
-| get_available_mcp_servers | :white_check_mark: | 5/5   |
-| get_configs               | :white_check_mark: | 6/6   |
-| Integration Tests         | :white_check_mark: | 9/9   |
+| Test Category     | Status             | Tests |
+| ----------------- | ------------------ | ----- |
+| Tool Registration | :white_check_mark: | 1/1   |
+| search_sessions   | :white_check_mark: | 4/4   |
+| get_session       | :white_check_mark: | 4/4   |
+| start_session     | :white_check_mark: | 1/1   |
+| action_session    | :white_check_mark: | 8/8   |
+| get_configs       | :white_check_mark: | 6/6   |
+| Integration Tests | :white_check_mark: | 13/13 |
 
 ### Functionality Verified
 
@@ -95,27 +93,32 @@ The tests will:
 - :white_check_mark: **startSessionWorks** - Create new sessions
 - :white_check_mark: **actionSessionWorks** - Archive/unarchive sessions
 - :white_check_mark: **changeMcpServersWorks** - Update MCP servers for a session
-- :white_check_mark: **healthCheckWorks** - API connectivity health check on startup
 - :white_check_mark: **getConfigsWorks** - Fetch all static configs (MCP servers, agent roots, stop conditions)
-- :white_check_mark: **sharedCacheWorks** - Cache sharing between get_configs and get_available_mcp_servers
+- :white_check_mark: **configResourcesWork** - MCP resources for individual config types
 
 ### Test Details
 
-**6-tool interface:**
+**5-tool interface:**
 
 - `search_sessions` - Search/list sessions with optional ID lookup
 - `get_session` - Get detailed session info with optional logs/transcripts
 - `start_session` - Create and start a new session
 - `action_session` - Perform actions (follow_up, pause, restart, archive, unarchive, change_mcp_servers)
-- `get_available_mcp_servers` - List available MCP servers (now uses unified configs endpoint)
-- `get_configs` - Fetch all static configuration in a single call (NEW in 0.2.0)
+- `get_configs` - Fetch all static configuration in a single call
+
+**4 MCP resources:**
+
+- `agent-orchestrator://config` - Server configuration and status
+- `agent-orchestrator://configs/mcp-servers` - List of available MCP servers
+- `agent-orchestrator://configs/agent-roots` - Preconfigured repository settings
+- `agent-orchestrator://configs/stop-conditions` - Session completion criteria
 
 **New in 0.2.0:**
 
 - Added `get_configs` tool for unified static configuration access
-- Updated `get_available_mcp_servers` to use unified `/api/v1/configs` endpoint
-- Implemented shared caching between config tools
-- Functional tests: 61 pass, Integration tests: 9 pass
+- Added MCP resources for individual config types (mcp-servers, agent-roots, stop-conditions)
+- **BREAKING:** Removed `get_available_mcp_servers` tool - use `get_configs` or resources instead
+- Functional tests: 24 pass, Integration tests: 13 pass
 
 ---
 
