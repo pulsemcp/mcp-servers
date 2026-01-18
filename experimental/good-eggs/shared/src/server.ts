@@ -802,12 +802,10 @@ export class GoodEggsClient implements IGoodEggsClient {
       return nameEl?.textContent?.trim() || 'Unknown item';
     });
 
-    // Look for the favorite/heart button
-    const favoriteButton = await page.$(
-      'button[aria-label*="favorite"], button[aria-label*="heart"], button:has([class*="heart"]), [class*="favorite"] button, button[class*="favorite"]'
-    );
+    // Look for the favorite control - Good Eggs uses a div, not a button
+    const favoriteControl = await page.$('.product-detail__favorite-control');
 
-    if (!favoriteButton) {
+    if (!favoriteControl) {
       return {
         success: false,
         message: 'Could not find favorite button',
@@ -815,17 +813,10 @@ export class GoodEggsClient implements IGoodEggsClient {
       };
     }
 
-    // Check if already favorited (button might have "filled" or "active" state)
-    const isAlreadyFavorited = await page.evaluate((btn) => {
-      const classList = btn.className || '';
-      const ariaPressed = btn.getAttribute('aria-pressed');
-      return (
-        classList.includes('active') ||
-        classList.includes('filled') ||
-        classList.includes('favorited') ||
-        ariaPressed === 'true'
-      );
-    }, favoriteButton);
+    // Check if already favorited by looking for 'favorited' class (vs 'not-favorited')
+    const isAlreadyFavorited = await page.evaluate((el) => {
+      return el.classList.contains('favorited');
+    }, favoriteControl);
 
     if (isAlreadyFavorited) {
       return {
@@ -835,7 +826,7 @@ export class GoodEggsClient implements IGoodEggsClient {
       };
     }
 
-    await favoriteButton.click();
+    await favoriteControl.click();
     await page.waitForTimeout(500);
 
     return {
@@ -866,12 +857,10 @@ export class GoodEggsClient implements IGoodEggsClient {
       return nameEl?.textContent?.trim() || 'Unknown item';
     });
 
-    // Look for the favorite/heart button
-    const favoriteButton = await page.$(
-      'button[aria-label*="favorite"], button[aria-label*="heart"], button:has([class*="heart"]), [class*="favorite"] button, button[class*="favorite"]'
-    );
+    // Look for the favorite control - Good Eggs uses a div, not a button
+    const favoriteControl = await page.$('.product-detail__favorite-control');
 
-    if (!favoriteButton) {
+    if (!favoriteControl) {
       return {
         success: false,
         message: 'Could not find favorite button',
@@ -879,17 +868,10 @@ export class GoodEggsClient implements IGoodEggsClient {
       };
     }
 
-    // Check if already favorited (button might have "filled" or "active" state)
-    const isFavorited = await page.evaluate((btn) => {
-      const classList = btn.className || '';
-      const ariaPressed = btn.getAttribute('aria-pressed');
-      return (
-        classList.includes('active') ||
-        classList.includes('filled') ||
-        classList.includes('favorited') ||
-        ariaPressed === 'true'
-      );
-    }, favoriteButton);
+    // Check if favorited by looking for 'favorited' class (vs 'not-favorited')
+    const isFavorited = await page.evaluate((el) => {
+      return el.classList.contains('favorited');
+    }, favoriteControl);
 
     if (!isFavorited) {
       return {
@@ -899,7 +881,7 @@ export class GoodEggsClient implements IGoodEggsClient {
       };
     }
 
-    await favoriteButton.click();
+    await favoriteControl.click();
     await page.waitForTimeout(500);
 
     return {

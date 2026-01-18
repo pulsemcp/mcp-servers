@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Fixed `add_favorite` and `remove_favorite` tools to use correct CSS selector (`.product-detail__favorite-control`) matching Good Eggs' actual page structure where the favorite control is a div element, not a button
+
 ## [0.1.6] - 2026-01-17
 
 ### Fixed
