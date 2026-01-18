@@ -31,19 +31,20 @@ describe('Agent Orchestrator MCP Server Integration Tests', () => {
   });
 
   describe('Tools', () => {
-    it('should list available tools (simplified 4-tool API)', async () => {
+    it('should list available tools', async () => {
       const mockClient = createIntegrationMockOrchestratorClient({});
       client = await createTestMCPClientWithMock(mockClient);
 
       const result = await client.listTools();
       const tools = result.tools;
-      expect(tools.length).toBe(4);
+      expect(tools.length).toBe(5);
 
       const toolNames = tools.map((t: { name: string }) => t.name);
       expect(toolNames).toContain('search_sessions');
       expect(toolNames).toContain('get_session');
       expect(toolNames).toContain('start_session');
       expect(toolNames).toContain('action_session');
+      expect(toolNames).toContain('get_configs');
     });
 
     it('should execute search_sessions tool', async () => {
@@ -237,6 +238,23 @@ describe('Agent Orchestrator MCP Server Integration Tests', () => {
       expect(result.content[0].text).toContain('Agent started processing');
       expect(result.content[0].text).toContain('Found an error');
     });
+
+    it('should execute get_configs tool', async () => {
+      const mockClient = createIntegrationMockOrchestratorClient({});
+      client = await createTestMCPClientWithMock(mockClient);
+
+      const result = await client.callTool('get_configs', {});
+
+      expect(result.content).toBeDefined();
+      expect(result.content[0].type).toBe('text');
+      expect(result.content[0].text).toContain('MCP Servers');
+      expect(result.content[0].text).toContain('Agent Roots');
+      expect(result.content[0].text).toContain('Stop Conditions');
+      // Verify mock data is present
+      expect(result.content[0].text).toContain('GitHub Development');
+      expect(result.content[0].text).toContain('mcp-servers');
+      expect(result.content[0].text).toContain('PR Merged');
+    });
   });
 
   describe('Resources', () => {
@@ -246,8 +264,13 @@ describe('Agent Orchestrator MCP Server Integration Tests', () => {
 
       const result = await client.listResources();
       const resources = result.resources;
-      expect(resources).toHaveLength(1);
-      expect(resources[0].uri).toBe('agent-orchestrator://config');
+      expect(resources).toHaveLength(4);
+
+      const resourceUris = resources.map((r: { uri: string }) => r.uri);
+      expect(resourceUris).toContain('agent-orchestrator://config');
+      expect(resourceUris).toContain('agent-orchestrator://configs/mcp-servers');
+      expect(resourceUris).toContain('agent-orchestrator://configs/agent-roots');
+      expect(resourceUris).toContain('agent-orchestrator://configs/stop-conditions');
     });
 
     it('should read config resource', async () => {
@@ -262,6 +285,57 @@ describe('Agent Orchestrator MCP Server Integration Tests', () => {
 
       const config = JSON.parse(result.contents[0].text);
       expect(config.server.name).toBe('agent-orchestrator-mcp-server');
+    });
+
+    it('should read mcp-servers config resource', async () => {
+      const mockClient = createIntegrationMockOrchestratorClient({});
+      client = await createTestMCPClientWithMock(mockClient);
+
+      const result = await client.readResource('agent-orchestrator://configs/mcp-servers');
+      expect(result.contents[0]).toMatchObject({
+        uri: 'agent-orchestrator://configs/mcp-servers',
+        mimeType: 'application/json',
+      });
+
+      const data = JSON.parse(result.contents[0].text);
+      expect(data.mcp_servers).toBeDefined();
+      expect(data.mcp_servers.length).toBeGreaterThan(0);
+      expect(data.mcp_servers[0]).toHaveProperty('name');
+      expect(data._usage).toContain('mcp_servers');
+    });
+
+    it('should read agent-roots config resource', async () => {
+      const mockClient = createIntegrationMockOrchestratorClient({});
+      client = await createTestMCPClientWithMock(mockClient);
+
+      const result = await client.readResource('agent-orchestrator://configs/agent-roots');
+      expect(result.contents[0]).toMatchObject({
+        uri: 'agent-orchestrator://configs/agent-roots',
+        mimeType: 'application/json',
+      });
+
+      const data = JSON.parse(result.contents[0].text);
+      expect(data.agent_roots).toBeDefined();
+      expect(data.agent_roots.length).toBeGreaterThan(0);
+      expect(data.agent_roots[0]).toHaveProperty('git_root');
+      expect(data._usage).toContain('git_root');
+    });
+
+    it('should read stop-conditions config resource', async () => {
+      const mockClient = createIntegrationMockOrchestratorClient({});
+      client = await createTestMCPClientWithMock(mockClient);
+
+      const result = await client.readResource('agent-orchestrator://configs/stop-conditions');
+      expect(result.contents[0]).toMatchObject({
+        uri: 'agent-orchestrator://configs/stop-conditions',
+        mimeType: 'application/json',
+      });
+
+      const data = JSON.parse(result.contents[0].text);
+      expect(data.stop_conditions).toBeDefined();
+      expect(data.stop_conditions.length).toBeGreaterThan(0);
+      expect(data.stop_conditions[0]).toHaveProperty('id');
+      expect(data._usage).toContain('stop_condition');
     });
   });
 });
