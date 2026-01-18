@@ -32,7 +32,7 @@ npm run test:manual
 
 **Test Date:** 2026-01-18
 **Branch:** claude/playwright-ignore-https-errors
-**Commit:** 3b1a4a1 (v0.0.8 - add IGNORE_HTTPS_ERRORS env var)
+**Commit:** 370adef (v0.0.8 - add IGNORE_HTTPS_ERRORS env var)
 **Tested By:** Claude
 
 ### Summary
