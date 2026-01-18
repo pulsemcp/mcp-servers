@@ -44,7 +44,7 @@ export const StartSessionSchema = z.object({
 
 const TOOL_DESCRIPTION = `Start a new agent session in the Agent Orchestrator.
 
-**IMPORTANT:** Call get_configs first to see available MCP servers, stop conditions, and preconfigured agent roots before starting a session.
+**IMPORTANT:** Before starting a session, call get_configs to discover available MCP servers, stop conditions, and preconfigured agent roots.
 
 **Returns:** The created session with its ID, status, and configuration.
 
