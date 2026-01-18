@@ -11,10 +11,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- New `IGNORE_HTTPS_ERRORS` environment variable to explicitly ignore HTTPS certificate errors
-- Useful in Docker environments, corporate networks with MITM proxies, or when using self-signed certificates
-- When not set, HTTPS errors are only ignored when a proxy is configured (existing behavior)
-- Setting `IGNORE_HTTPS_ERRORS=true` enables ignoring HTTPS errors without requiring a proxy
+- New `IGNORE_HTTPS_ERRORS` environment variable to control HTTPS certificate validation
+- Default is `true` (ignore errors) for convenience in Docker, corporate proxies, and self-signed cert environments
+- Set `IGNORE_HTTPS_ERRORS=false` to enable strict certificate validation for production use
 
 ## [0.0.7] - 2026-01-16
 

@@ -50,12 +50,11 @@ All functional and integration tests pass, including:
 
 ### New in v0.0.8
 
-IGNORE_HTTPS_ERRORS environment variable for explicitly ignoring HTTPS certificate errors:
+IGNORE_HTTPS_ERRORS environment variable for controlling HTTPS certificate validation:
 
-- New `IGNORE_HTTPS_ERRORS` env var to explicitly ignore HTTPS certificate errors
-- Useful in Docker environments, corporate networks with MITM proxies, or self-signed certificates
-- When not set, HTTPS errors are only ignored when a proxy is configured (existing behavior)
-- Setting `IGNORE_HTTPS_ERRORS=true` enables ignoring HTTPS errors without requiring a proxy
+- New `IGNORE_HTTPS_ERRORS` env var to control HTTPS certificate validation
+- Default is `true` (ignore errors) for convenience in Docker, corporate proxies, and self-signed cert environments
+- Set `IGNORE_HTTPS_ERRORS=false` to enable strict certificate validation for production use
 
 ### Test Cases Status
 

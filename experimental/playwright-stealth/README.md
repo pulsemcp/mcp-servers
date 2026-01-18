@@ -97,7 +97,7 @@ Add to your Claude Desktop config file:
 | `PROXY_PASSWORD`          | Proxy authentication password                                                     | -                             |
 | `PROXY_BYPASS`            | Comma-separated list of hosts to bypass proxy                                     | -                             |
 | `BROWSER_PERMISSIONS`     | Comma-separated list of browser permissions to grant (see below)                  | All permissions               |
-| `IGNORE_HTTPS_ERRORS`     | Ignore HTTPS certificate errors (useful in Docker or self-signed cert envs)       | `false`                       |
+| `IGNORE_HTTPS_ERRORS`     | Ignore HTTPS certificate errors (set to `false` for stricter security)            | `true`                        |
 
 ## Available Tools
 
@@ -280,15 +280,14 @@ The server supports HTTP/HTTPS proxies with optional authentication, making it c
 
 ## HTTPS Certificate Errors
 
-By default, the server validates HTTPS certificates. However, in some environments you may encounter certificate errors:
+By default, the server ignores HTTPS certificate errors (`IGNORE_HTTPS_ERRORS=true`). This is convenient for common automation scenarios:
 
 - **Docker environments** where SSL certificates may not match hostnames
 - **Corporate networks** with MITM proxies that re-sign certificates
 - **Self-signed certificates** in development or staging environments
+- **Residential proxies** that perform HTTPS inspection
 
-When a proxy is configured (via `PROXY_URL`), HTTPS errors are automatically ignored since residential proxies often perform HTTPS inspection.
-
-To explicitly enable ignoring HTTPS errors without a proxy, set:
+To enable strict certificate validation, set `IGNORE_HTTPS_ERRORS=false`:
 
 ```json
 {
@@ -297,14 +296,14 @@ To explicitly enable ignoring HTTPS errors without a proxy, set:
       "command": "npx",
       "args": ["-y", "playwright-stealth-mcp-server"],
       "env": {
-        "IGNORE_HTTPS_ERRORS": "true"
+        "IGNORE_HTTPS_ERRORS": "false"
       }
     }
   }
 }
 ```
 
-**Security Note:** Only enable this option when necessary, as it disables certificate validation which protects against man-in-the-middle attacks.
+**Security Note:** For production environments where certificate validation is important, set `IGNORE_HTTPS_ERRORS=false` to protect against man-in-the-middle attacks.
 
 ## Browser Permissions
 

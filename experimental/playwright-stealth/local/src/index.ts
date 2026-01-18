@@ -179,8 +179,8 @@ function validateEnvironment(): void {
     {
       name: 'IGNORE_HTTPS_ERRORS',
       description:
-        'Ignore HTTPS certificate errors (true/false). Useful in Docker or self-signed cert environments.',
-      defaultValue: 'false',
+        'Ignore HTTPS certificate errors (true/false). Set to false for stricter security.',
+      defaultValue: 'true',
     },
   ];
 
@@ -223,8 +223,8 @@ function validateEnvironment(): void {
   } else {
     logInfo('config', 'Browser permissions: all (default)');
   }
-  if (process.env.IGNORE_HTTPS_ERRORS === 'true') {
-    logWarning('config', 'HTTPS certificate error checking disabled');
+  if (process.env.IGNORE_HTTPS_ERRORS === 'false') {
+    logInfo('config', 'HTTPS certificate validation enabled (strict mode)');
   }
 
   // Show optional configuration if DEBUG is set
@@ -274,13 +274,8 @@ async function main() {
     }
   }
 
-  // Step 5: Parse IGNORE_HTTPS_ERRORS setting (undefined = use proxy-based default)
-  const ignoreHttpsErrors =
-    process.env.IGNORE_HTTPS_ERRORS === 'true'
-      ? true
-      : process.env.IGNORE_HTTPS_ERRORS === 'false'
-        ? false
-        : undefined;
+  // Step 5: Parse IGNORE_HTTPS_ERRORS setting (default: true)
+  const ignoreHttpsErrors = process.env.IGNORE_HTTPS_ERRORS !== 'false';
 
   // Step 6: Create server using factory, passing proxy config, permissions, and HTTPS error handling
   const { server, registerHandlers, cleanup } = createMCPServer({
