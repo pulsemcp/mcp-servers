@@ -162,8 +162,7 @@ export class IntegrationMockProctorClient implements IProctorClient {
     this.mockData.priorResults.set(key, {
       id: result.id,
       datetime_performed: new Date().toISOString(),
-      results:
-        typeof params.results === 'string' ? JSON.parse(params.results) : params.results,
+      results: typeof params.results === 'string' ? JSON.parse(params.results) : params.results,
       runtime_image: params.runtime_id,
       match_type: 'exact',
     });

@@ -36,15 +36,15 @@ This is an MCP ([Model Context Protocol](https://modelcontextprotocol.io/)) Serv
 
 This server is built and tested on macOS with Claude Desktop. It should work with other MCP clients as well.
 
-| Tool Name              | Tool Group | Read/Write | Description                                                |
-| ---------------------- | ---------- | ---------- | ---------------------------------------------------------- |
-| `get_proctor_metadata` | exams      | read       | Get available runtimes and exams for Proctor testing.      |
-| `run_exam`             | exams      | write      | Execute a Proctor exam against an MCP server.              |
-| `save_result`          | exams      | write      | Save exam results to the database for future comparison.   |
-| `get_prior_result`     | exams      | read       | Retrieve a previous exam result for comparison.            |
-| `get_machines`         | machines   | read       | List active Fly.io machines used for Proctor exams.        |
-| `destroy_machine`      | machines   | write      | Delete a Fly.io machine.                                   |
-| `cancel_exam`          | machines   | write      | Cancel a running Proctor exam.                             |
+| Tool Name              | Tool Group | Read/Write | Description                                              |
+| ---------------------- | ---------- | ---------- | -------------------------------------------------------- |
+| `get_proctor_metadata` | exams      | read       | Get available runtimes and exams for Proctor testing.    |
+| `run_exam`             | exams      | write      | Execute a Proctor exam against an MCP server.            |
+| `save_result`          | exams      | write      | Save exam results to the database for future comparison. |
+| `get_prior_result`     | exams      | read       | Retrieve a previous exam result for comparison.          |
+| `get_machines`         | machines   | read       | List active Fly.io machines used for Proctor exams.      |
+| `destroy_machine`      | machines   | write      | Delete a Fly.io machine.                                 |
+| `cancel_exam`          | machines   | write      | Cancel a running Proctor exam.                           |
 
 # Tool Groups
 
@@ -55,12 +55,12 @@ This server organizes tools into groups that can be selectively enabled or disab
 
 ## Available Groups
 
-| Group             | Tools | Description                             |
-| ----------------- | ----- | --------------------------------------- |
-| `exams`           | 4     | Full exam execution (read + write)      |
-| `exams_readonly`  | 2     | Exam metadata and results (read only)   |
-| `machines`        | 3     | Full machine management (read + write)  |
-| `machines_readonly` | 1   | Machine listing (read only)             |
+| Group               | Tools | Description                            |
+| ------------------- | ----- | -------------------------------------- |
+| `exams`             | 4     | Full exam execution (read + write)     |
+| `exams_readonly`    | 2     | Exam metadata and results (read only)  |
+| `machines`          | 3     | Full machine management (read + write) |
+| `machines_readonly` | 1     | Machine listing (read only)            |
 
 ### Tools by Group
 

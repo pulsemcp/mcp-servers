@@ -4,13 +4,11 @@ import type { ClientFactory } from '../server.js';
 
 // Parameter descriptions - single source of truth
 const PARAM_DESCRIPTIONS = {
-  runtime_id:
-    'Runtime ID used for the exam, or "__custom__" if a custom Docker image was used.',
+  runtime_id: 'Runtime ID used for the exam, or "__custom__" if a custom Docker image was used.',
   exam_id: 'Exam ID that was executed.',
   mcp_server_slug: 'Slug of the MCP server that was tested.',
   mirror_id: 'ID of the unofficial mirror associated with this test.',
-  results:
-    'Exam results as a JSON string or object. This is the full result from run_exam.',
+  results: 'Exam results as a JSON string or object. This is the full result from run_exam.',
   custom_runtime_image:
     'Required if runtime_id is "__custom__". The Docker image URL that was used.',
 } as const;
@@ -107,7 +105,8 @@ comparison with new test runs.
         let content = '## Result Saved\n\n';
         content += `**Success:** ${response.success}\n`;
         content += `**Result ID:** ${response.id}\n\n`;
-        content += 'The exam result has been saved and can be retrieved for comparison using get_prior_result.';
+        content +=
+          'The exam result has been saved and can be retrieved for comparison using get_prior_result.';
 
         return {
           content: [

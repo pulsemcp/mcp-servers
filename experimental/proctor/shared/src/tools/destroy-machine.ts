@@ -12,7 +12,10 @@ const DestroyMachineSchema = z.object({
   machine_id: z
     .string()
     .min(1)
-    .regex(/^[a-zA-Z0-9_-]+$/, 'Machine ID must contain only alphanumeric characters, underscores, and hyphens')
+    .regex(
+      /^[a-zA-Z0-9_-]+$/,
+      'Machine ID must contain only alphanumeric characters, underscores, and hyphens'
+    )
     .describe(PARAM_DESCRIPTIONS.machine_id),
 });
 

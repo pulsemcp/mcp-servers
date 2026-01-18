@@ -20,11 +20,7 @@ import { cancelExam } from './tools/cancel-exam.js';
  * - exams / exams_readonly: Exam execution and result management tools
  * - machines / machines_readonly: Fly.io machine management tools
  */
-export type ToolGroup =
-  | 'exams'
-  | 'exams_readonly'
-  | 'machines'
-  | 'machines_readonly';
+export type ToolGroup = 'exams' | 'exams_readonly' | 'machines' | 'machines_readonly';
 
 /** Base groups without _readonly suffix */
 type BaseToolGroup = 'exams' | 'machines';
@@ -64,12 +60,7 @@ const ALL_TOOLS: ToolDefinition[] = [
 /**
  * All valid tool groups (base groups and their _readonly variants)
  */
-const VALID_TOOL_GROUPS: ToolGroup[] = [
-  'exams',
-  'exams_readonly',
-  'machines',
-  'machines_readonly',
-];
+const VALID_TOOL_GROUPS: ToolGroup[] = ['exams', 'exams_readonly', 'machines', 'machines_readonly'];
 
 /**
  * Base groups (without _readonly suffix) - used for default "all groups" behavior
