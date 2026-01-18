@@ -44,6 +44,8 @@ export const StartSessionSchema = z.object({
 
 const TOOL_DESCRIPTION = `Start a new agent session in the Agent Orchestrator.
 
+**IMPORTANT:** Call get_configs first to see available MCP servers, stop conditions, and preconfigured agent roots before starting a session.
+
 **Returns:** The created session with its ID, status, and configuration.
 
 **Behavior:**
@@ -54,9 +56,7 @@ const TOOL_DESCRIPTION = `Start a new agent session in the Agent Orchestrator.
 - Start a new agent task on a repository
 - Create a session to work on a specific branch
 - Set up an agent with specific MCP servers enabled
-- Create a session with custom metadata for tracking
-
-**Tip:** Use get_available_mcp_servers first to see available options for the mcp_servers parameter.`;
+- Create a session with custom metadata for tracking`;
 
 export function startSessionTool(_server: Server, clientFactory: () => IAgentOrchestratorClient) {
   return {
