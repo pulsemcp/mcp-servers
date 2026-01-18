@@ -19,7 +19,7 @@ describe('Proctor MCP Server - Manual Tests', () => {
       env: {
         ...process.env,
         PROCTOR_API_KEY: process.env.PROCTOR_API_KEY!,
-        PROCTOR_BASE_URL: process.env.PROCTOR_BASE_URL!,
+        PROCTOR_API_URL: process.env.PROCTOR_API_URL!,
       },
       debug: true,
     });
@@ -65,35 +65,18 @@ describe('Proctor MCP Server - Manual Tests', () => {
       expect(result).toBeDefined();
       expect(result.content).toBeDefined();
       expect(result.content.length).toBeGreaterThan(0);
+      expect(result.isError).toBe(false);
 
-      // Parse the response content
+      // Parse the response content - it's markdown formatted
       const content = result.content[0];
       expect(content.type).toBe('text');
 
-      const metadata = JSON.parse(content.text);
-      console.log('Parsed metadata:', JSON.stringify(metadata, null, 2));
+      // Verify we got runtimes and exams in the markdown response
+      expect(content.text).toContain('## Available Proctor Runtimes');
+      expect(content.text).toContain('## Available Exams');
+      expect(content.text).toContain('proctor-mcp-client');
 
-      // Check that we have runtimes and exams
-      expect(metadata.runtimes).toBeDefined();
-      expect(Array.isArray(metadata.runtimes)).toBe(true);
-      expect(metadata.exams).toBeDefined();
-      expect(Array.isArray(metadata.exams)).toBe(true);
-
-      console.log(`Found ${metadata.runtimes.length} runtimes`);
-      console.log(`Found ${metadata.exams.length} exams`);
-
-      // Log runtime details
-      if (metadata.runtimes.length > 0) {
-        console.log('Runtimes:', metadata.runtimes);
-      }
-
-      // Log exam details
-      if (metadata.exams.length > 0) {
-        console.log(
-          'Exams:',
-          metadata.exams.map((e: { name: string }) => e.name)
-        );
-      }
+      console.log('Metadata response received successfully');
     }, 30000);
   });
 
@@ -106,46 +89,44 @@ describe('Proctor MCP Server - Manual Tests', () => {
       expect(result).toBeDefined();
       expect(result.content).toBeDefined();
       expect(result.content.length).toBeGreaterThan(0);
+      expect(result.isError).toBe(false);
 
       const content = result.content[0];
       expect(content.type).toBe('text');
 
-      const machines = JSON.parse(content.text);
-      console.log('Parsed machines:', JSON.stringify(machines, null, 2));
+      // The response is markdown formatted, check for expected format
+      // May have 0 or more machines
+      expect(
+        content.text.includes('## Active Machines') || content.text.includes('No active machines')
+      ).toBe(true);
 
-      expect(Array.isArray(machines)).toBe(true);
-      console.log(`Found ${machines.length} active machines`);
+      console.log('Machines response received successfully');
     }, 30000);
   });
 
   describe('run_exam', () => {
     it('should execute an exam against an MCP server', async () => {
-      // First get metadata to find available exams
-      const metadataResult = await client.callTool('get_proctor_metadata', {});
-      const metadata = JSON.parse(metadataResult.content[0].text);
+      // Use known exam ID and runtime from the metadata
+      const examId = 'proctor-mcp-client-init-tools-list';
+      const runtimeId = 'proctor-mcp-client-0.0.37-configs-0.0.10';
 
-      if (metadata.exams.length === 0) {
-        console.log('No exams available, skipping test');
-        return;
-      }
+      // mcp.json configuration for the time server
+      const mcpConfig = JSON.stringify({
+        mcpServers: {
+          time: {
+            command: 'npx',
+            args: ['-y', '@anthropics/mcp-server-time'],
+          },
+        },
+      });
 
-      if (metadata.runtimes.length === 0) {
-        console.log('No runtimes available, skipping test');
-        return;
-      }
+      console.log(`Running exam: ${examId} with runtime: ${runtimeId}`);
 
-      const examName = metadata.exams[0].name;
-      const runtime = metadata.runtimes[0];
-
-      console.log(`Running exam: ${examName} with runtime: ${runtime}`);
-
-      // Run the exam against a test MCP server
-      // Using a simple echo server configuration for testing
+      // Run the exam against the time MCP server
       const result = await client.callTool('run_exam', {
-        exam_name: examName,
-        runtime: runtime,
-        mcp_server_command: 'npx',
-        mcp_server_args: ['-y', '@anthropics/mcp-server-time'],
+        exam_id: examId,
+        runtime_id: runtimeId,
+        mcp_config: mcpConfig,
       });
 
       console.log('Run exam result:', JSON.stringify(result, null, 2));
@@ -154,22 +135,10 @@ describe('Proctor MCP Server - Manual Tests', () => {
       expect(result.content).toBeDefined();
       expect(result.content.length).toBeGreaterThan(0);
 
-      // The result should be NDJSON streamed content
+      // The result should contain exam execution output
       const content = result.content[0];
       expect(content.type).toBe('text');
-
-      // Parse NDJSON lines
-      const lines = content.text.trim().split('\n');
-      console.log(`Received ${lines.length} NDJSON lines`);
-
-      for (const line of lines) {
-        try {
-          const parsed = JSON.parse(line);
-          console.log('NDJSON line:', JSON.stringify(parsed, null, 2));
-        } catch {
-          console.log('Non-JSON line:', line);
-        }
-      }
+      console.log('Exam response:', content.text.substring(0, 500));
     }, 300000); // 5 minute timeout for exam execution
   });
 
@@ -185,9 +154,11 @@ describe('Proctor MCP Server - Manual Tests', () => {
       expect(result).toBeDefined();
       expect(result.content).toBeDefined();
 
-      // Should either return an error or "no prior result found" message
+      // Should return "no prior result found" message (not an error)
       const content = result.content[0];
       expect(content.type).toBe('text');
+      expect(content.text).toContain('No prior result found');
+      expect(result.isError).toBe(false);
     }, 30000);
   });
 
@@ -202,6 +173,11 @@ describe('Proctor MCP Server - Manual Tests', () => {
 
       expect(result).toBeDefined();
       expect(result.content).toBeDefined();
+
+      // Should return an error for non-existent machine
+      const content = result.content[0];
+      expect(content.type).toBe('text');
+      expect(result.isError).toBe(true);
     }, 30000);
   });
 
@@ -215,6 +191,11 @@ describe('Proctor MCP Server - Manual Tests', () => {
 
       expect(result).toBeDefined();
       expect(result.content).toBeDefined();
+
+      // Should return an error for non-existent machine
+      const content = result.content[0];
+      expect(content.type).toBe('text');
+      expect(result.isError).toBe(true);
     }, 30000);
   });
 });
