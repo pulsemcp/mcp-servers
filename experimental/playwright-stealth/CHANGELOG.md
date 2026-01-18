@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.0.9] - 2026-01-18
+
+### Fixed
+
+- `IGNORE_HTTPS_ERRORS` now correctly defaults to `true` when using the server as a library (via `createMCPServer`). Previously, library usage without explicitly passing `ignoreHttpsErrors: true` would only ignore HTTPS errors when a proxy was configured.
+
 ## [0.0.8] - 2026-01-18
 
 ### Added

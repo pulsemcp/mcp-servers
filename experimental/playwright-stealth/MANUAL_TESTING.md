@@ -31,8 +31,8 @@ npm run test:manual
 ## Latest Test Results
 
 **Test Date:** 2026-01-18
-**Branch:** claude/playwright-ignore-https-errors
-**Commit:** 370adef (v0.0.8 - add IGNORE_HTTPS_ERRORS env var)
+**Branch:** agent-orchestrator/fix-ignore-https-errors-default
+**Commit:** 924f4d8 (v0.0.9 - fix IGNORE_HTTPS_ERRORS default for library usage)
 **Tested By:** Claude
 
 ### Summary
@@ -46,15 +46,15 @@ All functional and integration tests pass, including:
 - Screenshot resource storage tests
 - Screenshot dimension limiting to prevent API errors
 - Browser permissions support
-- **NEW: IGNORE_HTTPS_ERRORS environment variable support**
+- IGNORE_HTTPS_ERRORS environment variable support
 
-### New in v0.0.8
+### Changes in v0.0.9
 
-IGNORE_HTTPS_ERRORS environment variable for controlling HTTPS certificate validation:
+Fixed the default behavior for `IGNORE_HTTPS_ERRORS` when using the server as a library:
 
-- New `IGNORE_HTTPS_ERRORS` env var to control HTTPS certificate validation
-- Default is `true` (ignore errors) for convenience in Docker, corporate proxies, and self-signed cert environments
-- Set `IGNORE_HTTPS_ERRORS=false` to enable strict certificate validation for production use
+- Library usage now correctly defaults to `true` (ignore HTTPS errors)
+- Previously, library usage without explicitly passing `ignoreHttpsErrors: true` would only ignore HTTPS errors when a proxy was configured
+- CLI usage was already correct and remains unchanged
 
 ### Test Cases Status
 
