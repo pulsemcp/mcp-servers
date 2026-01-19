@@ -9,6 +9,7 @@ export {
 export {
   createMCPServer,
   createSSHConfigFromEnv,
+  type CreateMCPServerOptions,
   type ClientFactory,
   type ISSHClient,
   type SSHConfig,

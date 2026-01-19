@@ -195,11 +195,15 @@ export class TwistClient implements ITwistClient {
 
 export type ClientFactory = () => ITwistClient;
 
-export function createMCPServer() {
+export interface CreateMCPServerOptions {
+  version: string;
+}
+
+export function createMCPServer(options: CreateMCPServerOptions) {
   const server = new Server(
     {
       name: 'mcp-server-twist',
-      version: '0.1.0',
+      version: options.version,
     },
     {
       capabilities: {

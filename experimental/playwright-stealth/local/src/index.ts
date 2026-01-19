@@ -1,9 +1,18 @@
 #!/usr/bin/env node
+import { readFileSync } from 'fs';
+import { dirname, join } from 'path';
+import { fileURLToPath } from 'url';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { createMCPServer } from '../shared/index.js';
 import { logServerStart, logError, logWarning, logInfo } from '../shared/logging.js';
 import type { ProxyConfig, BrowserPermission } from '../shared/types.js';
 import { ALL_BROWSER_PERMISSIONS } from '../shared/types.js';
+
+// Read version from package.json
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const packageJsonPath = join(__dirname, '..', 'package.json');
+const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf-8'));
+const VERSION = packageJson.version;
 
 // =============================================================================
 // PERMISSIONS CONFIGURATION
@@ -279,6 +288,7 @@ async function main() {
 
   // Step 6: Create server using factory, passing proxy config, permissions, and HTTPS error handling
   const { server, registerHandlers, cleanup } = createMCPServer({
+    version: VERSION,
     proxy: proxyConfig,
     permissions: browserPermissions,
     ignoreHttpsErrors,

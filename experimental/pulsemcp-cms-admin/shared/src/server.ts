@@ -590,11 +590,15 @@ export class PulseMCPAdminClient implements IPulseMCPAdminClient {
 
 export type ClientFactory = () => IPulseMCPAdminClient;
 
-export function createMCPServer() {
+export interface CreateMCPServerOptions {
+  version: string;
+}
+
+export function createMCPServer(options: CreateMCPServerOptions) {
   const server = new Server(
     {
       name: 'pulsemcp-cms-admin',
-      version: '0.1.0',
+      version: options.version,
     },
     {
       capabilities: {

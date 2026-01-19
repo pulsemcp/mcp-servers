@@ -8,6 +8,7 @@ export {
 } from './tools.js';
 export {
   createMCPServer,
+  type CreateMCPServerOptions,
   type ClientFactory,
   type IOnePasswordClient,
   OnePasswordClient,

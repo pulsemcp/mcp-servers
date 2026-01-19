@@ -1,6 +1,6 @@
 export { registerResources, createRegisterResources } from './resources.js';
 export { registerTools, createRegisterTools } from './tools.js';
-export { createMCPServer, type ClientFactory } from './server.js';
+export { createMCPServer, type ClientFactory, type CreateMCPServerOptions } from './server.js';
 export {
   type IClaudeCodeClient,
   ClaudeCodeClient,

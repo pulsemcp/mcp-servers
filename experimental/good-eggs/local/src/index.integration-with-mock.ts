@@ -9,6 +9,9 @@
  * Note: The mock client is defined inline because TypeScript's rootDir
  * constraints prevent importing from the tests/ directory.
  */
+import { readFileSync } from 'fs';
+import { dirname, join } from 'path';
+import { fileURLToPath } from 'url';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { createMCPServer, type IGoodEggsClient } from '../shared/index.js';
 import type {
@@ -19,6 +22,12 @@ import type {
   CartItem,
   GoodEggsConfig,
 } from '../shared/types.js';
+
+// Read version from package.json
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const packageJsonPath = join(__dirname, '..', 'package.json');
+const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf-8'));
+const VERSION = packageJson.version;
 
 /**
  * Creates a mock Good Eggs client for integration testing.
@@ -180,7 +189,7 @@ async function main() {
   // Create client factory that returns our mock
   const clientFactory = () => createMockGoodEggsClient();
 
-  const { server, registerHandlers } = createMCPServer();
+  const { server, registerHandlers } = createMCPServer({ version: VERSION });
   await registerHandlers(server, clientFactory);
 
   await server.connect(transport);

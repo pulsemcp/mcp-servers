@@ -154,11 +154,15 @@ export class SlackClient implements ISlackClient {
 
 export type ClientFactory = () => ISlackClient;
 
-export function createMCPServer() {
+export interface CreateMCPServerOptions {
+  version: string;
+}
+
+export function createMCPServer(options: CreateMCPServerOptions) {
   const server = new Server(
     {
       name: 'slack-workspace-mcp-server',
-      version: '0.0.1',
+      version: options.version,
     },
     {
       capabilities: {

@@ -6,11 +6,15 @@ import { getEffectiveAppId } from './state.js';
 
 export type ClientFactory = () => IAppsignalClient;
 
-export function createMCPServer() {
+export interface CreateMCPServerOptions {
+  version: string;
+}
+
+export function createMCPServer(options: CreateMCPServerOptions) {
   const server = new McpServer(
     {
       name: 'appsignal-mcp-server',
-      version: '0.1.0',
+      version: options.version,
     },
     {
       capabilities: {

@@ -6,7 +6,12 @@ export {
   type ToolGroup,
   parseEnabledToolGroups,
 } from './tools.js';
-export { createMCPServer, type ClientFactory, type IAgentOrchestratorClient } from './server.js';
+export {
+  createMCPServer,
+  type ClientFactory,
+  type IAgentOrchestratorClient,
+  type CreateMCPServerOptions,
+} from './server.js';
 
 // Client exports
 export {

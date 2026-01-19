@@ -1,7 +1,16 @@
 #!/usr/bin/env node
+import { readFileSync } from 'fs';
+import { dirname, join } from 'path';
+import { fileURLToPath } from 'url';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { createMCPServer } from '../shared/index.js';
 import { logServerStart, logError, logWarning } from '../shared/logging.js';
+
+// Read version from package.json
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const packageJsonPath = join(__dirname, '..', 'package.json');
+const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf-8'));
+const VERSION = packageJson.version;
 
 // =============================================================================
 // ENVIRONMENT VALIDATION
@@ -84,7 +93,9 @@ async function main() {
   validateEnvironment();
 
   // Step 2: Create server using factory
-  const { server, registerHandlers, cleanup, startBackgroundLogin } = createMCPServer();
+  const { server, registerHandlers, cleanup, startBackgroundLogin } = createMCPServer({
+    version: VERSION,
+  });
 
   // Step 3: Register all handlers (tools)
   await registerHandlers(server);

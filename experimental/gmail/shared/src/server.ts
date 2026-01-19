@@ -136,6 +136,10 @@ export class ServiceAccountGmailClient implements IGmailClient {
 
 export type ClientFactory = () => IGmailClient;
 
+export interface CreateMCPServerOptions {
+  version: string;
+}
+
 /**
  * Creates the default Gmail client based on environment variables.
  * Uses service account with domain-wide delegation:
@@ -186,11 +190,11 @@ export function createDefaultClient(): IGmailClient {
   return new ServiceAccountGmailClient(credentials, impersonateEmail);
 }
 
-export function createMCPServer() {
+export function createMCPServer(options: CreateMCPServerOptions) {
   const server = new Server(
     {
       name: 'gmail-workspace-mcp-server',
-      version: '0.0.2',
+      version: options.version,
     },
     {
       capabilities: {

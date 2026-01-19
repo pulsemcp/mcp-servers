@@ -305,6 +305,8 @@ export type ClientFactory = () => IPlaywrightClient;
  * Options for creating the MCP server
  */
 export interface CreateMCPServerOptions {
+  /** Server version (read from package.json) */
+  version?: string;
   /** Proxy configuration for browser connections */
   proxy?: ProxyConfig;
   /** Browser permissions to grant. If undefined, all permissions are granted. */
@@ -323,7 +325,7 @@ export function createMCPServer(options?: CreateMCPServerOptions) {
   const server = new Server(
     {
       name: 'playwright-stealth-mcp-server',
-      version: '0.0.9',
+      version: options?.version || '0.0.1',
     },
     {
       capabilities: {

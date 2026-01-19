@@ -5,7 +5,13 @@ export {
   type ToolGroup,
   parseEnabledToolGroups,
 } from './tools.js';
-export { createMCPServer, type ClientFactory, type IFlyIOClient, FlyIOClient } from './server.js';
+export {
+  createMCPServer,
+  type CreateMCPServerOptions,
+  type ClientFactory,
+  type IFlyIOClient,
+  FlyIOClient,
+} from './server.js';
 
 // Logging exports (re-exported for convenience)
 export { logServerStart, logError, logWarning, logDebug } from './logging.js';

@@ -122,11 +122,15 @@ export interface IScrapingClients {
 export type ClientFactory = () => IScrapingClients;
 export type StrategyConfigFactory = () => IStrategyConfigClient;
 
-export function createMCPServer() {
+export interface CreateMCPServerOptions {
+  version: string;
+}
+
+export function createMCPServer(options: CreateMCPServerOptions) {
   const server = new Server(
     {
       name: '@pulsemcp/pulse-fetch',
-      version: '0.0.1',
+      version: options.version,
     },
     {
       capabilities: {

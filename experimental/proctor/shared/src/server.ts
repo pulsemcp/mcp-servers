@@ -61,11 +61,15 @@ export class ProctorClient implements IProctorClient {
 
 export type ClientFactory = () => IProctorClient;
 
-export function createMCPServer() {
+export interface CreateMCPServerOptions {
+  version: string;
+}
+
+export function createMCPServer(options: CreateMCPServerOptions) {
   const server = new Server(
     {
       name: 'proctor-mcp-server',
-      version: '0.1.2',
+      version: options.version,
     },
     {
       capabilities: {
