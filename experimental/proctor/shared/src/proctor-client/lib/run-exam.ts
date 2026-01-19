@@ -28,6 +28,9 @@ export async function* runExam(
   if (params.max_retries !== undefined) {
     body.max_retries = params.max_retries;
   }
+  if (params.preloaded_credentials) {
+    body.preloaded_credentials = params.preloaded_credentials;
+  }
 
   const response = await fetch(url.toString(), {
     method: 'POST',
