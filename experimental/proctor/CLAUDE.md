@@ -2,7 +2,7 @@
 
 ## Overview
 
-This is the Proctor MCP Server, which provides tools for running Proctor exams against MCP servers. It integrates with the PulseMCP Proctor API to execute tests, manage results, and control exam infrastructure.
+This is the Proctor MCP Server, which provides tools for managing Proctor exams against MCP servers. It integrates with the PulseMCP Proctor API to manage results and control exam infrastructure.
 
 ## Architecture
 
@@ -23,17 +23,13 @@ proctor/
 │       ├── logging.ts     # Logging utilities
 │       ├── tools/         # Individual tool implementations
 │       │   ├── get-metadata.ts
-│       │   ├── run-exam.ts
 │       │   ├── save-result.ts
-│       │   ├── get-prior-result.ts
 │       │   ├── get-machines.ts
 │       │   ├── destroy-machine.ts
 │       │   └── cancel-exam.ts
 │       └── proctor-client/lib/  # API client methods
 │           ├── get-metadata.ts
-│           ├── run-exam.ts
 │           ├── save-result.ts
-│           ├── get-prior-result.ts
 │           ├── get-machines.ts
 │           ├── destroy-machine.ts
 │           └── cancel-exam.ts
@@ -50,7 +46,6 @@ proctor/
 1. **Client Interface**: `IProctorClient` defines the API contract
 2. **Dependency Injection**: Tools receive `clientFactory` for testability
 3. **Tool Groups**: Tools are organized into groups (exams, machines) with read-only variants
-4. **Streaming**: `run_exam` uses NDJSON streaming for real-time logs
 
 ## Development
 
@@ -85,9 +80,7 @@ npm run test:manual    # Run manual tests (requires API key)
 This server connects to the PulseMCP Proctor API:
 
 - `GET /api/proctor/metadata` - Available runtimes and exams
-- `POST /api/proctor/run_exam` - Execute exam (streaming NDJSON)
 - `POST /api/proctor/save_result` - Save exam results
-- `GET /api/proctor/prior_result` - Get previous results
 - `GET /api/proctor/machines` - List Fly machines
 - `DELETE /api/proctor/machines/:id` - Delete machine
 - `POST /api/proctor/cancel_exam` - Cancel running exam

@@ -39,9 +39,7 @@ This server is built and tested on macOS with Claude Desktop. It should work wit
 | Tool Name              | Tool Group | Read/Write | Description                                              |
 | ---------------------- | ---------- | ---------- | -------------------------------------------------------- |
 | `get_proctor_metadata` | exams      | read       | Get available runtimes and exams for Proctor testing.    |
-| `run_exam`             | exams      | write      | Execute a Proctor exam against an MCP server.            |
 | `save_result`          | exams      | write      | Save exam results to the database for future comparison. |
-| `get_prior_result`     | exams      | read       | Retrieve a previous exam result for comparison.          |
 | `get_machines`         | machines   | read       | List active Fly.io machines used for Proctor exams.      |
 | `destroy_machine`      | machines   | write      | Delete a Fly.io machine.                                 |
 | `cancel_exam`          | machines   | write      | Cancel a running Proctor exam.                           |
@@ -57,16 +55,16 @@ This server organizes tools into groups that can be selectively enabled or disab
 
 | Group               | Tools | Description                            |
 | ------------------- | ----- | -------------------------------------- |
-| `exams`             | 4     | Full exam execution (read + write)     |
-| `exams_readonly`    | 2     | Exam metadata and results (read only)  |
+| `exams`             | 2     | Full exam execution (read + write)     |
+| `exams_readonly`    | 1     | Exam metadata (read only)              |
 | `machines`          | 3     | Full machine management (read + write) |
 | `machines_readonly` | 1     | Machine listing (read only)            |
 
 ### Tools by Group
 
 - **exams** / **exams_readonly**:
-  - Read-only: `get_proctor_metadata`, `get_prior_result`
-  - Write: `run_exam`, `save_result`
+  - Read-only: `get_proctor_metadata`
+  - Write: `save_result`
 - **machines** / **machines_readonly**:
   - Read-only: `get_machines`
   - Write: `destroy_machine`, `cancel_exam`
@@ -114,9 +112,8 @@ TOOL_GROUPS=exams,machines_readonly
 
 # Usage Tips
 
-- Use `get_proctor_metadata` first to discover available runtimes and exam types
-- The `mcp_config` parameter for `run_exam` must be a valid JSON string
-- Save results with `save_result` to enable future comparisons with `get_prior_result`
+- Use `get_proctor_metadata` to discover available runtimes and exam types
+- Save results with `save_result` to persist exam outcomes
 - Use `get_machines` to monitor active exam infrastructure
 - Clean up machines with `destroy_machine` when no longer needed
 - Use `cancel_exam` to stop a stuck or slow exam before destroying the machine
@@ -139,24 +136,6 @@ Here are the available exams:
 **Exams:**
 - Auth Check (id: proctor-mcp-client-auth-check) - Verifies authentication mechanisms
 - Init Tools List (id: proctor-mcp-client-init-tools-list) - Tests initialization and tool listing
-```
-
-## Run an Exam
-
-```
-User: Run the init-tools-list exam against my MCP server at https://example.com/mcp
-Assistant: I'll run the exam against your server.
-
-[Calls run_exam with runtime_id="v0.0.37", exam_id="proctor-mcp-client-init-tools-list", mcp_config=...]
-
-The exam completed successfully. Here are the results:
-
-**Status:** Success
-**Tests Passed:** 5/5
-- Initialization: Passed
-- Tool listing: Passed
-- Tool execution: Passed
-...
 ```
 
 ## Monitor Infrastructure

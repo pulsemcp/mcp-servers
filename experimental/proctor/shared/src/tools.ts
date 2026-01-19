@@ -2,9 +2,7 @@ import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { ListToolsRequestSchema, CallToolRequestSchema } from '@modelcontextprotocol/sdk/types.js';
 import { ClientFactory } from './server.js';
 import { getMetadata } from './tools/get-metadata.js';
-import { runExam } from './tools/run-exam.js';
 import { saveResult } from './tools/save-result.js';
-import { getPriorResult } from './tools/get-prior-result.js';
 import { getMachines } from './tools/get-machines.js';
 import { destroyMachine } from './tools/destroy-machine.js';
 import { cancelExam } from './tools/cancel-exam.js';
@@ -48,9 +46,7 @@ interface ToolDefinition {
 const ALL_TOOLS: ToolDefinition[] = [
   // Exam tools
   { factory: getMetadata, group: 'exams', isWriteOperation: false },
-  { factory: runExam, group: 'exams', isWriteOperation: true },
   { factory: saveResult, group: 'exams', isWriteOperation: true },
-  { factory: getPriorResult, group: 'exams', isWriteOperation: false },
   // Machine management tools
   { factory: getMachines, group: 'machines', isWriteOperation: false },
   { factory: destroyMachine, group: 'machines', isWriteOperation: true },
@@ -133,7 +129,7 @@ function shouldIncludeTool(toolDef: ToolDefinition, enabledGroups: ToolGroup[]):
  *
  * Available tool groups:
  * - exams: All exam-related tools (read + write)
- * - exams_readonly: Exam tools (read only - get_proctor_metadata, get_prior_result)
+ * - exams_readonly: Exam tools (read only - get_proctor_metadata)
  * - machines: All machine management tools (read + write)
  * - machines_readonly: Machine tools (read only - get_machines)
  *

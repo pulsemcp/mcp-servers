@@ -47,9 +47,7 @@ describe('Proctor MCP Server - Manual Tests', () => {
       // Check for expected tools
       const toolNames = result.tools.map((t) => t.name);
       expect(toolNames).toContain('get_proctor_metadata');
-      expect(toolNames).toContain('run_exam');
       expect(toolNames).toContain('save_result');
-      expect(toolNames).toContain('get_prior_result');
       expect(toolNames).toContain('get_machines');
       expect(toolNames).toContain('destroy_machine');
       expect(toolNames).toContain('cancel_exam');
@@ -104,52 +102,13 @@ describe('Proctor MCP Server - Manual Tests', () => {
     }, 30000);
   });
 
-  describe('run_exam', () => {
-    it('should execute an exam against an MCP server', async () => {
-      // Use known exam ID and runtime from the metadata
-      const examId = 'proctor-mcp-client-init-tools-list';
-      const runtimeId = 'proctor-mcp-client-0.0.37-configs-0.0.10';
-
-      // mcp.json configuration for the time server
-      const mcpConfig = JSON.stringify({
-        mcpServers: {
-          time: {
-            command: 'npx',
-            args: ['-y', '@anthropics/mcp-server-time'],
-          },
-        },
-      });
-
-      console.log(`Running exam: ${examId} with runtime: ${runtimeId}`);
-
-      // Run the exam against the time MCP server
-      const result = await client.callTool('run_exam', {
-        exam_id: examId,
-        runtime_id: runtimeId,
-        mcp_config: mcpConfig,
-      });
-
-      console.log('Run exam result:', JSON.stringify(result, null, 2));
-
-      expect(result).toBeDefined();
-      expect(result.content).toBeDefined();
-      expect(result.content.length).toBeGreaterThan(0);
-
-      // The result should contain exam execution output
-      const content = result.content[0];
-      expect(content.type).toBe('text');
-      console.log('Exam response:', content.text.substring(0, 500));
-    }, 300000); // 5 minute timeout for exam execution
-  });
-
   describe('save_result', () => {
     it('should save exam results to the database', async () => {
       // Test saving exam results
-      // Uses a test mirror ID - the API will validate if the mirror exists
       const examId = 'proctor-mcp-client-init-tools-list';
       const runtimeId = 'proctor-mcp-client-0.0.37-configs-0.0.10';
 
-      // Sample exam results (simulating what run_exam would return)
+      // Sample exam results
       const results = JSON.stringify({
         passed: true,
         score: 100,
@@ -164,8 +123,6 @@ describe('Proctor MCP Server - Manual Tests', () => {
       const result = await client.callTool('save_result', {
         runtime_id: runtimeId,
         exam_id: examId,
-        mcp_server_slug: 'test-time-server',
-        mirror_id: 1, // Test mirror ID - staging should have this
         results: results,
       });
 
@@ -178,36 +135,16 @@ describe('Proctor MCP Server - Manual Tests', () => {
       const content = result.content[0];
       expect(content.type).toBe('text');
 
-      // The save might succeed or fail depending on whether mirror_id 1 exists
+      // The save might succeed or fail depending on API state
       // Either way, we verify the API responded properly
       if (result.isError) {
-        console.log('Save result returned error (mirror may not exist):', content.text);
-        // API responded with an error - this is valid behavior for non-existent mirrors
+        console.log('Save result returned error:', content.text);
+        // API responded with an error - this is valid behavior
         expect(content.text).toContain('Error');
       } else {
         console.log('Save result succeeded:', content.text);
         expect(content.text).toContain('Result Saved');
       }
-    }, 30000);
-  });
-
-  describe('get_prior_result', () => {
-    it('should handle request for non-existent result', async () => {
-      const result = await client.callTool('get_prior_result', {
-        mirror_id: 99999, // Non-existent mirror ID
-        exam_id: 'non-existent-exam',
-      });
-
-      console.log('Prior result response:', JSON.stringify(result, null, 2));
-
-      expect(result).toBeDefined();
-      expect(result.content).toBeDefined();
-
-      // Should return "no prior result found" message (not an error)
-      const content = result.content[0];
-      expect(content.type).toBe('text');
-      expect(content.text).toContain('No prior result found');
-      expect(result.isError).toBe(false);
     }, 30000);
   });
 
