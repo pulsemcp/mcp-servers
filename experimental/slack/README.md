@@ -12,31 +12,19 @@ A Model Context Protocol (MCP) server for integrating with Slack workspaces. Thi
 - **Update Messages** - Edit previously posted messages
 - **React to Messages** - Add emoji reactions to messages
 
-## Installation
+## Setup
 
-```bash
-npm install slack-workspace-mcp-server
-```
+### Prerequisites
 
-Or run directly with npx:
+- A Slack workspace with admin permissions to create apps
+- A Slack Bot Token (see instructions below)
 
-```bash
-npx slack-workspace-mcp-server
-```
+### Environment Variables
 
-## Configuration
-
-### Required Environment Variables
-
-| Variable          | Description                | Example        |
-| ----------------- | -------------------------- | -------------- |
-| `SLACK_BOT_TOKEN` | Slack Bot User OAuth Token | `xoxb-1234...` |
-
-### Optional Environment Variables
-
-| Variable             | Description                         | Default     |
-| -------------------- | ----------------------------------- | ----------- |
-| `ENABLED_TOOLGROUPS` | Comma-separated list of tool groups | All enabled |
+| Variable             | Required | Description                         | Default     |
+| -------------------- | -------- | ----------------------------------- | ----------- |
+| `SLACK_BOT_TOKEN`    | Yes      | Slack Bot User OAuth Token          | -           |
+| `ENABLED_TOOLGROUPS` | No       | Comma-separated list of tool groups | All enabled |
 
 ### Getting a Bot Token
 
@@ -53,16 +41,28 @@ npx slack-workspace-mcp-server
 5. Install the app to your workspace
 6. Copy the **Bot User OAuth Token** (starts with `xoxb-`)
 
-### MCP Client Configuration
+### Claude Desktop
 
-For Claude Desktop, add to your configuration:
+Make sure you have your Slack Bot Token ready.
+
+Then proceed to the setup instructions below. If this is your first time using MCP Servers, you'll want to make sure you have the [Claude Desktop application](https://claude.ai/download) and follow the [official MCP setup instructions](https://modelcontextprotocol.io/quickstart/user).
+
+#### Manual Setup
+
+You're going to need Node working on your machine so you can run `npx` commands in your terminal. If you don't have Node, you can install it from [nodejs.org](https://nodejs.org/en/download).
+
+macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
+
+Windows: `%APPDATA%\Claude\claude_desktop_config.json`
+
+Modify your `claude_desktop_config.json` file to add the following:
 
 ```json
 {
   "mcpServers": {
     "slack": {
       "command": "npx",
-      "args": ["slack-workspace-mcp-server"],
+      "args": ["-y", "slack-workspace-mcp-server"],
       "env": {
         "SLACK_BOT_TOKEN": "xoxb-your-token-here"
       }
@@ -70,6 +70,8 @@ For Claude Desktop, add to your configuration:
   }
 }
 ```
+
+Restart Claude Desktop and you should be ready to go!
 
 ## Available Tools
 
