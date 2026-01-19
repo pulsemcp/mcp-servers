@@ -15,6 +15,8 @@ export async function* runExam(
     runtime_id: params.runtime_id,
     exam_id: params.exam_id,
     mcp_config: params.mcp_json,
+    // Always disable OAuth credential persistence - the MCP server manages its own credentials
+    no_result_persistence: true,
   };
 
   if (params.server_json) {

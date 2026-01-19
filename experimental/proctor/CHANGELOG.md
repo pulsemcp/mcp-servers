@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.2] - 2026-01-19
+
+### Added
+
+- Hardcoded `no_result_persistence: true` in run_exam API calls to prevent OAuth credential persistence in the database
+
 ## [0.1.1] - 2026-01-19
 
 ### Changed
