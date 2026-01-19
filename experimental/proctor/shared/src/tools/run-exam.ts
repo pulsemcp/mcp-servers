@@ -81,7 +81,42 @@ The server.json follows the server.json specification and can include: name, tit
   custom_runtime_image:
     'Required if runtime_id is "__custom__". Docker image URL in format: registry/image:tag',
   max_retries: 'Maximum number of retry attempts (0-10). Default is 0.',
+  preloaded_credentials: `Optional pre-loaded OAuth credentials for servers that require authentication.
+
+When provided, these credentials are passed to proctor-mcp-client which loads them into its credential store before connecting to the server. This allows testing OAuth-protected servers without requiring interactive login.
+
+**Example:**
+\`\`\`json
+{
+  "server_key": "remotes[0]",
+  "access_token": "eyJhbGciOiJSUzI1NiIs...",
+  "refresh_token": "dGhpcyBpcyBhIHJlZnJl...",
+  "token_endpoint": "https://auth.example.com/oauth/token",
+  "client_id": "abc123",
+  "client_secret": "secret",
+  "expires_at": "2024-12-31T23:59:59Z"
+}
+\`\`\`
+
+**Fields:**
+- server_key (required): Server key from mcp.json (e.g., "remotes[0]")
+- access_token (required): OAuth access token
+- refresh_token: OAuth refresh token for token renewal
+- token_endpoint: URL for token refresh operations
+- client_id: OAuth client ID
+- client_secret: OAuth client secret
+- expires_at: ISO 8601 timestamp when the access token expires`,
 } as const;
+
+const PreloadedCredentialsSchema = z.object({
+  server_key: z.string().min(1),
+  access_token: z.string().min(1),
+  refresh_token: z.string().optional(),
+  token_endpoint: z.string().optional(),
+  client_id: z.string().optional(),
+  client_secret: z.string().optional(),
+  expires_at: z.string().optional(),
+});
 
 const RunExamSchema = z.object({
   runtime_id: z.string().min(1).describe(PARAM_DESCRIPTIONS.runtime_id),
@@ -90,6 +125,9 @@ const RunExamSchema = z.object({
   server_json: z.string().optional().describe(PARAM_DESCRIPTIONS.server_json),
   custom_runtime_image: z.string().optional().describe(PARAM_DESCRIPTIONS.custom_runtime_image),
   max_retries: z.number().min(0).max(10).optional().describe(PARAM_DESCRIPTIONS.max_retries),
+  preloaded_credentials: PreloadedCredentialsSchema.optional().describe(
+    PARAM_DESCRIPTIONS.preloaded_credentials
+  ),
 });
 
 export function runExam(_server: Server, clientFactory: ClientFactory) {
@@ -150,6 +188,20 @@ The mcp_json parameter accepts a JSON object with server configurations. Each se
           type: 'number',
           description: PARAM_DESCRIPTIONS.max_retries,
         },
+        preloaded_credentials: {
+          type: 'object',
+          description: PARAM_DESCRIPTIONS.preloaded_credentials,
+          properties: {
+            server_key: { type: 'string' },
+            access_token: { type: 'string' },
+            refresh_token: { type: 'string' },
+            token_endpoint: { type: 'string' },
+            client_id: { type: 'string' },
+            client_secret: { type: 'string' },
+            expires_at: { type: 'string' },
+          },
+          required: ['server_key', 'access_token'],
+        },
       },
       required: ['runtime_id', 'exam_id', 'mcp_json'],
     },
@@ -199,6 +251,7 @@ The mcp_json parameter accepts a JSON object with server configurations. Each se
           server_json: validatedArgs.server_json,
           custom_runtime_image: validatedArgs.custom_runtime_image,
           max_retries: validatedArgs.max_retries,
+          preloaded_credentials: validatedArgs.preloaded_credentials,
         })) {
           if (entry.type === 'log') {
             const logData = entry.data;

@@ -80,6 +80,12 @@ export interface RunExamParams {
   custom_runtime_image?: string;
   max_retries?: number;
   /**
+   * Pre-loaded OAuth credentials for servers that require authentication.
+   * When provided, these credentials are passed to proctor-mcp-client which
+   * loads them into its credential store before connecting to the server.
+   */
+  preloaded_credentials?: PreloadedCredentials;
+  /**
    * When true, OAuth credentials obtained via web bridge are not persisted in the database.
    * Instead, the user receives a one-time copy-to-clipboard page with their credentials.
    * This is useful for the MCP server since it manages its own credential storage.
@@ -129,4 +135,26 @@ export interface CancelExamResponse {
  */
 export interface ApiError {
   error: string;
+}
+
+/**
+ * Pre-loaded OAuth credentials for a server.
+ * These credentials are injected into the proctor-mcp-client before exam execution,
+ * allowing OAuth-protected servers to be tested without requiring interactive login.
+ */
+export interface PreloadedCredentials {
+  /** Server key from mcp.json (e.g., "remotes[0]") */
+  server_key: string;
+  /** OAuth access token */
+  access_token: string;
+  /** OAuth refresh token (if available) */
+  refresh_token?: string;
+  /** Token endpoint URL for refresh operations */
+  token_endpoint?: string;
+  /** OAuth client ID */
+  client_id?: string;
+  /** OAuth client secret (if applicable) */
+  client_secret?: string;
+  /** ISO 8601 timestamp when the access token expires */
+  expires_at?: string;
 }

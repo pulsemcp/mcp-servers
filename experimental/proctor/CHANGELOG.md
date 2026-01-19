@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.4] - 2026-01-19
+
+### Added
+
+- `preloaded_credentials` parameter to `run_exam` tool for passing pre-loaded OAuth credentials
+  - Allows testing OAuth-protected MCP servers without requiring interactive login
+  - Credentials include: server_key, access_token, refresh_token, token_endpoint, client_id, client_secret, expires_at
+
 ## [0.1.3] - 2026-01-19
 
 ### Added

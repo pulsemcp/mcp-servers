@@ -257,5 +257,30 @@ describe('Proctor Tools - Functional Tests', () => {
       expect(result.isError).toBe(true);
       expect(result.content[0].text).toContain('Connection timeout');
     });
+
+    it('should pass preloaded_credentials to client', async () => {
+      const tool = runExam(mockServer, clientFactory);
+      const preloadedCreds = {
+        server_key: 'remotes[0]',
+        access_token: 'test-token',
+        refresh_token: 'test-refresh',
+        token_endpoint: 'https://auth.example.com/token',
+        client_id: 'client123',
+        expires_at: '2024-12-31T23:59:59Z',
+      };
+
+      await tool.handler({
+        runtime_id: 'v0.0.37',
+        exam_id: 'proctor-mcp-client-init-tools-list',
+        mcp_json: '{"mcpServers":{}}',
+        preloaded_credentials: preloadedCreds,
+      });
+
+      expect(mockClient.runExam).toHaveBeenCalledWith(
+        expect.objectContaining({
+          preloaded_credentials: preloadedCreds,
+        })
+      );
+    });
   });
 });
