@@ -946,5 +946,54 @@ export function createMockPulseMCPAdminClient(mockData: MockData): IPulseMCPAdmi
     async deleteMcpJson() {
       return { success: true, message: 'MCP JSON deleted' };
     },
+
+    // Unified MCP Server methods (stub implementations)
+    async getUnifiedMCPServers() {
+      return {
+        servers: [],
+        pagination: { current_page: 1, total_pages: 1, total_count: 0 },
+      };
+    },
+
+    async getUnifiedMCPServer(slug) {
+      return {
+        id: 1,
+        slug,
+        implementation_id: 1,
+        name: `Test Server (${slug})`,
+        status: 'live' as const,
+        classification: 'community' as const,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+    },
+
+    async updateUnifiedMCPServer(implementationId, params) {
+      return {
+        id: 1,
+        slug: 'test-server',
+        implementation_id: implementationId,
+        name: params.name || 'Updated Server',
+        short_description: params.short_description,
+        description: params.description,
+        status: params.status || ('live' as const),
+        classification: params.classification || ('community' as const),
+        implementation_language: params.implementation_language,
+        url: params.url,
+        provider: params.provider_name
+          ? {
+              name: params.provider_name,
+              slug: params.provider_slug,
+              url: params.provider_url,
+            }
+          : undefined,
+        source_code: params.source_code,
+        canonical_urls: params.canonical_urls,
+        remotes: params.remotes,
+        internal_notes: params.internal_notes,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+    },
   };
 }

@@ -6,7 +6,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [0.6.2] - 2026-01-19
+
 ### Added
+
+- Added new `mcp_servers` / `mcp_servers_readonly` tool groups with unified interface for managing MCP servers:
+  - `list_mcp_servers`: List/search MCP servers with filtering by status, classification, and pagination
+  - `get_mcp_server`: Get detailed information about a specific MCP server by slug
+  - `update_mcp_server`: Update an MCP server's information (name, description, provider, source code, canonical URLs, remote endpoints)
+  - These tools provide an abstracted interface that hides the complexity of the underlying MCPImplementation → MCPServer data model
+  - Users can work directly with "MCP servers" without needing to understand the internal mcp_implementations relationship
+- Added new unified MCP server types: `UnifiedMCPServer`, `UnifiedMCPServersResponse`, `UpdateUnifiedMCPServerParams`, `SourceCodeLocation`, `CanonicalUrl`, `RemoteEndpoint`
+- Added 3 new API client methods: `getUnifiedMCPServers`, `getUnifiedMCPServer`, `updateUnifiedMCPServer`
 
 - Added convenience parameters to REST API tools for single-call operations:
   - `get_unofficial_mirrors`: Added `mcp_server_slug` as alternative to `mcp_server_id` for filtering by linked MCP server

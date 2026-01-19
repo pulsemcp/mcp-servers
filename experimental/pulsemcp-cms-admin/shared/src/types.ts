@@ -477,3 +477,154 @@ export interface UpdateMcpJsonParams {
   value?: Record<string, unknown> | string;
   description?: string;
 }
+
+// ============================================================
+// MCP Servers Unified Interface Types
+// These types provide an abstracted view of MCP servers that hides
+// the complexity of the underlying MCPImplementation → MCPServer relationship
+// ============================================================
+
+/**
+ * Source code location for an MCP server (e.g., GitHub repository)
+ */
+export interface SourceCodeLocation {
+  github_owner?: string;
+  github_repo?: string;
+  github_subfolder?: string;
+  github_stars?: number | null;
+  github_created_date?: string;
+  github_last_updated?: string;
+  github_status?: string;
+}
+
+/**
+ * Canonical URL configuration for an MCP server
+ */
+export interface CanonicalUrl {
+  url: string;
+  scope: 'domain' | 'subdomain' | 'subfolder' | 'url';
+  note?: string;
+}
+
+/**
+ * Remote endpoint configuration for an MCP server
+ */
+export interface RemoteEndpoint {
+  id?: number;
+  display_name?: string;
+  url_direct?: string;
+  url_setup?: string;
+  transport?: string;
+  host_platform?: string;
+  host_infrastructure?: string;
+  authentication_method?: string;
+  cost?: string;
+  status?: string;
+  internal_notes?: string;
+}
+
+/**
+ * Unified MCP server view that abstracts away MCPImplementation complexity.
+ * This represents an MCP server with all its associated data in a single interface.
+ */
+export interface UnifiedMCPServer {
+  // Core identification
+  id: number; // This is the MCPServer ID
+  slug: string;
+  implementation_id: number; // The underlying MCPImplementation ID (needed for updates)
+
+  // Basic info (from MCPImplementation)
+  name: string;
+  short_description?: string;
+  description?: string;
+  status: 'draft' | 'live' | 'archived';
+  classification?: 'official' | 'community' | 'reference';
+  implementation_language?: string;
+
+  // Marketing URL
+  url?: string;
+
+  // Provider info
+  provider?: {
+    id?: number | null;
+    name?: string;
+    slug?: string;
+    url?: string;
+  };
+
+  // Source code location
+  source_code?: SourceCodeLocation;
+
+  // Canonical URLs
+  canonical_urls?: CanonicalUrl[];
+
+  // Remote endpoints
+  remotes?: RemoteEndpoint[];
+
+  // Tags
+  tags?: MCPServerTag[];
+
+  // Registry/download info
+  registry_package_id?: number | null;
+  registry_package_soft_verified?: boolean;
+  downloads_estimate_last_7_days?: number;
+  downloads_estimate_last_30_days?: number;
+  downloads_estimate_total?: number;
+
+  // Internal notes
+  internal_notes?: string;
+
+  // Timestamps
+  created_at?: string;
+  updated_at?: string;
+}
+
+/**
+ * Response for listing unified MCP servers
+ */
+export interface UnifiedMCPServersResponse {
+  servers: UnifiedMCPServer[];
+  pagination?: {
+    current_page: number;
+    total_pages: number;
+    total_count: number;
+    has_next?: boolean;
+    limit?: number;
+  };
+}
+
+/**
+ * Parameters for updating a unified MCP server
+ */
+export interface UpdateUnifiedMCPServerParams {
+  // Basic info
+  name?: string;
+  short_description?: string;
+  description?: string;
+  status?: 'draft' | 'live' | 'archived';
+  classification?: 'official' | 'community' | 'reference';
+  implementation_language?: string;
+  url?: string;
+
+  // Provider (can link existing by ID or create new)
+  provider_id?: number | string; // number to link existing, "new" to create
+  provider_name?: string; // Name for new provider
+  provider_slug?: string;
+  provider_url?: string;
+
+  // Source code location
+  source_code?: {
+    github_owner?: string;
+    github_repo?: string;
+    github_subfolder?: string;
+  };
+
+  // Canonical URLs (replaces all if provided)
+  canonical_urls?: CanonicalUrl[];
+
+  // Remote endpoints (replaces all if provided)
+  remotes?: RemoteEndpoint[];
+
+  // Internal notes
+  internal_notes?: string;
+}
