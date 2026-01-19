@@ -94,6 +94,9 @@ Use cases:
         let content = `Found ${response.servers.length} MCP servers`;
         if (response.pagination) {
           content += ` (page ${response.pagination.current_page} of ${response.pagination.total_pages}, total: ${response.pagination.total_count})`;
+          if (response.pagination.has_next) {
+            content += ' - more results available';
+          }
         }
         content += ':\n\n';
 
@@ -123,7 +126,7 @@ Use cases:
               content += `/${server.source_code.github_subfolder}`;
             }
             if (server.source_code.github_stars) {
-              content += ` (⭐ ${server.source_code.github_stars})`;
+              content += ` (${server.source_code.github_stars.toLocaleString()} stars)`;
             }
             content += '\n';
           }

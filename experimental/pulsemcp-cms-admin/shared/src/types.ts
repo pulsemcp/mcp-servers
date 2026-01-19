@@ -498,13 +498,10 @@ export interface SourceCodeLocation {
 }
 
 /**
- * Canonical URL configuration for an MCP server
+ * Canonical URL configuration for an MCP server.
+ * Alias for CanonicalUrlParams - both represent the same data structure.
  */
-export interface CanonicalUrl {
-  url: string;
-  scope: 'domain' | 'subdomain' | 'subfolder' | 'url';
-  note?: string;
-}
+export type CanonicalUrl = CanonicalUrlParams;
 
 /**
  * Remote endpoint configuration for an MCP server
@@ -531,7 +528,7 @@ export interface UnifiedMCPServer {
   // Core identification
   id: number; // This is the MCPServer ID
   slug: string;
-  implementation_id: number; // The underlying MCPImplementation ID (needed for updates)
+  implementation_id: number | null; // The underlying MCPImplementation ID (needed for updates), null if no implementation exists
 
   // Basic info (from MCPImplementation)
   name: string;

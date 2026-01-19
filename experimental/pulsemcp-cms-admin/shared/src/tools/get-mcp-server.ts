@@ -83,7 +83,11 @@ Example response:
 
         let content = `# ${server.name}\n\n`;
         content += `**Slug:** \`${server.slug}\`\n`;
-        content += `**Implementation ID:** ${server.implementation_id} (use this for updates)\n`;
+        if (server.implementation_id !== null) {
+          content += `**Implementation ID:** ${server.implementation_id} (use this for updates)\n`;
+        } else {
+          content += `**Implementation ID:** None (this server has no linked implementation - cannot be updated via mcp_servers tools)\n`;
+        }
         content += `**Status:** ${server.status}\n`;
 
         if (server.classification) {
