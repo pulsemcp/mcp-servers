@@ -118,6 +118,33 @@ const PreloadedCredentialsSchema = z.object({
   expires_at: z.string().optional(),
 });
 
+// Preprocess to transform empty/incomplete objects to undefined before validation
+// This handles cases where MCP clients send {}, null, or partial objects for optional parameters
+const preprocessPreloadedCredentials = (val: unknown): unknown => {
+  // If undefined, null, or not an object, let it pass through (or become undefined)
+  if (val === undefined || val === null) {
+    return undefined;
+  }
+  if (typeof val !== 'object') {
+    return undefined;
+  }
+  // Check if it's an empty object or missing required fields
+  const obj = val as Record<string, unknown>;
+  if (Object.keys(obj).length === 0) {
+    return undefined;
+  }
+  if (!('server_key' in obj) || !('access_token' in obj)) {
+    return undefined;
+  }
+  // Has required fields, validate it properly
+  return val;
+};
+
+const OptionalPreloadedCredentialsSchema = z.preprocess(
+  preprocessPreloadedCredentials,
+  PreloadedCredentialsSchema.optional()
+);
+
 const RunExamSchema = z.object({
   runtime_id: z.string().min(1).describe(PARAM_DESCRIPTIONS.runtime_id),
   exam_id: z.string().min(1).describe(PARAM_DESCRIPTIONS.exam_id),
@@ -125,7 +152,7 @@ const RunExamSchema = z.object({
   server_json: z.string().optional().describe(PARAM_DESCRIPTIONS.server_json),
   custom_runtime_image: z.string().optional().describe(PARAM_DESCRIPTIONS.custom_runtime_image),
   max_retries: z.number().min(0).max(10).optional().describe(PARAM_DESCRIPTIONS.max_retries),
-  preloaded_credentials: PreloadedCredentialsSchema.optional().describe(
+  preloaded_credentials: OptionalPreloadedCredentialsSchema.optional().describe(
     PARAM_DESCRIPTIONS.preloaded_credentials
   ),
 });

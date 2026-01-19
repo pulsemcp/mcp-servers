@@ -282,5 +282,81 @@ describe('Proctor Tools - Functional Tests', () => {
         })
       );
     });
+
+    it('should work without preloaded_credentials', async () => {
+      const tool = runExam(mockServer, clientFactory);
+
+      const result = await tool.handler({
+        runtime_id: 'v0.0.37',
+        exam_id: 'proctor-mcp-client-init-tools-list',
+        mcp_json: '{"mcpServers":{}}',
+      });
+
+      expect(result.isError).toBeUndefined();
+      expect(result.content[0].text).toContain('Exam Execution');
+      expect(mockClient.runExam).toHaveBeenCalledWith(
+        expect.objectContaining({
+          preloaded_credentials: undefined,
+        })
+      );
+    });
+
+    it('should handle empty object for preloaded_credentials', async () => {
+      const tool = runExam(mockServer, clientFactory);
+
+      const result = await tool.handler({
+        runtime_id: 'v0.0.37',
+        exam_id: 'proctor-mcp-client-init-tools-list',
+        mcp_json: '{"mcpServers":{}}',
+        preloaded_credentials: {},
+      });
+
+      expect(result.isError).toBeUndefined();
+      expect(result.content[0].text).toContain('Exam Execution');
+      expect(mockClient.runExam).toHaveBeenCalledWith(
+        expect.objectContaining({
+          preloaded_credentials: undefined,
+        })
+      );
+    });
+
+    it('should handle null for preloaded_credentials', async () => {
+      const tool = runExam(mockServer, clientFactory);
+
+      const result = await tool.handler({
+        runtime_id: 'v0.0.37',
+        exam_id: 'proctor-mcp-client-init-tools-list',
+        mcp_json: '{"mcpServers":{}}',
+        preloaded_credentials: null,
+      });
+
+      expect(result.isError).toBeUndefined();
+      expect(result.content[0].text).toContain('Exam Execution');
+      expect(mockClient.runExam).toHaveBeenCalledWith(
+        expect.objectContaining({
+          preloaded_credentials: undefined,
+        })
+      );
+    });
+
+    it('should handle partial preloaded_credentials missing required fields', async () => {
+      const tool = runExam(mockServer, clientFactory);
+
+      // Missing access_token
+      const result = await tool.handler({
+        runtime_id: 'v0.0.37',
+        exam_id: 'proctor-mcp-client-init-tools-list',
+        mcp_json: '{"mcpServers":{}}',
+        preloaded_credentials: { server_key: 'remotes[0]' },
+      });
+
+      expect(result.isError).toBeUndefined();
+      expect(result.content[0].text).toContain('Exam Execution');
+      expect(mockClient.runExam).toHaveBeenCalledWith(
+        expect.objectContaining({
+          preloaded_credentials: undefined,
+        })
+      );
+    });
   });
 });

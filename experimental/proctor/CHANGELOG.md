@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.5] - 2026-01-19
+
+### Fixed
+
+- `preloaded_credentials` parameter in `run_exam` now correctly treated as optional
+  - Empty objects `{}`, `null`, or partial objects (missing required fields) are now accepted and treated as "no credentials"
+  - Previously, passing an empty object would cause validation errors requiring `server_key` and `access_token`
+
+### Added
+
+- Manual test for empty `preloaded_credentials` to prevent regression
+- Functional tests for `null`, empty object, and partial object cases
+
 ## [0.1.4] - 2026-01-19
 
 ### Added

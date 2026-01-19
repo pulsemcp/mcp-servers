@@ -146,6 +146,49 @@ describe('Proctor MCP Server - Manual Tests', () => {
         expect(content.text).toContain('Exam Execution');
       }
     }, 120000); // 2 minute timeout for exam execution
+
+    it('should accept empty preloaded_credentials without validation error', async () => {
+      // Test that empty preloaded_credentials does not cause validation error
+      // This was a bug where {} for preloaded_credentials triggered schema validation
+      const examId = 'proctor-mcp-client-init-tools-list';
+      const runtimeId = 'proctor-mcp-client-0.0.37-configs-0.0.10';
+
+      const mcpConfig = JSON.stringify({
+        mcpServers: {
+          test: {
+            command: 'echo',
+            args: ['test'],
+          },
+        },
+      });
+
+      console.log(`Running exam with empty preloaded_credentials`);
+
+      const result = await client.callTool('run_exam', {
+        runtime_id: runtimeId,
+        exam_id: examId,
+        mcp_json: mcpConfig,
+        preloaded_credentials: {}, // Empty object should be treated as undefined
+      });
+
+      console.log('Run exam with empty credentials response:', JSON.stringify(result, null, 2));
+
+      expect(result).toBeDefined();
+      expect(result.content).toBeDefined();
+      expect(result.content.length).toBeGreaterThan(0);
+
+      const content = result.content[0];
+      expect(content.type).toBe('text');
+
+      // Should NOT fail with validation error about missing server_key/access_token
+      // The empty object should be treated as "no credentials"
+      if (result.isError) {
+        // API errors are fine, but should not be Zod validation errors
+        expect(content.text).not.toContain('server_key');
+        expect(content.text).not.toContain('access_token');
+        expect(content.text).not.toContain('String must contain at least');
+      }
+    }, 30000);
   });
 
   describe('cancel_exam', () => {
