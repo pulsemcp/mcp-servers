@@ -28,7 +28,7 @@ describe('Proctor MCP Server Integration Tests', () => {
       // Check for expected tool names
       const toolNames = tools.map((t) => t.name);
       expect(toolNames).toContain('get_proctor_metadata');
-      expect(toolNames).toContain('save_result');
+      expect(toolNames).toContain('run_exam');
       expect(toolNames).toContain('get_machines');
       expect(toolNames).toContain('destroy_machine');
       expect(toolNames).toContain('cancel_exam');
@@ -110,26 +110,23 @@ describe('Proctor MCP Server Integration Tests', () => {
     });
   });
 
-  describe('save_result', () => {
-    it('should save exam results', async () => {
+  describe('run_exam', () => {
+    it('should run an exam and return results', async () => {
       client = await createTestMCPClient();
-      const results = JSON.stringify({
-        status: 'success',
-        tests: [{ name: 'test1', passed: true }],
-      });
-
-      const result = await client.callTool('save_result', {
+      const result = await client.callTool('run_exam', {
         runtime_id: 'v0.0.37',
         exam_id: 'proctor-mcp-client-init-tools-list',
-        results: results,
+        mcp_json: '{"mcpServers":{}}',
       });
 
       expect(result.content).toBeInstanceOf(Array);
       expect(result.content[0].type).toBe('text');
 
       const text = result.content[0].text as string;
-      expect(text).toContain('Result Saved');
-      expect(text).toContain('Success');
+      expect(text).toContain('Exam Execution');
+      expect(text).toContain('v0.0.37');
+      expect(text).toContain('Logs');
+      expect(text).toContain('Result');
     });
   });
 });

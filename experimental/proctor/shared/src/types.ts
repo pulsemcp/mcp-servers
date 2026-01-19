@@ -29,21 +29,63 @@ export interface ProctorMetadataResponse {
 }
 
 /**
- * Parameters for saving exam results
+ * Log entry from a running exam
  */
-export interface SaveResultParams {
-  runtime_id: string;
-  exam_id: string;
-  results: string | Record<string, unknown>;
-  custom_runtime_image?: string;
+export interface ExamLogEntry {
+  time?: string;
+  message?: string;
+  [key: string]: unknown;
 }
 
 /**
- * Response from save_result endpoint
+ * Streaming response types from run_exam endpoint
  */
-export interface SaveResultResponse {
-  success: boolean;
-  id: number;
+export interface ExamStreamLog {
+  type: 'log';
+  data: ExamLogEntry;
+}
+
+export interface ExamStreamResult {
+  type: 'result';
+  data: ExamResult;
+}
+
+export interface ExamStreamError {
+  type: 'error';
+  data: { error: string };
+}
+
+export type ExamStreamEntry = ExamStreamLog | ExamStreamResult | ExamStreamError;
+
+/**
+ * Final exam result
+ */
+export interface ExamResult {
+  status?: string;
+  input?: {
+    'mcp.json'?: Record<string, unknown>;
+    'server.json'?: Record<string, unknown>;
+  };
+  [key: string]: unknown;
+}
+
+/**
+ * Parameters for running an exam
+ */
+export interface RunExamParams {
+  runtime_id: string;
+  exam_id: string;
+  mcp_json: string;
+  server_json?: string;
+  custom_runtime_image?: string;
+  max_retries?: number;
+  /**
+   * When true, OAuth credentials obtained via web bridge are not persisted in the database.
+   * Instead, the user receives a one-time copy-to-clipboard page with their credentials.
+   * This is useful for the MCP server since it manages its own credential storage.
+   * @internal Hardcoded to true in the API client - not exposed as a tool parameter
+   */
+  no_result_persistence?: boolean;
 }
 
 /**

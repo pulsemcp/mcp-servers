@@ -2,8 +2,8 @@ import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { createRegisterTools } from './tools.js';
 import type {
   ProctorMetadataResponse,
-  SaveResultParams,
-  SaveResultResponse,
+  RunExamParams,
+  ExamStreamEntry,
   MachinesResponse,
   CancelExamParams,
   CancelExamResponse,
@@ -13,7 +13,7 @@ import type {
 export interface IProctorClient {
   getMetadata(): Promise<ProctorMetadataResponse>;
 
-  saveResult(params: SaveResultParams): Promise<SaveResultResponse>;
+  runExam(params: RunExamParams): AsyncGenerator<ExamStreamEntry, void, unknown>;
 
   getMachines(): Promise<MachinesResponse>;
 
@@ -38,9 +38,9 @@ export class ProctorClient implements IProctorClient {
     return getMetadata(this.apiKey, this.baseUrl);
   }
 
-  async saveResult(params: SaveResultParams): Promise<SaveResultResponse> {
-    const { saveResult } = await import('./proctor-client/lib/save-result.js');
-    return saveResult(this.apiKey, this.baseUrl, params);
+  async *runExam(params: RunExamParams): AsyncGenerator<ExamStreamEntry, void, unknown> {
+    const { runExam } = await import('./proctor-client/lib/run-exam.js');
+    yield* runExam(this.apiKey, this.baseUrl, params);
   }
 
   async getMachines(): Promise<MachinesResponse> {
@@ -65,7 +65,7 @@ export function createMCPServer() {
   const server = new Server(
     {
       name: 'proctor-mcp-server',
-      version: '0.1.0',
+      version: '0.1.2',
     },
     {
       capabilities: {

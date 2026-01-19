@@ -8,8 +8,8 @@ import { createMCPServer, logServerStart, logError } from '../shared/index.js';
 import type {
   IProctorClient,
   ProctorMetadataResponse,
-  SaveResultParams,
-  SaveResultResponse,
+  RunExamParams,
+  ExamStreamEntry,
   MachinesResponse,
   CancelExamParams,
   CancelExamResponse,
@@ -19,8 +19,6 @@ import type {
  * Integration mock implementation of IProctorClient
  */
 class IntegrationMockProctorClient implements IProctorClient {
-  private savedResultId = 0;
-
   async getMetadata(): Promise<ProctorMetadataResponse> {
     return {
       runtimes: [
@@ -50,14 +48,23 @@ class IntegrationMockProctorClient implements IProctorClient {
     };
   }
 
-  async saveResult(_params: SaveResultParams): Promise<SaveResultResponse> {
-    this.savedResultId++;
-    const result: SaveResultResponse = {
-      success: true,
-      id: this.savedResultId,
+  async *runExam(_params: RunExamParams): AsyncGenerator<ExamStreamEntry, void, unknown> {
+    yield { type: 'log', data: { time: '2024-01-15T10:30:00Z', message: 'Starting exam...' } };
+    yield {
+      type: 'log',
+      data: { time: '2024-01-15T10:30:01Z', message: 'Initializing MCP client...' },
     };
-
-    return result;
+    yield { type: 'log', data: { time: '2024-01-15T10:30:02Z', message: 'Running tests...' } };
+    yield {
+      type: 'result',
+      data: {
+        status: 'passed',
+        tests: [
+          { name: 'initialization', passed: true },
+          { name: 'tools_list', passed: true },
+        ],
+      },
+    };
   }
 
   async getMachines(): Promise<MachinesResponse> {

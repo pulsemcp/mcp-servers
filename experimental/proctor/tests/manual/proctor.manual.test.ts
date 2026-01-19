@@ -47,7 +47,7 @@ describe('Proctor MCP Server - Manual Tests', () => {
       // Check for expected tools
       const toolNames = result.tools.map((t) => t.name);
       expect(toolNames).toContain('get_proctor_metadata');
-      expect(toolNames).toContain('save_result');
+      expect(toolNames).toContain('run_exam');
       expect(toolNames).toContain('get_machines');
       expect(toolNames).toContain('destroy_machine');
       expect(toolNames).toContain('cancel_exam');
@@ -102,31 +102,31 @@ describe('Proctor MCP Server - Manual Tests', () => {
     }, 30000);
   });
 
-  describe('save_result', () => {
-    it('should save exam results to the database', async () => {
-      // Test saving exam results
+  describe('run_exam', () => {
+    it('should run an exam against an MCP server', async () => {
+      // Test running an exam with a simple mcp.json config
       const examId = 'proctor-mcp-client-init-tools-list';
       const runtimeId = 'proctor-mcp-client-0.0.37-configs-0.0.10';
 
-      // Sample exam results
-      const results = JSON.stringify({
-        passed: true,
-        score: 100,
-        tests: [
-          { name: 'test_initialization', passed: true },
-          { name: 'test_tools_list', passed: true },
-        ],
+      // Sample mcp.json configuration for testing
+      const mcpConfig = JSON.stringify({
+        mcpServers: {
+          test: {
+            command: 'echo',
+            args: ['test'],
+          },
+        },
       });
 
-      console.log(`Saving result for exam: ${examId}`);
+      console.log(`Running exam: ${examId} with runtime: ${runtimeId}`);
 
-      const result = await client.callTool('save_result', {
+      const result = await client.callTool('run_exam', {
         runtime_id: runtimeId,
         exam_id: examId,
-        results: results,
+        mcp_json: mcpConfig,
       });
 
-      console.log('Save result response:', JSON.stringify(result, null, 2));
+      console.log('Run exam response:', JSON.stringify(result, null, 2));
 
       expect(result).toBeDefined();
       expect(result.content).toBeDefined();
@@ -135,17 +135,17 @@ describe('Proctor MCP Server - Manual Tests', () => {
       const content = result.content[0];
       expect(content.type).toBe('text');
 
-      // The save might succeed or fail depending on API state
+      // The exam might succeed, fail, or return an error depending on API state
       // Either way, we verify the API responded properly
       if (result.isError) {
-        console.log('Save result returned error:', content.text);
+        console.log('Run exam returned error:', content.text);
         // API responded with an error - this is valid behavior
         expect(content.text).toContain('Error');
       } else {
-        console.log('Save result succeeded:', content.text);
-        expect(content.text).toContain('Result Saved');
+        console.log('Run exam succeeded:', content.text);
+        expect(content.text).toContain('Exam Execution');
       }
-    }, 30000);
+    }, 120000); // 2 minute timeout for exam execution
   });
 
   describe('cancel_exam', () => {

@@ -23,13 +23,13 @@ proctor/
 │       ├── logging.ts     # Logging utilities
 │       ├── tools/         # Individual tool implementations
 │       │   ├── get-metadata.ts
-│       │   ├── save-result.ts
+│       │   ├── run-exam.ts
 │       │   ├── get-machines.ts
 │       │   ├── destroy-machine.ts
 │       │   └── cancel-exam.ts
 │       └── proctor-client/lib/  # API client methods
 │           ├── get-metadata.ts
-│           ├── save-result.ts
+│           ├── run-exam.ts
 │           ├── get-machines.ts
 │           ├── destroy-machine.ts
 │           └── cancel-exam.ts
@@ -80,7 +80,7 @@ npm run test:manual    # Run manual tests (requires API key)
 This server connects to the PulseMCP Proctor API:
 
 - `GET /api/proctor/metadata` - Available runtimes and exams
-- `POST /api/proctor/save_result` - Save exam results
+- `POST /api/proctor/run_exam` - Run Proctor exams
 - `GET /api/proctor/machines` - List Fly machines
 - `DELETE /api/proctor/machines/:id` - Delete machine
 - `POST /api/proctor/cancel_exam` - Cancel running exam

@@ -5,7 +5,14 @@ import { getMetadata } from '../../shared/build/tools/get-metadata.js';
 import { getMachines } from '../../shared/build/tools/get-machines.js';
 import { destroyMachine } from '../../shared/build/tools/destroy-machine.js';
 import { cancelExam } from '../../shared/build/tools/cancel-exam.js';
-import { saveResult } from '../../shared/build/tools/save-result.js';
+import { runExam } from '../../shared/build/tools/run-exam.js';
+
+// Helper to create an async generator from an array
+async function* arrayToAsyncGenerator<T>(arr: T[]): AsyncGenerator<T, void, unknown> {
+  for (const item of arr) {
+    yield item;
+  }
+}
 
 // Create mock client factory
 function createMockClient(): IProctorClient {
@@ -26,7 +33,13 @@ function createMockClient(): IProctorClient {
         },
       ],
     }),
-    saveResult: vi.fn().mockResolvedValue({ success: true, id: 1 }),
+    runExam: vi.fn().mockImplementation(() =>
+      arrayToAsyncGenerator([
+        { type: 'log', data: { time: '2024-01-01T00:00:00Z', message: 'Starting exam...' } },
+        { type: 'log', data: { time: '2024-01-01T00:00:01Z', message: 'Running tests...' } },
+        { type: 'result', data: { status: 'passed', tests: [{ name: 'test1', passed: true }] } },
+      ])
+    ),
     getMachines: vi.fn().mockResolvedValue({
       machines: [
         {
@@ -160,45 +173,89 @@ describe('Proctor Tools - Functional Tests', () => {
     });
   });
 
-  describe('save_result', () => {
-    it('should save result successfully', async () => {
-      const tool = saveResult(mockServer, clientFactory);
+  describe('run_exam', () => {
+    it('should run exam and return results with logs', async () => {
+      const tool = runExam(mockServer, clientFactory);
       const result = await tool.handler({
         runtime_id: 'v0.0.37',
         exam_id: 'proctor-mcp-client-init-tools-list',
-        results: '{"passed":true}',
+        mcp_json: '{"mcpServers":{}}',
       });
 
-      expect(result.content[0].text).toContain('Result Saved');
+      expect(result.content[0].text).toContain('Exam Execution');
+      expect(result.content[0].text).toContain('v0.0.37');
+      expect(result.content[0].text).toContain('proctor-mcp-client-init-tools-list');
+      expect(result.content[0].text).toContain('Logs');
+      expect(result.content[0].text).toContain('Starting exam...');
+      expect(result.content[0].text).toContain('Result');
+      expect(result.content[0].text).toContain('passed');
     });
 
-    it('should handle API errors', async () => {
-      const errorClient = {
-        ...mockClient,
-        saveResult: vi.fn().mockRejectedValue(new Error('Save failed')),
-      };
-
-      const tool = saveResult(mockServer, () => errorClient);
+    it('should reject invalid mcp_json JSON', async () => {
+      const tool = runExam(mockServer, clientFactory);
       const result = await tool.handler({
         runtime_id: 'v0.0.37',
         exam_id: 'proctor-mcp-client-init-tools-list',
-        results: '{}',
+        mcp_json: 'invalid json',
       });
 
       expect(result.isError).toBe(true);
-      expect(result.content[0].text).toContain('Error saving result');
+      expect(result.content[0].text).toContain('mcp_json must be a valid JSON string');
     });
 
     it('should require custom_runtime_image when runtime_id is __custom__', async () => {
-      const tool = saveResult(mockServer, clientFactory);
+      const tool = runExam(mockServer, clientFactory);
       const result = await tool.handler({
         runtime_id: '__custom__',
         exam_id: 'proctor-mcp-client-init-tools-list',
-        results: '{}',
+        mcp_json: '{}',
       });
 
       expect(result.isError).toBe(true);
       expect(result.content[0].text).toContain('custom_runtime_image is required');
+    });
+
+    it('should handle API errors', async () => {
+      // eslint-disable-next-line require-yield
+      async function* throwingGenerator(): AsyncGenerator<never, void, unknown> {
+        throw new Error('Exam execution failed');
+      }
+      const errorClient = {
+        ...mockClient,
+        runExam: vi.fn().mockImplementation(() => throwingGenerator()),
+      };
+
+      const tool = runExam(mockServer, () => errorClient);
+      const result = await tool.handler({
+        runtime_id: 'v0.0.37',
+        exam_id: 'proctor-mcp-client-init-tools-list',
+        mcp_json: '{}',
+      });
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('Error running exam');
+    });
+
+    it('should handle streaming errors', async () => {
+      const errorClient = {
+        ...mockClient,
+        runExam: vi.fn().mockImplementation(() =>
+          arrayToAsyncGenerator([
+            { type: 'log', data: { message: 'Starting...' } },
+            { type: 'error', data: { error: 'Connection timeout' } },
+          ])
+        ),
+      };
+
+      const tool = runExam(mockServer, () => errorClient);
+      const result = await tool.handler({
+        runtime_id: 'v0.0.37',
+        exam_id: 'proctor-mcp-client-init-tools-list',
+        mcp_json: '{}',
+      });
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('Connection timeout');
     });
   });
 });

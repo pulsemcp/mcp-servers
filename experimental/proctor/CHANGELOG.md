@@ -7,15 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.2] - 2026-01-19
+
+### Added
+
+- Hardcoded `no_result_persistence: true` in run_exam API calls to prevent OAuth credential persistence in the database
+
+## [0.1.1] - 2026-01-19
+
 ### Changed
 
 - Updated README to use npx installation method instead of local build instructions
+- Renamed `mcp_config` parameter to `mcp_json` in `run_exam` tool for consistency
 
 ### Removed
 
-- `run_exam` tool - exam execution is now handled externally
-- `get_prior_result` tool - prior result retrieval is now handled externally
-- `mcp_server_slug` and `mirror_id` parameters from `save_result` tool - decoupled from internal identifiers
+- **BREAKING**: `save_result` tool - result saving is now handled externally
+- **BREAKING**: `get_prior_result` tool - prior result retrieval is now handled externally
+- `mcp_server_slug` and `mcp_json_id` parameters from `run_exam` tool - decoupled from internal identifiers
 
 ## [0.1.0] - 2025-01-18
 
