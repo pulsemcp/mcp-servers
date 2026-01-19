@@ -41,11 +41,11 @@ All manual tests pass successfully against the real Proctor API:
 
 ## Test Coverage
 
-| Test                 | Status | Notes                                           |
-| -------------------- | ------ | ----------------------------------------------- |
-| Tool Discovery       | PASS   | 5 tools registered as expected                  |
-| get_proctor_metadata | PASS   | Returns available runtimes and exams            |
-| save_result          | PASS   | API validation error (expected after PR #251)   |
-| get_machines         | PASS   | Returns list of active machines                 |
-| destroy_machine      | PASS   | Returns 404 error for non-existent machine      |
-| cancel_exam          | PASS   | Returns error for non-existent machine/exam     |
+| Test                 | Status | Notes                                         |
+| -------------------- | ------ | --------------------------------------------- |
+| Tool Discovery       | PASS   | 5 tools registered as expected                |
+| get_proctor_metadata | PASS   | Returns available runtimes and exams          |
+| save_result          | PASS   | API validation error (expected after PR #251) |
+| get_machines         | PASS   | Returns list of active machines               |
+| destroy_machine      | PASS   | Returns 404 error for non-existent machine    |
+| cancel_exam          | PASS   | Returns error for non-existent machine/exam   |
