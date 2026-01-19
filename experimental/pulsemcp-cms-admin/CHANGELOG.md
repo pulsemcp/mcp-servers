@@ -19,6 +19,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   - `get_official_mirror`: Added `name` as alternative to `id` for looking up by mirror name (e.g., "@anthropic/claude-code")
   - `get_mcp_jsons`: Added `unofficial_mirror_name`, `mcp_server_id`, and `mcp_server_slug` parameters to find MCP JSON configs by mirror name or linked MCP server
 
+### Fixed
+
+- Fixed `VALID_TOOL_GROUPS` array missing `official_mirrors` and `tenants` entries
+  - These groups were defined in `ToolGroup` type and `BASE_TOOL_GROUPS` but not in `VALID_TOOL_GROUPS`
+  - This caused "Unknown tool group" warnings when users explicitly specified these groups
+
 ### Removed
 
 - Removed secrets management tools (`secrets` / `secrets_readonly` tool groups):
