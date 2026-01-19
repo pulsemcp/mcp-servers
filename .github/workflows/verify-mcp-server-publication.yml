@@ -272,91 +272,130 @@ jobs:
             fi
 
             # Validate npm package can be executed via npx
+            echo ""
             echo "Validating npm package executability..."
-            cd "$LOCAL_DIR"
+
+            # Save current directory for reliable navigation
+            NPX_VALIDATION_DIR="$SERVER_DIR/local"
+            cd "$NPX_VALIDATION_DIR"
 
             # Get the bin entry from package.json
             BIN_NAME=$(node -e "const pkg = require('./package.json'); const bin = pkg.bin; if (typeof bin === 'string') { console.log(pkg.name); } else if (bin) { console.log(Object.keys(bin)[0]); }")
+            # For scoped packages like @pulsemcp/pulse-fetch, npm creates unscoped binary name
+            UNSCOPED_BIN_NAME=$(echo "$BIN_NAME" | sed 's|^@[^/]*/||')
 
             if [ -z "$BIN_NAME" ]; then
               echo "ℹ️  No bin entry found, skipping npx validation"
             else
               echo "Validating executable: $BIN_NAME"
 
+              # Track if prepublishOnly was run (for cleanup)
+              RAN_PREPUBLISH=false
+
               # Run prepublishOnly script first (npm pack doesn't run it, only npm publish does)
               # This prepares the shared files for packaging
               PREPUBLISH_SCRIPT=$(node -e "const pkg = require('./package.json'); console.log(pkg.scripts?.prepublishOnly || '')")
               if [ -n "$PREPUBLISH_SCRIPT" ]; then
-                echo "Running prepublishOnly script: $PREPUBLISH_SCRIPT"
+                echo "Running prepublishOnly script..."
                 npm run prepublishOnly
+                RAN_PREPUBLISH=true
               fi
 
-              # Run npm pack to create the tarball
+              # Run npm pack to create the tarball (capture only the filename line)
               echo "Running npm pack..."
-              TARBALL=$(npm pack 2>&1 | tail -1)
+              TARBALL=$(npm pack 2>/dev/null | grep '\.tgz$' | tail -1)
 
               if [ ! -f "$TARBALL" ]; then
                 echo "❌ ERROR: npm pack failed to create tarball"
                 VERIFICATION_FAILED=true
+                # Clean up prepublishOnly artifacts on failure
+                if [ "$RAN_PREPUBLISH" = true ]; then
+                  rm -rf shared README.md 2>/dev/null || true
+                fi
               else
                 echo "✅ Created tarball: $TARBALL"
 
                 # Create a temporary directory and install the package
-                TEST_DIR=$(mktemp -d)
+                TEST_DIR="$(mktemp -d)"
+                TARBALL_PATH="$NPX_VALIDATION_DIR/$TARBALL"
                 echo "Testing in: $TEST_DIR"
 
                 cd "$TEST_DIR"
                 npm init -y > /dev/null 2>&1
-                npm install "$OLDPWD/$TARBALL" 2>&1
 
-                # Check if the binary was installed
-                if [ -f "node_modules/.bin/$BIN_NAME" ]; then
-                  echo "✅ Binary installed at node_modules/.bin/$BIN_NAME"
+                # Install with timeout and error handling
+                set +e
+                INSTALL_OUTPUT=$(timeout 120s npm install "$TARBALL_PATH" 2>&1)
+                INSTALL_EXIT=$?
+                set -e
 
-                  # Try to execute the binary (it should at least start and show an error about missing env vars)
-                  # We use timeout to prevent hanging and expect a non-zero exit code (due to missing config)
-                  set +e
-                  OUTPUT=$(timeout 5s ./node_modules/.bin/$BIN_NAME 2>&1)
-                  EXIT_CODE=$?
-                  set -e
-
-                  # Check if it ran (exit code 1 with output is OK - means it executed but needs config)
-                  # Exit code 127 means "command not found" which is the failure we want to catch
-                  # Also check for ERR_MODULE_NOT_FOUND which means shared files weren't bundled
-                  if [ $EXIT_CODE -eq 127 ]; then
-                    echo "❌ ERROR: Binary failed with 'command not found' (exit code 127)"
-                    echo "   This usually means the shebang is missing or the package files are incomplete"
-                    echo "   Output: $OUTPUT"
-                    VERIFICATION_FAILED=true
-                  elif echo "$OUTPUT" | grep -q "ERR_MODULE_NOT_FOUND"; then
-                    echo "❌ ERROR: Binary failed with module not found error"
-                    echo "   This usually means the shared files weren't included in the package"
-                    echo "   Output: $OUTPUT"
-                    VERIFICATION_FAILED=true
-                  elif [ $EXIT_CODE -eq 124 ]; then
-                    # Timeout - might mean it's waiting for input, which is acceptable
-                    echo "✅ Binary executed (timed out waiting for input, which is acceptable)"
-                  else
-                    echo "✅ Binary executed successfully (exit code: $EXIT_CODE)"
-                    echo "   Output preview: $(echo "$OUTPUT" | head -3)"
-                  fi
-                else
-                  echo "❌ ERROR: Binary not found at node_modules/.bin/$BIN_NAME"
-                  echo "   Contents of node_modules/.bin:"
-                  ls -la node_modules/.bin/ 2>/dev/null || echo "   (directory does not exist)"
+                if [ $INSTALL_EXIT -ne 0 ]; then
+                  echo "❌ ERROR: npm install of tarball failed (exit code: $INSTALL_EXIT)"
+                  echo "   Output: $INSTALL_OUTPUT"
                   VERIFICATION_FAILED=true
+                else
+                  # Check if the binary was installed (try both scoped and unscoped names)
+                  ACTUAL_BIN=""
+                  if [ -f "node_modules/.bin/$BIN_NAME" ]; then
+                    ACTUAL_BIN="node_modules/.bin/$BIN_NAME"
+                  elif [ -f "node_modules/.bin/$UNSCOPED_BIN_NAME" ]; then
+                    ACTUAL_BIN="node_modules/.bin/$UNSCOPED_BIN_NAME"
+                  fi
+
+                  if [ -n "$ACTUAL_BIN" ]; then
+                    echo "✅ Binary installed at $ACTUAL_BIN"
+
+                    # Try to execute the binary (it should at least start and show an error about missing env vars)
+                    # We use timeout to prevent hanging and expect a non-zero exit code (due to missing config)
+                    set +e
+                    OUTPUT=$(timeout 5s "./$ACTUAL_BIN" 2>&1)
+                    EXIT_CODE=$?
+                    set -e
+
+                    # Check if it ran (exit code 1 with output is OK - means it executed but needs config)
+                    # Exit code 127 means "command not found" which is the failure we want to catch
+                    # Also check for common module loading errors
+                    if [ $EXIT_CODE -eq 127 ]; then
+                      echo "❌ ERROR: Binary failed with 'command not found' (exit code 127)"
+                      echo "   This usually means the shebang is missing or the package files are incomplete"
+                      echo "   Output: $OUTPUT"
+                      VERIFICATION_FAILED=true
+                    elif echo "$OUTPUT" | grep -qE "(ERR_MODULE_NOT_FOUND|ERR_PACKAGE_PATH_NOT_EXPORTED|Cannot find module)"; then
+                      echo "❌ ERROR: Binary failed with module loading error"
+                      echo "   This usually means the shared files weren't included in the package"
+                      echo "   Output: $OUTPUT"
+                      VERIFICATION_FAILED=true
+                    elif [ $EXIT_CODE -eq 124 ]; then
+                      # Timeout - might mean it's waiting for input, which is acceptable but warrants a note
+                      echo "⚠️  Binary timed out after 5s (acceptable if waiting for input)"
+                    else
+                      echo "✅ Binary executed successfully (exit code: $EXIT_CODE)"
+                      echo "   Output preview: $(echo "$OUTPUT" | head -3)"
+                    fi
+                  else
+                    echo "❌ ERROR: Binary not found at node_modules/.bin/$BIN_NAME"
+                    if [ "$BIN_NAME" != "$UNSCOPED_BIN_NAME" ]; then
+                      echo "   Also checked: node_modules/.bin/$UNSCOPED_BIN_NAME"
+                    fi
+                    echo "   Contents of node_modules/.bin:"
+                    ls -la node_modules/.bin/ 2>/dev/null || echo "   (directory does not exist)"
+                    VERIFICATION_FAILED=true
+                  fi
                 fi
 
-                # Cleanup
-                cd "$OLDPWD"
+                # Cleanup - return to validation dir first
+                cd "$NPX_VALIDATION_DIR"
                 rm -rf "$TEST_DIR"
                 rm -f "$TARBALL"
                 # Clean up prepublishOnly artifacts (shared dir and README copied during prepare)
-                rm -rf shared README.md 2>/dev/null || true
+                if [ "$RAN_PREPUBLISH" = true ]; then
+                  rm -rf shared README.md 2>/dev/null || true
+                fi
               fi
             fi
 
-            cd - > /dev/null
+            # Return to server directory for next iteration
+            cd "$SERVER_DIR"
 
             echo "---"
           done
