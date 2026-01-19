@@ -37,26 +37,40 @@ This is an MCP ([Model Context Protocol](https://modelcontextprotocol.io/)) Serv
 
 This server is built and tested on macOS with Claude Desktop. It should work with other MCP clients as well.
 
-| Tool Name                              | Tool Group     | Read/Write | Description                                                                  |
-| -------------------------------------- | -------------- | ---------- | ---------------------------------------------------------------------------- |
-| `get_newsletter_posts`                 | newsletter     | read       | List newsletter posts with search, sorting, and pagination options.          |
-| `get_newsletter_post`                  | newsletter     | read       | Retrieve a specific newsletter post by its unique slug.                      |
-| `draft_newsletter_post`                | newsletter     | write      | Create a new draft newsletter post with title, body, and metadata.           |
-| `update_newsletter_post`               | newsletter     | write      | Update an existing newsletter post's content and metadata (except status).   |
-| `upload_image`                         | newsletter     | write      | Upload an image and attach it to a specific newsletter post.                 |
-| `get_authors`                          | newsletter     | read       | Get a list of authors with optional search and pagination.                   |
-| `search_mcp_implementations`           | server_queue   | read       | Search for MCP servers and clients in the PulseMCP registry.                 |
-| `get_draft_mcp_implementations`        | server_queue   | read       | Retrieve paginated list of draft MCP implementations needing review.         |
-| `find_providers`                       | server_queue   | read       | Search for providers by ID, name, URL, or slug.                              |
-| `save_mcp_implementation`              | server_queue   | write      | Update an MCP implementation (replicates Admin panel "Save Changes" button). |
-| `send_impl_posted_notif`               | server_queue   | write      | Send email notification when MCP implementation goes live.                   |
-| `get_official_mirror_queue_items`      | official_queue | read       | List and filter official mirror queue entries with pagination and search.    |
-| `get_official_mirror_queue_item`       | official_queue | read       | Get detailed information about a single official mirror queue entry.         |
-| `approve_official_mirror_queue_item`   | official_queue | write      | Approve a queue entry and link it to an existing MCP server (async).         |
-| `approve_mirror_no_modify`             | official_queue | write      | Approve without updating the linked server.                                  |
-| `reject_official_mirror_queue_item`    | official_queue | write      | Reject a queue entry (async operation).                                      |
-| `add_official_mirror_to_regular_queue` | official_queue | write      | Convert a queue entry to a draft MCP implementation (async).                 |
-| `unlink_official_mirror_queue_item`    | official_queue | write      | Unlink a queue entry from its linked MCP server.                             |
+| Tool Name                              | Tool Group         | Read/Write | Description                                                                  |
+| -------------------------------------- | ------------------ | ---------- | ---------------------------------------------------------------------------- |
+| `get_newsletter_posts`                 | newsletter         | read       | List newsletter posts with search, sorting, and pagination options.          |
+| `get_newsletter_post`                  | newsletter         | read       | Retrieve a specific newsletter post by its unique slug.                      |
+| `draft_newsletter_post`                | newsletter         | write      | Create a new draft newsletter post with title, body, and metadata.           |
+| `update_newsletter_post`               | newsletter         | write      | Update an existing newsletter post's content and metadata (except status).   |
+| `upload_image`                         | newsletter         | write      | Upload an image and attach it to a specific newsletter post.                 |
+| `get_authors`                          | newsletter         | read       | Get a list of authors with optional search and pagination.                   |
+| `search_mcp_implementations`           | server_queue       | read       | Search for MCP servers and clients in the PulseMCP registry.                 |
+| `get_draft_mcp_implementations`        | server_queue       | read       | Retrieve paginated list of draft MCP implementations needing review.         |
+| `find_providers`                       | server_queue       | read       | Search for providers by ID, name, URL, or slug.                              |
+| `save_mcp_implementation`              | server_queue       | write      | Update an MCP implementation (replicates Admin panel "Save Changes" button). |
+| `send_impl_posted_notif`               | server_queue       | write      | Send email notification when MCP implementation goes live.                   |
+| `get_official_mirror_queue_items`      | official_queue     | read       | List and filter official mirror queue entries with pagination and search.    |
+| `get_official_mirror_queue_item`       | official_queue     | read       | Get detailed information about a single official mirror queue entry.         |
+| `approve_official_mirror_queue_item`   | official_queue     | write      | Approve a queue entry and link it to an existing MCP server (async).         |
+| `approve_mirror_no_modify`             | official_queue     | write      | Approve without updating the linked server.                                  |
+| `reject_official_mirror_queue_item`    | official_queue     | write      | Reject a queue entry (async operation).                                      |
+| `add_official_mirror_to_regular_queue` | official_queue     | write      | Convert a queue entry to a draft MCP implementation (async).                 |
+| `unlink_official_mirror_queue_item`    | official_queue     | write      | Unlink a queue entry from its linked MCP server.                             |
+| `get_unofficial_mirrors`               | unofficial_mirrors | read       | List unofficial mirrors with search, pagination, and MCP server filtering.   |
+| `get_unofficial_mirror`                | unofficial_mirrors | read       | Get detailed unofficial mirror info by ID or name.                           |
+| `create_unofficial_mirror`             | unofficial_mirrors | write      | Create a new unofficial mirror entry with JSON data.                         |
+| `update_unofficial_mirror`             | unofficial_mirrors | write      | Update an existing unofficial mirror by ID.                                  |
+| `delete_unofficial_mirror`             | unofficial_mirrors | write      | Delete an unofficial mirror by ID (irreversible).                            |
+| `get_official_mirrors`                 | official_mirrors   | read       | List official mirrors with search, status, and processing filters.           |
+| `get_official_mirror`                  | official_mirrors   | read       | Get detailed official mirror info by ID or name.                             |
+| `get_tenants`                          | tenants            | read       | List tenants with search and admin status filtering.                         |
+| `get_tenant`                           | tenants            | read       | Get detailed tenant info by ID or slug.                                      |
+| `get_mcp_jsons`                        | mcp_jsons          | read       | List MCP JSON configs with mirror and server filtering.                      |
+| `get_mcp_json`                         | mcp_jsons          | read       | Get a single MCP JSON configuration by ID.                                   |
+| `create_mcp_json`                      | mcp_jsons          | write      | Create a new MCP JSON configuration for an unofficial mirror.                |
+| `update_mcp_json`                      | mcp_jsons          | write      | Update an existing MCP JSON configuration by ID.                             |
+| `delete_mcp_json`                      | mcp_jsons          | write      | Delete an MCP JSON configuration by ID (irreversible).                       |
 
 # Tool Groups
 
@@ -67,14 +81,22 @@ This server organizes tools into groups that can be selectively enabled or disab
 
 ## Available Groups
 
-| Group                     | Tools | Description                                  |
-| ------------------------- | ----- | -------------------------------------------- |
-| `newsletter`              | 6     | Full newsletter management (read + write)    |
-| `newsletter_readonly`     | 3     | Newsletter read-only (get posts, authors)    |
-| `server_queue`            | 5     | Full MCP implementation queue (read + write) |
-| `server_queue_readonly`   | 3     | MCP implementation queue read-only           |
-| `official_queue`          | 7     | Full official mirror queue (read + write)    |
-| `official_queue_readonly` | 2     | Official mirror queue read-only              |
+| Group                         | Tools | Description                                  |
+| ----------------------------- | ----- | -------------------------------------------- |
+| `newsletter`                  | 6     | Full newsletter management (read + write)    |
+| `newsletter_readonly`         | 3     | Newsletter read-only (get posts, authors)    |
+| `server_queue`                | 5     | Full MCP implementation queue (read + write) |
+| `server_queue_readonly`       | 3     | MCP implementation queue read-only           |
+| `official_queue`              | 7     | Full official mirror queue (read + write)    |
+| `official_queue_readonly`     | 2     | Official mirror queue read-only              |
+| `unofficial_mirrors`          | 5     | Full unofficial mirrors CRUD (read + write)  |
+| `unofficial_mirrors_readonly` | 2     | Unofficial mirrors read-only                 |
+| `official_mirrors`            | 2     | Official mirrors REST API (read-only)        |
+| `official_mirrors_readonly`   | 2     | Official mirrors read-only (alias)           |
+| `tenants`                     | 2     | Tenants REST API (read-only)                 |
+| `tenants_readonly`            | 2     | Tenants read-only (alias)                    |
+| `mcp_jsons`                   | 5     | Full MCP JSON configurations (read + write)  |
+| `mcp_jsons_readonly`          | 2     | MCP JSON configurations read-only            |
 
 ### Tools by Group
 
@@ -87,12 +109,22 @@ This server organizes tools into groups that can be selectively enabled or disab
 - **official_queue** / **official_queue_readonly**:
   - Read-only: `get_official_mirror_queue_items`, `get_official_mirror_queue_item`
   - Write: `approve_official_mirror_queue_item`, `approve_mirror_no_modify`, `reject_official_mirror_queue_item`, `add_official_mirror_to_regular_queue`, `unlink_official_mirror_queue_item`
+- **unofficial_mirrors** / **unofficial_mirrors_readonly**:
+  - Read-only: `get_unofficial_mirrors`, `get_unofficial_mirror`
+  - Write: `create_unofficial_mirror`, `update_unofficial_mirror`, `delete_unofficial_mirror`
+- **official_mirrors** / **official_mirrors_readonly**:
+  - Read-only: `get_official_mirrors`, `get_official_mirror`
+- **tenants** / **tenants_readonly**:
+  - Read-only: `get_tenants`, `get_tenant`
+- **mcp_jsons** / **mcp_jsons_readonly**:
+  - Read-only: `get_mcp_jsons`, `get_mcp_json`
+  - Write: `create_mcp_json`, `update_mcp_json`, `delete_mcp_json`
 
 ## Environment Variables
 
-| Variable      | Description                                 | Default                                                    |
-| ------------- | ------------------------------------------- | ---------------------------------------------------------- |
-| `TOOL_GROUPS` | Comma-separated list of enabled tool groups | `newsletter,server_queue,official_queue` (all base groups) |
+| Variable      | Description                                 | Default                                                                                                          |
+| ------------- | ------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| `TOOL_GROUPS` | Comma-separated list of enabled tool groups | `newsletter,server_queue,official_queue,unofficial_mirrors,official_mirrors,tenants,mcp_jsons` (all base groups) |
 
 ## Examples
 
@@ -117,7 +149,7 @@ TOOL_GROUPS=server_queue_readonly
 Enable all groups with read-only access:
 
 ```bash
-TOOL_GROUPS=newsletter_readonly,server_queue_readonly,official_queue_readonly
+TOOL_GROUPS=newsletter_readonly,server_queue_readonly,official_queue_readonly,unofficial_mirrors_readonly,official_mirrors_readonly,tenants_readonly,mcp_jsons_readonly
 ```
 
 Mix full and read-only access per group:
@@ -249,7 +281,7 @@ Add to your Claude Desktop configuration:
       "args": ["/path/to/pulsemcp-cms-admin/local/build/index.js"],
       "env": {
         "PULSEMCP_ADMIN_API_KEY": "your-api-key-here",
-        "TOOL_GROUPS": "newsletter,server_queue,official_queue"
+        "TOOL_GROUPS": "newsletter,server_queue,official_queue,unofficial_mirrors,official_mirrors,tenants,mcp_jsons"
       }
     }
   }
@@ -266,7 +298,7 @@ For read-only access:
       "args": ["/path/to/pulsemcp-cms-admin/local/build/index.js"],
       "env": {
         "PULSEMCP_ADMIN_API_KEY": "your-api-key-here",
-        "TOOL_GROUPS": "newsletter_readonly,server_queue_readonly,official_queue_readonly"
+        "TOOL_GROUPS": "newsletter_readonly,server_queue_readonly,official_queue_readonly,unofficial_mirrors_readonly,official_mirrors_readonly,tenants_readonly,mcp_jsons_readonly"
       }
     }
   }
