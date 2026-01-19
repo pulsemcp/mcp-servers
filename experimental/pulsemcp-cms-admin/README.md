@@ -89,7 +89,7 @@ This server organizes tools into groups that can be selectively enabled or disab
 | `newsletter`        | 6     | Full newsletter management (read + write) |
 | `server_queue`      | 5     | Full MCP implementation queue (read + write) |
 | `official_queue`    | 7     | Full official mirror queue (read + write) |
-| `unofficial_mirrors`| 5     | Full unofficial mirrors CRUD (read + write) |
+| `unofficial_mirrors` | 5     | Full unofficial mirrors CRUD (read + write) |
 | `official_mirrors`  | 2     | Official mirrors REST API (read-only)    |
 | `tenants`           | 2     | Tenants REST API (read-only)             |
 | `mcp_jsons`         | 5     | Full MCP JSON configurations (read + write) |
