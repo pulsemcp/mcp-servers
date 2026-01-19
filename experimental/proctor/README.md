@@ -36,13 +36,13 @@ This is an MCP ([Model Context Protocol](https://modelcontextprotocol.io/)) Serv
 
 This server is built and tested on macOS with Claude Desktop. It should work with other MCP clients as well.
 
-| Tool Name              | Tool Group | Read/Write | Description                                              |
-| ---------------------- | ---------- | ---------- | -------------------------------------------------------- |
-| `get_proctor_metadata` | exams      | read       | Get available runtimes and exams for Proctor testing.    |
-| `save_result`          | exams      | write      | Save exam results to the database for future comparison. |
-| `get_machines`         | machines   | read       | List active Fly.io machines used for Proctor exams.      |
-| `destroy_machine`      | machines   | write      | Delete a Fly.io machine.                                 |
-| `cancel_exam`          | machines   | write      | Cancel a running Proctor exam.                           |
+| Tool Name              | Tool Group | Read/Write | Description                                           |
+| ---------------------- | ---------- | ---------- | ----------------------------------------------------- |
+| `get_proctor_metadata` | exams      | read       | Get available runtimes and exams for Proctor testing. |
+| `run_exam`             | exams      | write      | Execute a Proctor exam against an MCP server.         |
+| `get_machines`         | machines   | read       | List active Fly.io machines used for Proctor exams.   |
+| `destroy_machine`      | machines   | write      | Delete a Fly.io machine.                              |
+| `cancel_exam`          | machines   | write      | Cancel a running Proctor exam.                        |
 
 # Tool Groups
 
@@ -64,7 +64,7 @@ This server organizes tools into groups that can be selectively enabled or disab
 
 - **exams** / **exams_readonly**:
   - Read-only: `get_proctor_metadata`
-  - Write: `save_result`
+  - Write: `run_exam`
 - **machines** / **machines_readonly**:
   - Read-only: `get_machines`
   - Write: `destroy_machine`, `cancel_exam`
@@ -113,7 +113,7 @@ TOOL_GROUPS=exams,machines_readonly
 # Usage Tips
 
 - Use `get_proctor_metadata` to discover available runtimes and exam types
-- Save results with `save_result` to persist exam outcomes
+- Run exams with `run_exam` to test MCP servers with streaming progress logs
 - Use `get_machines` to monitor active exam infrastructure
 - Clean up machines with `destroy_machine` when no longer needed
 - Use `cancel_exam` to stop a stuck or slow exam before destroying the machine

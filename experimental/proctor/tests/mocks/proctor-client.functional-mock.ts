@@ -2,10 +2,17 @@ import { vi } from 'vitest';
 import type {
   IProctorClient,
   ProctorMetadataResponse,
-  SaveResultResponse,
+  ExamStreamEntry,
   MachinesResponse,
   CancelExamResponse,
 } from '../../shared/build/index.js';
+
+// Helper to create an async generator from an array
+async function* arrayToAsyncGenerator<T>(arr: T[]): AsyncGenerator<T, void, unknown> {
+  for (const item of arr) {
+    yield item;
+  }
+}
 
 /**
  * Functional mock implementation of IProctorClient for unit testing
@@ -13,7 +20,7 @@ import type {
  */
 export interface FunctionalMockProctorClient extends IProctorClient {
   getMetadata: ReturnType<typeof vi.fn>;
-  saveResult: ReturnType<typeof vi.fn>;
+  runExam: ReturnType<typeof vi.fn>;
   getMachines: ReturnType<typeof vi.fn>;
   destroyMachine: ReturnType<typeof vi.fn>;
   cancelExam: ReturnType<typeof vi.fn>;
@@ -51,10 +58,11 @@ export function createFunctionalMockProctorClient(): FunctionalMockProctorClient
     ],
   };
 
-  const defaultSaveResult: SaveResultResponse = {
-    success: true,
-    id: 1,
-  };
+  const defaultExamResults: ExamStreamEntry[] = [
+    { type: 'log', data: { time: '2024-01-15T10:30:00Z', message: 'Starting exam...' } },
+    { type: 'log', data: { time: '2024-01-15T10:30:01Z', message: 'Running tests...' } },
+    { type: 'result', data: { status: 'passed', tests: [{ name: 'test1', passed: true }] } },
+  ];
 
   const defaultCancelResult: CancelExamResponse = {
     success: true,
@@ -63,7 +71,7 @@ export function createFunctionalMockProctorClient(): FunctionalMockProctorClient
 
   return {
     getMetadata: vi.fn().mockResolvedValue(defaultMetadata),
-    saveResult: vi.fn().mockResolvedValue(defaultSaveResult),
+    runExam: vi.fn().mockImplementation(() => arrayToAsyncGenerator(defaultExamResults)),
     getMachines: vi.fn().mockResolvedValue(defaultMachines),
     destroyMachine: vi.fn().mockResolvedValue({ success: true }),
     cancelExam: vi.fn().mockResolvedValue(defaultCancelResult),
