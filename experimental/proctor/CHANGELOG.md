@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.3] - 2026-01-19
+
+### Added
+
+- Comprehensive documentation for `run_exam` tool parameters:
+  - Simple examples for mcp_json (HTTP and stdio server configs)
+  - Simple example for server_json format
+  - Standard fields documentation with format hints (headers, env, args)
+  - Advanced/internal underscore-prefixed fields with full contextual example:
+    - `_proctor_files`: Files to create in working directory before exam execution
+    - `_proctor_pre_registered_client`: Pre-registered OAuth client credentials for non-DCR providers
+
 ## [0.1.2] - 2026-01-19
 
 ### Added
