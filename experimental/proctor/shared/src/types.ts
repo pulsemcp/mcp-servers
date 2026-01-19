@@ -83,6 +83,7 @@ export interface RunExamParams {
    * When true, OAuth credentials obtained via web bridge are not persisted in the database.
    * Instead, the user receives a one-time copy-to-clipboard page with their credentials.
    * This is useful for the MCP server since it manages its own credential storage.
+   * @internal Hardcoded to true in the API client - not exposed as a tool parameter
    */
   no_result_persistence?: boolean;
 }
