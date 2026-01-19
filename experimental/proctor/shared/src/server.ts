@@ -2,12 +2,8 @@ import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { createRegisterTools } from './tools.js';
 import type {
   ProctorMetadataResponse,
-  RunExamParams,
-  ExamStreamEntry,
   SaveResultParams,
   SaveResultResponse,
-  PriorResultParams,
-  PriorResultResponse,
   MachinesResponse,
   CancelExamParams,
   CancelExamResponse,
@@ -17,11 +13,7 @@ import type {
 export interface IProctorClient {
   getMetadata(): Promise<ProctorMetadataResponse>;
 
-  runExam(params: RunExamParams): AsyncGenerator<ExamStreamEntry, void, unknown>;
-
   saveResult(params: SaveResultParams): Promise<SaveResultResponse>;
-
-  getPriorResult(params: PriorResultParams): Promise<PriorResultResponse>;
 
   getMachines(): Promise<MachinesResponse>;
 
@@ -46,19 +38,9 @@ export class ProctorClient implements IProctorClient {
     return getMetadata(this.apiKey, this.baseUrl);
   }
 
-  async *runExam(params: RunExamParams): AsyncGenerator<ExamStreamEntry, void, unknown> {
-    const { runExam } = await import('./proctor-client/lib/run-exam.js');
-    yield* runExam(this.apiKey, this.baseUrl, params);
-  }
-
   async saveResult(params: SaveResultParams): Promise<SaveResultResponse> {
     const { saveResult } = await import('./proctor-client/lib/save-result.js');
     return saveResult(this.apiKey, this.baseUrl, params);
-  }
-
-  async getPriorResult(params: PriorResultParams): Promise<PriorResultResponse> {
-    const { getPriorResult } = await import('./proctor-client/lib/get-prior-result.js');
-    return getPriorResult(this.apiKey, this.baseUrl, params);
   }
 
   async getMachines(): Promise<MachinesResponse> {

@@ -6,9 +6,7 @@ import type { ClientFactory } from '../server.js';
 const PARAM_DESCRIPTIONS = {
   runtime_id: 'Runtime ID used for the exam, or "__custom__" if a custom Docker image was used.',
   exam_id: 'Exam ID that was executed.',
-  mcp_server_slug: 'Slug of the MCP server that was tested.',
-  mirror_id: 'ID of the unofficial mirror associated with this test.',
-  results: 'Exam results as a JSON string or object. This is the full result from run_exam.',
+  results: 'Exam results as a JSON string or object.',
   custom_runtime_image:
     'Required if runtime_id is "__custom__". The Docker image URL that was used.',
 } as const;
@@ -16,8 +14,6 @@ const PARAM_DESCRIPTIONS = {
 const SaveResultSchema = z.object({
   runtime_id: z.string().min(1).describe(PARAM_DESCRIPTIONS.runtime_id),
   exam_id: z.string().min(1).describe(PARAM_DESCRIPTIONS.exam_id),
-  mcp_server_slug: z.string().min(1).describe(PARAM_DESCRIPTIONS.mcp_server_slug),
-  mirror_id: z.number().describe(PARAM_DESCRIPTIONS.mirror_id),
   results: z.union([z.string(), z.record(z.unknown())]).describe(PARAM_DESCRIPTIONS.results),
   custom_runtime_image: z.string().optional().describe(PARAM_DESCRIPTIONS.custom_runtime_image),
 });
@@ -38,11 +34,8 @@ comparison with new test runs.
 - Persist exam results after running tests
 - Create a baseline for future comparisons
 - Track test history for an MCP server
-- Enable regression testing by comparing against prior results
 
 **Note:**
-- The mirror_id must be a valid unofficial mirror ID
-- Results should be the full output from run_exam
 - Custom runtime images require the custom_runtime_image parameter`,
     inputSchema: {
       type: 'object',
@@ -55,14 +48,6 @@ comparison with new test runs.
           type: 'string',
           description: PARAM_DESCRIPTIONS.exam_id,
         },
-        mcp_server_slug: {
-          type: 'string',
-          description: PARAM_DESCRIPTIONS.mcp_server_slug,
-        },
-        mirror_id: {
-          type: 'number',
-          description: PARAM_DESCRIPTIONS.mirror_id,
-        },
         results: {
           oneOf: [{ type: 'string' }, { type: 'object' }],
           description: PARAM_DESCRIPTIONS.results,
@@ -72,7 +57,7 @@ comparison with new test runs.
           description: PARAM_DESCRIPTIONS.custom_runtime_image,
         },
       },
-      required: ['runtime_id', 'exam_id', 'mcp_server_slug', 'mirror_id', 'results'],
+      required: ['runtime_id', 'exam_id', 'results'],
     },
     handler: async (args: unknown) => {
       const validatedArgs = SaveResultSchema.parse(args);
@@ -96,8 +81,6 @@ comparison with new test runs.
         const response = await client.saveResult({
           runtime_id: validatedArgs.runtime_id,
           exam_id: validatedArgs.exam_id,
-          mcp_server_slug: validatedArgs.mcp_server_slug,
-          mirror_id: validatedArgs.mirror_id,
           results: validatedArgs.results,
           custom_runtime_image: validatedArgs.custom_runtime_image,
         });
@@ -105,8 +88,7 @@ comparison with new test runs.
         let content = '## Result Saved\n\n';
         content += `**Success:** ${response.success}\n`;
         content += `**Result ID:** ${response.id}\n\n`;
-        content +=
-          'The exam result has been saved and can be retrieved for comparison using get_prior_result.';
+        content += 'The exam result has been saved.';
 
         return {
           content: [

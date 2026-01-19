@@ -6,20 +6,16 @@ export function getMetadata(_server: Server, clientFactory: ClientFactory) {
     name: 'get_proctor_metadata',
     description: `Get available runtimes and exams for Proctor testing.
 
-Returns the list of available runtime environments (Docker images) and exam types
-that can be used with the run_exam tool.
+Returns the list of available runtime environments (Docker images) and exam types.
 
 **Returns:**
 - runtimes: Array of runtime configurations with id, name, and Docker image
 - exams: Array of exam types with id, name, and description
 
 **Use cases:**
-- Discover available runtime environments before running an exam
+- Discover available runtime environments
 - Find the correct exam ID for a specific test type
-- Check which runtime versions are available
-- Plan which exam to run against an MCP server
-
-**Note:** Use the runtime_id and exam_id values from this response when calling run_exam.`,
+- Check which runtime versions are available`,
     inputSchema: {
       type: 'object',
       properties: {},

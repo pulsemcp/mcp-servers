@@ -8,12 +8,8 @@ import { createMCPServer, logServerStart, logError } from '../shared/index.js';
 import type {
   IProctorClient,
   ProctorMetadataResponse,
-  RunExamParams,
-  ExamStreamEntry,
   SaveResultParams,
   SaveResultResponse,
-  PriorResultParams,
-  PriorResultResponse,
   MachinesResponse,
   CancelExamParams,
   CancelExamResponse,
@@ -23,7 +19,6 @@ import type {
  * Integration mock implementation of IProctorClient
  */
 class IntegrationMockProctorClient implements IProctorClient {
-  private priorResults: Map<string, PriorResultResponse> = new Map();
   private savedResultId = 0;
 
   async getMetadata(): Promise<ProctorMetadataResponse> {
@@ -55,68 +50,12 @@ class IntegrationMockProctorClient implements IProctorClient {
     };
   }
 
-  async *runExam(params: RunExamParams): AsyncGenerator<ExamStreamEntry, void, unknown> {
-    yield {
-      type: 'log',
-      data: { time: new Date().toISOString(), message: 'Starting exam...' },
-    };
-
-    yield {
-      type: 'log',
-      data: { time: new Date().toISOString(), message: `Using runtime: ${params.runtime_id}` },
-    };
-
-    yield {
-      type: 'log',
-      data: { time: new Date().toISOString(), message: `Running exam: ${params.exam_id}` },
-    };
-
-    yield {
-      type: 'log',
-      data: { time: new Date().toISOString(), message: 'Exam completed successfully' },
-    };
-
-    yield {
-      type: 'result',
-      data: {
-        status: 'success',
-        input: {
-          'mcp.json': JSON.parse(params.mcp_config),
-        },
-        tests: [
-          { name: 'initialization', passed: true },
-          { name: 'tool_listing', passed: true },
-        ],
-      },
-    };
-  }
-
-  async saveResult(params: SaveResultParams): Promise<SaveResultResponse> {
+  async saveResult(_params: SaveResultParams): Promise<SaveResultResponse> {
     this.savedResultId++;
     const result: SaveResultResponse = {
       success: true,
       id: this.savedResultId,
     };
-
-    const key = `${params.mirror_id}-${params.exam_id}`;
-    this.priorResults.set(key, {
-      id: this.savedResultId,
-      datetime_performed: new Date().toISOString(),
-      results: typeof params.results === 'string' ? JSON.parse(params.results) : params.results,
-      runtime_image: params.runtime_id,
-      match_type: 'exact',
-    });
-
-    return result;
-  }
-
-  async getPriorResult(params: PriorResultParams): Promise<PriorResultResponse> {
-    const key = `${params.mirror_id}-${params.exam_id}`;
-    const result = this.priorResults.get(key);
-
-    if (!result) {
-      throw new Error('No prior result found');
-    }
 
     return result;
   }

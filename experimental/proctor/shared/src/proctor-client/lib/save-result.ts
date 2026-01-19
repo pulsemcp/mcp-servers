@@ -13,8 +13,6 @@ export async function saveResult(
   const body: Record<string, unknown> = {
     runtime_id: params.runtime_id,
     exam_id: params.exam_id,
-    mcp_server_slug: params.mcp_server_slug,
-    mirror_id: params.mirror_id,
     results: typeof params.results === 'string' ? params.results : JSON.stringify(params.results),
   };
 
@@ -38,9 +36,6 @@ export async function saveResult(
     }
     if (response.status === 403) {
       throw new Error('User lacks admin privileges or insufficient permissions');
-    }
-    if (response.status === 404) {
-      throw new Error('Mirror not found');
     }
     if (response.status === 422) {
       const errorData = (await response.json()) as { error?: string };

@@ -28,9 +28,7 @@ describe('Proctor MCP Server Integration Tests', () => {
       // Check for expected tool names
       const toolNames = tools.map((t) => t.name);
       expect(toolNames).toContain('get_proctor_metadata');
-      expect(toolNames).toContain('run_exam');
       expect(toolNames).toContain('save_result');
-      expect(toolNames).toContain('get_prior_result');
       expect(toolNames).toContain('get_machines');
       expect(toolNames).toContain('destroy_machine');
       expect(toolNames).toContain('cancel_exam');
@@ -62,60 +60,6 @@ describe('Proctor MCP Server Integration Tests', () => {
       expect(text).toContain('Available Exams');
       expect(text).toContain('v0.0.37');
       expect(text).toContain('proctor-mcp-client-auth-check');
-    });
-  });
-
-  describe('run_exam', () => {
-    it('should execute an exam and return results', async () => {
-      client = await createTestMCPClient();
-      const mcpConfig = JSON.stringify({
-        'test-server': {
-          type: 'streamable-http',
-          url: 'https://example.com/mcp',
-        },
-      });
-
-      const result = await client.callTool('run_exam', {
-        runtime_id: 'v0.0.37',
-        exam_id: 'proctor-mcp-client-init-tools-list',
-        mcp_config: mcpConfig,
-      });
-
-      expect(result.content).toBeInstanceOf(Array);
-      expect(result.content.length).toBe(1);
-      expect(result.content[0].type).toBe('text');
-
-      const text = result.content[0].text as string;
-      expect(text).toContain('Exam Execution');
-      expect(text).toContain('Runtime');
-      expect(text).toContain('v0.0.37');
-      expect(text).toContain('Result');
-    });
-
-    it('should reject invalid mcp_config JSON', async () => {
-      client = await createTestMCPClient();
-      const result = await client.callTool('run_exam', {
-        runtime_id: 'v0.0.37',
-        exam_id: 'proctor-mcp-client-init-tools-list',
-        mcp_config: 'not valid json',
-      });
-
-      expect(result.isError).toBe(true);
-      expect(result.content[0].text).toContain('mcp_config must be a valid JSON string');
-    });
-
-    it('should require custom_runtime_image for __custom__ runtime', async () => {
-      client = await createTestMCPClient();
-      const mcpConfig = JSON.stringify({ 'test-server': { type: 'streamable-http' } });
-
-      const result = await client.callTool('run_exam', {
-        runtime_id: '__custom__',
-        exam_id: 'proctor-mcp-client-init-tools-list',
-        mcp_config: mcpConfig,
-      });
-
-      expect(result.isError).toBe(true);
-      expect(result.content[0].text).toContain('custom_runtime_image is required');
     });
   });
 
@@ -177,8 +121,6 @@ describe('Proctor MCP Server Integration Tests', () => {
       const result = await client.callTool('save_result', {
         runtime_id: 'v0.0.37',
         exam_id: 'proctor-mcp-client-init-tools-list',
-        mcp_server_slug: 'test-server',
-        mirror_id: 123,
         results: results,
       });
 
@@ -188,22 +130,6 @@ describe('Proctor MCP Server Integration Tests', () => {
       const text = result.content[0].text as string;
       expect(text).toContain('Result Saved');
       expect(text).toContain('Success');
-    });
-  });
-
-  describe('get_prior_result', () => {
-    it('should return no result when none exists', async () => {
-      client = await createTestMCPClient();
-      const result = await client.callTool('get_prior_result', {
-        mirror_id: 999,
-        exam_id: 'nonexistent-exam',
-      });
-
-      expect(result.content).toBeInstanceOf(Array);
-      expect(result.content[0].type).toBe('text');
-
-      const text = result.content[0].text as string;
-      expect(text).toContain('No prior result found');
     });
   });
 });
