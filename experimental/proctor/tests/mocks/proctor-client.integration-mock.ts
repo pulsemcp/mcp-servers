@@ -1,8 +1,8 @@
 import type {
   IProctorClient,
   ProctorMetadataResponse,
-  SaveResultParams,
-  SaveResultResponse,
+  RunExamParams,
+  ExamStreamEntry,
   MachinesResponse,
   CancelExamParams,
   CancelExamResponse,
@@ -14,10 +14,10 @@ import type {
 export interface MockData {
   metadata: ProctorMetadataResponse;
   machines: MachinesResponse;
-  savedResults: SaveResultResponse[];
+  examResults: ExamStreamEntry[];
   errors?: {
     getMetadata?: Error;
-    saveResult?: Error;
+    runExam?: Error;
     getMachines?: Error;
     destroyMachine?: Error;
     cancelExam?: Error;
@@ -73,7 +73,24 @@ export function createDefaultMockData(): MockData {
         },
       ],
     },
-    savedResults: [],
+    examResults: [
+      { type: 'log', data: { time: '2024-01-15T10:30:00Z', message: 'Starting exam...' } },
+      {
+        type: 'log',
+        data: { time: '2024-01-15T10:30:01Z', message: 'Initializing MCP client...' },
+      },
+      { type: 'log', data: { time: '2024-01-15T10:30:02Z', message: 'Running tests...' } },
+      {
+        type: 'result',
+        data: {
+          status: 'passed',
+          tests: [
+            { name: 'initialization', passed: true },
+            { name: 'tools_list', passed: true },
+          ],
+        },
+      },
+    ],
   };
 }
 
@@ -90,19 +107,14 @@ export class IntegrationMockProctorClient implements IProctorClient {
     return this.mockData.metadata;
   }
 
-  async saveResult(_params: SaveResultParams): Promise<SaveResultResponse> {
-    if (this.mockData.errors?.saveResult) {
-      throw this.mockData.errors.saveResult;
+  async *runExam(_params: RunExamParams): AsyncGenerator<ExamStreamEntry, void, unknown> {
+    if (this.mockData.errors?.runExam) {
+      throw this.mockData.errors.runExam;
     }
 
-    const result: SaveResultResponse = {
-      success: true,
-      id: this.mockData.savedResults.length + 1,
-    };
-
-    this.mockData.savedResults.push(result);
-
-    return result;
+    for (const entry of this.mockData.examResults) {
+      yield entry;
+    }
   }
 
   async getMachines(): Promise<MachinesResponse> {

@@ -2,7 +2,7 @@ import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { ListToolsRequestSchema, CallToolRequestSchema } from '@modelcontextprotocol/sdk/types.js';
 import { ClientFactory } from './server.js';
 import { getMetadata } from './tools/get-metadata.js';
-import { saveResult } from './tools/save-result.js';
+import { runExam } from './tools/run-exam.js';
 import { getMachines } from './tools/get-machines.js';
 import { destroyMachine } from './tools/destroy-machine.js';
 import { cancelExam } from './tools/cancel-exam.js';
@@ -46,7 +46,7 @@ interface ToolDefinition {
 const ALL_TOOLS: ToolDefinition[] = [
   // Exam tools
   { factory: getMetadata, group: 'exams', isWriteOperation: false },
-  { factory: saveResult, group: 'exams', isWriteOperation: true },
+  { factory: runExam, group: 'exams', isWriteOperation: true },
   // Machine management tools
   { factory: getMachines, group: 'machines', isWriteOperation: false },
   { factory: destroyMachine, group: 'machines', isWriteOperation: true },
