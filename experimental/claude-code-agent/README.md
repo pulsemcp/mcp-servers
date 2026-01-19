@@ -77,16 +77,26 @@ This approach scales to hundreds of trusted servers without any tool overload, a
 
 ### Claude Desktop
 
-#### Using NPM (when published)
+Make sure you have your servers.md and servers.json configuration files ready.
 
-Add this to your `claude_desktop_config.json`:
+Then proceed to the setup instructions below. If this is your first time using MCP Servers, you'll want to make sure you have the [Claude Desktop application](https://claude.ai/download) and follow the [official MCP setup instructions](https://modelcontextprotocol.io/quickstart/user).
+
+#### Manual Setup
+
+You're going to need Node working on your machine so you can run `npx` commands in your terminal. If you don't have Node, you can install it from [nodejs.org](https://nodejs.org/en/download).
+
+macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
+
+Windows: `%APPDATA%\Claude\claude_desktop_config.json`
+
+Modify your `claude_desktop_config.json` file to add the following:
 
 ```json
 {
   "mcpServers": {
     "claude-code-agent": {
       "command": "npx",
-      "args": ["claude-code-agent-mcp-server"],
+      "args": ["-y", "claude-code-agent-mcp-server"],
       "env": {
         "TRUSTED_SERVERS_PATH": "/path/to/your/servers.md",
         "SERVER_CONFIGS_PATH": "/path/to/your/servers.json"
@@ -96,24 +106,7 @@ Add this to your `claude_desktop_config.json`:
 }
 ```
 
-#### Using Local Build
-
-For development or before the package is published:
-
-```json
-{
-  "mcpServers": {
-    "claude-code-agent": {
-      "command": "node",
-      "args": ["/path/to/claude-code-agent/local/build/index.js"],
-      "env": {
-        "TRUSTED_SERVERS_PATH": "/path/to/your/servers.md",
-        "SERVER_CONFIGS_PATH": "/path/to/your/servers.json"
-      }
-    }
-  }
-}
-```
+Restart Claude Desktop and you should be ready to go!
 
 ## Development
 
