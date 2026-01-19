@@ -84,24 +84,16 @@ This server organizes tools into groups that can be selectively enabled or disab
 
 ## Available Groups
 
-| Group                         | Tools | Description                                  |
-| ----------------------------- | ----- | -------------------------------------------- |
-| `newsletter`                  | 6     | Full newsletter management (read + write)    |
-| `newsletter_readonly`         | 3     | Newsletter read-only (get posts, authors)    |
-| `server_queue`                | 5     | Full MCP implementation queue (read + write) |
-| `server_queue_readonly`       | 3     | MCP implementation queue read-only           |
-| `official_queue`              | 7     | Full official mirror queue (read + write)    |
-| `official_queue_readonly`     | 2     | Official mirror queue read-only              |
-| `unofficial_mirrors`          | 5     | Full unofficial mirrors CRUD (read + write)  |
-| `unofficial_mirrors_readonly` | 2     | Unofficial mirrors read-only                 |
-| `official_mirrors`            | 2     | Official mirrors REST API (read-only)        |
-| `official_mirrors_readonly`   | 2     | Official mirrors read-only (alias)           |
-| `tenants`                     | 2     | Tenants REST API (read-only)                 |
-| `tenants_readonly`            | 2     | Tenants read-only (alias)                    |
-| `mcp_jsons`                   | 5     | Full MCP JSON configurations (read + write)  |
-| `mcp_jsons_readonly`          | 2     | MCP JSON configurations read-only            |
-| `mcp_servers`                 | 3     | Full MCP servers management (read + write)   |
-| `mcp_servers_readonly`        | 2     | MCP servers read-only (list, get)            |
+| Group               | Tools | Description                              |
+| ------------------- | ----- | ---------------------------------------- |
+| `newsletter`        | 6     | Full newsletter management (read + write) |
+| `server_queue`      | 5     | Full MCP implementation queue (read + write) |
+| `official_queue`    | 7     | Full official mirror queue (read + write) |
+| `unofficial_mirrors`| 5     | Full unofficial mirrors CRUD (read + write) |
+| `official_mirrors`  | 2     | Official mirrors REST API (read-only)    |
+| `tenants`           | 2     | Tenants REST API (read-only)             |
+| `mcp_jsons`         | 5     | Full MCP JSON configurations (read + write) |
+| `mcp_servers`       | 3     | Full MCP servers management (read + write) |
 
 ### Tools by Group
 

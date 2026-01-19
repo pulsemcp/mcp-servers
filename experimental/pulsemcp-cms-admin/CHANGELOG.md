@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Changed
+
+- Simplified README "Available Groups" table to show only base tool groups instead of listing both base and `_readonly` variants separately
+  - The `_readonly` variants are still supported but are now explained conceptually rather than listed as separate rows
+  - This matches the formatting style used in the proctor MCP server README
+
 ## [0.6.2] - 2026-01-19
 
 ### Added
