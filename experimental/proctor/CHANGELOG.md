@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Removed
+
+- `run_exam` tool - exam execution is now handled externally
+- `get_prior_result` tool - prior result retrieval is now handled externally
+- `mcp_server_slug` and `mirror_id` parameters from `save_result` tool - decoupled from internal identifiers
+
 ## [0.1.0] - 2025-01-18
 
 ### Added

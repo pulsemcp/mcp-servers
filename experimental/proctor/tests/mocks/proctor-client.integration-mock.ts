@@ -1,12 +1,8 @@
 import type {
   IProctorClient,
   ProctorMetadataResponse,
-  RunExamParams,
-  ExamStreamEntry,
   SaveResultParams,
   SaveResultResponse,
-  PriorResultParams,
-  PriorResultResponse,
   MachinesResponse,
   CancelExamParams,
   CancelExamResponse,
@@ -18,13 +14,10 @@ import type {
 export interface MockData {
   metadata: ProctorMetadataResponse;
   machines: MachinesResponse;
-  priorResults: Map<string, PriorResultResponse>;
   savedResults: SaveResultResponse[];
   errors?: {
     getMetadata?: Error;
-    runExam?: Error;
     saveResult?: Error;
-    getPriorResult?: Error;
     getMachines?: Error;
     destroyMachine?: Error;
     cancelExam?: Error;
@@ -80,7 +73,6 @@ export function createDefaultMockData(): MockData {
         },
       ],
     },
-    priorResults: new Map(),
     savedResults: [],
   };
 }
@@ -98,54 +90,7 @@ export class IntegrationMockProctorClient implements IProctorClient {
     return this.mockData.metadata;
   }
 
-  async *runExam(params: RunExamParams): AsyncGenerator<ExamStreamEntry, void, unknown> {
-    if (this.mockData.errors?.runExam) {
-      throw this.mockData.errors.runExam;
-    }
-
-    // Simulate streaming logs
-    yield {
-      type: 'log',
-      data: { time: new Date().toISOString(), message: 'Starting exam...' },
-    };
-
-    yield {
-      type: 'log',
-      data: { time: new Date().toISOString(), message: `Using runtime: ${params.runtime_id}` },
-    };
-
-    yield {
-      type: 'log',
-      data: { time: new Date().toISOString(), message: `Running exam: ${params.exam_id}` },
-    };
-
-    yield {
-      type: 'log',
-      data: { time: new Date().toISOString(), message: 'Connecting to MCP server...' },
-    };
-
-    yield {
-      type: 'log',
-      data: { time: new Date().toISOString(), message: 'Exam completed successfully' },
-    };
-
-    // Yield final result
-    yield {
-      type: 'result',
-      data: {
-        status: 'success',
-        input: {
-          'mcp.json': JSON.parse(params.mcp_config),
-        },
-        tests: [
-          { name: 'initialization', passed: true },
-          { name: 'tool_listing', passed: true },
-        ],
-      },
-    };
-  }
-
-  async saveResult(params: SaveResultParams): Promise<SaveResultResponse> {
+  async saveResult(_params: SaveResultParams): Promise<SaveResultResponse> {
     if (this.mockData.errors?.saveResult) {
       throw this.mockData.errors.saveResult;
     }
@@ -156,31 +101,6 @@ export class IntegrationMockProctorClient implements IProctorClient {
     };
 
     this.mockData.savedResults.push(result);
-
-    // Store for prior result lookup
-    const key = `${params.mirror_id}-${params.exam_id}`;
-    this.mockData.priorResults.set(key, {
-      id: result.id,
-      datetime_performed: new Date().toISOString(),
-      results: typeof params.results === 'string' ? JSON.parse(params.results) : params.results,
-      runtime_image: params.runtime_id,
-      match_type: 'exact',
-    });
-
-    return result;
-  }
-
-  async getPriorResult(params: PriorResultParams): Promise<PriorResultResponse> {
-    if (this.mockData.errors?.getPriorResult) {
-      throw this.mockData.errors.getPriorResult;
-    }
-
-    const key = `${params.mirror_id}-${params.exam_id}`;
-    const result = this.mockData.priorResults.get(key);
-
-    if (!result) {
-      throw new Error('No prior result found');
-    }
 
     return result;
   }
@@ -227,6 +147,5 @@ export function createIntegrationMockProctorClient(
   return new IntegrationMockProctorClient({
     ...defaultData,
     ...mockData,
-    priorResults: mockData?.priorResults || defaultData.priorResults,
   });
 }
