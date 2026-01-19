@@ -719,6 +719,7 @@ describe('Newsletter Tools', () => {
         'official_mirrors',
         'tenants',
         'mcp_jsons',
+        'mcp_servers',
       ]);
     });
 
@@ -732,6 +733,7 @@ describe('Newsletter Tools', () => {
         'official_mirrors',
         'tenants',
         'mcp_jsons',
+        'mcp_servers',
       ]);
     });
 
@@ -878,8 +880,8 @@ describe('Newsletter Tools', () => {
       const listToolsHandler = handlers.get('tools/list');
       const result = await listToolsHandler({ method: 'tools/list', params: {} });
 
-      // 6 newsletter + 5 server_queue + 7 official_queue + 5 unofficial_mirrors + 2 official_mirrors + 2 tenants + 5 mcp_jsons = 32 tools
-      expect(result.tools).toHaveLength(32);
+      // 6 newsletter + 5 server_queue + 7 official_queue + 5 unofficial_mirrors + 2 official_mirrors + 2 tenants + 5 mcp_jsons + 3 mcp_servers = 35 tools
+      expect(result.tools).toHaveLength(35);
     });
 
     it('should register only read-only newsletter tools when newsletter_readonly group is enabled', async () => {

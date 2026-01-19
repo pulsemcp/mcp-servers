@@ -32,6 +32,10 @@ import type {
   McpJsonsResponse,
   CreateMcpJsonParams,
   UpdateMcpJsonParams,
+  // Unified MCP Server types
+  UnifiedMCPServer,
+  UnifiedMCPServersResponse,
+  UpdateUnifiedMCPServerParams,
 } from './types.js';
 
 // PulseMCP Admin API client interface
@@ -195,6 +199,22 @@ export interface IPulseMCPAdminClient {
   updateMcpJson(id: number, params: UpdateMcpJsonParams): Promise<McpJson>;
 
   deleteMcpJson(id: number): Promise<{ success: boolean; message: string }>;
+
+  // Unified MCP Server methods (abstracted interface)
+  getUnifiedMCPServers(params?: {
+    q?: string;
+    status?: 'draft' | 'live' | 'archived' | 'all';
+    classification?: 'official' | 'community' | 'reference';
+    limit?: number;
+    offset?: number;
+  }): Promise<UnifiedMCPServersResponse>;
+
+  getUnifiedMCPServer(slug: string): Promise<UnifiedMCPServer>;
+
+  updateUnifiedMCPServer(
+    implementationId: number,
+    params: UpdateUnifiedMCPServerParams
+  ): Promise<UnifiedMCPServer>;
 }
 
 // PulseMCP Admin API client implementation
@@ -534,6 +554,37 @@ export class PulseMCPAdminClient implements IPulseMCPAdminClient {
   async deleteMcpJson(id: number): Promise<{ success: boolean; message: string }> {
     const { deleteMcpJson } = await import('./pulsemcp-admin-client/lib/delete-mcp-json.js');
     return deleteMcpJson(this.apiKey, this.baseUrl, id);
+  }
+
+  // Unified MCP Server methods (abstracted interface)
+  async getUnifiedMCPServers(params?: {
+    q?: string;
+    status?: 'draft' | 'live' | 'archived' | 'all';
+    classification?: 'official' | 'community' | 'reference';
+    limit?: number;
+    offset?: number;
+  }): Promise<UnifiedMCPServersResponse> {
+    const { getUnifiedMCPServers } = await import(
+      './pulsemcp-admin-client/lib/get-unified-mcp-servers.js'
+    );
+    return getUnifiedMCPServers(this.apiKey, this.baseUrl, params);
+  }
+
+  async getUnifiedMCPServer(slug: string): Promise<UnifiedMCPServer> {
+    const { getUnifiedMCPServer } = await import(
+      './pulsemcp-admin-client/lib/get-unified-mcp-server.js'
+    );
+    return getUnifiedMCPServer(this.apiKey, this.baseUrl, slug);
+  }
+
+  async updateUnifiedMCPServer(
+    implementationId: number,
+    params: UpdateUnifiedMCPServerParams
+  ): Promise<UnifiedMCPServer> {
+    const { updateUnifiedMCPServer } = await import(
+      './pulsemcp-admin-client/lib/update-unified-mcp-server.js'
+    );
+    return updateUnifiedMCPServer(this.apiKey, this.baseUrl, implementationId, params);
   }
 }
 

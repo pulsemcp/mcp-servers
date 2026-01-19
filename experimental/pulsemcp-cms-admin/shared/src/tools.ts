@@ -37,6 +37,10 @@ import { getMcpJson } from './tools/get-mcp-json.js';
 import { createMcpJson } from './tools/create-mcp-json.js';
 import { updateMcpJson } from './tools/update-mcp-json.js';
 import { deleteMcpJson } from './tools/delete-mcp-json.js';
+// Unified MCP Server tools
+import { listMCPServers } from './tools/list-mcp-servers.js';
+import { getMCPServer } from './tools/get-mcp-server.js';
+import { updateMCPServer } from './tools/update-mcp-server.js';
 
 /**
  * Tool group definitions - groups of related tools that can be enabled/disabled together
@@ -53,6 +57,7 @@ import { deleteMcpJson } from './tools/delete-mcp-json.js';
  * - official_mirrors_readonly: Official mirrors read-only tools (REST API)
  * - tenants_readonly: Tenant read-only tools
  * - mcp_jsons / mcp_jsons_readonly: MCP JSON configuration tools
+ * - mcp_servers / mcp_servers_readonly: Unified MCP server tools (abstracted interface)
  */
 export type ToolGroup =
   | 'newsletter'
@@ -68,7 +73,9 @@ export type ToolGroup =
   | 'tenants'
   | 'tenants_readonly'
   | 'mcp_jsons'
-  | 'mcp_jsons_readonly';
+  | 'mcp_jsons_readonly'
+  | 'mcp_servers'
+  | 'mcp_servers_readonly';
 
 /** Base groups without _readonly suffix */
 type BaseToolGroup =
@@ -78,7 +85,8 @@ type BaseToolGroup =
   | 'unofficial_mirrors'
   | 'official_mirrors'
   | 'tenants'
-  | 'mcp_jsons';
+  | 'mcp_jsons'
+  | 'mcp_servers';
 
 interface Tool {
   name: string;
@@ -148,6 +156,10 @@ const ALL_TOOLS: ToolDefinition[] = [
   { factory: createMcpJson, group: 'mcp_jsons', isWriteOperation: true },
   { factory: updateMcpJson, group: 'mcp_jsons', isWriteOperation: true },
   { factory: deleteMcpJson, group: 'mcp_jsons', isWriteOperation: true },
+  // Unified MCP Server tools (abstracted interface)
+  { factory: listMCPServers, group: 'mcp_servers', isWriteOperation: false },
+  { factory: getMCPServer, group: 'mcp_servers', isWriteOperation: false },
+  { factory: updateMCPServer, group: 'mcp_servers', isWriteOperation: true },
 ];
 
 /**
@@ -168,6 +180,8 @@ const VALID_TOOL_GROUPS: ToolGroup[] = [
   'tenants_readonly',
   'mcp_jsons',
   'mcp_jsons_readonly',
+  'mcp_servers',
+  'mcp_servers_readonly',
 ];
 
 /**
@@ -181,6 +195,7 @@ const BASE_TOOL_GROUPS: BaseToolGroup[] = [
   'official_mirrors',
   'tenants',
   'mcp_jsons',
+  'mcp_servers',
 ];
 
 /**
@@ -260,6 +275,8 @@ function shouldIncludeTool(toolDef: ToolDefinition, enabledGroups: ToolGroup[]):
  * - tenants_readonly: Tenant tools (read only)
  * - mcp_jsons: MCP JSON configuration tools (read + write)
  * - mcp_jsons_readonly: MCP JSON tools (read only)
+ * - mcp_servers: Unified MCP server tools with abstracted interface (read + write)
+ * - mcp_servers_readonly: Unified MCP server tools (read only)
  *
  * @param clientFactory - Factory function that creates client instances
  * @param enabledGroups - Optional comma-separated list of enabled tool groups (overrides env var)

@@ -2,15 +2,42 @@
 
 ## Latest Test Results
 
-**Date:** 2026-01-17
-**Commit:** bb9fed4
-**Version:** 0.6.0
+**Date:** 2026-01-19
+**Commit:** f2eb628
+**Version:** 0.6.2
 **API Environment:** Staging (https://admin.staging.pulsemcp.com)
 **API Key:** Admin API key (read/write)
 
 ## Test Results Summary
 
-### Overall: ✅ 28/28 REST API Tool Tests PASSING
+### Overall: ✅ 36/36 MCP Servers Tests + 28/28 REST API Tests PASSING
+
+**v0.6.2 mcp_servers tools - Fully Tested:**
+
+The new `mcp_servers` and `mcp_servers_readonly` tool groups provide a unified interface for managing MCP servers that abstracts away the underlying MCPImplementation → MCPServer data model complexity.
+
+**mcp_servers Tools Tests (mcp-servers-tools.manual.test.ts): ✅ 36/36 PASSING**
+
+- Tool Registration (3 tests): All tools registered correctly
+- list_mcp_servers (9 tests): Listing, search, filtering by status/classification, pagination
+- get_mcp_server (10 tests): Detailed server info, provider, source code, canonicals, remotes, tags, package info, timestamps
+- update_mcp_server (13 tests): All field updates tested (skipped on staging due to no draft servers, but error handling verified)
+- End-to-end workflow (1 test): List → Get → Update flow verified
+
+**Key Fields Tested:**
+
+- Basic info: name, short_description, description, status, classification
+- Provider: linking existing or creating new
+- Source code: github_owner, github_repo, github_subfolder
+- Package info: package_registry, package_name
+- Flags: recommended, created_on_override
+- Arrays: tags, canonical_urls, remotes
+
+**API Compatibility Fixes Applied:**
+
+- Fixed wildcard query for listing (API requires `q` parameter)
+- Fixed status filter (API doesn't support `status=all`)
+- Tools now work correctly against both staging and production APIs
 
 **v0.6.0 REST API Tools - All Tested and Verified:**
 

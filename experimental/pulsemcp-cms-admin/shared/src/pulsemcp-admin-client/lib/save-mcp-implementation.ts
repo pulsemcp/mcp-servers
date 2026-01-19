@@ -84,6 +84,36 @@ export async function saveMCPImplementation(
     formData.append('mcp_implementation[github_subfolder]', params.github_subfolder);
   }
 
+  // Package registry fields
+  if (params.package_registry !== undefined) {
+    formData.append('mcp_implementation[package_registry]', params.package_registry);
+  }
+  if (params.package_name !== undefined) {
+    formData.append('mcp_implementation[package_name]', params.package_name);
+  }
+
+  // Flags
+  if (params.recommended !== undefined) {
+    formData.append('mcp_implementation[recommended]', params.recommended.toString());
+  }
+
+  // Date overrides
+  if (params.created_on_override !== undefined) {
+    formData.append('mcp_implementation[created_on_override]', params.created_on_override);
+  }
+
+  // Tags
+  if (params.tags !== undefined) {
+    if (params.tags.length > 0) {
+      params.tags.forEach((tagSlug, index) => {
+        formData.append(`mcp_implementation[tags][${index}]`, tagSlug);
+      });
+    } else {
+      // Empty array explicitly provided - send empty array marker to Rails
+      formData.append('mcp_implementation[tags]', '[]');
+    }
+  }
+
   // Internal notes
   if (params.internal_notes !== undefined) {
     formData.append('mcp_implementation[internal_notes]', params.internal_notes);

@@ -6,8 +6,28 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [0.6.2] - 2026-01-19
+
 ### Added
 
+- Added new `mcp_servers` / `mcp_servers_readonly` tool groups with unified interface for managing MCP servers:
+  - `list_mcp_servers`: List/search MCP servers with filtering by status, classification, and pagination
+  - `get_mcp_server`: Get detailed information about a specific MCP server by slug
+  - `update_mcp_server`: Update an MCP server's information including all admin UI fields:
+    - Basic info: name, short_description, description, status, classification, implementation_language, url
+    - Provider: provider_id, provider_name, provider_slug, provider_url
+    - Source code: github_owner, github_repo, github_subfolder
+    - Package registry: package_registry (npm, pypi, etc.), package_name
+    - Flags: recommended (mark as PulseMCP recommended)
+    - Date overrides: created_on_override (ISO date string)
+    - Tags: tags (array of tag slugs, replaces all)
+    - Canonical URLs: canonical_urls (replaces all)
+    - Remote endpoints: remotes (replaces all)
+    - Internal notes: internal_notes
+  - These tools provide an abstracted interface that hides the complexity of the underlying MCPImplementation → MCPServer data model
+  - Users can work directly with "MCP servers" without needing to understand the internal mcp_implementations relationship
+- Added new unified MCP server types: `UnifiedMCPServer`, `UnifiedMCPServersResponse`, `UpdateUnifiedMCPServerParams`, `SourceCodeLocation`, `CanonicalUrl`, `RemoteEndpoint`
+- Added 3 new API client methods: `getUnifiedMCPServers`, `getUnifiedMCPServer`, `updateUnifiedMCPServer`
 - Added documentation for REST API tools to README:
   - Documented all 13 new tools in the Capabilities table
   - Added 4 new tool groups to the Available Groups table
@@ -24,6 +44,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Fixed `VALID_TOOL_GROUPS` array missing `official_mirrors` and `tenants` entries
   - These groups were defined in `ToolGroup` type and `BASE_TOOL_GROUPS` but not in `VALID_TOOL_GROUPS`
   - This caused "Unknown tool group" warnings when users explicitly specified these groups
+- Fixed `list_mcp_servers` API compatibility: Added wildcard query (`q=*`) when no search query provided
+  - The PulseMCP API requires the `q` parameter; omitting it caused 422 errors
+- Fixed `get_mcp_server` API compatibility: Removed `status=all` parameter from implementation search
+  - The PulseMCP API only accepts `draft`, `live`, or `archived` status values; omitting the parameter returns all statuses
 
 ### Removed
 

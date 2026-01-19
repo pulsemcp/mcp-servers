@@ -223,6 +223,19 @@ export interface SaveMCPImplementationParams {
   github_repo?: string; // Repository name
   github_subfolder?: string; // Optional subfolder within repo (for monorepos)
 
+  // Package registry fields
+  package_registry?: string; // e.g., "npm", "pypi", "cargo"
+  package_name?: string; // e.g., "@modelcontextprotocol/server-filesystem"
+
+  // Flags
+  recommended?: boolean; // Mark this server as recommended by PulseMCP
+
+  // Date overrides
+  created_on_override?: string; // ISO date string to override the automatically derived created date
+
+  // Tags (for servers)
+  tags?: string[]; // Array of tag slugs to set on the server
+
   // Remote endpoints (for servers)
   remote?: RemoteEndpointParams[]; // Array of remote endpoint configurations
 
@@ -476,4 +489,173 @@ export interface UpdateMcpJsonParams {
   title?: string;
   value?: Record<string, unknown> | string;
   description?: string;
+}
+
+// ============================================================
+// MCP Servers Unified Interface Types
+// These types provide an abstracted view of MCP servers that hides
+// the complexity of the underlying MCPImplementation → MCPServer relationship
+// ============================================================
+
+/**
+ * Source code location for an MCP server (e.g., GitHub repository)
+ */
+export interface SourceCodeLocation {
+  github_owner?: string;
+  github_repo?: string;
+  github_subfolder?: string;
+  github_stars?: number | null;
+  github_created_date?: string;
+  github_last_updated?: string;
+  github_status?: string;
+}
+
+/**
+ * Canonical URL configuration for an MCP server.
+ * Alias for CanonicalUrlParams - both represent the same data structure.
+ */
+export type CanonicalUrl = CanonicalUrlParams;
+
+/**
+ * Remote endpoint configuration for an MCP server
+ */
+export interface RemoteEndpoint {
+  id?: number;
+  display_name?: string;
+  url_direct?: string;
+  url_setup?: string;
+  transport?: string;
+  host_platform?: string;
+  host_infrastructure?: string;
+  authentication_method?: string;
+  cost?: string;
+  status?: string;
+  internal_notes?: string;
+}
+
+/**
+ * Unified MCP server view that abstracts away MCPImplementation complexity.
+ * This represents an MCP server with all its associated data in a single interface.
+ */
+export interface UnifiedMCPServer {
+  // Core identification
+  id: number; // This is the MCPServer ID
+  slug: string;
+  implementation_id: number | null; // The underlying MCPImplementation ID (needed for updates), null if no implementation exists
+
+  // Basic info (from MCPImplementation)
+  name: string;
+  short_description?: string;
+  description?: string;
+  status: 'draft' | 'live' | 'archived';
+  classification?: 'official' | 'community' | 'reference';
+  implementation_language?: string;
+
+  // Marketing URL
+  url?: string;
+
+  // Provider info
+  provider?: {
+    id?: number | null;
+    name?: string;
+    slug?: string;
+    url?: string;
+  };
+
+  // Source code location
+  source_code?: SourceCodeLocation;
+
+  // Package registry info
+  package_registry?: string; // e.g., "npm", "pypi", "cargo"
+  package_name?: string; // e.g., "@modelcontextprotocol/server-filesystem"
+
+  // Flags
+  recommended?: boolean; // Whether this server is recommended by PulseMCP
+
+  // Canonical URLs
+  canonical_urls?: CanonicalUrl[];
+
+  // Remote endpoints
+  remotes?: RemoteEndpoint[];
+
+  // Tags
+  tags?: MCPServerTag[];
+
+  // Registry/download info
+  registry_package_id?: number | null;
+  registry_package_soft_verified?: boolean;
+  downloads_estimate_last_7_days?: number;
+  downloads_estimate_last_30_days?: number;
+  downloads_estimate_total?: number;
+
+  // Internal notes
+  internal_notes?: string;
+
+  // Timestamps
+  created_at?: string;
+  updated_at?: string;
+  created_on_override?: string; // User-specified creation date override
+}
+
+/**
+ * Response for listing unified MCP servers
+ */
+export interface UnifiedMCPServersResponse {
+  servers: UnifiedMCPServer[];
+  pagination?: {
+    current_page: number;
+    total_pages: number;
+    total_count: number;
+    has_next?: boolean;
+    limit?: number;
+  };
+}
+
+/**
+ * Parameters for updating a unified MCP server
+ */
+export interface UpdateUnifiedMCPServerParams {
+  // Basic info
+  name?: string;
+  short_description?: string;
+  description?: string;
+  status?: 'draft' | 'live' | 'archived';
+  classification?: 'official' | 'community' | 'reference';
+  implementation_language?: string;
+  url?: string;
+
+  // Provider (can link existing by ID or create new)
+  provider_id?: number | string; // number to link existing, "new" to create
+  provider_name?: string; // Name for new provider
+  provider_slug?: string;
+  provider_url?: string;
+
+  // Source code location
+  source_code?: {
+    github_owner?: string;
+    github_repo?: string;
+    github_subfolder?: string;
+  };
+
+  // Package registry info
+  package_registry?: string; // e.g., "npm", "pypi", "cargo"
+  package_name?: string; // e.g., "@modelcontextprotocol/server-filesystem"
+
+  // Flags
+  recommended?: boolean; // Mark this server as recommended by PulseMCP
+
+  // Date overrides
+  created_on_override?: string; // ISO date string to override the automatically derived created date
+
+  // Tags (replaces all if provided)
+  tags?: string[]; // Array of tag slugs
+
+  // Canonical URLs (replaces all if provided)
+  canonical_urls?: CanonicalUrl[];
+
+  // Remote endpoints (replaces all if provided)
+  remotes?: RemoteEndpoint[];
+
+  // Internal notes
+  internal_notes?: string;
 }
