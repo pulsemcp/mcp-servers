@@ -40,11 +40,27 @@ stdio server:
 - command: Command for stdio transport (e.g., "npx", "uvx")
 - args: Arguments for stdio command as ["arg1", "arg2"]
 
-**Advanced/internal fields (underscore-prefixed):**
-- _proctor_files: Object mapping filenames to content. Files are created in the working directory before exam execution. Useful for config files the MCP server needs.
-  Example: { "_proctor_files": { "config.json": "{\\"key\\": \\"value\\"}" } }
-- _proctor_pre_registered_client: Pre-registered OAuth client for providers that don't support Dynamic Client Registration (DCR). Required fields: client_id, client_secret, redirect_uri.
-  Example: { "_proctor_pre_registered_client": { "client_id": "...", "client_secret": "...", "redirect_uri": "https://..." } }
+**Advanced/internal fields (underscore-prefixed, added inside a server entry):**
+- _proctor_files: Object mapping filenames to content. Files are created in the working directory before exam execution.
+- _proctor_pre_registered_client: Pre-registered OAuth client for providers that don't support Dynamic Client Registration (DCR).
+
+Example with advanced fields:
+\`\`\`json
+{
+  "my-server": {
+    "type": "streamable-http",
+    "url": "https://example.com/mcp",
+    "_proctor_files": {
+      "config.json": "{\\"apiKey\\": \\"test\\"}"
+    },
+    "_proctor_pre_registered_client": {
+      "client_id": "abc123",
+      "client_secret": "secret",
+      "redirect_uri": "https://pulsemcp.com/oauth/callback"
+    }
+  }
+}
+\`\`\`
 
 These underscore-prefixed fields are stripped from the config before execution and are used only for exam setup.`,
   server_json: `Optional JSON string of server.json for result enrichment. Provides additional context about the server being tested.
