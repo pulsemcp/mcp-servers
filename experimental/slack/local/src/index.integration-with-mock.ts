@@ -8,8 +8,17 @@
  * Mock data is passed via the SLACK_MOCK_DATA environment variable.
  */
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
+import { readFileSync } from 'fs';
+import { dirname, join } from 'path';
+import { fileURLToPath } from 'url';
 import { createMCPServer } from '../shared/index.js';
 import { createIntegrationMockSlackClient } from '../shared/slack-client/slack-client.integration-mock.js';
+
+// Read version from package.json
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const packageJsonPath = join(__dirname, '..', 'package.json');
+const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf-8'));
+const VERSION = packageJson.version;
 
 async function main() {
   const transport = new StdioServerTransport();
@@ -27,7 +36,7 @@ async function main() {
   // Create client factory that returns our mock
   const clientFactory = () => createIntegrationMockSlackClient(mockData);
 
-  const { server, registerHandlers } = createMCPServer();
+  const { server, registerHandlers } = createMCPServer({ version: VERSION });
   await registerHandlers(server, clientFactory);
 
   await server.connect(transport);

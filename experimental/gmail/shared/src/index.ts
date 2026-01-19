@@ -8,6 +8,7 @@ export {
   type IGmailClient,
   type ClientFactory,
   type ServiceAccountCredentials,
+  type CreateMCPServerOptions,
 } from './server.js';
 
 // Tools

@@ -5,11 +5,15 @@ import { IClaudeCodeClient, ClaudeCodeClient } from './claude-code-client/claude
 
 export type ClientFactory = () => IClaudeCodeClient;
 
-export function createMCPServer() {
+export interface CreateMCPServerOptions {
+  version: string;
+}
+
+export function createMCPServer(options: CreateMCPServerOptions) {
   const server = new Server(
     {
       name: 'claude-code-agent-mcp-server',
-      version: '0.0.1',
+      version: options.version,
     },
     {
       capabilities: {

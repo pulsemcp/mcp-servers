@@ -4,6 +4,7 @@ export { createRegisterTools, type ToolGroup, parseEnabledToolGroups } from './t
 export {
   createMCPServer,
   createDefaultStorageClient,
+  type CreateMCPServerOptions,
   type StorageClientFactory,
   type IStorageClient,
   type GCSConfig,

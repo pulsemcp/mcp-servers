@@ -11,11 +11,15 @@ export type { IAgentOrchestratorClient } from './orchestrator-client/orchestrato
 
 export type ClientFactory = () => IAgentOrchestratorClient;
 
-export function createMCPServer() {
+export interface CreateMCPServerOptions {
+  version: string;
+}
+
+export function createMCPServer(options: CreateMCPServerOptions) {
   const server = new Server(
     {
       name: 'agent-orchestrator-mcp-server',
-      version: '0.2.0',
+      version: options.version,
     },
     {
       capabilities: {

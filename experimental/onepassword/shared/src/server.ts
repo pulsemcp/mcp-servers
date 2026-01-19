@@ -10,11 +10,15 @@ export { OnePasswordClient } from './onepassword-client/onepassword-client.js';
 
 export type ClientFactory = () => IOnePasswordClient;
 
-export function createMCPServer() {
+export interface CreateMCPServerOptions {
+  version: string;
+}
+
+export function createMCPServer(options: CreateMCPServerOptions) {
   const server = new Server(
     {
       name: 'onepassword-mcp-server',
-      version: '0.1.0',
+      version: options.version,
     },
     {
       capabilities: {

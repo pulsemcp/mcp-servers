@@ -35,11 +35,15 @@ export class ExampleClient implements IExampleClient {
 
 export type ClientFactory = () => IExampleClient;
 
-export function createMCPServer() {
+export interface CreateMCPServerOptions {
+  version: string;
+}
+
+export function createMCPServer(options: CreateMCPServerOptions) {
   const server = new Server(
     {
       name: 'NAME-mcp-server',
-      version: '0.1.0',
+      version: options.version,
     },
     {
       capabilities: {

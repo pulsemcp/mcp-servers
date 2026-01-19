@@ -7,11 +7,15 @@ export { IFlyIOClient, FlyIOClient };
 
 export type ClientFactory = () => IFlyIOClient;
 
-export function createMCPServer() {
+export interface CreateMCPServerOptions {
+  version: string;
+}
+
+export function createMCPServer(options: CreateMCPServerOptions) {
   const server = new Server(
     {
       name: 'fly-io-mcp-server',
-      version: '0.1.0',
+      version: options.version,
     },
     {
       capabilities: {

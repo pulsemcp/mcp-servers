@@ -4,9 +4,18 @@
  * Used for running integration tests without real Gmail API access
  */
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
+import { readFileSync } from 'fs';
+import { dirname, join } from 'path';
+import { fileURLToPath } from 'url';
 import { createMCPServer } from '../shared/index.js';
 import { logServerStart, logError } from '../shared/logging.js';
 import type { IGmailClient } from '../shared/server.js';
+
+// Read version from package.json
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const packageJsonPath = join(__dirname, '..', 'package.json');
+const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf-8'));
+const VERSION = packageJson.version;
 
 // =============================================================================
 // MOCK DATA
@@ -107,7 +116,7 @@ function createMockClient(): IGmailClient {
 
 async function main() {
   // Create server with mock client
-  const { server, registerHandlers } = createMCPServer();
+  const { server, registerHandlers } = createMCPServer({ version: VERSION });
 
   // Register handlers with mock client factory
   await registerHandlers(server, createMockClient);

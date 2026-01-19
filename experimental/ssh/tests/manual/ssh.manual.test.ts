@@ -11,8 +11,8 @@ describe('SSH MCP Server - Manual Tests', () => {
   let clientFactory: () => SSHClient;
 
   beforeAll(() => {
-    // Create MCP server
-    const { server: mcpServer } = createMCPServer();
+    // Create MCP server with test version
+    const { server: mcpServer } = createMCPServer({ version: '0.0.0-test' });
     server = mcpServer;
 
     // Create client factory using env config

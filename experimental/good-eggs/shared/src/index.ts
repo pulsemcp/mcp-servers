@@ -4,6 +4,7 @@ export {
   GoodEggsClient,
   type IGoodEggsClient,
   type ClientFactory,
+  type CreateMCPServerOptions,
 } from './server.js';
 
 // Tools exports

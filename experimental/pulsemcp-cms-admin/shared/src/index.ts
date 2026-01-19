@@ -1,6 +1,7 @@
 export { registerTools, createRegisterTools } from './tools.js';
 export {
   createMCPServer,
+  type CreateMCPServerOptions,
   type ClientFactory,
   type IPulseMCPAdminClient,
   PulseMCPAdminClient,

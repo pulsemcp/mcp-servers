@@ -65,11 +65,15 @@ export class HatchboxClient implements IHatchboxClient {
 
 export type ClientFactory = () => IHatchboxClient;
 
-export function createMCPServer() {
+export interface CreateMCPServerOptions {
+  version: string;
+}
+
+export function createMCPServer(options: CreateMCPServerOptions) {
   const server = new Server(
     {
       name: 'hatchbox-mcp-server',
-      version: '0.0.1',
+      version: options.version,
     },
     {
       capabilities: {

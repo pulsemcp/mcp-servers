@@ -1,7 +1,16 @@
 #!/usr/bin/env node
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
+import { readFileSync } from 'fs';
+import { dirname, join } from 'path';
+import { fileURLToPath } from 'url';
 import { createMCPServer } from '../shared/index.js';
 import { logServerStart, logError } from '../shared/logging.js';
+
+// Read version from package.json
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const packageJsonPath = join(__dirname, '..', 'package.json');
+const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf-8'));
+const VERSION = packageJson.version;
 
 // Set default environment variables
 function setDefaults(): void {
@@ -39,7 +48,7 @@ async function main() {
   setDefaults();
 
   // Create server using factory
-  const { server, registerHandlers } = createMCPServer();
+  const { server, registerHandlers } = createMCPServer({ version: VERSION });
 
   // Register all handlers (resources and tools)
   await registerHandlers(server);

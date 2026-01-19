@@ -70,11 +70,15 @@ export function createSSHConfigFromEnv(): SSHConfig {
   };
 }
 
-export function createMCPServer() {
+export interface CreateMCPServerOptions {
+  version: string;
+}
+
+export function createMCPServer(options: CreateMCPServerOptions) {
   const server = new Server(
     {
       name: 'ssh-mcp-server',
-      version: '0.1.0',
+      version: options.version,
     },
     {
       capabilities: {

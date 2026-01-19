@@ -5,11 +5,15 @@ import { GCSClient, type IGCSClient } from './gcs-client/gcs-client.js';
 
 export type ClientFactory = () => IGCSClient;
 
-export function createMCPServer() {
+export interface CreateMCPServerOptions {
+  version: string;
+}
+
+export function createMCPServer(options: CreateMCPServerOptions) {
   const server = new Server(
     {
       name: 'remote-filesystem-mcp-server',
-      version: '0.1.0',
+      version: options.version,
     },
     {
       capabilities: {

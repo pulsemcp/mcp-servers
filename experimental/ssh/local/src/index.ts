@@ -1,4 +1,7 @@
 #!/usr/bin/env node
+import { readFileSync } from 'fs';
+import { dirname, join } from 'path';
+import { fileURLToPath } from 'url';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import {
   createMCPServer,
@@ -8,6 +11,12 @@ import {
   parseHealthCheckTimeout,
 } from '../shared/index.js';
 import { logServerStart, logError, logWarning, logDebug } from '../shared/logging.js';
+
+// Read version from package.json
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const packageJsonPath = join(__dirname, '..', 'package.json');
+const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf-8'));
+const VERSION = packageJson.version;
 
 // =============================================================================
 // ENVIRONMENT VALIDATION
@@ -189,7 +198,7 @@ async function main() {
   await performHealthChecks();
 
   // Step 3: Create server using factory
-  const { server, registerHandlers } = createMCPServer();
+  const { server, registerHandlers } = createMCPServer({ version: VERSION });
 
   // Step 4: Register all handlers (resources and tools)
   await registerHandlers(server);

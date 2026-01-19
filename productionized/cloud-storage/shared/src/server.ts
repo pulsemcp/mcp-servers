@@ -60,13 +60,20 @@ export function createDefaultStorageClient(): IStorageClient {
 }
 
 /**
+ * Options for creating the MCP server
+ */
+export interface CreateMCPServerOptions {
+  version: string;
+}
+
+/**
  * Create the MCP server for cloud storage operations
  */
-export function createMCPServer() {
+export function createMCPServer(options: CreateMCPServerOptions) {
   const server = new Server(
     {
       name: 'cloud-storage-mcp-server',
-      version: '0.1.0',
+      version: options.version,
     },
     {
       capabilities: {

@@ -171,6 +171,13 @@ export class ServiceAccountCalendarClient implements ICalendarClient {
 export type ClientFactory = () => ICalendarClient;
 
 /**
+ * Options for creating the MCP server
+ */
+export interface CreateMCPServerOptions {
+  version: string;
+}
+
+/**
  * Creates the default Google Calendar client based on environment variables.
  * Uses service account with domain-wide delegation:
  *   - GCAL_SERVICE_ACCOUNT_CLIENT_EMAIL: Service account email address
@@ -220,11 +227,11 @@ export function createDefaultClient(): ICalendarClient {
   return new ServiceAccountCalendarClient(credentials, impersonateEmail);
 }
 
-export function createMCPServer() {
+export function createMCPServer(options: CreateMCPServerOptions) {
   const server = new Server(
     {
       name: 'google-calendar-workspace-mcp-server',
-      version: '0.0.1',
+      version: options.version,
     },
     {
       capabilities: {
