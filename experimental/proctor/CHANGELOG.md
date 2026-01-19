@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Updated README to use npx installation method instead of local build instructions
+
 ### Removed
 
 - `run_exam` tool - exam execution is now handled externally

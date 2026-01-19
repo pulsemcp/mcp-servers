@@ -154,9 +154,59 @@ There are 2 active machines:
 
 # Setup
 
-## Cheatsheet
+## Claude Desktop
 
-Quick setup:
+Make sure you have your Proctor API key ready.
+
+Then proceed to the setup instructions below. If this is your first time using MCP Servers, you'll want to make sure you have the [Claude Desktop application](https://claude.ai/download) and follow the [official MCP setup instructions](https://modelcontextprotocol.io/quickstart/user).
+
+### Manual Setup
+
+You're going to need Node working on your machine so you can run `npx` commands in your terminal. If you don't have Node, you can install it from [nodejs.org](https://nodejs.org/en/download).
+
+macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
+
+Windows: `%APPDATA%\Claude\claude_desktop_config.json`
+
+Modify your `claude_desktop_config.json` file to add the following:
+
+```json
+{
+  "mcpServers": {
+    "proctor": {
+      "command": "npx",
+      "args": ["-y", "proctor-mcp-server"],
+      "env": {
+        "PROCTOR_API_KEY": "your-api-key-here",
+        "TOOL_GROUPS": "exams,machines"
+      }
+    }
+  }
+}
+```
+
+Restart Claude Desktop and you should be ready to go!
+
+For read-only access:
+
+```json
+{
+  "mcpServers": {
+    "proctor-readonly": {
+      "command": "npx",
+      "args": ["-y", "proctor-mcp-server"],
+      "env": {
+        "PROCTOR_API_KEY": "your-api-key-here",
+        "TOOL_GROUPS": "exams_readonly,machines_readonly"
+      }
+    }
+  }
+}
+```
+
+## Development
+
+### Quick Setup
 
 ```bash
 # Install dependencies
@@ -170,55 +220,6 @@ export PROCTOR_API_KEY="your-api-key-here"
 
 # Run the server
 cd local && npm start
-```
-
-## Claude Desktop
-
-Add to your Claude Desktop configuration:
-
-### macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
-
-### Windows: `%APPDATA%\Claude\claude_desktop_config.json`
-
-```json
-{
-  "mcpServers": {
-    "proctor": {
-      "command": "node",
-      "args": ["/path/to/proctor/local/build/index.js"],
-      "env": {
-        "PROCTOR_API_KEY": "your-api-key-here",
-        "TOOL_GROUPS": "exams,machines"
-      }
-    }
-  }
-}
-```
-
-For read-only access:
-
-```json
-{
-  "mcpServers": {
-    "proctor-readonly": {
-      "command": "node",
-      "args": ["/path/to/proctor/local/build/index.js"],
-      "env": {
-        "PROCTOR_API_KEY": "your-api-key-here",
-        "TOOL_GROUPS": "exams_readonly,machines_readonly"
-      }
-    }
-  }
-}
-```
-
-### Manual Setup
-
-If you prefer to run the server manually:
-
-```bash
-cd /path/to/proctor/local
-PROCTOR_API_KEY="your-api-key-here" node build/index.js
 ```
 
 ## License

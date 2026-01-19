@@ -27,23 +27,14 @@ MCP server for Good Eggs grocery shopping automation using Playwright. Search fo
 | `add_favorite`                 | Add a product to your favorites                      |
 | `remove_favorite`              | Remove a product from your favorites                 |
 
-## Quick Start
+## Setup
 
 ### Prerequisites
 
 - Node.js 18+
 - A Good Eggs account (create one at [goodeggs.com](https://www.goodeggs.com))
 
-### Installation
-
-```bash
-npm install
-npm run build
-```
-
-### Configuration
-
-Set the following environment variables:
+### Environment Variables
 
 | Variable             | Required | Description                     | Default |
 | -------------------- | -------- | ------------------------------- | ------- |
@@ -52,13 +43,21 @@ Set the following environment variables:
 | `HEADLESS`           | No       | Run browser in headless mode    | `true`  |
 | `TIMEOUT`            | No       | Browser operation timeout (ms)  | `30000` |
 
-### Claude Desktop Configuration
+### Claude Desktop
 
-Add to your `claude_desktop_config.json`:
+Make sure you have your Good Eggs account credentials ready.
 
-**macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
+Then proceed to the setup instructions below. If this is your first time using MCP Servers, you'll want to make sure you have the [Claude Desktop application](https://claude.ai/download) and follow the [official MCP setup instructions](https://modelcontextprotocol.io/quickstart/user).
 
-**Windows**: `%APPDATA%\Claude\claude_desktop_config.json`
+#### Manual Setup
+
+You're going to need Node working on your machine so you can run `npx` commands in your terminal. If you don't have Node, you can install it from [nodejs.org](https://nodejs.org/en/download).
+
+macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
+
+Windows: `%APPDATA%\Claude\claude_desktop_config.json`
+
+Modify your `claude_desktop_config.json` file to add the following:
 
 ```json
 {
@@ -75,7 +74,7 @@ Add to your `claude_desktop_config.json`:
 }
 ```
 
-Restart Claude Desktop to connect.
+Restart Claude Desktop and you should be ready to go!
 
 ## Usage Examples
 

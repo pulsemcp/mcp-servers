@@ -4,6 +4,10 @@ All notable changes to the Claude Code Agent MCP Server will be documented in th
 
 ## [Unreleased]
 
+### Changed
+
+- Updated README Claude Desktop section to use npx installation (package is now published)
+
 ## [0.0.6] - 2025-10-13
 
 **CRITICAL FIX: Publishing Script**

@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Improved README setup section for better consistency with other MCP servers
+
 ## [0.1.7] - 2026-01-18
 
 ### Fixed
