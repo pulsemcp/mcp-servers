@@ -46,6 +46,20 @@ export async function updateUnifiedMCPServer(
       implParams.github_subfolder = params.source_code.github_subfolder;
   }
 
+  // Package registry info
+  if (params.package_registry !== undefined) implParams.package_registry = params.package_registry;
+  if (params.package_name !== undefined) implParams.package_name = params.package_name;
+
+  // Flags
+  if (params.recommended !== undefined) implParams.recommended = params.recommended;
+
+  // Date overrides
+  if (params.created_on_override !== undefined)
+    implParams.created_on_override = params.created_on_override;
+
+  // Tags
+  if (params.tags !== undefined) implParams.tags = params.tags;
+
   // Canonical URLs
   if (params.canonical_urls !== undefined) {
     implParams.canonical = params.canonical_urls;

@@ -35,6 +35,10 @@ export interface RailsImplementation {
   internal_notes?: string;
   created_at?: string;
   updated_at?: string;
+  created_on_override?: string;
+  package_registry?: string;
+  package_name?: string;
+  recommended?: boolean;
   canonical?: CanonicalUrlParams[];
   mcp_server?: {
     id: number;
@@ -120,6 +124,13 @@ export function mapToUnifiedServer(impl: RailsImplementation): UnifiedMCPServer 
           }
         : undefined,
 
+    // Package registry info
+    package_registry: impl.package_registry,
+    package_name: impl.package_name,
+
+    // Flags
+    recommended: impl.recommended,
+
     // Canonical URLs
     canonical_urls: impl.canonical,
 
@@ -154,5 +165,6 @@ export function mapToUnifiedServer(impl: RailsImplementation): UnifiedMCPServer 
     // Timestamps (use implementation timestamps as they're more relevant)
     created_at: impl.created_at,
     updated_at: impl.updated_at,
+    created_on_override: impl.created_on_override,
   };
 }

@@ -99,6 +99,16 @@ Example response:
         if (server.url) {
           content += `**URL:** ${server.url}\n`;
         }
+        if (server.package_registry || server.package_name) {
+          content += `**Package:** ${server.package_registry || 'unknown'}`;
+          if (server.package_name) {
+            content += ` - ${server.package_name}`;
+          }
+          content += '\n';
+        }
+        if (server.recommended) {
+          content += `**Recommended:** Yes\n`;
+        }
 
         if (server.short_description) {
           content += `\n**Short Description:**\n${server.short_description}\n`;
@@ -232,6 +242,9 @@ Example response:
         }
         if (server.updated_at) {
           content += `- **Updated:** ${server.updated_at}\n`;
+        }
+        if (server.created_on_override) {
+          content += `- **Created On Override:** ${server.created_on_override}\n`;
         }
 
         return { content: [{ type: 'text', text: content }] };

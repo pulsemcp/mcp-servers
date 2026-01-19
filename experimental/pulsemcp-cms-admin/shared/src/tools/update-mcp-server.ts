@@ -18,6 +18,12 @@ const PARAM_DESCRIPTIONS = {
   provider_slug: 'URL slug for provider (auto-generated from name if omitted)',
   provider_url: 'Website URL for provider',
   source_code: 'GitHub repository information',
+  package_registry: 'Package registry: npm, pypi, cargo, etc.',
+  package_name: 'Package name on the registry (e.g., "@modelcontextprotocol/server-filesystem")',
+  recommended: 'Mark this server as recommended by PulseMCP',
+  created_on_override:
+    'Override the automatically derived created date (ISO date string, e.g., "2025-01-15")',
+  tags: 'Tags for the server. Replaces all existing tags when provided. Use tag slugs.',
   canonical_urls:
     'Authoritative URLs for the server. Replaces all existing canonical URLs when provided.',
   remotes: 'Remote endpoints for the server. Replaces all existing remotes when provided.',
@@ -84,6 +90,11 @@ const UpdateMCPServerSchema = z.object({
   provider_slug: z.string().optional().describe(PARAM_DESCRIPTIONS.provider_slug),
   provider_url: z.string().optional().describe(PARAM_DESCRIPTIONS.provider_url),
   source_code: SourceCodeSchema.optional().describe(PARAM_DESCRIPTIONS.source_code),
+  package_registry: z.string().optional().describe(PARAM_DESCRIPTIONS.package_registry),
+  package_name: z.string().optional().describe(PARAM_DESCRIPTIONS.package_name),
+  recommended: z.boolean().optional().describe(PARAM_DESCRIPTIONS.recommended),
+  created_on_override: z.string().optional().describe(PARAM_DESCRIPTIONS.created_on_override),
+  tags: z.array(z.string()).optional().describe(PARAM_DESCRIPTIONS.tags),
   canonical_urls: z
     .array(CanonicalUrlSchema)
     .optional()
@@ -217,6 +228,18 @@ Create new provider:
             },
           },
           description: PARAM_DESCRIPTIONS.source_code,
+        },
+        package_registry: { type: 'string', description: PARAM_DESCRIPTIONS.package_registry },
+        package_name: { type: 'string', description: PARAM_DESCRIPTIONS.package_name },
+        recommended: { type: 'boolean', description: PARAM_DESCRIPTIONS.recommended },
+        created_on_override: {
+          type: 'string',
+          description: PARAM_DESCRIPTIONS.created_on_override,
+        },
+        tags: {
+          type: 'array',
+          items: { type: 'string' },
+          description: PARAM_DESCRIPTIONS.tags,
         },
         canonical_urls: {
           type: 'array',

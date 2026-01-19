@@ -13,7 +13,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Added new `mcp_servers` / `mcp_servers_readonly` tool groups with unified interface for managing MCP servers:
   - `list_mcp_servers`: List/search MCP servers with filtering by status, classification, and pagination
   - `get_mcp_server`: Get detailed information about a specific MCP server by slug
-  - `update_mcp_server`: Update an MCP server's information (name, description, provider, source code, canonical URLs, remote endpoints)
+  - `update_mcp_server`: Update an MCP server's information including all admin UI fields:
+    - Basic info: name, short_description, description, status, classification, implementation_language, url
+    - Provider: provider_id, provider_name, provider_slug, provider_url
+    - Source code: github_owner, github_repo, github_subfolder
+    - Package registry: package_registry (npm, pypi, etc.), package_name
+    - Flags: recommended (mark as PulseMCP recommended)
+    - Date overrides: created_on_override (ISO date string)
+    - Tags: tags (array of tag slugs, replaces all)
+    - Canonical URLs: canonical_urls (replaces all)
+    - Remote endpoints: remotes (replaces all)
+    - Internal notes: internal_notes
   - These tools provide an abstracted interface that hides the complexity of the underlying MCPImplementation → MCPServer data model
   - Users can work directly with "MCP servers" without needing to understand the internal mcp_implementations relationship
 - Added new unified MCP server types: `UnifiedMCPServer`, `UnifiedMCPServersResponse`, `UpdateUnifiedMCPServerParams`, `SourceCodeLocation`, `CanonicalUrl`, `RemoteEndpoint`

@@ -223,6 +223,19 @@ export interface SaveMCPImplementationParams {
   github_repo?: string; // Repository name
   github_subfolder?: string; // Optional subfolder within repo (for monorepos)
 
+  // Package registry fields
+  package_registry?: string; // e.g., "npm", "pypi", "cargo"
+  package_name?: string; // e.g., "@modelcontextprotocol/server-filesystem"
+
+  // Flags
+  recommended?: boolean; // Mark this server as recommended by PulseMCP
+
+  // Date overrides
+  created_on_override?: string; // ISO date string to override the automatically derived created date
+
+  // Tags (for servers)
+  tags?: string[]; // Array of tag slugs to set on the server
+
   // Remote endpoints (for servers)
   remote?: RemoteEndpointParams[]; // Array of remote endpoint configurations
 
@@ -552,6 +565,13 @@ export interface UnifiedMCPServer {
   // Source code location
   source_code?: SourceCodeLocation;
 
+  // Package registry info
+  package_registry?: string; // e.g., "npm", "pypi", "cargo"
+  package_name?: string; // e.g., "@modelcontextprotocol/server-filesystem"
+
+  // Flags
+  recommended?: boolean; // Whether this server is recommended by PulseMCP
+
   // Canonical URLs
   canonical_urls?: CanonicalUrl[];
 
@@ -574,6 +594,7 @@ export interface UnifiedMCPServer {
   // Timestamps
   created_at?: string;
   updated_at?: string;
+  created_on_override?: string; // User-specified creation date override
 }
 
 /**
@@ -615,6 +636,19 @@ export interface UpdateUnifiedMCPServerParams {
     github_repo?: string;
     github_subfolder?: string;
   };
+
+  // Package registry info
+  package_registry?: string; // e.g., "npm", "pypi", "cargo"
+  package_name?: string; // e.g., "@modelcontextprotocol/server-filesystem"
+
+  // Flags
+  recommended?: boolean; // Mark this server as recommended by PulseMCP
+
+  // Date overrides
+  created_on_override?: string; // ISO date string to override the automatically derived created date
+
+  // Tags (replaces all if provided)
+  tags?: string[]; // Array of tag slugs
 
   // Canonical URLs (replaces all if provided)
   canonical_urls?: CanonicalUrl[];
