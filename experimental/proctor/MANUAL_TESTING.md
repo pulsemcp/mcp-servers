@@ -24,9 +24,13 @@ This document tracks manual testing results for the Proctor MCP Server.
 
 ## Latest Test Results
 
-**Commit:** 1c13249a9492853a22b13db397ce7e2c30ea7263
-**Date:** 2026-01-19 02:59 UTC
+**Commit:** 2ddeaf97b2174590698e0c55840d07a6dd82fd00
+**Date:** 2026-01-19 03:20 UTC
 **Result:** 6/6 tests passed (100%)
+
+Note: This version bump adds `no_result_persistence: true` to run_exam API calls.
+This is a pass-through parameter that doesn't affect the MCP server's behavior -
+it only affects how the proctor backend handles OAuth credentials during exams.
 
 ### Summary
 
