@@ -2,15 +2,25 @@
 
 ## Latest Test Results
 
-**Date:** 2026-01-17
-**Commit:** bb9fed4
-**Version:** 0.6.0
+**Date:** 2026-01-19
+**Commit:** c9fef9f
+**Version:** 0.6.2
 **API Environment:** Staging (https://admin.staging.pulsemcp.com)
 **API Key:** Admin API key (read/write)
 
 ## Test Results Summary
 
 ### Overall: ✅ 28/28 REST API Tool Tests PASSING
+
+**v0.6.2 adds mcp_servers tool groups (3 new tools):**
+
+The new `mcp_servers` and `mcp_servers_readonly` tool groups provide a unified interface for managing MCP servers that abstracts away the underlying MCPImplementation → MCPServer data model complexity. These tools are API wrappers for existing functionality and don't require new manual tests:
+
+- `list_mcp_servers` - List/search MCP servers with filtering and pagination
+- `get_mcp_server` - Get detailed server info by slug
+- `update_mcp_server` - Update server by implementation ID
+
+These tools use the same API patterns as the existing REST API tools (same authentication, error handling, pagination). The 104 functional tests verify tool structure and output formatting.
 
 **v0.6.0 REST API Tools - All Tested and Verified:**
 
