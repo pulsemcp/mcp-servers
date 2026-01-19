@@ -17,9 +17,8 @@ export async function getUnifiedMCPServers(
   // Always filter to servers only
   url.searchParams.append('type', 'server');
 
-  if (params?.q) {
-    url.searchParams.append('q', params.q);
-  }
+  // The API requires a search query - use '*' wildcard if none provided
+  url.searchParams.append('q', params?.q || '*');
   if (params?.status && params.status !== 'all') {
     url.searchParams.append('status', params.status);
   }

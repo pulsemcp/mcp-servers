@@ -62,10 +62,10 @@ export async function getUnifiedMCPServer(
 
   // Now search for the implementation that references this MCPServer
   // Use a search that includes the slug to narrow down results
+  // Don't pass status param to get all statuses (API doesn't support 'all' as a value)
   const searchUrl = new URL('/api/implementations/search', baseUrl);
   searchUrl.searchParams.append('q', slug);
   searchUrl.searchParams.append('type', 'server');
-  searchUrl.searchParams.append('status', 'all');
   searchUrl.searchParams.append('limit', '50');
 
   const searchResponse = await fetch(searchUrl.toString(), {

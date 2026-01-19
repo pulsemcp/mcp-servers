@@ -44,6 +44,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Fixed `VALID_TOOL_GROUPS` array missing `official_mirrors` and `tenants` entries
   - These groups were defined in `ToolGroup` type and `BASE_TOOL_GROUPS` but not in `VALID_TOOL_GROUPS`
   - This caused "Unknown tool group" warnings when users explicitly specified these groups
+- Fixed `list_mcp_servers` API compatibility: Added wildcard query (`q=*`) when no search query provided
+  - The PulseMCP API requires the `q` parameter; omitting it caused 422 errors
+- Fixed `get_mcp_server` API compatibility: Removed `status=all` parameter from implementation search
+  - The PulseMCP API only accepts `draft`, `live`, or `archived` status values; omitting the parameter returns all statuses
 
 ### Removed
 
