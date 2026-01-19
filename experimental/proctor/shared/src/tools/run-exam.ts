@@ -8,10 +8,60 @@ const PARAM_DESCRIPTIONS = {
     'Runtime ID from get_proctor_metadata, or "__custom__" for a custom Docker image. Example: "v0.0.37"',
   exam_id:
     'Exam ID from get_proctor_metadata. Example: "proctor-mcp-client-init-tools-list" or "proctor-mcp-client-auth-check"',
-  mcp_json:
-    'JSON string of the mcp.json configuration for the MCP server. Must be a valid JSON object with server configurations.',
-  server_json:
-    'Optional JSON string of server.json for result enrichment. Provides additional context about the server being tested.',
+  mcp_json: `JSON string of the mcp.json configuration for the MCP server to test.
+
+**Simple examples:**
+
+HTTP server:
+\`\`\`json
+{
+  "my-server": {
+    "type": "streamable-http",
+    "url": "https://example.com/mcp"
+  }
+}
+\`\`\`
+
+stdio server:
+\`\`\`json
+{
+  "my-server": {
+    "command": "npx",
+    "args": ["-y", "my-mcp-server"]
+  }
+}
+\`\`\`
+
+**Standard fields per server entry:**
+- type: Transport type ("streamable-http", "sse", "stdio")
+- url: Server URL (for HTTP transports)
+- headers: HTTP headers as { "Header-Name": "value" } (optional)
+- env: Environment variables as { "VAR_NAME": "value" } (optional)
+- command: Command for stdio transport (e.g., "npx", "uvx")
+- args: Arguments for stdio command as ["arg1", "arg2"]
+
+**Advanced/internal fields (underscore-prefixed):**
+- _proctor_files: Object mapping filenames to content. Files are created in the working directory before exam execution. Useful for config files the MCP server needs.
+  Example: { "_proctor_files": { "config.json": "{\\"key\\": \\"value\\"}" } }
+- _proctor_pre_registered_client: Pre-registered OAuth client for providers that don't support Dynamic Client Registration (DCR). Required fields: client_id, client_secret, redirect_uri.
+  Example: { "_proctor_pre_registered_client": { "client_id": "...", "client_secret": "...", "redirect_uri": "https://..." } }
+
+These underscore-prefixed fields are stripped from the config before execution and are used only for exam setup.`,
+  server_json: `Optional JSON string of server.json for result enrichment. Provides additional context about the server being tested.
+
+**Simple example:**
+\`\`\`json
+{
+  "name": "my-mcp-server",
+  "title": "My MCP Server",
+  "description": "A helpful MCP server",
+  "remotes": [
+    { "url": "https://example.com/mcp", "type": "streamable-http" }
+  ]
+}
+\`\`\`
+
+The server.json follows the server.json specification and can include: name, title, description, version, websiteUrl, remotes (with url, type, headers), and packages (for stdio servers with identifier, registryType, runtimeHint, environmentVariables, runtimeArguments).`,
   custom_runtime_image:
     'Required if runtime_id is "__custom__". Docker image URL in format: registry/image:tag',
   max_retries: 'Maximum number of retry attempts (0-10). Default is 0.',
@@ -45,10 +95,18 @@ tests the MCP server's functionality and returns detailed results.
 - Validate MCP protocol compliance
 - Test before publishing a new MCP server version
 
+**mcp_json Format:**
+The mcp_json parameter accepts a JSON object with server configurations. Each server entry can include:
+- Standard fields: type, url, headers, env, command, args
+- Advanced fields (underscore-prefixed, stripped before execution):
+  - _proctor_files: Files to create in working directory (map of filename to content)
+  - _proctor_pre_registered_client: Pre-registered OAuth client credentials for non-DCR providers
+
 **Note:**
 - Use get_proctor_metadata first to discover available runtimes and exams
 - The mcp_json must be a valid JSON string representing the mcp.json format
-- Custom runtime images require the "__custom__" runtime_id and custom_runtime_image parameter`,
+- Custom runtime images require the "__custom__" runtime_id and custom_runtime_image parameter
+- Underscore-prefixed fields in mcp_json are used for exam setup only and stripped before server execution`,
     inputSchema: {
       type: 'object',
       properties: {

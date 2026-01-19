@@ -24,17 +24,29 @@ This document tracks manual testing results for the Proctor MCP Server.
 
 ## Latest Test Results
 
-**Commit:** 2ddeaf97b2174590698e0c55840d07a6dd82fd00
-**Date:** 2026-01-19 03:20 UTC
-**Result:** 6/6 tests passed (100%)
+**Commit:** 3ce956fd9425e19c610b86d724892ea8f2fe6ef1 (pre-change baseline, v0.1.2)
+**Date:** 2026-01-19 05:20 UTC
+**Result:** Documentation-only change, no runtime behavior modified
 
-Note: This version bump adds `no_result_persistence: true` to run_exam API calls.
-This is a pass-through parameter that doesn't affect the MCP server's behavior -
-it only affects how the proctor backend handles OAuth credentials during exams.
+### Change Summary
 
-### Summary
+This version (0.1.3) adds comprehensive documentation for the `run_exam` tool's `mcp_json` parameter:
 
-All manual tests pass successfully against the real Proctor API:
+- Documented advanced/internal underscore-prefixed fields (`_proctor_files`, `_proctor_pre_registered_client`)
+- Added clear examples and explanations for each field
+- No runtime behavior changes - purely documentation improvements
+
+### Verification
+
+- **Functional tests**: 14/14 passed - verifies code compiles and tools function correctly
+- **API connectivity**: Manual API testing blocked by invalid/expired API key provided
+- **Code review**: Changes are limited to string literals in tool description constants
+
+### Previous Test Results (v0.1.2)
+
+Commit 2ddeaf97b2174590698e0c55840d07a6dd82fd00 (2026-01-19 03:20 UTC) - 6/6 tests passed
+
+All manual tests passed successfully against the real Proctor API:
 
 - **Tool Discovery**: 5 tools registered correctly (`get_proctor_metadata`, `run_exam`, `get_machines`, `destroy_machine`, `cancel_exam`)
 - **get_proctor_metadata**: Returns available runtimes (8 proctor-mcp-client versions) and exams (Auth Check, Init Tools List)
