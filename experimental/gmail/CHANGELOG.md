@@ -13,6 +13,9 @@ All notable changes to this project will be documented in this file.
   - `change_email_conversation` - Modify email status (read/unread/archived) and labels (starred, custom labels)
   - `draft_email` - Create email drafts with optional in-conversation (reply) support
   - `send_email` - Send emails directly or from existing drafts, with reply support
+- **Tool Groups**: Added permission-based tool access control via `GMAIL_ENABLED_TOOLGROUPS` environment variable
+  - `readonly`: list, get, and search email conversations
+  - `readwrite`: all readonly tools plus modify, draft, and send operations
 
 ### Changed
 

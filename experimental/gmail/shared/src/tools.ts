@@ -28,24 +28,82 @@ interface Tool {
 type ToolFactory = (server: Server, clientFactory: ClientFactory) => Tool;
 
 /**
- * All available tools
+ * Available tool groups for Gmail MCP server
+ * - readonly: Read-only operations (list, get, search emails)
+ * - readwrite: Read and write operations (includes readonly + modify, draft, send)
  */
-const ALL_TOOLS: ToolFactory[] = [
-  listEmailConversationsTool,
-  getEmailConversationTool,
-  searchEmailConversationsTool,
-  changeEmailConversationTool,
-  draftEmailTool,
-  sendEmailTool,
+export type ToolGroup = 'readonly' | 'readwrite';
+
+const ALL_TOOL_GROUPS: ToolGroup[] = ['readonly', 'readwrite'];
+
+interface ToolDefinition {
+  factory: ToolFactory;
+  groups: ToolGroup[];
+}
+
+/**
+ * All available tools with their group assignments
+ *
+ * readonly: list_email_conversations, get_email_conversation, search_email_conversations
+ * readwrite: all readonly tools + change_email_conversation, draft_email, send_email
+ */
+const ALL_TOOLS: ToolDefinition[] = [
+  // Read-only tools (available in both groups)
+  { factory: listEmailConversationsTool, groups: ['readonly', 'readwrite'] },
+  { factory: getEmailConversationTool, groups: ['readonly', 'readwrite'] },
+  { factory: searchEmailConversationsTool, groups: ['readonly', 'readwrite'] },
+  // Write tools (only available in readwrite group)
+  { factory: changeEmailConversationTool, groups: ['readwrite'] },
+  { factory: draftEmailTool, groups: ['readwrite'] },
+  { factory: sendEmailTool, groups: ['readwrite'] },
 ];
 
 /**
- * Creates a function to register all tools with the server
+ * Parses the ENABLED_TOOLGROUPS environment variable
+ * @param enabledGroupsParam - Comma-separated list of tool groups
+ * @returns Array of valid tool groups
  */
-export function createRegisterTools(clientFactory: ClientFactory) {
+export function parseEnabledToolGroups(enabledGroupsParam?: string): ToolGroup[] {
+  if (!enabledGroupsParam) {
+    return ALL_TOOL_GROUPS; // All groups enabled by default
+  }
+
+  const requestedGroups = enabledGroupsParam.split(',').map((g) => g.trim().toLowerCase());
+
+  const validGroups = requestedGroups.filter((g): g is ToolGroup =>
+    ALL_TOOL_GROUPS.includes(g as ToolGroup)
+  );
+
+  if (validGroups.length === 0) {
+    console.error(
+      `Warning: No valid tool groups found in "${enabledGroupsParam}". ` +
+        `Valid groups: ${ALL_TOOL_GROUPS.join(', ')}. Using all groups.`
+    );
+    return ALL_TOOL_GROUPS;
+  }
+
+  return validGroups;
+}
+
+/**
+ * Gets all available tool group names
+ */
+export function getAvailableToolGroups(): ToolGroup[] {
+  return [...ALL_TOOL_GROUPS];
+}
+
+/**
+ * Creates a function to register tools with the server based on enabled groups
+ */
+export function createRegisterTools(clientFactory: ClientFactory, enabledGroups?: ToolGroup[]) {
+  // Parse enabled groups from environment or use provided array
+  const groups = enabledGroups || parseEnabledToolGroups(process.env.GMAIL_ENABLED_TOOLGROUPS);
+
   return (server: Server) => {
-    // Create tool instances
-    const tools = ALL_TOOLS.map((factory) => factory(server, clientFactory));
+    // Filter tools by enabled groups and create instances
+    const tools = ALL_TOOLS.filter((def) => def.groups.some((g) => groups.includes(g))).map((def) =>
+      def.factory(server, clientFactory)
+    );
 
     // List available tools
     server.setRequestHandler(ListToolsRequestSchema, async () => {

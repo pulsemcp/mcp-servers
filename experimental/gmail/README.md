@@ -43,13 +43,33 @@ This server requires a Google Cloud service account with domain-wide delegation 
 
 ### Environment Variables
 
-| Variable                             | Required | Description                              |
-| ------------------------------------ | -------- | ---------------------------------------- |
-| `GMAIL_SERVICE_ACCOUNT_CLIENT_EMAIL` | Yes      | Service account email address            |
-| `GMAIL_SERVICE_ACCOUNT_PRIVATE_KEY`  | Yes      | Service account private key (PEM format) |
-| `GMAIL_IMPERSONATE_EMAIL`            | Yes      | Email address to impersonate             |
+| Variable                             | Required | Description                                                         |
+| ------------------------------------ | -------- | ------------------------------------------------------------------- |
+| `GMAIL_SERVICE_ACCOUNT_CLIENT_EMAIL` | Yes      | Service account email address                                       |
+| `GMAIL_SERVICE_ACCOUNT_PRIVATE_KEY`  | Yes      | Service account private key (PEM format)                            |
+| `GMAIL_IMPERSONATE_EMAIL`            | Yes      | Email address to impersonate                                        |
+| `GMAIL_ENABLED_TOOLGROUPS`           | No       | Comma-separated list of tool groups to enable (default: all groups) |
 
 You can find the `client_email` and `private_key` values in your service account JSON key file.
+
+### Tool Groups
+
+The server supports two tool groups for permission-based access control:
+
+| Group       | Tools Included                                                                     |
+| ----------- | ---------------------------------------------------------------------------------- |
+| `readonly`  | `list_email_conversations`, `get_email_conversation`, `search_email_conversations` |
+| `readwrite` | All readonly tools + `change_email_conversation`, `draft_email`, `send_email`      |
+
+By default, all tool groups are enabled. To restrict access, set the `GMAIL_ENABLED_TOOLGROUPS` environment variable:
+
+```bash
+# Read-only access (no write/send capabilities)
+GMAIL_ENABLED_TOOLGROUPS=readonly
+
+# Full access (default)
+GMAIL_ENABLED_TOOLGROUPS=readonly,readwrite
+```
 
 ## Configuration
 

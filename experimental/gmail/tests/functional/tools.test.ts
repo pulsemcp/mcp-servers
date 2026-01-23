@@ -493,3 +493,66 @@ describe('Gmail MCP Server Tools', () => {
     });
   });
 });
+
+describe('Tool Groups', () => {
+  describe('parseEnabledToolGroups', () => {
+    it('should return all groups when no parameter provided', async () => {
+      const { parseEnabledToolGroups } = await import('../../shared/src/tools.js');
+      const groups = parseEnabledToolGroups();
+      expect(groups).toEqual(['readonly', 'readwrite']);
+    });
+
+    it('should return all groups for empty string', async () => {
+      const { parseEnabledToolGroups } = await import('../../shared/src/tools.js');
+      const groups = parseEnabledToolGroups('');
+      expect(groups).toEqual(['readonly', 'readwrite']);
+    });
+
+    it('should parse single group', async () => {
+      const { parseEnabledToolGroups } = await import('../../shared/src/tools.js');
+      const groups = parseEnabledToolGroups('readonly');
+      expect(groups).toEqual(['readonly']);
+    });
+
+    it('should parse multiple groups', async () => {
+      const { parseEnabledToolGroups } = await import('../../shared/src/tools.js');
+      const groups = parseEnabledToolGroups('readonly,readwrite');
+      expect(groups).toEqual(['readonly', 'readwrite']);
+    });
+
+    it('should handle whitespace', async () => {
+      const { parseEnabledToolGroups } = await import('../../shared/src/tools.js');
+      const groups = parseEnabledToolGroups(' readonly , readwrite ');
+      expect(groups).toEqual(['readonly', 'readwrite']);
+    });
+
+    it('should handle case insensitivity', async () => {
+      const { parseEnabledToolGroups } = await import('../../shared/src/tools.js');
+      const groups = parseEnabledToolGroups('READONLY,ReadWrite');
+      expect(groups).toEqual(['readonly', 'readwrite']);
+    });
+
+    it('should filter invalid groups', async () => {
+      const { parseEnabledToolGroups } = await import('../../shared/src/tools.js');
+      const groups = parseEnabledToolGroups('readonly,invalid,readwrite');
+      expect(groups).toEqual(['readonly', 'readwrite']);
+    });
+
+    it('should return all groups if all specified groups are invalid', async () => {
+      const { parseEnabledToolGroups } = await import('../../shared/src/tools.js');
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const groups = parseEnabledToolGroups('invalid,unknown');
+      expect(groups).toEqual(['readonly', 'readwrite']);
+      expect(consoleSpy).toHaveBeenCalled();
+      consoleSpy.mockRestore();
+    });
+  });
+
+  describe('getAvailableToolGroups', () => {
+    it('should return all available tool groups', async () => {
+      const { getAvailableToolGroups } = await import('../../shared/src/tools.js');
+      const groups = getAvailableToolGroups();
+      expect(groups).toEqual(['readonly', 'readwrite']);
+    });
+  });
+});

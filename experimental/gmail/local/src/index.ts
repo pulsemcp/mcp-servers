@@ -4,7 +4,7 @@ import { readFileSync } from 'fs';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 import { createMCPServer } from '../shared/index.js';
-import { logServerStart, logError } from '../shared/logging.js';
+import { logServerStart, logError, logWarning } from '../shared/logging.js';
 
 // Read version from package.json
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -44,8 +44,13 @@ function validateEnvironment(): void {
     console.error('\nSetup steps:');
     console.error('  1. Go to https://console.cloud.google.com/');
     console.error('  2. Create a service account with domain-wide delegation');
-    console.error('  3. In Google Workspace Admin, grant gmail.readonly scope');
+    console.error('  3. In Google Workspace Admin, grant required Gmail API scopes');
     console.error('  4. Download the JSON key file and extract client_email and private_key');
+    console.error('\nOptional environment variables:');
+    console.error('  GMAIL_ENABLED_TOOLGROUPS: Comma-separated list of tool groups to enable');
+    console.error('    Valid groups: readonly, readwrite');
+    console.error('    Default: all groups enabled');
+    console.error('    Example: GMAIL_ENABLED_TOOLGROUPS=readonly');
     console.error('\n======================================================\n');
 
     process.exit(1);
@@ -60,13 +65,18 @@ async function main() {
   // Step 1: Validate environment variables
   validateEnvironment();
 
-  // Step 2: Create server using factory
+  // Step 2: Log tool groups if configured
+  if (process.env.GMAIL_ENABLED_TOOLGROUPS) {
+    logWarning('config', `Enabled tool groups: ${process.env.GMAIL_ENABLED_TOOLGROUPS}`);
+  }
+
+  // Step 3: Create server using factory
   const { server, registerHandlers } = createMCPServer({ version: VERSION });
 
-  // Step 3: Register all handlers (tools)
+  // Step 4: Register all handlers (tools)
   await registerHandlers(server);
 
-  // Step 4: Start server with stdio transport
+  // Step 5: Start server with stdio transport
   const transport = new StdioServerTransport();
   await server.connect(transport);
 
