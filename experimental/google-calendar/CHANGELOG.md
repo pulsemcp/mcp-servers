@@ -7,7 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.0.2] - 2025-01-23
+
 ### Added
+
+- Tool groups support with `calendar` and `calendar_readonly` groups
+  - `calendar`: All tools enabled (read + write) - default behavior
+  - `calendar_readonly`: Only read operations (excludes `gcal_create_event`)
+- `TOOL_GROUPS` environment variable for configuring enabled tool groups
+- `enabledToolGroups` option in `CreateMCPServerOptions` for programmatic configuration
+- Integration tests for tool group filtering
 
 - Initial implementation of Google Calendar MCP server
 - Service account authentication with domain-wide delegation
