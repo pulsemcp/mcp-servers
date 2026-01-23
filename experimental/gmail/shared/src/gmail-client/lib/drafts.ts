@@ -1,5 +1,6 @@
 import type { Email, EmailListItem } from '../../types.js';
 import { handleApiError } from './api-errors.js';
+import { buildMimeMessage, toBase64Url } from './mime-utils.js';
 
 interface Draft {
   id: string;
@@ -15,59 +16,6 @@ interface DraftsListResponse {
   drafts?: DraftListItem[];
   nextPageToken?: string;
   resultSizeEstimate?: number;
-}
-
-/**
- * Builds a MIME message from email options
- */
-function buildMimeMessage(
-  from: string,
-  options: {
-    to: string;
-    subject: string;
-    body: string;
-    cc?: string;
-    bcc?: string;
-    inReplyTo?: string;
-    references?: string;
-  }
-): string {
-  const headers: string[] = [
-    `From: ${from}`,
-    `To: ${options.to}`,
-    `Subject: ${options.subject}`,
-    'MIME-Version: 1.0',
-    'Content-Type: text/plain; charset=utf-8',
-  ];
-
-  if (options.cc) {
-    headers.push(`Cc: ${options.cc}`);
-  }
-
-  if (options.bcc) {
-    headers.push(`Bcc: ${options.bcc}`);
-  }
-
-  if (options.inReplyTo) {
-    headers.push(`In-Reply-To: ${options.inReplyTo}`);
-  }
-
-  if (options.references) {
-    headers.push(`References: ${options.references}`);
-  }
-
-  return headers.join('\r\n') + '\r\n\r\n' + options.body;
-}
-
-/**
- * Converts a string to base64url encoding
- */
-function toBase64Url(str: string): string {
-  return Buffer.from(str, 'utf-8')
-    .toString('base64')
-    .replace(/\+/g, '-')
-    .replace(/\//g, '_')
-    .replace(/=+$/, '');
 }
 
 /**

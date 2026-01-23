@@ -88,7 +88,7 @@ List email conversations from Gmail with optional filtering.
 
 - `count` (number, optional): Number of emails to return (default: 10, max: 100)
 - `labels` (string, optional): Comma-separated label IDs to filter by (default: "INBOX")
-- `sort_by` (string, optional): Sort order (currently supports "date")
+- `sort_by` (string, optional): Sort order - "recent" (newest first) or "oldest" (default: recent)
 
 **Example:**
 
