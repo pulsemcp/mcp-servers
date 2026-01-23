@@ -116,6 +116,36 @@ Add this configuration to your Claude Desktop config file:
 }
 ```
 
+## Tool Groups
+
+By default, all tools are enabled (read + write access). You can restrict the server to read-only operations by setting the `TOOL_GROUPS` environment variable:
+
+```json
+{
+  "mcpServers": {
+    "google-calendar": {
+      "command": "npx",
+      "args": ["google-calendar-workspace-mcp-server"],
+      "env": {
+        "GCAL_SERVICE_ACCOUNT_CLIENT_EMAIL": "...",
+        "GCAL_SERVICE_ACCOUNT_PRIVATE_KEY": "...",
+        "GCAL_IMPERSONATE_EMAIL": "...",
+        "TOOL_GROUPS": "calendar_readonly"
+      }
+    }
+  }
+}
+```
+
+**Available tool groups:**
+
+| Group               | Tools Included                                                                                      |
+| ------------------- | --------------------------------------------------------------------------------------------------- |
+| `calendar`          | All tools (read + write) - default                                                                  |
+| `calendar_readonly` | Read-only tools: `gcal_list_events`, `gcal_get_event`, `gcal_list_calendars`, `gcal_query_freebusy` |
+
+When using `calendar_readonly`, the `gcal_create_event` tool is not available.
+
 ## Available Tools
 
 ### gcal_list_events

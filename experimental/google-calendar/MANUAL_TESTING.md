@@ -5,8 +5,8 @@ This file tracks manual testing results for the Google Calendar MCP server again
 ## Latest Test Run
 
 **Status:** PASS
-**Date:** 2026-01-13
-**Commit:** daae242
+**Date:** 2026-01-23
+**Commit:** e93c1b9
 **Tester:** Claude Code
 
 ### Results
@@ -16,6 +16,10 @@ This file tracks manual testing results for the Google Calendar MCP server again
 - List events: PASS (Found 10 events)
 - Get event: PASS (Retrieved event details)
 - Query freebusy: PASS (Found 1 busy period)
+
+### Notes on Tool Groups Feature
+
+The tool groups feature (added in 0.0.2) only affects tool registration filtering and does not change any API interactions. The previous manual test results remain valid for API functionality.
 
 ### Test Output
 

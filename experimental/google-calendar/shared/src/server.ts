@@ -175,6 +175,16 @@ export type ClientFactory = () => ICalendarClient;
  */
 export interface CreateMCPServerOptions {
   version: string;
+  /**
+   * Optional comma-separated list of tool groups to enable.
+   * Available groups:
+   * - 'calendar': All calendar tools (read + write)
+   * - 'calendar_readonly': Calendar tools (read only - excludes create_event)
+   *
+   * If not specified, defaults to 'calendar' (full access).
+   * Can also be set via TOOL_GROUPS environment variable.
+   */
+  enabledToolGroups?: string;
 }
 
 /**
@@ -244,7 +254,7 @@ export function createMCPServer(options: CreateMCPServerOptions) {
     // Use provided factory or create default client
     const factory = clientFactory || createDefaultClient;
 
-    const registerTools = createRegisterTools(factory);
+    const registerTools = createRegisterTools(factory, options.enabledToolGroups);
     registerTools(server);
   };
 
