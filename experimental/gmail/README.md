@@ -162,7 +162,7 @@ Modify email labels and status (read/unread, starred, archived).
 - `email_id` (string, required): The email ID to modify
 - `status` (string, optional): "read", "unread", or "archived"
 - `is_starred` (boolean, optional): Star or unstar the email
-- `add_labels` (string, optional): Comma-separated labels to add
+- `labels` (string, optional): Comma-separated labels to add
 - `remove_labels` (string, optional): Comma-separated labels to remove
 
 **Example:**
@@ -206,7 +206,7 @@ Send an email directly or from an existing draft.
 - `to` (string, conditional): Recipient email (required unless sending from draft)
 - `subject` (string, conditional): Email subject (required unless sending from draft)
 - `body` (string, conditional): Email body (required unless sending from draft)
-- `draft_id` (string, optional): Send an existing draft by ID
+- `from_draft_id` (string, optional): Send an existing draft by ID
 - `thread_id` (string, optional): Thread ID for replies
 - `reply_to_email_id` (string, optional): Email ID to reply to
 
@@ -224,7 +224,7 @@ Send an email directly or from an existing draft.
 
 ```json
 {
-  "draft_id": "r123456789"
+  "from_draft_id": "r123456789"
 }
 ```
 
