@@ -4,6 +4,29 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.0.4] - 2026-01-23
+
+### Added
+
+- **New Tools**:
+  - `search_email_conversations` - Search emails using Gmail query syntax (from:, subject:, is:unread, etc.)
+  - `change_email_conversation` - Modify email status (read/unread/archived) and labels (starred, custom labels)
+  - `draft_email` - Create email drafts with optional in-conversation (reply) support
+  - `send_email` - Send emails directly or from existing drafts, with reply support
+
+### Changed
+
+- **BREAKING**: Renamed tools for better clarity:
+  - `gmail_list_recent_emails` → `list_email_conversations`
+  - `gmail_get_email` → `get_email_conversation`
+- **BREAKING**: `list_email_conversations` parameters changed:
+  - Removed `hours` parameter
+  - Added `count` parameter (default: 10, max: 100)
+  - Added `labels` parameter for filtering by Gmail labels
+  - Added `sort_by` parameter (accepts: 'date')
+- Extended Gmail API scopes to include `gmail.modify`, `gmail.compose`, and `gmail.send` for write operations
+- Added `IGmailClient` interface methods: `modifyMessage`, `createDraft`, `getDraft`, `listDrafts`, `deleteDraft`, `sendMessage`, `sendDraft`
+
 ## [0.0.3] - 2026-01-03
 
 ### Fixed

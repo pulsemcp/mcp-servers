@@ -1,8 +1,12 @@
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { ListToolsRequestSchema, CallToolRequestSchema } from '@modelcontextprotocol/sdk/types.js';
 import { ClientFactory } from './server.js';
-import { listRecentEmailsTool } from './tools/list-recent-emails.js';
-import { getEmailTool } from './tools/get-email.js';
+import { listEmailConversationsTool } from './tools/list-email-conversations.js';
+import { getEmailConversationTool } from './tools/get-email-conversation.js';
+import { changeEmailConversationTool } from './tools/change-email-conversation.js';
+import { draftEmailTool } from './tools/draft-email.js';
+import { sendEmailTool } from './tools/send-email.js';
+import { searchEmailConversationsTool } from './tools/search-email-conversations.js';
 
 /**
  * Generic tool interface
@@ -26,7 +30,14 @@ type ToolFactory = (server: Server, clientFactory: ClientFactory) => Tool;
 /**
  * All available tools
  */
-const ALL_TOOLS: ToolFactory[] = [listRecentEmailsTool, getEmailTool];
+const ALL_TOOLS: ToolFactory[] = [
+  listEmailConversationsTool,
+  getEmailConversationTool,
+  searchEmailConversationsTool,
+  changeEmailConversationTool,
+  draftEmailTool,
+  sendEmailTool,
+];
 
 /**
  * Creates a function to register all tools with the server

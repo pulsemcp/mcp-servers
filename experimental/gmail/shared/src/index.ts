@@ -9,6 +9,7 @@ export {
   type ClientFactory,
   type ServiceAccountCredentials,
   type CreateMCPServerOptions,
+  type Draft,
 } from './server.js';
 
 // Tools

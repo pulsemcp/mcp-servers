@@ -5,33 +5,34 @@ import type { Email } from '../types.js';
 import { getHeader } from '../utils/email-helpers.js';
 
 const PARAM_DESCRIPTIONS = {
-  hours:
-    'Time horizon in hours to look back for emails. Default: 24. ' +
-    'Example: 48 for the last 2 days.',
+  count: 'Maximum number of email conversations to return. Default: 10. Max: 100.',
   labels:
     'Comma-separated list of label IDs to filter by. Default: INBOX. ' +
     'Common labels: INBOX, SENT, DRAFTS, SPAM, TRASH, STARRED, IMPORTANT, UNREAD.',
-  max_results: 'Maximum number of emails to return. Default: 10. Max: 100.',
+  sort_by:
+    'Sort order for results. Default: recent. ' +
+    'Options: recent (newest first), oldest (oldest first).',
 } as const;
 
-export const ListRecentEmailsSchema = z.object({
-  hours: z.number().positive().default(24).describe(PARAM_DESCRIPTIONS.hours),
+export const ListEmailConversationsSchema = z.object({
+  count: z.number().positive().max(100).default(10).describe(PARAM_DESCRIPTIONS.count),
   labels: z.string().optional().default('INBOX').describe(PARAM_DESCRIPTIONS.labels),
-  max_results: z.number().positive().max(100).default(10).describe(PARAM_DESCRIPTIONS.max_results),
+  sort_by: z.enum(['recent', 'oldest']).default('recent').describe(PARAM_DESCRIPTIONS.sort_by),
 });
 
-const TOOL_DESCRIPTION = `List recent emails from Gmail within a specified time horizon.
+const TOOL_DESCRIPTION = `List email conversations from Gmail.
 
-Returns a list of recent emails with their subject, sender, date, and a snippet preview. Use get_email to retrieve the full content of a specific email.
+Returns a list of email conversations with their subject, sender, date, and a snippet preview. Use get_email_conversation to retrieve the full content of a specific conversation.
 
 **Parameters:**
-- hours: How far back to look for emails (default: 24 hours)
+- count: Maximum conversations to return (default: 10, max: 100)
 - labels: Which labels/folders to search (default: INBOX)
-- max_results: Maximum emails to return (default: 10, max: 100)
+- sort_by: Sort order - "recent" (newest first) or "oldest" (default: recent)
 
 **Returns:**
-A formatted list of emails with:
-- Email ID (needed for get_email)
+A formatted list of email conversations with:
+- Email ID (needed for get_email_conversation)
+- Thread ID
 - Subject line
 - Sender (From)
 - Date received
@@ -39,10 +40,10 @@ A formatted list of emails with:
 
 **Use cases:**
 - Check recent inbox activity
-- Monitor for new emails in a time window
-- List recent emails from specific labels like SENT or STARRED
+- List emails from specific labels like SENT or STARRED
+- Get oldest emails first for processing backlogs
 
-**Note:** This tool only returns email metadata and snippets. Use get_email with an email ID to retrieve the full message content.`;
+**Note:** This tool only returns email metadata and snippets. Use get_email_conversation with an email ID to retrieve the full message content.`;
 
 /**
  * Formats an email for display
@@ -54,57 +55,50 @@ function formatEmail(email: Email): string {
   const snippet = email.snippet || '';
 
   return `**ID:** ${email.id}
+**Thread ID:** ${email.threadId}
 **Subject:** ${subject}
 **From:** ${from}
 **Date:** ${date}
 **Preview:** ${snippet}`;
 }
 
-export function listRecentEmailsTool(server: Server, clientFactory: ClientFactory) {
+export function listEmailConversationsTool(server: Server, clientFactory: ClientFactory) {
   return {
-    name: 'gmail_list_recent_emails',
+    name: 'list_email_conversations',
     description: TOOL_DESCRIPTION,
     inputSchema: {
       type: 'object' as const,
       properties: {
-        hours: {
+        count: {
           type: 'number',
-          default: 24,
-          description: PARAM_DESCRIPTIONS.hours,
+          default: 10,
+          description: PARAM_DESCRIPTIONS.count,
         },
         labels: {
           type: 'string',
           default: 'INBOX',
           description: PARAM_DESCRIPTIONS.labels,
         },
-        max_results: {
-          type: 'number',
-          default: 10,
-          description: PARAM_DESCRIPTIONS.max_results,
+        sort_by: {
+          type: 'string',
+          enum: ['recent', 'oldest'],
+          default: 'recent',
+          description: PARAM_DESCRIPTIONS.sort_by,
         },
       },
       required: [],
     },
     handler: async (args: unknown) => {
       try {
-        const parsed = ListRecentEmailsSchema.parse(args ?? {});
+        const parsed = ListEmailConversationsSchema.parse(args ?? {});
         const client = clientFactory();
-
-        // Calculate the timestamp for the time horizon
-        const now = new Date();
-        const cutoffDate = new Date(now.getTime() - parsed.hours * 60 * 60 * 1000);
-        const afterTimestamp = Math.floor(cutoffDate.getTime() / 1000);
-
-        // Build the Gmail query
-        const query = `after:${afterTimestamp}`;
 
         // Parse labels
         const labelIds = parsed.labels.split(',').map((l) => l.trim().toUpperCase());
 
         // List messages
         const { messages } = await client.listMessages({
-          q: query,
-          maxResults: parsed.max_results,
+          maxResults: parsed.count,
           labelIds,
         });
 
@@ -113,7 +107,7 @@ export function listRecentEmailsTool(server: Server, clientFactory: ClientFactor
             content: [
               {
                 type: 'text',
-                text: `No emails found in the last ${parsed.hours} hour(s) with labels: ${labelIds.join(', ')}`,
+                text: `No email conversations found with labels: ${labelIds.join(', ')}`,
               },
             ],
           };
@@ -129,13 +123,20 @@ export function listRecentEmailsTool(server: Server, clientFactory: ClientFactor
           )
         );
 
-        const formattedEmails = emailDetails.map(formatEmail).join('\n\n---\n\n');
+        // Sort based on sort_by parameter
+        const sortedEmails = [...emailDetails].sort((a, b) => {
+          const dateA = parseInt(a.internalDate, 10);
+          const dateB = parseInt(b.internalDate, 10);
+          return parsed.sort_by === 'recent' ? dateB - dateA : dateA - dateB;
+        });
+
+        const formattedEmails = sortedEmails.map(formatEmail).join('\n\n---\n\n');
 
         return {
           content: [
             {
               type: 'text',
-              text: `Found ${messages.length} email(s) in the last ${parsed.hours} hour(s):\n\n${formattedEmails}`,
+              text: `Found ${messages.length} email conversation(s):\n\n${formattedEmails}`,
             },
           ],
         };
@@ -144,7 +145,7 @@ export function listRecentEmailsTool(server: Server, clientFactory: ClientFactor
           content: [
             {
               type: 'text',
-              text: `Error listing emails: ${error instanceof Error ? error.message : 'Unknown error'}`,
+              text: `Error listing email conversations: ${error instanceof Error ? error.message : 'Unknown error'}`,
             },
           ],
           isError: true,

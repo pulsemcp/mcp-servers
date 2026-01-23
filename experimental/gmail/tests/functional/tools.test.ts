@@ -1,8 +1,12 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { createMockGmailClient } from '../mocks/gmail-client.functional-mock.js';
-import { listRecentEmailsTool } from '../../shared/src/tools/list-recent-emails.js';
-import { getEmailTool } from '../../shared/src/tools/get-email.js';
+import { listEmailConversationsTool } from '../../shared/src/tools/list-email-conversations.js';
+import { getEmailConversationTool } from '../../shared/src/tools/get-email-conversation.js';
+import { searchEmailConversationsTool } from '../../shared/src/tools/search-email-conversations.js';
+import { changeEmailConversationTool } from '../../shared/src/tools/change-email-conversation.js';
+import { draftEmailTool } from '../../shared/src/tools/draft-email.js';
+import { sendEmailTool } from '../../shared/src/tools/send-email.js';
 import type { IGmailClient } from '../../shared/src/server.js';
 
 describe('Gmail MCP Server Tools', () => {
@@ -14,23 +18,23 @@ describe('Gmail MCP Server Tools', () => {
     mockServer = {} as Server;
   });
 
-  describe('gmail_list_recent_emails', () => {
-    it('should list recent emails with default parameters', async () => {
-      const tool = listRecentEmailsTool(mockServer, () => mockClient);
+  describe('list_email_conversations', () => {
+    it('should list email conversations with default parameters', async () => {
+      const tool = listEmailConversationsTool(mockServer, () => mockClient);
       const result = await tool.handler({});
 
-      expect(result.content[0].text).toContain('Found 2 email(s)');
+      expect(result.content[0].text).toContain('Found 2 email conversation(s)');
       expect(result.content[0].text).toContain('Project Update');
       expect(result.content[0].text).toContain('Meeting Reminder');
       expect(result.content[0].text).toContain('alice@example.com');
       expect(mockClient.listMessages).toHaveBeenCalled();
     });
 
-    it('should respect max_results parameter', async () => {
-      const tool = listRecentEmailsTool(mockServer, () => mockClient);
-      const result = await tool.handler({ max_results: 1 });
+    it('should respect count parameter', async () => {
+      const tool = listEmailConversationsTool(mockServer, () => mockClient);
+      const result = await tool.handler({ count: 1 });
 
-      expect(result.content[0].text).toContain('Found 1 email(s)');
+      expect(result.content[0].text).toContain('Found 1 email conversation(s)');
       expect(mockClient.listMessages).toHaveBeenCalledWith(
         expect.objectContaining({ maxResults: 1 })
       );
@@ -41,36 +45,44 @@ describe('Gmail MCP Server Tools', () => {
         messages: [],
         resultSizeEstimate: 0,
       });
-      const tool = listRecentEmailsTool(mockServer, () => mockClient);
+      const tool = listEmailConversationsTool(mockServer, () => mockClient);
       const result = await tool.handler({});
 
-      expect(result.content[0].text).toContain('No emails found');
+      expect(result.content[0].text).toContain('No email conversations found');
     });
 
     it('should handle errors', async () => {
       (mockClient.listMessages as ReturnType<typeof vi.fn>).mockRejectedValue(
         new Error('API error')
       );
-      const tool = listRecentEmailsTool(mockServer, () => mockClient);
+      const tool = listEmailConversationsTool(mockServer, () => mockClient);
       const result = await tool.handler({});
 
       expect(result.isError).toBe(true);
-      expect(result.content[0].text).toContain('Error listing emails');
+      expect(result.content[0].text).toContain('Error listing email conversations');
     });
 
     it('should pass labels to API', async () => {
-      const tool = listRecentEmailsTool(mockServer, () => mockClient);
+      const tool = listEmailConversationsTool(mockServer, () => mockClient);
       await tool.handler({ labels: 'STARRED,IMPORTANT' });
 
       expect(mockClient.listMessages).toHaveBeenCalledWith(
         expect.objectContaining({ labelIds: ['STARRED', 'IMPORTANT'] })
       );
     });
+
+    it('should include thread ID in output', async () => {
+      const tool = listEmailConversationsTool(mockServer, () => mockClient);
+      const result = await tool.handler({});
+
+      expect(result.content[0].text).toContain('**Thread ID:** thread_001');
+      expect(result.content[0].text).toContain('**Thread ID:** thread_002');
+    });
   });
 
-  describe('gmail_get_email', () => {
+  describe('get_email_conversation', () => {
     it('should get email by ID', async () => {
-      const tool = getEmailTool(mockServer, () => mockClient);
+      const tool = getEmailConversationTool(mockServer, () => mockClient);
       const result = await tool.handler({ email_id: 'msg_001' });
 
       expect(result.content[0].text).toContain('# Email Details');
@@ -82,7 +94,7 @@ describe('Gmail MCP Server Tools', () => {
     });
 
     it('should require email_id parameter', async () => {
-      const tool = getEmailTool(mockServer, () => mockClient);
+      const tool = getEmailConversationTool(mockServer, () => mockClient);
       const result = await tool.handler({});
 
       expect(result.isError).toBe(true);
@@ -92,7 +104,7 @@ describe('Gmail MCP Server Tools', () => {
       (mockClient.getMessage as ReturnType<typeof vi.fn>).mockRejectedValue(
         new Error('Message not found: msg_999')
       );
-      const tool = getEmailTool(mockServer, () => mockClient);
+      const tool = getEmailConversationTool(mockServer, () => mockClient);
       const result = await tool.handler({ email_id: 'msg_999' });
 
       expect(result.isError).toBe(true);
@@ -101,7 +113,7 @@ describe('Gmail MCP Server Tools', () => {
     });
 
     it('should show labels', async () => {
-      const tool = getEmailTool(mockServer, () => mockClient);
+      const tool = getEmailConversationTool(mockServer, () => mockClient);
       const result = await tool.handler({ email_id: 'msg_001' });
 
       expect(result.content[0].text).toContain('**Labels:** INBOX, UNREAD');
@@ -129,7 +141,7 @@ describe('Gmail MCP Server Tools', () => {
         },
       });
 
-      const tool = getEmailTool(mockServer, () => mockClient);
+      const tool = getEmailConversationTool(mockServer, () => mockClient);
       const result = await tool.handler({ email_id: 'msg_no_subject' });
 
       expect(result.content[0].text).toContain('**Subject:** (No Subject)');
@@ -164,7 +176,7 @@ describe('Gmail MCP Server Tools', () => {
         },
       });
 
-      const tool = getEmailTool(mockServer, () => mockClient);
+      const tool = getEmailConversationTool(mockServer, () => mockClient);
       const result = await tool.handler({ email_id: 'msg_html' });
 
       expect(result.content[0].text).toContain('Hello');
@@ -211,7 +223,7 @@ describe('Gmail MCP Server Tools', () => {
         },
       });
 
-      const tool = getEmailTool(mockServer, () => mockClient);
+      const tool = getEmailConversationTool(mockServer, () => mockClient);
       const result = await tool.handler({ email_id: 'msg_attachment' });
 
       expect(result.content[0].text).toContain('## Attachments (1)');
@@ -239,10 +251,245 @@ describe('Gmail MCP Server Tools', () => {
         },
       });
 
-      const tool = getEmailTool(mockServer, () => mockClient);
+      const tool = getEmailConversationTool(mockServer, () => mockClient);
       const result = await tool.handler({ email_id: 'msg_no_body' });
 
       expect(result.content[0].text).toContain('(No body content available)');
+    });
+  });
+
+  describe('search_email_conversations', () => {
+    it('should search emails by query', async () => {
+      const tool = searchEmailConversationsTool(mockServer, () => mockClient);
+      const result = await tool.handler({ query: 'project' });
+
+      expect(result.content[0].text).toContain('Found');
+      expect(result.content[0].text).toContain('project');
+      expect(mockClient.listMessages).toHaveBeenCalledWith(
+        expect.objectContaining({ q: 'project' })
+      );
+    });
+
+    it('should require query parameter', async () => {
+      const tool = searchEmailConversationsTool(mockServer, () => mockClient);
+      const result = await tool.handler({});
+
+      expect(result.isError).toBe(true);
+    });
+
+    it('should respect count parameter', async () => {
+      const tool = searchEmailConversationsTool(mockServer, () => mockClient);
+      await tool.handler({ query: 'test', count: 5 });
+
+      expect(mockClient.listMessages).toHaveBeenCalledWith(
+        expect.objectContaining({ maxResults: 5 })
+      );
+    });
+
+    it('should handle no results', async () => {
+      (mockClient.listMessages as ReturnType<typeof vi.fn>).mockResolvedValue({
+        messages: [],
+        resultSizeEstimate: 0,
+      });
+      const tool = searchEmailConversationsTool(mockServer, () => mockClient);
+      const result = await tool.handler({ query: 'nonexistent' });
+
+      expect(result.content[0].text).toContain('No emails found');
+    });
+  });
+
+  describe('change_email_conversation', () => {
+    it('should mark email as read', async () => {
+      const tool = changeEmailConversationTool(mockServer, () => mockClient);
+      const result = await tool.handler({ email_id: 'msg_001', status: 'read' });
+
+      expect(result.content[0].text).toContain('updated successfully');
+      expect(result.content[0].text).toContain('Removed labels: UNREAD');
+      expect(mockClient.modifyMessage).toHaveBeenCalledWith('msg_001', {
+        addLabelIds: undefined,
+        removeLabelIds: ['UNREAD'],
+      });
+    });
+
+    it('should mark email as unread', async () => {
+      const tool = changeEmailConversationTool(mockServer, () => mockClient);
+      const result = await tool.handler({ email_id: 'msg_002', status: 'unread' });
+
+      expect(result.content[0].text).toContain('updated successfully');
+      expect(result.content[0].text).toContain('Added labels: UNREAD');
+      expect(mockClient.modifyMessage).toHaveBeenCalledWith('msg_002', {
+        addLabelIds: ['UNREAD'],
+        removeLabelIds: undefined,
+      });
+    });
+
+    it('should archive email', async () => {
+      const tool = changeEmailConversationTool(mockServer, () => mockClient);
+      const result = await tool.handler({ email_id: 'msg_001', status: 'archived' });
+
+      expect(result.content[0].text).toContain('updated successfully');
+      expect(result.content[0].text).toContain('Removed labels: INBOX');
+    });
+
+    it('should star email', async () => {
+      const tool = changeEmailConversationTool(mockServer, () => mockClient);
+      const result = await tool.handler({ email_id: 'msg_001', is_starred: true });
+
+      expect(result.content[0].text).toContain('updated successfully');
+      expect(result.content[0].text).toContain('Added labels: STARRED');
+    });
+
+    it('should unstar email', async () => {
+      const tool = changeEmailConversationTool(mockServer, () => mockClient);
+      const result = await tool.handler({ email_id: 'msg_001', is_starred: false });
+
+      expect(result.content[0].text).toContain('updated successfully');
+      expect(result.content[0].text).toContain('Removed labels: STARRED');
+    });
+
+    it('should add custom labels', async () => {
+      const tool = changeEmailConversationTool(mockServer, () => mockClient);
+      const result = await tool.handler({ email_id: 'msg_001', labels: 'IMPORTANT' });
+
+      expect(result.content[0].text).toContain('updated successfully');
+      expect(result.content[0].text).toContain('Added labels: IMPORTANT');
+    });
+
+    it('should require email_id parameter', async () => {
+      const tool = changeEmailConversationTool(mockServer, () => mockClient);
+      const result = await tool.handler({});
+
+      expect(result.isError).toBe(true);
+    });
+
+    it('should handle no changes specified', async () => {
+      const tool = changeEmailConversationTool(mockServer, () => mockClient);
+      const result = await tool.handler({ email_id: 'msg_001' });
+
+      expect(result.content[0].text).toContain('No changes specified');
+    });
+  });
+
+  describe('draft_email', () => {
+    it('should create a draft', async () => {
+      const tool = draftEmailTool(mockServer, () => mockClient);
+      const result = await tool.handler({
+        to: 'recipient@example.com',
+        subject: 'Test Subject',
+        body: 'Test body content',
+      });
+
+      expect(result.content[0].text).toContain('Draft created successfully');
+      expect(result.content[0].text).toContain('Draft ID:');
+      expect(result.content[0].text).toContain('recipient@example.com');
+      expect(result.content[0].text).toContain('Test Subject');
+      expect(mockClient.createDraft).toHaveBeenCalled();
+    });
+
+    it('should create a draft with CC and BCC', async () => {
+      const tool = draftEmailTool(mockServer, () => mockClient);
+      const result = await tool.handler({
+        to: 'recipient@example.com',
+        subject: 'Test Subject',
+        body: 'Test body content',
+        cc: 'cc@example.com',
+        bcc: 'bcc@example.com',
+      });
+
+      expect(result.content[0].text).toContain('Draft created successfully');
+      expect(result.content[0].text).toContain('CC:');
+      expect(result.content[0].text).toContain('BCC:');
+    });
+
+    it('should create a reply draft with thread_id', async () => {
+      const tool = draftEmailTool(mockServer, () => mockClient);
+      const result = await tool.handler({
+        to: 'recipient@example.com',
+        subject: 'Re: Test Subject',
+        body: 'Test reply content',
+        thread_id: 'thread_001',
+        reply_to_email_id: 'msg_001',
+      });
+
+      expect(result.content[0].text).toContain('Draft created successfully');
+      expect(result.content[0].text).toContain('**Thread ID:** thread_001');
+      expect(result.content[0].text).toContain('reply in an existing conversation');
+    });
+
+    it('should require to, subject, and body parameters', async () => {
+      const tool = draftEmailTool(mockServer, () => mockClient);
+      const result = await tool.handler({ to: 'test@example.com' });
+
+      expect(result.isError).toBe(true);
+    });
+  });
+
+  describe('send_email', () => {
+    it('should send a new email', async () => {
+      const tool = sendEmailTool(mockServer, () => mockClient);
+      const result = await tool.handler({
+        to: 'recipient@example.com',
+        subject: 'Test Subject',
+        body: 'Test body content',
+      });
+
+      expect(result.content[0].text).toContain('Email sent successfully');
+      expect(result.content[0].text).toContain('Message ID:');
+      expect(result.content[0].text).toContain('Thread ID:');
+      expect(mockClient.sendMessage).toHaveBeenCalled();
+    });
+
+    it('should send a draft', async () => {
+      // First create a draft
+      await (mockClient.createDraft as ReturnType<typeof vi.fn>)({
+        to: 'test@example.com',
+        subject: 'Test',
+        body: 'Test',
+      });
+
+      const tool = sendEmailTool(mockServer, () => mockClient);
+      const result = await tool.handler({
+        from_draft_id: 'draft_1',
+      });
+
+      expect(result.content[0].text).toContain('Draft sent successfully');
+      expect(mockClient.sendDraft).toHaveBeenCalledWith('draft_1');
+    });
+
+    it('should send a reply with thread_id', async () => {
+      const tool = sendEmailTool(mockServer, () => mockClient);
+      const result = await tool.handler({
+        to: 'recipient@example.com',
+        subject: 'Re: Test Subject',
+        body: 'Test reply content',
+        thread_id: 'thread_001',
+        reply_to_email_id: 'msg_001',
+      });
+
+      expect(result.content[0].text).toContain('Email sent successfully');
+      expect(result.content[0].text).toContain('reply in an existing conversation');
+    });
+
+    it('should require either from_draft_id OR to/subject/body', async () => {
+      const tool = sendEmailTool(mockServer, () => mockClient);
+      const result = await tool.handler({});
+
+      expect(result.isError).toBe(true);
+    });
+
+    it('should handle send error', async () => {
+      (mockClient.sendMessage as ReturnType<typeof vi.fn>).mockRejectedValue(
+        new Error('Failed to send')
+      );
+      const tool = sendEmailTool(mockServer, () => mockClient);
+      const result = await tool.handler({
+        to: 'test@example.com',
+        subject: 'Test',
+        body: 'Test',
+      });
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('Error sending email');
     });
   });
 });
