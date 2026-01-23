@@ -18,6 +18,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `enabledToolGroups` option in `CreateMCPServerOptions` for programmatic configuration
 - Integration tests for tool group filtering
 
+## [0.0.1] - 2024-01-12
+
+### Added
+
 - Initial implementation of Google Calendar MCP server
 - Service account authentication with domain-wide delegation
 - `gcal_list_events` tool for listing calendar events
@@ -27,9 +31,3 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `gcal_query_freebusy` tool for checking availability
 - Comprehensive test suite (functional, integration, and manual tests)
 - Full documentation including setup guide and troubleshooting
-
-## [0.0.1] - 2024-01-12
-
-### Added
-
-- Initial release (placeholder version)
