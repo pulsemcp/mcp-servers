@@ -392,6 +392,22 @@ describe('Tools', () => {
       expect(result.content[0].text).toContain('release');
       expect(mockClient.listReleases).toHaveBeenCalledWith('test-app', { limit: 5 });
     });
+
+    it('should return error when app_name is missing', async () => {
+      const tool = listReleasesTool(mockServer, () => mockClient);
+      const result = await tool.handler({});
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('Error');
+    });
+
+    it('should handle empty releases', async () => {
+      (mockClient.listReleases as ReturnType<typeof vi.fn>).mockResolvedValueOnce([]);
+      const tool = listReleasesTool(mockServer, () => mockClient);
+      const result = await tool.handler({ app_name: 'test-app' });
+
+      expect(result.content[0].text).toContain('No releases found');
+    });
   });
 
   describe('update_image', () => {
@@ -415,6 +431,14 @@ describe('Tools', () => {
       expect(mockClient.updateImage).toHaveBeenCalledWith('test-app', {
         image: 'registry.fly.io/my-app:v2',
       });
+    });
+
+    it('should return error when app_name is missing', async () => {
+      const tool = updateImageTool(mockServer, () => mockClient);
+      const result = await tool.handler({});
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('Error');
     });
   });
 });

@@ -43,6 +43,7 @@ export function listReleasesTool(_server: Server, clientFactory: () => IFlyIOCli
         },
         limit: {
           type: 'number',
+          minimum: 1,
           description: PARAM_DESCRIPTIONS.limit,
         },
       },
