@@ -44,6 +44,27 @@ This server is built and tested on macOS with Claude Desktop. It should work wit
 - Use `get_server` to get detailed information about a specific server.
 - The `version` parameter in `get_server` defaults to "latest" but you can specify a specific version.
 
+## Auto-Truncation
+
+To reduce context size, responses are automatically truncated:
+
+- **Strings** longer than 200 characters are replaced with a truncation message
+- **Deep objects** (at depth 6+) larger than 500 characters are replaced with a truncation message
+
+Truncated values show the exact `expand_fields` path needed to view the full content:
+
+```json
+{
+  "description": "[TRUNCATED - use expand_fields: [\"servers[].server.description\"] to see full content]"
+}
+```
+
+Use the `expand_fields` parameter to view full content for specific fields:
+
+```
+expand_fields: ["servers[].server.description", "servers[].server.readme"]
+```
+
 # Examples
 
 ## Browsing Servers
@@ -212,9 +233,10 @@ Browse MCP servers from the PulseMCP Sub-Registry.
 
 - `limit` (number, optional): Maximum number of servers to return (1-100). Default: 30.
 - `cursor` (string, optional): Pagination cursor from a previous response.
-- `search` (string, optional): Search term to filter servers by name or description.
+- `search` (string, optional): Search term to filter servers by name or title.
 - `updated_since` (string, optional): ISO 8601 timestamp to filter servers updated after this date. Example: "2024-01-01T00:00:00Z".
-- `exclude_fields` (array, optional): Array of dot-notation paths to exclude from the response. Reduces context size by removing unnecessary fields. Examples: `["servers[].server.packages", "servers[].server.remotes", "servers[]._meta"]`.
+- `latest_only` (boolean, optional): If true (default), only returns the latest version of each server. Set to false to include all versions.
+- `expand_fields` (array, optional): Array of dot-notation paths to show in full (not truncated). By default, long strings are truncated. Examples: `["servers[].server.description", "servers[].server.readme"]`.
 
 ### get_server
 
@@ -224,7 +246,7 @@ Get detailed information about a specific MCP server.
 
 - `server_name` (string, required): The name of the server to look up.
 - `version` (string, optional): Specific version to retrieve. Default: "latest".
-- `exclude_fields` (array, optional): Array of dot-notation paths to exclude from the response. Examples: `["server.packages", "server.remotes", "_meta"]`.
+- `expand_fields` (array, optional): Array of dot-notation paths to show in full (not truncated). Examples: `["server.description", "server.readme"]`.
 
 ## License
 
