@@ -192,9 +192,10 @@ describe('list_servers tool', () => {
 
     const parsed = JSON.parse(result.content[0].text);
     expect(parsed.servers[0].server.name).toBe('test-server');
-    expect(parsed.servers[0].server.description).toContain('... [TRUNCATED');
-    // Truncated to 200 chars + suffix, so shorter than original
-    expect(parsed.servers[0].server.description.length).toBeLessThan(longDescription.length);
+    // Truncated strings are replaced with message (no original content prefix)
+    expect(parsed.servers[0].server.description).toBe(
+      '[TRUNCATED - use expand_fields: ["servers[].server.description"] to see full content]'
+    );
   });
 
   it('should expand fields using expand_fields parameter', async () => {
@@ -347,9 +348,10 @@ describe('get_server tool', () => {
 
     const parsed = JSON.parse(result.content[0].text);
     expect(parsed.server.name).toBe('test-server');
-    expect(parsed.server.description).toContain('... [TRUNCATED');
-    // Truncated to 200 chars + suffix, so shorter than original
-    expect(parsed.server.description.length).toBeLessThan(longDescription.length);
+    // Truncated strings are replaced with message (no original content prefix)
+    expect(parsed.server.description).toBe(
+      '[TRUNCATED - use expand_fields: ["server.description"] to see full content]'
+    );
   });
 
   it('should expand fields using expand_fields parameter', async () => {

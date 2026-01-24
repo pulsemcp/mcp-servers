@@ -7,10 +7,8 @@ describe('truncateStrings', () => {
     const result = truncateStrings({ text: longString });
 
     const text = (result as Record<string, unknown>).text as string;
-    expect(text).toContain('... [TRUNCATED');
-    // Should start with 200 chars + truncation suffix
-    expect(text.startsWith('a'.repeat(200))).toBe(true);
-    expect(text.length).toBeLessThan(longString.length);
+    // Should be replaced with truncation message (no original content)
+    expect(text).toBe('[TRUNCATED - use expand_fields: ["text"] to see full content]');
   });
 
   it('should include specific path in truncation message', () => {
@@ -19,7 +17,9 @@ describe('truncateStrings', () => {
 
     const server = (result as Record<string, unknown>).server as Record<string, unknown>;
     const desc = server.description as string;
-    expect(desc).toContain('expand_fields: ["server.description"]');
+    expect(desc).toBe(
+      '[TRUNCATED - use expand_fields: ["server.description"] to see full content]'
+    );
   });
 
   it('should use wildcard notation for array paths in truncation message', () => {
@@ -30,7 +30,9 @@ describe('truncateStrings', () => {
 
     const servers = (result as Record<string, unknown>).servers as Array<Record<string, unknown>>;
     const desc = servers[0].description as string;
-    expect(desc).toContain('expand_fields: ["servers[].description"]');
+    expect(desc).toBe(
+      '[TRUNCATED - use expand_fields: ["servers[].description"] to see full content]'
+    );
   });
 
   it('should not truncate strings shorter than 200 characters', () => {
@@ -50,7 +52,9 @@ describe('truncateStrings', () => {
     });
 
     const server = (result as Record<string, unknown>).server as Record<string, unknown>;
-    expect(server.description).toContain('... [TRUNCATED');
+    expect(server.description).toBe(
+      '[TRUNCATED - use expand_fields: ["server.description"] to see full content]'
+    );
     expect(server.name).toBe('short');
   });
 
@@ -61,7 +65,9 @@ describe('truncateStrings', () => {
     });
 
     const servers = (result as Record<string, unknown>).servers as Array<Record<string, unknown>>;
-    expect(servers[0].description).toContain('... [TRUNCATED');
+    expect(servers[0].description).toBe(
+      '[TRUNCATED - use expand_fields: ["servers[].description"] to see full content]'
+    );
     expect(servers[1].description).toBe('short');
   });
 
@@ -157,10 +163,10 @@ describe('truncateStrings', () => {
     const meta = server.meta as Record<string, unknown>;
     const tools = meta.tools as string;
 
-    // Should be truncated to a string with the truncation suffix
-    expect(typeof tools).toBe('string');
-    expect(tools).toContain('DEEP OBJECT TRUNCATED');
-    expect(tools).toContain('expand_fields: ["servers[].server.meta.tools"]');
+    // Should be replaced with truncation message (keeps JSON valid)
+    expect(tools).toBe(
+      '[DEEP OBJECT TRUNCATED - use expand_fields: ["servers[].server.meta.tools"] to see full content]'
+    );
   });
 
   it('should not truncate objects at depth 4 (only truncate at depth >= 5)', () => {
@@ -246,9 +252,13 @@ describe('truncateStrings', () => {
     // Should still be an object (object structure preserved at depth 3)
     // Strings inside at depth 4 (servers[0].server.field1) will be truncated
     expect(typeof server).toBe('object');
-    // At depth 4, strings > 200 chars are truncated
-    expect(server.field1).toContain('... [TRUNCATED');
-    expect(server.field2).toContain('... [TRUNCATED');
+    // At depth 4, strings > 200 chars are replaced with truncation message
+    expect(server.field1).toBe(
+      '[TRUNCATED - use expand_fields: ["servers[].server.field1"] to see full content]'
+    );
+    expect(server.field2).toBe(
+      '[TRUNCATED - use expand_fields: ["servers[].server.field2"] to see full content]'
+    );
   });
 
   it('should allow expanding deep truncated objects', () => {

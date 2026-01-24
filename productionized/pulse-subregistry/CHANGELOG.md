@@ -12,9 +12,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `latest_only` parameter to `list_servers` tool (default: `true`)
   - By default, only returns the latest version of each server
   - Set to `false` to include all versions
-- Auto-truncation to reduce context size:
-  - Strings longer than 200 characters are truncated with path-specific message showing exact `expand_fields` path needed
-  - Deep objects/arrays (depth >= 5) larger than 500 characters are truncated with path-specific message (depth 4 keys remain visible)
+- Auto-truncation to reduce context size (truncated values are valid JSON strings, not partial content):
+  - Strings longer than 200 characters are replaced with a message showing exact `expand_fields` path needed
+  - Deep objects/arrays (depth >= 5) larger than 500 characters are replaced with a message (depth 4 keys remain visible)
 - `expand_fields` parameter to `list_servers` and `get_server` tools for viewing full content of truncated fields
   - Uses dot-notation paths (e.g., `"servers[].server.description"`, `"server.readme"`)
   - Supports array notation `[]` to apply to all array elements

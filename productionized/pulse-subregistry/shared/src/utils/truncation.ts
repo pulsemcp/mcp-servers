@@ -7,16 +7,15 @@ const DEEP_VALUE_MAX_LENGTH = 500;
 const DEPTH_THRESHOLD = 5; // Start truncating complex values at depth 5 (so depth 4 keys are visible)
 
 /**
- * Creates truncation suffix with specific path for expansion
+ * Creates truncation message with specific path for expansion.
+ * Returns a complete message (not a suffix) to ensure JSON validity.
  */
-function getStringTruncationSuffix(path: string): string {
+function getTruncationMessage(path: string, type: 'string' | 'deep'): string {
   const wildcardPath = path.replace(/\[\d+\]/g, '[]');
-  return ` ... [TRUNCATED - use expand_fields: ["${wildcardPath}"] to see full content]`;
-}
-
-function getDeepTruncationSuffix(path: string): string {
-  const wildcardPath = path.replace(/\[\d+\]/g, '[]');
-  return ` ... [DEEP OBJECT TRUNCATED - use expand_fields: ["${wildcardPath}"] to see full content]`;
+  if (type === 'string') {
+    return `[TRUNCATED - use expand_fields: ["${wildcardPath}"] to see full content]`;
+  }
+  return `[DEEP OBJECT TRUNCATED - use expand_fields: ["${wildcardPath}"] to see full content]`;
 }
 
 /**
@@ -110,15 +109,16 @@ export function truncateStrings(
   if (currentDepth >= DEPTH_THRESHOLD && (typeof obj === 'object' || Array.isArray(obj))) {
     const serialized = JSON.stringify(obj);
     if (serialized.length > DEEP_VALUE_MAX_LENGTH) {
-      // Truncate the serialized JSON with path-specific message
-      return serialized.substring(0, DEEP_VALUE_MAX_LENGTH) + getDeepTruncationSuffix(currentPath);
+      // Replace the entire value with a truncation message (keeps JSON valid)
+      return getTruncationMessage(currentPath, 'deep');
     }
   }
 
   // Handle strings - truncate if too long
   if (typeof obj === 'string') {
     if (obj.length > DEFAULT_STRING_MAX_LENGTH) {
-      return obj.substring(0, DEFAULT_STRING_MAX_LENGTH) + getStringTruncationSuffix(currentPath);
+      // Replace with truncation message (keeps JSON valid)
+      return getTruncationMessage(currentPath, 'string');
     }
     return obj;
   }

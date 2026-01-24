@@ -214,11 +214,13 @@ This document tracks potentially controversial design decisions made during the 
 - Auto-truncation provides a good default experience without requiring users to understand the API response structure
 - The `expand_fields` parameter allows users to see full content for specific fields when needed
 - Deep nesting in JSON can create verbose output even with short strings
+- Truncated values must be valid JSON strings (not partial content) to ensure the response can be parsed
 
 **Implementation**:
 
-- **String truncation**: Strings longer than 200 characters are truncated with the specific path to expand, e.g.: `"... [TRUNCATED - use expand_fields: ["servers[].server.description"] to see full content]"`
-- **Deep object truncation**: At depth >= 5, objects/arrays larger than 500 chars when serialized are truncated with the specific path, e.g.: `"... [DEEP OBJECT TRUNCATED - use expand_fields: ["servers[].server.meta.tools"] to see full content]"`
+- **String truncation**: Strings longer than 200 characters are replaced with a message showing the path to expand, e.g.: `"[TRUNCATED - use expand_fields: ["servers[].server.description"] to see full content]"`
+- **Deep object truncation**: At depth >= 5, objects/arrays larger than 500 chars when serialized are replaced with a message, e.g.: `"[DEEP OBJECT TRUNCATED - use expand_fields: ["servers[].server.meta.tools"] to see full content]"`
+- **JSON validity**: Truncated values are complete strings (not partial JSON) ensuring the entire response remains valid and parseable
 - Depth counting: Each key access and array index counts as one level
   - `servers` = depth 1
   - `servers[0]` = depth 2
