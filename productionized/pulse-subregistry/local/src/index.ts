@@ -22,7 +22,7 @@ function validateEnvironment() {
     process.exit(1);
   }
 
-  console.error(`Pulse Directory MCP server starting (v${VERSION})`);
+  console.error(`Pulse Sub-Registry MCP server starting (v${VERSION})`);
 
   if (process.env.PULSEMCP_TENANT_ID) {
     console.error('Using tenant ID:', process.env.PULSEMCP_TENANT_ID);

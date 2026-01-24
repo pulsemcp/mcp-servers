@@ -5,7 +5,7 @@ import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { createMCPServer } from '../shared/index.js';
-import type { IPulseDirectoryClient } from '../shared/index.js';
+import type { IPulseSubregistryClient } from '../shared/index.js';
 import type {
   ListServersResponse,
   GetServerResponse,
@@ -20,7 +20,7 @@ const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf-8'));
 const VERSION = packageJson.version;
 
 // Mock client implementation for integration testing
-class MockPulseDirectoryClient implements IPulseDirectoryClient {
+class MockPulseSubregistryClient implements IPulseSubregistryClient {
   async listServers(options?: ListServersOptions): Promise<ListServersResponse> {
     const mockServers = process.env.MOCK_SERVERS_DATA;
     const mockSuccess = process.env.MOCK_LIST_SUCCESS !== 'false';
@@ -100,7 +100,7 @@ async function main() {
   const { server, registerHandlers } = createMCPServer({ version: VERSION });
 
   // Create mock client factory for testing
-  const mockClientFactory = () => new MockPulseDirectoryClient();
+  const mockClientFactory = () => new MockPulseSubregistryClient();
 
   await registerHandlers(server, mockClientFactory);
 

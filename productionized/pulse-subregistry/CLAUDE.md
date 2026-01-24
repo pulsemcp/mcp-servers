@@ -1,10 +1,10 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with the Pulse Directory MCP server.
+This file provides guidance to Claude Code (claude.ai/code) when working with the Pulse Sub-Registry MCP server.
 
 ## Overview
 
-Pulse Directory is an MCP server that provides access to the PulseMCP server directory, allowing users to browse and discover MCP servers programmatically.
+Pulse Sub-Registry is an MCP server that provides access to the PulseMCP Sub-Registry, allowing users to browse and discover MCP servers programmatically.
 
 ## Architecture
 

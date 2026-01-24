@@ -8,7 +8,7 @@ import type { ClientFactory } from '../client.js';
 
 const PARAM_DESCRIPTIONS = {
   server_name:
-    'The name of the server to look up. This is the unique identifier for the server in the PulseMCP directory. Example: "@anthropic/mcp-server-filesystem".',
+    'The name of the server to look up. This is the unique identifier for the server in the PulseMCP Sub-Registry. Example: "@anthropic/mcp-server-filesystem".',
   version:
     'Specific version to retrieve. Use "latest" (default) to get the most recent version, or specify a semver version like "1.0.0".',
 } as const;
@@ -20,15 +20,19 @@ const getServerArgsSchema = z.object({
 
 function formatServerDetails(server: {
   name: string;
+  title?: string;
   description?: string;
-  url?: string;
-  repository?: string;
+  websiteUrl?: string;
+  repository?: { url?: string; source?: string } | string;
   version?: string;
   [key: string]: unknown;
 }): string {
   const lines: string[] = [];
 
-  lines.push(`# ${server.name}`);
+  // Use title if available, otherwise fall back to name
+  const displayName = server.title || server.name;
+  lines.push(`# ${displayName}`);
+  lines.push(`**ID**: \`${server.name}\``);
   lines.push('');
 
   if (server.description) {
@@ -43,16 +47,31 @@ function formatServerDetails(server: {
     lines.push(`- **Version**: ${server.version}`);
   }
 
-  if (server.url) {
-    lines.push(`- **URL**: ${server.url}`);
+  if (server.websiteUrl) {
+    lines.push(`- **Website**: ${server.websiteUrl}`);
   }
 
+  // Handle repository as either object or string
   if (server.repository) {
-    lines.push(`- **Repository**: ${server.repository}`);
+    const repoUrl =
+      typeof server.repository === 'object' ? server.repository.url : server.repository;
+    if (repoUrl) {
+      lines.push(`- **Repository**: ${repoUrl}`);
+    }
   }
 
   // Include any other fields from the server object
-  const knownFields = ['name', 'description', 'url', 'repository', 'version'];
+  const knownFields = [
+    'name',
+    'title',
+    'description',
+    'websiteUrl',
+    'repository',
+    'version',
+    '$schema',
+    'packages',
+    'remotes',
+  ];
   const additionalFields = Object.entries(server).filter(
     ([key, value]) => !knownFields.includes(key) && value !== undefined && value !== null
   );
@@ -76,7 +95,7 @@ export function getServerTool(_server: Server, clientFactory: ClientFactory) {
   return {
     name: 'get_server',
     description:
-      'Get detailed information about a specific MCP server from the PulseMCP directory. Returns the server\'s metadata, description, repository URL, and other available information. Use "latest" version (default) or specify a specific version number.',
+      'Get detailed information about a specific MCP server from the PulseMCP Sub-Registry. Returns the server\'s metadata, description, repository URL, and other available information. Use "latest" version (default) or specify a specific version number.',
     inputSchema: {
       type: 'object' as const,
       properties: {

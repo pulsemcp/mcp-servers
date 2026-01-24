@@ -1,7 +1,7 @@
 {
-  "name": "@pulsemcp/pulse-directory-shared",
+  "name": "@pulsemcp/pulse-subregistry-shared",
   "version": "0.0.1",
-  "description": "Shared code for pulse-directory MCP server implementations",
+  "description": "Shared code for pulse-subregistry MCP server implementations",
   "main": "build/index.js",
   "type": "module",
   "scripts": {

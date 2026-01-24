@@ -1,9 +1,10 @@
 /**
- * PulseMCP Directory API Client
+ * PulseMCP Sub-Registry API Client
  */
 
 import type {
   ListServersResponse,
+  ListServersApiResponse,
   GetServerResponse,
   ListServersOptions,
   GetServerOptions,
@@ -13,25 +14,25 @@ const API_BASE_URL = 'https://api.pulsemcp.com';
 const API_VERSION = 'v0.1';
 const DEFAULT_TIMEOUT_MS = 30000;
 
-export interface PulseDirectoryClientConfig {
+export interface PulseSubregistryClientConfig {
   apiKey: string;
   tenantId?: string;
   baseUrl?: string;
   timeout?: number;
 }
 
-export interface IPulseDirectoryClient {
+export interface IPulseSubregistryClient {
   listServers(options?: ListServersOptions): Promise<ListServersResponse>;
   getServer(options: GetServerOptions): Promise<GetServerResponse>;
 }
 
-export class PulseDirectoryClient implements IPulseDirectoryClient {
+export class PulseSubregistryClient implements IPulseSubregistryClient {
   private apiKey: string;
   private tenantId?: string;
   private baseUrl: string;
   private timeout: number;
 
-  constructor(config: PulseDirectoryClientConfig) {
+  constructor(config: PulseSubregistryClientConfig) {
     this.apiKey = config.apiKey;
     this.tenantId = config.tenantId;
     this.baseUrl = config.baseUrl || API_BASE_URL;
@@ -120,7 +121,14 @@ export class PulseDirectoryClient implements IPulseDirectoryClient {
       throw new Error(`API request failed (${response.status}): ${errorMessage}`);
     }
 
-    return response.json() as Promise<ListServersResponse>;
+    // Parse the raw API response
+    const apiResponse = (await response.json()) as ListServersApiResponse;
+
+    // Transform to flattened format - extract server objects from nested structure
+    return {
+      servers: apiResponse.servers.map((entry) => entry.server),
+      metadata: apiResponse.metadata,
+    };
   }
 
   async getServer(options: GetServerOptions): Promise<GetServerResponse> {
@@ -163,4 +171,4 @@ export class PulseDirectoryClient implements IPulseDirectoryClient {
   }
 }
 
-export type ClientFactory = () => IPulseDirectoryClient;
+export type ClientFactory = () => IPulseSubregistryClient;

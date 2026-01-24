@@ -1,11 +1,11 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import type { Server } from '@modelcontextprotocol/sdk/server/index.js';
-import type { IPulseDirectoryClient, ClientFactory } from '../../shared/src/client.js';
+import type { IPulseSubregistryClient, ClientFactory } from '../../shared/src/client.js';
 import { listServersTool } from '../../shared/src/tools/list-servers.js';
 import { getServerTool } from '../../shared/src/tools/get-server.js';
 
 // Create mock client factory
-function createMockClient(): IPulseDirectoryClient {
+function createMockClient(): IPulseSubregistryClient {
   return {
     listServers: vi.fn(),
     getServer: vi.fn(),
@@ -13,7 +13,7 @@ function createMockClient(): IPulseDirectoryClient {
 }
 
 describe('list_servers tool', () => {
-  let mockClient: IPulseDirectoryClient;
+  let mockClient: IPulseSubregistryClient;
   let mockServer: Server;
   let clientFactory: ClientFactory;
 
@@ -27,16 +27,18 @@ describe('list_servers tool', () => {
     (mockClient.listServers as ReturnType<typeof vi.fn>).mockResolvedValue({
       servers: [
         {
-          name: 'test-server-1',
+          name: 'io.github.example/test-server-1',
+          title: 'Test Server 1',
           description: 'A test server',
           version: '1.0.0',
-          url: 'https://example.com/test-1',
+          websiteUrl: 'https://example.com/test-1',
         },
         {
-          name: 'test-server-2',
+          name: 'io.github.example/test-server-2',
+          title: 'Test Server 2',
           description: 'Another test server',
           version: '2.0.0',
-          repository: 'https://github.com/example/test-2',
+          repository: { url: 'https://github.com/example/test-2', source: 'github' },
         },
       ],
       metadata: {
@@ -48,9 +50,9 @@ describe('list_servers tool', () => {
     const result = await tool.handler({});
 
     expect(result.content[0].text).toContain('Found 2 servers');
-    expect(result.content[0].text).toContain('test-server-1');
+    expect(result.content[0].text).toContain('Test Server 1');
     expect(result.content[0].text).toContain('A test server');
-    expect(result.content[0].text).toContain('test-server-2');
+    expect(result.content[0].text).toContain('Test Server 2');
     expect(result.content[0].text).toContain('Another test server');
   });
 
@@ -134,7 +136,7 @@ describe('list_servers tool', () => {
 });
 
 describe('get_server tool', () => {
-  let mockClient: IPulseDirectoryClient;
+  let mockClient: IPulseSubregistryClient;
   let mockServer: Server;
   let clientFactory: ClientFactory;
 
@@ -147,19 +149,20 @@ describe('get_server tool', () => {
   it('should return formatted server details', async () => {
     (mockClient.getServer as ReturnType<typeof vi.fn>).mockResolvedValue({
       server: {
-        name: 'test-server',
+        name: 'io.github.example/test-server',
+        title: 'Test Server',
         description: 'A detailed test server',
         version: '1.2.3',
-        url: 'https://example.com/test',
-        repository: 'https://github.com/example/test',
+        websiteUrl: 'https://example.com/test',
+        repository: { url: 'https://github.com/example/test', source: 'github' },
       },
       _meta: {},
     });
 
     const tool = getServerTool(mockServer, clientFactory);
-    const result = await tool.handler({ server_name: 'test-server' });
+    const result = await tool.handler({ server_name: 'io.github.example/test-server' });
 
-    expect(result.content[0].text).toContain('test-server');
+    expect(result.content[0].text).toContain('Test Server');
     expect(result.content[0].text).toContain('A detailed test server');
     expect(result.content[0].text).toContain('1.2.3');
     expect(result.content[0].text).toContain('https://example.com/test');

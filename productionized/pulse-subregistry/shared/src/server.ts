@@ -1,6 +1,10 @@
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { createRegisterTools } from './tools.js';
-import { PulseDirectoryClient, type ClientFactory, type IPulseDirectoryClient } from './client.js';
+import {
+  PulseSubregistryClient,
+  type ClientFactory,
+  type IPulseSubregistryClient,
+} from './client.js';
 
 export interface CreateMCPServerOptions {
   version: string;
@@ -9,7 +13,7 @@ export interface CreateMCPServerOptions {
 export function createMCPServer(options: CreateMCPServerOptions) {
   const server = new Server(
     {
-      name: '@pulsemcp/pulse-directory',
+      name: '@pulsemcp/pulse-subregistry',
       version: options.version,
     },
     {
@@ -30,7 +34,7 @@ export function createMCPServer(options: CreateMCPServerOptions) {
           throw new Error('PULSEMCP_API_KEY environment variable is required');
         }
 
-        return new PulseDirectoryClient({
+        return new PulseSubregistryClient({
           apiKey,
           tenantId: process.env.PULSEMCP_TENANT_ID,
         });
@@ -44,5 +48,5 @@ export function createMCPServer(options: CreateMCPServerOptions) {
 }
 
 // Re-export client types for integration testing
-export type { IPulseDirectoryClient, ClientFactory };
-export { PulseDirectoryClient };
+export type { IPulseSubregistryClient, ClientFactory };
+export { PulseSubregistryClient };

@@ -1,6 +1,6 @@
 # Design Decisions
 
-This document tracks potentially controversial design decisions made during the development of the Pulse Directory MCP server. These are meant to be discussed and potentially revised.
+This document tracks potentially controversial design decisions made during the development of the Pulse Sub-Registry MCP server. These are meant to be discussed and potentially revised.
 
 ## 1. Tool Names: `list_servers` vs `list_mcp_servers`
 
@@ -8,7 +8,7 @@ This document tracks potentially controversial design decisions made during the 
 
 **Rationale**:
 
-- The server name already indicates it's about MCP servers (`pulse-directory`)
+- The server name already indicates it's about MCP servers (`pulse-subregistry`)
 - Shorter names are easier to type and remember
 - Follows the pattern of other MCP servers that use domain-specific short names
 
@@ -105,7 +105,7 @@ This document tracks potentially controversial design decisions made during the 
 
 ## 7. API Client Architecture: Class vs Functions
 
-**Decision**: Use class-based client (`PulseDirectoryClient`).
+**Decision**: Use class-based client (`PulseSubregistryClient`).
 
 **Rationale**:
 
@@ -162,8 +162,45 @@ This document tracks potentially controversial design decisions made during the 
 
 **Alternatives considered**:
 
-- `PULSE_DIRECTORY_API_KEY` - Matches server name but longer
+- `PULSE_SUBREGISTRY_API_KEY` - Matches server name but longer
 - `API_KEY` - Too generic, could conflict
+
+---
+
+## 11. API Response Transformation: Flattening Nested Structure
+
+**Decision**: Transform the nested API response (`{ server: ..., _meta: ... }`) to a flat structure for tools.
+
+**Rationale**:
+
+- The API returns servers as `{ servers: [{ server: {...}, _meta: {...} }, ...] }`
+- For tool output, users care about the server data, not the wrapper structure
+- Flattening makes the tool output cleaner and more readable
+- The `_meta` information (visitor stats, publication info) could be exposed later if needed
+
+**Implementation**:
+
+- `listServers()` extracts `entry.server` from each entry
+- `getServer()` returns the full response including `_meta` for potential future use
+
+---
+
+## 12. Display Names: Server Title vs ID
+
+**Decision**: Display server `title` as the primary name, with `name` (ID) shown separately.
+
+**Rationale**:
+
+- The API returns both `title` (human-friendly, e.g., "Context7") and `name` (ID, e.g., "io.github.upstash/context7")
+- Using `title` for display provides better readability
+- Showing the `name` as an ID helps users reference servers in API calls
+
+**Example output**:
+
+```
+## Context7
+**ID**: `io.github.upstash/context7`
+```
 
 ---
 
@@ -174,5 +211,6 @@ This document tracks potentially controversial design decisions made during the 
 3. Should we offer a `format` parameter for output (JSON/Markdown)?
 4. Should we add a `list_versions` tool?
 5. Should we expose the `updated_since` parameter?
+6. Should we expose `_meta` information (visitor stats, publication info) in tool output?
 
 Please review these decisions and let me know if any should be changed before merging.

@@ -1,5 +1,5 @@
 /**
- * Tool for listing MCP servers from the PulseMCP directory
+ * Tool for listing MCP servers from the PulseMCP Sub-Registry
  */
 
 import { z } from 'zod';
@@ -24,9 +24,10 @@ const listServersArgsSchema = z.object({
 function formatServerList(
   servers: Array<{
     name: string;
+    title?: string;
     description?: string;
-    url?: string;
-    repository?: string;
+    websiteUrl?: string;
+    repository?: { url?: string; source?: string } | string;
     version?: string;
     [key: string]: unknown;
   }>,
@@ -41,7 +42,10 @@ function formatServerList(
   lines.push('');
 
   for (const server of servers) {
-    lines.push(`## ${server.name}`);
+    // Use title if available, otherwise fall back to name
+    const displayName = server.title || server.name;
+    lines.push(`## ${displayName}`);
+    lines.push(`**ID**: \`${server.name}\``);
 
     if (server.description) {
       lines.push(server.description);
@@ -51,12 +55,17 @@ function formatServerList(
       lines.push(`- **Version**: ${server.version}`);
     }
 
-    if (server.url) {
-      lines.push(`- **URL**: ${server.url}`);
+    if (server.websiteUrl) {
+      lines.push(`- **Website**: ${server.websiteUrl}`);
     }
 
+    // Handle repository as either object or string
     if (server.repository) {
-      lines.push(`- **Repository**: ${server.repository}`);
+      const repoUrl =
+        typeof server.repository === 'object' ? server.repository.url : server.repository;
+      if (repoUrl) {
+        lines.push(`- **Repository**: ${repoUrl}`);
+      }
     }
 
     lines.push('');
@@ -74,7 +83,7 @@ export function listServersTool(_server: Server, clientFactory: ClientFactory) {
   return {
     name: 'list_servers',
     description:
-      'Browse MCP servers from the PulseMCP directory. Returns a paginated list of servers with their names, descriptions, and metadata. Use search to filter by name or description. Use cursor for pagination through large result sets.',
+      'Browse MCP servers from the PulseMCP Sub-Registry. Returns a paginated list of servers with their names, descriptions, and metadata. Use search to filter by name or description. Use cursor for pagination through large result sets.',
     inputSchema: {
       type: 'object' as const,
       properties: {

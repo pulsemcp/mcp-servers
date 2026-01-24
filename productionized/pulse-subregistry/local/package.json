@@ -1,12 +1,12 @@
 {
-  "name": "@pulsemcp/pulse-directory",
+  "name": "@pulsemcp/pulse-subregistry",
   "version": "0.0.1",
-  "description": "MCP server for browsing the PulseMCP server directory",
-  "mcpName": "com.pulsemcp.servers/pulse-directory",
+  "description": "MCP server for browsing the PulseMCP Sub-Registry",
+  "mcpName": "com.pulsemcp.servers/pulse-subregistry",
   "main": "build/index.js",
   "type": "module",
   "bin": {
-    "@pulsemcp/pulse-directory": "./build/index.js"
+    "@pulsemcp/pulse-subregistry": "./build/index.js"
   },
   "files": [
     "build/**/*.js",

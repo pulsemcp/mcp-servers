@@ -1,10 +1,10 @@
-# Pulse Directory MCP Server
+# Pulse Sub-Registry MCP Server
 
 Haven't heard about MCP yet? The easiest way to keep up-to-date is to read our [weekly newsletter at PulseMCP](https://www.pulsemcp.com/).
 
 ---
 
-This is an MCP ([Model Context Protocol](https://modelcontextprotocol.io/)) Server that provides access to the PulseMCP server directory, allowing you to browse and discover MCP servers.
+This is an MCP ([Model Context Protocol](https://modelcontextprotocol.io/)) Server that provides access to the PulseMCP Sub-Registry, allowing you to browse and discover MCP servers.
 
 This project is built and maintained by [PulseMCP](https://www.pulsemcp.com/).
 
@@ -22,7 +22,7 @@ This project is built and maintained by [PulseMCP](https://www.pulsemcp.com/).
 
 # Highlights
 
-**Browse MCP servers**: Search and discover MCP servers from the PulseMCP directory.
+**Browse MCP servers**: Search and discover MCP servers from the PulseMCP Sub-Registry.
 
 **Get server details**: Retrieve detailed information about specific servers including versions, descriptions, and repository links.
 
@@ -32,10 +32,10 @@ This project is built and maintained by [PulseMCP](https://www.pulsemcp.com/).
 
 This server is built and tested on macOS with Claude Desktop. It should work with other MCP clients as well.
 
-| Tool Name      | Description                                                                |
-| -------------- | -------------------------------------------------------------------------- |
-| `list_servers` | Browse MCP servers from the directory with optional search and pagination. |
-| `get_server`   | Get detailed information about a specific MCP server by name and version.  |
+| Tool Name      | Description                                                                   |
+| -------------- | ----------------------------------------------------------------------------- |
+| `list_servers` | Browse MCP servers from the Sub-Registry with optional search and pagination. |
+| `get_server`   | Get detailed information about a specific MCP server by name and version.     |
 
 # Usage Tips
 
@@ -115,9 +115,9 @@ Add this configuration to your Claude Desktop config file:
 ```json
 {
   "mcpServers": {
-    "pulse-directory": {
+    "pulse-subregistry": {
       "command": "npx",
-      "args": ["-y", "@pulsemcp/pulse-directory"],
+      "args": ["-y", "@pulsemcp/pulse-subregistry"],
       "env": {
         "PULSEMCP_API_KEY": "your-api-key-here"
       }
@@ -129,7 +129,7 @@ Add this configuration to your Claude Desktop config file:
 To set up the local version:
 
 1. Clone or download the repository
-2. Navigate to the local directory: `cd pulse-directory/local`
+2. Navigate to the local directory: `cd pulse-subregistry/local`
 3. Install dependencies: `npm install`
 4. Build the project: `npm run build`
 5. Update your Claude Desktop config with the correct path
@@ -140,7 +140,7 @@ To set up the local version:
 ## Project Structure
 
 ```
-pulse-directory/
+pulse-subregistry/
 ├── local/                 # Local server implementation
 │   ├── src/
 │   │   └── index.ts      # Main entry point
@@ -206,7 +206,7 @@ npm run format
 
 ### list_servers
 
-Browse MCP servers from the PulseMCP directory.
+Browse MCP servers from the PulseMCP Sub-Registry.
 
 **Parameters:**
 
