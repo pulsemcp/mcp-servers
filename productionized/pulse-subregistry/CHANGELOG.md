@@ -14,7 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Set to `false` to include all versions
 - Auto-truncation to reduce context size (truncated values are valid JSON strings, not partial content):
   - Strings longer than 200 characters are replaced with a message showing exact `expand_fields` path needed
-  - Deep objects/arrays (depth >= 5) larger than 500 characters are replaced with a message (depth 4 keys remain visible)
+  - Deep objects/arrays (depth >= 6) larger than 500 characters are replaced with a message (depth 5 keys remain visible)
 - `expand_fields` parameter to `list_servers` and `get_server` tools for viewing full content of truncated fields
   - Uses dot-notation paths (e.g., `"servers[].server.description"`, `"server.readme"`)
   - Supports array notation `[]` to apply to all array elements

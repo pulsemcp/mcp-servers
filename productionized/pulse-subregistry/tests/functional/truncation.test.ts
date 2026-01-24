@@ -135,7 +135,44 @@ describe('truncateStrings', () => {
     expect(packages[0].readme).toBe(longString);
   });
 
-  it('should truncate deep objects (depth >= 5) larger than 500 chars', () => {
+  it('should truncate deep objects (depth >= 6) larger than 500 chars', () => {
+    // Depth 6 example: servers[0].server.meta.version.details = 1+1+1+1+1+1 = 6
+    const largeDeepObject = {
+      field1: 'a'.repeat(100),
+      field2: 'b'.repeat(100),
+      field3: 'c'.repeat(100),
+      field4: 'd'.repeat(100),
+      field5: 'e'.repeat(100),
+      nested: { more: 'data' },
+    };
+
+    const result = truncateStrings({
+      servers: [
+        {
+          server: {
+            meta: {
+              version: {
+                details: largeDeepObject,
+              },
+            },
+          },
+        },
+      ],
+    });
+
+    const servers = (result as Record<string, unknown>).servers as Array<Record<string, unknown>>;
+    const server = servers[0].server as Record<string, unknown>;
+    const meta = server.meta as Record<string, unknown>;
+    const version = meta.version as Record<string, unknown>;
+    const details = version.details as string;
+
+    // Should be replaced with truncation message (keeps JSON valid)
+    expect(details).toBe(
+      '[DEEP OBJECT TRUNCATED - use expand_fields: ["servers[].server.meta.version.details"] to see full content]'
+    );
+  });
+
+  it('should not truncate objects at depth 5 (only truncate at depth >= 6)', () => {
     // Depth 5 example: servers[0].server.meta.tools = 1+1+1+1+1 = 5
     const largeDeepObject = {
       field1: 'a'.repeat(100),
@@ -161,47 +198,16 @@ describe('truncateStrings', () => {
     const servers = (result as Record<string, unknown>).servers as Array<Record<string, unknown>>;
     const server = servers[0].server as Record<string, unknown>;
     const meta = server.meta as Record<string, unknown>;
-    const tools = meta.tools as string;
+    const tools = meta.tools as Record<string, unknown>;
 
-    // Should be replaced with truncation message (keeps JSON valid)
-    expect(tools).toBe(
-      '[DEEP OBJECT TRUNCATED - use expand_fields: ["servers[].server.meta.tools"] to see full content]'
-    );
-  });
-
-  it('should not truncate objects at depth 4 (only truncate at depth >= 5)', () => {
-    // Depth 4 example: servers[0].server.meta = 1+1+1+1 = 4
-    const largeDeepObject = {
-      field1: 'a'.repeat(100),
-      field2: 'b'.repeat(100),
-      field3: 'c'.repeat(100),
-      field4: 'd'.repeat(100),
-      field5: 'e'.repeat(100),
-      nested: { more: 'data' },
-    };
-
-    const result = truncateStrings({
-      servers: [
-        {
-          server: {
-            meta: largeDeepObject,
-          },
-        },
-      ],
-    });
-
-    const servers = (result as Record<string, unknown>).servers as Array<Record<string, unknown>>;
-    const server = servers[0].server as Record<string, unknown>;
-    const meta = server.meta as Record<string, unknown>;
-
-    // Should still be an object at depth 4
-    expect(typeof meta).toBe('object');
-    expect(meta.field1).toBe('a'.repeat(100));
-    expect(meta.field2).toBe('b'.repeat(100));
+    // Should still be an object at depth 5
+    expect(typeof tools).toBe('object');
+    expect(tools.field1).toBe('a'.repeat(100));
+    expect(tools.field2).toBe('b'.repeat(100));
   });
 
   it('should not truncate deep objects smaller than 500 chars', () => {
-    // Create a small object at depth 5
+    // Create a small object at depth 6: servers[0].server.meta.version.details = 6
     const smallDeepObject = {
       field1: 'small',
       field2: 'value',
@@ -212,7 +218,9 @@ describe('truncateStrings', () => {
         {
           server: {
             meta: {
-              tools: smallDeepObject,
+              version: {
+                details: smallDeepObject,
+              },
             },
           },
         },
@@ -222,15 +230,16 @@ describe('truncateStrings', () => {
     const servers = (result as Record<string, unknown>).servers as Array<Record<string, unknown>>;
     const server = servers[0].server as Record<string, unknown>;
     const meta = server.meta as Record<string, unknown>;
-    const tools = meta.tools as Record<string, unknown>;
+    const version = meta.version as Record<string, unknown>;
+    const details = version.details as Record<string, unknown>;
 
-    // Should still be an object, not truncated
-    expect(typeof tools).toBe('object');
-    expect(tools.field1).toBe('small');
-    expect(tools.field2).toBe('value');
+    // Should still be an object, not truncated (small object)
+    expect(typeof details).toBe('object');
+    expect(details.field1).toBe('small');
+    expect(details.field2).toBe('value');
   });
 
-  it('should not truncate objects at depth < 5 regardless of size', () => {
+  it('should not truncate objects at depth < 6 regardless of size', () => {
     // servers[0].server is depth 3, should not be truncated even if large
     const largeObject = {
       field1: 'a'.repeat(600),
@@ -262,6 +271,7 @@ describe('truncateStrings', () => {
   });
 
   it('should allow expanding deep truncated objects', () => {
+    // Large object at depth 6: servers[0].server.meta.version.details
     const largeDeepObject = {
       field1: 'a'.repeat(200),
       field2: 'b'.repeat(200),
@@ -274,24 +284,27 @@ describe('truncateStrings', () => {
           {
             server: {
               meta: {
-                tools: largeDeepObject,
+                version: {
+                  details: largeDeepObject,
+                },
               },
             },
           },
         ],
       },
-      ['servers[].server.meta.tools']
+      ['servers[].server.meta.version.details']
     );
 
     const servers = (result as Record<string, unknown>).servers as Array<Record<string, unknown>>;
     const server = servers[0].server as Record<string, unknown>;
     const meta = server.meta as Record<string, unknown>;
-    const tools = meta.tools as Record<string, unknown>;
+    const version = meta.version as Record<string, unknown>;
+    const details = version.details as Record<string, unknown>;
 
     // Should be expanded (object preserved, no deep truncation)
     // Inner strings are also preserved because the whole path is expanded
-    expect(typeof tools).toBe('object');
-    expect(tools.field1).toBe('a'.repeat(200));
+    expect(typeof details).toBe('object');
+    expect(details.field1).toBe('a'.repeat(200));
   });
 });
 

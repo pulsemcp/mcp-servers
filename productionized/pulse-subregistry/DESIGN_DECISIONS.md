@@ -219,14 +219,16 @@ This document tracks potentially controversial design decisions made during the 
 **Implementation**:
 
 - **String truncation**: Strings longer than 200 characters are replaced with a message showing the path to expand, e.g.: `"[TRUNCATED - use expand_fields: ["servers[].server.description"] to see full content]"`
-- **Deep object truncation**: At depth >= 5, objects/arrays larger than 500 chars when serialized are replaced with a message, e.g.: `"[DEEP OBJECT TRUNCATED - use expand_fields: ["servers[].server.meta.tools"] to see full content]"`
+- **Deep object truncation**: At depth >= 6, objects/arrays larger than 500 chars when serialized are replaced with a message, e.g.: `"[DEEP OBJECT TRUNCATED - use expand_fields: ["servers[].server.meta.version.details"] to see full content]"`
 - **JSON validity**: Truncated values are complete strings (not partial JSON) ensuring the entire response remains valid and parseable
 - Depth counting: Each key access and array index counts as one level
   - `servers` = depth 1
   - `servers[0]` = depth 2
   - `servers[0].server` = depth 3
-  - `servers[0].server.meta` = depth 4 (keys visible, values may be truncated at next level)
-  - `servers[0].server.meta.tools` = depth 5 (truncation applies here for large objects)
+  - `servers[0]._meta` = depth 3
+  - `servers[0]._meta.com.pulsemcp/server-version` = depth 4
+  - `servers[0]._meta.com.pulsemcp/server-version.source` = depth 5 (visible)
+  - `servers[0]._meta.com.pulsemcp/server-version.remotes[0]` = depth 6 (truncation applies here for large objects)
 - Truncation messages include the exact path needed to expand (with array indices converted to `[]` wildcards)
 - `expand_fields` accepts an array of dot-notation paths to show in full (not truncated)
 - Supports `[]` notation to apply to all array elements (e.g., `"servers[].server.description"`)

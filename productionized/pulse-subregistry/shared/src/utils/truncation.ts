@@ -4,7 +4,7 @@
 
 const DEFAULT_STRING_MAX_LENGTH = 200;
 const DEEP_VALUE_MAX_LENGTH = 500;
-const DEPTH_THRESHOLD = 5; // Start truncating complex values at depth 5 (so depth 4 keys are visible)
+const DEPTH_THRESHOLD = 6; // Start truncating complex values at depth 6 (so depth 5 keys are visible)
 
 /**
  * Creates truncation message with specific path for expansion.
@@ -27,9 +27,11 @@ function getTruncationMessage(path: string, type: 'string' | 'deep'): string {
  *   - "servers[0].server" = depth 3
  *   - "servers[0].server.packages" = depth 4
  *   - "servers[0].server.packages[0]" = depth 5
+ *   - "servers[0].server.packages[0].readme" = depth 6 (truncation starts here)
  *   - "servers[0]._meta" = depth 3
- *   - "servers[0]._meta.com.pulsemcp/server" = depth 4
- *   - "servers[0]._meta.com.pulsemcp/server.tools" = depth 5
+ *   - "servers[0]._meta.com.pulsemcp/server-version" = depth 4
+ *   - "servers[0]._meta.com.pulsemcp/server-version.source" = depth 5 (visible)
+ *   - "servers[0]._meta.com.pulsemcp/server-version.remotes[0]" = depth 6 (truncation starts here)
  */
 function getDepth(path: string): number {
   if (!path) return 0;
