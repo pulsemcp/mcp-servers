@@ -19,10 +19,9 @@ You can have confidence that any Pulse-branded MCP server was built with these n
 
 These are PulseMCP-branded servers that we intend to maintain indefinitely as our own offerings.
 
-| Name                                             | Description                          | Local Status | Remote Status | Target Audience                                                                                        | Notes                                                                                                  |
-| ------------------------------------------------ | ------------------------------------ | ------------ | ------------- | ------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------ |
-| [pulse-fetch](./productionized/pulse-fetch/)     | Pull internet resources into context | 0.3.0        | Not Started   | Agent-building frameworks (e.g. fast-agent, Mastra, PydanticAI) and MCP clients without built-in fetch | Supports Firecrawl and BrightData integrations; HTML noise stripping; Resource caching; LLM extraction |
-| [cloud-storage](./productionized/cloud-storage/) | Cloud storage integration (GCS, S3)  | 0.1.0        | Not Started   | Developers needing to store/retrieve files from cloud storage                                          | Supports GCS; Local file path references to preserve context window; Future S3 support planned         |
+| Name                                         | Description                          | Local Status | Remote Status | Target Audience                                                                                        | Notes                                                                                                  |
+| -------------------------------------------- | ------------------------------------ | ------------ | ------------- | ------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------ |
+| [pulse-fetch](./productionized/pulse-fetch/) | Pull internet resources into context | 0.3.0        | Not Started   | Agent-building frameworks (e.g. fast-agent, Mastra, PydanticAI) and MCP clients without built-in fetch | Supports Firecrawl and BrightData integrations; HTML noise stripping; Resource caching; LLM extraction |
 
 ### Experimental Servers
 
