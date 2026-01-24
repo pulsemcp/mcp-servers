@@ -17,6 +17,9 @@ import { waitMachineTool } from '../../shared/src/tools/wait-machine.js';
 import { getMachineEventsTool } from '../../shared/src/tools/get-machine-events.js';
 import { getLogsTool } from '../../shared/src/tools/get-logs.js';
 import { machineExecTool } from '../../shared/src/tools/machine-exec.js';
+import { showImageTool } from '../../shared/src/tools/show-image.js';
+import { listReleasesTool } from '../../shared/src/tools/list-releases.js';
+import { updateImageTool } from '../../shared/src/tools/update-image.js';
 import { createRegisterTools, parseEnabledToolGroups } from '../../shared/src/tools.js';
 import { createMockFlyIOClient } from '../mocks/fly-io-client.functional-mock.js';
 
@@ -350,6 +353,70 @@ describe('Tools', () => {
       );
     });
   });
+
+  describe('show_image', () => {
+    it('should show image details for an app', async () => {
+      const tool = showImageTool(mockServer, () => mockClient);
+      const result = await tool.handler({ app_name: 'test-app' });
+
+      expect(result.content[0].text).toContain('registry.fly.io');
+      expect(result.content[0].text).toContain('test-app');
+      expect(result.content[0].text).toContain('deployment-abc123');
+      expect(mockClient.showImage).toHaveBeenCalledWith('test-app');
+    });
+
+    it('should return error when app_name is missing', async () => {
+      const tool = showImageTool(mockServer, () => mockClient);
+      const result = await tool.handler({});
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('Error');
+    });
+  });
+
+  describe('list_releases', () => {
+    it('should list releases for an app', async () => {
+      const tool = listReleasesTool(mockServer, () => mockClient);
+      const result = await tool.handler({ app_name: 'test-app' });
+
+      expect(result.content[0].text).toContain('release');
+      expect(result.content[0].text).toContain('v1');
+      expect(result.content[0].text).toContain('Initial deployment');
+      expect(mockClient.listReleases).toHaveBeenCalledWith('test-app', { limit: undefined });
+    });
+
+    it('should accept a limit parameter', async () => {
+      const tool = listReleasesTool(mockServer, () => mockClient);
+      const result = await tool.handler({ app_name: 'test-app', limit: 5 });
+
+      expect(result.content[0].text).toContain('release');
+      expect(mockClient.listReleases).toHaveBeenCalledWith('test-app', { limit: 5 });
+    });
+  });
+
+  describe('update_image', () => {
+    it('should update image for an app', async () => {
+      const tool = updateImageTool(mockServer, () => mockClient);
+      const result = await tool.handler({ app_name: 'test-app' });
+
+      expect(result.content[0].text).toContain('successfully');
+      expect(result.content[0].text).toContain('registry.fly.io');
+      expect(mockClient.updateImage).toHaveBeenCalledWith('test-app', { image: undefined });
+    });
+
+    it('should accept a specific image parameter', async () => {
+      const tool = updateImageTool(mockServer, () => mockClient);
+      const result = await tool.handler({
+        app_name: 'test-app',
+        image: 'registry.fly.io/my-app:v2',
+      });
+
+      expect(result.content[0].text).toContain('successfully');
+      expect(mockClient.updateImage).toHaveBeenCalledWith('test-app', {
+        image: 'registry.fly.io/my-app:v2',
+      });
+    });
+  });
 });
 
 describe('parseEnabledToolGroups', () => {
@@ -362,6 +429,7 @@ describe('parseEnabledToolGroups', () => {
     expect(result).toContain('machines');
     expect(result).toContain('logs');
     expect(result).toContain('ssh');
+    expect(result).toContain('images');
   });
 
   it('should return all groups when empty string is provided', () => {
@@ -458,6 +526,10 @@ describe('Feature Groups (ENABLED_TOOLGROUPS)', () => {
       expect(toolNames).toContain('machine_exec');
       expect(toolNames).toContain('delete_app');
       expect(toolNames).toContain('delete_machine');
+      // Image tools should also be included
+      expect(toolNames).toContain('show_image');
+      expect(toolNames).toContain('list_releases');
+      expect(toolNames).toContain('update_image');
     });
   });
 
@@ -546,6 +618,19 @@ describe('Feature Groups (ENABLED_TOOLGROUPS)', () => {
 
       const toolNames = result.tools.map((t) => t.name);
       expect(toolNames).toContain('machine_exec');
+      expect(toolNames).not.toContain('list_apps');
+      expect(toolNames).not.toContain('list_machines');
+      expect(toolNames).not.toContain('get_logs');
+    });
+
+    it('should filter to images feature only', async () => {
+      setupServer(['images']);
+      const result = await listToolsHandler();
+
+      const toolNames = result.tools.map((t) => t.name);
+      expect(toolNames).toContain('show_image');
+      expect(toolNames).toContain('list_releases');
+      expect(toolNames).toContain('update_image');
       expect(toolNames).not.toContain('list_apps');
       expect(toolNames).not.toContain('list_machines');
       expect(toolNames).not.toContain('get_logs');

@@ -1,6 +1,6 @@
 import { vi } from 'vitest';
 import type { IFlyIOClient } from '../../shared/src/fly-io-client/fly-io-client.js';
-import type { App, Machine, MachineEvent } from '../../shared/src/types.js';
+import type { App, Machine, MachineEvent, ImageDetails, Release } from '../../shared/src/types.js';
 
 const mockApp: App = {
   id: 'test-app-id',
@@ -82,7 +82,33 @@ export function createMockFlyIOClient(): IFlyIOClient {
       .fn()
       .mockResolvedValue('2025-01-01T00:00:00Z app[test-machine-id] INFO: Application started'),
     execCommand: vi.fn().mockResolvedValue('command output'),
+
+    // Image operations
+    showImage: vi.fn().mockResolvedValue(mockImageDetails),
+    listReleases: vi.fn().mockResolvedValue([mockRelease]),
+    updateImage: vi.fn().mockResolvedValue(mockImageDetails),
   };
 }
 
-export { mockApp, mockMachine, mockEvents };
+const mockImageDetails: ImageDetails = {
+  registry: 'registry.fly.io',
+  repository: 'test-app',
+  tag: 'deployment-abc123',
+  digest: 'sha256:abc123def456',
+  version: 1,
+};
+
+const mockRelease: Release = {
+  id: 'release-1',
+  version: 1,
+  stable: true,
+  inProgress: false,
+  status: 'complete',
+  description: 'Initial deployment',
+  reason: 'deploy',
+  user: { id: 'user-1', email: 'test@example.com', name: 'Test User' },
+  createdAt: '2025-01-01T00:00:00Z',
+  imageRef: 'registry.fly.io/test-app:deployment-abc123',
+};
+
+export { mockApp, mockMachine, mockEvents, mockImageDetails, mockRelease };

@@ -7,8 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Image management tools:
+  - `show_image` - Show current Docker image details for an app
+  - `list_releases` - List releases with Docker image references
+  - `update_image` - Update app's image to latest version or specific image
+- `images` feature group for image management tools
+
 ### Changed
 
+- Increased `machine_exec` default timeout from 30s to 120s to prevent MCP client timeouts
+- Fixed integration test import path for test-mcp-client
 - **BREAKING**: Refactored to use `fly` CLI instead of REST API
   - All operations now shell out to the `fly` command
   - Requires `fly` CLI to be installed and available in PATH

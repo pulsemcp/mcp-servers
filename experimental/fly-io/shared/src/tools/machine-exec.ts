@@ -6,7 +6,7 @@ const PARAM_DESCRIPTIONS = {
   app_name: 'The name of the app containing the machine.',
   machine_id: 'The ID of the machine to execute the command on.',
   command: 'The command to execute on the machine.',
-  timeout: 'Optional: Timeout in seconds (default: 30).',
+  timeout: 'Optional: Timeout in seconds (default: 120).',
 } as const;
 
 export const MachineExecSchema = z.object({

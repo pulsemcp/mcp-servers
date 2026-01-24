@@ -18,6 +18,9 @@ import { waitMachineTool } from './tools/wait-machine.js';
 import { getMachineEventsTool } from './tools/get-machine-events.js';
 import { getLogsTool } from './tools/get-logs.js';
 import { machineExecTool } from './tools/machine-exec.js';
+import { showImageTool } from './tools/show-image.js';
+import { listReleasesTool } from './tools/list-releases.js';
+import { updateImageTool } from './tools/update-image.js';
 
 // =============================================================================
 // TOOL GROUPING SYSTEM
@@ -37,6 +40,7 @@ import { machineExecTool } from './tools/machine-exec.js';
 //    - 'machines': Machine management tools (list, get, create, update, delete, start, stop, etc.)
 //    - 'logs': Log retrieval tools (get_logs)
 //    - 'ssh': Remote execution tools (machine_exec)
+//    - 'images': Image management tools (show_image, list_releases, update_image)
 //
 // Usage: Set ENABLED_TOOLGROUPS environment variable to a comma-separated list
 // Examples:
@@ -62,7 +66,7 @@ export type PermissionGroup = 'readonly' | 'write' | 'admin';
 /**
  * Feature-based tool groups (what features are enabled)
  */
-export type FeatureGroup = 'apps' | 'machines' | 'logs' | 'ssh';
+export type FeatureGroup = 'apps' | 'machines' | 'logs' | 'ssh' | 'images';
 
 /**
  * All available tool groups (both permission and feature based)
@@ -70,7 +74,7 @@ export type FeatureGroup = 'apps' | 'machines' | 'logs' | 'ssh';
 export type ToolGroup = PermissionGroup | FeatureGroup;
 
 const ALL_PERMISSION_GROUPS: PermissionGroup[] = ['readonly', 'write', 'admin'];
-const ALL_FEATURE_GROUPS: FeatureGroup[] = ['apps', 'machines', 'logs', 'ssh'];
+const ALL_FEATURE_GROUPS: FeatureGroup[] = ['apps', 'machines', 'logs', 'ssh', 'images'];
 const ALL_TOOL_GROUPS: ToolGroup[] = [...ALL_PERMISSION_GROUPS, ...ALL_FEATURE_GROUPS];
 
 /**
@@ -244,6 +248,25 @@ const ALL_TOOLS: ToolDefinition[] = [
     factory: machineExecTool,
     permissionGroups: ['write', 'admin'],
     featureGroup: 'ssh',
+    requiresAppName: true,
+  },
+  // Image management tools
+  {
+    factory: showImageTool,
+    permissionGroups: ['readonly', 'write', 'admin'],
+    featureGroup: 'images',
+    requiresAppName: true,
+  },
+  {
+    factory: listReleasesTool,
+    permissionGroups: ['readonly', 'write', 'admin'],
+    featureGroup: 'images',
+    requiresAppName: true,
+  },
+  {
+    factory: updateImageTool,
+    permissionGroups: ['write', 'admin'],
+    featureGroup: 'images',
     requiresAppName: true,
   },
 ];

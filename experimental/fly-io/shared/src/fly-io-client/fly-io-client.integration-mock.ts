@@ -1,4 +1,4 @@
-import type { IFlyIOClient } from './fly-io-client.js';
+import type { IFlyIOClient, ReleasesOptions, UpdateImageOptions } from './fly-io-client.js';
 import type {
   App,
   Machine,
@@ -6,6 +6,8 @@ import type {
   CreateMachineRequest,
   UpdateMachineRequest,
   MachineState,
+  ImageDetails,
+  Release,
 } from '../types.js';
 
 /**
@@ -238,6 +240,60 @@ export function createIntegrationMockFlyIOClient(
         throw new Error(`Machine not found: ${machineId}`);
       }
       return `Executed: ${command}`;
+    },
+
+    // Image operations
+    async showImage(appName: string): Promise<ImageDetails> {
+      const app = apps.find((a) => a.name === appName);
+      if (!app) {
+        throw new Error(`App not found: ${appName}`);
+      }
+      return {
+        registry: 'registry.fly.io',
+        repository: appName,
+        tag: 'deployment-mock123',
+        digest: 'sha256:abc123def456',
+        version: 1,
+      };
+    },
+
+    async listReleases(appName: string, options?: ReleasesOptions): Promise<Release[]> {
+      const app = apps.find((a) => a.name === appName);
+      if (!app) {
+        throw new Error(`App not found: ${appName}`);
+      }
+      const releases: Release[] = [
+        {
+          id: 'release-1',
+          version: 1,
+          stable: true,
+          inProgress: false,
+          status: 'complete',
+          description: 'Initial deployment',
+          reason: 'deploy',
+          user: { id: 'user-1', email: 'test@example.com', name: 'Test User' },
+          createdAt: '2025-01-01T00:00:00Z',
+          imageRef: `registry.fly.io/${appName}:deployment-mock123`,
+        },
+      ];
+      if (options?.limit && options.limit > 0) {
+        return releases.slice(0, options.limit);
+      }
+      return releases;
+    },
+
+    async updateImage(appName: string, _options?: UpdateImageOptions): Promise<ImageDetails> {
+      const app = apps.find((a) => a.name === appName);
+      if (!app) {
+        throw new Error(`App not found: ${appName}`);
+      }
+      return {
+        registry: 'registry.fly.io',
+        repository: appName,
+        tag: 'deployment-mock456',
+        digest: 'sha256:updated789',
+        version: 2,
+      };
     },
   };
 

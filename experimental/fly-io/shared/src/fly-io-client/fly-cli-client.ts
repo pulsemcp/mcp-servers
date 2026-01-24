@@ -7,6 +7,8 @@ import type {
   CreateMachineRequest,
   UpdateMachineRequest,
   MachineState,
+  ImageDetails,
+  Release,
 } from '../types.js';
 
 const execFileAsync = promisify(execFile);
@@ -50,6 +52,19 @@ export interface IFlyIOClientExtended {
     command: string,
     timeout?: number
   ): Promise<string>;
+
+  // Image operations
+  showImage(appName: string): Promise<ImageDetails>;
+  listReleases(appName: string, options?: ReleasesOptions): Promise<Release[]>;
+  updateImage(appName: string, options?: UpdateImageOptions): Promise<ImageDetails>;
+}
+
+export interface ReleasesOptions {
+  limit?: number;
+}
+
+export interface UpdateImageOptions {
+  image?: string;
 }
 
 export interface LogsOptions {
@@ -428,7 +443,7 @@ export class FlyCLIClient implements IFlyIOClientExtended {
     appName: string,
     machineId: string,
     command: string,
-    timeout: number = 30
+    timeout: number = 120
   ): Promise<string> {
     const args = [
       'machine',
@@ -441,8 +456,87 @@ export class FlyCLIClient implements IFlyIOClientExtended {
       timeout.toString(),
     ];
 
-    const output = await this.execFly(args, { json: false, timeout: (timeout + 10) * 1000 });
+    const output = await this.execFly(args, { json: false, timeout: (timeout + 30) * 1000 });
     return output;
+  }
+
+  // ==========================================================================
+  // Image operations
+  // ==========================================================================
+
+  async showImage(appName: string): Promise<ImageDetails> {
+    const args = ['image', 'show', '--app', appName];
+    const output = await this.execFly(args);
+    const data = this.parseJson<{
+      Registry: string;
+      Repository: string;
+      Tag: string;
+      Digest: string;
+      Version: number;
+    }>(output);
+
+    return {
+      registry: data.Registry,
+      repository: data.Repository,
+      tag: data.Tag,
+      digest: data.Digest,
+      version: data.Version,
+    };
+  }
+
+  async listReleases(appName: string, options: ReleasesOptions = {}): Promise<Release[]> {
+    const args = ['releases', '--app', appName, '--image'];
+
+    const output = await this.execFly(args);
+    let releases = this.parseJson<
+      Array<{
+        ID: string;
+        Version: number;
+        Stable: boolean;
+        InProgress: boolean;
+        Status: string;
+        Description: string;
+        Reason: string;
+        User: { ID: string; Email: string; Name: string };
+        CreatedAt: string;
+        ImageRef?: string;
+      }>
+    >(output);
+
+    if (options.limit && options.limit > 0) {
+      releases = releases.slice(0, options.limit);
+    }
+
+    return releases.map((r) => ({
+      id: r.ID,
+      version: r.Version,
+      stable: r.Stable,
+      inProgress: r.InProgress,
+      status: r.Status,
+      description: r.Description,
+      reason: r.Reason,
+      user: {
+        id: r.User?.ID || '',
+        email: r.User?.Email || '',
+        name: r.User?.Name || '',
+      },
+      createdAt: r.CreatedAt,
+      imageRef: r.ImageRef,
+    }));
+  }
+
+  async updateImage(appName: string, options: UpdateImageOptions = {}): Promise<ImageDetails> {
+    const args = ['image', 'update', '--app', appName, '--yes'];
+
+    if (options.image) {
+      args.push('--image', options.image);
+    }
+
+    // Image update can take a while, use longer timeout
+    await this.execFly(args, { json: false, timeout: 300000 });
+
+    // Fetch the updated image details
+    return this.showImage(appName);
   }
 }
 

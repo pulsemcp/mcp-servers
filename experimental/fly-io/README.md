@@ -12,6 +12,7 @@ MCP server for managing Fly.io machines and applications. This server provides t
 - Deploy Docker images to Fly.io
 - **Retrieve application logs** with region and machine filtering
 - **Execute commands on running machines**
+- **Manage Docker images** - view current image, list releases, update to new versions
 - Tool grouping for permission-based access control
 - Health checks for API credential validation
 
@@ -38,6 +39,9 @@ MCP server for managing Fly.io machines and applications. This server provides t
 | `wait_machine`       | write, admin           | machines | Wait for a machine to reach a state         |
 | `get_logs`           | readonly, write, admin | logs     | Get application logs                        |
 | `machine_exec`       | write, admin           | ssh      | Execute a command on a machine              |
+| `show_image`         | readonly, write, admin | images   | Show current Docker image details           |
+| `list_releases`      | readonly, write, admin | images   | List releases with image references         |
+| `update_image`       | write, admin           | images   | Update app's image to latest or specific    |
 
 ### Security Considerations
 
@@ -67,6 +71,7 @@ Control which tools are available via the `ENABLED_TOOLGROUPS` environment varia
 | `machines` | Machine management tools (list, get, create, update, delete, start, stop) |
 | `logs`     | Log retrieval tools (get_logs)                                            |
 | `ssh`      | Remote execution tools (machine_exec)                                     |
+| `images`   | Image management tools (show_image, list_releases, update_image)          |
 
 **Examples:**
 
@@ -200,6 +205,24 @@ Get the logs for my-web-app to see what's happening.
 
 ```
 Run "ls -la /app" on machine abc123 in my-web-app to see the app files.
+```
+
+### Check current image version
+
+```
+Show me the current Docker image details for my-web-app.
+```
+
+### List deployment history
+
+```
+List the last 5 releases for my-web-app to see the deployment history.
+```
+
+### Update to a new image
+
+```
+Update my-web-app to use the latest image version.
 ```
 
 ## Development

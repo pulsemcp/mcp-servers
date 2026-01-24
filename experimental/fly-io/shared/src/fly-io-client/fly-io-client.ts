@@ -5,10 +5,17 @@ import type {
   CreateMachineRequest,
   UpdateMachineRequest,
   MachineState,
+  ImageDetails,
+  Release,
 } from '../types.js';
-import { FlyCLIClient, type LogsOptions } from './fly-cli-client.js';
+import {
+  FlyCLIClient,
+  type LogsOptions,
+  type ReleasesOptions,
+  type UpdateImageOptions,
+} from './fly-cli-client.js';
 
-export { FlyCLIClient, type LogsOptions };
+export { FlyCLIClient, type LogsOptions, type ReleasesOptions, type UpdateImageOptions };
 
 /**
  * Interface for Fly.io API client
@@ -50,6 +57,11 @@ export interface IFlyIOClient {
     command: string,
     timeout?: number
   ): Promise<string>;
+
+  // Image operations
+  showImage(appName: string): Promise<ImageDetails>;
+  listReleases(appName: string, options?: ReleasesOptions): Promise<Release[]>;
+  updateImage(appName: string, options?: UpdateImageOptions): Promise<ImageDetails>;
 }
 
 /**
@@ -142,5 +154,18 @@ export class FlyIOClient implements IFlyIOClient {
     timeout?: number
   ): Promise<string> {
     return this.client.execCommand(appName, machineId, command, timeout);
+  }
+
+  // Image operations
+  async showImage(appName: string): Promise<ImageDetails> {
+    return this.client.showImage(appName);
+  }
+
+  async listReleases(appName: string, options?: ReleasesOptions): Promise<Release[]> {
+    return this.client.listReleases(appName, options);
+  }
+
+  async updateImage(appName: string, options?: UpdateImageOptions): Promise<ImageDetails> {
+    return this.client.updateImage(appName, options);
   }
 }

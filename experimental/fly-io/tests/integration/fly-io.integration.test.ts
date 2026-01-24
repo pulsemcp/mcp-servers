@@ -1,5 +1,5 @@
 import { describe, it, expect, afterEach } from 'vitest';
-import { TestMCPClient } from '../../../test-mcp-client/build/index.js';
+import { TestMCPClient } from '../../../../libs/test-mcp-client/build/index.js';
 import {
   createIntegrationMockFlyIOClient,
   type MockData,
