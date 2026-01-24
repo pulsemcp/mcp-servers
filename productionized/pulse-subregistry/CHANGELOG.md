@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `latest_only` parameter to `list_servers` tool (default: `true`)
+  - By default, only returns the latest version of each server
+  - Set to `false` to include all versions
 - Auto-truncation of long strings (>200 characters) to reduce context size
   - Truncated strings include a note: `"... [TRUNCATED - use expand_fields to see full content]"`
 - `expand_fields` parameter to `list_servers` and `get_server` tools for viewing full content of truncated fields

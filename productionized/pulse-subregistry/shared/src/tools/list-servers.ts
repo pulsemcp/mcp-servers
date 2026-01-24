@@ -16,6 +16,8 @@ const PARAM_DESCRIPTIONS = {
     'Search term to filter servers. Searches server names and titles. Example: "github", "slack".',
   updated_since:
     'ISO 8601 timestamp to filter servers updated after this date. Example: "2024-01-01T00:00:00Z".',
+  latest_only:
+    'If true (default), only returns the latest version of each server. Set to false to include all versions.',
   expand_fields:
     'Array of dot-notation paths to show in full (not truncated). By default, strings longer than 200 characters are truncated. Use this to expand specific fields. Examples: ["servers[].server.description", "servers[].server.readme"].',
 } as const;
@@ -25,6 +27,7 @@ const listServersArgsSchema = z.object({
   cursor: z.string().optional().describe(PARAM_DESCRIPTIONS.cursor),
   search: z.string().optional().describe(PARAM_DESCRIPTIONS.search),
   updated_since: z.string().optional().describe(PARAM_DESCRIPTIONS.updated_since),
+  latest_only: z.boolean().optional().default(true).describe(PARAM_DESCRIPTIONS.latest_only),
   expand_fields: z.array(z.string()).optional().describe(PARAM_DESCRIPTIONS.expand_fields),
 });
 
@@ -84,6 +87,11 @@ export function listServersTool(_server: Server, clientFactory: ClientFactory) {
           type: 'string',
           description: PARAM_DESCRIPTIONS.updated_since,
         },
+        latest_only: {
+          type: 'boolean',
+          description: PARAM_DESCRIPTIONS.latest_only,
+          default: true,
+        },
         expand_fields: {
           type: 'array',
           items: { type: 'string' },
@@ -101,6 +109,7 @@ export function listServersTool(_server: Server, clientFactory: ClientFactory) {
           cursor: validatedArgs.cursor,
           search: validatedArgs.search,
           updatedSince: validatedArgs.updated_since,
+          version: validatedArgs.latest_only ? 'latest' : undefined,
         });
 
         const filteredResponse = applyTruncation(response, validatedArgs.expand_fields);
