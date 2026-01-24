@@ -69,7 +69,7 @@ The tests will:
 
 **Test Date:** 2026-01-24
 **Branch:** claude/gmail-write-tools-v0.0.4
-**Commit:** bcf2f80
+**Commit:** 3aaf66f
 **Tested By:** Claude Code
 **Environment:** Node.js, Service Account with Domain-Wide Delegation
 
@@ -109,7 +109,7 @@ The functional and integration tests cover:
 
 | Date       | Commit  | Status | Notes                                                      |
 | ---------- | ------- | ------ | ---------------------------------------------------------- |
-| 2026-01-24 | bcf2f80 | PASS   | Added after_date parameter, tool groups, 58 tests passing  |
+| 2026-01-24 | 3aaf66f | PASS   | Added after_date parameter, tool groups, 58 tests passing  |
 | 2026-01-23 | d728dca | PASS   | v0.0.4 - New tools (search, change, draft, send), 46 tests |
 | 2026-01-03 | 36568ff | PASS   | v0.0.3 - Publish fix, 7 manual tests passing               |
 | 2026-01-03 | e668d3d | PASS   | v0.0.1 - Initial release, 7 manual tests passing           |
