@@ -95,10 +95,10 @@ Here are more servers...
 
 ## Environment Variables
 
-| Environment Variable | Description                                   | Required | Default |
-| -------------------- | --------------------------------------------- | -------- | ------- |
-| `PULSEMCP_API_KEY`   | Your PulseMCP API key                         | Yes      | N/A     |
-| `PULSEMCP_TENANT_ID` | Your tenant identifier (for multi-tenant use) | No       | N/A     |
+| Environment Variable             | Description                                   | Required | Default |
+| -------------------------------- | --------------------------------------------- | -------- | ------- |
+| `PULSEMCP_SUBREGISTRY_API_KEY`   | Your PulseMCP API key                         | Yes      | N/A     |
+| `PULSEMCP_SUBREGISTRY_TENANT_ID` | Your tenant identifier (for multi-tenant use) | No       | N/A     |
 
 ## Claude Desktop
 
@@ -119,7 +119,7 @@ Add this configuration to your Claude Desktop config file:
       "command": "npx",
       "args": ["-y", "@pulsemcp/pulse-subregistry"],
       "env": {
-        "PULSEMCP_API_KEY": "your-api-key-here"
+        "PULSEMCP_SUBREGISTRY_API_KEY": "your-api-key-here"
       }
     }
   }

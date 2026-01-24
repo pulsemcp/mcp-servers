@@ -10,7 +10,7 @@ If you've cloned the repository, you can run the server directly:
 cd local
 npm install
 npm run build
-PULSEMCP_API_KEY=your-key node build/index.js
+PULSEMCP_SUBREGISTRY_API_KEY=your-key node build/index.js
 ```
 
 ## Development Mode

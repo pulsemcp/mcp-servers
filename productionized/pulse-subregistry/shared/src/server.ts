@@ -28,15 +28,15 @@ export function createMCPServer(options: CreateMCPServerOptions) {
     const factory =
       clientFactory ||
       (() => {
-        const apiKey = process.env.PULSEMCP_API_KEY;
+        const apiKey = process.env.PULSEMCP_SUBREGISTRY_API_KEY;
 
         if (!apiKey) {
-          throw new Error('PULSEMCP_API_KEY environment variable is required');
+          throw new Error('PULSEMCP_SUBREGISTRY_API_KEY environment variable is required');
         }
 
         return new PulseSubregistryClient({
           apiKey,
-          tenantId: process.env.PULSEMCP_TENANT_ID,
+          tenantId: process.env.PULSEMCP_SUBREGISTRY_TENANT_ID,
         });
       });
 

@@ -14,18 +14,18 @@ const VERSION = packageJson.version;
 
 // Validate environment variables
 function validateEnvironment() {
-  const apiKey = process.env.PULSEMCP_API_KEY;
+  const apiKey = process.env.PULSEMCP_SUBREGISTRY_API_KEY;
 
   if (!apiKey) {
-    console.error('Missing required environment variable: PULSEMCP_API_KEY');
+    console.error('Missing required environment variable: PULSEMCP_SUBREGISTRY_API_KEY');
     console.error('Get your API key from https://www.pulsemcp.com/');
     process.exit(1);
   }
 
   console.error(`Pulse Sub-Registry MCP server starting (v${VERSION})`);
 
-  if (process.env.PULSEMCP_TENANT_ID) {
-    console.error('Using tenant ID:', process.env.PULSEMCP_TENANT_ID);
+  if (process.env.PULSEMCP_SUBREGISTRY_TENANT_ID) {
+    console.error('Using tenant ID:', process.env.PULSEMCP_SUBREGISTRY_TENANT_ID);
   }
 }
 

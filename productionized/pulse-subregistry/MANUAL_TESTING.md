@@ -59,19 +59,19 @@ Tests: 7 passed (7)
 To run manual tests, you will need:
 
 1. A valid PulseMCP API key
-2. Set the `PULSEMCP_API_KEY` environment variable
-3. Optionally set `PULSEMCP_TENANT_ID` for multi-tenant access
+2. Set the `PULSEMCP_SUBREGISTRY_API_KEY` environment variable
+3. Optionally set `PULSEMCP_SUBREGISTRY_TENANT_ID` for multi-tenant access
 
 ## Running Manual Tests
 
 ```bash
 # Set up environment
-export PULSEMCP_API_KEY=your-api-key
-export PULSEMCP_TENANT_ID=your-tenant-id  # optional
+export PULSEMCP_SUBREGISTRY_API_KEY=your-api-key
+export PULSEMCP_SUBREGISTRY_TENANT_ID=your-tenant-id  # optional
 
 # Or create a .env file (do NOT commit this file)
-echo "PULSEMCP_API_KEY=your-api-key" > .env
-echo "PULSEMCP_TENANT_ID=your-tenant-id" >> .env
+echo "PULSEMCP_SUBREGISTRY_API_KEY=your-api-key" > .env
+echo "PULSEMCP_SUBREGISTRY_TENANT_ID=your-tenant-id" >> .env
 
 # Run manual tests
 npm run test:manual

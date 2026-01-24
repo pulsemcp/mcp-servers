@@ -152,17 +152,17 @@ This document tracks potentially controversial design decisions made during the 
 
 ## 10. Environment Variable Naming
 
-**Decision**: Use `PULSEMCP_API_KEY` and `PULSEMCP_TENANT_ID`.
+**Decision**: Use `PULSEMCP_SUBREGISTRY_API_KEY` and `PULSEMCP_SUBREGISTRY_TENANT_ID`.
 
 **Rationale**:
 
-- Prefixed with `PULSEMCP_` to avoid conflicts
-- Matches the naming pattern from the API documentation
-- Clear what they're for
+- Prefixed with `PULSEMCP_SUBREGISTRY_` to clearly identify the server they belong to
+- Avoids conflicts with other PulseMCP servers that might use similar credentials
+- Clear what they're for and which server uses them
 
 **Alternatives considered**:
 
-- `PULSE_SUBREGISTRY_API_KEY` - Matches server name but longer
+- `PULSEMCP_API_KEY` - Shorter but could conflict with other PulseMCP servers
 - `API_KEY` - Too generic, could conflict
 
 ---

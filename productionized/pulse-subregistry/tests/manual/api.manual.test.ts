@@ -5,8 +5,8 @@
  * Run with: npm run test:manual
  *
  * Prerequisites:
- * - Set PULSEMCP_API_KEY environment variable
- * - Optionally set PULSEMCP_TENANT_ID for multi-tenant access
+ * - Set PULSEMCP_SUBREGISTRY_API_KEY environment variable
+ * - Optionally set PULSEMCP_SUBREGISTRY_TENANT_ID for multi-tenant access
  */
 
 import { describe, it, expect, beforeAll } from 'vitest';
@@ -20,11 +20,13 @@ describe('PulseMCP Sub-Registry API - Manual Tests', () => {
   let client: PulseSubregistryClient;
 
   beforeAll(() => {
-    const apiKey = process.env.PULSEMCP_API_KEY;
-    const tenantId = process.env.PULSEMCP_TENANT_ID;
+    const apiKey = process.env.PULSEMCP_SUBREGISTRY_API_KEY;
+    const tenantId = process.env.PULSEMCP_SUBREGISTRY_TENANT_ID;
 
     if (!apiKey) {
-      throw new Error('PULSEMCP_API_KEY environment variable is required for manual tests');
+      throw new Error(
+        'PULSEMCP_SUBREGISTRY_API_KEY environment variable is required for manual tests'
+      );
     }
 
     client = new PulseSubregistryClient({

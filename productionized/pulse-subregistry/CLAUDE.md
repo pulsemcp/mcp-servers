@@ -46,7 +46,7 @@ npm run dev       # Development with auto-reload (builds shared first)
 - The prebuild/predev scripts ensure shared is always built first
 - All new features should be added to the shared module
 - The local module is a thin wrapper that registers shared functionality
-- Environment variable `PULSEMCP_API_KEY` is required for production use
+- Environment variable `PULSEMCP_SUBREGISTRY_API_KEY` is required for production use
 
 ## API Integration
 
