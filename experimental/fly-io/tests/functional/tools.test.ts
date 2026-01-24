@@ -1089,3 +1089,111 @@ describe('Docker Tool Group Configuration', () => {
     });
   });
 });
+
+describe('Docker Registry Input Validation', () => {
+  // Note: The real DockerCLIClient validates appName and tag parameters.
+  // These tests verify that validation errors are properly returned through tools.
+  // We use a mock that throws validation errors to simulate the real client behavior.
+
+  let mockServer: Server;
+
+  beforeEach(() => {
+    mockServer = {} as Server;
+  });
+
+  describe('app name validation', () => {
+    it('should reject app names with uppercase letters', async () => {
+      // Create a mock that throws validation error for invalid app names
+      const mockDockerClient = {
+        ...createMockDockerCLIClient(),
+        pushImage: vi
+          .fn()
+          .mockRejectedValue(
+            new Error(
+              'Invalid app name "MyApp". App names must be lowercase alphanumeric with hyphens.'
+            )
+          ),
+      };
+
+      const tool = pushImageTool(mockServer, () => mockDockerClient);
+      const result = await tool.handler({
+        source_image: 'nginx:latest',
+        app_name: 'MyApp',
+        tag: 'v1',
+      });
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('Invalid app name');
+    });
+
+    it('should reject app names with special characters', async () => {
+      const mockDockerClient = {
+        ...createMockDockerCLIClient(),
+        pushImage: vi
+          .fn()
+          .mockRejectedValue(
+            new Error(
+              'Invalid app name "my_app!". App names must be lowercase alphanumeric with hyphens.'
+            )
+          ),
+      };
+
+      const tool = pushImageTool(mockServer, () => mockDockerClient);
+      const result = await tool.handler({
+        source_image: 'nginx:latest',
+        app_name: 'my_app!',
+        tag: 'v1',
+      });
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('Invalid app name');
+    });
+
+    it('should accept valid app names', async () => {
+      const mockDockerClient = createMockDockerCLIClient();
+
+      const tool = pushImageTool(mockServer, () => mockDockerClient);
+      const result = await tool.handler({
+        source_image: 'nginx:latest',
+        app_name: 'my-valid-app-123',
+        tag: 'v1',
+      });
+
+      // Should not have validation error (mock will return success)
+      expect(result.isError).toBeFalsy();
+    });
+  });
+
+  describe('tag validation', () => {
+    it('should reject tags with special characters', async () => {
+      const mockDockerClient = {
+        ...createMockDockerCLIClient(),
+        pullImage: vi
+          .fn()
+          .mockRejectedValue(new Error('Invalid tag "v1:bad". Tags must start with alphanumeric.')),
+      };
+
+      const tool = pullImageTool(mockServer, () => mockDockerClient);
+      const result = await tool.handler({
+        app_name: 'test-app',
+        tag: 'v1:bad',
+      });
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('Invalid tag');
+    });
+
+    it('should accept valid tags', async () => {
+      const mockDockerClient = createMockDockerCLIClient();
+
+      const tool = pullImageTool(mockServer, () => mockDockerClient);
+      const result = await tool.handler({
+        app_name: 'test-app',
+        tag: 'v1.2.3-beta_1',
+      });
+
+      // Should not have validation error (mock will return success)
+      expect(result.isError).toBeFalsy();
+    });
+  });
+});
