@@ -69,20 +69,33 @@ The tests will:
 
 **Test Date:** 2026-01-24
 **Branch:** claude/gmail-write-tools-v0.0.4
-**Commit:** 3aaf66f
+**Commit:** 89c0fe2
 **Tested By:** Claude Code
 **Environment:** Node.js, Service Account with Domain-Wide Delegation
 
 ### Test Results
 
-**Type:** Functional and integration testing (manual tests require API credentials)
-**Status:** PASS (automated tests)
+**Automated Tests (mocked):**
 
 ```
 Functional Tests: 47 passed (47)
 Integration Tests: 11 passed (11)
 Total: 58 tests passing
 ```
+
+**Manual Tests (real API):**
+
+```
+Status: BLOCKED - Service account authorization issue
+Error: unauthorized_client: Client is unauthorized to retrieve access tokens
+       using this method, or client not authorized for any of the scopes requested.
+
+Tests attempted: 12
+Tests passed: 3 (authentication detection, draft skip tests)
+Tests failed: 9 (all Gmail API calls)
+```
+
+The service account `claude-code-auth-proctor@pulse-443819.iam.gserviceaccount.com` does not have domain-wide delegation configured for the Gmail API scopes. This is a credential configuration issue, not a code bug.
 
 ### Test Coverage
 
@@ -99,7 +112,7 @@ The functional and integration tests cover:
 
 ### Notes
 
-- Manual tests (`npm run test:manual`) require real Gmail API credentials
+- Manual tests require a service account with domain-wide delegation properly configured in Google Workspace Admin
 - Functional tests use mocked Gmail client and provide full coverage of implementation logic
 - Integration tests use TestMCPClient with mocked external APIs
 - The `after_date` parameter for `list_email_conversations` was added in this version
@@ -107,9 +120,9 @@ The functional and integration tests cover:
 
 ## Historical Test Runs
 
-| Date       | Commit  | Status | Notes                                                      |
-| ---------- | ------- | ------ | ---------------------------------------------------------- |
-| 2026-01-24 | 3aaf66f | PASS   | Added after_date parameter, tool groups, 58 tests passing  |
-| 2026-01-23 | d728dca | PASS   | v0.0.4 - New tools (search, change, draft, send), 46 tests |
-| 2026-01-03 | 36568ff | PASS   | v0.0.3 - Publish fix, 7 manual tests passing               |
-| 2026-01-03 | e668d3d | PASS   | v0.0.1 - Initial release, 7 manual tests passing           |
+| Date       | Commit  | Status  | Notes                                                              |
+| ---------- | ------- | ------- | ------------------------------------------------------------------ |
+| 2026-01-24 | 89c0fe2 | BLOCKED | Manual tests blocked by service account auth; 58 automated passing |
+| 2026-01-23 | d728dca | PASS    | v0.0.4 - New tools (search, change, draft, send), 46 tests         |
+| 2026-01-03 | 36568ff | PASS    | v0.0.3 - Publish fix, 7 manual tests passing                       |
+| 2026-01-03 | e668d3d | PASS    | v0.0.1 - Initial release, 7 manual tests passing                   |
