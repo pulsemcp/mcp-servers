@@ -105,6 +105,7 @@ export interface ListServersOptions {
   limit?: number;
   search?: string;
   version?: string;
+  updatedSince?: string;
 }
 
 /**

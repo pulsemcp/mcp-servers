@@ -213,6 +213,7 @@ Browse MCP servers from the PulseMCP Sub-Registry.
 - `limit` (number, optional): Maximum number of servers to return (1-100). Default: 30.
 - `cursor` (string, optional): Pagination cursor from a previous response.
 - `search` (string, optional): Search term to filter servers by name or description.
+- `updated_since` (string, optional): ISO 8601 timestamp to filter servers updated after this date. Example: "2024-01-01T00:00:00Z".
 
 ### get_server
 

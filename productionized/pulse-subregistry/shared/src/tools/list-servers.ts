@@ -13,12 +13,15 @@ const PARAM_DESCRIPTIONS = {
     'Pagination cursor from a previous response. Use this to get the next page of results when nextCursor is returned.',
   search:
     'Search term to filter servers. Searches server names and descriptions. Example: "github", "slack".',
+  updated_since:
+    'ISO 8601 timestamp to filter servers updated after this date. Example: "2024-01-01T00:00:00Z".',
 } as const;
 
 const listServersArgsSchema = z.object({
   limit: z.number().min(1).max(100).optional().default(30).describe(PARAM_DESCRIPTIONS.limit),
   cursor: z.string().optional().describe(PARAM_DESCRIPTIONS.cursor),
   search: z.string().optional().describe(PARAM_DESCRIPTIONS.search),
+  updated_since: z.string().optional().describe(PARAM_DESCRIPTIONS.updated_since),
 });
 
 function formatServerList(
@@ -102,6 +105,10 @@ export function listServersTool(_server: Server, clientFactory: ClientFactory) {
           type: 'string',
           description: PARAM_DESCRIPTIONS.search,
         },
+        updated_since: {
+          type: 'string',
+          description: PARAM_DESCRIPTIONS.updated_since,
+        },
       },
     },
     handler: async (args: unknown) => {
@@ -113,6 +120,7 @@ export function listServersTool(_server: Server, clientFactory: ClientFactory) {
           limit: validatedArgs.limit,
           cursor: validatedArgs.cursor,
           search: validatedArgs.search,
+          updatedSince: validatedArgs.updated_since,
         });
 
         const formattedOutput = formatServerList(

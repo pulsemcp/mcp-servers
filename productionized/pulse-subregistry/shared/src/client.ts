@@ -92,6 +92,7 @@ export class PulseSubregistryClient implements IPulseSubregistryClient {
       limit: options.limit,
       search: options.search,
       version: options.version,
+      updated_since: options.updatedSince,
     });
 
     const response = await this.fetchWithTimeout(url, {

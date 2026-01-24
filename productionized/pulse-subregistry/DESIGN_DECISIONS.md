@@ -136,17 +136,17 @@ This document tracks potentially controversial design decisions made during the 
 
 ---
 
-## 9. Not Implemented: `updated_since` Parameter
+## 9. `updated_since` Parameter
 
-**Decision**: Not exposing the `updated_since` parameter from the list servers API.
+**Decision**: Expose the `updated_since` parameter in the `list_servers` tool.
 
 **Rationale**:
 
-- Less commonly needed for typical browsing use cases
-- Adds complexity to the tool interface
-- Can be added later if users request it
+- Allows power users to filter for recently updated servers
+- Useful for monitoring new additions to the registry
+- Matches the API capability
 
-**Open for discussion**: Should we expose `updated_since` for power users?
+**Usage**: Pass an ISO 8601 timestamp (e.g., `"2024-01-01T00:00:00Z"`) to filter servers updated after that date.
 
 ---
 
@@ -210,7 +210,6 @@ This document tracks potentially controversial design decisions made during the 
 2. Should we require explicit version in `get_server`?
 3. Should we offer a `format` parameter for output (JSON/Markdown)?
 4. Should we add a `list_versions` tool?
-5. Should we expose the `updated_since` parameter?
-6. Should we expose `_meta` information (visitor stats, publication info) in tool output?
+5. Should we expose `_meta` information (visitor stats, publication info) in tool output?
 
 Please review these decisions and let me know if any should be changed before merging.

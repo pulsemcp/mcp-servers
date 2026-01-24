@@ -12,7 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Initial implementation of pulse-subregistry MCP server
-- `list_servers` tool for browsing MCP servers with search and pagination
+- `list_servers` tool for browsing MCP servers with search, pagination, and `updated_since` filtering
 - `get_server` tool for retrieving detailed server information by name and version
 - PulseMCP Sub-Registry API client with authentication support
 - Proper handling of nested API response structure (server entries with `server` and `_meta` fields)
