@@ -7,11 +7,14 @@ export async function updateEvent(
   calendarId: string,
   eventId: string,
   event: Partial<CalendarEvent>,
-  options?: { sendUpdates?: 'all' | 'externalOnly' | 'none' }
+  options?: { sendUpdates?: 'all' | 'externalOnly' | 'none'; supportsAttachments?: boolean }
 ): Promise<CalendarEvent> {
   const params = new URLSearchParams();
   if (options?.sendUpdates) {
     params.set('sendUpdates', options.sendUpdates);
+  }
+  if (options?.supportsAttachments) {
+    params.set('supportsAttachments', 'true');
   }
 
   const queryString = params.toString();

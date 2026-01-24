@@ -5,9 +5,16 @@ export async function createEvent(
   baseUrl: string,
   headers: Record<string, string>,
   calendarId: string,
-  event: Partial<CalendarEvent>
+  event: Partial<CalendarEvent>,
+  options?: { supportsAttachments?: boolean }
 ): Promise<CalendarEvent> {
-  const url = `${baseUrl}/calendars/${encodeURIComponent(calendarId)}/events`;
+  const params = new URLSearchParams();
+  if (options?.supportsAttachments) {
+    params.set('supportsAttachments', 'true');
+  }
+
+  const queryString = params.toString();
+  const url = `${baseUrl}/calendars/${encodeURIComponent(calendarId)}/events${queryString ? `?${queryString}` : ''}`;
 
   const response = await fetch(url, {
     method: 'POST',

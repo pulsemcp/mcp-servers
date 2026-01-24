@@ -140,7 +140,6 @@ Endpoints used:
 
 - **No recurring event editing**: Recurring events are shown as instances but can't be edited as a series
 - **Basic reminders**: Limited reminder configuration support
-- **No attachment support**: Can't upload or retrieve event attachments
 
 ## Future Enhancements
 
@@ -149,5 +148,4 @@ Consider adding:
 - Batch operations for efficiency
 - Calendar creation and management
 - Event color customization
-- Attachment handling
 - Extended recurrence rule support

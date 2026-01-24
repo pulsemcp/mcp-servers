@@ -38,7 +38,11 @@ export interface ICalendarClient {
   /**
    * Create a new event
    */
-  createEvent(calendarId: string, event: Partial<CalendarEvent>): Promise<CalendarEvent>;
+  createEvent(
+    calendarId: string,
+    event: Partial<CalendarEvent>,
+    options?: { supportsAttachments?: boolean }
+  ): Promise<CalendarEvent>;
 
   /**
    * Update an existing event
@@ -47,7 +51,7 @@ export interface ICalendarClient {
     calendarId: string,
     eventId: string,
     event: Partial<CalendarEvent>,
-    options?: { sendUpdates?: 'all' | 'externalOnly' | 'none' }
+    options?: { sendUpdates?: 'all' | 'externalOnly' | 'none'; supportsAttachments?: boolean }
   ): Promise<CalendarEvent>;
 
   /**
@@ -165,17 +169,21 @@ export class ServiceAccountCalendarClient implements ICalendarClient {
     return getEvent(this.baseUrl, headers, calendarId, eventId);
   }
 
-  async createEvent(calendarId: string, event: Partial<CalendarEvent>): Promise<CalendarEvent> {
+  async createEvent(
+    calendarId: string,
+    event: Partial<CalendarEvent>,
+    options?: { supportsAttachments?: boolean }
+  ): Promise<CalendarEvent> {
     const headers = await this.getHeaders();
     const { createEvent } = await import('./calendar-client/lib/create-event.js');
-    return createEvent(this.baseUrl, headers, calendarId, event);
+    return createEvent(this.baseUrl, headers, calendarId, event, options);
   }
 
   async updateEvent(
     calendarId: string,
     eventId: string,
     event: Partial<CalendarEvent>,
-    options?: { sendUpdates?: 'all' | 'externalOnly' | 'none' }
+    options?: { sendUpdates?: 'all' | 'externalOnly' | 'none'; supportsAttachments?: boolean }
   ): Promise<CalendarEvent> {
     const headers = await this.getHeaders();
     const { updateEvent } = await import('./calendar-client/lib/update-event.js');

@@ -104,6 +104,62 @@ describe('Google Calendar MCP Server Tools', () => {
       expect(mockClient.createEvent).toHaveBeenCalled();
     });
 
+    it('should create a new event with attachments', async () => {
+      const tool = createEventTool(mockServer, () => mockClient);
+      const result = await tool.handler({
+        summary: 'Meeting with Attachment',
+        start_datetime: '2024-01-20T10:00:00-05:00',
+        end_datetime: '2024-01-20T11:00:00-05:00',
+        attachments: [
+          {
+            file_url: 'https://example.com/document.pdf',
+            title: 'Meeting Notes',
+          },
+        ],
+      });
+
+      expect(result.content[0].text).toContain('Event Created Successfully');
+      expect(result.content[0].text).toContain('Meeting with Attachment');
+      expect(result.content[0].text).toContain('Attachments');
+      expect(result.content[0].text).toContain('Meeting Notes');
+      expect(mockClient.createEvent).toHaveBeenCalledWith(
+        'primary',
+        expect.objectContaining({
+          attachments: [{ fileUrl: 'https://example.com/document.pdf', title: 'Meeting Notes' }],
+        }),
+        { supportsAttachments: true }
+      );
+    });
+
+    it('should not pass supportsAttachments when no attachments provided', async () => {
+      const tool = createEventTool(mockServer, () => mockClient);
+      await tool.handler({
+        summary: 'Simple Meeting',
+        start_datetime: '2024-01-20T10:00:00-05:00',
+        end_datetime: '2024-01-20T11:00:00-05:00',
+      });
+
+      expect(mockClient.createEvent).toHaveBeenCalledWith('primary', expect.any(Object), undefined);
+    });
+
+    it('should reject invalid attachment URLs', async () => {
+      const tool = createEventTool(mockServer, () => mockClient);
+      const result = await tool.handler({
+        summary: 'Meeting with Bad URL',
+        start_datetime: '2024-01-20T10:00:00-05:00',
+        end_datetime: '2024-01-20T11:00:00-05:00',
+        attachments: [
+          {
+            file_url: 'not-a-valid-url',
+            title: 'Bad Attachment',
+          },
+        ],
+      });
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('Error creating event');
+    });
+
     it('should require start and end times', async () => {
       const tool = createEventTool(mockServer, () => mockClient);
       const result = await tool.handler({
@@ -126,6 +182,33 @@ describe('Google Calendar MCP Server Tools', () => {
       expect(result.content[0].text).toContain('Event Updated Successfully');
       expect(result.content[0].text).toContain('Updated Meeting');
       expect(mockClient.updateEvent).toHaveBeenCalled();
+    });
+
+    it('should update an event with attachments', async () => {
+      const tool = updateEventTool(mockServer, () => mockClient);
+      const result = await tool.handler({
+        event_id: 'event1',
+        attachments: [
+          {
+            file_url: 'https://example.com/updated-doc.pdf',
+            title: 'Updated Document',
+          },
+        ],
+      });
+
+      expect(result.content[0].text).toContain('Event Updated Successfully');
+      expect(result.content[0].text).toContain('Attachments');
+      expect(result.content[0].text).toContain('Updated Document');
+      expect(mockClient.updateEvent).toHaveBeenCalledWith(
+        'primary',
+        'event1',
+        expect.objectContaining({
+          attachments: [
+            { fileUrl: 'https://example.com/updated-doc.pdf', title: 'Updated Document' },
+          ],
+        }),
+        { supportsAttachments: true }
+      );
     });
 
     it('should handle non-existent events', async () => {

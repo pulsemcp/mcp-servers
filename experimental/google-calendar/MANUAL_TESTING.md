@@ -6,7 +6,7 @@ This file tracks manual testing results for the Google Calendar MCP server again
 
 **Status:** PASS
 **Date:** 2026-01-24
-**Commit:** 4eb09a7
+**Commit:** c3ad5de (base), changes for version 0.0.5
 **Tester:** Claude Code
 
 ### Results
@@ -16,35 +16,32 @@ This file tracks manual testing results for the Google Calendar MCP server again
 - List events: PASS (Found 10 events)
 - Get event: PASS (Retrieved event details)
 - Query freebusy: PASS (Found 3 busy periods)
+- Create event with file attachment: PASS
+- Update event to add file attachment: PASS
 
-### Notes on Version 0.0.4 Changes
+### Notes on Version 0.0.5 Changes
 
-**Tool Renaming (0.0.4):** All tools were renamed for cleaner, more consistent naming. This is a naming-only change that doesn't affect API interactions:
+**File Attachments Support (0.0.5):**
 
-- `gcal_list_events` → `list_calendar_events`
-- `gcal_get_event` → `get_calendar_event`
-- `gcal_create_event` → `create_calendar_event`
-- `gcal_list_calendars` → `list_calendars`
-- `gcal_query_freebusy` → `query_calendar_freebusy`
-
-**New Tools (0.0.4):**
-
-- `update_calendar_event`: Uses Google Calendar PATCH API (same authentication as other tools)
-- `delete_calendar_event`: Uses Google Calendar DELETE API (same authentication as other tools)
-
-These new tools use the same service account authentication and JWT signing that has been validated in manual tests. The PATCH and DELETE operations follow the same patterns as tested create operations.
-
-**Tool Groups (0.0.2, renamed in 0.0.3):** The tool groups feature only affects tool registration filtering and does not change any API interactions. The previous manual test results remain valid for API functionality.
+- Added `attachments` parameter to `create_calendar_event` and `update_calendar_event` tools
+- Attachments can use any URL (not just Google Drive)
+- Tested with public PDF URL: `https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf`
+- API correctly accepts non-Google Drive URLs as attachments
+- Maximum 25 attachments per event (enforced by Google Calendar API)
 
 ### Test Output
 
 ```
- ✓ tests/manual/calendar-client.test.ts (4 tests) 1565ms
-   ✓ Google Calendar Client - Manual Tests > should list calendars  699ms
-   ✓ Google Calendar Client - Manual Tests > should get a specific event  405ms
+ ✓ tests/manual/calendar-client.test.ts (6 tests) 3573ms
+   ✓ Google Calendar Client - Manual Tests > should list calendars  816ms
+   ✓ Google Calendar Client - Manual Tests > should list events from primary calendar  320ms
+   ✓ Google Calendar Client - Manual Tests > should get a specific event  366ms
+   ✓ Google Calendar Client - Manual Tests > should query freebusy information  158ms
+   ✓ Google Calendar Client - Manual Tests > should create an event with a file attachment  698ms
+   ✓ Google Calendar Client - Manual Tests > should update an event to add an attachment  1215ms
 
  Test Files  1 passed (1)
-      Tests  4 passed (4)
+      Tests  6 passed (6)
 ```
 
 ### Notes
@@ -52,7 +49,8 @@ These new tools use the same service account authentication and JWT signing that
 - Service account authentication with domain-wide delegation working correctly
 - Token caching and JWT signing verified functional
 - All read operations tested successfully
-- Create event test not included in manual test suite (avoids modifying user calendars)
+- Create, update, and delete operations tested with cleanup
+- Non-Google Drive URLs confirmed working for attachments
 
 ## Test Environment Setup
 
@@ -78,15 +76,17 @@ Manual tests verify:
 - [x] List calendars
 - [x] List events from primary calendar
 - [x] Get specific event details
-- [ ] Create new event (not tested - would modify user calendar)
-- [ ] Update event (not tested - would modify user calendar)
-- [ ] Delete event (not tested - would modify user calendar)
+- [x] Create new event (tested with cleanup)
+- [x] Create event with file attachment
+- [x] Update event with file attachment
+- [x] Delete event (used for cleanup)
 - [x] Query freebusy information
 - [x] Error handling for invalid requests
 
 ## Historical Test Runs
 
-| Date       | Commit  | Status | Notes                                            |
-| ---------- | ------- | ------ | ------------------------------------------------ |
-| 2026-01-24 | 4eb09a7 | PASS   | Version 0.0.4 with new tools - 4/4 tests passing |
-| 2026-01-13 | daae242 | PASS   | Initial manual testing - 4/4 tests passing       |
+| Date       | Commit  | Status | Notes                                                      |
+| ---------- | ------- | ------ | ---------------------------------------------------------- |
+| 2026-01-24 | c3ad5de | PASS   | Version 0.0.5 with attachments support - 6/6 tests passing |
+| 2026-01-24 | 4eb09a7 | PASS   | Version 0.0.4 with new tools - 4/4 tests passing           |
+| 2026-01-13 | daae242 | PASS   | Initial manual testing - 4/4 tests passing                 |

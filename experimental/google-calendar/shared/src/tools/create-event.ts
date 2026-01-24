@@ -41,6 +41,19 @@ export const CreateEventSchema = z.object({
     .optional()
     .describe('Time zone for end time (e.g., "America/New_York"). Optional.'),
   attendees: z.array(z.string()).optional().describe('List of attendee email addresses.'),
+  attachments: z
+    .array(
+      z.object({
+        file_url: z.string().url().describe('URL link to the attachment. Required.'),
+        title: z.string().optional().describe('Title of the attachment.'),
+      })
+    )
+    .max(25, 'Maximum 25 attachments per event')
+    .optional()
+    .describe(
+      'File attachments for the event. Maximum 25 attachments. Each attachment requires a file_url. ' +
+        'For Google Drive files, use the Drive file URL format.'
+    ),
 });
 
 export function createEventTool(server: Server, clientFactory: ClientFactory) {
@@ -99,6 +112,18 @@ export function createEventTool(server: Server, clientFactory: ClientFactory) {
           items: { type: 'string' },
           description: CreateEventSchema.shape.attendees.description,
         },
+        attachments: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              file_url: { type: 'string', description: 'URL link to the attachment. Required.' },
+              title: { type: 'string', description: 'Title of the attachment.' },
+            },
+            required: ['file_url'],
+          },
+          description: CreateEventSchema.shape.attachments.description,
+        },
       },
       required: ['summary'],
     },
@@ -123,6 +148,7 @@ export function createEventTool(server: Server, clientFactory: ClientFactory) {
           start: { dateTime?: string; date?: string; timeZone?: string };
           end: { dateTime?: string; date?: string; timeZone?: string };
           attendees?: Array<{ email: string }>;
+          attachments?: Array<{ fileUrl: string; title?: string }>;
         } = {
           summary: parsed.summary,
           description: parsed.description,
@@ -156,7 +182,21 @@ export function createEventTool(server: Server, clientFactory: ClientFactory) {
           event.attendees = parsed.attendees.map((email) => ({ email }));
         }
 
-        const result = await client.createEvent(parsed.calendar_id, event);
+        // Add attachments
+        if (parsed.attachments && parsed.attachments.length > 0) {
+          event.attachments = parsed.attachments.map((attachment) => ({
+            fileUrl: attachment.file_url,
+            title: attachment.title,
+          }));
+        }
+
+        // Determine if we need supportsAttachments parameter
+        const hasAttachments = parsed.attachments && parsed.attachments.length > 0;
+        const result = await client.createEvent(
+          parsed.calendar_id,
+          event,
+          hasAttachments ? { supportsAttachments: true } : undefined
+        );
 
         let output = `# Event Created Successfully\n\n`;
         output += `## ${result.summary || '(No title)'}\n\n`;
@@ -186,6 +226,14 @@ export function createEventTool(server: Server, clientFactory: ClientFactory) {
           output += `**Attendees:** ${result.attendees.length}\n`;
           for (const attendee of result.attendees) {
             output += `  - ${attendee.email}\n`;
+          }
+        }
+
+        // Attachments
+        if (result.attachments && result.attachments.length > 0) {
+          output += `**Attachments:** ${result.attachments.length}\n`;
+          for (const attachment of result.attachments) {
+            output += `  - ${attachment.title || attachment.fileUrl}\n`;
           }
         }
 
