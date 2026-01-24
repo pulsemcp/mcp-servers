@@ -6,7 +6,8 @@ const PARAM_DESCRIPTIONS = {
   app_name: 'The name of the app containing the machine.',
   machine_id: 'The ID of the machine to execute the command on.',
   command: 'The command to execute on the machine.',
-  timeout: 'Optional: Timeout in seconds (default: 120).',
+  timeout:
+    'Optional: Timeout in seconds (default: 60, max: 60). Fly.io limits exec timeout to 60 seconds.',
 } as const;
 
 export const MachineExecSchema = z.object({

@@ -26,7 +26,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Increased `machine_exec` default timeout from 30s to 120s to allow longer-running commands
+- `machine_exec` timeout now defaults to 60s and is capped at 60s (Fly.io API limit)
+- Fixed `fly machines run` to parse text output (no --json support in fly CLI)
+- Fixed `fly machines status` to use listMachines + filter (no --json support)
+- Fixed `fly machines destroy` to not use --yes flag (not supported)
 - Fixed integration test import path for test-mcp-client
 - Registry tools automatically authenticate and clean up Docker config (no credential pollution)
 - **BREAKING**: Refactored to use `fly` CLI instead of REST API
