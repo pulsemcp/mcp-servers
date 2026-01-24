@@ -6,7 +6,7 @@ This file tracks manual testing results for the Google Calendar MCP server again
 
 **Status:** PASS
 **Date:** 2026-01-24
-**Commit:** 77da540
+**Commit:** 4eb09a7
 **Tester:** Claude Code
 
 ### Results
@@ -15,7 +15,7 @@ This file tracks manual testing results for the Google Calendar MCP server again
 - List calendars: PASS (Found 7 calendars)
 - List events: PASS (Found 10 events)
 - Get event: PASS (Retrieved event details)
-- Query freebusy: PASS (Found 1 busy period)
+- Query freebusy: PASS (Found 3 busy periods)
 
 ### Notes on Version 0.0.4 Changes
 
@@ -39,11 +39,9 @@ These new tools use the same service account authentication and JWT signing that
 ### Test Output
 
 ```
- PASS  tests/manual/calendar-client.test.ts (4 tests) 2699ms
-   PASS Google Calendar Client - Manual Tests > should list calendars  1515ms
-   PASS Google Calendar Client - Manual Tests > should list events from primary calendar  371ms
-   PASS Google Calendar Client - Manual Tests > should get a specific event  535ms
-   PASS Google Calendar Client - Manual Tests > should query freebusy information  278ms
+ ✓ tests/manual/calendar-client.test.ts (4 tests) 1565ms
+   ✓ Google Calendar Client - Manual Tests > should list calendars  699ms
+   ✓ Google Calendar Client - Manual Tests > should get a specific event  405ms
 
  Test Files  1 passed (1)
       Tests  4 passed (4)
@@ -88,6 +86,7 @@ Manual tests verify:
 
 ## Historical Test Runs
 
-| Date       | Commit  | Status | Notes                                      |
-| ---------- | ------- | ------ | ------------------------------------------ |
-| 2026-01-13 | daae242 | PASS   | Initial manual testing - 4/4 tests passing |
+| Date       | Commit  | Status | Notes                                            |
+| ---------- | ------- | ------ | ------------------------------------------------ |
+| 2026-01-24 | 4eb09a7 | PASS   | Version 0.0.4 with new tools - 4/4 tests passing |
+| 2026-01-13 | daae242 | PASS   | Initial manual testing - 4/4 tests passing       |
