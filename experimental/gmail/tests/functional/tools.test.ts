@@ -79,16 +79,40 @@ describe('Gmail MCP Server Tools', () => {
       expect(result.content[0].text).toContain('**Thread ID:** thread_002');
     });
 
-    it('should pass after_date as query parameter', async () => {
+    it('should pass after as query parameter with Unix timestamp', async () => {
       const tool = listEmailConversationsTool(mockServer, () => mockClient);
-      await tool.handler({ after_date: '2024-01-15' });
+      await tool.handler({ after: '2024-01-15T14:30:00Z' });
 
+      // 2024-01-15T14:30:00Z = 1705329000 Unix timestamp
       expect(mockClient.listMessages).toHaveBeenCalledWith(
-        expect.objectContaining({ q: 'after:2024/01/15' })
+        expect.objectContaining({ q: 'after:1705329000' })
       );
     });
 
-    it('should not include query when after_date is not provided', async () => {
+    it('should pass before as query parameter with Unix timestamp', async () => {
+      const tool = listEmailConversationsTool(mockServer, () => mockClient);
+      await tool.handler({ before: '2024-01-20T23:59:59Z' });
+
+      // 2024-01-20T23:59:59Z = 1705795199 Unix timestamp
+      expect(mockClient.listMessages).toHaveBeenCalledWith(
+        expect.objectContaining({ q: 'before:1705795199' })
+      );
+    });
+
+    it('should combine after and before in query', async () => {
+      const tool = listEmailConversationsTool(mockServer, () => mockClient);
+      await tool.handler({ after: '2024-01-15T00:00:00Z', before: '2024-01-20T00:00:00Z' });
+
+      // Verify both after and before are in the query
+      expect(mockClient.listMessages).toHaveBeenCalledWith(
+        expect.objectContaining({ q: expect.stringContaining('after:') })
+      );
+      expect(mockClient.listMessages).toHaveBeenCalledWith(
+        expect.objectContaining({ q: expect.stringContaining('before:') })
+      );
+    });
+
+    it('should not include query when datetime filters are not provided', async () => {
       const tool = listEmailConversationsTool(mockServer, () => mockClient);
       await tool.handler({});
 

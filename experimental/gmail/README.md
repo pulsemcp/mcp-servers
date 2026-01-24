@@ -115,7 +115,8 @@ List email conversations from Gmail with optional filtering.
 - `count` (number, optional): Number of emails to return (default: 10, max: 100)
 - `labels` (string, optional): Comma-separated label IDs to filter by (default: "INBOX")
 - `sort_by` (string, optional): Sort order - "recent" (newest first) or "oldest" (default: recent)
-- `after_date` (string, optional): Only return emails after this date (format: YYYY-MM-DD)
+- `after` (string, optional): Only return emails after this datetime, exclusive (ISO 8601 UTC, e.g., "2024-01-15T14:30:00Z")
+- `before` (string, optional): Only return emails before this datetime, exclusive (ISO 8601 UTC, e.g., "2024-01-15T14:30:00Z")
 
 **Example:**
 
@@ -123,7 +124,8 @@ List email conversations from Gmail with optional filtering.
 {
   "count": 20,
   "labels": "INBOX,STARRED",
-  "after_date": "2024-01-15"
+  "after": "2024-01-15T00:00:00Z",
+  "before": "2024-01-20T23:59:59Z"
 }
 ```
 

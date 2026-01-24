@@ -6,7 +6,9 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
-- `after_date` parameter to `list_email_conversations` for filtering emails by date (format: YYYY-MM-DD)
+- `after` and `before` datetime parameters to `list_email_conversations` for filtering emails by time range
+  - ISO 8601 format in UTC (e.g., `2024-01-15T14:30:00Z`)
+  - Both parameters are exclusive (emails strictly after/before the specified datetime)
 
 ### Fixed
 

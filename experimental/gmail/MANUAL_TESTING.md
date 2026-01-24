@@ -126,7 +126,7 @@ All tests verified against real Gmail API:
 - All manual tests passed against real Gmail API
 - Service account impersonating: tadas@tadasant.com
 - Tests verify read operations (list, get), write operations (modify labels, drafts), and send operations
-- The `after_date` parameter for `list_email_conversations` was added in this version
+- The `after` and `before` datetime parameters for `list_email_conversations` were added in this version
 - Tool groups feature allows permission-based access control (readonly vs readwrite vs readwrite_external)
 
 ## Historical Test Runs

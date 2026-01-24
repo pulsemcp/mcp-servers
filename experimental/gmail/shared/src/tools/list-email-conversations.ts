@@ -11,16 +11,20 @@ const PARAM_DESCRIPTIONS = {
   sort_by:
     'Sort order for results. Default: recent. ' +
     'Options: recent (newest first), oldest (oldest first).',
-  after_date:
-    'Only return emails after this date. Format: YYYY-MM-DD (e.g., 2024-01-15). ' +
-    'Uses Gmail query syntax internally.',
+  after:
+    'Only return emails after this datetime (exclusive). ' +
+    'ISO 8601 format in UTC (e.g., 2024-01-15T14:30:00Z).',
+  before:
+    'Only return emails before this datetime (exclusive). ' +
+    'ISO 8601 format in UTC (e.g., 2024-01-15T14:30:00Z).',
 } as const;
 
 export const ListEmailConversationsSchema = z.object({
   count: z.number().positive().max(100).default(10).describe(PARAM_DESCRIPTIONS.count),
   labels: z.string().optional().default('INBOX').describe(PARAM_DESCRIPTIONS.labels),
   sort_by: z.enum(['recent', 'oldest']).default('recent').describe(PARAM_DESCRIPTIONS.sort_by),
-  after_date: z.string().optional().describe(PARAM_DESCRIPTIONS.after_date),
+  after: z.string().optional().describe(PARAM_DESCRIPTIONS.after),
+  before: z.string().optional().describe(PARAM_DESCRIPTIONS.before),
 });
 
 const TOOL_DESCRIPTION = `List email conversations from Gmail.
@@ -31,7 +35,8 @@ Returns a list of email conversations with their subject, sender, date, and a sn
 - count: Maximum conversations to return (default: 10, max: 100)
 - labels: Which labels/folders to search (default: INBOX)
 - sort_by: Sort order - "recent" (newest first) or "oldest" (default: recent)
-- after_date: Only return emails after this date (format: YYYY-MM-DD)
+- after: Only return emails after this datetime, exclusive (ISO 8601 UTC, e.g., 2024-01-15T14:30:00Z)
+- before: Only return emails before this datetime, exclusive (ISO 8601 UTC, e.g., 2024-01-15T14:30:00Z)
 
 **Returns:**
 A formatted list of email conversations with:
@@ -46,7 +51,7 @@ A formatted list of email conversations with:
 - Check recent inbox activity
 - List emails from specific labels like SENT or STARRED
 - Get oldest emails first for processing backlogs
-- Filter emails by date range
+- Filter emails by date/time range using after and/or before
 
 **Note:** This tool only returns email metadata and snippets. Use get_email_conversation with an email ID to retrieve the full message content.`;
 
@@ -73,9 +78,13 @@ export function listEmailConversationsTool(server: Server, clientFactory: Client
           default: 'recent',
           description: PARAM_DESCRIPTIONS.sort_by,
         },
-        after_date: {
+        after: {
           type: 'string',
-          description: PARAM_DESCRIPTIONS.after_date,
+          description: PARAM_DESCRIPTIONS.after,
+        },
+        before: {
+          type: 'string',
+          description: PARAM_DESCRIPTIONS.before,
         },
       },
       required: [],
@@ -88,12 +97,18 @@ export function listEmailConversationsTool(server: Server, clientFactory: Client
         // Parse labels
         const labelIds = parsed.labels.split(',').map((l) => l.trim().toUpperCase());
 
-        // Build query string for date filtering
-        let query: string | undefined;
-        if (parsed.after_date) {
-          // Convert YYYY-MM-DD to YYYY/MM/DD for Gmail query syntax
-          query = `after:${parsed.after_date.replace(/-/g, '/')}`;
+        // Build query string for datetime filtering
+        // Gmail uses Unix timestamps (seconds since epoch) for after: and before: operators
+        const queryParts: string[] = [];
+        if (parsed.after) {
+          const timestamp = Math.floor(new Date(parsed.after).getTime() / 1000);
+          queryParts.push(`after:${timestamp}`);
         }
+        if (parsed.before) {
+          const timestamp = Math.floor(new Date(parsed.before).getTime() / 1000);
+          queryParts.push(`before:${timestamp}`);
+        }
+        const query = queryParts.length > 0 ? queryParts.join(' ') : undefined;
 
         // List messages
         const { messages } = await client.listMessages({
