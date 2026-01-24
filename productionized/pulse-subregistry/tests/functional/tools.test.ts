@@ -23,22 +23,28 @@ describe('list_servers tool', () => {
     clientFactory = () => mockClient;
   });
 
-  it('should return JSON list of servers', async () => {
+  it('should return JSON list of servers with _meta', async () => {
     (mockClient.listServers as ReturnType<typeof vi.fn>).mockResolvedValue({
       servers: [
         {
-          name: 'io.github.example/test-server-1',
-          title: 'Test Server 1',
-          description: 'A test server',
-          version: '1.0.0',
-          websiteUrl: 'https://example.com/test-1',
+          server: {
+            name: 'io.github.example/test-server-1',
+            title: 'Test Server 1',
+            description: 'A test server',
+            version: '1.0.0',
+            websiteUrl: 'https://example.com/test-1',
+          },
+          _meta: { 'com.pulsemcp/server': { visitorsEstimateTotal: 100 } },
         },
         {
-          name: 'io.github.example/test-server-2',
-          title: 'Test Server 2',
-          description: 'Another test server',
-          version: '2.0.0',
-          repository: { url: 'https://github.com/example/test-2', source: 'github' },
+          server: {
+            name: 'io.github.example/test-server-2',
+            title: 'Test Server 2',
+            description: 'Another test server',
+            version: '2.0.0',
+            repository: { url: 'https://github.com/example/test-2', source: 'github' },
+          },
+          _meta: { 'com.pulsemcp/server': { visitorsEstimateTotal: 200 } },
         },
       ],
       metadata: {
@@ -49,14 +55,14 @@ describe('list_servers tool', () => {
     const tool = listServersTool(mockServer, clientFactory);
     const result = await tool.handler({});
 
-    // Verify it's valid JSON
+    // Verify it's valid JSON with full structure including _meta
     const parsed = JSON.parse(result.content[0].text);
     expect(parsed.servers).toHaveLength(2);
-    expect(parsed.servers[0].name).toBe('io.github.example/test-server-1');
-    expect(parsed.servers[0].title).toBe('Test Server 1');
-    expect(parsed.servers[0].description).toBe('A test server');
-    expect(parsed.servers[1].name).toBe('io.github.example/test-server-2');
-    expect(parsed.servers[1].title).toBe('Test Server 2');
+    expect(parsed.servers[0].server.name).toBe('io.github.example/test-server-1');
+    expect(parsed.servers[0].server.title).toBe('Test Server 1');
+    expect(parsed.servers[0]._meta['com.pulsemcp/server'].visitorsEstimateTotal).toBe(100);
+    expect(parsed.servers[1].server.name).toBe('io.github.example/test-server-2');
+    expect(parsed.servers[1]._meta['com.pulsemcp/server'].visitorsEstimateTotal).toBe(200);
     expect(parsed.metadata.count).toBe(2);
   });
 
@@ -102,7 +108,7 @@ describe('list_servers tool', () => {
 
   it('should include nextCursor in JSON when available', async () => {
     (mockClient.listServers as ReturnType<typeof vi.fn>).mockResolvedValue({
-      servers: [{ name: 'test-server', description: 'Test' }],
+      servers: [{ server: { name: 'test-server', description: 'Test' }, _meta: {} }],
       metadata: { count: 1, nextCursor: 'next-page-cursor' },
     });
 

@@ -166,21 +166,21 @@ This document tracks potentially controversial design decisions made during the 
 
 ---
 
-## 11. API Response Transformation: Flattening Nested Structure
+## 11. API Response: Preserving Full Structure with `_meta`
 
-**Decision**: Transform the nested API response (`{ server: ..., _meta: ... }`) to a flat structure for tools.
+**Decision**: Return the full API response structure including `_meta` information for all tools.
 
 **Rationale**:
 
 - The API returns servers as `{ servers: [{ server: {...}, _meta: {...} }, ...] }`
-- For tool output, users care about the server data, not the wrapper structure
-- Flattening makes the tool output cleaner and more readable
-- The `_meta` information (visitor stats, publication info) could be exposed later if needed
+- The `_meta` information (visitor stats, publication info, timestamps) is valuable for debugging
+- Users need access to this metadata for troubleshooting and investigating server configurations
+- Preserving the full structure makes it easier to understand the exact API response shape
 
 **Implementation**:
 
-- `listServers()` extracts `entry.server` from each entry
-- `getServer()` returns the full response including `_meta` for potential future use
+- `listServers()` returns full entries with both `server` and `_meta` fields
+- `getServer()` returns the full response including `_meta`
 
 ---
 
@@ -208,6 +208,5 @@ This document tracks potentially controversial design decisions made during the 
 1. Should tool names be more explicit (e.g., `list_mcp_servers`)?
 2. Should we require explicit version in `get_server`?
 3. Should we add a `list_versions` tool?
-4. Should we expose `_meta` information (visitor stats, publication info) in tool output?
 
 Please review these decisions and let me know if any should be changed before merging.

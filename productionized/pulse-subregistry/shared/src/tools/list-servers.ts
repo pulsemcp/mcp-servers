@@ -24,8 +24,13 @@ const listServersArgsSchema = z.object({
   updated_since: z.string().optional().describe(PARAM_DESCRIPTIONS.updated_since),
 });
 
+interface ServerEntry {
+  server: Record<string, unknown>;
+  _meta?: Record<string, unknown>;
+}
+
 interface ListServersResponse {
-  servers: Array<Record<string, unknown>>;
+  servers: ServerEntry[];
   metadata: {
     count?: number;
     nextCursor?: string;

@@ -122,12 +122,11 @@ export class PulseSubregistryClient implements IPulseSubregistryClient {
       throw new Error(`API request failed (${response.status}): ${errorMessage}`);
     }
 
-    // Parse the raw API response
+    // Parse the raw API response and return with full server entries including _meta
     const apiResponse = (await response.json()) as ListServersApiResponse;
 
-    // Transform to flattened format - extract server objects from nested structure
     return {
-      servers: apiResponse.servers.map((entry) => entry.server),
+      servers: apiResponse.servers,
       metadata: apiResponse.metadata,
     };
   }

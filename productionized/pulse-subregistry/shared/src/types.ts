@@ -78,11 +78,11 @@ export interface ListServersApiResponse {
 }
 
 /**
- * Processed response from the list servers endpoint
- * (flattened for easier tool consumption)
+ * Response from the list servers endpoint
+ * Includes full server entries with _meta information
  */
 export interface ListServersResponse {
-  servers: Server[];
+  servers: ServerEntry[];
   metadata: {
     nextCursor?: string;
     count: number;

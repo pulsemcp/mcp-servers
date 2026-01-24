@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Output format changed from Markdown to raw JSON for easier debugging and inspection of API responses
+- `list_servers` now includes full `_meta` information for each server entry (visitor stats, publication info, timestamps)
 
 ## [0.0.1] - 2026-01-24
 
