@@ -39,7 +39,7 @@ This server is built and tested on macOS with Claude Desktop. It should work wit
 
 # Usage Tips
 
-- Use `list_servers` to browse available MCP servers. You can search by name or description.
+- Use `list_servers` to browse available MCP servers. You can search by name or title.
 - Use pagination with the `cursor` parameter when there are many results.
 - Use `get_server` to get detailed information about a specific server.
 - The `version` parameter in `get_server` defaults to "latest" but you can specify a specific version.

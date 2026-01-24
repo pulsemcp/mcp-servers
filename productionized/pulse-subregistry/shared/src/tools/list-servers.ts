@@ -13,7 +13,7 @@ const PARAM_DESCRIPTIONS = {
   cursor:
     'Pagination cursor from a previous response. Use this to get the next page of results when nextCursor is returned.',
   search:
-    'Search term to filter servers. Searches server names and descriptions. Example: "github", "slack".',
+    'Search term to filter servers. Searches server names and titles. Example: "github", "slack".',
   updated_since:
     'ISO 8601 timestamp to filter servers updated after this date. Example: "2024-01-01T00:00:00Z".',
   expand_fields:
