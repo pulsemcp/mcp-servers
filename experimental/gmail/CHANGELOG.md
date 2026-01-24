@@ -4,8 +4,14 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.0.5] - 2026-01-24
+
 ### Added
 
+- `include_html` parameter to `get_email_conversation` for returning raw HTML email content
+  - When `true`, includes the original HTML body in addition to plain text
+  - Useful for rendering emails with original formatting, creating screenshots, or archival workflows
+  - Addresses [issue #276](https://github.com/pulsemcp/mcp-servers/issues/276)
 - `after` and `before` datetime parameters to `list_email_conversations` for filtering emails by time range
   - ISO 8601 format in UTC (e.g., `2024-01-15T14:30:00Z`)
   - Both parameters are exclusive (emails strictly after/before the specified datetime)

@@ -298,6 +298,134 @@ describe('Gmail MCP Server Tools', () => {
 
       expect(result.content[0].text).toContain('(No body content available)');
     });
+
+    it('should include HTML body when include_html is true', async () => {
+      (mockClient.getMessage as ReturnType<typeof vi.fn>).mockResolvedValue({
+        id: 'msg_html',
+        threadId: 'thread_html',
+        labelIds: ['INBOX'],
+        snippet: 'HTML email',
+        historyId: '12345',
+        internalDate: String(Date.now()),
+        payload: {
+          mimeType: 'multipart/alternative',
+          headers: [
+            { name: 'Subject', value: 'HTML Email' },
+            { name: 'From', value: 'sender@example.com' },
+            { name: 'To', value: 'me@example.com' },
+            { name: 'Date', value: new Date().toISOString() },
+          ],
+          parts: [
+            {
+              partId: '0',
+              mimeType: 'text/plain',
+              body: {
+                size: 50,
+                data: Buffer.from('Plain text version').toString('base64url'),
+              },
+            },
+            {
+              partId: '1',
+              mimeType: 'text/html',
+              body: {
+                size: 100,
+                data: Buffer.from('<html><body><h1>Hello</h1><p>World</p></body></html>').toString(
+                  'base64url'
+                ),
+              },
+            },
+          ],
+        },
+      });
+
+      const tool = getEmailConversationTool(mockServer, () => mockClient);
+      const result = await tool.handler({ email_id: 'msg_html', include_html: true });
+
+      expect(result.content[0].text).toContain('## HTML Body');
+      expect(result.content[0].text).toContain('```html');
+      expect(result.content[0].text).toContain(
+        '<html><body><h1>Hello</h1><p>World</p></body></html>'
+      );
+      // Plain text body should also be present
+      expect(result.content[0].text).toContain('Plain text version');
+    });
+
+    it('should not include HTML body when include_html is false or not specified', async () => {
+      (mockClient.getMessage as ReturnType<typeof vi.fn>).mockResolvedValue({
+        id: 'msg_html',
+        threadId: 'thread_html',
+        labelIds: ['INBOX'],
+        snippet: 'HTML email',
+        historyId: '12345',
+        internalDate: String(Date.now()),
+        payload: {
+          mimeType: 'multipart/alternative',
+          headers: [
+            { name: 'Subject', value: 'HTML Email' },
+            { name: 'From', value: 'sender@example.com' },
+            { name: 'To', value: 'me@example.com' },
+            { name: 'Date', value: new Date().toISOString() },
+          ],
+          parts: [
+            {
+              partId: '0',
+              mimeType: 'text/plain',
+              body: {
+                size: 50,
+                data: Buffer.from('Plain text version').toString('base64url'),
+              },
+            },
+            {
+              partId: '1',
+              mimeType: 'text/html',
+              body: {
+                size: 100,
+                data: Buffer.from('<html><body><h1>Hello</h1><p>World</p></body></html>').toString(
+                  'base64url'
+                ),
+              },
+            },
+          ],
+        },
+      });
+
+      const tool = getEmailConversationTool(mockServer, () => mockClient);
+      const result = await tool.handler({ email_id: 'msg_html' });
+
+      expect(result.content[0].text).not.toContain('## HTML Body');
+      expect(result.content[0].text).not.toContain('```html');
+      expect(result.content[0].text).toContain('Plain text version');
+    });
+
+    it('should show message when include_html is true but no HTML content available', async () => {
+      (mockClient.getMessage as ReturnType<typeof vi.fn>).mockResolvedValue({
+        id: 'msg_plain_only',
+        threadId: 'thread_plain',
+        labelIds: ['INBOX'],
+        snippet: 'Plain text only email',
+        historyId: '12345',
+        internalDate: String(Date.now()),
+        payload: {
+          mimeType: 'text/plain',
+          headers: [
+            { name: 'Subject', value: 'Plain Text Email' },
+            { name: 'From', value: 'sender@example.com' },
+            { name: 'To', value: 'me@example.com' },
+            { name: 'Date', value: new Date().toISOString() },
+          ],
+          body: {
+            size: 50,
+            data: Buffer.from('This is plain text only').toString('base64url'),
+          },
+        },
+      });
+
+      const tool = getEmailConversationTool(mockServer, () => mockClient);
+      const result = await tool.handler({ email_id: 'msg_plain_only', include_html: true });
+
+      expect(result.content[0].text).toContain('## HTML Body');
+      expect(result.content[0].text).toContain('(No HTML content available)');
+    });
   });
 
   describe('search_email_conversations', () => {

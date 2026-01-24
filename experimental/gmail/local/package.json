@@ -1,6 +1,6 @@
 {
   "name": "gmail-workspace-mcp-server",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "description": "MCP server for Gmail integration with service account support",
   "main": "build/index.js",
   "type": "module",

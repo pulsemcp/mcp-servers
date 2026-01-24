@@ -8,10 +8,14 @@ const PARAM_DESCRIPTIONS = {
   email_id:
     'The unique identifier of the email to retrieve. ' +
     'Obtain this from list_email_conversations or search_email_conversations.',
+  include_html:
+    'When true, includes the raw HTML body of the email (if available) in addition to the plain text. ' +
+    'Useful for rendering emails with original formatting, creating screenshots, or archival workflows.',
 } as const;
 
 export const GetEmailConversationSchema = z.object({
   email_id: z.string().min(1).describe(PARAM_DESCRIPTIONS.email_id),
+  include_html: z.boolean().optional().describe(PARAM_DESCRIPTIONS.include_html),
 });
 
 const TOOL_DESCRIPTION = `Retrieve the full content of a specific email conversation by its ID.
@@ -20,11 +24,13 @@ Returns the complete email including headers, body content, and attachment infor
 
 **Parameters:**
 - email_id: The unique identifier of the email (required)
+- include_html: When true, includes raw HTML body in addition to plain text (optional)
 
 **Returns:**
 Full email details including:
 - Subject, From, To, Cc, Date headers
 - Full message body (plain text preferred, HTML as fallback)
+- Raw HTML body (when include_html is true and HTML content is available)
 - List of attachments (if any)
 - Labels assigned to the email
 
@@ -32,6 +38,8 @@ Full email details including:
 - Read the full content of an email after listing conversations
 - Extract specific information from an email body
 - Check attachment details
+- Render emails with original HTML formatting (use include_html: true)
+- Create email screenshots or archives with original styling
 
 **Note:** Use list_email_conversations or search_email_conversations first to get email IDs.`;
 
@@ -101,6 +109,24 @@ function getEmailBody(email: Email): string {
 }
 
 /**
+ * Gets the raw HTML body content from an email (if available)
+ */
+function getEmailHtmlBody(email: Email): string | null {
+  // Check if body is directly on payload and it's HTML
+  if (email.payload?.body?.data && email.payload.mimeType === 'text/html') {
+    return decodeBase64Url(email.payload.body.data);
+  }
+
+  // Try to extract HTML from parts
+  if (email.payload?.parts) {
+    const html = extractBodyContent(email.payload.parts, 'text/html');
+    if (html) return html;
+  }
+
+  return null;
+}
+
+/**
  * Extracts attachment information from email parts
  */
 function getAttachments(
@@ -129,7 +155,7 @@ function getAttachments(
 /**
  * Formats an email for display
  */
-function formatFullEmail(email: Email): string {
+function formatFullEmail(email: Email, options?: { includeHtml?: boolean }): string {
   const subject = getHeader(email, 'Subject') || '(No Subject)';
   const from = getHeader(email, 'From') || 'Unknown';
   const to = getHeader(email, 'To') || 'Unknown';
@@ -162,6 +188,26 @@ function formatFullEmail(email: Email): string {
 
 ${body}`;
 
+  // Include raw HTML body if requested
+  if (options?.includeHtml) {
+    const htmlBody = getEmailHtmlBody(email);
+    if (htmlBody) {
+      output += `
+
+## HTML Body
+
+\`\`\`html
+${htmlBody}
+\`\`\``;
+    } else {
+      output += `
+
+## HTML Body
+
+(No HTML content available)`;
+    }
+  }
+
   if (attachments.length > 0) {
     output += `\n\n## Attachments (${attachments.length})\n`;
     attachments.forEach((att, i) => {
@@ -184,6 +230,10 @@ export function getEmailConversationTool(server: Server, clientFactory: ClientFa
           type: 'string',
           description: PARAM_DESCRIPTIONS.email_id,
         },
+        include_html: {
+          type: 'boolean',
+          description: PARAM_DESCRIPTIONS.include_html,
+        },
       },
       required: ['email_id'],
     },
@@ -196,7 +246,9 @@ export function getEmailConversationTool(server: Server, clientFactory: ClientFa
           format: 'full',
         });
 
-        const formattedEmail = formatFullEmail(email);
+        const formattedEmail = formatFullEmail(email, {
+          includeHtml: parsed.include_html,
+        });
 
         return {
           content: [
