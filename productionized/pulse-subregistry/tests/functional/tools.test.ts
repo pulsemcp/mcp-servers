@@ -143,6 +143,55 @@ describe('list_servers tool', () => {
 
     expect(mockClient.listServers).toHaveBeenCalledWith(expect.objectContaining({ limit: 30 }));
   });
+
+  it('should exclude fields using exclude_fields parameter', async () => {
+    (mockClient.listServers as ReturnType<typeof vi.fn>).mockResolvedValue({
+      servers: [
+        {
+          server: {
+            name: 'test-server',
+            description: 'Test',
+            packages: [{ name: 'pkg1' }],
+            remotes: [{ url: 'https://example.com' }],
+          },
+          _meta: { 'com.pulsemcp/server': { visitorsEstimateTotal: 100 } },
+        },
+      ],
+      metadata: { count: 1 },
+    });
+
+    const tool = listServersTool(mockServer, clientFactory);
+    const result = await tool.handler({
+      exclude_fields: ['servers[].server.packages', 'servers[].server.remotes'],
+    });
+
+    const parsed = JSON.parse(result.content[0].text);
+    expect(parsed.servers[0].server.name).toBe('test-server');
+    expect(parsed.servers[0].server.packages).toBeUndefined();
+    expect(parsed.servers[0].server.remotes).toBeUndefined();
+    expect(parsed.servers[0]._meta).toBeDefined();
+  });
+
+  it('should exclude _meta from servers using exclude_fields', async () => {
+    (mockClient.listServers as ReturnType<typeof vi.fn>).mockResolvedValue({
+      servers: [
+        {
+          server: { name: 'test-server', description: 'Test' },
+          _meta: { 'com.pulsemcp/server': { visitorsEstimateTotal: 100 } },
+        },
+      ],
+      metadata: { count: 1 },
+    });
+
+    const tool = listServersTool(mockServer, clientFactory);
+    const result = await tool.handler({
+      exclude_fields: ['servers[]._meta'],
+    });
+
+    const parsed = JSON.parse(result.content[0].text);
+    expect(parsed.servers[0].server.name).toBe('test-server');
+    expect(parsed.servers[0]._meta).toBeUndefined();
+  });
 });
 
 describe('get_server tool', () => {
@@ -252,5 +301,47 @@ describe('get_server tool', () => {
     expect(parsed.server.customField).toBe('custom value');
     expect(parsed.server.anotherField).toBe(123);
     expect(parsed._meta.someMetadata).toBe('value');
+  });
+
+  it('should exclude fields using exclude_fields parameter', async () => {
+    (mockClient.getServer as ReturnType<typeof vi.fn>).mockResolvedValue({
+      server: {
+        name: 'test-server',
+        description: 'Test',
+        packages: [{ name: 'pkg1' }],
+        remotes: [{ url: 'https://example.com' }],
+      },
+      _meta: { someMetadata: 'value' },
+    });
+
+    const tool = getServerTool(mockServer, clientFactory);
+    const result = await tool.handler({
+      server_name: 'test-server',
+      exclude_fields: ['server.packages', 'server.remotes'],
+    });
+
+    const parsed = JSON.parse(result.content[0].text);
+    expect(parsed.server.name).toBe('test-server');
+    expect(parsed.server.description).toBe('Test');
+    expect(parsed.server.packages).toBeUndefined();
+    expect(parsed.server.remotes).toBeUndefined();
+    expect(parsed._meta.someMetadata).toBe('value');
+  });
+
+  it('should exclude _meta using exclude_fields', async () => {
+    (mockClient.getServer as ReturnType<typeof vi.fn>).mockResolvedValue({
+      server: { name: 'test-server', description: 'Test' },
+      _meta: { someMetadata: 'value' },
+    });
+
+    const tool = getServerTool(mockServer, clientFactory);
+    const result = await tool.handler({
+      server_name: 'test-server',
+      exclude_fields: ['_meta'],
+    });
+
+    const parsed = JSON.parse(result.content[0].text);
+    expect(parsed.server.name).toBe('test-server');
+    expect(parsed._meta).toBeUndefined();
   });
 });

@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `exclude_fields` parameter to `list_servers` and `get_server` tools for reducing context size by selectively excluding fields
+  - Uses dot-notation paths (e.g., `"servers[].server.packages"`, `"_meta"`)
+  - Supports array notation `[]` to apply exclusions to all array elements
+
 ### Changed
 
 - Output format changed from Markdown to raw JSON for easier debugging and inspection of API responses

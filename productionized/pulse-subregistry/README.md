@@ -214,6 +214,7 @@ Browse MCP servers from the PulseMCP Sub-Registry.
 - `cursor` (string, optional): Pagination cursor from a previous response.
 - `search` (string, optional): Search term to filter servers by name or description.
 - `updated_since` (string, optional): ISO 8601 timestamp to filter servers updated after this date. Example: "2024-01-01T00:00:00Z".
+- `exclude_fields` (array, optional): Array of dot-notation paths to exclude from the response. Reduces context size by removing unnecessary fields. Examples: `["servers[].server.packages", "servers[].server.remotes", "servers[]._meta"]`.
 
 ### get_server
 
@@ -223,6 +224,7 @@ Get detailed information about a specific MCP server.
 
 - `server_name` (string, required): The name of the server to look up.
 - `version` (string, optional): Specific version to retrieve. Default: "latest".
+- `exclude_fields` (array, optional): Array of dot-notation paths to exclude from the response. Examples: `["server.packages", "server.remotes", "_meta"]`.
 
 ## License
 

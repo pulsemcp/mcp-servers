@@ -203,6 +203,29 @@ This document tracks potentially controversial design decisions made during the 
 
 ---
 
+## 13. Field Exclusion: `exclude_fields` Parameter
+
+**Decision**: Add an `exclude_fields` parameter to both tools that accepts an array of dot-notation paths to exclude from the response.
+
+**Rationale**:
+
+- API responses can be large and consume significant context in LLM conversations
+- Users often only need specific fields (e.g., name and description, not packages or remotes)
+- Flexible dot-notation with array support (`servers[].server.packages`) allows precise control
+- Reduces token usage without requiring multiple tool variations
+
+**Implementation**:
+
+- Accepts an array of strings using dot-notation paths
+- Supports `[]` notation to apply exclusions to all array elements (e.g., `"servers[].server.packages"`)
+- Deep clones response before filtering to avoid mutation
+- Examples:
+  - `["servers[]._meta"]` - Remove `_meta` from all servers in list
+  - `["server.packages", "server.remotes"]` - Remove packages and remotes from get_server
+  - `["_meta"]` - Remove top-level `_meta`
+
+---
+
 ## Summary of Open Questions
 
 1. Should tool names be more explicit (e.g., `list_mcp_servers`)?
