@@ -20,8 +20,16 @@ import { machineExecTool } from '../../shared/src/tools/machine-exec.js';
 import { showImageTool } from '../../shared/src/tools/show-image.js';
 import { listReleasesTool } from '../../shared/src/tools/list-releases.js';
 import { updateImageTool } from '../../shared/src/tools/update-image.js';
-import { createRegisterTools, parseEnabledToolGroups } from '../../shared/src/tools.js';
+import { pushImageTool } from '../../shared/src/tools/push-image.js';
+import { pullImageTool } from '../../shared/src/tools/pull-image.js';
+import { checkRegistryImageTool } from '../../shared/src/tools/check-registry-image.js';
+import {
+  createRegisterTools,
+  parseEnabledToolGroups,
+  validateToolGroupConfig,
+} from '../../shared/src/tools.js';
 import { createMockFlyIOClient } from '../mocks/fly-io-client.functional-mock.js';
+import { createMockDockerCLIClient } from '../mocks/docker-cli-client.functional-mock.js';
 
 describe('Tools', () => {
   let mockServer: Server;
@@ -890,6 +898,191 @@ describe('App Scoping (FLY_IO_APP_NAME)', () => {
       const listMachines = result.tools.find((t) => t.name === 'list_machines');
       const schema = listMachines?.inputSchema as { required?: string[] };
       expect(schema.required).toContain('app_name');
+    });
+  });
+});
+
+describe('Docker Registry Tools', () => {
+  let mockServer: Server;
+  let mockDockerClient: ReturnType<typeof createMockDockerCLIClient>;
+
+  beforeEach(() => {
+    mockServer = {} as Server;
+    mockDockerClient = createMockDockerCLIClient();
+  });
+
+  describe('push_image', () => {
+    it('should push an image successfully', async () => {
+      const tool = pushImageTool(mockServer, () => mockDockerClient);
+      const result = await tool.handler({
+        source_image: 'nginx:latest',
+        app_name: 'test-app',
+        tag: 'v1',
+      });
+
+      expect(result.content[0].text).toContain('Image pushed successfully');
+      expect(result.content[0].text).toContain('registry.fly.io');
+      expect(result.content[0].text).toContain('test-app');
+      expect(mockDockerClient.pushImage).toHaveBeenCalledWith('nginx:latest', 'test-app', 'v1');
+    });
+
+    it('should return error when source_image is missing', async () => {
+      const tool = pushImageTool(mockServer, () => mockDockerClient);
+      const result = await tool.handler({
+        app_name: 'test-app',
+        tag: 'v1',
+      });
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('Error');
+    });
+  });
+
+  describe('pull_image', () => {
+    it('should pull an image successfully', async () => {
+      const tool = pullImageTool(mockServer, () => mockDockerClient);
+      const result = await tool.handler({
+        app_name: 'test-app',
+        tag: 'v1',
+      });
+
+      expect(result.content[0].text).toContain('Image pulled successfully');
+      expect(result.content[0].text).toContain('registry.fly.io');
+      expect(mockDockerClient.pullImage).toHaveBeenCalledWith('test-app', 'v1');
+    });
+
+    it('should return error when app_name is missing', async () => {
+      const tool = pullImageTool(mockServer, () => mockDockerClient);
+      const result = await tool.handler({ tag: 'v1' });
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('Error');
+    });
+  });
+
+  describe('check_registry_image', () => {
+    it('should confirm image exists', async () => {
+      const tool = checkRegistryImageTool(mockServer, () => mockDockerClient);
+      const result = await tool.handler({
+        app_name: 'test-app',
+        tag: 'v1',
+      });
+
+      expect(result.content[0].text).toContain('Image exists');
+      expect(result.content[0].text).toContain('registry.fly.io/test-app:v1');
+      expect(mockDockerClient.imageExists).toHaveBeenCalledWith('test-app', 'v1');
+    });
+
+    it('should report image not found', async () => {
+      mockDockerClient.imageExists.mockResolvedValue(false);
+      const tool = checkRegistryImageTool(mockServer, () => mockDockerClient);
+      const result = await tool.handler({
+        app_name: 'test-app',
+        tag: 'nonexistent',
+      });
+
+      expect(result.content[0].text).toContain('not found');
+    });
+  });
+});
+
+describe('Docker Tool Group Configuration', () => {
+  describe('validateToolGroupConfig', () => {
+    it('should not throw when Docker is not disabled', () => {
+      expect(() => {
+        validateToolGroupConfig(['readonly', 'registry'], false);
+      }).not.toThrow();
+    });
+
+    it('should not throw when Docker is disabled but registry group is not explicitly enabled', () => {
+      expect(() => {
+        validateToolGroupConfig(['readonly', 'write'], true);
+      }).not.toThrow();
+    });
+
+    it('should throw when registry group is explicitly enabled but Docker is disabled', () => {
+      expect(() => {
+        validateToolGroupConfig(['readonly', 'registry'], true);
+      }).toThrow('Docker CLI tools are disabled');
+    });
+  });
+
+  describe('createRegisterTools with Docker options', () => {
+    let mockClient: ReturnType<typeof createMockFlyIOClient>;
+    let mockDockerClient: ReturnType<typeof createMockDockerCLIClient>;
+    let listToolsHandler: () => Promise<{
+      tools: Array<{ name: string; description: string; inputSchema: object }>;
+    }>;
+
+    beforeEach(() => {
+      mockClient = createMockFlyIOClient();
+      mockDockerClient = createMockDockerCLIClient();
+    });
+
+    const setupServer = (options: {
+      dockerClientFactory?: () => ReturnType<typeof createMockDockerCLIClient>;
+      dockerDisabled?: boolean;
+    }) => {
+      const mockServer = {
+        setRequestHandler: vi.fn((schema: unknown, handler: (req: unknown) => Promise<unknown>) => {
+          const schemaObj = schema as {
+            def?: { shape?: { method?: { def?: { values?: string[] } } } };
+          };
+          const method = schemaObj?.def?.shape?.method?.def?.values?.[0];
+          if (method === 'tools/list') {
+            listToolsHandler = handler as typeof listToolsHandler;
+          }
+        }),
+      } as unknown as Server;
+
+      const registerTools = createRegisterTools(() => mockClient, {
+        dockerClientFactory: options.dockerClientFactory,
+        dockerDisabled: options.dockerDisabled,
+      });
+      registerTools(mockServer);
+    };
+
+    it('should include registry tools when Docker client factory is provided', async () => {
+      setupServer({ dockerClientFactory: () => mockDockerClient });
+      const result = await listToolsHandler();
+
+      const toolNames = result.tools.map((t) => t.name);
+      expect(toolNames).toContain('push_image');
+      expect(toolNames).toContain('pull_image');
+      expect(toolNames).toContain('check_registry_image');
+    });
+
+    it('should not include registry tools when Docker client factory is not provided', async () => {
+      setupServer({});
+      const result = await listToolsHandler();
+
+      const toolNames = result.tools.map((t) => t.name);
+      expect(toolNames).not.toContain('push_image');
+      expect(toolNames).not.toContain('pull_image');
+      expect(toolNames).not.toContain('check_registry_image');
+    });
+
+    it('should not include registry tools when Docker is disabled', async () => {
+      setupServer({
+        dockerClientFactory: () => mockDockerClient,
+        dockerDisabled: true,
+      });
+      const result = await listToolsHandler();
+
+      const toolNames = result.tools.map((t) => t.name);
+      expect(toolNames).not.toContain('push_image');
+      expect(toolNames).not.toContain('pull_image');
+      expect(toolNames).not.toContain('check_registry_image');
+    });
+
+    it('should include fly CLI image tools regardless of Docker settings', async () => {
+      setupServer({ dockerDisabled: true });
+      const result = await listToolsHandler();
+
+      const toolNames = result.tools.map((t) => t.name);
+      expect(toolNames).toContain('show_image');
+      expect(toolNames).toContain('list_releases');
+      expect(toolNames).toContain('update_image');
     });
   });
 });

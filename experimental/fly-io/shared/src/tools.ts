@@ -21,6 +21,10 @@ import { machineExecTool } from './tools/machine-exec.js';
 import { showImageTool } from './tools/show-image.js';
 import { listReleasesTool } from './tools/list-releases.js';
 import { updateImageTool } from './tools/update-image.js';
+import { pushImageTool } from './tools/push-image.js';
+import { pullImageTool } from './tools/pull-image.js';
+import { checkRegistryImageTool } from './tools/check-registry-image.js';
+import type { DockerCLIClient } from './docker-client/docker-cli-client.js';
 
 // =============================================================================
 // TOOL GROUPING SYSTEM
@@ -41,6 +45,7 @@ import { updateImageTool } from './tools/update-image.js';
 //    - 'logs': Log retrieval tools (get_logs)
 //    - 'ssh': Remote execution tools (machine_exec)
 //    - 'images': Image management tools (show_image, list_releases, update_image)
+//    - 'registry': Docker registry tools (push_image, pull_image, check_registry_image) - requires Docker CLI
 //
 // Usage: Set ENABLED_TOOLGROUPS environment variable to a comma-separated list
 // Examples:
@@ -66,7 +71,7 @@ export type PermissionGroup = 'readonly' | 'write' | 'admin';
 /**
  * Feature-based tool groups (what features are enabled)
  */
-export type FeatureGroup = 'apps' | 'machines' | 'logs' | 'ssh' | 'images';
+export type FeatureGroup = 'apps' | 'machines' | 'logs' | 'ssh' | 'images' | 'registry';
 
 /**
  * All available tool groups (both permission and feature based)
@@ -74,8 +79,20 @@ export type FeatureGroup = 'apps' | 'machines' | 'logs' | 'ssh' | 'images';
 export type ToolGroup = PermissionGroup | FeatureGroup;
 
 const ALL_PERMISSION_GROUPS: PermissionGroup[] = ['readonly', 'write', 'admin'];
-const ALL_FEATURE_GROUPS: FeatureGroup[] = ['apps', 'machines', 'logs', 'ssh', 'images'];
+const ALL_FEATURE_GROUPS: FeatureGroup[] = [
+  'apps',
+  'machines',
+  'logs',
+  'ssh',
+  'images',
+  'registry',
+];
 const ALL_TOOL_GROUPS: ToolGroup[] = [...ALL_PERMISSION_GROUPS, ...ALL_FEATURE_GROUPS];
+
+/**
+ * Feature groups that require Docker CLI
+ */
+export const DOCKER_REQUIRED_FEATURE_GROUPS: FeatureGroup[] = ['registry'];
 
 /**
  * Parse enabled tool groups from environment variable.
@@ -123,18 +140,22 @@ interface Tool {
   }>;
 }
 
-type ToolFactory = (server: Server, clientFactory: ClientFactory) => Tool;
+type FlyIOToolFactory = (server: Server, clientFactory: ClientFactory) => Tool;
+type DockerToolFactory = (server: Server, dockerClientFactory: () => DockerCLIClient) => Tool;
+type ToolFactory = FlyIOToolFactory | DockerToolFactory;
 
 interface ToolDefinition {
   factory: ToolFactory;
   /** Permission groups this tool belongs to (readonly, write, admin) */
   permissionGroups: PermissionGroup[];
-  /** Feature group this tool belongs to (apps, machines, logs, ssh) */
+  /** Feature group this tool belongs to (apps, machines, logs, ssh, images, registry) */
   featureGroup: FeatureGroup;
   /** If true, this tool manages apps and will be disabled when FLY_IO_APP_NAME is set */
   isAppManagement?: boolean;
   /** If true, this tool has an app_name parameter that should be scoped when FLY_IO_APP_NAME is set */
   requiresAppName?: boolean;
+  /** If true, this tool requires Docker CLI and uses DockerCLIClient */
+  requiresDocker?: boolean;
 }
 
 /**
@@ -269,7 +290,34 @@ const ALL_TOOLS: ToolDefinition[] = [
     featureGroup: 'images',
     requiresAppName: true,
   },
+  // Docker registry tools (require Docker CLI)
+  {
+    factory: pushImageTool as ToolFactory,
+    permissionGroups: ['write', 'admin'],
+    featureGroup: 'registry',
+    requiresAppName: true,
+    requiresDocker: true,
+  },
+  {
+    factory: pullImageTool as ToolFactory,
+    permissionGroups: ['readonly', 'write', 'admin'],
+    featureGroup: 'registry',
+    requiresAppName: true,
+    requiresDocker: true,
+  },
+  {
+    factory: checkRegistryImageTool as ToolFactory,
+    permissionGroups: ['readonly', 'write', 'admin'],
+    featureGroup: 'registry',
+    requiresAppName: true,
+    requiresDocker: true,
+  },
 ];
+
+/**
+ * Docker client factory type
+ */
+export type DockerClientFactory = () => DockerCLIClient;
 
 /**
  * Configuration options for tool registration
@@ -277,6 +325,34 @@ const ALL_TOOLS: ToolDefinition[] = [
 export interface RegisterToolsOptions {
   enabledGroups?: ToolGroup[];
   scopedAppName?: string;
+  /** Factory for Docker CLI client (required for registry tools) */
+  dockerClientFactory?: DockerClientFactory;
+  /** If true, Docker tools are disabled (DISABLE_DOCKER_CLI_TOOLS=true) */
+  dockerDisabled?: boolean;
+}
+
+/**
+ * Validates tool group configuration.
+ * Throws an error if Docker-requiring feature groups are explicitly enabled
+ * but Docker is disabled via DISABLE_DOCKER_CLI_TOOLS.
+ */
+export function validateToolGroupConfig(enabledGroups: ToolGroup[], dockerDisabled: boolean): void {
+  if (!dockerDisabled) {
+    return; // No validation needed if Docker is not disabled
+  }
+
+  // Check if any Docker-requiring feature groups are explicitly enabled
+  const explicitlyEnabledDockerGroups = enabledGroups.filter((g): g is FeatureGroup =>
+    DOCKER_REQUIRED_FEATURE_GROUPS.includes(g as FeatureGroup)
+  );
+
+  if (explicitlyEnabledDockerGroups.length > 0) {
+    throw new Error(
+      `Invalid configuration: Docker CLI tools are disabled (DISABLE_DOCKER_CLI_TOOLS=true) ` +
+        `but Docker-requiring feature groups are explicitly enabled: ${explicitlyEnabledDockerGroups.join(', ')}. ` +
+        `Either remove these groups from ENABLED_TOOLGROUPS or unset DISABLE_DOCKER_CLI_TOOLS.`
+    );
+  }
 }
 
 /**
@@ -303,6 +379,8 @@ export function createRegisterTools(
   // Validate scopedAppName - treat empty strings as undefined
   const rawScopedAppName = opts.scopedAppName ?? process.env.FLY_IO_APP_NAME;
   const scopedAppName = rawScopedAppName?.trim() || undefined;
+  const dockerClientFactory = opts.dockerClientFactory;
+  const dockerDisabled = opts.dockerDisabled ?? false;
 
   return (server: Server) => {
     // Separate enabled groups into permission and feature groups
@@ -317,7 +395,14 @@ export function createRegisterTools(
     // If no feature groups specified, enable all features
     const effectivePermissions =
       enabledPermissions.length > 0 ? enabledPermissions : ALL_PERMISSION_GROUPS;
-    const effectiveFeatures = enabledFeatures.length > 0 ? enabledFeatures : ALL_FEATURE_GROUPS;
+    let effectiveFeatures = enabledFeatures.length > 0 ? enabledFeatures : ALL_FEATURE_GROUPS;
+
+    // If Docker is disabled, remove Docker-requiring feature groups
+    if (dockerDisabled) {
+      effectiveFeatures = effectiveFeatures.filter(
+        (f) => !DOCKER_REQUIRED_FEATURE_GROUPS.includes(f)
+      );
+    }
 
     // Filter tools: must match at least one permission group AND the feature group must be enabled
     let filteredTools = ALL_TOOLS.filter(
@@ -331,11 +416,28 @@ export function createRegisterTools(
       filteredTools = filteredTools.filter((def) => !def.isAppManagement);
     }
 
+    // Remove Docker tools if no Docker client factory is provided
+    if (!dockerClientFactory) {
+      filteredTools = filteredTools.filter((def) => !def.requiresDocker);
+    }
+
     // Create tool instances
-    const toolInstances = filteredTools.map((def) => ({
-      tool: def.factory(server, clientFactory),
-      requiresAppName: def.requiresAppName,
-    }));
+    const toolInstances = filteredTools.map((def) => {
+      // Use appropriate factory based on whether tool requires Docker
+      if (def.requiresDocker && dockerClientFactory) {
+        const dockerFactory = def.factory as DockerToolFactory;
+        return {
+          tool: dockerFactory(server, dockerClientFactory),
+          requiresAppName: def.requiresAppName,
+        };
+      } else {
+        const flyioFactory = def.factory as FlyIOToolFactory;
+        return {
+          tool: flyioFactory(server, clientFactory),
+          requiresAppName: def.requiresAppName,
+        };
+      }
+    });
 
     // List available tools
     server.setRequestHandler(ListToolsRequestSchema, async () => {
