@@ -53,11 +53,13 @@ Uses Google Service Account with domain-wide delegation (same pattern as Gmail):
 
 ### Tools Implemented
 
-1. **gcal_list_events**: List events with time range filtering and search
-2. **gcal_get_event**: Get detailed event information
-3. **gcal_create_event**: Create new events with attendees
-4. **gcal_list_calendars**: Discover available calendars
-5. **gcal_query_freebusy**: Check availability and busy periods
+1. **list_calendar_events**: List events with time range filtering and search
+2. **get_calendar_event**: Get detailed event information
+3. **create_calendar_event**: Create new events with attendees
+4. **update_calendar_event**: Update existing events (PATCH semantics)
+5. **delete_calendar_event**: Delete events with optional attendee notifications
+6. **list_calendars**: Discover available calendars
+7. **query_calendar_freebusy**: Check availability and busy periods
 
 All tools follow MCP best practices with:
 
@@ -129,12 +131,13 @@ Endpoints used:
 - `GET /calendars/{calendarId}/events` - List events
 - `GET /calendars/{calendarId}/events/{eventId}` - Get event
 - `POST /calendars/{calendarId}/events` - Create event
+- `PATCH /calendars/{calendarId}/events/{eventId}` - Update event
+- `DELETE /calendars/{calendarId}/events/{eventId}` - Delete event
 - `GET /users/me/calendarList` - List calendars
 - `POST /freeBusy` - Query availability
 
 ## Known Limitations
 
-- **Create-only**: Currently doesn't support updating or deleting events
 - **No recurring event editing**: Recurring events are shown as instances but can't be edited as a series
 - **Basic reminders**: Limited reminder configuration support
 - **No attachment support**: Can't upload or retrieve event attachments
@@ -143,7 +146,6 @@ Endpoints used:
 
 Consider adding:
 
-- Update and delete event tools
 - Batch operations for efficiency
 - Calendar creation and management
 - Event color customization

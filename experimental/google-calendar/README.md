@@ -7,6 +7,8 @@ An MCP (Model Context Protocol) server for Google Calendar integration using ser
 - **List Events**: View calendar events within a specified time range with filtering
 - **Get Event Details**: Retrieve complete information about specific events
 - **Create Events**: Create new calendar events with attendees, location, and descriptions
+- **Update Events**: Modify existing events (PATCH semantics - only provided fields are updated)
+- **Delete Events**: Remove events with optional notification to attendees
 - **List Calendars**: Discover available calendars
 - **Query Free/Busy**: Check availability and find busy time slots
 
@@ -118,7 +120,7 @@ Add this configuration to your Claude Desktop config file:
 
 ## Tool Groups
 
-By default, all tools are enabled (read + write access). You can restrict the server to read-only operations by setting the `TOOL_GROUPS` environment variable:
+By default, all tools are enabled (read + write access). You can restrict the server to read-only operations by setting the `ENABLED_TOOLGROUPS` environment variable:
 
 ```json
 {
@@ -130,7 +132,7 @@ By default, all tools are enabled (read + write access). You can restrict the se
         "GCAL_SERVICE_ACCOUNT_CLIENT_EMAIL": "...",
         "GCAL_SERVICE_ACCOUNT_PRIVATE_KEY": "...",
         "GCAL_IMPERSONATE_EMAIL": "...",
-        "TOOL_GROUPS": "calendar_readonly"
+        "ENABLED_TOOLGROUPS": "readonly"
       }
     }
   }
@@ -139,16 +141,16 @@ By default, all tools are enabled (read + write access). You can restrict the se
 
 **Available tool groups:**
 
-| Group               | Tools Included                                                                                      |
-| ------------------- | --------------------------------------------------------------------------------------------------- |
-| `calendar`          | All tools (read + write) - default                                                                  |
-| `calendar_readonly` | Read-only tools: `gcal_list_events`, `gcal_get_event`, `gcal_list_calendars`, `gcal_query_freebusy` |
+| Group       | Tools Included                                                                                             |
+| ----------- | ---------------------------------------------------------------------------------------------------------- |
+| `readwrite` | All 7 tools (read + write) - included by default                                                           |
+| `readonly`  | Read-only tools: `list_calendar_events`, `get_calendar_event`, `list_calendars`, `query_calendar_freebusy` |
 
-When using `calendar_readonly`, the `gcal_create_event` tool is not available.
+When using only `readonly`, the write tools (`create_calendar_event`, `update_calendar_event`, `delete_calendar_event`) are not available.
 
 ## Available Tools
 
-### gcal_list_events
+### list_calendar_events
 
 Lists events from a calendar within an optional time range.
 
@@ -168,7 +170,7 @@ Lists events from a calendar within an optional time range.
 List my events for the next week
 ```
 
-### gcal_get_event
+### get_calendar_event
 
 Retrieves detailed information about a specific event.
 
@@ -183,7 +185,7 @@ Retrieves detailed information about a specific event.
 Get details for event ID abc123
 ```
 
-### gcal_create_event
+### create_calendar_event
 
 Creates a new calendar event.
 
@@ -203,7 +205,45 @@ Creates a new calendar event.
 Create a meeting tomorrow at 2pm for 1 hour titled "Team Sync"
 ```
 
-### gcal_list_calendars
+### update_calendar_event
+
+Updates an existing calendar event. Uses PATCH semantics - only the fields you provide will be updated; other fields remain unchanged.
+
+**Parameters:**
+
+- `event_id` (required): The event ID to update
+- `calendar_id` (optional): Calendar ID (default: "primary")
+- `summary` (optional): New event title
+- `description` (optional): New event description
+- `location` (optional): New event location
+- `start_datetime` OR `start_date` (optional): New start time
+- `end_datetime` OR `end_date` (optional): New end time
+- `attendees` (optional): Updated array of attendee email addresses
+- `send_updates` (optional): "all", "externalOnly", or "none" - whether to send update notifications
+
+**Example:**
+
+```
+Update event abc123 to change the title to "Team Standup"
+```
+
+### delete_calendar_event
+
+Deletes a calendar event.
+
+**Parameters:**
+
+- `event_id` (required): The event ID to delete
+- `calendar_id` (optional): Calendar ID (default: "primary")
+- `send_updates` (optional): "all", "externalOnly", or "none" - whether to send cancellation notifications
+
+**Example:**
+
+```
+Delete event abc123
+```
+
+### list_calendars
 
 Lists all calendars available to the authenticated user.
 
@@ -217,7 +257,7 @@ Lists all calendars available to the authenticated user.
 Show all my calendars
 ```
 
-### gcal_query_freebusy
+### query_calendar_freebusy
 
 Queries availability information for calendars.
 
@@ -281,7 +321,7 @@ npm run test:all
 
 - Check that the calendar ID is correct
 - Verify the impersonated user has access to the calendar
-- Use `gcal_list_calendars` to discover available calendar IDs
+- Use `list_calendars` to discover available calendar IDs
 
 ## License
 

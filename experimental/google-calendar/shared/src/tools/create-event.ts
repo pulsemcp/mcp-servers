@@ -45,7 +45,7 @@ export const CreateEventSchema = z.object({
 
 export function createEventTool(server: Server, clientFactory: ClientFactory) {
   return {
-    name: 'gcal_create_event',
+    name: 'create_calendar_event',
     description:
       'Creates a new event in Google Calendar. ' +
       'Supports both timed events (using start_datetime/end_datetime) and all-day events (using start_date/end_date). ' +

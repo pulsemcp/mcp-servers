@@ -1,6 +1,6 @@
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { JWT } from 'google-auth-library';
-import { createRegisterTools } from './tools.js';
+import { createRegisterTools, parseEnabledToolGroups, type ToolGroup } from './tools.js';
 import type {
   CalendarEvent,
   CalendarEventList,
@@ -39,6 +39,25 @@ export interface ICalendarClient {
    * Create a new event
    */
   createEvent(calendarId: string, event: Partial<CalendarEvent>): Promise<CalendarEvent>;
+
+  /**
+   * Update an existing event
+   */
+  updateEvent(
+    calendarId: string,
+    eventId: string,
+    event: Partial<CalendarEvent>,
+    options?: { sendUpdates?: 'all' | 'externalOnly' | 'none' }
+  ): Promise<CalendarEvent>;
+
+  /**
+   * Delete an event
+   */
+  deleteEvent(
+    calendarId: string,
+    eventId: string,
+    options?: { sendUpdates?: 'all' | 'externalOnly' | 'none' }
+  ): Promise<void>;
 
   /**
    * List calendars available to the user
@@ -152,6 +171,27 @@ export class ServiceAccountCalendarClient implements ICalendarClient {
     return createEvent(this.baseUrl, headers, calendarId, event);
   }
 
+  async updateEvent(
+    calendarId: string,
+    eventId: string,
+    event: Partial<CalendarEvent>,
+    options?: { sendUpdates?: 'all' | 'externalOnly' | 'none' }
+  ): Promise<CalendarEvent> {
+    const headers = await this.getHeaders();
+    const { updateEvent } = await import('./calendar-client/lib/update-event.js');
+    return updateEvent(this.baseUrl, headers, calendarId, eventId, event, options);
+  }
+
+  async deleteEvent(
+    calendarId: string,
+    eventId: string,
+    options?: { sendUpdates?: 'all' | 'externalOnly' | 'none' }
+  ): Promise<void> {
+    const headers = await this.getHeaders();
+    const { deleteEvent } = await import('./calendar-client/lib/delete-event.js');
+    return deleteEvent(this.baseUrl, headers, calendarId, eventId, options);
+  }
+
   async listCalendars(options?: {
     maxResults?: number;
     pageToken?: string;
@@ -176,15 +216,15 @@ export type ClientFactory = () => ICalendarClient;
 export interface CreateMCPServerOptions {
   version: string;
   /**
-   * Optional comma-separated list of tool groups to enable.
+   * Optional array of tool groups to enable or comma-separated string.
    * Available groups:
-   * - 'calendar': All calendar tools (read + write)
-   * - 'calendar_readonly': Calendar tools (read only - excludes create_event)
+   * - 'readonly': Read-only operations (list events, get event, list calendars, query freebusy)
+   * - 'readwrite': Read and write operations (includes readonly + create_event)
    *
-   * If not specified, defaults to 'calendar' (full access).
-   * Can also be set via TOOL_GROUPS environment variable.
+   * If not specified, defaults to all groups (full access).
+   * Can also be set via ENABLED_TOOLGROUPS environment variable.
    */
-  enabledToolGroups?: string;
+  enabledToolGroups?: ToolGroup[] | string;
 }
 
 /**
@@ -254,7 +294,14 @@ export function createMCPServer(options: CreateMCPServerOptions) {
     // Use provided factory or create default client
     const factory = clientFactory || createDefaultClient;
 
-    const registerTools = createRegisterTools(factory, options.enabledToolGroups);
+    // Parse tool groups - handle both array and string formats
+    const enabledGroups = Array.isArray(options.enabledToolGroups)
+      ? options.enabledToolGroups
+      : options.enabledToolGroups
+        ? parseEnabledToolGroups(options.enabledToolGroups)
+        : undefined;
+
+    const registerTools = createRegisterTools(factory, enabledGroups);
     registerTools(server);
   };
 

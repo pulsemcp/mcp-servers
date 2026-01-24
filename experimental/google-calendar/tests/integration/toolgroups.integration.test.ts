@@ -7,7 +7,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 describe('Google Calendar MCP Server - Toolgroups Integration Tests', () => {
-  describe('calendar group (full access - default)', () => {
+  describe('readwrite group (full access)', () => {
     let client: TestMCPClient;
 
     beforeAll(async () => {
@@ -17,7 +17,7 @@ describe('Google Calendar MCP Server - Toolgroups Integration Tests', () => {
         serverPath: serverPath,
         env: {
           ...process.env,
-          TOOL_GROUPS: 'calendar',
+          ENABLED_TOOLGROUPS: 'readwrite',
         },
       });
       await client.connect();
@@ -27,22 +27,24 @@ describe('Google Calendar MCP Server - Toolgroups Integration Tests', () => {
       await client.disconnect();
     });
 
-    it('should register all 5 calendar tools (read + write)', async () => {
+    it('should register all 7 calendar tools (read + write)', async () => {
       const tools = await client.listTools();
 
-      expect(tools.tools).toHaveLength(5);
+      expect(tools.tools).toHaveLength(7);
       const toolNames = tools.tools.map((t) => t.name);
 
       // All calendar tools should be present
-      expect(toolNames).toContain('gcal_list_events');
-      expect(toolNames).toContain('gcal_get_event');
-      expect(toolNames).toContain('gcal_create_event');
-      expect(toolNames).toContain('gcal_list_calendars');
-      expect(toolNames).toContain('gcal_query_freebusy');
+      expect(toolNames).toContain('list_calendar_events');
+      expect(toolNames).toContain('get_calendar_event');
+      expect(toolNames).toContain('create_calendar_event');
+      expect(toolNames).toContain('update_calendar_event');
+      expect(toolNames).toContain('delete_calendar_event');
+      expect(toolNames).toContain('list_calendars');
+      expect(toolNames).toContain('query_calendar_freebusy');
     });
 
-    it('should successfully call create_event (write operation)', async () => {
-      const result = await client.callTool('gcal_create_event', {
+    it('should successfully call create_calendar_event (write operation)', async () => {
+      const result = await client.callTool('create_calendar_event', {
         summary: 'Test Event',
         start_datetime: '2024-01-20T10:00:00-05:00',
         end_datetime: '2024-01-20T11:00:00-05:00',
@@ -53,7 +55,7 @@ describe('Google Calendar MCP Server - Toolgroups Integration Tests', () => {
     });
   });
 
-  describe('calendar_readonly group', () => {
+  describe('readonly group', () => {
     let client: TestMCPClient;
 
     beforeAll(async () => {
@@ -63,7 +65,7 @@ describe('Google Calendar MCP Server - Toolgroups Integration Tests', () => {
         serverPath: serverPath,
         env: {
           ...process.env,
-          TOOL_GROUPS: 'calendar_readonly',
+          ENABLED_TOOLGROUPS: 'readonly',
         },
       });
       await client.connect();
@@ -80,18 +82,20 @@ describe('Google Calendar MCP Server - Toolgroups Integration Tests', () => {
       const toolNames = tools.tools.map((t) => t.name);
 
       // Read-only calendar tools should be present
-      expect(toolNames).toContain('gcal_list_events');
-      expect(toolNames).toContain('gcal_get_event');
-      expect(toolNames).toContain('gcal_list_calendars');
-      expect(toolNames).toContain('gcal_query_freebusy');
+      expect(toolNames).toContain('list_calendar_events');
+      expect(toolNames).toContain('get_calendar_event');
+      expect(toolNames).toContain('list_calendars');
+      expect(toolNames).toContain('query_calendar_freebusy');
 
       // Write tools should NOT be present
-      expect(toolNames).not.toContain('gcal_create_event');
+      expect(toolNames).not.toContain('create_calendar_event');
+      expect(toolNames).not.toContain('update_calendar_event');
+      expect(toolNames).not.toContain('delete_calendar_event');
     });
 
-    it('should error when calling create_event (write operation not available)', async () => {
+    it('should error when calling create_calendar_event (write operation not available)', async () => {
       try {
-        await client.callTool('gcal_create_event', {
+        await client.callTool('create_calendar_event', {
           summary: 'Test Event',
           start_datetime: '2024-01-20T10:00:00-05:00',
           end_datetime: '2024-01-20T11:00:00-05:00',
@@ -104,8 +108,8 @@ describe('Google Calendar MCP Server - Toolgroups Integration Tests', () => {
       }
     });
 
-    it('should successfully call list_events (read operation)', async () => {
-      const result = await client.callTool('gcal_list_events', {});
+    it('should successfully call list_calendar_events (read operation)', async () => {
+      const result = await client.callTool('list_calendar_events', {});
 
       expect(result.isError).toBeFalsy();
       expect(result.content[0].text).toContain('Calendar Events');
@@ -118,9 +122,9 @@ describe('Google Calendar MCP Server - Toolgroups Integration Tests', () => {
     beforeAll(async () => {
       const serverPath = path.join(__dirname, '../../local/build/index.integration-with-mock.js');
 
-      // Create a clean env without TOOL_GROUPS
+      // Create a clean env without ENABLED_TOOLGROUPS
       const cleanEnv = { ...process.env };
-      delete cleanEnv.TOOL_GROUPS;
+      delete cleanEnv.ENABLED_TOOLGROUPS;
 
       client = new TestMCPClient({
         serverPath: serverPath,
@@ -133,18 +137,20 @@ describe('Google Calendar MCP Server - Toolgroups Integration Tests', () => {
       await client.disconnect();
     });
 
-    it('should register all 5 tools by default (full access)', async () => {
+    it('should register all 7 tools by default (full access)', async () => {
       const tools = await client.listTools();
 
-      expect(tools.tools).toHaveLength(5);
+      expect(tools.tools).toHaveLength(7);
       const toolNames = tools.tools.map((t) => t.name);
 
       // All calendar tools should be present by default
-      expect(toolNames).toContain('gcal_list_events');
-      expect(toolNames).toContain('gcal_get_event');
-      expect(toolNames).toContain('gcal_create_event');
-      expect(toolNames).toContain('gcal_list_calendars');
-      expect(toolNames).toContain('gcal_query_freebusy');
+      expect(toolNames).toContain('list_calendar_events');
+      expect(toolNames).toContain('get_calendar_event');
+      expect(toolNames).toContain('create_calendar_event');
+      expect(toolNames).toContain('update_calendar_event');
+      expect(toolNames).toContain('delete_calendar_event');
+      expect(toolNames).toContain('list_calendars');
+      expect(toolNames).toContain('query_calendar_freebusy');
     });
   });
 });
