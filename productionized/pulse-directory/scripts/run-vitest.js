@@ -6,8 +6,7 @@
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
 // Import and run vitest CLI
 const vitestCliPath = join(__dirname, '../node_modules/vitest/dist/cli.js');

@@ -11,11 +11,13 @@ import type {
 
 const API_BASE_URL = 'https://api.pulsemcp.com';
 const API_VERSION = 'v0.1';
+const DEFAULT_TIMEOUT_MS = 30000;
 
 export interface PulseDirectoryClientConfig {
   apiKey: string;
   tenantId?: string;
   baseUrl?: string;
+  timeout?: number;
 }
 
 export interface IPulseDirectoryClient {
@@ -27,11 +29,33 @@ export class PulseDirectoryClient implements IPulseDirectoryClient {
   private apiKey: string;
   private tenantId?: string;
   private baseUrl: string;
+  private timeout: number;
 
   constructor(config: PulseDirectoryClientConfig) {
     this.apiKey = config.apiKey;
     this.tenantId = config.tenantId;
     this.baseUrl = config.baseUrl || API_BASE_URL;
+    this.timeout = config.timeout || DEFAULT_TIMEOUT_MS;
+  }
+
+  private async fetchWithTimeout(url: string, options: RequestInit): Promise<Response> {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), this.timeout);
+
+    try {
+      const response = await fetch(url, {
+        ...options,
+        signal: controller.signal,
+      });
+      return response;
+    } catch (error) {
+      if (error instanceof Error && error.name === 'AbortError') {
+        throw new Error(`Request timed out after ${this.timeout}ms`);
+      }
+      throw error;
+    } finally {
+      clearTimeout(timeoutId);
+    }
   }
 
   private getHeaders(): Record<string, string> {
@@ -69,7 +93,7 @@ export class PulseDirectoryClient implements IPulseDirectoryClient {
       version: options.version,
     });
 
-    const response = await fetch(url, {
+    const response = await this.fetchWithTimeout(url, {
       method: 'GET',
       headers: this.getHeaders(),
     });
@@ -106,7 +130,7 @@ export class PulseDirectoryClient implements IPulseDirectoryClient {
 
     const url = this.buildUrl(`/servers/${encodedName}/versions/${encodedVersion}`);
 
-    const response = await fetch(url, {
+    const response = await this.fetchWithTimeout(url, {
       method: 'GET',
       headers: this.getHeaders(),
     });
