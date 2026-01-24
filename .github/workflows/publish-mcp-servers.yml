@@ -207,36 +207,37 @@ jobs:
               
               # Wait for npm registry propagation and verify package metadata
               echo "Waiting for npm registry propagation..."
-              # Increase timeout to 3 minutes (36 iterations × 5 seconds)
-              for i in {1..36}; do
+              # Timeout of 10 minutes (60 iterations × 10 seconds)
+              # npm CDN propagation can take 5+ minutes for new scoped packages
+              for i in {1..60}; do
                 PUBLISHED_VERSION=$(npm view "$PACKAGE_NAME@$PACKAGE_VERSION" version 2>/dev/null || true)
                 if [ "$PUBLISHED_VERSION" = "$PACKAGE_VERSION" ]; then
                   echo "✅ Package $PACKAGE_NAME@$PACKAGE_VERSION available on npm registry"
-                  
+
                   # Additional validation: check package has required metadata
                   MAIN_FIELD=$(npm view "$PACKAGE_NAME@$PACKAGE_VERSION" main 2>/dev/null || true)
                   FILES_FIELD=$(npm view "$PACKAGE_NAME@$PACKAGE_VERSION" files 2>/dev/null || true)
-                  
+
                   if [ -z "$MAIN_FIELD" ]; then
                     echo "⚠️  Warning: Package missing 'main' field in package.json"
                   else
                     echo "✅ Package has main field: $MAIN_FIELD"
                   fi
-                  
+
                   if [ -z "$FILES_FIELD" ]; then
                     echo "⚠️  Warning: Package missing 'files' field - may include unintended files"
                   else
                     echo "✅ Package has files field configured"
                   fi
-                  
+
                   break
                 fi
-                if [ $i -eq 36 ]; then
-                  echo "❌ Package not available after 180 seconds - registry propagation failed"
+                if [ $i -eq 60 ]; then
+                  echo "❌ Package not available after 600 seconds - registry propagation failed"
                   VALIDATION_FAILED=true
                 fi
-                echo "Waiting for registry propagation... ($i/36)"
-                sleep 5
+                echo "Waiting for registry propagation... ($i/60)"
+                sleep 10
               done
               
               # Check validation results
