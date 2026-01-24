@@ -1,6 +1,6 @@
 {
   "name": "google-calendar-workspace-mcp-server",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "MCP server for Google Calendar integration with service account support",
   "main": "build/index.js",
   "type": "module",

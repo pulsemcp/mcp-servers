@@ -90,6 +90,34 @@ export function createMockCalendarClient(): ICalendarClient {
       } as CalendarEvent;
     }),
 
+    updateEvent: vi.fn().mockImplementation(async (calendarId, eventId, event, _options) => {
+      const existingEvent = mockEvents.find((e) => e.id === eventId);
+      if (!existingEvent) {
+        throw new Error(`Event not found: ${eventId}`);
+      }
+      return {
+        id: eventId,
+        summary: event.summary || existingEvent.summary,
+        description: event.description || existingEvent.description,
+        location: event.location || existingEvent.location,
+        start: event.start || existingEvent.start,
+        end: event.end || existingEvent.end,
+        status: 'confirmed',
+        htmlLink: `https://calendar.google.com/event?eid=${eventId}`,
+        created: existingEvent.created || '2024-01-01T00:00:00Z',
+        updated: new Date().toISOString(),
+        attendees: event.attendees || existingEvent.attendees,
+      } as CalendarEvent;
+    }),
+
+    deleteEvent: vi.fn().mockImplementation(async (calendarId, eventId, _options) => {
+      const existingEvent = mockEvents.find((e) => e.id === eventId);
+      if (!existingEvent) {
+        throw new Error(`Event not found: ${eventId}`);
+      }
+      // Success - event deleted (void return)
+    }),
+
     listCalendars: vi.fn().mockImplementation(async () => {
       const result: CalendarList = {
         kind: 'calendar#calendarList',

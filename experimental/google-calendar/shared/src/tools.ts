@@ -5,6 +5,8 @@ import type { ClientFactory } from './server.js';
 import { listEventsTool } from './tools/list-events.js';
 import { getEventTool } from './tools/get-event.js';
 import { createEventTool } from './tools/create-event.js';
+import { updateEventTool } from './tools/update-event.js';
+import { deleteEventTool } from './tools/delete-event.js';
 import { listCalendarsTool } from './tools/list-calendars.js';
 import { queryFreebusyTool } from './tools/query-freebusy.js';
 
@@ -26,8 +28,8 @@ type ToolFactory = (server: Server, clientFactory: ClientFactory) => Tool;
 
 /**
  * Available tool groups for Google Calendar MCP server
- * - readonly: Read-only operations (list events, get event, list calendars, query freebusy)
- * - readwrite: Read and write operations (includes readonly + create_event)
+ * - readonly: Read-only operations (list_calendar_events, get_calendar_event, list_calendars, query_calendar_freebusy)
+ * - readwrite: Read and write operations (includes readonly + create/update/delete_calendar_event)
  */
 export type ToolGroup = 'readonly' | 'readwrite';
 
@@ -42,8 +44,8 @@ interface ToolDefinition {
 /**
  * All available tools with their group assignments
  *
- * readonly: list_events, get_event, list_calendars, query_freebusy
- * readwrite: all readonly tools + create_event
+ * readonly: list_calendar_events, get_calendar_event, list_calendars, query_calendar_freebusy
+ * readwrite: all readonly tools + create_calendar_event, update_calendar_event, delete_calendar_event
  */
 const ALL_TOOLS: ToolDefinition[] = [
   // Read-only tools (available in all groups)
@@ -53,6 +55,8 @@ const ALL_TOOLS: ToolDefinition[] = [
   { factory: queryFreebusyTool, groups: ['readonly', 'readwrite'] },
   // Write tools (only in readwrite)
   { factory: createEventTool, groups: ['readwrite'] },
+  { factory: updateEventTool, groups: ['readwrite'] },
+  { factory: deleteEventTool, groups: ['readwrite'] },
 ];
 
 /**

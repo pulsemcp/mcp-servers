@@ -165,6 +165,42 @@ class MockCalendarClient implements ICalendarClient {
     };
   }
 
+  async updateEvent(
+    calendarId: string,
+    eventId: string,
+    event: Partial<CalendarEvent>,
+    _options?: { sendUpdates?: 'all' | 'externalOnly' | 'none' }
+  ): Promise<CalendarEvent> {
+    if (eventId === 'nonexistent') {
+      throw new Error(`Event not found: ${eventId}`);
+    }
+
+    return {
+      id: eventId,
+      summary: event.summary || 'Updated Event',
+      description: event.description,
+      location: event.location,
+      start: event.start || { dateTime: '2024-01-20T10:00:00-05:00' },
+      end: event.end || { dateTime: '2024-01-20T11:00:00-05:00' },
+      status: 'confirmed',
+      htmlLink: `https://calendar.google.com/event?eid=${eventId}`,
+      created: '2024-01-01T00:00:00Z',
+      updated: new Date().toISOString(),
+      attendees: event.attendees,
+    };
+  }
+
+  async deleteEvent(
+    _calendarId: string,
+    eventId: string,
+    _options?: { sendUpdates?: 'all' | 'externalOnly' | 'none' }
+  ): Promise<void> {
+    if (eventId === 'nonexistent') {
+      throw new Error(`Event not found: ${eventId}`);
+    }
+    // Success - event deleted
+  }
+
   async listCalendars(_options?: {
     maxResults?: number;
     pageToken?: string;

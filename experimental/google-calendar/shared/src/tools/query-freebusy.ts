@@ -24,7 +24,7 @@ export const QueryFreebusySchema = z.object({
 
 export function queryFreebusyTool(server: Server, clientFactory: ClientFactory) {
   return {
-    name: 'gcal_query_freebusy',
+    name: 'query_calendar_freebusy',
     description:
       'Queries free/busy information for one or more calendars within a specified time range. ' +
       'Returns time periods when calendars are busy (have events scheduled). ' +

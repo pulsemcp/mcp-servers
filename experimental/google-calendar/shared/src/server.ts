@@ -41,6 +41,25 @@ export interface ICalendarClient {
   createEvent(calendarId: string, event: Partial<CalendarEvent>): Promise<CalendarEvent>;
 
   /**
+   * Update an existing event
+   */
+  updateEvent(
+    calendarId: string,
+    eventId: string,
+    event: Partial<CalendarEvent>,
+    options?: { sendUpdates?: 'all' | 'externalOnly' | 'none' }
+  ): Promise<CalendarEvent>;
+
+  /**
+   * Delete an event
+   */
+  deleteEvent(
+    calendarId: string,
+    eventId: string,
+    options?: { sendUpdates?: 'all' | 'externalOnly' | 'none' }
+  ): Promise<void>;
+
+  /**
    * List calendars available to the user
    */
   listCalendars(options?: { maxResults?: number; pageToken?: string }): Promise<CalendarList>;
@@ -150,6 +169,27 @@ export class ServiceAccountCalendarClient implements ICalendarClient {
     const headers = await this.getHeaders();
     const { createEvent } = await import('./calendar-client/lib/create-event.js');
     return createEvent(this.baseUrl, headers, calendarId, event);
+  }
+
+  async updateEvent(
+    calendarId: string,
+    eventId: string,
+    event: Partial<CalendarEvent>,
+    options?: { sendUpdates?: 'all' | 'externalOnly' | 'none' }
+  ): Promise<CalendarEvent> {
+    const headers = await this.getHeaders();
+    const { updateEvent } = await import('./calendar-client/lib/update-event.js');
+    return updateEvent(this.baseUrl, headers, calendarId, eventId, event, options);
+  }
+
+  async deleteEvent(
+    calendarId: string,
+    eventId: string,
+    options?: { sendUpdates?: 'all' | 'externalOnly' | 'none' }
+  ): Promise<void> {
+    const headers = await this.getHeaders();
+    const { deleteEvent } = await import('./calendar-client/lib/delete-event.js');
+    return deleteEvent(this.baseUrl, headers, calendarId, eventId, options);
   }
 
   async listCalendars(options?: {

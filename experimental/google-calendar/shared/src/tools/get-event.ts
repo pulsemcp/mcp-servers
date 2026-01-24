@@ -14,7 +14,7 @@ export const GetEventSchema = z.object({
 
 export function getEventTool(server: Server, clientFactory: ClientFactory) {
   return {
-    name: 'gcal_get_event',
+    name: 'get_calendar_event',
     description:
       'Retrieves detailed information about a specific calendar event by ID. ' +
       'Returns full event details including title, time, location, attendees, description, recurrence rules, and reminders. ' +

@@ -3,6 +3,8 @@ import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { listEventsTool } from '../../shared/src/tools/list-events.js';
 import { getEventTool } from '../../shared/src/tools/get-event.js';
 import { createEventTool } from '../../shared/src/tools/create-event.js';
+import { updateEventTool } from '../../shared/src/tools/update-event.js';
+import { deleteEventTool } from '../../shared/src/tools/delete-event.js';
 import { listCalendarsTool } from '../../shared/src/tools/list-calendars.js';
 import { queryFreebusyTool } from '../../shared/src/tools/query-freebusy.js';
 import { createMockCalendarClient } from '../mocks/calendar-client.functional-mock.js';
@@ -20,7 +22,7 @@ describe('Google Calendar MCP Server Tools', () => {
     );
   });
 
-  describe('gcal_list_events', () => {
+  describe('list_calendar_events', () => {
     it('should list events with default parameters', async () => {
       const tool = listEventsTool(mockServer, () => mockClient);
       const result = await tool.handler({});
@@ -69,7 +71,7 @@ describe('Google Calendar MCP Server Tools', () => {
     });
   });
 
-  describe('gcal_get_event', () => {
+  describe('get_calendar_event', () => {
     it('should retrieve a specific event', async () => {
       const tool = getEventTool(mockServer, () => mockClient);
       const result = await tool.handler({ event_id: 'event1' });
@@ -88,7 +90,7 @@ describe('Google Calendar MCP Server Tools', () => {
     });
   });
 
-  describe('gcal_create_event', () => {
+  describe('create_calendar_event', () => {
     it('should create a new event', async () => {
       const tool = createEventTool(mockServer, () => mockClient);
       const result = await tool.handler({
@@ -113,7 +115,54 @@ describe('Google Calendar MCP Server Tools', () => {
     });
   });
 
-  describe('gcal_list_calendars', () => {
+  describe('update_calendar_event', () => {
+    it('should update an existing event', async () => {
+      const tool = updateEventTool(mockServer, () => mockClient);
+      const result = await tool.handler({
+        event_id: 'event1',
+        summary: 'Updated Meeting',
+      });
+
+      expect(result.content[0].text).toContain('Event Updated Successfully');
+      expect(result.content[0].text).toContain('Updated Meeting');
+      expect(mockClient.updateEvent).toHaveBeenCalled();
+    });
+
+    it('should handle non-existent events', async () => {
+      const tool = updateEventTool(mockServer, () => mockClient);
+      const result = await tool.handler({
+        event_id: 'nonexistent',
+        summary: 'Update Attempt',
+      });
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('Error updating event');
+    });
+  });
+
+  describe('delete_calendar_event', () => {
+    it('should delete an existing event', async () => {
+      const tool = deleteEventTool(mockServer, () => mockClient);
+      const result = await tool.handler({
+        event_id: 'event1',
+      });
+
+      expect(result.content[0].text).toContain('Event Deleted Successfully');
+      expect(mockClient.deleteEvent).toHaveBeenCalled();
+    });
+
+    it('should handle non-existent events', async () => {
+      const tool = deleteEventTool(mockServer, () => mockClient);
+      const result = await tool.handler({
+        event_id: 'nonexistent',
+      });
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('Error deleting event');
+    });
+  });
+
+  describe('list_calendars', () => {
     it('should list available calendars', async () => {
       const tool = listCalendarsTool(mockServer, () => mockClient);
       const result = await tool.handler({});
@@ -125,7 +174,7 @@ describe('Google Calendar MCP Server Tools', () => {
     });
   });
 
-  describe('gcal_query_freebusy', () => {
+  describe('query_calendar_freebusy', () => {
     it('should query freebusy information', async () => {
       const tool = queryFreebusyTool(mockServer, () => mockClient);
       const result = await tool.handler({

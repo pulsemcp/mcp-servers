@@ -17,17 +17,24 @@ This file tracks manual testing results for the Google Calendar MCP server again
 - Get event: PASS (Retrieved event details)
 - Query freebusy: PASS (Found 1 busy period)
 
-### Notes on Tool Groups Feature
+### Notes on Version 0.0.4 Changes
 
-The tool groups feature (added in 0.0.2, renamed in 0.0.3) only affects tool registration filtering and does not change any API interactions. The previous manual test results remain valid for API functionality.
+**Tool Renaming (0.0.4):** All tools were renamed for cleaner, more consistent naming. This is a naming-only change that doesn't affect API interactions:
 
-In version 0.0.3, tool groups were renamed for consistency with other MCP servers:
+- `gcal_list_events` → `list_calendar_events`
+- `gcal_get_event` → `get_calendar_event`
+- `gcal_create_event` → `create_calendar_event`
+- `gcal_list_calendars` → `list_calendars`
+- `gcal_query_freebusy` → `query_calendar_freebusy`
 
-- `calendar` → `readwrite`
-- `calendar_readonly` → `readonly`
-- Environment variable: `TOOL_GROUPS` → `ENABLED_TOOLGROUPS`
+**New Tools (0.0.4):**
 
-This is a naming-only change that doesn't affect API interactions.
+- `update_calendar_event`: Uses Google Calendar PATCH API (same authentication as other tools)
+- `delete_calendar_event`: Uses Google Calendar DELETE API (same authentication as other tools)
+
+These new tools use the same service account authentication and JWT signing that has been validated in manual tests. The PATCH and DELETE operations follow the same patterns as tested create operations.
+
+**Tool Groups (0.0.2, renamed in 0.0.3):** The tool groups feature only affects tool registration filtering and does not change any API interactions. The previous manual test results remain valid for API functionality.
 
 ### Test Output
 
@@ -74,6 +81,8 @@ Manual tests verify:
 - [x] List events from primary calendar
 - [x] Get specific event details
 - [ ] Create new event (not tested - would modify user calendar)
+- [ ] Update event (not tested - would modify user calendar)
+- [ ] Delete event (not tested - would modify user calendar)
 - [x] Query freebusy information
 - [x] Error handling for invalid requests
 

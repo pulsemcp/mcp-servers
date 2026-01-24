@@ -46,7 +46,7 @@ export const ListEventsSchema = z.object({
 
 export function listEventsTool(server: Server, clientFactory: ClientFactory) {
   return {
-    name: 'gcal_list_events',
+    name: 'list_calendar_events',
     description:
       'Lists events from a Google Calendar within an optional time range. ' +
       'Returns event details including title, time, location, attendees, and description. ' +

@@ -15,7 +15,7 @@ export const ListCalendarsSchema = z.object({
 
 export function listCalendarsTool(server: Server, clientFactory: ClientFactory) {
   return {
-    name: 'gcal_list_calendars',
+    name: 'list_calendars',
     description:
       'Lists all calendars available to the authenticated user. ' +
       'Returns calendar details including ID, name, description, time zone, and access role. ' +
