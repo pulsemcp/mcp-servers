@@ -8,6 +8,11 @@ All notable changes to this project will be documented in this file.
 
 - `after_date` parameter to `list_email_conversations` for filtering emails by date (format: YYYY-MM-DD)
 
+### Fixed
+
+- Labels in `change_email_conversation` are now case-sensitive to properly support user-defined label IDs
+- Extracted duplicate `formatEmail` function to shared utility
+
 ## [0.0.4] - 2026-01-23
 
 ### Added
@@ -31,7 +36,7 @@ All notable changes to this project will be documented in this file.
   - Removed `hours` parameter
   - Added `count` parameter (default: 10, max: 100)
   - Added `labels` parameter for filtering by Gmail labels
-  - Added `sort_by` parameter (accepts: 'date')
+  - Added `sort_by` parameter (accepts: 'recent', 'oldest')
 - Extended Gmail API scopes to include `gmail.modify`, `gmail.compose`, and `gmail.send` for write operations
 - Added `IGmailClient` interface methods: `modifyMessage`, `createDraft`, `getDraft`, `listDrafts`, `deleteDraft`, `sendMessage`, `sendDraft`
 

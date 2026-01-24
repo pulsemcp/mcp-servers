@@ -1,8 +1,7 @@
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { z } from 'zod';
 import type { ClientFactory } from '../server.js';
-import type { Email } from '../types.js';
-import { getHeader } from '../utils/email-helpers.js';
+import { formatEmail } from '../utils/email-helpers.js';
 
 const PARAM_DESCRIPTIONS = {
   query:
@@ -48,23 +47,6 @@ const TOOL_DESCRIPTION = `Search email conversations using Gmail's powerful sear
 A formatted list of matching emails with ID, Thread ID, Subject, From, Date, and snippet.
 
 **Note:** Use get_email_conversation with an email ID to retrieve full message content.`;
-
-/**
- * Formats an email for display
- */
-function formatEmail(email: Email): string {
-  const subject = getHeader(email, 'Subject') || '(No Subject)';
-  const from = getHeader(email, 'From') || 'Unknown';
-  const date = getHeader(email, 'Date') || 'Unknown date';
-  const snippet = email.snippet || '';
-
-  return `**ID:** ${email.id}
-**Thread ID:** ${email.threadId}
-**Subject:** ${subject}
-**From:** ${from}
-**Date:** ${date}
-**Preview:** ${snippet}`;
-}
 
 export function searchEmailConversationsTool(server: Server, clientFactory: ClientFactory) {
   return {

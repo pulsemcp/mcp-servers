@@ -1,8 +1,7 @@
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { z } from 'zod';
 import type { ClientFactory } from '../server.js';
-import type { Email } from '../types.js';
-import { getHeader } from '../utils/email-helpers.js';
+import { formatEmail } from '../utils/email-helpers.js';
 
 const PARAM_DESCRIPTIONS = {
   count: 'Maximum number of email conversations to return. Default: 10. Max: 100.',
@@ -50,23 +49,6 @@ A formatted list of email conversations with:
 - Filter emails by date range
 
 **Note:** This tool only returns email metadata and snippets. Use get_email_conversation with an email ID to retrieve the full message content.`;
-
-/**
- * Formats an email for display
- */
-function formatEmail(email: Email): string {
-  const subject = getHeader(email, 'Subject') || '(No Subject)';
-  const from = getHeader(email, 'From') || 'Unknown';
-  const date = getHeader(email, 'Date') || 'Unknown date';
-  const snippet = email.snippet || '';
-
-  return `**ID:** ${email.id}
-**Thread ID:** ${email.threadId}
-**Subject:** ${subject}
-**From:** ${from}
-**Date:** ${date}
-**Preview:** ${snippet}`;
-}
 
 export function listEmailConversationsTool(server: Server, clientFactory: ClientFactory) {
   return {

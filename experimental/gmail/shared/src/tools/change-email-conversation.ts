@@ -103,13 +103,13 @@ export function changeEmailConversationTool(server: Server, clientFactory: Clien
 
         // Handle labels to add
         if (parsed.labels) {
-          const labels = parsed.labels.split(',').map((l) => l.trim().toUpperCase());
+          const labels = parsed.labels.split(',').map((l) => l.trim());
           addLabelIds.push(...labels);
         }
 
         // Handle labels to remove
         if (parsed.remove_labels) {
-          const labels = parsed.remove_labels.split(',').map((l) => l.trim().toUpperCase());
+          const labels = parsed.remove_labels.split(',').map((l) => l.trim());
           removeLabelIds.push(...labels);
         }
 
