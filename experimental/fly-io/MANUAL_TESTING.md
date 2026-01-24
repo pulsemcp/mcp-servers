@@ -48,7 +48,7 @@ npm run test:manual
 
 **Test Date:** 2026-01-24
 **Branch:** claude/fly-io-images-and-timeout
-**Commit:** 4f2f592
+**Commit:** 8b9d397
 **Tested By:** Claude
 **Environment:** Linux, Node.js 20, Fly.io API (real credentials)
 
