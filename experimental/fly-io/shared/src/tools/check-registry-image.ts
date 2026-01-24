@@ -73,7 +73,7 @@ export function checkRegistryImageTool(
               {
                 type: 'text',
                 text: [
-                  '✓ Image exists in Fly.io registry',
+                  'Image exists in Fly.io registry',
                   '',
                   `Image: ${imageRef}`,
                   '',
@@ -88,7 +88,7 @@ export function checkRegistryImageTool(
               {
                 type: 'text',
                 text: [
-                  '✗ Image not found in Fly.io registry',
+                  'Image not found in Fly.io registry',
                   '',
                   `Checked: ${imageRef}`,
                   '',

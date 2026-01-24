@@ -349,15 +349,16 @@ describe('Tools', () => {
         app_name: 'test-app',
         machine_id: 'test-machine-id',
         command: 'long-running-command',
-        timeout: 60,
+        timeout: 60, // User provides seconds
       });
 
       expect(result.content[0].text).toContain('command output');
+      // Tool converts seconds to milliseconds for the client
       expect(mockClient.execCommand).toHaveBeenCalledWith(
         'test-app',
         'test-machine-id',
         'long-running-command',
-        60
+        60000 // Client receives milliseconds
       );
     });
   });

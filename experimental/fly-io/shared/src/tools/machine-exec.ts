@@ -62,11 +62,13 @@ export function machineExecTool(_server: Server, clientFactory: () => IFlyIOClie
         const validatedArgs = MachineExecSchema.parse(args);
         const client = clientFactory();
 
+        // Convert user-provided seconds to milliseconds for the client
+        const timeoutMs = validatedArgs.timeout ? validatedArgs.timeout * 1000 : undefined;
         const output = await client.execCommand(
           validatedArgs.app_name,
           validatedArgs.machine_id,
           validatedArgs.command,
-          validatedArgs.timeout
+          timeoutMs
         );
 
         return {
