@@ -3,8 +3,18 @@ import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import { readFileSync } from 'fs';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
-import { createMCPServer, FlyIOClient } from '../shared/index.js';
-import { logServerStart, logError, logWarning } from '../shared/logging.js';
+import { execFile } from 'child_process';
+import { promisify } from 'util';
+import {
+  createMCPServer,
+  FlyIOClient,
+  DockerCLIClient,
+  parseEnabledToolGroups,
+  validateToolGroupConfig,
+} from '../shared/index.js';
+import { logServerStart, logError, logWarning, logDebug } from '../shared/logging.js';
+
+const execFileAsync = promisify(execFile);
 
 // Read version from package.json
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -30,12 +40,18 @@ function validateEnvironment(): void {
   const optional: { name: string; description: string; defaultValue?: string }[] = [
     {
       name: 'ENABLED_TOOLGROUPS',
-      description: 'Comma-separated list of tool groups to enable (readonly,write,admin)',
+      description:
+        'Comma-separated list of tool groups to enable (readonly,write,admin,apps,machines,logs,ssh,images,registry)',
       defaultValue: 'all groups enabled',
     },
     {
       name: 'SKIP_HEALTH_CHECKS',
       description: 'Skip API validation at startup',
+      defaultValue: 'false',
+    },
+    {
+      name: 'DISABLE_DOCKER_CLI_TOOLS',
+      description: 'Disable Docker CLI-based tools (registry tools)',
       defaultValue: 'false',
     },
   ];
@@ -76,6 +92,50 @@ function validateEnvironment(): void {
 }
 
 // =============================================================================
+// CLI TOOL CHECKS
+// =============================================================================
+// Verifies that required CLI tools (fly, docker) are available.
+// =============================================================================
+
+interface CLICheckResult {
+  flyAvailable: boolean;
+  flyVersion?: string;
+  dockerAvailable: boolean;
+  dockerVersion?: string;
+}
+
+async function checkCLITools(checkDocker: boolean): Promise<CLICheckResult> {
+  const result: CLICheckResult = {
+    flyAvailable: false,
+    dockerAvailable: false,
+  };
+
+  // Check fly CLI
+  try {
+    const { stdout } = await execFileAsync('fly', ['version'], { timeout: 5000 });
+    result.flyAvailable = true;
+    result.flyVersion = stdout.trim().split('\n')[0];
+    logDebug('cli-check', `fly CLI: ${result.flyVersion}`);
+  } catch {
+    result.flyAvailable = false;
+  }
+
+  // Check docker CLI (only if requested)
+  if (checkDocker) {
+    try {
+      const { stdout } = await execFileAsync('docker', ['--version'], { timeout: 5000 });
+      result.dockerAvailable = true;
+      result.dockerVersion = stdout.trim();
+      logDebug('cli-check', `docker CLI: ${result.dockerVersion}`);
+    } catch {
+      result.dockerAvailable = false;
+    }
+  }
+
+  return result;
+}
+
+// =============================================================================
 // HEALTH CHECKS
 // =============================================================================
 // Validates API credentials and connectivity before starting the server.
@@ -83,12 +143,32 @@ function validateEnvironment(): void {
 // Set SKIP_HEALTH_CHECKS=true to disable (useful for testing).
 // =============================================================================
 
-async function performHealthChecks(): Promise<void> {
+async function performHealthChecks(dockerDisabled: boolean): Promise<CLICheckResult> {
+  const cliCheck = await checkCLITools(!dockerDisabled);
+
   if (process.env.SKIP_HEALTH_CHECKS === 'true') {
     logWarning('healthcheck', 'Health checks skipped (SKIP_HEALTH_CHECKS=true)');
-    return;
+    return cliCheck;
   }
 
+  // Check fly CLI availability
+  if (!cliCheck.flyAvailable) {
+    logError('healthcheck', 'fly CLI not found');
+    console.error('\nThe fly CLI is required for this server to work.');
+    console.error('Please install it: https://fly.io/docs/hands-on/install-flyctl/');
+    process.exit(1);
+  }
+
+  // Check docker CLI availability (only if Docker tools are enabled)
+  if (!dockerDisabled && !cliCheck.dockerAvailable) {
+    logWarning(
+      'healthcheck',
+      'docker CLI not found - registry tools will be disabled. ' +
+        'Set DISABLE_DOCKER_CLI_TOOLS=true to suppress this warning.'
+    );
+  }
+
+  // Validate API credentials
   try {
     const client = new FlyIOClient(process.env.FLY_IO_API_TOKEN!);
     // Make a minimal API call to validate credentials
@@ -103,6 +183,8 @@ async function performHealthChecks(): Promise<void> {
     console.error('\nGet a new token at: https://fly.io/user/personal_access_tokens');
     process.exit(1);
   }
+
+  return cliCheck;
 }
 
 // =============================================================================
@@ -113,16 +195,38 @@ async function main() {
   // Step 1: Validate environment variables
   validateEnvironment();
 
-  // Step 2: Perform health checks (validates credentials, connectivity)
-  await performHealthChecks();
+  // Step 2: Determine Docker configuration
+  const dockerDisabled = process.env.DISABLE_DOCKER_CLI_TOOLS === 'true';
 
-  // Step 3: Create server using factory
+  // Step 3: Validate tool group configuration
+  // This will throw an error if registry group is explicitly enabled but Docker is disabled
+  const enabledGroups = parseEnabledToolGroups(process.env.ENABLED_TOOLGROUPS);
+  validateToolGroupConfig(enabledGroups, dockerDisabled);
+
+  // Step 4: Perform health checks (validates credentials, connectivity, CLI tools)
+  const cliCheck = await performHealthChecks(dockerDisabled);
+
+  // Step 5: Determine if Docker tools should be enabled
+  // Docker tools are disabled if:
+  // - DISABLE_DOCKER_CLI_TOOLS=true, OR
+  // - Docker CLI is not available (and not explicitly disabled)
+  const effectiveDockerDisabled = dockerDisabled || !cliCheck.dockerAvailable;
+
+  // Step 6: Create server using factory
   const { server, registerHandlers } = createMCPServer({ version: VERSION });
 
-  // Step 4: Register all handlers (tools)
-  await registerHandlers(server);
+  // Step 7: Register all handlers (tools)
+  // Pass Docker client factory if Docker is available
+  const dockerClientFactory = !effectiveDockerDisabled
+    ? () => new DockerCLIClient(process.env.FLY_IO_API_TOKEN!)
+    : undefined;
 
-  // Step 5: Start server with stdio transport
+  await registerHandlers(server, {
+    dockerClientFactory,
+    dockerDisabled: effectiveDockerDisabled,
+  });
+
+  // Step 8: Start server with stdio transport
   const transport = new StdioServerTransport();
   await server.connect(transport);
 }

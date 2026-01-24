@@ -178,3 +178,34 @@ export type MachineState =
 export interface WaitMachineResponse {
   ok: boolean;
 }
+
+/**
+ * Image details from fly image show
+ */
+export interface ImageDetails {
+  registry: string;
+  repository: string;
+  tag: string;
+  digest: string;
+  version: number;
+}
+
+/**
+ * Release information from fly releases
+ */
+export interface Release {
+  id: string;
+  version: number;
+  stable: boolean;
+  inProgress: boolean;
+  status: string;
+  description: string;
+  reason: string;
+  user: {
+    id: string;
+    email: string;
+    name: string;
+  };
+  createdAt: string;
+  imageRef?: string;
+}

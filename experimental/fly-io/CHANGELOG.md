@@ -7,8 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Image management tools (via `fly` CLI):
+  - `show_image` - Show current Docker image details for an app
+  - `list_releases` - List releases with Docker image references
+  - `update_image` - Update app's image to latest version or specific image
+- `images` feature group for image management tools
+- Docker registry tools for interacting with Fly.io's private registry (requires Docker CLI):
+  - `push_new_fly_registry_image` - Push a local Docker image to Fly.io registry for use with machines
+  - `pull_fly_registry_image` - Pull an image from Fly.io registry to local Docker
+  - `check_fly_registry_image` - Check if an image exists in Fly.io registry
+- `registry` feature group for Docker registry tools
+- CLI availability health checks at startup for `fly` and `docker`
+- `DISABLE_DOCKER_CLI_TOOLS` environment variable to opt out of Docker-based tools
+  - When set, skips Docker health check and doesn't serve registry tools
+  - Fails on startup if `registry` group is explicitly enabled but Docker is disabled
+
 ### Changed
 
+- `machine_exec` timeout now defaults to 60s and is capped at 60s (Fly.io API limit)
+- Fixed `fly machines run` to parse text output (no --json support in fly CLI)
+- Fixed `fly machines status` to use listMachines + filter (no --json support)
+- Fixed `fly machines destroy` to not use --yes flag (not supported)
+- Fixed integration test import path for test-mcp-client
+- Registry tools automatically authenticate and clean up Docker config (no credential pollution)
 - **BREAKING**: Refactored to use `fly` CLI instead of REST API
   - All operations now shell out to the `fly` command
   - Requires `fly` CLI to be installed and available in PATH

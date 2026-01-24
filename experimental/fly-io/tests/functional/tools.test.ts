@@ -17,8 +17,19 @@ import { waitMachineTool } from '../../shared/src/tools/wait-machine.js';
 import { getMachineEventsTool } from '../../shared/src/tools/get-machine-events.js';
 import { getLogsTool } from '../../shared/src/tools/get-logs.js';
 import { machineExecTool } from '../../shared/src/tools/machine-exec.js';
-import { createRegisterTools, parseEnabledToolGroups } from '../../shared/src/tools.js';
+import { showImageTool } from '../../shared/src/tools/show-image.js';
+import { listReleasesTool } from '../../shared/src/tools/list-releases.js';
+import { updateImageTool } from '../../shared/src/tools/update-image.js';
+import { pushImageTool } from '../../shared/src/tools/push-image.js';
+import { pullImageTool } from '../../shared/src/tools/pull-image.js';
+import { checkRegistryImageTool } from '../../shared/src/tools/check-registry-image.js';
+import {
+  createRegisterTools,
+  parseEnabledToolGroups,
+  validateToolGroupConfig,
+} from '../../shared/src/tools.js';
 import { createMockFlyIOClient } from '../mocks/fly-io-client.functional-mock.js';
+import { createMockDockerCLIClient } from '../mocks/docker-cli-client.functional-mock.js';
 
 describe('Tools', () => {
   let mockServer: Server;
@@ -338,16 +349,105 @@ describe('Tools', () => {
         app_name: 'test-app',
         machine_id: 'test-machine-id',
         command: 'long-running-command',
-        timeout: 60,
+        timeout: 60, // User provides seconds
       });
 
       expect(result.content[0].text).toContain('command output');
+      // Tool converts seconds to milliseconds for the client
       expect(mockClient.execCommand).toHaveBeenCalledWith(
         'test-app',
         'test-machine-id',
         'long-running-command',
-        60
+        60000 // Client receives milliseconds
       );
+    });
+  });
+
+  describe('show_image', () => {
+    it('should show image details for an app', async () => {
+      const tool = showImageTool(mockServer, () => mockClient);
+      const result = await tool.handler({ app_name: 'test-app' });
+
+      expect(result.content[0].text).toContain('registry.fly.io');
+      expect(result.content[0].text).toContain('test-app');
+      expect(result.content[0].text).toContain('deployment-abc123');
+      expect(mockClient.showImage).toHaveBeenCalledWith('test-app');
+    });
+
+    it('should return error when app_name is missing', async () => {
+      const tool = showImageTool(mockServer, () => mockClient);
+      const result = await tool.handler({});
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('Error');
+    });
+  });
+
+  describe('list_releases', () => {
+    it('should list releases for an app', async () => {
+      const tool = listReleasesTool(mockServer, () => mockClient);
+      const result = await tool.handler({ app_name: 'test-app' });
+
+      expect(result.content[0].text).toContain('release');
+      expect(result.content[0].text).toContain('v1');
+      expect(result.content[0].text).toContain('Initial deployment');
+      expect(mockClient.listReleases).toHaveBeenCalledWith('test-app', { limit: undefined });
+    });
+
+    it('should accept a limit parameter', async () => {
+      const tool = listReleasesTool(mockServer, () => mockClient);
+      const result = await tool.handler({ app_name: 'test-app', limit: 5 });
+
+      expect(result.content[0].text).toContain('release');
+      expect(mockClient.listReleases).toHaveBeenCalledWith('test-app', { limit: 5 });
+    });
+
+    it('should return error when app_name is missing', async () => {
+      const tool = listReleasesTool(mockServer, () => mockClient);
+      const result = await tool.handler({});
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('Error');
+    });
+
+    it('should handle empty releases', async () => {
+      (mockClient.listReleases as ReturnType<typeof vi.fn>).mockResolvedValueOnce([]);
+      const tool = listReleasesTool(mockServer, () => mockClient);
+      const result = await tool.handler({ app_name: 'test-app' });
+
+      expect(result.content[0].text).toContain('No releases found');
+    });
+  });
+
+  describe('update_image', () => {
+    it('should update image for an app', async () => {
+      const tool = updateImageTool(mockServer, () => mockClient);
+      const result = await tool.handler({ app_name: 'test-app' });
+
+      expect(result.content[0].text).toContain('successfully');
+      expect(result.content[0].text).toContain('registry.fly.io');
+      expect(mockClient.updateImage).toHaveBeenCalledWith('test-app', { image: undefined });
+    });
+
+    it('should accept a specific image parameter', async () => {
+      const tool = updateImageTool(mockServer, () => mockClient);
+      const result = await tool.handler({
+        app_name: 'test-app',
+        image: 'registry.fly.io/my-app:v2',
+      });
+
+      expect(result.content[0].text).toContain('successfully');
+      expect(mockClient.updateImage).toHaveBeenCalledWith('test-app', {
+        image: 'registry.fly.io/my-app:v2',
+      });
+    });
+
+    it('should return error when app_name is missing', async () => {
+      const tool = updateImageTool(mockServer, () => mockClient);
+      const result = await tool.handler({});
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('Error');
     });
   });
 });
@@ -362,6 +462,7 @@ describe('parseEnabledToolGroups', () => {
     expect(result).toContain('machines');
     expect(result).toContain('logs');
     expect(result).toContain('ssh');
+    expect(result).toContain('images');
   });
 
   it('should return all groups when empty string is provided', () => {
@@ -458,6 +559,10 @@ describe('Feature Groups (ENABLED_TOOLGROUPS)', () => {
       expect(toolNames).toContain('machine_exec');
       expect(toolNames).toContain('delete_app');
       expect(toolNames).toContain('delete_machine');
+      // Image tools should also be included
+      expect(toolNames).toContain('show_image');
+      expect(toolNames).toContain('list_releases');
+      expect(toolNames).toContain('update_image');
     });
   });
 
@@ -546,6 +651,19 @@ describe('Feature Groups (ENABLED_TOOLGROUPS)', () => {
 
       const toolNames = result.tools.map((t) => t.name);
       expect(toolNames).toContain('machine_exec');
+      expect(toolNames).not.toContain('list_apps');
+      expect(toolNames).not.toContain('list_machines');
+      expect(toolNames).not.toContain('get_logs');
+    });
+
+    it('should filter to images feature only', async () => {
+      setupServer(['images']);
+      const result = await listToolsHandler();
+
+      const toolNames = result.tools.map((t) => t.name);
+      expect(toolNames).toContain('show_image');
+      expect(toolNames).toContain('list_releases');
+      expect(toolNames).toContain('update_image');
       expect(toolNames).not.toContain('list_apps');
       expect(toolNames).not.toContain('list_machines');
       expect(toolNames).not.toContain('get_logs');
@@ -781,6 +899,302 @@ describe('App Scoping (FLY_IO_APP_NAME)', () => {
       const listMachines = result.tools.find((t) => t.name === 'list_machines');
       const schema = listMachines?.inputSchema as { required?: string[] };
       expect(schema.required).toContain('app_name');
+    });
+  });
+});
+
+describe('Docker Registry Tools', () => {
+  let mockServer: Server;
+  let mockDockerClient: ReturnType<typeof createMockDockerCLIClient>;
+
+  beforeEach(() => {
+    mockServer = {} as Server;
+    mockDockerClient = createMockDockerCLIClient();
+  });
+
+  describe('push_new_fly_registry_image', () => {
+    it('should push an image successfully', async () => {
+      const tool = pushImageTool(mockServer, () => mockDockerClient);
+      const result = await tool.handler({
+        source_image: 'nginx:latest',
+        app_name: 'test-app',
+        tag: 'v1',
+      });
+
+      expect(tool.name).toBe('push_new_fly_registry_image');
+      expect(result.content[0].text).toContain('Image pushed successfully');
+      expect(result.content[0].text).toContain('registry.fly.io');
+      expect(result.content[0].text).toContain('test-app');
+      expect(mockDockerClient.pushImage).toHaveBeenCalledWith('nginx:latest', 'test-app', 'v1');
+    });
+
+    it('should return error when source_image is missing', async () => {
+      const tool = pushImageTool(mockServer, () => mockDockerClient);
+      const result = await tool.handler({
+        app_name: 'test-app',
+        tag: 'v1',
+      });
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('Error');
+    });
+  });
+
+  describe('pull_fly_registry_image', () => {
+    it('should pull an image successfully', async () => {
+      const tool = pullImageTool(mockServer, () => mockDockerClient);
+      const result = await tool.handler({
+        app_name: 'test-app',
+        tag: 'v1',
+      });
+
+      expect(tool.name).toBe('pull_fly_registry_image');
+      expect(result.content[0].text).toContain('Image pulled successfully');
+      expect(result.content[0].text).toContain('registry.fly.io');
+      expect(mockDockerClient.pullImage).toHaveBeenCalledWith('test-app', 'v1');
+    });
+
+    it('should return error when app_name is missing', async () => {
+      const tool = pullImageTool(mockServer, () => mockDockerClient);
+      const result = await tool.handler({ tag: 'v1' });
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('Error');
+    });
+  });
+
+  describe('check_fly_registry_image', () => {
+    it('should confirm image exists', async () => {
+      const tool = checkRegistryImageTool(mockServer, () => mockDockerClient);
+      const result = await tool.handler({
+        app_name: 'test-app',
+        tag: 'v1',
+      });
+
+      expect(tool.name).toBe('check_fly_registry_image');
+      expect(result.content[0].text).toContain('Image exists');
+      expect(result.content[0].text).toContain('registry.fly.io/test-app:v1');
+      expect(mockDockerClient.imageExists).toHaveBeenCalledWith('test-app', 'v1');
+    });
+
+    it('should report image not found', async () => {
+      mockDockerClient.imageExists.mockResolvedValue(false);
+      const tool = checkRegistryImageTool(mockServer, () => mockDockerClient);
+      const result = await tool.handler({
+        app_name: 'test-app',
+        tag: 'nonexistent',
+      });
+
+      expect(result.content[0].text).toContain('not found');
+    });
+  });
+});
+
+describe('Docker Tool Group Configuration', () => {
+  describe('validateToolGroupConfig', () => {
+    it('should not throw when Docker is not disabled', () => {
+      expect(() => {
+        validateToolGroupConfig(['readonly', 'registry'], false);
+      }).not.toThrow();
+    });
+
+    it('should not throw when Docker is disabled but registry group is not explicitly enabled', () => {
+      expect(() => {
+        validateToolGroupConfig(['readonly', 'write'], true);
+      }).not.toThrow();
+    });
+
+    it('should throw when registry group is explicitly enabled but Docker is disabled', () => {
+      expect(() => {
+        validateToolGroupConfig(['readonly', 'registry'], true);
+      }).toThrow('Docker CLI tools are disabled');
+    });
+  });
+
+  describe('createRegisterTools with Docker options', () => {
+    let mockClient: ReturnType<typeof createMockFlyIOClient>;
+    let mockDockerClient: ReturnType<typeof createMockDockerCLIClient>;
+    let listToolsHandler: () => Promise<{
+      tools: Array<{ name: string; description: string; inputSchema: object }>;
+    }>;
+
+    beforeEach(() => {
+      mockClient = createMockFlyIOClient();
+      mockDockerClient = createMockDockerCLIClient();
+    });
+
+    const setupServer = (options: {
+      dockerClientFactory?: () => ReturnType<typeof createMockDockerCLIClient>;
+      dockerDisabled?: boolean;
+    }) => {
+      const mockServer = {
+        setRequestHandler: vi.fn((schema: unknown, handler: (req: unknown) => Promise<unknown>) => {
+          const schemaObj = schema as {
+            def?: { shape?: { method?: { def?: { values?: string[] } } } };
+          };
+          const method = schemaObj?.def?.shape?.method?.def?.values?.[0];
+          if (method === 'tools/list') {
+            listToolsHandler = handler as typeof listToolsHandler;
+          }
+        }),
+      } as unknown as Server;
+
+      const registerTools = createRegisterTools(() => mockClient, {
+        dockerClientFactory: options.dockerClientFactory,
+        dockerDisabled: options.dockerDisabled,
+      });
+      registerTools(mockServer);
+    };
+
+    it('should include registry tools when Docker client factory is provided', async () => {
+      setupServer({ dockerClientFactory: () => mockDockerClient });
+      const result = await listToolsHandler();
+
+      const toolNames = result.tools.map((t) => t.name);
+      expect(toolNames).toContain('push_new_fly_registry_image');
+      expect(toolNames).toContain('pull_fly_registry_image');
+      expect(toolNames).toContain('check_fly_registry_image');
+    });
+
+    it('should not include registry tools when Docker client factory is not provided', async () => {
+      setupServer({});
+      const result = await listToolsHandler();
+
+      const toolNames = result.tools.map((t) => t.name);
+      expect(toolNames).not.toContain('push_new_fly_registry_image');
+      expect(toolNames).not.toContain('pull_fly_registry_image');
+      expect(toolNames).not.toContain('check_fly_registry_image');
+    });
+
+    it('should not include registry tools when Docker is disabled', async () => {
+      setupServer({
+        dockerClientFactory: () => mockDockerClient,
+        dockerDisabled: true,
+      });
+      const result = await listToolsHandler();
+
+      const toolNames = result.tools.map((t) => t.name);
+      expect(toolNames).not.toContain('push_new_fly_registry_image');
+      expect(toolNames).not.toContain('pull_fly_registry_image');
+      expect(toolNames).not.toContain('check_fly_registry_image');
+    });
+
+    it('should include fly CLI image tools regardless of Docker settings', async () => {
+      setupServer({ dockerDisabled: true });
+      const result = await listToolsHandler();
+
+      const toolNames = result.tools.map((t) => t.name);
+      expect(toolNames).toContain('show_image');
+      expect(toolNames).toContain('list_releases');
+      expect(toolNames).toContain('update_image');
+    });
+  });
+});
+
+describe('Docker Registry Input Validation', () => {
+  // Note: The real DockerCLIClient validates appName and tag parameters.
+  // These tests verify that validation errors are properly returned through tools.
+  // We use a mock that throws validation errors to simulate the real client behavior.
+
+  let mockServer: Server;
+
+  beforeEach(() => {
+    mockServer = {} as Server;
+  });
+
+  describe('app name validation', () => {
+    it('should reject app names with uppercase letters', async () => {
+      // Create a mock that throws validation error for invalid app names
+      const mockDockerClient = {
+        ...createMockDockerCLIClient(),
+        pushImage: vi
+          .fn()
+          .mockRejectedValue(
+            new Error(
+              'Invalid app name "MyApp". App names must be lowercase alphanumeric with hyphens.'
+            )
+          ),
+      };
+
+      const tool = pushImageTool(mockServer, () => mockDockerClient);
+      const result = await tool.handler({
+        source_image: 'nginx:latest',
+        app_name: 'MyApp',
+        tag: 'v1',
+      });
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('Invalid app name');
+    });
+
+    it('should reject app names with special characters', async () => {
+      const mockDockerClient = {
+        ...createMockDockerCLIClient(),
+        pushImage: vi
+          .fn()
+          .mockRejectedValue(
+            new Error(
+              'Invalid app name "my_app!". App names must be lowercase alphanumeric with hyphens.'
+            )
+          ),
+      };
+
+      const tool = pushImageTool(mockServer, () => mockDockerClient);
+      const result = await tool.handler({
+        source_image: 'nginx:latest',
+        app_name: 'my_app!',
+        tag: 'v1',
+      });
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('Invalid app name');
+    });
+
+    it('should accept valid app names', async () => {
+      const mockDockerClient = createMockDockerCLIClient();
+
+      const tool = pushImageTool(mockServer, () => mockDockerClient);
+      const result = await tool.handler({
+        source_image: 'nginx:latest',
+        app_name: 'my-valid-app-123',
+        tag: 'v1',
+      });
+
+      // Should not have validation error (mock will return success)
+      expect(result.isError).toBeFalsy();
+    });
+  });
+
+  describe('tag validation', () => {
+    it('should reject tags with special characters', async () => {
+      const mockDockerClient = {
+        ...createMockDockerCLIClient(),
+        pullImage: vi
+          .fn()
+          .mockRejectedValue(new Error('Invalid tag "v1:bad". Tags must start with alphanumeric.')),
+      };
+
+      const tool = pullImageTool(mockServer, () => mockDockerClient);
+      const result = await tool.handler({
+        app_name: 'test-app',
+        tag: 'v1:bad',
+      });
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('Invalid tag');
+    });
+
+    it('should accept valid tags', async () => {
+      const mockDockerClient = createMockDockerCLIClient();
+
+      const tool = pullImageTool(mockServer, () => mockDockerClient);
+      const result = await tool.handler({
+        app_name: 'test-app',
+        tag: 'v1.2.3-beta_1',
+      });
+
+      // Should not have validation error (mock will return success)
+      expect(result.isError).toBeFalsy();
     });
   });
 });

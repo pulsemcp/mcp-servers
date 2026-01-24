@@ -46,18 +46,18 @@ npm run test:manual
 
 ## Latest Test Results
 
-**Test Date:** 2026-01-12
-**Branch:** tadasant/fly-io-mcp-server
-**Commit:** 4705c65
+**Test Date:** 2026-01-24
+**Branch:** claude/fly-io-images-and-timeout
+**Commit:** 8b9d397
 **Tested By:** Claude
-**Environment:** macOS, Node.js 18, Fly.io API (real credentials)
+**Environment:** Linux, Node.js 20, Fly.io API (real credentials)
 
 ### Summary
 
 | Metric      | Value |
 | ----------- | ----- |
-| Total Tests | 58    |
-| Passed      | 58    |
+| Total Tests | 96    |
+| Passed      | 96    |
 | Failed      | 0     |
 | Pass Rate   | 100%  |
 
@@ -65,22 +65,52 @@ npm run test:manual
 
 | File                    | Status                  | Tests | Notes                                                           |
 | ----------------------- | ----------------------- | ----- | --------------------------------------------------------------- |
-| `tools.test.ts`         | :white_check_mark: PASS | 55/55 | All functional tests pass with mocked client                    |
-| `fly-io.manual.test.ts` | :white_check_mark: PASS | 3/3   | All manual tests pass with real API (pulsemcp-proctor-runtimes) |
+| `tools.test.ts`         | :white_check_mark: PASS | 83/83 | All functional tests pass with mocked client                    |
+| `fly-io.manual.test.ts` | :white_check_mark: PASS | 13/13 | All manual tests pass with real API (pulsemcp-proctor-runtimes) |
 
 ### Details
 
-Fly.io MCP server with feature-based tool groups:
+This PR adds image management tools and Docker registry integration for running machines with custom images:
 
-- All 17 tools implemented and verified against real Fly.io API
-- Permission groups: readonly, write, admin
-- Feature groups: apps, machines, logs, ssh
-- App scoping via FLY_IO_APP_NAME environment variable
-- Fail-closed behavior for invalid ENABLED_TOOLGROUPS
-- CLI client fixes for actual fly CLI output structure
-- list_apps successfully returns apps from real account
-- get_app uses fly status command (apps show lacks --json)
-- Rate limiting test verified (no rate limits encountered)
+**New Image Management Tools:**
+
+- `show_image` - Display current image details for an app
+- `list_releases` - List release history with image information
+- `update_image` - Update machines to a new Docker image
+
+**New Docker Registry Tools (for running machines with custom images):**
+
+- `push_new_fly_registry_image` - Push a Docker image to registry.fly.io
+- `pull_fly_registry_image` - Pull an image from registry.fly.io
+- `check_fly_registry_image` - Check if an image exists in registry.fly.io
+
+**Machine Operation Fixes:**
+
+- Fixed `fly machines run` to parse text output (no --json support)
+- Fixed `fly machines status` to use listMachines + filter (no --json support)
+- Fixed `fly machines destroy` (no --yes flag)
+- Added 60s max timeout enforcement for exec (Fly.io API limit)
+
+**Manual Tests Verified:**
+
+- ✅ list_machines - Found machines in app
+- ✅ create_machine - Created machine with nginx:alpine image
+- ✅ get_machine - Retrieved machine details
+- ✅ wait_machine - Machine reached started state
+- ✅ exec_command - Command executed with 60s timeout
+- ✅ stop_machine - Machine stopped successfully
+- ✅ start_machine - Machine started successfully
+- ✅ restart_machine - Machine restarted successfully
+- ✅ delete_machine - Machine deleted successfully
+- ✅ check_fly_registry_image - Registry check works
+- ✅ registry validation - App name and tag validation works
+- ✅ get_logs - Retrieved 100 log lines
+
+**Input Validation:**
+
+- App names validated (lowercase alphanumeric, hyphens, 1-63 chars)
+- Docker tags validated (alphanumeric start, max 128 chars)
+- Race condition fixed in Docker config backup (unique temp files)
 
 ---
 

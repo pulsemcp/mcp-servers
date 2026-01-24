@@ -7,6 +7,8 @@ import type {
   CreateMachineRequest,
   UpdateMachineRequest,
   MachineState,
+  ImageDetails,
+  Release,
 } from '../types.js';
 
 const execFileAsync = promisify(execFile);
@@ -50,6 +52,19 @@ export interface IFlyIOClientExtended {
     command: string,
     timeout?: number
   ): Promise<string>;
+
+  // Image operations
+  showImage(appName: string): Promise<ImageDetails>;
+  listReleases(appName: string, options?: ReleasesOptions): Promise<Release[]>;
+  updateImage(appName: string, options?: UpdateImageOptions): Promise<ImageDetails>;
+}
+
+export interface ReleasesOptions {
+  limit?: number;
+}
+
+export interface UpdateImageOptions {
+  image?: string;
 }
 
 export interface LogsOptions {
@@ -249,55 +264,15 @@ export class FlyCLIClient implements IFlyIOClientExtended {
   }
 
   async getMachine(appName: string, machineId: string): Promise<Machine> {
-    const args = ['machines', 'status', machineId, '--app', appName];
-    const output = await this.execFly(args);
-    const m = this.parseJson<{
-      id: string;
-      name: string;
-      state: string;
-      region: string;
-      instance_id: string;
-      private_ip: string;
-      config: {
-        image: string;
-        env?: Record<string, string>;
-        guest?: { cpus?: number; memory_mb?: number; cpu_kind?: string };
-      };
-      image_ref?: { registry: string; repository: string; tag: string; digest: string };
-      created_at: string;
-      updated_at: string;
-      events?: Array<{
-        id: string;
-        type: string;
-        status: string;
-        source: string;
-        timestamp: number;
-      }>;
-    }>(output);
+    // fly machines status doesn't support --json, so use fly machines list and filter
+    const machines = await this.listMachines(appName);
+    const machine = machines.find((m) => m.id === machineId);
 
-    return {
-      id: m.id,
-      name: m.name,
-      state: m.state,
-      region: m.region,
-      instance_id: m.instance_id,
-      private_ip: m.private_ip,
-      config: {
-        image: m.config?.image || '',
-        env: m.config?.env,
-        guest: m.config?.guest
-          ? {
-              cpus: m.config.guest.cpus,
-              memory_mb: m.config.guest.memory_mb,
-              cpu_kind: m.config.guest.cpu_kind as 'shared' | 'performance' | undefined,
-            }
-          : undefined,
-      },
-      image_ref: m.image_ref,
-      created_at: m.created_at,
-      updated_at: m.updated_at,
-      events: m.events,
-    };
+    if (!machine) {
+      throw new Error(`Machine ${machineId} not found in app ${appName}`);
+    }
+
+    return machine;
   }
 
   async createMachine(appName: string, request: CreateMachineRequest): Promise<Machine> {
@@ -324,11 +299,22 @@ export class FlyCLIClient implements IFlyIOClientExtended {
       }
     }
 
-    const output = await this.execFly(args);
-    const result = this.parseJson<{ id: string }>(output);
+    // Get machine list before creation to find the new one
+    const machinesBefore = await this.listMachines(appName);
+    const existingIds = new Set(machinesBefore.map((m) => m.id));
 
-    // Fetch the created machine to get full details
-    return this.getMachine(appName, result.id);
+    // fly machines run does not support --json, so we run and then find the new machine
+    await this.execFly(args, { json: false, timeout: 120000 });
+
+    // Find the newly created machine by comparing lists
+    const machinesAfter = await this.listMachines(appName);
+    const newMachine = machinesAfter.find((m) => !existingIds.has(m.id));
+
+    if (!newMachine) {
+      throw new Error('Failed to find newly created machine');
+    }
+
+    return newMachine;
   }
 
   async updateMachine(
@@ -355,7 +341,8 @@ export class FlyCLIClient implements IFlyIOClientExtended {
   }
 
   async deleteMachine(appName: string, machineId: string, force: boolean = false): Promise<void> {
-    const args = ['machines', 'destroy', machineId, '--app', appName, '--yes'];
+    // fly machines destroy doesn't have --yes, but it's non-interactive when piped
+    const args = ['machines', 'destroy', machineId, '--app', appName];
     if (force) {
       args.push('--force');
     }
@@ -428,8 +415,11 @@ export class FlyCLIClient implements IFlyIOClientExtended {
     appName: string,
     machineId: string,
     command: string,
-    timeout: number = 30
+    timeout: number = 60000
   ): Promise<string> {
+    // Convert timeout from milliseconds to seconds, capped at Fly.io's 60s max
+    const timeoutSeconds = Math.min(Math.ceil(timeout / 1000), 60);
+
     const args = [
       'machine',
       'exec',
@@ -438,11 +428,90 @@ export class FlyCLIClient implements IFlyIOClientExtended {
       '--app',
       appName,
       '--timeout',
-      timeout.toString(),
+      timeoutSeconds.toString(),
     ];
 
-    const output = await this.execFly(args, { json: false, timeout: (timeout + 10) * 1000 });
+    const output = await this.execFly(args, { json: false, timeout: (timeoutSeconds + 30) * 1000 });
     return output;
+  }
+
+  // ==========================================================================
+  // Image operations
+  // ==========================================================================
+
+  async showImage(appName: string): Promise<ImageDetails> {
+    const args = ['image', 'show', '--app', appName];
+    const output = await this.execFly(args);
+    const data = this.parseJson<{
+      Registry: string;
+      Repository: string;
+      Tag: string;
+      Digest: string;
+      Version: number;
+    }>(output);
+
+    return {
+      registry: data.Registry,
+      repository: data.Repository,
+      tag: data.Tag,
+      digest: data.Digest,
+      version: data.Version,
+    };
+  }
+
+  async listReleases(appName: string, options: ReleasesOptions = {}): Promise<Release[]> {
+    const args = ['releases', '--app', appName, '--image'];
+
+    const output = await this.execFly(args);
+    let releases = this.parseJson<
+      Array<{
+        ID: string;
+        Version: number;
+        Stable: boolean;
+        InProgress: boolean;
+        Status: string;
+        Description: string;
+        Reason: string;
+        User: { ID: string; Email: string; Name: string };
+        CreatedAt: string;
+        ImageRef?: string;
+      }>
+    >(output);
+
+    if (options.limit && options.limit > 0) {
+      releases = releases.slice(0, options.limit);
+    }
+
+    return releases.map((r) => ({
+      id: r.ID,
+      version: r.Version,
+      stable: r.Stable,
+      inProgress: r.InProgress,
+      status: r.Status,
+      description: r.Description,
+      reason: r.Reason,
+      user: {
+        id: r.User?.ID || '',
+        email: r.User?.Email || '',
+        name: r.User?.Name || '',
+      },
+      createdAt: r.CreatedAt,
+      imageRef: r.ImageRef,
+    }));
+  }
+
+  async updateImage(appName: string, options: UpdateImageOptions = {}): Promise<ImageDetails> {
+    const args = ['image', 'update', '--app', appName, '--yes'];
+
+    if (options.image) {
+      args.push('--image', options.image);
+    }
+
+    // Image update can take a while, use longer timeout
+    await this.execFly(args, { json: false, timeout: 300000 });
+
+    // Fetch the updated image details
+    return this.showImage(appName);
   }
 }
 

@@ -12,32 +12,40 @@ MCP server for managing Fly.io machines and applications. This server provides t
 - Deploy Docker images to Fly.io
 - **Retrieve application logs** with region and machine filtering
 - **Execute commands on running machines**
+- **Manage Docker images** - view current image, list releases, update to new versions
+- **Push/pull images to Fly.io registry** - interact with registry.fly.io directly
 - Tool grouping for permission-based access control
-- Health checks for API credential validation
+- Health checks for API credential and CLI tool validation
 
 ## Capabilities
 
 ### Tools
 
-| Tool                 | Permissions            | Feature  | Description                                 |
-| -------------------- | ---------------------- | -------- | ------------------------------------------- |
-| `list_apps`          | readonly, write, admin | apps     | List all Fly.io applications                |
-| `get_app`            | readonly, write, admin | apps     | Get details for a specific app              |
-| `create_app`         | write, admin           | apps     | Create a new Fly.io application             |
-| `delete_app`         | admin                  | apps     | Delete an application                       |
-| `list_machines`      | readonly, write, admin | machines | List all machines in an app                 |
-| `get_machine`        | readonly, write, admin | machines | Get details for a specific machine          |
-| `get_machine_events` | readonly, write, admin | machines | Get event log for a machine (for debugging) |
-| `create_machine`     | write, admin           | machines | Create a new machine with a Docker image    |
-| `update_machine`     | write, admin           | machines | Update a machine's configuration            |
-| `delete_machine`     | admin                  | machines | Delete a machine                            |
-| `start_machine`      | write, admin           | machines | Start a stopped machine                     |
-| `stop_machine`       | write, admin           | machines | Stop a running machine                      |
-| `restart_machine`    | write, admin           | machines | Restart a machine (stop then start)         |
-| `suspend_machine`    | write, admin           | machines | Suspend a machine (save state to disk)      |
-| `wait_machine`       | write, admin           | machines | Wait for a machine to reach a state         |
-| `get_logs`           | readonly, write, admin | logs     | Get application logs                        |
-| `machine_exec`       | write, admin           | ssh      | Execute a command on a machine              |
+| Tool                          | Permissions            | Feature  | Description                                 |
+| ----------------------------- | ---------------------- | -------- | ------------------------------------------- |
+| `list_apps`                   | readonly, write, admin | apps     | List all Fly.io applications                |
+| `get_app`                     | readonly, write, admin | apps     | Get details for a specific app              |
+| `create_app`                  | write, admin           | apps     | Create a new Fly.io application             |
+| `delete_app`                  | admin                  | apps     | Delete an application                       |
+| `list_machines`               | readonly, write, admin | machines | List all machines in an app                 |
+| `get_machine`                 | readonly, write, admin | machines | Get details for a specific machine          |
+| `get_machine_events`          | readonly, write, admin | machines | Get event log for a machine (for debugging) |
+| `create_machine`              | write, admin           | machines | Create a new machine with a Docker image    |
+| `update_machine`              | write, admin           | machines | Update a machine's configuration            |
+| `delete_machine`              | admin                  | machines | Delete a machine                            |
+| `start_machine`               | write, admin           | machines | Start a stopped machine                     |
+| `stop_machine`                | write, admin           | machines | Stop a running machine                      |
+| `restart_machine`             | write, admin           | machines | Restart a machine (stop then start)         |
+| `suspend_machine`             | write, admin           | machines | Suspend a machine (save state to disk)      |
+| `wait_machine`                | write, admin           | machines | Wait for a machine to reach a state         |
+| `get_logs`                    | readonly, write, admin | logs     | Get application logs                        |
+| `machine_exec`                | write, admin           | ssh      | Execute a command on a machine              |
+| `show_image`                  | readonly, write, admin | images   | Show current Docker image details           |
+| `list_releases`               | readonly, write, admin | images   | List releases with image references         |
+| `update_image`                | write, admin           | images   | Update app's image to latest or specific    |
+| `push_new_fly_registry_image` | write, admin           | registry | Push local image to Fly.io registry         |
+| `pull_fly_registry_image`     | readonly, write, admin | registry | Pull image from Fly.io registry             |
+| `check_fly_registry_image`    | readonly, write, admin | registry | Check if image exists in registry           |
 
 ### Security Considerations
 
@@ -61,12 +69,14 @@ Control which tools are available via the `ENABLED_TOOLGROUPS` environment varia
 
 #### Feature Groups (what features are enabled)
 
-| Group      | Description                                                               |
-| ---------- | ------------------------------------------------------------------------- |
-| `apps`     | App management tools (list_apps, get_app, create_app, delete_app)         |
-| `machines` | Machine management tools (list, get, create, update, delete, start, stop) |
-| `logs`     | Log retrieval tools (get_logs)                                            |
-| `ssh`      | Remote execution tools (machine_exec)                                     |
+| Group      | Description                                                                                                                  |
+| ---------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| `apps`     | App management tools (list_apps, get_app, create_app, delete_app)                                                            |
+| `machines` | Machine management tools (list, get, create, update, delete, start, stop)                                                    |
+| `logs`     | Log retrieval tools (get_logs)                                                                                               |
+| `ssh`      | Remote execution tools (machine_exec)                                                                                        |
+| `images`   | Image management tools (show_image, list_releases, update_image)                                                             |
+| `registry` | Docker registry tools (push_new_fly_registry_image, pull_fly_registry_image, check_fly_registry_image) - requires Docker CLI |
 
 **Examples:**
 
@@ -98,18 +108,20 @@ This is useful for:
 1. A Fly.io account - [Sign up at fly.io](https://fly.io)
 2. A Fly.io API token - [Create one here](https://fly.io/user/personal_access_tokens)
 3. **Fly.io CLI (`fly`) installed** - [Install instructions](https://fly.io/docs/hands-on/install-flyctl/)
-4. Node.js 18+ installed
+4. **Docker CLI installed** (optional) - Required for registry tools (`push_image`, `pull_image`, `check_registry_image`)
+5. Node.js 18+ installed
 
 ### Configuration
 
 #### Environment Variables
 
-| Variable             | Required | Description                                            | Default     |
-| -------------------- | -------- | ------------------------------------------------------ | ----------- |
-| `FLY_IO_API_TOKEN`   | Yes      | API token for Fly.io authentication                    | -           |
-| `FLY_IO_APP_NAME`    | No       | Scope server to a single app (disables app management) | -           |
-| `ENABLED_TOOLGROUPS` | No       | Comma-separated tool groups to enable                  | All enabled |
-| `SKIP_HEALTH_CHECKS` | No       | Skip API validation at startup                         | `false`     |
+| Variable                   | Required | Description                                            | Default     |
+| -------------------------- | -------- | ------------------------------------------------------ | ----------- |
+| `FLY_IO_API_TOKEN`         | Yes      | API token for Fly.io authentication                    | -           |
+| `FLY_IO_APP_NAME`          | No       | Scope server to a single app (disables app management) | -           |
+| `ENABLED_TOOLGROUPS`       | No       | Comma-separated tool groups to enable                  | All enabled |
+| `SKIP_HEALTH_CHECKS`       | No       | Skip API validation at startup                         | `false`     |
+| `DISABLE_DOCKER_CLI_TOOLS` | No       | Disable Docker-based registry tools                    | `false`     |
 
 ### Claude Desktop Configuration
 
@@ -200,6 +212,36 @@ Get the logs for my-web-app to see what's happening.
 
 ```
 Run "ls -la /app" on machine abc123 in my-web-app to see the app files.
+```
+
+### Check current image version
+
+```
+Show me the current Docker image details for my-web-app.
+```
+
+### List deployment history
+
+```
+List the last 5 releases for my-web-app to see the deployment history.
+```
+
+### Update to a new image
+
+```
+Update my-web-app to use the latest image version.
+```
+
+### Push a local image to Fly.io registry
+
+```
+Push my local "my-app:v2" image to the Fly.io registry for my-web-app with tag "v2".
+```
+
+### Check if an image exists in the registry
+
+```
+Check if the image with tag "v2" exists in the Fly.io registry for my-web-app.
 ```
 
 ## Development
