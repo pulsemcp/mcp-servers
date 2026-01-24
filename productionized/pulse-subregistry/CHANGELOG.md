@@ -13,8 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - By default, only returns the latest version of each server
   - Set to `false` to include all versions
 - Auto-truncation to reduce context size:
-  - Strings longer than 200 characters are truncated with `"... [TRUNCATED - use expand_fields to see full content]"`
-  - Deep objects/arrays (depth >= 4) larger than 500 characters are truncated with `"... [DEEP OBJECT TRUNCATED - use expand_fields to see full content]"`
+  - Strings longer than 200 characters are truncated with path-specific message showing exact `expand_fields` path needed
+  - Deep objects/arrays (depth >= 5) larger than 500 characters are truncated with path-specific message (depth 4 keys remain visible)
 - `expand_fields` parameter to `list_servers` and `get_server` tools for viewing full content of truncated fields
   - Uses dot-notation paths (e.g., `"servers[].server.description"`, `"server.readme"`)
   - Supports array notation `[]` to apply to all array elements

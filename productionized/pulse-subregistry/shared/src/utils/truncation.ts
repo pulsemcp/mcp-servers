@@ -4,10 +4,20 @@
 
 const DEFAULT_STRING_MAX_LENGTH = 200;
 const DEEP_VALUE_MAX_LENGTH = 500;
-const DEPTH_THRESHOLD = 4; // Start truncating complex values at depth 4
-const STRING_TRUNCATION_SUFFIX = '... [TRUNCATED - use expand_fields to see full content]';
-const DEEP_TRUNCATION_SUFFIX =
-  ' ... [DEEP OBJECT TRUNCATED - use expand_fields to see full content]';
+const DEPTH_THRESHOLD = 5; // Start truncating complex values at depth 5 (so depth 4 keys are visible)
+
+/**
+ * Creates truncation suffix with specific path for expansion
+ */
+function getStringTruncationSuffix(path: string): string {
+  const wildcardPath = path.replace(/\[\d+\]/g, '[]');
+  return ` ... [TRUNCATED - use expand_fields: ["${wildcardPath}"] to see full content]`;
+}
+
+function getDeepTruncationSuffix(path: string): string {
+  const wildcardPath = path.replace(/\[\d+\]/g, '[]');
+  return ` ... [DEEP OBJECT TRUNCATED - use expand_fields: ["${wildcardPath}"] to see full content]`;
+}
 
 /**
  * Calculates the depth of a path.
@@ -17,8 +27,10 @@ const DEEP_TRUNCATION_SUFFIX =
  *   - "servers[0]" = depth 2
  *   - "servers[0].server" = depth 3
  *   - "servers[0].server.packages" = depth 4
+ *   - "servers[0].server.packages[0]" = depth 5
  *   - "servers[0]._meta" = depth 3
- *   - "servers[0]._meta['com.pulsemcp/server']" = depth 4
+ *   - "servers[0]._meta.com.pulsemcp/server" = depth 4
+ *   - "servers[0]._meta.com.pulsemcp/server.tools" = depth 5
  */
 function getDepth(path: string): number {
   if (!path) return 0;
@@ -56,7 +68,7 @@ function getDepth(path: string): number {
 /**
  * Recursively truncates values in an object:
  * 1. Strings longer than 200 chars are truncated
- * 2. At depth >= 4, any value serializing to > 500 chars is truncated
+ * 2. At depth >= 5, any value serializing to > 500 chars is truncated
  *
  * @param obj - The object to process
  * @param expandFields - Array of dot-notation paths to exclude from truncation
@@ -98,15 +110,15 @@ export function truncateStrings(
   if (currentDepth >= DEPTH_THRESHOLD && (typeof obj === 'object' || Array.isArray(obj))) {
     const serialized = JSON.stringify(obj);
     if (serialized.length > DEEP_VALUE_MAX_LENGTH) {
-      // Truncate the serialized JSON
-      return serialized.substring(0, DEEP_VALUE_MAX_LENGTH) + DEEP_TRUNCATION_SUFFIX;
+      // Truncate the serialized JSON with path-specific message
+      return serialized.substring(0, DEEP_VALUE_MAX_LENGTH) + getDeepTruncationSuffix(currentPath);
     }
   }
 
   // Handle strings - truncate if too long
   if (typeof obj === 'string') {
     if (obj.length > DEFAULT_STRING_MAX_LENGTH) {
-      return obj.substring(0, DEFAULT_STRING_MAX_LENGTH) + STRING_TRUNCATION_SUFFIX;
+      return obj.substring(0, DEFAULT_STRING_MAX_LENGTH) + getStringTruncationSuffix(currentPath);
     }
     return obj;
   }
