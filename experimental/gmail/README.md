@@ -4,8 +4,12 @@ An MCP (Model Context Protocol) server that provides Gmail integration for AI as
 
 ## Features
 
-- **List Recent Emails**: Retrieve recent emails within a specified time horizon
+- **List Email Conversations**: Retrieve emails with label filtering
 - **Get Email Details**: Fetch full email content including body and attachments info
+- **Search Emails**: Search using Gmail's powerful query syntax
+- **Manage Emails**: Mark as read/unread, star/unstar, archive, apply labels
+- **Create Drafts**: Compose draft emails with reply support
+- **Send Emails**: Send new emails or replies, directly or from drafts
 - **Service Account Authentication**: Secure domain-wide delegation for Google Workspace organizations
 
 ## Installation
@@ -30,18 +34,48 @@ This server requires a Google Cloud service account with domain-wide delegation 
 2. Create or select a project
 3. Enable the Gmail API
 4. Create a service account with domain-wide delegation enabled
-5. In [Google Workspace Admin Console](https://admin.google.com/), grant the service account access to the `https://www.googleapis.com/auth/gmail.readonly` scope
+5. In [Google Workspace Admin Console](https://admin.google.com/), grant the service account access to the following scopes:
+   - `https://www.googleapis.com/auth/gmail.readonly` (read emails)
+   - `https://www.googleapis.com/auth/gmail.modify` (modify labels)
+   - `https://www.googleapis.com/auth/gmail.compose` (create drafts)
+   - `https://www.googleapis.com/auth/gmail.send` (send emails)
 6. Download the JSON key file
 
 ### Environment Variables
 
-| Variable                             | Required | Description                              |
-| ------------------------------------ | -------- | ---------------------------------------- |
-| `GMAIL_SERVICE_ACCOUNT_CLIENT_EMAIL` | Yes      | Service account email address            |
-| `GMAIL_SERVICE_ACCOUNT_PRIVATE_KEY`  | Yes      | Service account private key (PEM format) |
-| `GMAIL_IMPERSONATE_EMAIL`            | Yes      | Email address to impersonate             |
+| Variable                             | Required | Description                                                         |
+| ------------------------------------ | -------- | ------------------------------------------------------------------- |
+| `GMAIL_SERVICE_ACCOUNT_CLIENT_EMAIL` | Yes      | Service account email address                                       |
+| `GMAIL_SERVICE_ACCOUNT_PRIVATE_KEY`  | Yes      | Service account private key (PEM format)                            |
+| `GMAIL_IMPERSONATE_EMAIL`            | Yes      | Email address to impersonate                                        |
+| `GMAIL_ENABLED_TOOLGROUPS`           | No       | Comma-separated list of tool groups to enable (default: all groups) |
 
 You can find the `client_email` and `private_key` values in your service account JSON key file.
+
+### Tool Groups
+
+The server supports three tool groups for permission-based access control:
+
+| Group                | Tools Included                                                                     | Risk Level |
+| -------------------- | ---------------------------------------------------------------------------------- | ---------- |
+| `readonly`           | `list_email_conversations`, `get_email_conversation`, `search_email_conversations` | Low        |
+| `readwrite`          | All readonly tools + `change_email_conversation`, `draft_email`                    | Medium     |
+| `readwrite_external` | All readwrite tools + `send_email`                                                 | High       |
+
+By default, all tool groups are enabled. To restrict access, set the `GMAIL_ENABLED_TOOLGROUPS` environment variable:
+
+```bash
+# Read-only access (no write/send capabilities)
+GMAIL_ENABLED_TOOLGROUPS=readonly
+
+# Read and write, but no external sending
+GMAIL_ENABLED_TOOLGROUPS=readwrite
+
+# Full access including sending emails (default)
+GMAIL_ENABLED_TOOLGROUPS=readwrite_external
+```
+
+**Security Note:** The `send_email` tool is in a separate `readwrite_external` group because it can send emails externally, which carries higher risk than internal operations like modifying labels or creating drafts.
 
 ## Configuration
 
@@ -72,27 +106,30 @@ Add to your Claude Desktop configuration (`~/Library/Application Support/Claude/
 
 ## Available Tools
 
-### gmail_list_recent_emails
+### list_email_conversations
 
-List recent emails from Gmail within a specified time horizon.
+List email conversations from Gmail with optional filtering.
 
 **Parameters:**
 
-- `hours` (number, optional): Time horizon in hours (default: 24)
-- `labels` (string, optional): Comma-separated label IDs (default: "INBOX")
-- `max_results` (number, optional): Maximum emails to return (default: 10, max: 100)
+- `count` (number, optional): Number of emails to return (default: 10, max: 100)
+- `labels` (string, optional): Comma-separated label IDs to filter by (default: "INBOX")
+- `sort_by` (string, optional): Sort order - "recent" (newest first) or "oldest" (default: recent)
+- `after` (string, optional): Only return emails after this datetime, exclusive (ISO 8601 UTC, e.g., "2024-01-15T14:30:00Z")
+- `before` (string, optional): Only return emails before this datetime, exclusive (ISO 8601 UTC, e.g., "2024-01-15T14:30:00Z")
 
 **Example:**
 
 ```json
 {
-  "hours": 48,
+  "count": 20,
   "labels": "INBOX,STARRED",
-  "max_results": 20
+  "after": "2024-01-15T00:00:00Z",
+  "before": "2024-01-20T23:59:59Z"
 }
 ```
 
-### gmail_get_email
+### get_email_conversation
 
 Retrieve the full content of a specific email by its ID.
 
@@ -105,6 +142,99 @@ Retrieve the full content of a specific email by its ID.
 ```json
 {
   "email_id": "18abc123def456"
+}
+```
+
+### search_email_conversations
+
+Search emails using Gmail's powerful query syntax.
+
+**Parameters:**
+
+- `query` (string, required): Gmail search query (e.g., "from:user@example.com", "is:unread", "subject:meeting")
+- `count` (number, optional): Maximum results to return (default: 10, max: 100)
+
+**Example:**
+
+```json
+{
+  "query": "from:alice@example.com is:unread",
+  "count": 20
+}
+```
+
+### change_email_conversation
+
+Modify email labels and status (read/unread, starred, archived).
+
+**Parameters:**
+
+- `email_id` (string, required): The email ID to modify
+- `status` (string, optional): "read", "unread", or "archived"
+- `is_starred` (boolean, optional): Star or unstar the email
+- `labels` (string, optional): Comma-separated labels to add
+- `remove_labels` (string, optional): Comma-separated labels to remove
+
+**Example:**
+
+```json
+{
+  "email_id": "18abc123def456",
+  "status": "read",
+  "is_starred": true
+}
+```
+
+### draft_email
+
+Create a draft email, optionally as a reply to an existing conversation.
+
+**Parameters:**
+
+- `to` (string, required): Recipient email address
+- `subject` (string, required): Email subject
+- `body` (string, required): Email body (plain text)
+- `thread_id` (string, optional): Thread ID for replies
+- `reply_to_email_id` (string, optional): Email ID to reply to (sets References/In-Reply-To headers)
+
+**Example:**
+
+```json
+{
+  "to": "recipient@example.com",
+  "subject": "Meeting Follow-up",
+  "body": "Thanks for the meeting today!"
+}
+```
+
+### send_email
+
+Send an email directly or from an existing draft.
+
+**Parameters:**
+
+- `to` (string, conditional): Recipient email (required unless sending from draft)
+- `subject` (string, conditional): Email subject (required unless sending from draft)
+- `body` (string, conditional): Email body (required unless sending from draft)
+- `from_draft_id` (string, optional): Send an existing draft by ID
+- `thread_id` (string, optional): Thread ID for replies
+- `reply_to_email_id` (string, optional): Email ID to reply to
+
+**Example (new email):**
+
+```json
+{
+  "to": "recipient@example.com",
+  "subject": "Hello",
+  "body": "This is a test email."
+}
+```
+
+**Example (send draft):**
+
+```json
+{
+  "from_draft_id": "r123456789"
 }
 ```
 

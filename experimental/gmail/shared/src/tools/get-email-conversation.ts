@@ -7,14 +7,14 @@ import { getHeader } from '../utils/email-helpers.js';
 const PARAM_DESCRIPTIONS = {
   email_id:
     'The unique identifier of the email to retrieve. ' +
-    'Obtain this from gmail_list_recent_emails.',
+    'Obtain this from list_email_conversations or search_email_conversations.',
 } as const;
 
-export const GetEmailSchema = z.object({
+export const GetEmailConversationSchema = z.object({
   email_id: z.string().min(1).describe(PARAM_DESCRIPTIONS.email_id),
 });
 
-const TOOL_DESCRIPTION = `Retrieve the full content of a specific email by its ID.
+const TOOL_DESCRIPTION = `Retrieve the full content of a specific email conversation by its ID.
 
 Returns the complete email including headers, body content, and attachment information.
 
@@ -29,11 +29,11 @@ Full email details including:
 - Labels assigned to the email
 
 **Use cases:**
-- Read the full content of an email after listing recent emails
+- Read the full content of an email after listing conversations
 - Extract specific information from an email body
 - Check attachment details
 
-**Note:** Use gmail_list_recent_emails first to get email IDs.`;
+**Note:** Use list_email_conversations or search_email_conversations first to get email IDs.`;
 
 /**
  * Decodes base64url encoded content
@@ -173,9 +173,9 @@ ${body}`;
   return output;
 }
 
-export function getEmailTool(server: Server, clientFactory: ClientFactory) {
+export function getEmailConversationTool(server: Server, clientFactory: ClientFactory) {
   return {
-    name: 'gmail_get_email',
+    name: 'get_email_conversation',
     description: TOOL_DESCRIPTION,
     inputSchema: {
       type: 'object' as const,
@@ -189,7 +189,7 @@ export function getEmailTool(server: Server, clientFactory: ClientFactory) {
     },
     handler: async (args: unknown) => {
       try {
-        const parsed = GetEmailSchema.parse(args ?? {});
+        const parsed = GetEmailConversationSchema.parse(args ?? {});
         const client = clientFactory();
 
         const email = await client.getMessage(parsed.email_id, {

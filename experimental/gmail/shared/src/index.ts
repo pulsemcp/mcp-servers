@@ -9,10 +9,17 @@ export {
   type ClientFactory,
   type ServiceAccountCredentials,
   type CreateMCPServerOptions,
+  type Draft,
 } from './server.js';
 
-// Tools
-export { createRegisterTools, registerTools } from './tools.js';
+// Tools and tool groups
+export {
+  createRegisterTools,
+  registerTools,
+  parseEnabledToolGroups,
+  getAvailableToolGroups,
+  type ToolGroup,
+} from './tools.js';
 
 // Logging utilities
 export { logServerStart, logError, logWarning, logDebug } from './logging.js';

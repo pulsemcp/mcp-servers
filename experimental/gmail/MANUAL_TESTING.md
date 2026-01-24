@@ -1,94 +1,139 @@
 # Manual Testing Results
 
-## Test Run: 2026-01-03 (v0.0.3 - Publish Fix)
+This file tracks the **most recent** manual test results for the Gmail MCP server.
 
-**Commit:** 36568ff (v0.0.2 tests remain valid - only restored missing publish script, no code changes)
+**Note:** Each new test run should overwrite the previous results. We only maintain the latest test results here.
 
-**Authentication Method:** Service Account with Domain-Wide Delegation (via environment variables)
+## Test Execution
 
-**Environment:**
+### Prerequisites
 
-- Node.js v22.x
-- Service account with gmail.readonly scope
-- Impersonating: tadas@tadasant.com
+1. **Set up API credentials** - Ensure you have the necessary API credentials in your `.env` file:
 
-**Environment Variables Used:**
+   ```bash
+   GMAIL_SERVICE_ACCOUNT_CLIENT_EMAIL=your-service-account@project.iam.gserviceaccount.com
+   GMAIL_SERVICE_ACCOUNT_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----"
+   GMAIL_IMPERSONATE_EMAIL=user@yourdomain.com
+   ```
 
-- `GMAIL_SERVICE_ACCOUNT_CLIENT_EMAIL`: Service account email address
-- `GMAIL_SERVICE_ACCOUNT_PRIVATE_KEY`: Private key with `\n` literals (newline conversion working)
-- `GMAIL_IMPERSONATE_EMAIL`: Email address to impersonate
+   To set up a service account:
+   1. Create a Google Cloud project and enable Gmail API
+   2. Create a service account with domain-wide delegation
+   3. In Google Workspace Admin, grant the service account access to required scopes:
+      - `https://www.googleapis.com/auth/gmail.readonly`
+      - `https://www.googleapis.com/auth/gmail.modify`
+      - `https://www.googleapis.com/auth/gmail.compose`
+      - `https://www.googleapis.com/auth/gmail.send`
+   4. Download the JSON key file and extract `client_email` and `private_key`
+
+2. **Commit your changes BEFORE running tests**
+
+   The test results will reference the current commit hash. If you have uncommitted changes, the commit hash will not represent what was actually tested:
+
+   ```bash
+   git add .
+   git commit -m "Your changes"
+   ```
+
+### First-Time Setup (or after clean checkout)
+
+If you're running manual tests for the first time or in a fresh worktree:
+
+```bash
+# This will verify environment, install dependencies, and build everything
+npm run test:manual:setup
+```
+
+This setup script will:
+
+- Check that .env file exists and has required credentials
+- Install all dependencies (including test-mcp-client)
+- Build the project and all test dependencies
+- Verify everything is ready for manual testing
+
+### Running Tests
+
+Once setup is complete, run manual tests:
+
+```bash
+npm run test:manual
+```
+
+The tests will:
+
+1. Build the project first (compiles TypeScript to JavaScript)
+2. Run tests against the built JavaScript code (not source TypeScript)
+3. This ensures we're testing the actual code that would be published
+
+## Latest Test Results
+
+**Test Date:** 2026-01-24
+**Branch:** claude/gmail-write-tools-v0.0.4
+**Commit:** f3d5154
+**Tested By:** Claude Code
+**Environment:** Node.js, Service Account with Domain-Wide Delegation
 
 ### Test Results
 
+**Automated Tests (mocked):**
+
 ```
- ✓ tests/manual/gmail-client.test.ts (7 tests) 2084ms
-   ✓ Gmail Client - Manual Tests > listMessages > should list messages from inbox  723ms
-   ✓ Gmail Client - Manual Tests > listMessages > should filter by query
-   ✓ Gmail Client - Manual Tests > listMessages > should filter by time horizon (24 hours)
-   ✓ Gmail Client - Manual Tests > getMessage > should get a message with full format  341ms
-   ✓ Gmail Client - Manual Tests > getMessage > should get a message with metadata format  319ms
-   ✓ Gmail Client - Manual Tests > getMessage > should decode email body content  304ms
-   ✓ Gmail Client - Manual Tests > authentication > should use service account authentication
+Functional Tests: 47 passed (47)
+Integration Tests: 11 passed (11)
+Total: 58 tests passing
+```
+
+**Manual Tests (real API):**
+
+```
+ ✓ tests/manual/gmail-client.test.ts (12 tests) 3530ms
+   ✓ listMessages > should list messages from inbox  522ms
+   ✓ listMessages > should filter by query
+   ✓ getMessage > should get a message with full format
+   ✓ getMessage > should get a message with metadata format
+   ✓ getMessage > should decode email body content
+   ✓ modifyMessage > should modify labels on a message  706ms
+   ✓ drafts > should create a draft
+   ✓ drafts > should list drafts
+   ✓ drafts > should get a draft by ID
+   ✓ drafts > should delete a draft  423ms
+   ✓ sendMessage > should send a test email (to same account)  302ms
+   ✓ authentication > should use service account authentication
 
  Test Files  1 passed (1)
-      Tests  7 passed (7)
+      Tests  12 passed (12)
 ```
 
-### Verification Details
+### Test Coverage
 
-1. **Service Account Authentication**: Successfully authenticated using domain-wide delegation with env vars
-2. **Newline Handling**: Private key with `\n` literals correctly converted to actual newlines
-3. **List Messages**: Retrieved 5 messages from inbox, 10-20 messages from last 24 hours
-4. **Get Message**: Successfully retrieved full message with headers and body
-5. **Body Decoding**: Successfully decoded base64url encoded email body content
-6. **Message Preview**: Verified email content from `Google <no-reply@accounts.google.com>` with subject "Security alert"
+All tests verified against real Gmail API:
+
+- [x] listMessages - inbox listing with 5 messages found
+- [x] listMessages - query filtering (10 messages from last 24 hours)
+- [x] getMessage - full format with headers and body
+- [x] getMessage - metadata format
+- [x] getMessage - body decoding (base64url)
+- [x] modifyMessage - add/remove STARRED label
+- [x] createDraft - created draft successfully
+- [x] listDrafts - found 5 drafts
+- [x] getDraft - retrieved draft by ID
+- [x] deleteDraft - deleted draft successfully
+- [x] sendMessage - sent test email to same account
+- [x] Service account authentication verified
 
 ### Notes
 
-- All 7 tests passed on first run
-- Environment variable-based authentication works correctly
-- Newline conversion for private key (`\n` → actual newlines) verified working
+- All manual tests passed against real Gmail API
+- Service account impersonating: tadas@tadasant.com
+- Tests verify read operations (list, get), write operations (modify labels, drafts), and send operations
+- The `after` and `before` datetime parameters for `list_email_conversations` were added in this version
+- Tool groups feature allows permission-based access control (readonly vs readwrite vs readwrite_external)
 
----
+## Historical Test Runs
 
-## Previous Test Run: 2026-01-03 (v0.0.1)
-
-**Commit:** e668d3de6bedb40e31d3bec7db8b88e1e19f1a9c
-
-**Authentication Method:** Service Account with Domain-Wide Delegation (via file path)
-
-**Environment:**
-
-- Node.js v22.x
-- Service account with gmail.readonly scope
-- Impersonating: tadas@tadasant.com
-
-### Test Results
-
-```
- ✓ tests/manual/gmail-client.test.ts (7 tests) 1866ms
-   ✓ Gmail Client - Manual Tests > listMessages > should list messages from inbox  573ms
-   ✓ Gmail Client - Manual Tests > listMessages > should filter by query
-   ✓ Gmail Client - Manual Tests > listMessages > should filter by time horizon (24 hours)
-   ✓ Gmail Client - Manual Tests > getMessage > should get a message with full format  356ms
-   ✓ Gmail Client - Manual Tests > getMessage > should get a message with metadata format
-   ✓ Gmail Client - Manual Tests > getMessage > should decode email body content  304ms
-   ✓ Gmail Client - Manual Tests > authentication > should report authentication method
-
- Test Files  1 passed (1)
-      Tests  7 passed (7)
-```
-
-### Verification Details
-
-1. **Service Account Authentication**: Successfully authenticated using domain-wide delegation
-2. **List Messages**: Retrieved 5 messages from inbox, 10-20 messages from last 24 hours
-3. **Get Message**: Successfully retrieved full message with headers and body
-4. **Body Decoding**: Successfully decoded base64url encoded email body content
-5. **Message Preview**: Verified email content from `Google <no-reply@accounts.google.com>` with subject "Security alert"
-
-### Notes
-
-- All tests passed on first run
-- Service account authentication with domain-wide delegation works correctly
-- Token caching is functional (subsequent requests use cached token)
+| Date       | Commit  | Status | Notes                                                      |
+| ---------- | ------- | ------ | ---------------------------------------------------------- |
+| 2026-01-24 | f3d5154 | PASS   | All 12 manual tests + 58 automated tests passing           |
+| 2026-01-23 | d728dca | PASS   | v0.0.4 - New tools (search, change, draft, send), 46 tests |
+| 2026-01-03 | 36568ff | PASS   | v0.0.3 - Publish fix, 7 manual tests passing               |
+| 2026-01-03 | e668d3d | PASS   | v0.0.1 - Initial release, 7 manual tests passing           |

@@ -4,6 +4,14 @@ import { createRegisterTools } from './tools.js';
 import type { Email, EmailListItem } from './types.js';
 
 /**
+ * Draft message structure
+ */
+export interface Draft {
+  id: string;
+  message: Email;
+}
+
+/**
  * Gmail API client interface
  * Defines all methods for interacting with the Gmail API
  */
@@ -32,6 +40,69 @@ export interface IGmailClient {
       metadataHeaders?: string[];
     }
   ): Promise<Email>;
+
+  /**
+   * Modify labels on a message (add/remove labels)
+   */
+  modifyMessage(
+    messageId: string,
+    options: {
+      addLabelIds?: string[];
+      removeLabelIds?: string[];
+    }
+  ): Promise<Email>;
+
+  /**
+   * Create a draft email
+   */
+  createDraft(options: {
+    to: string;
+    subject: string;
+    body: string;
+    cc?: string;
+    bcc?: string;
+    threadId?: string;
+    inReplyTo?: string;
+    references?: string;
+  }): Promise<Draft>;
+
+  /**
+   * Get a draft by ID
+   */
+  getDraft(draftId: string): Promise<Draft>;
+
+  /**
+   * List drafts
+   */
+  listDrafts(options?: { maxResults?: number; pageToken?: string }): Promise<{
+    drafts: Array<{ id: string; message: EmailListItem }>;
+    nextPageToken?: string;
+    resultSizeEstimate?: number;
+  }>;
+
+  /**
+   * Delete a draft
+   */
+  deleteDraft(draftId: string): Promise<void>;
+
+  /**
+   * Send an email (either directly or from a draft)
+   */
+  sendMessage(options: {
+    to: string;
+    subject: string;
+    body: string;
+    cc?: string;
+    bcc?: string;
+    threadId?: string;
+    inReplyTo?: string;
+    references?: string;
+  }): Promise<Email>;
+
+  /**
+   * Send a draft
+   */
+  sendDraft(draftId: string): Promise<Email>;
 }
 
 /**
@@ -67,7 +138,12 @@ export class ServiceAccountGmailClient implements IGmailClient {
     this.jwtClient = new JWT({
       email: credentials.client_email,
       key: credentials.private_key,
-      scopes: ['https://www.googleapis.com/auth/gmail.readonly'],
+      scopes: [
+        'https://www.googleapis.com/auth/gmail.readonly',
+        'https://www.googleapis.com/auth/gmail.modify',
+        'https://www.googleapis.com/auth/gmail.compose',
+        'https://www.googleapis.com/auth/gmail.send',
+      ],
       subject: impersonateEmail,
     });
   }
@@ -131,6 +207,76 @@ export class ServiceAccountGmailClient implements IGmailClient {
     const headers = await this.getHeaders();
     const { getMessage } = await import('./gmail-client/lib/get-message.js');
     return getMessage(this.baseUrl, headers, messageId, options);
+  }
+
+  async modifyMessage(
+    messageId: string,
+    options: {
+      addLabelIds?: string[];
+      removeLabelIds?: string[];
+    }
+  ): Promise<Email> {
+    const headers = await this.getHeaders();
+    const { modifyMessage } = await import('./gmail-client/lib/modify-message.js');
+    return modifyMessage(this.baseUrl, headers, messageId, options);
+  }
+
+  async createDraft(options: {
+    to: string;
+    subject: string;
+    body: string;
+    cc?: string;
+    bcc?: string;
+    threadId?: string;
+    inReplyTo?: string;
+    references?: string;
+  }): Promise<Draft> {
+    const headers = await this.getHeaders();
+    const { createDraft } = await import('./gmail-client/lib/drafts.js');
+    return createDraft(this.baseUrl, headers, this.impersonateEmail, options);
+  }
+
+  async getDraft(draftId: string): Promise<Draft> {
+    const headers = await this.getHeaders();
+    const { getDraft } = await import('./gmail-client/lib/drafts.js');
+    return getDraft(this.baseUrl, headers, draftId);
+  }
+
+  async listDrafts(options?: { maxResults?: number; pageToken?: string }): Promise<{
+    drafts: Array<{ id: string; message: EmailListItem }>;
+    nextPageToken?: string;
+    resultSizeEstimate?: number;
+  }> {
+    const headers = await this.getHeaders();
+    const { listDrafts } = await import('./gmail-client/lib/drafts.js');
+    return listDrafts(this.baseUrl, headers, options);
+  }
+
+  async deleteDraft(draftId: string): Promise<void> {
+    const headers = await this.getHeaders();
+    const { deleteDraft } = await import('./gmail-client/lib/drafts.js');
+    return deleteDraft(this.baseUrl, headers, draftId);
+  }
+
+  async sendMessage(options: {
+    to: string;
+    subject: string;
+    body: string;
+    cc?: string;
+    bcc?: string;
+    threadId?: string;
+    inReplyTo?: string;
+    references?: string;
+  }): Promise<Email> {
+    const headers = await this.getHeaders();
+    const { sendMessage } = await import('./gmail-client/lib/send-message.js');
+    return sendMessage(this.baseUrl, headers, this.impersonateEmail, options);
+  }
+
+  async sendDraft(draftId: string): Promise<Email> {
+    const headers = await this.getHeaders();
+    const { sendDraft } = await import('./gmail-client/lib/send-message.js');
+    return sendDraft(this.baseUrl, headers, draftId);
   }
 }
 
