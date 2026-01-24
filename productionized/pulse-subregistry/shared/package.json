@@ -22,7 +22,13 @@
     "typescript": "^5.8.3",
     "vitest": "^3.2.3"
   },
-  "keywords": [],
+  "keywords": [
+    "mcp",
+    "pulsemcp",
+    "subregistry",
+    "servers",
+    "discovery"
+  ],
   "author": "PulseMCP",
   "license": "MIT"
 }

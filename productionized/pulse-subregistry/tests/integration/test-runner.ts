@@ -64,7 +64,7 @@ async function createTestMCPClientWithMocks(
  * Run integration tests in a specific mode (source or built)
  */
 export function runIntegrationTests(mode: TestMode) {
-  describe(`Pulse Directory MCP Server Integration Tests [${mode.name}]`, () => {
+  describe(`Pulse Sub-Registry MCP Server Integration Tests [${mode.name}]`, () => {
     let client: TestMCPClient | null = null;
 
     beforeAll(async () => {
