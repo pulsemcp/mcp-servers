@@ -2,59 +2,129 @@
  * Utility functions for string truncation and field expansion
  */
 
-const DEFAULT_MAX_LENGTH = 200;
-const TRUNCATION_SUFFIX = '... [TRUNCATED - use expand_fields to see full content]';
+const DEFAULT_STRING_MAX_LENGTH = 200;
+const DEEP_VALUE_MAX_LENGTH = 500;
+const DEPTH_THRESHOLD = 4; // Start truncating complex values at depth 4
+const STRING_TRUNCATION_SUFFIX = '... [TRUNCATED - use expand_fields to see full content]';
+const DEEP_TRUNCATION_SUFFIX =
+  ' ... [DEEP OBJECT TRUNCATED - use expand_fields to see full content]';
 
 /**
- * Recursively truncates string values in an object that exceed the max length.
- * Returns a new object with truncated strings and tracks which paths were truncated.
+ * Calculates the depth of a path.
+ * Depth is counted as: each key access and each array index access.
+ * Examples:
+ *   - "servers" = depth 1
+ *   - "servers[0]" = depth 2
+ *   - "servers[0].server" = depth 3
+ *   - "servers[0].server.packages" = depth 4
+ *   - "servers[0]._meta" = depth 3
+ *   - "servers[0]._meta['com.pulsemcp/server']" = depth 4
+ */
+function getDepth(path: string): number {
+  if (!path) return 0;
+
+  let depth = 0;
+  let i = 0;
+
+  while (i < path.length) {
+    // Skip to the next segment
+    if (path[i] === '.') {
+      i++;
+      continue;
+    }
+
+    if (path[i] === '[') {
+      // Array index or bracket notation - count as one depth level
+      depth++;
+      // Skip past the closing bracket
+      const closeBracket = path.indexOf(']', i);
+      if (closeBracket === -1) break;
+      i = closeBracket + 1;
+    } else {
+      // Key access - count as one depth level
+      depth++;
+      // Skip to the next delimiter
+      while (i < path.length && path[i] !== '.' && path[i] !== '[') {
+        i++;
+      }
+    }
+  }
+
+  return depth;
+}
+
+/**
+ * Recursively truncates values in an object:
+ * 1. Strings longer than 200 chars are truncated
+ * 2. At depth >= 4, any value serializing to > 500 chars is truncated
  *
  * @param obj - The object to process
  * @param expandFields - Array of dot-notation paths to exclude from truncation
- * @param maxLength - Maximum string length before truncation
  * @param currentPath - Current path in the object (for internal recursion)
- * @returns Object with truncated strings
+ * @returns Object with truncated values
  */
 export function truncateStrings(
   obj: unknown,
   expandFields: string[] = [],
-  maxLength: number = DEFAULT_MAX_LENGTH,
   currentPath: string = ''
 ): unknown {
   if (obj === null || obj === undefined) {
     return obj;
   }
 
-  if (typeof obj === 'string') {
-    // Check if current path matches any expand field
-    if (shouldExpand(currentPath, expandFields)) {
-      return obj;
+  const currentDepth = getDepth(currentPath);
+
+  // Check if this path should be expanded (skip all truncation)
+  if (shouldExpand(currentPath, expandFields)) {
+    // Still need to recurse for nested paths that might not be expanded
+    if (Array.isArray(obj)) {
+      return obj.map((item, index) => {
+        const arrayPath = currentPath ? `${currentPath}[${index}]` : `[${index}]`;
+        return truncateStrings(item, expandFields, arrayPath);
+      });
     }
-    if (obj.length > maxLength) {
-      return obj.substring(0, maxLength) + TRUNCATION_SUFFIX;
+    if (typeof obj === 'object') {
+      const result: Record<string, unknown> = {};
+      for (const [key, value] of Object.entries(obj)) {
+        const newPath = currentPath ? `${currentPath}.${key}` : key;
+        result[key] = truncateStrings(value, expandFields, newPath);
+      }
+      return result;
     }
     return obj;
   }
 
+  // At depth >= DEPTH_THRESHOLD, check if the serialized value is too large
+  if (currentDepth >= DEPTH_THRESHOLD && (typeof obj === 'object' || Array.isArray(obj))) {
+    const serialized = JSON.stringify(obj);
+    if (serialized.length > DEEP_VALUE_MAX_LENGTH) {
+      // Truncate the serialized JSON
+      return serialized.substring(0, DEEP_VALUE_MAX_LENGTH) + DEEP_TRUNCATION_SUFFIX;
+    }
+  }
+
+  // Handle strings - truncate if too long
+  if (typeof obj === 'string') {
+    if (obj.length > DEFAULT_STRING_MAX_LENGTH) {
+      return obj.substring(0, DEFAULT_STRING_MAX_LENGTH) + STRING_TRUNCATION_SUFFIX;
+    }
+    return obj;
+  }
+
+  // Handle arrays
   if (Array.isArray(obj)) {
     return obj.map((item, index) => {
       const arrayPath = currentPath ? `${currentPath}[${index}]` : `[${index}]`;
-      // Also support [] notation for all array elements
-      const wildcardPath = currentPath ? `${currentPath}[]` : `[]`;
-      return truncateStrings(
-        item,
-        expandFields,
-        maxLength,
-        shouldExpand(wildcardPath, expandFields) ? '' : arrayPath
-      );
+      return truncateStrings(item, expandFields, arrayPath);
     });
   }
 
+  // Handle objects
   if (typeof obj === 'object') {
     const result: Record<string, unknown> = {};
     for (const [key, value] of Object.entries(obj)) {
       const newPath = currentPath ? `${currentPath}.${key}` : key;
-      result[key] = truncateStrings(value, expandFields, maxLength, newPath);
+      result[key] = truncateStrings(value, expandFields, newPath);
     }
     return result;
   }

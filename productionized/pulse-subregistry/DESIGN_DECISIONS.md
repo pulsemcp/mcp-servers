@@ -205,7 +205,7 @@ This document tracks potentially controversial design decisions made during the 
 
 ## 13. Auto-Truncation with Field Expansion: `expand_fields` Parameter
 
-**Decision**: Automatically truncate long strings (>200 chars) by default, with an `expand_fields` parameter to show full content for specific fields.
+**Decision**: Automatically truncate long strings and deep objects by default, with an `expand_fields` parameter to show full content for specific fields.
 
 **Rationale**:
 
@@ -213,17 +213,24 @@ This document tracks potentially controversial design decisions made during the 
 - Users don't know ahead of time which fields are large and need to be excluded
 - Auto-truncation provides a good default experience without requiring users to understand the API response structure
 - The `expand_fields` parameter allows users to see full content for specific fields when needed
+- Deep nesting in JSON can create verbose output even with short strings
 
 **Implementation**:
 
-- By default, all strings longer than 200 characters are truncated with a note: `"... [TRUNCATED - use expand_fields to see full content]"`
+- **String truncation**: Strings longer than 200 characters are truncated with: `"... [TRUNCATED - use expand_fields to see full content]"`
+- **Deep object truncation**: At depth >= 4 (e.g., `servers[0]._meta['com.pulsemcp/server']`), objects/arrays larger than 500 chars when serialized are truncated with: `"... [DEEP OBJECT TRUNCATED - use expand_fields to see full content]"`
+- Depth counting: Each key access and array index counts as one level
+  - `servers` = depth 1
+  - `servers[0]` = depth 2
+  - `servers[0].server` = depth 3
+  - `servers[0].server.packages` = depth 4 (truncation applies here)
 - `expand_fields` accepts an array of dot-notation paths to show in full (not truncated)
 - Supports `[]` notation to apply to all array elements (e.g., `"servers[].server.description"`)
 - Deep clones response before processing to avoid mutation
 - Examples:
   - `["servers[].server.description"]` - Show full description for all servers in list
   - `["server.readme"]` - Show full readme in get_server
-  - `["server.packages[].readme"]` - Show full readme for all packages
+  - `["servers[]._meta.com.pulsemcp/server"]` - Show full metadata object
 
 ---
 

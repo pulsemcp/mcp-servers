@@ -108,6 +108,121 @@ describe('truncateStrings', () => {
     const packages = server.packages as Array<Record<string, unknown>>;
     expect(packages[0].readme).toBe(longString);
   });
+
+  it('should truncate deep objects (depth >= 4) larger than 500 chars', () => {
+    // Create a structure where depth 4 has a large object
+    // servers[0]._meta['com.pulsemcp/server'] is depth 4
+    const largeDeepObject = {
+      field1: 'a'.repeat(100),
+      field2: 'b'.repeat(100),
+      field3: 'c'.repeat(100),
+      field4: 'd'.repeat(100),
+      field5: 'e'.repeat(100),
+      nested: { more: 'data' },
+    };
+
+    const result = truncateStrings({
+      servers: [
+        {
+          _meta: {
+            'com.pulsemcp/server': largeDeepObject,
+          },
+        },
+      ],
+    });
+
+    const servers = (result as Record<string, unknown>).servers as Array<Record<string, unknown>>;
+    const meta = servers[0]._meta as Record<string, unknown>;
+    const pulseMeta = meta['com.pulsemcp/server'] as string;
+
+    // Should be truncated to a string with the truncation suffix
+    expect(typeof pulseMeta).toBe('string');
+    expect(pulseMeta).toContain('DEEP OBJECT TRUNCATED');
+  });
+
+  it('should not truncate deep objects smaller than 500 chars', () => {
+    // Create a small object at depth 4
+    const smallDeepObject = {
+      field1: 'small',
+      field2: 'value',
+    };
+
+    const result = truncateStrings({
+      servers: [
+        {
+          _meta: {
+            'com.pulsemcp/server': smallDeepObject,
+          },
+        },
+      ],
+    });
+
+    const servers = (result as Record<string, unknown>).servers as Array<Record<string, unknown>>;
+    const meta = servers[0]._meta as Record<string, unknown>;
+    const pulseMeta = meta['com.pulsemcp/server'] as Record<string, unknown>;
+
+    // Should still be an object, not truncated
+    expect(typeof pulseMeta).toBe('object');
+    expect(pulseMeta.field1).toBe('small');
+    expect(pulseMeta.field2).toBe('value');
+  });
+
+  it('should not truncate objects at depth < 4 regardless of size', () => {
+    // servers[0].server is depth 3, should not be truncated even if large
+    const largeObject = {
+      field1: 'a'.repeat(600),
+      field2: 'b'.repeat(600),
+      field3: 'c'.repeat(600),
+    };
+
+    const result = truncateStrings({
+      servers: [
+        {
+          server: largeObject,
+        },
+      ],
+    });
+
+    const servers = (result as Record<string, unknown>).servers as Array<Record<string, unknown>>;
+    const server = servers[0].server as Record<string, unknown>;
+
+    // Should still be an object (object structure preserved at depth 3)
+    // Strings inside at depth 4 (servers[0].server.field1) will be truncated
+    expect(typeof server).toBe('object');
+    // At depth 4, strings > 200 chars are truncated
+    expect(server.field1).toContain('... [TRUNCATED');
+    expect(server.field2).toContain('... [TRUNCATED');
+  });
+
+  it('should allow expanding deep truncated objects', () => {
+    const largeDeepObject = {
+      field1: 'a'.repeat(200),
+      field2: 'b'.repeat(200),
+      field3: 'c'.repeat(200),
+    };
+
+    const result = truncateStrings(
+      {
+        servers: [
+          {
+            _meta: {
+              'com.pulsemcp/server': largeDeepObject,
+            },
+          },
+        ],
+      },
+      ['servers[]._meta.com.pulsemcp/server']
+    );
+
+    const servers = (result as Record<string, unknown>).servers as Array<Record<string, unknown>>;
+    const meta = servers[0]._meta as Record<string, unknown>;
+    const pulseMeta = meta['com.pulsemcp/server'] as Record<string, unknown>;
+
+    // Should be expanded (object preserved, no deep truncation)
+    // Inner strings are also preserved because the whole path is expanded
+    expect(typeof pulseMeta).toBe('object');
+    expect(pulseMeta.field1).toBe('a'.repeat(200));
+  });
 });
 
 describe('deepClone', () => {
