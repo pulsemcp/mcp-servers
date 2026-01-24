@@ -14,8 +14,9 @@ All notable changes to this project will be documented in this file.
   - `draft_email` - Create email drafts with optional in-conversation (reply) support
   - `send_email` - Send emails directly or from existing drafts, with reply support
 - **Tool Groups**: Added permission-based tool access control via `GMAIL_ENABLED_TOOLGROUPS` environment variable
-  - `readonly`: list, get, and search email conversations
-  - `readwrite`: all readonly tools plus modify, draft, and send operations
+  - `readonly`: list, get, and search email conversations (low risk)
+  - `readwrite`: all readonly tools plus modify labels and create drafts (medium risk)
+  - `readwrite_external`: all readwrite tools plus send_email (high risk - external communication)
 
 ### Changed
 

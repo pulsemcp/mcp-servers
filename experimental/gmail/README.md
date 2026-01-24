@@ -54,12 +54,13 @@ You can find the `client_email` and `private_key` values in your service account
 
 ### Tool Groups
 
-The server supports two tool groups for permission-based access control:
+The server supports three tool groups for permission-based access control:
 
-| Group       | Tools Included                                                                     |
-| ----------- | ---------------------------------------------------------------------------------- |
-| `readonly`  | `list_email_conversations`, `get_email_conversation`, `search_email_conversations` |
-| `readwrite` | All readonly tools + `change_email_conversation`, `draft_email`, `send_email`      |
+| Group                | Tools Included                                                                     | Risk Level |
+| -------------------- | ---------------------------------------------------------------------------------- | ---------- |
+| `readonly`           | `list_email_conversations`, `get_email_conversation`, `search_email_conversations` | Low        |
+| `readwrite`          | All readonly tools + `change_email_conversation`, `draft_email`                    | Medium     |
+| `readwrite_external` | All readwrite tools + `send_email`                                                 | High       |
 
 By default, all tool groups are enabled. To restrict access, set the `GMAIL_ENABLED_TOOLGROUPS` environment variable:
 
@@ -67,9 +68,14 @@ By default, all tool groups are enabled. To restrict access, set the `GMAIL_ENAB
 # Read-only access (no write/send capabilities)
 GMAIL_ENABLED_TOOLGROUPS=readonly
 
-# Full access (default)
-GMAIL_ENABLED_TOOLGROUPS=readonly,readwrite
+# Read and write, but no external sending
+GMAIL_ENABLED_TOOLGROUPS=readwrite
+
+# Full access including sending emails (default)
+GMAIL_ENABLED_TOOLGROUPS=readwrite_external
 ```
+
+**Security Note:** The `send_email` tool is in a separate `readwrite_external` group because it can send emails externally, which carries higher risk than internal operations like modifying labels or creating drafts.
 
 ## Configuration
 

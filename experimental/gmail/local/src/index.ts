@@ -48,9 +48,9 @@ function validateEnvironment(): void {
     console.error('  4. Download the JSON key file and extract client_email and private_key');
     console.error('\nOptional environment variables:');
     console.error('  GMAIL_ENABLED_TOOLGROUPS: Comma-separated list of tool groups to enable');
-    console.error('    Valid groups: readonly, readwrite');
+    console.error('    Valid groups: readonly, readwrite, readwrite_external');
     console.error('    Default: all groups enabled');
-    console.error('    Example: GMAIL_ENABLED_TOOLGROUPS=readonly');
+    console.error('    Example: GMAIL_ENABLED_TOOLGROUPS=readwrite');
     console.error('\n======================================================\n');
 
     process.exit(1);

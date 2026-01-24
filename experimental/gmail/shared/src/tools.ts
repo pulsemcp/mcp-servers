@@ -30,11 +30,12 @@ type ToolFactory = (server: Server, clientFactory: ClientFactory) => Tool;
 /**
  * Available tool groups for Gmail MCP server
  * - readonly: Read-only operations (list, get, search emails)
- * - readwrite: Read and write operations (includes readonly + modify, draft, send)
+ * - readwrite: Read and write operations (includes readonly + modify, draft)
+ * - readwrite_external: External communication operations (includes readwrite + send_email)
  */
-export type ToolGroup = 'readonly' | 'readwrite';
+export type ToolGroup = 'readonly' | 'readwrite' | 'readwrite_external';
 
-const ALL_TOOL_GROUPS: ToolGroup[] = ['readonly', 'readwrite'];
+const ALL_TOOL_GROUPS: ToolGroup[] = ['readonly', 'readwrite', 'readwrite_external'];
 
 interface ToolDefinition {
   factory: ToolFactory;
@@ -45,17 +46,22 @@ interface ToolDefinition {
  * All available tools with their group assignments
  *
  * readonly: list_email_conversations, get_email_conversation, search_email_conversations
- * readwrite: all readonly tools + change_email_conversation, draft_email, send_email
+ * readwrite: all readonly tools + change_email_conversation, draft_email
+ * readwrite_external: all readwrite tools + send_email (external communication)
  */
 const ALL_TOOLS: ToolDefinition[] = [
-  // Read-only tools (available in both groups)
-  { factory: listEmailConversationsTool, groups: ['readonly', 'readwrite'] },
-  { factory: getEmailConversationTool, groups: ['readonly', 'readwrite'] },
-  { factory: searchEmailConversationsTool, groups: ['readonly', 'readwrite'] },
-  // Write tools (only available in readwrite group)
-  { factory: changeEmailConversationTool, groups: ['readwrite'] },
-  { factory: draftEmailTool, groups: ['readwrite'] },
-  { factory: sendEmailTool, groups: ['readwrite'] },
+  // Read-only tools (available in all groups)
+  { factory: listEmailConversationsTool, groups: ['readonly', 'readwrite', 'readwrite_external'] },
+  { factory: getEmailConversationTool, groups: ['readonly', 'readwrite', 'readwrite_external'] },
+  {
+    factory: searchEmailConversationsTool,
+    groups: ['readonly', 'readwrite', 'readwrite_external'],
+  },
+  // Write tools (available in readwrite and readwrite_external)
+  { factory: changeEmailConversationTool, groups: ['readwrite', 'readwrite_external'] },
+  { factory: draftEmailTool, groups: ['readwrite', 'readwrite_external'] },
+  // External communication tools (only in readwrite_external - most dangerous)
+  { factory: sendEmailTool, groups: ['readwrite_external'] },
 ];
 
 /**

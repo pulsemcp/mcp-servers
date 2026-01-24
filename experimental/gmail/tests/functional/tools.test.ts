@@ -499,13 +499,13 @@ describe('Tool Groups', () => {
     it('should return all groups when no parameter provided', async () => {
       const { parseEnabledToolGroups } = await import('../../shared/src/tools.js');
       const groups = parseEnabledToolGroups();
-      expect(groups).toEqual(['readonly', 'readwrite']);
+      expect(groups).toEqual(['readonly', 'readwrite', 'readwrite_external']);
     });
 
     it('should return all groups for empty string', async () => {
       const { parseEnabledToolGroups } = await import('../../shared/src/tools.js');
       const groups = parseEnabledToolGroups('');
-      expect(groups).toEqual(['readonly', 'readwrite']);
+      expect(groups).toEqual(['readonly', 'readwrite', 'readwrite_external']);
     });
 
     it('should parse single group', async () => {
@@ -520,6 +520,12 @@ describe('Tool Groups', () => {
       expect(groups).toEqual(['readonly', 'readwrite']);
     });
 
+    it('should parse readwrite_external group', async () => {
+      const { parseEnabledToolGroups } = await import('../../shared/src/tools.js');
+      const groups = parseEnabledToolGroups('readwrite_external');
+      expect(groups).toEqual(['readwrite_external']);
+    });
+
     it('should handle whitespace', async () => {
       const { parseEnabledToolGroups } = await import('../../shared/src/tools.js');
       const groups = parseEnabledToolGroups(' readonly , readwrite ');
@@ -528,8 +534,8 @@ describe('Tool Groups', () => {
 
     it('should handle case insensitivity', async () => {
       const { parseEnabledToolGroups } = await import('../../shared/src/tools.js');
-      const groups = parseEnabledToolGroups('READONLY,ReadWrite');
-      expect(groups).toEqual(['readonly', 'readwrite']);
+      const groups = parseEnabledToolGroups('READONLY,ReadWrite,READWRITE_EXTERNAL');
+      expect(groups).toEqual(['readonly', 'readwrite', 'readwrite_external']);
     });
 
     it('should filter invalid groups', async () => {
@@ -542,7 +548,7 @@ describe('Tool Groups', () => {
       const { parseEnabledToolGroups } = await import('../../shared/src/tools.js');
       const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
       const groups = parseEnabledToolGroups('invalid,unknown');
-      expect(groups).toEqual(['readonly', 'readwrite']);
+      expect(groups).toEqual(['readonly', 'readwrite', 'readwrite_external']);
       expect(consoleSpy).toHaveBeenCalled();
       consoleSpy.mockRestore();
     });
@@ -552,7 +558,7 @@ describe('Tool Groups', () => {
     it('should return all available tool groups', async () => {
       const { getAvailableToolGroups } = await import('../../shared/src/tools.js');
       const groups = getAvailableToolGroups();
-      expect(groups).toEqual(['readonly', 'readwrite']);
+      expect(groups).toEqual(['readonly', 'readwrite', 'readwrite_external']);
     });
   });
 });
