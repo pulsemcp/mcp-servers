@@ -7,7 +7,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 describe('Google Calendar MCP Server - Toolgroups Integration Tests', () => {
-  describe('calendar group (full access - default)', () => {
+  describe('readwrite group (full access)', () => {
     let client: TestMCPClient;
 
     beforeAll(async () => {
@@ -17,7 +17,7 @@ describe('Google Calendar MCP Server - Toolgroups Integration Tests', () => {
         serverPath: serverPath,
         env: {
           ...process.env,
-          TOOL_GROUPS: 'calendar',
+          ENABLED_TOOLGROUPS: 'readwrite',
         },
       });
       await client.connect();
@@ -53,7 +53,7 @@ describe('Google Calendar MCP Server - Toolgroups Integration Tests', () => {
     });
   });
 
-  describe('calendar_readonly group', () => {
+  describe('readonly group', () => {
     let client: TestMCPClient;
 
     beforeAll(async () => {
@@ -63,7 +63,7 @@ describe('Google Calendar MCP Server - Toolgroups Integration Tests', () => {
         serverPath: serverPath,
         env: {
           ...process.env,
-          TOOL_GROUPS: 'calendar_readonly',
+          ENABLED_TOOLGROUPS: 'readonly',
         },
       });
       await client.connect();
@@ -118,9 +118,9 @@ describe('Google Calendar MCP Server - Toolgroups Integration Tests', () => {
     beforeAll(async () => {
       const serverPath = path.join(__dirname, '../../local/build/index.integration-with-mock.js');
 
-      // Create a clean env without TOOL_GROUPS
+      // Create a clean env without ENABLED_TOOLGROUPS
       const cleanEnv = { ...process.env };
-      delete cleanEnv.TOOL_GROUPS;
+      delete cleanEnv.ENABLED_TOOLGROUPS;
 
       client = new TestMCPClient({
         serverPath: serverPath,

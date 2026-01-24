@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.0.3] - 2026-01-24
+
+### Changed
+
+- **BREAKING**: Renamed tool groups for consistency with other MCP servers:
+  - `calendar` → `readwrite`
+  - `calendar_readonly` → `readonly`
+- **BREAKING**: Renamed environment variable from `TOOL_GROUPS` to `ENABLED_TOOLGROUPS` for consistency
+
 ## [0.0.2] - 2025-01-23
 
 ### Added

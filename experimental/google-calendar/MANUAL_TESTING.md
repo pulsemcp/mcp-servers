@@ -19,7 +19,15 @@ This file tracks manual testing results for the Google Calendar MCP server again
 
 ### Notes on Tool Groups Feature
 
-The tool groups feature (added in 0.0.2) only affects tool registration filtering and does not change any API interactions. The previous manual test results remain valid for API functionality.
+The tool groups feature (added in 0.0.2, renamed in 0.0.3) only affects tool registration filtering and does not change any API interactions. The previous manual test results remain valid for API functionality.
+
+In version 0.0.3, tool groups were renamed for consistency with other MCP servers:
+
+- `calendar` → `readwrite`
+- `calendar_readonly` → `readonly`
+- Environment variable: `TOOL_GROUPS` → `ENABLED_TOOLGROUPS`
+
+This is a naming-only change that doesn't affect API interactions.
 
 ### Test Output
 
