@@ -68,8 +68,8 @@ The tests will:
 ## Latest Test Results
 
 **Test Date:** 2026-01-24
-**Branch:** claude/gmail-write-tools-v0.0.4
-**Commit:** f3d5154
+**Branch:** github-actions-bot/gmail-include-html
+**Commit:** b02e4cd
 **Tested By:** Claude Code
 **Environment:** Node.js, Service Account with Domain-Wide Delegation
 
@@ -78,26 +78,25 @@ The tests will:
 **Automated Tests (mocked):**
 
 ```
-Functional Tests: 47 passed (47)
-Integration Tests: 11 passed (11)
-Total: 58 tests passing
+Functional Tests: 52 passed (52)
+Total: 52 tests passing
 ```
 
 **Manual Tests (real API):**
 
 ```
- ✓ tests/manual/gmail-client.test.ts (12 tests) 3530ms
-   ✓ listMessages > should list messages from inbox  522ms
+ ✓ tests/manual/gmail-client.test.ts (12 tests) 3782ms
+   ✓ listMessages > should list messages from inbox  578ms
    ✓ listMessages > should filter by query
-   ✓ getMessage > should get a message with full format
+   ✓ getMessage > should get a message with full format  315ms
    ✓ getMessage > should get a message with metadata format
-   ✓ getMessage > should decode email body content
-   ✓ modifyMessage > should modify labels on a message  706ms
-   ✓ drafts > should create a draft
+   ✓ getMessage > should decode email body content  335ms
+   ✓ modifyMessage > should modify labels on a message  779ms
+   ✓ drafts > should create a draft  326ms
    ✓ drafts > should list drafts
    ✓ drafts > should get a draft by ID
-   ✓ drafts > should delete a draft  423ms
-   ✓ sendMessage > should send a test email (to same account)  302ms
+   ✓ drafts > should delete a draft  405ms
+   ✓ sendMessage > should send a test email (to same account)
    ✓ authentication > should use service account authentication
 
  Test Files  1 passed (1)
@@ -108,7 +107,7 @@ Total: 58 tests passing
 
 All tests verified against real Gmail API:
 
-- [x] listMessages - inbox listing with 5 messages found
+- [x] listMessages - inbox listing with 2 messages found
 - [x] listMessages - query filtering (10 messages from last 24 hours)
 - [x] getMessage - full format with headers and body
 - [x] getMessage - metadata format
@@ -126,13 +125,14 @@ All tests verified against real Gmail API:
 - All manual tests passed against real Gmail API
 - Service account impersonating: tadas@tadasant.com
 - Tests verify read operations (list, get), write operations (modify labels, drafts), and send operations
-- The `after` and `before` datetime parameters for `list_email_conversations` were added in this version
+- New `include_html` parameter added to `get_email_conversation` for returning raw HTML content
 - Tool groups feature allows permission-based access control (readonly vs readwrite vs readwrite_external)
 
 ## Historical Test Runs
 
 | Date       | Commit  | Status | Notes                                                      |
 | ---------- | ------- | ------ | ---------------------------------------------------------- |
+| 2026-01-24 | b02e4cd | PASS   | v0.0.5 - include_html parameter, 12 manual + 52 automated  |
 | 2026-01-24 | f3d5154 | PASS   | All 12 manual tests + 58 automated tests passing           |
 | 2026-01-23 | d728dca | PASS   | v0.0.4 - New tools (search, change, draft, send), 46 tests |
 | 2026-01-03 | 36568ff | PASS   | v0.0.3 - Publish fix, 7 manual tests passing               |
