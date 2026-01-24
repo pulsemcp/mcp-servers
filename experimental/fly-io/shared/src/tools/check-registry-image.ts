@@ -12,31 +12,38 @@ export const CheckRegistryImageSchema = z.object({
   tag: z.string().min(1).describe(PARAM_DESCRIPTIONS.tag),
 });
 
-const TOOL_DESCRIPTION = `Check if an image exists in Fly.io's registry.
+const TOOL_DESCRIPTION = `Check if an image exists in Fly.io's private registry (registry.fly.io).
 
-Verifies whether a specific image tag exists in the Fly.io registry for an app.
+Verifies whether a specific image tag exists in the Fly.io registry. Use this to confirm an image
+is available before creating or updating Fly machines to use it.
+
+**Fly Registry:**
+- Images are stored at registry.fly.io/<app_name>:<tag>
+- Only accessible by your Fly.io account
+- Automatically authenticated via your Fly API token
 
 **Parameters:**
-- app_name: Fly app name
+- app_name: Fly app name (the image repository)
 - tag: Image tag to check
 
 **Returns:**
-- Whether the image exists
-- Full image reference if it exists
+- Whether the image exists in the registry
+- Full image reference if it exists (for use with Fly machines)
 
 **Use cases:**
-- Verify an image was pushed successfully
-- Check if a specific version is available
-- Validate image references before deployment
+- Verify an image was pushed successfully before deploying
+- Check if a specific version is available in the registry
+- Validate image references before using with create_machine or update_machine
+- Confirm deployment readiness
 
-**Note:** Requires Docker CLI to be installed and running.`;
+**Note:** Requires Docker CLI to be installed and running locally.`;
 
 export function checkRegistryImageTool(
   _server: Server,
   dockerClientFactory: () => DockerCLIClient
 ) {
   return {
-    name: 'check_registry_image',
+    name: 'check_fly_registry_image',
     description: TOOL_DESCRIPTION,
     inputSchema: {
       type: 'object' as const,
@@ -86,7 +93,7 @@ export function checkRegistryImageTool(
                   `Checked: ${imageRef}`,
                   '',
                   'The image either does not exist or you do not have access to it.',
-                  'Use push_image to push a local image to the registry.',
+                  'Use push_new_fly_registry_image to push a local image to the registry.',
                 ].join('\n'),
               },
             ],

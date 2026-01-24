@@ -15,29 +15,36 @@ export const PushImageSchema = z.object({
   tag: z.string().min(1).describe(PARAM_DESCRIPTIONS.tag),
 });
 
-const TOOL_DESCRIPTION = `Push a local Docker image to Fly.io's registry.
+const TOOL_DESCRIPTION = `Push a local Docker image to Fly.io's private registry (registry.fly.io).
 
-Takes a local Docker image and pushes it to registry.fly.io for use with Fly machines.
+This tool uploads a Docker image from your local machine to Fly.io's registry, making it available
+to run on Fly machines. After pushing, you can use the image reference with create_machine or
+update_machine to deploy containers.
+
+**Fly Registry:**
+- Images are stored at registry.fly.io/<app_name>:<tag>
+- Only accessible by your Fly.io account
+- Automatically authenticated via your Fly API token
 
 **Parameters:**
-- source_image: Local image to push (must exist locally)
+- source_image: Local Docker image to push (must exist in local Docker)
 - app_name: Fly app name (determines the registry path)
 - tag: Tag for the pushed image
 
 **Returns:**
-- Registry path (registry.fly.io/<app_name>:<tag>)
-- Image digest (SHA256)
+- Full registry path for use with Fly machines
+- Image digest (SHA256) for verification
 
-**Use cases:**
-- Deploy a locally built image to Fly.io
-- Push a tagged version of an external image
-- Prepare an image for machine deployment
+**Workflow:**
+1. Build your Docker image locally
+2. Push to Fly registry with this tool
+3. Use the returned image reference with create_machine or update_machine
 
-**Note:** Requires Docker CLI to be installed and running.`;
+**Note:** Requires Docker CLI to be installed and running locally.`;
 
 export function pushImageTool(_server: Server, dockerClientFactory: () => DockerCLIClient) {
   return {
-    name: 'push_image',
+    name: 'push_new_fly_registry_image',
     description: TOOL_DESCRIPTION,
     inputSchema: {
       type: 'object' as const,

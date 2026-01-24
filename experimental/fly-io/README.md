@@ -21,31 +21,31 @@ MCP server for managing Fly.io machines and applications. This server provides t
 
 ### Tools
 
-| Tool                   | Permissions            | Feature  | Description                                 |
-| ---------------------- | ---------------------- | -------- | ------------------------------------------- |
-| `list_apps`            | readonly, write, admin | apps     | List all Fly.io applications                |
-| `get_app`              | readonly, write, admin | apps     | Get details for a specific app              |
-| `create_app`           | write, admin           | apps     | Create a new Fly.io application             |
-| `delete_app`           | admin                  | apps     | Delete an application                       |
-| `list_machines`        | readonly, write, admin | machines | List all machines in an app                 |
-| `get_machine`          | readonly, write, admin | machines | Get details for a specific machine          |
-| `get_machine_events`   | readonly, write, admin | machines | Get event log for a machine (for debugging) |
-| `create_machine`       | write, admin           | machines | Create a new machine with a Docker image    |
-| `update_machine`       | write, admin           | machines | Update a machine's configuration            |
-| `delete_machine`       | admin                  | machines | Delete a machine                            |
-| `start_machine`        | write, admin           | machines | Start a stopped machine                     |
-| `stop_machine`         | write, admin           | machines | Stop a running machine                      |
-| `restart_machine`      | write, admin           | machines | Restart a machine (stop then start)         |
-| `suspend_machine`      | write, admin           | machines | Suspend a machine (save state to disk)      |
-| `wait_machine`         | write, admin           | machines | Wait for a machine to reach a state         |
-| `get_logs`             | readonly, write, admin | logs     | Get application logs                        |
-| `machine_exec`         | write, admin           | ssh      | Execute a command on a machine              |
-| `show_image`           | readonly, write, admin | images   | Show current Docker image details           |
-| `list_releases`        | readonly, write, admin | images   | List releases with image references         |
-| `update_image`         | write, admin           | images   | Update app's image to latest or specific    |
-| `push_image`           | write, admin           | registry | Push local image to Fly.io registry         |
-| `pull_image`           | readonly, write, admin | registry | Pull image from Fly.io registry             |
-| `check_registry_image` | readonly, write, admin | registry | Check if image exists in registry           |
+| Tool                          | Permissions            | Feature  | Description                                 |
+| ----------------------------- | ---------------------- | -------- | ------------------------------------------- |
+| `list_apps`                   | readonly, write, admin | apps     | List all Fly.io applications                |
+| `get_app`                     | readonly, write, admin | apps     | Get details for a specific app              |
+| `create_app`                  | write, admin           | apps     | Create a new Fly.io application             |
+| `delete_app`                  | admin                  | apps     | Delete an application                       |
+| `list_machines`               | readonly, write, admin | machines | List all machines in an app                 |
+| `get_machine`                 | readonly, write, admin | machines | Get details for a specific machine          |
+| `get_machine_events`          | readonly, write, admin | machines | Get event log for a machine (for debugging) |
+| `create_machine`              | write, admin           | machines | Create a new machine with a Docker image    |
+| `update_machine`              | write, admin           | machines | Update a machine's configuration            |
+| `delete_machine`              | admin                  | machines | Delete a machine                            |
+| `start_machine`               | write, admin           | machines | Start a stopped machine                     |
+| `stop_machine`                | write, admin           | machines | Stop a running machine                      |
+| `restart_machine`             | write, admin           | machines | Restart a machine (stop then start)         |
+| `suspend_machine`             | write, admin           | machines | Suspend a machine (save state to disk)      |
+| `wait_machine`                | write, admin           | machines | Wait for a machine to reach a state         |
+| `get_logs`                    | readonly, write, admin | logs     | Get application logs                        |
+| `machine_exec`                | write, admin           | ssh      | Execute a command on a machine              |
+| `show_image`                  | readonly, write, admin | images   | Show current Docker image details           |
+| `list_releases`               | readonly, write, admin | images   | List releases with image references         |
+| `update_image`                | write, admin           | images   | Update app's image to latest or specific    |
+| `push_new_fly_registry_image` | write, admin           | registry | Push local image to Fly.io registry         |
+| `pull_fly_registry_image`     | readonly, write, admin | registry | Pull image from Fly.io registry             |
+| `check_fly_registry_image`    | readonly, write, admin | registry | Check if image exists in registry           |
 
 ### Security Considerations
 
@@ -69,14 +69,14 @@ Control which tools are available via the `ENABLED_TOOLGROUPS` environment varia
 
 #### Feature Groups (what features are enabled)
 
-| Group      | Description                                                                                |
-| ---------- | ------------------------------------------------------------------------------------------ |
-| `apps`     | App management tools (list_apps, get_app, create_app, delete_app)                          |
-| `machines` | Machine management tools (list, get, create, update, delete, start, stop)                  |
-| `logs`     | Log retrieval tools (get_logs)                                                             |
-| `ssh`      | Remote execution tools (machine_exec)                                                      |
-| `images`   | Image management tools (show_image, list_releases, update_image)                           |
-| `registry` | Docker registry tools (push_image, pull_image, check_registry_image) - requires Docker CLI |
+| Group      | Description                                                                                                                  |
+| ---------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| `apps`     | App management tools (list_apps, get_app, create_app, delete_app)                                                            |
+| `machines` | Machine management tools (list, get, create, update, delete, start, stop)                                                    |
+| `logs`     | Log retrieval tools (get_logs)                                                                                               |
+| `ssh`      | Remote execution tools (machine_exec)                                                                                        |
+| `images`   | Image management tools (show_image, list_releases, update_image)                                                             |
+| `registry` | Docker registry tools (push_new_fly_registry_image, pull_fly_registry_image, check_fly_registry_image) - requires Docker CLI |
 
 **Examples:**
 

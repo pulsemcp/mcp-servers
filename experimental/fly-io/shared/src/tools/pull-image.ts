@@ -12,28 +12,35 @@ export const PullImageSchema = z.object({
   tag: z.string().min(1).describe(PARAM_DESCRIPTIONS.tag),
 });
 
-const TOOL_DESCRIPTION = `Pull an image from Fly.io's registry to local Docker.
+const TOOL_DESCRIPTION = `Pull an image from Fly.io's private registry (registry.fly.io) to local Docker.
 
-Downloads an image from registry.fly.io to the local Docker daemon.
+Downloads an image that was previously pushed to the Fly.io registry to your local Docker daemon.
+This is useful for inspecting images currently running on Fly machines or debugging deployments.
+
+**Fly Registry:**
+- Images are stored at registry.fly.io/<app_name>:<tag>
+- Only accessible by your Fly.io account
+- Automatically authenticated via your Fly API token
 
 **Parameters:**
-- app_name: Fly app name
+- app_name: Fly app name (the image repository)
 - tag: Image tag to pull
 
 **Returns:**
 - Confirmation of successful pull
-- Full image reference
+- Full image reference for local use
 
 **Use cases:**
-- Inspect a deployed image locally
+- Inspect an image currently running on Fly machines
+- Debug issues by examining the deployed image locally
 - Use a Fly registry image as a base for new builds
-- Verify image contents
+- Verify image contents before or after deployment
 
-**Note:** Requires Docker CLI to be installed and running.`;
+**Note:** Requires Docker CLI to be installed and running locally.`;
 
 export function pullImageTool(_server: Server, dockerClientFactory: () => DockerCLIClient) {
   return {
-    name: 'pull_image',
+    name: 'pull_fly_registry_image',
     description: TOOL_DESCRIPTION,
     inputSchema: {
       type: 'object' as const,

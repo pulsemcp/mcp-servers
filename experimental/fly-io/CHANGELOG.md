@@ -14,10 +14,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `list_releases` - List releases with Docker image references
   - `update_image` - Update app's image to latest version or specific image
 - `images` feature group for image management tools
-- Docker registry tools (requires Docker CLI):
-  - `push_image` - Push a local Docker image to Fly.io registry
-  - `pull_image` - Pull an image from Fly.io registry to local Docker
-  - `check_registry_image` - Check if an image exists in Fly.io registry
+- Docker registry tools for interacting with Fly.io's private registry (requires Docker CLI):
+  - `push_new_fly_registry_image` - Push a local Docker image to Fly.io registry for use with machines
+  - `pull_fly_registry_image` - Pull an image from Fly.io registry to local Docker
+  - `check_fly_registry_image` - Check if an image exists in Fly.io registry
 - `registry` feature group for Docker registry tools
 - CLI availability health checks at startup for `fly` and `docker`
 - `DISABLE_DOCKER_CLI_TOOLS` environment variable to opt out of Docker-based tools

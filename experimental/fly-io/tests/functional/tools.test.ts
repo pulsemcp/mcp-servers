@@ -911,7 +911,7 @@ describe('Docker Registry Tools', () => {
     mockDockerClient = createMockDockerCLIClient();
   });
 
-  describe('push_image', () => {
+  describe('push_new_fly_registry_image', () => {
     it('should push an image successfully', async () => {
       const tool = pushImageTool(mockServer, () => mockDockerClient);
       const result = await tool.handler({
@@ -920,6 +920,7 @@ describe('Docker Registry Tools', () => {
         tag: 'v1',
       });
 
+      expect(tool.name).toBe('push_new_fly_registry_image');
       expect(result.content[0].text).toContain('Image pushed successfully');
       expect(result.content[0].text).toContain('registry.fly.io');
       expect(result.content[0].text).toContain('test-app');
@@ -938,7 +939,7 @@ describe('Docker Registry Tools', () => {
     });
   });
 
-  describe('pull_image', () => {
+  describe('pull_fly_registry_image', () => {
     it('should pull an image successfully', async () => {
       const tool = pullImageTool(mockServer, () => mockDockerClient);
       const result = await tool.handler({
@@ -946,6 +947,7 @@ describe('Docker Registry Tools', () => {
         tag: 'v1',
       });
 
+      expect(tool.name).toBe('pull_fly_registry_image');
       expect(result.content[0].text).toContain('Image pulled successfully');
       expect(result.content[0].text).toContain('registry.fly.io');
       expect(mockDockerClient.pullImage).toHaveBeenCalledWith('test-app', 'v1');
@@ -960,7 +962,7 @@ describe('Docker Registry Tools', () => {
     });
   });
 
-  describe('check_registry_image', () => {
+  describe('check_fly_registry_image', () => {
     it('should confirm image exists', async () => {
       const tool = checkRegistryImageTool(mockServer, () => mockDockerClient);
       const result = await tool.handler({
@@ -968,6 +970,7 @@ describe('Docker Registry Tools', () => {
         tag: 'v1',
       });
 
+      expect(tool.name).toBe('check_fly_registry_image');
       expect(result.content[0].text).toContain('Image exists');
       expect(result.content[0].text).toContain('registry.fly.io/test-app:v1');
       expect(mockDockerClient.imageExists).toHaveBeenCalledWith('test-app', 'v1');
@@ -1047,9 +1050,9 @@ describe('Docker Tool Group Configuration', () => {
       const result = await listToolsHandler();
 
       const toolNames = result.tools.map((t) => t.name);
-      expect(toolNames).toContain('push_image');
-      expect(toolNames).toContain('pull_image');
-      expect(toolNames).toContain('check_registry_image');
+      expect(toolNames).toContain('push_new_fly_registry_image');
+      expect(toolNames).toContain('pull_fly_registry_image');
+      expect(toolNames).toContain('check_fly_registry_image');
     });
 
     it('should not include registry tools when Docker client factory is not provided', async () => {
@@ -1057,9 +1060,9 @@ describe('Docker Tool Group Configuration', () => {
       const result = await listToolsHandler();
 
       const toolNames = result.tools.map((t) => t.name);
-      expect(toolNames).not.toContain('push_image');
-      expect(toolNames).not.toContain('pull_image');
-      expect(toolNames).not.toContain('check_registry_image');
+      expect(toolNames).not.toContain('push_new_fly_registry_image');
+      expect(toolNames).not.toContain('pull_fly_registry_image');
+      expect(toolNames).not.toContain('check_fly_registry_image');
     });
 
     it('should not include registry tools when Docker is disabled', async () => {
@@ -1070,9 +1073,9 @@ describe('Docker Tool Group Configuration', () => {
       const result = await listToolsHandler();
 
       const toolNames = result.tools.map((t) => t.name);
-      expect(toolNames).not.toContain('push_image');
-      expect(toolNames).not.toContain('pull_image');
-      expect(toolNames).not.toContain('check_registry_image');
+      expect(toolNames).not.toContain('push_new_fly_registry_image');
+      expect(toolNames).not.toContain('pull_fly_registry_image');
+      expect(toolNames).not.toContain('check_fly_registry_image');
     });
 
     it('should include fly CLI image tools regardless of Docker settings', async () => {
