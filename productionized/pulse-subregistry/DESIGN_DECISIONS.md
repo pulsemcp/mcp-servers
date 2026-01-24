@@ -203,26 +203,27 @@ This document tracks potentially controversial design decisions made during the 
 
 ---
 
-## 13. Field Exclusion: `exclude_fields` Parameter
+## 13. Auto-Truncation with Field Expansion: `expand_fields` Parameter
 
-**Decision**: Add an `exclude_fields` parameter to both tools that accepts an array of dot-notation paths to exclude from the response.
+**Decision**: Automatically truncate long strings (>200 chars) by default, with an `expand_fields` parameter to show full content for specific fields.
 
 **Rationale**:
 
 - API responses can be large and consume significant context in LLM conversations
-- Users often only need specific fields (e.g., name and description, not packages or remotes)
-- Flexible dot-notation with array support (`servers[].server.packages`) allows precise control
-- Reduces token usage without requiring multiple tool variations
+- Users don't know ahead of time which fields are large and need to be excluded
+- Auto-truncation provides a good default experience without requiring users to understand the API response structure
+- The `expand_fields` parameter allows users to see full content for specific fields when needed
 
 **Implementation**:
 
-- Accepts an array of strings using dot-notation paths
-- Supports `[]` notation to apply exclusions to all array elements (e.g., `"servers[].server.packages"`)
-- Deep clones response before filtering to avoid mutation
+- By default, all strings longer than 200 characters are truncated with a note: `"... [TRUNCATED - use expand_fields to see full content]"`
+- `expand_fields` accepts an array of dot-notation paths to show in full (not truncated)
+- Supports `[]` notation to apply to all array elements (e.g., `"servers[].server.description"`)
+- Deep clones response before processing to avoid mutation
 - Examples:
-  - `["servers[]._meta"]` - Remove `_meta` from all servers in list
-  - `["server.packages", "server.remotes"]` - Remove packages and remotes from get_server
-  - `["_meta"]` - Remove top-level `_meta`
+  - `["servers[].server.description"]` - Show full description for all servers in list
+  - `["server.readme"]` - Show full readme in get_server
+  - `["server.packages[].readme"]` - Show full readme for all packages
 
 ---
 

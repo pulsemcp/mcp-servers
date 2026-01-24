@@ -9,9 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- `exclude_fields` parameter to `list_servers` and `get_server` tools for reducing context size by selectively excluding fields
-  - Uses dot-notation paths (e.g., `"servers[].server.packages"`, `"_meta"`)
-  - Supports array notation `[]` to apply exclusions to all array elements
+- Auto-truncation of long strings (>200 characters) to reduce context size
+  - Truncated strings include a note: `"... [TRUNCATED - use expand_fields to see full content]"`
+- `expand_fields` parameter to `list_servers` and `get_server` tools for viewing full content of truncated fields
+  - Uses dot-notation paths (e.g., `"servers[].server.description"`, `"server.readme"`)
+  - Supports array notation `[]` to apply to all array elements
 
 ### Changed
 

@@ -144,15 +144,39 @@ describe('list_servers tool', () => {
     expect(mockClient.listServers).toHaveBeenCalledWith(expect.objectContaining({ limit: 30 }));
   });
 
-  it('should exclude fields using exclude_fields parameter', async () => {
+  it('should truncate long strings by default', async () => {
+    const longDescription = 'x'.repeat(500);
     (mockClient.listServers as ReturnType<typeof vi.fn>).mockResolvedValue({
       servers: [
         {
           server: {
             name: 'test-server',
-            description: 'Test',
-            packages: [{ name: 'pkg1' }],
-            remotes: [{ url: 'https://example.com' }],
+            description: longDescription,
+          },
+          _meta: { 'com.pulsemcp/server': { visitorsEstimateTotal: 100 } },
+        },
+      ],
+      metadata: { count: 1 },
+    });
+
+    const tool = listServersTool(mockServer, clientFactory);
+    const result = await tool.handler({});
+
+    const parsed = JSON.parse(result.content[0].text);
+    expect(parsed.servers[0].server.name).toBe('test-server');
+    expect(parsed.servers[0].server.description).toContain('... [TRUNCATED');
+    // Truncated to 200 chars + suffix, so shorter than original
+    expect(parsed.servers[0].server.description.length).toBeLessThan(longDescription.length);
+  });
+
+  it('should expand fields using expand_fields parameter', async () => {
+    const longDescription = 'y'.repeat(250);
+    (mockClient.listServers as ReturnType<typeof vi.fn>).mockResolvedValue({
+      servers: [
+        {
+          server: {
+            name: 'test-server',
+            description: longDescription,
           },
           _meta: { 'com.pulsemcp/server': { visitorsEstimateTotal: 100 } },
         },
@@ -162,35 +186,12 @@ describe('list_servers tool', () => {
 
     const tool = listServersTool(mockServer, clientFactory);
     const result = await tool.handler({
-      exclude_fields: ['servers[].server.packages', 'servers[].server.remotes'],
+      expand_fields: ['servers[].server.description'],
     });
 
     const parsed = JSON.parse(result.content[0].text);
     expect(parsed.servers[0].server.name).toBe('test-server');
-    expect(parsed.servers[0].server.packages).toBeUndefined();
-    expect(parsed.servers[0].server.remotes).toBeUndefined();
-    expect(parsed.servers[0]._meta).toBeDefined();
-  });
-
-  it('should exclude _meta from servers using exclude_fields', async () => {
-    (mockClient.listServers as ReturnType<typeof vi.fn>).mockResolvedValue({
-      servers: [
-        {
-          server: { name: 'test-server', description: 'Test' },
-          _meta: { 'com.pulsemcp/server': { visitorsEstimateTotal: 100 } },
-        },
-      ],
-      metadata: { count: 1 },
-    });
-
-    const tool = listServersTool(mockServer, clientFactory);
-    const result = await tool.handler({
-      exclude_fields: ['servers[]._meta'],
-    });
-
-    const parsed = JSON.parse(result.content[0].text);
-    expect(parsed.servers[0].server.name).toBe('test-server');
-    expect(parsed.servers[0]._meta).toBeUndefined();
+    expect(parsed.servers[0].server.description).toBe(longDescription);
   });
 });
 
@@ -303,13 +304,32 @@ describe('get_server tool', () => {
     expect(parsed._meta.someMetadata).toBe('value');
   });
 
-  it('should exclude fields using exclude_fields parameter', async () => {
+  it('should truncate long strings by default', async () => {
+    const longDescription = 'z'.repeat(500);
     (mockClient.getServer as ReturnType<typeof vi.fn>).mockResolvedValue({
       server: {
         name: 'test-server',
-        description: 'Test',
-        packages: [{ name: 'pkg1' }],
-        remotes: [{ url: 'https://example.com' }],
+        description: longDescription,
+      },
+      _meta: { someMetadata: 'value' },
+    });
+
+    const tool = getServerTool(mockServer, clientFactory);
+    const result = await tool.handler({ server_name: 'test-server' });
+
+    const parsed = JSON.parse(result.content[0].text);
+    expect(parsed.server.name).toBe('test-server');
+    expect(parsed.server.description).toContain('... [TRUNCATED');
+    // Truncated to 200 chars + suffix, so shorter than original
+    expect(parsed.server.description.length).toBeLessThan(longDescription.length);
+  });
+
+  it('should expand fields using expand_fields parameter', async () => {
+    const longDescription = 'w'.repeat(500);
+    (mockClient.getServer as ReturnType<typeof vi.fn>).mockResolvedValue({
+      server: {
+        name: 'test-server',
+        description: longDescription,
       },
       _meta: { someMetadata: 'value' },
     });
@@ -317,31 +337,11 @@ describe('get_server tool', () => {
     const tool = getServerTool(mockServer, clientFactory);
     const result = await tool.handler({
       server_name: 'test-server',
-      exclude_fields: ['server.packages', 'server.remotes'],
+      expand_fields: ['server.description'],
     });
 
     const parsed = JSON.parse(result.content[0].text);
     expect(parsed.server.name).toBe('test-server');
-    expect(parsed.server.description).toBe('Test');
-    expect(parsed.server.packages).toBeUndefined();
-    expect(parsed.server.remotes).toBeUndefined();
-    expect(parsed._meta.someMetadata).toBe('value');
-  });
-
-  it('should exclude _meta using exclude_fields', async () => {
-    (mockClient.getServer as ReturnType<typeof vi.fn>).mockResolvedValue({
-      server: { name: 'test-server', description: 'Test' },
-      _meta: { someMetadata: 'value' },
-    });
-
-    const tool = getServerTool(mockServer, clientFactory);
-    const result = await tool.handler({
-      server_name: 'test-server',
-      exclude_fields: ['_meta'],
-    });
-
-    const parsed = JSON.parse(result.content[0].text);
-    expect(parsed.server.name).toBe('test-server');
-    expect(parsed._meta).toBeUndefined();
+    expect(parsed.server.description).toBe(longDescription);
   });
 });
