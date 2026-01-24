@@ -6,7 +6,7 @@ This file tracks manual testing results for the pulse-subregistry MCP server.
 
 **Test Date:** 2026-01-24
 **Branch:** claude/pulse-directory-mcp-server
-**Commit:** 62aebf0
+**Commit:** c5a1280
 **Tested By:** Claude
 **Environment:** Real API with pulsemcp-admin tenant
 
