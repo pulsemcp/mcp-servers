@@ -19,9 +19,10 @@ You can have confidence that any Pulse-branded MCP server was built with these n
 
 These are PulseMCP-branded servers that we intend to maintain indefinitely as our own offerings.
 
-| Name                                         | Description                          | Local Status | Remote Status | Target Audience                                                                                        | Notes                                                                                                  |
-| -------------------------------------------- | ------------------------------------ | ------------ | ------------- | ------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------ |
-| [pulse-fetch](./productionized/pulse-fetch/) | Pull internet resources into context | 0.3.0        | Not Started   | Agent-building frameworks (e.g. fast-agent, Mastra, PydanticAI) and MCP clients without built-in fetch | Supports Firecrawl and BrightData integrations; HTML noise stripping; Resource caching; LLM extraction |
+| Name                                                     | Description                          | Local Status | Remote Status | Target Audience                                                                                        | Notes                                                                                                  |
+| -------------------------------------------------------- | ------------------------------------ | ------------ | ------------- | ------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------ |
+| [pulse-fetch](./productionized/pulse-fetch/)             | Pull internet resources into context | 0.3.0        | Not Started   | Agent-building frameworks (e.g. fast-agent, Mastra, PydanticAI) and MCP clients without built-in fetch | Supports Firecrawl and BrightData integrations; HTML noise stripping; Resource caching; LLM extraction |
+| [pulse-subregistry](./productionized/pulse-subregistry/) | Browse the PulseMCP Sub-Registry     | 0.0.1        | Not Started   | Developers discovering MCP servers from the PulseMCP Sub-Registry                                      | Search and pagination; Version selection; Integrates with PulseMCP Sub-Registry API                    |
 
 ### Experimental Servers
 

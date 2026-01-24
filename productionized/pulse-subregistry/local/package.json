@@ -1,0 +1,50 @@
+{
+  "name": "@pulsemcp/pulse-subregistry",
+  "version": "0.0.1",
+  "description": "MCP server for browsing the PulseMCP Sub-Registry",
+  "mcpName": "com.pulsemcp.servers/pulse-subregistry",
+  "main": "build/index.js",
+  "type": "module",
+  "bin": {
+    "@pulsemcp/pulse-subregistry": "./build/index.js"
+  },
+  "files": [
+    "build/**/*.js",
+    "build/**/*.d.ts",
+    "shared/**/*.js",
+    "shared/**/*.d.ts",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc && npm run build:integration",
+    "build:integration": "tsc -p tsconfig.integration.json",
+    "start": "node build/index.js",
+    "dev": "tsx src/index.ts",
+    "predev": "cd ../shared && npm run build && cd ../local && node setup-dev.js",
+    "prebuild": "cd ../shared && npm run build && cd ../local && node setup-dev.js",
+    "prepublishOnly": "node prepare-publish.js && node ../scripts/prepare-npm-readme.js",
+    "lint": "eslint . --ext .ts,.tsx",
+    "lint:fix": "eslint . --ext .ts,.tsx --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "stage-publish": "npm version"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.19.1",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "tsx": "^4.19.4",
+    "typescript": "^5.8.3"
+  },
+  "keywords": [
+    "mcp",
+    "pulsemcp",
+    "subregistry",
+    "servers",
+    "discovery"
+  ],
+  "author": "PulseMCP",
+  "license": "MIT"
+}
