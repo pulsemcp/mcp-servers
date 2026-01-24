@@ -44,10 +44,11 @@ export const CreateEventSchema = z.object({
   attachments: z
     .array(
       z.object({
-        file_url: z.string().describe('URL link to the attachment. Required.'),
+        file_url: z.string().url().describe('URL link to the attachment. Required.'),
         title: z.string().optional().describe('Title of the attachment.'),
       })
     )
+    .max(25, 'Maximum 25 attachments per event')
     .optional()
     .describe(
       'File attachments for the event. Maximum 25 attachments. Each attachment requires a file_url. ' +

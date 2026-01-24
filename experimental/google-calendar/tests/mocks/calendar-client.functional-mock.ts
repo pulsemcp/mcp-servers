@@ -87,6 +87,7 @@ export function createMockCalendarClient(): ICalendarClient {
         created: new Date().toISOString(),
         updated: new Date().toISOString(),
         attendees: event.attendees,
+        attachments: event.attachments,
       } as CalendarEvent;
     }),
 
@@ -107,6 +108,7 @@ export function createMockCalendarClient(): ICalendarClient {
         created: existingEvent.created || '2024-01-01T00:00:00Z',
         updated: new Date().toISOString(),
         attendees: event.attendees || existingEvent.attendees,
+        attachments: event.attachments || existingEvent.attachments,
       } as CalendarEvent;
     }),
 
