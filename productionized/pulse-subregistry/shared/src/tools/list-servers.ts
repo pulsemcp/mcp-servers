@@ -24,62 +24,16 @@ const listServersArgsSchema = z.object({
   updated_since: z.string().optional().describe(PARAM_DESCRIPTIONS.updated_since),
 });
 
-function formatServerList(
-  servers: Array<{
-    name: string;
-    title?: string;
-    description?: string;
-    websiteUrl?: string;
-    repository?: { url?: string; source?: string } | string;
-    version?: string;
-    [key: string]: unknown;
-  }>,
-  nextCursor?: string,
-  totalCount?: number
-): string {
-  const lines: string[] = [];
+interface ListServersResponse {
+  servers: Array<Record<string, unknown>>;
+  metadata: {
+    count?: number;
+    nextCursor?: string;
+  };
+}
 
-  lines.push(
-    `Found ${servers.length} servers${totalCount ? ` (${totalCount} total in page)` : ''}:`
-  );
-  lines.push('');
-
-  for (const server of servers) {
-    // Use title if available, otherwise fall back to name
-    const displayName = server.title || server.name;
-    lines.push(`## ${displayName}`);
-    lines.push(`**ID**: \`${server.name}\``);
-
-    if (server.description) {
-      lines.push(server.description);
-    }
-
-    if (server.version) {
-      lines.push(`- **Version**: ${server.version}`);
-    }
-
-    if (server.websiteUrl) {
-      lines.push(`- **Website**: ${server.websiteUrl}`);
-    }
-
-    // Handle repository as either object or string
-    if (server.repository) {
-      const repoUrl =
-        typeof server.repository === 'object' ? server.repository.url : server.repository;
-      if (repoUrl) {
-        lines.push(`- **Repository**: ${repoUrl}`);
-      }
-    }
-
-    lines.push('');
-  }
-
-  if (nextCursor) {
-    lines.push('---');
-    lines.push(`More results available. Use cursor: "${nextCursor}" to get the next page.`);
-  }
-
-  return lines.join('\n');
+function formatServerListAsJson(response: ListServersResponse): string {
+  return JSON.stringify(response, null, 2);
 }
 
 export function listServersTool(_server: Server, clientFactory: ClientFactory) {
@@ -123,17 +77,13 @@ export function listServersTool(_server: Server, clientFactory: ClientFactory) {
           updatedSince: validatedArgs.updated_since,
         });
 
-        const formattedOutput = formatServerList(
-          response.servers,
-          response.metadata.nextCursor,
-          response.metadata.count
-        );
+        const jsonOutput = formatServerListAsJson(response);
 
         return {
           content: [
             {
               type: 'text',
-              text: formattedOutput,
+              text: jsonOutput,
             },
           ],
         };

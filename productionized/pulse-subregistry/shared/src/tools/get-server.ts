@@ -18,77 +18,13 @@ const getServerArgsSchema = z.object({
   version: z.string().optional().default('latest').describe(PARAM_DESCRIPTIONS.version),
 });
 
-function formatServerDetails(server: {
-  name: string;
-  title?: string;
-  description?: string;
-  websiteUrl?: string;
-  repository?: { url?: string; source?: string } | string;
-  version?: string;
-  [key: string]: unknown;
-}): string {
-  const lines: string[] = [];
+interface GetServerResponse {
+  server: Record<string, unknown>;
+  _meta?: Record<string, unknown>;
+}
 
-  // Use title if available, otherwise fall back to name
-  const displayName = server.title || server.name;
-  lines.push(`# ${displayName}`);
-  lines.push(`**ID**: \`${server.name}\``);
-  lines.push('');
-
-  if (server.description) {
-    lines.push(server.description);
-    lines.push('');
-  }
-
-  lines.push('## Details');
-  lines.push('');
-
-  if (server.version) {
-    lines.push(`- **Version**: ${server.version}`);
-  }
-
-  if (server.websiteUrl) {
-    lines.push(`- **Website**: ${server.websiteUrl}`);
-  }
-
-  // Handle repository as either object or string
-  if (server.repository) {
-    const repoUrl =
-      typeof server.repository === 'object' ? server.repository.url : server.repository;
-    if (repoUrl) {
-      lines.push(`- **Repository**: ${repoUrl}`);
-    }
-  }
-
-  // Include any other fields from the server object
-  const knownFields = [
-    'name',
-    'title',
-    'description',
-    'websiteUrl',
-    'repository',
-    'version',
-    '$schema',
-    'packages',
-    'remotes',
-  ];
-  const additionalFields = Object.entries(server).filter(
-    ([key, value]) => !knownFields.includes(key) && value !== undefined && value !== null
-  );
-
-  if (additionalFields.length > 0) {
-    lines.push('');
-    lines.push('## Additional Information');
-    lines.push('');
-
-    for (const [key, value] of additionalFields) {
-      const formattedValue =
-        typeof value === 'object' ? JSON.stringify(value, null, 2) : String(value);
-      lines.push(`- **${key}**: ${formattedValue}`);
-    }
-  }
-
-  return lines.join('\n');
+function formatServerDetailsAsJson(response: GetServerResponse): string {
+  return JSON.stringify(response, null, 2);
 }
 
 export function getServerTool(_server: Server, clientFactory: ClientFactory) {
@@ -121,13 +57,13 @@ export function getServerTool(_server: Server, clientFactory: ClientFactory) {
           version: validatedArgs.version,
         });
 
-        const formattedOutput = formatServerDetails(response.server);
+        const jsonOutput = formatServerDetailsAsJson(response);
 
         return {
           content: [
             {
               type: 'text',
-              text: formattedOutput,
+              text: jsonOutput,
             },
           ],
         };

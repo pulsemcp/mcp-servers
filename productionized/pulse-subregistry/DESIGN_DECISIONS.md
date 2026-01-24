@@ -57,21 +57,20 @@ This document tracks potentially controversial design decisions made during the 
 
 ## 4. Output Format: Markdown vs JSON vs Plain Text
 
-**Decision**: Return formatted Markdown for both tools.
+**Decision**: Return raw JSON for both tools.
 
 **Rationale**:
 
-- Markdown renders nicely in MCP clients like Claude Desktop
-- Easier to read than raw JSON
-- Follows the pattern used by other PulseMCP servers (e.g., pulse-fetch)
+- This is a technical tool for debugging and investigating server configurations
+- Users often need to inspect the exact data shapes returned by the API
+- JSON preserves all fields and structure for detailed investigation
+- Makes it easier to compare API responses and troubleshoot issues
 
 **Alternatives considered**:
 
-- JSON - More structured but harder to read
+- Markdown - More readable but loses structural information
 - Plain text - Less formatting capabilities
 - Both (with format parameter) - Added complexity
-
-**Open for discussion**: Should we offer a `format` parameter?
 
 ---
 
@@ -208,8 +207,7 @@ This document tracks potentially controversial design decisions made during the 
 
 1. Should tool names be more explicit (e.g., `list_mcp_servers`)?
 2. Should we require explicit version in `get_server`?
-3. Should we offer a `format` parameter for output (JSON/Markdown)?
-4. Should we add a `list_versions` tool?
-5. Should we expose `_meta` information (visitor stats, publication info) in tool output?
+3. Should we add a `list_versions` tool?
+4. Should we expose `_meta` information (visitor stats, publication info) in tool output?
 
 Please review these decisions and let me know if any should be changed before merging.

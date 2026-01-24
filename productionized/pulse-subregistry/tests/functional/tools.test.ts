@@ -23,7 +23,7 @@ describe('list_servers tool', () => {
     clientFactory = () => mockClient;
   });
 
-  it('should return formatted list of servers', async () => {
+  it('should return JSON list of servers', async () => {
     (mockClient.listServers as ReturnType<typeof vi.fn>).mockResolvedValue({
       servers: [
         {
@@ -49,11 +49,15 @@ describe('list_servers tool', () => {
     const tool = listServersTool(mockServer, clientFactory);
     const result = await tool.handler({});
 
-    expect(result.content[0].text).toContain('Found 2 servers');
-    expect(result.content[0].text).toContain('Test Server 1');
-    expect(result.content[0].text).toContain('A test server');
-    expect(result.content[0].text).toContain('Test Server 2');
-    expect(result.content[0].text).toContain('Another test server');
+    // Verify it's valid JSON
+    const parsed = JSON.parse(result.content[0].text);
+    expect(parsed.servers).toHaveLength(2);
+    expect(parsed.servers[0].name).toBe('io.github.example/test-server-1');
+    expect(parsed.servers[0].title).toBe('Test Server 1');
+    expect(parsed.servers[0].description).toBe('A test server');
+    expect(parsed.servers[1].name).toBe('io.github.example/test-server-2');
+    expect(parsed.servers[1].title).toBe('Test Server 2');
+    expect(parsed.metadata.count).toBe(2);
   });
 
   it('should pass limit parameter to client', async () => {
@@ -96,7 +100,7 @@ describe('list_servers tool', () => {
     );
   });
 
-  it('should show nextCursor when available', async () => {
+  it('should include nextCursor in JSON when available', async () => {
     (mockClient.listServers as ReturnType<typeof vi.fn>).mockResolvedValue({
       servers: [{ name: 'test-server', description: 'Test' }],
       metadata: { count: 1, nextCursor: 'next-page-cursor' },
@@ -105,8 +109,8 @@ describe('list_servers tool', () => {
     const tool = listServersTool(mockServer, clientFactory);
     const result = await tool.handler({});
 
-    expect(result.content[0].text).toContain('next-page-cursor');
-    expect(result.content[0].text).toContain('More results available');
+    const parsed = JSON.parse(result.content[0].text);
+    expect(parsed.metadata.nextCursor).toBe('next-page-cursor');
   });
 
   it('should handle errors gracefully', async () => {
@@ -146,7 +150,7 @@ describe('get_server tool', () => {
     clientFactory = () => mockClient;
   });
 
-  it('should return formatted server details', async () => {
+  it('should return JSON server details', async () => {
     (mockClient.getServer as ReturnType<typeof vi.fn>).mockResolvedValue({
       server: {
         name: 'io.github.example/test-server',
@@ -162,11 +166,15 @@ describe('get_server tool', () => {
     const tool = getServerTool(mockServer, clientFactory);
     const result = await tool.handler({ server_name: 'io.github.example/test-server' });
 
-    expect(result.content[0].text).toContain('Test Server');
-    expect(result.content[0].text).toContain('A detailed test server');
-    expect(result.content[0].text).toContain('1.2.3');
-    expect(result.content[0].text).toContain('https://example.com/test');
-    expect(result.content[0].text).toContain('https://github.com/example/test');
+    // Verify it's valid JSON
+    const parsed = JSON.parse(result.content[0].text);
+    expect(parsed.server.name).toBe('io.github.example/test-server');
+    expect(parsed.server.title).toBe('Test Server');
+    expect(parsed.server.description).toBe('A detailed test server');
+    expect(parsed.server.version).toBe('1.2.3');
+    expect(parsed.server.websiteUrl).toBe('https://example.com/test');
+    expect(parsed.server.repository.url).toBe('https://github.com/example/test');
+    expect(parsed._meta).toEqual({});
   });
 
   it('should pass server name and version to client', async () => {
@@ -220,7 +228,7 @@ describe('get_server tool', () => {
     expect(result.content[0].text).toContain('Error');
   });
 
-  it('should include additional fields from server response', async () => {
+  it('should include all fields from server response in JSON', async () => {
     (mockClient.getServer as ReturnType<typeof vi.fn>).mockResolvedValue({
       server: {
         name: 'test-server',
@@ -228,15 +236,15 @@ describe('get_server tool', () => {
         customField: 'custom value',
         anotherField: 123,
       },
-      _meta: {},
+      _meta: { someMetadata: 'value' },
     });
 
     const tool = getServerTool(mockServer, clientFactory);
     const result = await tool.handler({ server_name: 'test-server' });
 
-    expect(result.content[0].text).toContain('customField');
-    expect(result.content[0].text).toContain('custom value');
-    expect(result.content[0].text).toContain('anotherField');
-    expect(result.content[0].text).toContain('123');
+    const parsed = JSON.parse(result.content[0].text);
+    expect(parsed.server.customField).toBe('custom value');
+    expect(parsed.server.anotherField).toBe(123);
+    expect(parsed._meta.someMetadata).toBe('value');
   });
 });
