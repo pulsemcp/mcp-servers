@@ -87,7 +87,7 @@ npm run test:all        # Both
 - Follow the standard pattern: return object with `{ name, description, inputSchema, handler }`
 - Use Zod for parameter validation
 - Return `{ content: [...], isError: true }` for errors, don't throw
-- Format output in markdown for better readability
+- Output raw JSON for debugging and inspection (auto-truncation handles large responses)
 
 ### Testing
 

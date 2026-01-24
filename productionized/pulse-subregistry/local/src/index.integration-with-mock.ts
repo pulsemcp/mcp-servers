@@ -30,7 +30,8 @@ class MockPulseSubregistryClient implements IPulseSubregistryClient {
       throw new Error(process.env.MOCK_ERROR_MESSAGE || 'Mock list servers failed');
     }
 
-    let servers = mockServers
+    // Parse raw server data and wrap in ServerEntry structure
+    const rawServers = mockServers
       ? JSON.parse(mockServers)
       : [
           {
@@ -47,13 +48,19 @@ class MockPulseSubregistryClient implements IPulseSubregistryClient {
           },
         ];
 
+    // Wrap servers in ServerEntry structure { server: {...}, _meta: {...} }
+    let servers = rawServers.map((s: Record<string, unknown>) => ({
+      server: s,
+      _meta: {},
+    }));
+
     // Apply search filter if provided
     if (options?.search) {
       const searchLower = options.search.toLowerCase();
       servers = servers.filter(
-        (s: { name: string; description?: string }) =>
-          s.name.toLowerCase().includes(searchLower) ||
-          (s.description && s.description.toLowerCase().includes(searchLower))
+        (entry: { server: { name: string; description?: string } }) =>
+          entry.server.name.toLowerCase().includes(searchLower) ||
+          (entry.server.description && entry.server.description.toLowerCase().includes(searchLower))
       );
     }
 

@@ -108,16 +108,12 @@ export function runIntegrationTests(mode: TestMode) {
 
         const result = await client.callTool('list_servers', {});
 
-        expect(result).toMatchObject({
-          content: [
-            {
-              type: 'text',
-              text: expect.stringContaining('server-a'),
-            },
-          ],
-        });
-        expect(result.content[0].text).toContain('server-b');
-        expect(result.content[0].text).toContain('Found 2 servers');
+        // Output is JSON format
+        const parsed = JSON.parse(result.content[0].text);
+        expect(parsed.servers).toHaveLength(2);
+        expect(parsed.servers[0].server.name).toBe('server-a');
+        expect(parsed.servers[1].server.name).toBe('server-b');
+        expect(parsed.metadata.count).toBe(2);
       });
 
       it('should execute list_servers with search parameter', async () => {
@@ -131,7 +127,13 @@ export function runIntegrationTests(mode: TestMode) {
 
         const result = await client.callTool('list_servers', { search: 'github' });
 
-        expect(result.content[0].text).toContain('github-server');
+        // Output is JSON format
+        const parsed = JSON.parse(result.content[0].text);
+        expect(
+          parsed.servers.some(
+            (s: { server: { name: string } }) => s.server.name === 'github-server'
+          )
+        ).toBe(true);
       });
 
       it('should handle list_servers pagination', async () => {
@@ -142,8 +144,9 @@ export function runIntegrationTests(mode: TestMode) {
 
         const result = await client.callTool('list_servers', { limit: 1 });
 
-        expect(result.content[0].text).toContain('cursor-to-next-page');
-        expect(result.content[0].text).toContain('More results available');
+        // Output is JSON format - check for nextCursor in metadata
+        const parsed = JSON.parse(result.content[0].text);
+        expect(parsed.metadata.nextCursor).toBe('cursor-to-next-page');
       });
 
       it('should execute get_server tool successfully', async () => {

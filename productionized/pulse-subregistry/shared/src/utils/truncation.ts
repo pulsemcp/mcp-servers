@@ -68,8 +68,8 @@ function getDepth(path: string): number {
 
 /**
  * Recursively truncates values in an object:
- * 1. Strings longer than 200 chars are truncated
- * 2. At depth >= 5, any value serializing to > 500 chars is truncated
+ * 1. Strings longer than 200 chars are replaced with truncation message
+ * 2. At depth >= 6, any value serializing to > 500 chars is replaced with truncation message
  *
  * @param obj - The object to process
  * @param expandFields - Array of dot-notation paths to exclude from truncation
