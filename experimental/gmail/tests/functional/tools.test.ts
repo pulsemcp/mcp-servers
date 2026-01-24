@@ -78,6 +78,24 @@ describe('Gmail MCP Server Tools', () => {
       expect(result.content[0].text).toContain('**Thread ID:** thread_001');
       expect(result.content[0].text).toContain('**Thread ID:** thread_002');
     });
+
+    it('should pass after_date as query parameter', async () => {
+      const tool = listEmailConversationsTool(mockServer, () => mockClient);
+      await tool.handler({ after_date: '2024-01-15' });
+
+      expect(mockClient.listMessages).toHaveBeenCalledWith(
+        expect.objectContaining({ q: 'after:2024/01/15' })
+      );
+    });
+
+    it('should not include query when after_date is not provided', async () => {
+      const tool = listEmailConversationsTool(mockServer, () => mockClient);
+      await tool.handler({});
+
+      expect(mockClient.listMessages).toHaveBeenCalledWith(
+        expect.objectContaining({ q: undefined })
+      );
+    });
   });
 
   describe('get_email_conversation', () => {

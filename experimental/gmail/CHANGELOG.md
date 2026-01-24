@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- `after_date` parameter to `list_email_conversations` for filtering emails by date (format: YYYY-MM-DD)
+
 ## [0.0.4] - 2026-01-23
 
 ### Added

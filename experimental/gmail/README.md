@@ -115,13 +115,15 @@ List email conversations from Gmail with optional filtering.
 - `count` (number, optional): Number of emails to return (default: 10, max: 100)
 - `labels` (string, optional): Comma-separated label IDs to filter by (default: "INBOX")
 - `sort_by` (string, optional): Sort order - "recent" (newest first) or "oldest" (default: recent)
+- `after_date` (string, optional): Only return emails after this date (format: YYYY-MM-DD)
 
 **Example:**
 
 ```json
 {
   "count": 20,
-  "labels": "INBOX,STARRED"
+  "labels": "INBOX,STARRED",
+  "after_date": "2024-01-15"
 }
 ```
 
