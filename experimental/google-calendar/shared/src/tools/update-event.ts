@@ -50,6 +50,19 @@ export const UpdateEventSchema = z.object({
     .describe(
       'Whether to send update notifications. "all" sends to all attendees, "externalOnly" to external attendees only, "none" sends no notifications.'
     ),
+  attachments: z
+    .array(
+      z.object({
+        file_url: z.string().describe('URL link to the attachment. Required.'),
+        title: z.string().optional().describe('Title of the attachment.'),
+      })
+    )
+    .optional()
+    .describe(
+      'File attachments for the event. Maximum 25 attachments. Each attachment requires a file_url. ' +
+        'For Google Drive files, use the Drive file URL format. ' +
+        'Setting this replaces all existing attachments.'
+    ),
 });
 
 export function updateEventTool(server: Server, clientFactory: ClientFactory) {
@@ -117,6 +130,18 @@ export function updateEventTool(server: Server, clientFactory: ClientFactory) {
           enum: ['all', 'externalOnly', 'none'],
           description: UpdateEventSchema.shape.send_updates.description,
         },
+        attachments: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              file_url: { type: 'string', description: 'URL link to the attachment. Required.' },
+              title: { type: 'string', description: 'Title of the attachment.' },
+            },
+            required: ['file_url'],
+          },
+          description: UpdateEventSchema.shape.attachments.description,
+        },
       },
       required: ['event_id'],
     },
@@ -133,6 +158,7 @@ export function updateEventTool(server: Server, clientFactory: ClientFactory) {
           start?: { dateTime?: string; date?: string; timeZone?: string };
           end?: { dateTime?: string; date?: string; timeZone?: string };
           attendees?: Array<{ email: string }>;
+          attachments?: Array<{ fileUrl: string; title?: string }>;
         } = {};
 
         if (parsed.summary !== undefined) {
@@ -176,11 +202,32 @@ export function updateEventTool(server: Server, clientFactory: ClientFactory) {
           eventUpdate.attendees = parsed.attendees.map((email) => ({ email }));
         }
 
+        // Set attachments if provided
+        if (parsed.attachments !== undefined) {
+          eventUpdate.attachments = parsed.attachments.map((attachment) => ({
+            fileUrl: attachment.file_url,
+            title: attachment.title,
+          }));
+        }
+
+        // Build options object
+        const hasAttachments = parsed.attachments !== undefined;
+        const options: {
+          sendUpdates?: 'all' | 'externalOnly' | 'none';
+          supportsAttachments?: boolean;
+        } = {};
+        if (parsed.send_updates) {
+          options.sendUpdates = parsed.send_updates;
+        }
+        if (hasAttachments) {
+          options.supportsAttachments = true;
+        }
+
         const result = await client.updateEvent(
           parsed.calendar_id,
           parsed.event_id,
           eventUpdate,
-          parsed.send_updates ? { sendUpdates: parsed.send_updates } : undefined
+          Object.keys(options).length > 0 ? options : undefined
         );
 
         let output = `# Event Updated Successfully\n\n`;
@@ -211,6 +258,14 @@ export function updateEventTool(server: Server, clientFactory: ClientFactory) {
           output += `**Attendees:** ${result.attendees.length}\n`;
           for (const attendee of result.attendees) {
             output += `  - ${attendee.email}\n`;
+          }
+        }
+
+        // Attachments
+        if (result.attachments && result.attachments.length > 0) {
+          output += `**Attachments:** ${result.attachments.length}\n`;
+          for (const attachment of result.attachments) {
+            output += `  - ${attachment.title || attachment.fileUrl}\n`;
           }
         }
 

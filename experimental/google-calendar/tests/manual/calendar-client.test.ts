@@ -101,4 +101,89 @@ describe('Google Calendar Client - Manual Tests', () => {
     expect(result.calendars.primary).toBeDefined();
     console.log(`Busy periods: ${result.calendars.primary.busy?.length || 0}`);
   });
+
+  it('should create an event with a file attachment', async () => {
+    const now = new Date();
+    const oneHourFromNow = new Date(now.getTime() + 60 * 60 * 1000);
+
+    // Use a public URL as an attachment
+    const testAttachmentUrl =
+      'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf';
+
+    const event = await client.createEvent(
+      'primary',
+      {
+        summary: `MCP Test Event with Attachment - ${now.toISOString()}`,
+        description: 'Test event created by MCP manual tests to verify attachment functionality',
+        start: { dateTime: now.toISOString() },
+        end: { dateTime: oneHourFromNow.toISOString() },
+        attachments: [
+          {
+            fileUrl: testAttachmentUrl,
+            title: 'Test PDF Attachment',
+          },
+        ],
+      },
+      { supportsAttachments: true }
+    );
+
+    expect(event).toBeDefined();
+    expect(event.id).toBeDefined();
+    expect(event.summary).toContain('MCP Test Event with Attachment');
+    console.log(`Created event with ID: ${event.id}`);
+    console.log(`Event has ${event.attachments?.length || 0} attachment(s)`);
+
+    if (event.attachments && event.attachments.length > 0) {
+      console.log('Attachment:', JSON.stringify(event.attachments[0], null, 2));
+    }
+
+    // Clean up - delete the test event
+    await client.deleteEvent('primary', event.id);
+    console.log('Test event deleted');
+  });
+
+  it('should update an event to add an attachment', async () => {
+    const now = new Date();
+    const oneHourFromNow = new Date(now.getTime() + 60 * 60 * 1000);
+
+    // First create an event without attachments
+    const event = await client.createEvent('primary', {
+      summary: `MCP Test Event for Update - ${now.toISOString()}`,
+      description: 'Test event to verify updating with attachments',
+      start: { dateTime: now.toISOString() },
+      end: { dateTime: oneHourFromNow.toISOString() },
+    });
+
+    expect(event).toBeDefined();
+    console.log(`Created event with ID: ${event.id}`);
+
+    // Now update it with an attachment
+    const testAttachmentUrl =
+      'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf';
+
+    const updatedEvent = await client.updateEvent(
+      'primary',
+      event.id,
+      {
+        attachments: [
+          {
+            fileUrl: testAttachmentUrl,
+            title: 'Added PDF Attachment',
+          },
+        ],
+      },
+      { supportsAttachments: true }
+    );
+
+    expect(updatedEvent).toBeDefined();
+    console.log(`Updated event has ${updatedEvent.attachments?.length || 0} attachment(s)`);
+
+    if (updatedEvent.attachments && updatedEvent.attachments.length > 0) {
+      console.log('Attachment:', JSON.stringify(updatedEvent.attachments[0], null, 2));
+    }
+
+    // Clean up - delete the test event
+    await client.deleteEvent('primary', event.id);
+    console.log('Test event deleted');
+  });
 });

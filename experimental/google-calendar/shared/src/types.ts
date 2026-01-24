@@ -52,6 +52,15 @@ export interface CalendarEvent {
   colorId?: string;
   iCalUID?: string;
   sequence?: number;
+  attachments?: EventAttachment[];
+}
+
+export interface EventAttachment {
+  fileId?: string;
+  fileUrl: string;
+  iconLink?: string;
+  mimeType?: string;
+  title?: string;
 }
 
 export interface CalendarEventList {

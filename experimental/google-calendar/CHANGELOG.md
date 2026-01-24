@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.0.5] - 2026-01-24
+
+### Added
+
+- File attachments support for `create_calendar_event` and `update_calendar_event` tools
+  - Allows attaching files to calendar events via URL (e.g., Google Drive links, or any public URL)
+  - Maximum 25 attachments per event
+  - Automatically sets `supportsAttachments=true` query parameter when attachments are provided
+
 ## [0.0.4] - 2026-01-24
 
 ### Added
