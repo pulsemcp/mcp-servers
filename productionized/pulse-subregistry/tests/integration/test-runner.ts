@@ -271,6 +271,25 @@ export function runIntegrationTests(mode: TestMode) {
 
         expect(result.content[0].text).toBe('Tenant ID cleared. Using default (no tenant).');
       });
+
+      it('should persist tenant ID across subsequent API calls', async () => {
+        client = await createTestMCPClientWithMocks(mode.serverPath, {
+          showAdminTools: true,
+        });
+
+        // Switch tenant ID
+        await client.callTool('switch_tenant_id', {
+          tenant_id: 'e2e-test-tenant',
+        });
+
+        // Verify tenant ID is used in subsequent get_server call
+        const result = await client.callTool('get_server', {
+          server_name: 'test-server',
+        });
+
+        const parsed = JSON.parse(result.content[0].text);
+        expect(parsed._meta.activeTenantId).toBe('e2e-test-tenant');
+      });
     });
   });
 }

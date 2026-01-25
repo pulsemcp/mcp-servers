@@ -12,7 +12,14 @@ const PARAM_DESCRIPTIONS = {
 } as const;
 
 const switchTenantIdArgsSchema = z.object({
-  tenant_id: z.string().describe(PARAM_DESCRIPTIONS.tenant_id),
+  tenant_id: z
+    .string()
+    .max(256)
+    .regex(
+      /^[a-zA-Z0-9_-]*$/,
+      'Tenant ID must contain only alphanumeric characters, hyphens, and underscores'
+    )
+    .describe(PARAM_DESCRIPTIONS.tenant_id),
 });
 
 export function switchTenantIdTool(_server: Server, clientFactory: ClientFactory) {

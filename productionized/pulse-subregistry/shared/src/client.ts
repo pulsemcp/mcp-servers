@@ -25,7 +25,6 @@ export interface IPulseSubregistryClient {
   listServers(options?: ListServersOptions): Promise<ListServersResponse>;
   getServer(options: GetServerOptions): Promise<GetServerResponse>;
   setTenantId(tenantId: string | undefined): void;
-  getTenantId(): string | undefined;
 }
 
 export class PulseSubregistryClient implements IPulseSubregistryClient {
@@ -43,10 +42,6 @@ export class PulseSubregistryClient implements IPulseSubregistryClient {
 
   setTenantId(tenantId: string | undefined): void {
     this.tenantId = tenantId;
-  }
-
-  getTenantId(): string | undefined {
-    return this.tenantId;
   }
 
   private async fetchWithTimeout(url: string, options: RequestInit): Promise<Response> {

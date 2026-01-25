@@ -7,14 +7,10 @@ import { switchTenantIdTool } from '../../shared/src/tools/switch-tenant-id.js';
 
 // Create mock client factory
 function createMockClient(): IPulseSubregistryClient {
-  let tenantId: string | undefined;
   return {
     listServers: vi.fn(),
     getServer: vi.fn(),
-    setTenantId: vi.fn((id: string | undefined) => {
-      tenantId = id;
-    }),
-    getTenantId: vi.fn(() => tenantId),
+    setTenantId: vi.fn(),
   };
 }
 
@@ -423,5 +419,21 @@ describe('switch_tenant_id tool', () => {
     expect(tool.name).toBe('switch_tenant_id');
     expect(tool.description).toContain('Switch the active tenant ID');
     expect(tool.inputSchema.required).toContain('tenant_id');
+  });
+
+  it('should reject tenant IDs with invalid characters', async () => {
+    const tool = switchTenantIdTool(mockServer, clientFactory);
+    const result = await tool.handler({ tenant_id: 'invalid tenant\r\nid' });
+
+    expect(result.isError).toBe(true);
+    expect(result.content[0].text).toContain('Error switching tenant ID');
+  });
+
+  it('should accept valid tenant IDs with alphanumeric chars, hyphens, and underscores', async () => {
+    const tool = switchTenantIdTool(mockServer, clientFactory);
+    const result = await tool.handler({ tenant_id: 'my-tenant_123' });
+
+    expect(result.content[0].text).toBe('Tenant ID switched to: my-tenant_123');
+    expect(mockClient.setTenantId).toHaveBeenCalledWith('my-tenant_123');
   });
 });

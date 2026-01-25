@@ -27,10 +27,6 @@ class MockPulseSubregistryClient implements IPulseSubregistryClient {
     this.tenantId = tenantId;
   }
 
-  getTenantId(): string | undefined {
-    return this.tenantId;
-  }
-
   async listServers(options?: ListServersOptions): Promise<ListServersResponse> {
     const mockServers = process.env.MOCK_SERVERS_DATA;
     const mockSuccess = process.env.MOCK_LIST_SUCCESS !== 'false';
@@ -108,7 +104,9 @@ class MockPulseSubregistryClient implements IPulseSubregistryClient {
 
     return {
       server,
-      _meta: {},
+      _meta: {
+        activeTenantId: this.tenantId || null,
+      },
     };
   }
 }
