@@ -62,6 +62,14 @@ You can also pass credentials via environment variables:
 GMAIL_OAUTH_CLIENT_ID=... GMAIL_OAUTH_CLIENT_SECRET=... npx tsx scripts/oauth-setup.ts
 ```
 
+**Port conflict?** If port 3000 is already in use, specify a different port:
+
+```bash
+PORT=3001 npx tsx scripts/oauth-setup.ts <client_id> <client_secret>
+```
+
+Desktop app credentials automatically allow `http://localhost` redirects on any port, so no additional Google Cloud Console configuration is needed.
+
 This will open your browser for Google sign-in and print the refresh token. You only need to do this once — the refresh token does not expire (as long as the OAuth consent screen is published).
 
 #### Environment Variables (OAuth2)
