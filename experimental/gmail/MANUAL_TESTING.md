@@ -69,7 +69,7 @@ The tests will:
 
 **Test Date:** 2026-01-25
 **Branch:** tadasant/gmail-oauth2-support
-**Commit:** 61a0f08
+**Commit:** 5da9cf3
 **Tested By:** Claude Code
 **Environment:** Node.js, Automated tests only (OAuth2 feature adds new auth mode; service account path unchanged)
 
@@ -78,11 +78,11 @@ The tests will:
 **Automated Tests (mocked):**
 
 ```
-Functional Tests: 61 passed (61)
-  - auth.test.ts: 9 tests (OAuth2 + service account client creation, preference, error cases)
+Functional Tests: 64 passed (64)
+  - auth.test.ts: 12 tests (OAuth2 + service account client creation, preference, error cases, partial credential warnings)
   - tools.test.ts: 52 tests (all existing tool tests)
 Integration Tests: 11 passed (11)
-Total: 72 tests passing
+Total: 75 tests passing
 ```
 
 **Manual Tests (real API):**
@@ -100,9 +100,12 @@ Automated test coverage for OAuth2 changes:
 
 - [x] OAuth2GmailClient construction with required parameters
 - [x] OAuth2GmailClient implements all IGmailClient interface methods
+- [x] OAuth2GmailClient fails with descriptive error on bad credentials
 - [x] createDefaultClient() returns OAuth2GmailClient when OAuth2 env vars set
 - [x] createDefaultClient() returns ServiceAccountGmailClient when service account env vars set
 - [x] createDefaultClient() prefers OAuth2 when both credential sets present
+- [x] createDefaultClient() warns on partial OAuth2 credentials and falls back to service account
+- [x] createDefaultClient() does not warn when no OAuth2 credentials set
 - [x] Error handling for missing credentials (no credentials, partial OAuth2, partial service account)
 - [x] All 52 existing tool tests pass (auth-agnostic via IGmailClient interface)
 - [x] All 11 integration tests pass (MCP protocol end-to-end with mock server)
@@ -120,7 +123,7 @@ Automated test coverage for OAuth2 changes:
 
 | Date       | Commit  | Status | Notes                                                      |
 | ---------- | ------- | ------ | ---------------------------------------------------------- |
-| 2026-01-25 | 61a0f08 | PASS   | v0.1.0 - OAuth2 support, 61 functional + 11 integration    |
+| 2026-01-25 | 5da9cf3 | PASS   | v0.1.0 - OAuth2 support, 64 functional + 11 integration    |
 | 2026-01-24 | b02e4cd | PASS   | v0.0.5 - include_html parameter, 12 manual + 52 automated  |
 | 2026-01-24 | f3d5154 | PASS   | All 12 manual tests + 58 automated tests passing           |
 | 2026-01-23 | d728dca | PASS   | v0.0.4 - New tools (search, change, draft, send), 46 tests |
