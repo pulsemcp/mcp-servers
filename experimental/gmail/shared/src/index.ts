@@ -6,6 +6,7 @@ export {
   createDefaultClient,
   ServiceAccountGmailClient,
   OAuth2GmailClient,
+  GMAIL_SCOPES,
   type IGmailClient,
   type ClientFactory,
   type ServiceAccountCredentials,

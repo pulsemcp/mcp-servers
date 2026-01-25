@@ -60,6 +60,36 @@ function validateEnvironment(): void {
     process.exit(1);
   }
 
+  // Check for partial service account configuration
+  const serviceAccountVars = {
+    GMAIL_SERVICE_ACCOUNT_CLIENT_EMAIL: process.env.GMAIL_SERVICE_ACCOUNT_CLIENT_EMAIL,
+    GMAIL_SERVICE_ACCOUNT_PRIVATE_KEY: process.env.GMAIL_SERVICE_ACCOUNT_PRIVATE_KEY,
+    GMAIL_IMPERSONATE_EMAIL: process.env.GMAIL_IMPERSONATE_EMAIL,
+  };
+  const hasPartialServiceAccount = Object.values(serviceAccountVars).some(Boolean);
+
+  if (hasPartialServiceAccount) {
+    const missingServiceAccount = Object.entries(serviceAccountVars)
+      .filter(([, v]) => !v)
+      .map(([k]) => k);
+
+    logError('validateEnvironment', 'Incomplete service account configuration. Missing:');
+    for (const varName of missingServiceAccount) {
+      console.error(`  - ${varName}`);
+    }
+    console.error('\nService account mode requires all three variables:');
+    console.error('  GMAIL_SERVICE_ACCOUNT_CLIENT_EMAIL: Service account email address');
+    console.error('  GMAIL_SERVICE_ACCOUNT_PRIVATE_KEY: Service account private key (PEM format)');
+    console.error('  GMAIL_IMPERSONATE_EMAIL: Email address to impersonate');
+    console.error('\nSetup steps:');
+    console.error('  1. Go to https://console.cloud.google.com/');
+    console.error('  2. Create a service account with domain-wide delegation');
+    console.error('  3. In Google Workspace Admin, grant required Gmail API scopes');
+    console.error('  4. Download the JSON key file and extract client_email and private_key');
+    console.error('\n======================================================\n');
+    process.exit(1);
+  }
+
   // No credentials found at all
   logError('validateEnvironment', 'Missing required environment variables:');
 

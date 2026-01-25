@@ -48,13 +48,21 @@ Use this for personal `@gmail.com` accounts or any Google account without Worksp
 
 #### Getting a Refresh Token
 
-Run the one-time setup script:
+Run the one-time setup script from a clone of the repository:
 
 ```bash
+git clone https://github.com/pulsemcp/mcp-servers.git
+cd mcp-servers/experimental/gmail
 npx tsx scripts/oauth-setup.ts <client_id> <client_secret>
 ```
 
-This will open your browser for Google sign-in and print the refresh token.
+You can also pass credentials via environment variables:
+
+```bash
+GMAIL_OAUTH_CLIENT_ID=... GMAIL_OAUTH_CLIENT_SECRET=... npx tsx scripts/oauth-setup.ts
+```
+
+This will open your browser for Google sign-in and print the refresh token. You only need to do this once — the refresh token does not expire (as long as the OAuth consent screen is published).
 
 #### Environment Variables (OAuth2)
 

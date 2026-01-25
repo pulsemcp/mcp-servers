@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import {
   createDefaultClient,
   OAuth2GmailClient,
@@ -111,6 +111,51 @@ describe('Authentication Modes', () => {
       expect(typeof client.deleteDraft).toBe('function');
       expect(typeof client.sendMessage).toBe('function');
       expect(typeof client.sendDraft).toBe('function');
+    });
+
+    it('should fail with descriptive error when token refresh fails', async () => {
+      const client = new OAuth2GmailClient('bad-id', 'bad-secret', 'bad-token');
+
+      // listMessages triggers token refresh internally
+      await expect(client.listMessages()).rejects.toThrow();
+    });
+  });
+
+  describe('createDefaultClient partial credential warnings', () => {
+    it('should warn when partial OAuth2 credentials are set and fall back to service account', () => {
+      process.env.GMAIL_OAUTH_CLIENT_ID = 'test-client-id';
+      // Missing client secret and refresh token
+      process.env.GMAIL_SERVICE_ACCOUNT_CLIENT_EMAIL = 'test@project.iam.gserviceaccount.com';
+      process.env.GMAIL_SERVICE_ACCOUNT_PRIVATE_KEY =
+        '-----BEGIN PRIVATE KEY-----\ntest\n-----END PRIVATE KEY-----';
+      process.env.GMAIL_IMPERSONATE_EMAIL = 'user@domain.com';
+
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+      const client = createDefaultClient();
+      expect(client).toBeInstanceOf(ServiceAccountGmailClient);
+      expect(warnSpy).toHaveBeenCalledWith(
+        expect.stringContaining('Partial OAuth2 configuration detected')
+      );
+      expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('GMAIL_OAUTH_CLIENT_SECRET'));
+      expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('GMAIL_OAUTH_REFRESH_TOKEN'));
+
+      warnSpy.mockRestore();
+    });
+
+    it('should not warn when no OAuth2 credentials are set', () => {
+      process.env.GMAIL_SERVICE_ACCOUNT_CLIENT_EMAIL = 'test@project.iam.gserviceaccount.com';
+      process.env.GMAIL_SERVICE_ACCOUNT_PRIVATE_KEY =
+        '-----BEGIN PRIVATE KEY-----\ntest\n-----END PRIVATE KEY-----';
+      process.env.GMAIL_IMPERSONATE_EMAIL = 'user@domain.com';
+
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+      const client = createDefaultClient();
+      expect(client).toBeInstanceOf(ServiceAccountGmailClient);
+      expect(warnSpy).not.toHaveBeenCalled();
+
+      warnSpy.mockRestore();
     });
   });
 });

@@ -5,6 +5,9 @@
  * Usage:
  *   npx tsx scripts/oauth-setup.ts <client_id> <client_secret>
  *
+ * You can also pass credentials via environment variables:
+ *   GMAIL_OAUTH_CLIENT_ID=... GMAIL_OAUTH_CLIENT_SECRET=... npx tsx scripts/oauth-setup.ts
+ *
  * Prerequisites:
  *   1. Create a project in Google Cloud Console (https://console.cloud.google.com/)
  *   2. Enable the Gmail API
@@ -18,7 +21,7 @@
  *
  * This script will:
  *   1. Start a local HTTP server on http://localhost:3000/callback
- *   2. Open your browser to Google's OAuth consent screen
+ *   2. Print a URL for you to open in your browser
  *   3. Receive the authorization code callback
  *   4. Exchange the code for tokens
  *   5. Print the refresh token for you to use in your configuration
@@ -28,6 +31,7 @@ import http from 'node:http';
 import { OAuth2Client } from 'google-auth-library';
 
 const REDIRECT_URI = 'http://localhost:3000/callback';
+const CALLBACK_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes
 const SCOPES = [
   'https://www.googleapis.com/auth/gmail.readonly',
   'https://www.googleapis.com/auth/gmail.modify',
@@ -36,10 +40,17 @@ const SCOPES = [
 ];
 
 async function main() {
-  const [clientId, clientSecret] = process.argv.slice(2);
+  // Support both CLI args and environment variables
+  const clientId = process.argv[2] || process.env.GMAIL_OAUTH_CLIENT_ID;
+  const clientSecret = process.argv[3] || process.env.GMAIL_OAUTH_CLIENT_SECRET;
 
   if (!clientId || !clientSecret) {
     console.error('Usage: npx tsx scripts/oauth-setup.ts <client_id> <client_secret>');
+    console.error('');
+    console.error('Or set environment variables:');
+    console.error(
+      '  GMAIL_OAUTH_CLIENT_ID=... GMAIL_OAUTH_CLIENT_SECRET=... npx tsx scripts/oauth-setup.ts'
+    );
     console.error('');
     console.error('Get your OAuth2 credentials from:');
     console.error('  https://console.cloud.google.com/apis/credentials');
@@ -59,7 +70,7 @@ async function main() {
   console.log(`   ${authorizeUrl}\n`);
   console.log('2. Sign in and authorize the application');
   console.log('3. You will be redirected to localhost:3000/callback\n');
-  console.log('Waiting for callback...\n');
+  console.log('Waiting for callback (5 minute timeout)...\n');
 
   const code = await waitForCallback();
 
@@ -86,6 +97,8 @@ async function main() {
   console.log(`  GMAIL_OAUTH_CLIENT_SECRET=${clientSecret}`);
   console.log(`  GMAIL_OAUTH_REFRESH_TOKEN=${tokens.refresh_token}`);
   console.log('');
+  console.log('SECURITY NOTE: Keep your refresh token secure. Anyone with this token and your');
+  console.log('client credentials can access your Gmail account.\n');
   console.log('Example Claude Desktop config:\n');
   console.log(
     JSON.stringify(
@@ -146,15 +159,23 @@ function waitForCallback(): Promise<string> {
       res.end(
         '<html><body><h1>Authorization Successful!</h1><p>You can close this window and return to the terminal.</p></body></html>'
       );
+      clearTimeout(timeout);
       server.close();
       resolve(code);
     });
+
+    const timeout = setTimeout(() => {
+      console.error('\nTimeout: No callback received within 5 minutes. Exiting.');
+      server.close();
+      reject(new Error('OAuth callback timeout - no response within 5 minutes'));
+    }, CALLBACK_TIMEOUT_MS);
 
     server.listen(3000, () => {
       // Server is listening
     });
 
     server.on('error', (err) => {
+      clearTimeout(timeout);
       if ((err as NodeJS.ErrnoException).code === 'EADDRINUSE') {
         reject(new Error('Port 3000 is already in use. Please free it and try again.'));
       } else {
