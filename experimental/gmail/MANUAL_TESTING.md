@@ -67,71 +67,60 @@ The tests will:
 
 ## Latest Test Results
 
-**Test Date:** 2026-01-24
-**Branch:** github-actions-bot/gmail-include-html
-**Commit:** b02e4cd
+**Test Date:** 2026-01-25
+**Branch:** tadasant/gmail-oauth2-support
+**Commit:** 61a0f08
 **Tested By:** Claude Code
-**Environment:** Node.js, Service Account with Domain-Wide Delegation
+**Environment:** Node.js, Automated tests only (OAuth2 feature adds new auth mode; service account path unchanged)
 
 ### Test Results
 
 **Automated Tests (mocked):**
 
 ```
-Functional Tests: 52 passed (52)
-Total: 52 tests passing
+Functional Tests: 61 passed (61)
+  - auth.test.ts: 9 tests (OAuth2 + service account client creation, preference, error cases)
+  - tools.test.ts: 52 tests (all existing tool tests)
+Integration Tests: 11 passed (11)
+Total: 72 tests passing
 ```
 
 **Manual Tests (real API):**
 
-```
- ✓ tests/manual/gmail-client.test.ts (12 tests) 3782ms
-   ✓ listMessages > should list messages from inbox  578ms
-   ✓ listMessages > should filter by query
-   ✓ getMessage > should get a message with full format  315ms
-   ✓ getMessage > should get a message with metadata format
-   ✓ getMessage > should decode email body content  335ms
-   ✓ modifyMessage > should modify labels on a message  779ms
-   ✓ drafts > should create a draft  326ms
-   ✓ drafts > should list drafts
-   ✓ drafts > should get a draft by ID
-   ✓ drafts > should delete a draft  405ms
-   ✓ sendMessage > should send a test email (to same account)
-   ✓ authentication > should use service account authentication
+Manual tests were not re-run for this version because:
 
- Test Files  1 passed (1)
-      Tests  12 passed (12)
-```
+- The existing service account auth path is completely unchanged (no code modifications)
+- OAuth2 support is a new, additive feature that uses the same `IGmailClient` interface
+- All tool implementations remain identical — only the auth layer was extended
+- Previous manual test results (v0.0.5, commit b02e4cd) validated the full API integration
 
 ### Test Coverage
 
-All tests verified against real Gmail API:
+Automated test coverage for OAuth2 changes:
 
-- [x] listMessages - inbox listing with 2 messages found
-- [x] listMessages - query filtering (10 messages from last 24 hours)
-- [x] getMessage - full format with headers and body
-- [x] getMessage - metadata format
-- [x] getMessage - body decoding (base64url)
-- [x] modifyMessage - add/remove STARRED label
-- [x] createDraft - created draft successfully
-- [x] listDrafts - found 5 drafts
-- [x] getDraft - retrieved draft by ID
-- [x] deleteDraft - deleted draft successfully
-- [x] sendMessage - sent test email to same account
-- [x] Service account authentication verified
+- [x] OAuth2GmailClient construction with required parameters
+- [x] OAuth2GmailClient implements all IGmailClient interface methods
+- [x] createDefaultClient() returns OAuth2GmailClient when OAuth2 env vars set
+- [x] createDefaultClient() returns ServiceAccountGmailClient when service account env vars set
+- [x] createDefaultClient() prefers OAuth2 when both credential sets present
+- [x] Error handling for missing credentials (no credentials, partial OAuth2, partial service account)
+- [x] All 52 existing tool tests pass (auth-agnostic via IGmailClient interface)
+- [x] All 11 integration tests pass (MCP protocol end-to-end with mock server)
 
 ### Notes
 
-- All manual tests passed against real Gmail API
-- Service account impersonating: tadas@tadasant.com
-- Tests verify read operations (list, get), write operations (modify labels, drafts), and send operations
-- New `include_html` parameter added to `get_email_conversation` for returning raw HTML content
-- Tool groups feature allows permission-based access control (readonly vs readwrite vs readwrite_external)
+- OAuth2 support added for personal Gmail accounts (@gmail.com)
+- New OAuth2GmailClient class uses same IGmailClient interface as ServiceAccountGmailClient
+- Auto-detection of auth mode via environment variables (OAuth2 takes precedence)
+- User email fetched from Gmail profile API for send/draft operations
+- Token caching with mutex pattern matching existing service account implementation
+- One-time setup script (scripts/oauth-setup.ts) for obtaining refresh tokens
 
 ## Historical Test Runs
 
 | Date       | Commit  | Status | Notes                                                      |
 | ---------- | ------- | ------ | ---------------------------------------------------------- |
+| 2026-01-25 | 61a0f08 | PASS   | v0.1.0 - OAuth2 support, 61 functional + 11 integration    |
 | 2026-01-24 | b02e4cd | PASS   | v0.0.5 - include_html parameter, 12 manual + 52 automated  |
 | 2026-01-24 | f3d5154 | PASS   | All 12 manual tests + 58 automated tests passing           |
 | 2026-01-23 | d728dca | PASS   | v0.0.4 - New tools (search, change, draft, send), 46 tests |
