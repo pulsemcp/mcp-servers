@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Response times now include timezone information when available (e.g., `4/1/2026, 2:04:00 PM (America/Los_Angeles)`)
+  - Applies to `create_calendar_event`, `update_calendar_event`, `list_calendar_events`, `get_calendar_event`, and `query_calendar_freebusy` tools
+  - Helps clarify which timezone event times are displayed in
+
 ## [0.0.5] - 2026-01-24
 
 ### Added

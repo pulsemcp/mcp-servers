@@ -67,7 +67,11 @@ export function queryFreebusyTool(server: Server, clientFactory: ClientFactory) 
         const result = await client.queryFreebusy(request);
 
         let output = `# Free/Busy Information\n\n`;
-        output += `**Time Range:** ${new Date(result.timeMin).toLocaleString()} to ${new Date(result.timeMax).toLocaleString()}\n\n`;
+        output += `**Time Range:** ${new Date(result.timeMin).toLocaleString()} to ${new Date(result.timeMax).toLocaleString()}\n`;
+        if (parsed.timezone) {
+          output += `**Times shown in:** ${parsed.timezone}\n`;
+        }
+        output += '\n';
 
         for (const calendarId of parsed.calendar_ids) {
           const calendarInfo = result.calendars[calendarId];

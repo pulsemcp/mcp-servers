@@ -80,8 +80,11 @@ export function createMockCalendarClient(): ICalendarClient {
         summary: event.summary || 'New Event',
         description: event.description,
         location: event.location,
-        start: event.start || { dateTime: '2024-01-20T10:00:00-05:00' },
-        end: event.end || { dateTime: '2024-01-20T11:00:00-05:00' },
+        start: event.start || {
+          dateTime: '2024-01-20T10:00:00-05:00',
+          timeZone: 'America/New_York',
+        },
+        end: event.end || { dateTime: '2024-01-20T11:00:00-05:00', timeZone: 'America/New_York' },
         status: 'confirmed',
         htmlLink: 'https://calendar.google.com/event?eid=new-event-id',
         created: new Date().toISOString(),

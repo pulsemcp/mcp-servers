@@ -123,14 +123,22 @@ export function listEventsTool(server: Server, clientFactory: ClientFactory) {
 
           // Start time
           if (event.start?.dateTime) {
-            output += `**Start:** ${new Date(event.start.dateTime).toLocaleString()}\n`;
+            output += `**Start:** ${new Date(event.start.dateTime).toLocaleString()}`;
+            if (event.start.timeZone) {
+              output += ` (${event.start.timeZone})`;
+            }
+            output += '\n';
           } else if (event.start?.date) {
             output += `**Start:** ${event.start.date} (All day)\n`;
           }
 
           // End time
           if (event.end?.dateTime) {
-            output += `**End:** ${new Date(event.end.dateTime).toLocaleString()}\n`;
+            output += `**End:** ${new Date(event.end.dateTime).toLocaleString()}`;
+            if (event.end.timeZone) {
+              output += ` (${event.end.timeZone})`;
+            }
+            output += '\n';
           } else if (event.end?.date) {
             output += `**End:** ${event.end.date} (All day)\n`;
           }

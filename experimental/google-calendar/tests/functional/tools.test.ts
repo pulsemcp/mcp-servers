@@ -41,6 +41,46 @@ describe('Google Calendar MCP Server Tools', () => {
       expect(result.content[0].text).not.toContain('Project Meeting');
     });
 
+    it('should include timezone in event times', async () => {
+      const tool = listEventsTool(mockServer, () => mockClient);
+      const result = await tool.handler({});
+
+      expect(result.content[0].text).toContain('(America/New_York)');
+    });
+
+    it('should handle events without timezone gracefully', async () => {
+      const clientWithoutTz = createMockCalendarClient();
+      vi.mocked(clientWithoutTz.listEvents).mockResolvedValue({
+        kind: 'calendar#events',
+        etag: 'mock-etag',
+        summary: 'Primary Calendar',
+        updated: new Date().toISOString(),
+        timeZone: 'America/New_York',
+        accessRole: 'owner',
+        items: [
+          {
+            id: 'event-no-tz',
+            summary: 'Event Without Timezone',
+            start: {
+              dateTime: '2024-01-15T10:00:00-05:00',
+              // No timeZone property
+            },
+            end: {
+              dateTime: '2024-01-15T10:30:00-05:00',
+              // No timeZone property
+            },
+          },
+        ],
+      });
+
+      const tool = listEventsTool(mockServer, () => clientWithoutTz);
+      const result = await tool.handler({});
+
+      expect(result.content[0].text).toContain('Event Without Timezone');
+      expect(result.content[0].text).not.toContain('undefined');
+      expect(result.content[0].text).not.toContain('null');
+    });
+
     it('should return message when no events found', async () => {
       const emptyClient = createMockCalendarClient();
       vi.mocked(emptyClient.listEvents).mockResolvedValue({
@@ -87,6 +127,13 @@ describe('Google Calendar MCP Server Tools', () => {
 
       expect(result.isError).toBe(true);
       expect(result.content[0].text).toContain('Error getting event');
+    });
+
+    it('should include timezone in event times', async () => {
+      const tool = getEventTool(mockServer, () => mockClient);
+      const result = await tool.handler({ event_id: 'event1' });
+
+      expect(result.content[0].text).toContain('(America/New_York)');
     });
   });
 
@@ -169,6 +216,20 @@ describe('Google Calendar MCP Server Tools', () => {
       expect(result.isError).toBe(true);
       expect(result.content[0].text).toContain('Error creating event');
     });
+
+    it('should include timezone in response when provided', async () => {
+      const tool = createEventTool(mockServer, () => mockClient);
+      const result = await tool.handler({
+        summary: 'New Meeting',
+        start_datetime: '2024-01-20T10:00:00-05:00',
+        end_datetime: '2024-01-20T11:00:00-05:00',
+        start_timezone: 'America/New_York',
+        end_timezone: 'America/New_York',
+      });
+
+      expect(result.content[0].text).toContain('Event Created Successfully');
+      expect(result.content[0].text).toContain('(America/New_York)');
+    });
   });
 
   describe('update_calendar_event', () => {
@@ -221,6 +282,17 @@ describe('Google Calendar MCP Server Tools', () => {
       expect(result.isError).toBe(true);
       expect(result.content[0].text).toContain('Error updating event');
     });
+
+    it('should include timezone in response', async () => {
+      const tool = updateEventTool(mockServer, () => mockClient);
+      const result = await tool.handler({
+        event_id: 'event1',
+        summary: 'Updated Meeting',
+      });
+
+      expect(result.content[0].text).toContain('Event Updated Successfully');
+      expect(result.content[0].text).toContain('(America/New_York)');
+    });
   });
 
   describe('delete_calendar_event', () => {
@@ -269,6 +341,19 @@ describe('Google Calendar MCP Server Tools', () => {
       expect(result.content[0].text).toContain('Free/Busy Information');
       expect(result.content[0].text).toContain('Busy Periods');
       expect(mockClient.queryFreebusy).toHaveBeenCalled();
+    });
+
+    it('should include timezone in response when provided', async () => {
+      const tool = queryFreebusyTool(mockServer, () => mockClient);
+      const result = await tool.handler({
+        time_min: '2024-01-15T00:00:00Z',
+        time_max: '2024-01-15T23:59:59Z',
+        calendar_ids: ['primary'],
+        timezone: 'America/Los_Angeles',
+      });
+
+      expect(result.content[0].text).toContain('Free/Busy Information');
+      expect(result.content[0].text).toContain('**Times shown in:** America/Los_Angeles');
     });
   });
 });
