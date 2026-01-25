@@ -69,9 +69,9 @@ The tests will:
 
 **Test Date:** 2026-01-25
 **Branch:** tadasant/gmail-oauth2-support
-**Commit:** 5da9cf3
+**Commit:** 21600dd
 **Tested By:** Claude Code
-**Environment:** Node.js, Automated tests only (OAuth2 feature adds new auth mode; service account path unchanged)
+**Environment:** Node.js with OAuth2 credentials (personal Gmail account)
 
 ### Test Results
 
@@ -85,14 +85,22 @@ Integration Tests: 11 passed (11)
 Total: 75 tests passing
 ```
 
-**Manual Tests (real API):**
+**Manual Tests (real API with OAuth2):**
 
-Manual tests were not re-run for this version because:
+```
+Tests: 12 passed (12)
+Duration: 2.75s
+Authentication: OAuth2 (personal Gmail)
+```
 
-- The existing service account auth path is completely unchanged (no code modifications)
-- OAuth2 support is a new, additive feature that uses the same `IGmailClient` interface
-- All tool implementations remain identical — only the auth layer was extended
-- Previous manual test results (v0.0.5, commit b02e4cd) validated the full API integration
+Test results:
+
+- listMessages: Listed 5 messages from inbox, filtered 10 messages from last 24 hours
+- getMessage: Retrieved full message format, decoded email body content
+- modifyMessage: Added/removed STARRED label successfully
+- drafts: Created, listed, retrieved, and deleted draft successfully
+- sendMessage: Sent test email (ID: 19bf395d1cc1728f)
+- authentication: Verified OAuth2 authentication was used
 
 ### Test Coverage
 
@@ -121,11 +129,11 @@ Automated test coverage for OAuth2 changes:
 
 ## Historical Test Runs
 
-| Date       | Commit  | Status | Notes                                                      |
-| ---------- | ------- | ------ | ---------------------------------------------------------- |
-| 2026-01-25 | 5da9cf3 | PASS   | v0.1.0 - OAuth2 support, 64 functional + 11 integration    |
-| 2026-01-24 | b02e4cd | PASS   | v0.0.5 - include_html parameter, 12 manual + 52 automated  |
-| 2026-01-24 | f3d5154 | PASS   | All 12 manual tests + 58 automated tests passing           |
-| 2026-01-23 | d728dca | PASS   | v0.0.4 - New tools (search, change, draft, send), 46 tests |
-| 2026-01-03 | 36568ff | PASS   | v0.0.3 - Publish fix, 7 manual tests passing               |
-| 2026-01-03 | e668d3d | PASS   | v0.0.1 - Initial release, 7 manual tests passing           |
+| Date       | Commit  | Status | Notes                                                               |
+| ---------- | ------- | ------ | ------------------------------------------------------------------- |
+| 2026-01-25 | 21600dd | PASS   | v0.1.0 - OAuth2 support, 12 manual + 64 functional + 11 integration |
+| 2026-01-24 | b02e4cd | PASS   | v0.0.5 - include_html parameter, 12 manual + 52 automated           |
+| 2026-01-24 | f3d5154 | PASS   | All 12 manual tests + 58 automated tests passing                    |
+| 2026-01-23 | d728dca | PASS   | v0.0.4 - New tools (search, change, draft, send), 46 tests          |
+| 2026-01-03 | 36568ff | PASS   | v0.0.3 - Publish fix, 7 manual tests passing                        |
+| 2026-01-03 | e668d3d | PASS   | v0.0.1 - Initial release, 7 manual tests passing                    |
