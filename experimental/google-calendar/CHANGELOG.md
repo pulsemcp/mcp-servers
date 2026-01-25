@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.0.6] - 2026-01-25
+
 ### Changed
 
 - Response times now include timezone information when available (e.g., `4/1/2026, 2:04:00 PM (America/Los_Angeles)`)
