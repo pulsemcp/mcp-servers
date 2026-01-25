@@ -17,44 +17,78 @@ const VERSION = packageJson.version;
 // =============================================================================
 
 function validateEnvironment(): void {
-  const missing: string[] = [];
+  // Check for OAuth2 credentials
+  const hasOAuth2 =
+    process.env.GMAIL_OAUTH_CLIENT_ID &&
+    process.env.GMAIL_OAUTH_CLIENT_SECRET &&
+    process.env.GMAIL_OAUTH_REFRESH_TOKEN;
 
-  if (!process.env.GMAIL_SERVICE_ACCOUNT_CLIENT_EMAIL) {
-    missing.push('GMAIL_SERVICE_ACCOUNT_CLIENT_EMAIL');
-  }
-  if (!process.env.GMAIL_SERVICE_ACCOUNT_PRIVATE_KEY) {
-    missing.push('GMAIL_SERVICE_ACCOUNT_PRIVATE_KEY');
-  }
-  if (!process.env.GMAIL_IMPERSONATE_EMAIL) {
-    missing.push('GMAIL_IMPERSONATE_EMAIL');
+  // Check for service account credentials
+  const hasServiceAccount =
+    process.env.GMAIL_SERVICE_ACCOUNT_CLIENT_EMAIL &&
+    process.env.GMAIL_SERVICE_ACCOUNT_PRIVATE_KEY &&
+    process.env.GMAIL_IMPERSONATE_EMAIL;
+
+  if (hasOAuth2 || hasServiceAccount) {
+    return;
   }
 
-  if (missing.length > 0) {
-    logError('validateEnvironment', 'Missing required environment variables:');
+  // Check for partial OAuth2 configuration
+  const oauthVars = {
+    GMAIL_OAUTH_CLIENT_ID: process.env.GMAIL_OAUTH_CLIENT_ID,
+    GMAIL_OAUTH_CLIENT_SECRET: process.env.GMAIL_OAUTH_CLIENT_SECRET,
+    GMAIL_OAUTH_REFRESH_TOKEN: process.env.GMAIL_OAUTH_REFRESH_TOKEN,
+  };
+  const hasPartialOAuth2 = Object.values(oauthVars).some(Boolean);
 
-    console.error('\nThis MCP server requires a Google Cloud service account with');
-    console.error('domain-wide delegation to access Gmail on behalf of users.');
-    console.error('\nRequired environment variables:');
-    console.error('  GMAIL_SERVICE_ACCOUNT_CLIENT_EMAIL: Service account email address');
-    console.error('    Example: my-service-account@my-project.iam.gserviceaccount.com');
-    console.error('  GMAIL_SERVICE_ACCOUNT_PRIVATE_KEY: Service account private key (PEM format)');
-    console.error('    Example: -----BEGIN PRIVATE KEY-----\\nMIIE...\\n-----END PRIVATE KEY-----');
-    console.error('  GMAIL_IMPERSONATE_EMAIL: Email address to impersonate');
-    console.error('    Example: user@yourdomain.com');
-    console.error('\nSetup steps:');
-    console.error('  1. Go to https://console.cloud.google.com/');
-    console.error('  2. Create a service account with domain-wide delegation');
-    console.error('  3. In Google Workspace Admin, grant required Gmail API scopes');
-    console.error('  4. Download the JSON key file and extract client_email and private_key');
-    console.error('\nOptional environment variables:');
-    console.error('  GMAIL_ENABLED_TOOLGROUPS: Comma-separated list of tool groups to enable');
-    console.error('    Valid groups: readonly, readwrite, readwrite_external');
-    console.error('    Default: all groups enabled');
-    console.error('    Example: GMAIL_ENABLED_TOOLGROUPS=readwrite');
+  if (hasPartialOAuth2) {
+    const missingOAuth = Object.entries(oauthVars)
+      .filter(([, v]) => !v)
+      .map(([k]) => k);
+
+    logError('validateEnvironment', 'Incomplete OAuth2 configuration. Missing:');
+    for (const varName of missingOAuth) {
+      console.error(`  - ${varName}`);
+    }
+    console.error('\nOAuth2 mode requires all three variables:');
+    console.error('  GMAIL_OAUTH_CLIENT_ID: OAuth2 client ID from Google Cloud Console');
+    console.error('  GMAIL_OAUTH_CLIENT_SECRET: OAuth2 client secret');
+    console.error('  GMAIL_OAUTH_REFRESH_TOKEN: Refresh token from one-time consent flow');
+    console.error('\nRun the setup script to obtain a refresh token:');
+    console.error('  npx tsx scripts/oauth-setup.ts <client_id> <client_secret>');
     console.error('\n======================================================\n');
-
     process.exit(1);
   }
+
+  // No credentials found at all
+  logError('validateEnvironment', 'Missing required environment variables:');
+
+  console.error('\nThis MCP server supports two authentication modes:\n');
+  console.error('--- Option 1: OAuth2 (for personal Gmail accounts) ---');
+  console.error('  GMAIL_OAUTH_CLIENT_ID: OAuth2 client ID from Google Cloud Console');
+  console.error('  GMAIL_OAUTH_CLIENT_SECRET: OAuth2 client secret');
+  console.error('  GMAIL_OAUTH_REFRESH_TOKEN: Refresh token from one-time consent flow');
+  console.error('\n  Setup: Run `npx tsx scripts/oauth-setup.ts <client_id> <client_secret>`');
+  console.error('\n--- Option 2: Service Account (for Google Workspace) ---');
+  console.error('  GMAIL_SERVICE_ACCOUNT_CLIENT_EMAIL: Service account email address');
+  console.error('    Example: my-service-account@my-project.iam.gserviceaccount.com');
+  console.error('  GMAIL_SERVICE_ACCOUNT_PRIVATE_KEY: Service account private key (PEM format)');
+  console.error('    Example: -----BEGIN PRIVATE KEY-----\\nMIIE...\\n-----END PRIVATE KEY-----');
+  console.error('  GMAIL_IMPERSONATE_EMAIL: Email address to impersonate');
+  console.error('    Example: user@yourdomain.com');
+  console.error('\n  Setup steps:');
+  console.error('  1. Go to https://console.cloud.google.com/');
+  console.error('  2. Create a service account with domain-wide delegation');
+  console.error('  3. In Google Workspace Admin, grant required Gmail API scopes');
+  console.error('  4. Download the JSON key file and extract client_email and private_key');
+  console.error('\nOptional environment variables:');
+  console.error('  GMAIL_ENABLED_TOOLGROUPS: Comma-separated list of tool groups to enable');
+  console.error('    Valid groups: readonly, readwrite, readwrite_external');
+  console.error('    Default: all groups enabled');
+  console.error('    Example: GMAIL_ENABLED_TOOLGROUPS=readwrite');
+  console.error('\n======================================================\n');
+
+  process.exit(1);
 }
 
 // =============================================================================

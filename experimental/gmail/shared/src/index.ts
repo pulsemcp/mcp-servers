@@ -5,6 +5,7 @@ export {
   createMCPServer,
   createDefaultClient,
   ServiceAccountGmailClient,
+  OAuth2GmailClient,
   type IGmailClient,
   type ClientFactory,
   type ServiceAccountCredentials,

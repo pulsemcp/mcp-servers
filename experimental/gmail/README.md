@@ -1,6 +1,6 @@
 # Gmail Workspace MCP Server
 
-An MCP (Model Context Protocol) server that provides Gmail integration for AI assistants using Google Workspace service accounts with domain-wide delegation.
+An MCP (Model Context Protocol) server that provides Gmail integration for AI assistants. Supports both **personal Gmail accounts** (via OAuth2) and **Google Workspace accounts** (via service account with domain-wide delegation).
 
 ## Features
 
@@ -10,7 +10,7 @@ An MCP (Model Context Protocol) server that provides Gmail integration for AI as
 - **Manage Emails**: Mark as read/unread, star/unstar, archive, apply labels
 - **Create Drafts**: Compose draft emails with reply support
 - **Send Emails**: Send new emails or replies, directly or from drafts
-- **Service Account Authentication**: Secure domain-wide delegation for Google Workspace organizations
+- **Two Auth Methods**: OAuth2 for personal accounts, Service Account for Google Workspace
 
 ## Installation
 
@@ -24,11 +24,70 @@ Or run directly with npx:
 npx gmail-workspace-mcp-server
 ```
 
-## Prerequisites
+## Authentication
 
-This server requires a Google Cloud service account with domain-wide delegation to access Gmail on behalf of users in your Google Workspace domain.
+This server supports two authentication modes. Choose the one that matches your account type.
 
-### Setup Steps
+### Option 1: OAuth2 (Personal Gmail Accounts)
+
+Use this for personal `@gmail.com` accounts or any Google account without Workspace admin access.
+
+#### Prerequisites
+
+1. Go to [Google Cloud Console](https://console.cloud.google.com/)
+2. Create or select a project
+3. Enable the Gmail API
+4. Configure the OAuth consent screen:
+   - Choose **External** user type
+   - Add yourself as a test user
+   - **Publish the app** (click "Publish" on the consent screen) to prevent refresh tokens from expiring every 7 days. No full Google verification is needed for personal use.
+5. Create OAuth 2.0 credentials:
+   - Choose **Desktop app** as the application type
+   - **Important**: Create new credentials _after_ publishing the app
+6. Copy the Client ID and Client Secret
+
+#### Getting a Refresh Token
+
+Run the one-time setup script:
+
+```bash
+npx tsx scripts/oauth-setup.ts <client_id> <client_secret>
+```
+
+This will open your browser for Google sign-in and print the refresh token.
+
+#### Environment Variables (OAuth2)
+
+| Variable                    | Required | Description                                        |
+| --------------------------- | -------- | -------------------------------------------------- |
+| `GMAIL_OAUTH_CLIENT_ID`     | Yes      | OAuth2 client ID from Google Cloud Console         |
+| `GMAIL_OAUTH_CLIENT_SECRET` | Yes      | OAuth2 client secret                               |
+| `GMAIL_OAUTH_REFRESH_TOKEN` | Yes      | Refresh token from the setup script                |
+| `GMAIL_ENABLED_TOOLGROUPS`  | No       | Comma-separated list of tool groups (default: all) |
+
+#### Claude Desktop Configuration (OAuth2)
+
+```json
+{
+  "mcpServers": {
+    "gmail": {
+      "command": "npx",
+      "args": ["gmail-workspace-mcp-server"],
+      "env": {
+        "GMAIL_OAUTH_CLIENT_ID": "your-client-id.apps.googleusercontent.com",
+        "GMAIL_OAUTH_CLIENT_SECRET": "your-client-secret",
+        "GMAIL_OAUTH_REFRESH_TOKEN": "your-refresh-token"
+      }
+    }
+  }
+}
+```
+
+### Option 2: Service Account (Google Workspace)
+
+Use this for Google Workspace organizations where a domain admin can grant domain-wide delegation.
+
+#### Prerequisites
 
 1. Go to [Google Cloud Console](https://console.cloud.google.com/)
 2. Create or select a project
@@ -41,7 +100,7 @@ This server requires a Google Cloud service account with domain-wide delegation 
    - `https://www.googleapis.com/auth/gmail.send` (send emails)
 6. Download the JSON key file
 
-### Environment Variables
+#### Environment Variables (Service Account)
 
 | Variable                             | Required | Description                                                         |
 | ------------------------------------ | -------- | ------------------------------------------------------------------- |
@@ -52,7 +111,30 @@ This server requires a Google Cloud service account with domain-wide delegation 
 
 You can find the `client_email` and `private_key` values in your service account JSON key file.
 
-### Tool Groups
+#### Claude Desktop Configuration (Service Account)
+
+```json
+{
+  "mcpServers": {
+    "gmail": {
+      "command": "npx",
+      "args": ["gmail-workspace-mcp-server"],
+      "env": {
+        "GMAIL_SERVICE_ACCOUNT_CLIENT_EMAIL": "my-service-account@my-project.iam.gserviceaccount.com",
+        "GMAIL_SERVICE_ACCOUNT_PRIVATE_KEY": "-----BEGIN PRIVATE KEY-----\nMIIE...\n-----END PRIVATE KEY-----",
+        "GMAIL_IMPERSONATE_EMAIL": "user@yourdomain.com"
+      }
+    }
+  }
+}
+```
+
+**Note:** For the private key, you can either:
+
+1. Use the key directly with `\n` for newlines (as shown above)
+2. Set the environment variable from a shell that preserves newlines
+
+## Tool Groups
 
 The server supports three tool groups for permission-based access control:
 
@@ -76,33 +158,6 @@ GMAIL_ENABLED_TOOLGROUPS=readwrite_external
 ```
 
 **Security Note:** The `send_email` tool is in a separate `readwrite_external` group because it can send emails externally, which carries higher risk than internal operations like modifying labels or creating drafts.
-
-## Configuration
-
-### Claude Desktop
-
-Add to your Claude Desktop configuration (`~/Library/Application Support/Claude/claude_desktop_config.json`):
-
-```json
-{
-  "mcpServers": {
-    "gmail": {
-      "command": "npx",
-      "args": ["gmail-workspace-mcp-server"],
-      "env": {
-        "GMAIL_SERVICE_ACCOUNT_CLIENT_EMAIL": "my-service-account@my-project.iam.gserviceaccount.com",
-        "GMAIL_SERVICE_ACCOUNT_PRIVATE_KEY": "-----BEGIN PRIVATE KEY-----\nMIIE...\n-----END PRIVATE KEY-----",
-        "GMAIL_IMPERSONATE_EMAIL": "user@yourdomain.com"
-      }
-    }
-  }
-}
-```
-
-**Note:** For the private key, you can either:
-
-1. Use the key directly with `\n` for newlines (as shown above)
-2. Set the environment variable from a shell that preserves newlines
 
 ## Available Tools
 
@@ -262,7 +317,7 @@ npm test
 # Run integration tests
 npm run test:integration
 
-# Run manual tests (requires service account credentials)
+# Run manual tests (requires credentials)
 npm run test:manual
 ```
 

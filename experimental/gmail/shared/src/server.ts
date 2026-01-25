@@ -1,5 +1,5 @@
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
-import { JWT } from 'google-auth-library';
+import { JWT, OAuth2Client } from 'google-auth-library';
 import { createRegisterTools } from './tools.js';
 import type { Email, EmailListItem } from './types.js';
 
@@ -280,6 +280,183 @@ export class ServiceAccountGmailClient implements IGmailClient {
   }
 }
 
+/**
+ * Gmail API client implementation using OAuth2 user authentication.
+ * Enables access to personal Gmail accounts (e.g., @gmail.com) that cannot
+ * use domain-wide delegation.
+ */
+export class OAuth2GmailClient implements IGmailClient {
+  private baseUrl = 'https://gmail.googleapis.com/gmail/v1/users/me';
+  private oauth2Client: OAuth2Client;
+  private cachedToken: string | null = null;
+  private tokenExpiry: number = 0;
+  private refreshPromise: Promise<void> | null = null;
+  private userEmail: string | null = null;
+
+  constructor(clientId: string, clientSecret: string, refreshToken: string) {
+    this.oauth2Client = new OAuth2Client(clientId, clientSecret);
+    this.oauth2Client.setCredentials({ refresh_token: refreshToken });
+  }
+
+  private async refreshToken(): Promise<void> {
+    const { token, res } = await this.oauth2Client.getAccessToken();
+    if (!token) {
+      throw new Error('Failed to obtain access token from OAuth2 refresh token');
+    }
+
+    this.cachedToken = token;
+    // Use expiry from response if available, otherwise default to 1 hour
+    const expiryDate = res?.data?.expiry_date;
+    this.tokenExpiry = typeof expiryDate === 'number' ? expiryDate : Date.now() + 3600000;
+  }
+
+  private async getHeaders(): Promise<Record<string, string>> {
+    // Check if we have a valid cached token (with 60 second buffer)
+    if (this.cachedToken && Date.now() < this.tokenExpiry - 60000) {
+      return {
+        Authorization: `Bearer ${this.cachedToken}`,
+        'Content-Type': 'application/json',
+      };
+    }
+
+    // Use mutex pattern to prevent concurrent token refresh
+    if (!this.refreshPromise) {
+      this.refreshPromise = this.refreshToken().finally(() => {
+        this.refreshPromise = null;
+      });
+    }
+    await this.refreshPromise;
+
+    return {
+      Authorization: `Bearer ${this.cachedToken}`,
+      'Content-Type': 'application/json',
+    };
+  }
+
+  /**
+   * Fetches the authenticated user's email address from the Gmail profile API.
+   * Caches the result for subsequent calls.
+   */
+  private async getUserEmail(): Promise<string> {
+    if (this.userEmail) {
+      return this.userEmail;
+    }
+
+    const headers = await this.getHeaders();
+    const response = await fetch(`${this.baseUrl}/profile`, {
+      method: 'GET',
+      headers,
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch Gmail profile: ${response.status} ${response.statusText}`);
+    }
+
+    const profile = (await response.json()) as { emailAddress: string };
+    this.userEmail = profile.emailAddress;
+    return this.userEmail;
+  }
+
+  async listMessages(options?: {
+    q?: string;
+    maxResults?: number;
+    pageToken?: string;
+    labelIds?: string[];
+  }): Promise<{
+    messages: EmailListItem[];
+    nextPageToken?: string;
+    resultSizeEstimate?: number;
+  }> {
+    const headers = await this.getHeaders();
+    const { listMessages } = await import('./gmail-client/lib/list-messages.js');
+    return listMessages(this.baseUrl, headers, options);
+  }
+
+  async getMessage(
+    messageId: string,
+    options?: {
+      format?: 'minimal' | 'full' | 'raw' | 'metadata';
+      metadataHeaders?: string[];
+    }
+  ): Promise<Email> {
+    const headers = await this.getHeaders();
+    const { getMessage } = await import('./gmail-client/lib/get-message.js');
+    return getMessage(this.baseUrl, headers, messageId, options);
+  }
+
+  async modifyMessage(
+    messageId: string,
+    options: {
+      addLabelIds?: string[];
+      removeLabelIds?: string[];
+    }
+  ): Promise<Email> {
+    const headers = await this.getHeaders();
+    const { modifyMessage } = await import('./gmail-client/lib/modify-message.js');
+    return modifyMessage(this.baseUrl, headers, messageId, options);
+  }
+
+  async createDraft(options: {
+    to: string;
+    subject: string;
+    body: string;
+    cc?: string;
+    bcc?: string;
+    threadId?: string;
+    inReplyTo?: string;
+    references?: string;
+  }): Promise<Draft> {
+    const headers = await this.getHeaders();
+    const userEmail = await this.getUserEmail();
+    const { createDraft } = await import('./gmail-client/lib/drafts.js');
+    return createDraft(this.baseUrl, headers, userEmail, options);
+  }
+
+  async getDraft(draftId: string): Promise<Draft> {
+    const headers = await this.getHeaders();
+    const { getDraft } = await import('./gmail-client/lib/drafts.js');
+    return getDraft(this.baseUrl, headers, draftId);
+  }
+
+  async listDrafts(options?: { maxResults?: number; pageToken?: string }): Promise<{
+    drafts: Array<{ id: string; message: EmailListItem }>;
+    nextPageToken?: string;
+    resultSizeEstimate?: number;
+  }> {
+    const headers = await this.getHeaders();
+    const { listDrafts } = await import('./gmail-client/lib/drafts.js');
+    return listDrafts(this.baseUrl, headers, options);
+  }
+
+  async deleteDraft(draftId: string): Promise<void> {
+    const headers = await this.getHeaders();
+    const { deleteDraft } = await import('./gmail-client/lib/drafts.js');
+    return deleteDraft(this.baseUrl, headers, draftId);
+  }
+
+  async sendMessage(options: {
+    to: string;
+    subject: string;
+    body: string;
+    cc?: string;
+    bcc?: string;
+    threadId?: string;
+    inReplyTo?: string;
+    references?: string;
+  }): Promise<Email> {
+    const headers = await this.getHeaders();
+    const userEmail = await this.getUserEmail();
+    const { sendMessage } = await import('./gmail-client/lib/send-message.js');
+    return sendMessage(this.baseUrl, headers, userEmail, options);
+  }
+
+  async sendDraft(draftId: string): Promise<Email> {
+    const headers = await this.getHeaders();
+    const { sendDraft } = await import('./gmail-client/lib/send-message.js');
+    return sendDraft(this.baseUrl, headers, draftId);
+  }
+}
+
 export type ClientFactory = () => IGmailClient;
 
 export interface CreateMCPServerOptions {
@@ -288,12 +465,32 @@ export interface CreateMCPServerOptions {
 
 /**
  * Creates the default Gmail client based on environment variables.
- * Uses service account with domain-wide delegation:
+ *
+ * Supports two authentication modes:
+ *
+ * 1. OAuth2 (for personal Gmail accounts):
+ *   - GMAIL_OAUTH_CLIENT_ID: OAuth2 client ID from Google Cloud Console
+ *   - GMAIL_OAUTH_CLIENT_SECRET: OAuth2 client secret
+ *   - GMAIL_OAUTH_REFRESH_TOKEN: Refresh token from one-time consent flow
+ *
+ * 2. Service Account (for Google Workspace accounts):
  *   - GMAIL_SERVICE_ACCOUNT_CLIENT_EMAIL: Service account email address
  *   - GMAIL_SERVICE_ACCOUNT_PRIVATE_KEY: Service account private key (PEM format)
  *   - GMAIL_IMPERSONATE_EMAIL: Email address to impersonate
+ *
+ * If OAuth2 credentials are present, OAuth2 mode is used. Otherwise, service account mode is used.
  */
 export function createDefaultClient(): IGmailClient {
+  // Check for OAuth2 credentials first
+  const oauthClientId = process.env.GMAIL_OAUTH_CLIENT_ID;
+  const oauthClientSecret = process.env.GMAIL_OAUTH_CLIENT_SECRET;
+  const oauthRefreshToken = process.env.GMAIL_OAUTH_REFRESH_TOKEN;
+
+  if (oauthClientId && oauthClientSecret && oauthRefreshToken) {
+    return new OAuth2GmailClient(oauthClientId, oauthClientSecret, oauthRefreshToken);
+  }
+
+  // Fall back to service account mode
   const clientEmail = process.env.GMAIL_SERVICE_ACCOUNT_CLIENT_EMAIL;
   // Handle both literal \n in JSON configs and actual newlines
   const privateKey = process.env.GMAIL_SERVICE_ACCOUNT_PRIVATE_KEY?.replace(/\\n/g, '\n');

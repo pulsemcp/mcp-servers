@@ -4,6 +4,19 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- OAuth2 user authentication for personal Gmail accounts (`@gmail.com` and other non-Workspace accounts)
+  - New `OAuth2GmailClient` class using OAuth2 refresh tokens instead of service account JWT
+  - Automatic user email detection via Gmail profile API (no additional configuration needed)
+  - One-time setup script (`scripts/oauth-setup.ts`) to obtain refresh tokens via browser-based consent flow
+  - Token caching with automatic refresh, matching the existing service account pattern
+- `createDefaultClient()` now auto-detects auth mode based on environment variables:
+  - `GMAIL_OAUTH_CLIENT_ID` + `GMAIL_OAUTH_CLIENT_SECRET` + `GMAIL_OAUTH_REFRESH_TOKEN` → OAuth2 mode
+  - `GMAIL_SERVICE_ACCOUNT_*` → Service Account mode (existing behavior, unchanged)
+- Environment validation now provides guidance for both auth modes with partial-config detection
+- Addresses [issue #279](https://github.com/pulsemcp/mcp-servers/issues/279)
+
 ## [0.0.5] - 2026-01-24
 
 ### Added
