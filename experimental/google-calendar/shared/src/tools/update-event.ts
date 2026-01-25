@@ -237,14 +237,22 @@ export function updateEventTool(server: Server, clientFactory: ClientFactory) {
 
         // Start time
         if (result.start?.dateTime) {
-          output += `**Start:** ${new Date(result.start.dateTime).toLocaleString()}\n`;
+          output += `**Start:** ${new Date(result.start.dateTime).toLocaleString()}`;
+          if (result.start.timeZone) {
+            output += ` (${result.start.timeZone})`;
+          }
+          output += '\n';
         } else if (result.start?.date) {
           output += `**Start:** ${result.start.date} (All day)\n`;
         }
 
         // End time
         if (result.end?.dateTime) {
-          output += `**End:** ${new Date(result.end.dateTime).toLocaleString()}\n`;
+          output += `**End:** ${new Date(result.end.dateTime).toLocaleString()}`;
+          if (result.end.timeZone) {
+            output += ` (${result.end.timeZone})`;
+          }
+          output += '\n';
         } else if (result.end?.date) {
           output += `**End:** ${result.end.date} (All day)\n`;
         }
