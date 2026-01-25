@@ -1,5 +1,5 @@
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
-import { createRegisterTools } from './tools.js';
+import { createRegisterTools, type RegisterToolsOptions } from './tools.js';
 import {
   PulseSubregistryClient,
   type ClientFactory,
@@ -8,6 +8,7 @@ import {
 
 export interface CreateMCPServerOptions {
   version: string;
+  showAdminTools?: boolean;
 }
 
 export function createMCPServer(options: CreateMCPServerOptions) {
@@ -24,23 +25,31 @@ export function createMCPServer(options: CreateMCPServerOptions) {
   );
 
   const registerHandlers = async (server: Server, clientFactory?: ClientFactory) => {
-    // Use provided factory or create default client from environment
+    // Use provided factory or create default singleton client from environment
+    let clientInstance: IPulseSubregistryClient | null = null;
     const factory =
       clientFactory ||
       (() => {
-        const apiKey = process.env.PULSEMCP_SUBREGISTRY_API_KEY;
+        if (!clientInstance) {
+          const apiKey = process.env.PULSEMCP_SUBREGISTRY_API_KEY;
 
-        if (!apiKey) {
-          throw new Error('PULSEMCP_SUBREGISTRY_API_KEY environment variable is required');
+          if (!apiKey) {
+            throw new Error('PULSEMCP_SUBREGISTRY_API_KEY environment variable is required');
+          }
+
+          clientInstance = new PulseSubregistryClient({
+            apiKey,
+            tenantId: process.env.PULSEMCP_SUBREGISTRY_TENANT_ID,
+          });
         }
-
-        return new PulseSubregistryClient({
-          apiKey,
-          tenantId: process.env.PULSEMCP_SUBREGISTRY_TENANT_ID,
-        });
+        return clientInstance;
       });
 
-    const registerTools = createRegisterTools(factory);
+    const toolsOptions: RegisterToolsOptions = {
+      showAdminTools: options.showAdminTools,
+    };
+
+    const registerTools = createRegisterTools(factory, toolsOptions);
     registerTools(server);
   };
 

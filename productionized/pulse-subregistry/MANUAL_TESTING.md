@@ -4,9 +4,9 @@ This file tracks manual testing results for the pulse-subregistry MCP server.
 
 ## Latest Test Results
 
-**Test Date:** 2026-01-24
-**Branch:** claude/pulse-directory-mcp-server
-**Commit:** bf06159
+**Test Date:** 2026-01-25
+**Branch:** tadasant/add-switch-tenant-id-tool
+**Commit:** 872cd0b
 **Tested By:** Claude
 **Environment:** Real API with pulsemcp-admin tenant
 

@@ -3,11 +3,41 @@ import { ListToolsRequestSchema, CallToolRequestSchema } from '@modelcontextprot
 import type { ClientFactory } from './client.js';
 import { listServersTool } from './tools/list-servers.js';
 import { getServerTool } from './tools/get-server.js';
+import { switchTenantIdTool } from './tools/switch-tenant-id.js';
 
-export function createRegisterTools(clientFactory: ClientFactory) {
+interface ToolDefinition {
+  name: string;
+  description: string;
+  inputSchema: {
+    type: 'object';
+    properties: Record<string, unknown>;
+    required?: string[];
+  };
+  handler: (args: unknown) => Promise<{
+    content: { type: string; text: string }[];
+    isError?: boolean;
+  }>;
+}
+
+export interface RegisterToolsOptions {
+  showAdminTools?: boolean;
+}
+
+export function createRegisterTools(
+  clientFactory: ClientFactory,
+  options: RegisterToolsOptions = {}
+) {
   return (server: Server) => {
     // Create tool instances
-    const tools = [listServersTool(server, clientFactory), getServerTool(server, clientFactory)];
+    const tools: ToolDefinition[] = [
+      listServersTool(server, clientFactory),
+      getServerTool(server, clientFactory),
+    ];
+
+    // Conditionally add admin tools
+    if (options.showAdminTools) {
+      tools.push(switchTenantIdTool(server, clientFactory));
+    }
 
     // Register tool definitions
     server.setRequestHandler(ListToolsRequestSchema, async () => ({

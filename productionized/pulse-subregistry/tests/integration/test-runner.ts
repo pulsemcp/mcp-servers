@@ -9,6 +9,7 @@ interface MockConfig {
   serverData?: string;
   nextCursor?: string;
   errorMessage?: string;
+  showAdminTools?: boolean;
 }
 
 interface TestMode {
@@ -48,6 +49,10 @@ async function createTestMCPClientWithMocks(
 
   if (config.errorMessage) {
     env.MOCK_ERROR_MESSAGE = config.errorMessage;
+  }
+
+  if (config.showAdminTools) {
+    env.SHOW_ADMIN_TOOLS = 'true';
   }
 
   const client = new TestMCPClient({
@@ -219,6 +224,71 @@ export function runIntegrationTests(mode: TestMode) {
 
         expect(result.isError).toBe(true);
         expect(result.content[0].text).toContain('Error');
+      });
+    });
+
+    describe('Admin Tools Gating', () => {
+      it('should not include switch_tenant_id tool by default', async () => {
+        client = await createTestMCPClientWithMocks(mode.serverPath, {});
+
+        const result = await client.listTools();
+
+        const toolNames = result.tools.map((t: { name: string }) => t.name);
+        expect(toolNames).not.toContain('switch_tenant_id');
+      });
+
+      it('should include switch_tenant_id tool when SHOW_ADMIN_TOOLS is true', async () => {
+        client = await createTestMCPClientWithMocks(mode.serverPath, {
+          showAdminTools: true,
+        });
+
+        const result = await client.listTools();
+
+        const toolNames = result.tools.map((t: { name: string }) => t.name);
+        expect(toolNames).toContain('switch_tenant_id');
+      });
+
+      it('should execute switch_tenant_id tool successfully', async () => {
+        client = await createTestMCPClientWithMocks(mode.serverPath, {
+          showAdminTools: true,
+        });
+
+        const result = await client.callTool('switch_tenant_id', {
+          tenant_id: 'test-tenant-456',
+        });
+
+        expect(result.content[0].text).toBe('Tenant ID switched to: test-tenant-456');
+      });
+
+      it('should clear tenant ID with empty string', async () => {
+        client = await createTestMCPClientWithMocks(mode.serverPath, {
+          showAdminTools: true,
+        });
+
+        const result = await client.callTool('switch_tenant_id', {
+          tenant_id: '',
+        });
+
+        expect(result.content[0].text).toBe('Tenant ID cleared. Using default (no tenant).');
+      });
+
+      it('should persist tenant ID across subsequent API calls', async () => {
+        client = await createTestMCPClientWithMocks(mode.serverPath, {
+          showAdminTools: true,
+        });
+
+        // Switch tenant ID
+        await client.callTool('switch_tenant_id', {
+          tenant_id: 'e2e-test-tenant',
+        });
+
+        // Verify tenant ID is used in subsequent get_server call
+        const result = await client.callTool('get_server', {
+          server_name: 'test-server',
+        });
+
+        const parsed = JSON.parse(result.content[0].text);
+        expect(parsed._meta.activeTenantId).toBe('e2e-test-tenant');
       });
     });
   });

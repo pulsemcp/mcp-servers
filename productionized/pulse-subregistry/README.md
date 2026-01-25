@@ -32,10 +32,11 @@ This project is built and maintained by [PulseMCP](https://www.pulsemcp.com/).
 
 This server is built and tested on macOS with Claude Desktop. It should work with other MCP clients as well.
 
-| Tool Name      | Description                                                                   |
-| -------------- | ----------------------------------------------------------------------------- |
-| `list_servers` | Browse MCP servers from the Sub-Registry with optional search and pagination. |
-| `get_server`   | Get detailed information about a specific MCP server by name and version.     |
+| Tool Name          | Description                                                                                     |
+| ------------------ | ----------------------------------------------------------------------------------------------- |
+| `list_servers`     | Browse MCP servers from the Sub-Registry with optional search and pagination.                   |
+| `get_server`       | Get detailed information about a specific MCP server by name and version.                       |
+| `switch_tenant_id` | (Admin) Switch the active tenant ID at runtime. Requires `SHOW_ADMIN_TOOLS=true` to be visible. |
 
 # Usage Tips
 
@@ -116,10 +117,11 @@ Here are more servers...
 
 ## Environment Variables
 
-| Environment Variable             | Description                                   | Required | Default |
-| -------------------------------- | --------------------------------------------- | -------- | ------- |
-| `PULSEMCP_SUBREGISTRY_API_KEY`   | Your PulseMCP API key                         | Yes      | N/A     |
-| `PULSEMCP_SUBREGISTRY_TENANT_ID` | Your tenant identifier (for multi-tenant use) | No       | N/A     |
+| Environment Variable             | Description                                            | Required | Default |
+| -------------------------------- | ------------------------------------------------------ | -------- | ------- |
+| `PULSEMCP_SUBREGISTRY_API_KEY`   | Your PulseMCP API key                                  | Yes      | N/A     |
+| `PULSEMCP_SUBREGISTRY_TENANT_ID` | Your tenant identifier (for multi-tenant use)          | No       | N/A     |
+| `SHOW_ADMIN_TOOLS`               | Set to `true` to enable admin tools (switch_tenant_id) | No       | N/A     |
 
 ## Claude Desktop
 
@@ -247,6 +249,14 @@ Get detailed information about a specific MCP server.
 - `server_name` (string, required): The name of the server to look up.
 - `version` (string, optional): Specific version to retrieve. Default: "latest".
 - `expand_fields` (array, optional): Array of dot-notation paths to show in full (not truncated). Examples: `["server.description", "server.readme"]`.
+
+### switch_tenant_id
+
+Switch the active tenant ID used for subsequent API requests. This is an admin tool that is hidden by default. Set `SHOW_ADMIN_TOOLS=true` to enable it.
+
+**Parameters:**
+
+- `tenant_id` (string, required): The tenant ID to switch to. Pass an empty string to clear the tenant ID and revert to the default.
 
 ## License
 

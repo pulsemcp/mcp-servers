@@ -7,8 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.0.2] - 2026-01-25
+
 ### Added
 
+- `switch_tenant_id` admin tool for changing the active tenant ID at runtime
+  - Allows switching tenant context without restarting the server
+  - Pass an empty string to clear the tenant ID
+  - Disabled by default; enable with `SHOW_ADMIN_TOOLS=true` environment variable
 - `latest_only` parameter to `list_servers` tool (default: `true`)
   - By default, only returns the latest version of each server
   - Set to `false` to include all versions

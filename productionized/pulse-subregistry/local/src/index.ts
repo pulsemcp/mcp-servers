@@ -27,12 +27,17 @@ function validateEnvironment() {
   if (process.env.PULSEMCP_SUBREGISTRY_TENANT_ID) {
     console.error('Using tenant ID:', process.env.PULSEMCP_SUBREGISTRY_TENANT_ID);
   }
+
+  if (process.env.SHOW_ADMIN_TOOLS === 'true') {
+    console.error('Admin tools enabled');
+  }
 }
 
 async function main() {
   validateEnvironment();
 
-  const { server, registerHandlers } = createMCPServer({ version: VERSION });
+  const showAdminTools = process.env.SHOW_ADMIN_TOOLS === 'true';
+  const { server, registerHandlers } = createMCPServer({ version: VERSION, showAdminTools });
   await registerHandlers(server);
 
   const transport = new StdioServerTransport();
