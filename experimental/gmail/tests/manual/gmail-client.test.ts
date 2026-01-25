@@ -1,57 +1,76 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import {
+  createDefaultClient,
   ServiceAccountGmailClient,
+  OAuth2GmailClient,
   type IGmailClient,
-  type ServiceAccountCredentials,
 } from '../../shared/src/server.js';
 
 /**
  * Manual tests that hit the real Gmail API
  *
- * Prerequisites:
+ * Prerequisites (choose one):
+ *
+ * Option 1: OAuth2 (for personal Gmail accounts)
+ *   - GMAIL_OAUTH_CLIENT_ID: OAuth2 client ID from Google Cloud Console
+ *   - GMAIL_OAUTH_CLIENT_SECRET: OAuth2 client secret
+ *   - GMAIL_OAUTH_REFRESH_TOKEN: Refresh token from oauth-setup.ts script
+ *
+ * Option 2: Service Account (for Google Workspace)
  *   - GMAIL_SERVICE_ACCOUNT_CLIENT_EMAIL: Service account email address
  *   - GMAIL_SERVICE_ACCOUNT_PRIVATE_KEY: Service account private key (PEM format)
  *   - GMAIL_IMPERSONATE_EMAIL: Email address to impersonate
- *
- * To set up service account:
- * 1. Create a Google Cloud project and enable Gmail API
- * 2. Create a service account with domain-wide delegation
- * 3. In Google Workspace Admin, grant the service account access to required scopes
- * 4. Download the JSON key file and extract client_email and private_key
  */
 
 describe('Gmail Client - Manual Tests', () => {
   let client: IGmailClient;
+  let testRecipientEmail: string;
 
   beforeAll(() => {
-    const clientEmail = process.env.GMAIL_SERVICE_ACCOUNT_CLIENT_EMAIL;
-    // Handle both literal \n in JSON configs and actual newlines
-    const privateKey = process.env.GMAIL_SERVICE_ACCOUNT_PRIVATE_KEY?.replace(/\\n/g, '\n');
-    const impersonateEmail = process.env.GMAIL_IMPERSONATE_EMAIL;
+    // Check for OAuth2 credentials
+    const hasOAuth2 =
+      process.env.GMAIL_OAUTH_CLIENT_ID &&
+      process.env.GMAIL_OAUTH_CLIENT_SECRET &&
+      process.env.GMAIL_OAUTH_REFRESH_TOKEN;
 
-    if (!clientEmail || !privateKey || !impersonateEmail) {
+    // Check for service account credentials
+    const hasServiceAccount =
+      process.env.GMAIL_SERVICE_ACCOUNT_CLIENT_EMAIL &&
+      process.env.GMAIL_SERVICE_ACCOUNT_PRIVATE_KEY &&
+      process.env.GMAIL_IMPERSONATE_EMAIL;
+
+    if (!hasOAuth2 && !hasServiceAccount) {
       throw new Error(
-        'Gmail authentication not configured. Set:\n' +
-          '  - GMAIL_SERVICE_ACCOUNT_CLIENT_EMAIL: Service account email address\n' +
-          '  - GMAIL_SERVICE_ACCOUNT_PRIVATE_KEY: Service account private key (PEM format)\n' +
-          '  - GMAIL_IMPERSONATE_EMAIL: Email address to impersonate'
+        'Gmail authentication not configured. Set one of:\n\n' +
+          'Option 1 - OAuth2 (for personal Gmail):\n' +
+          '  - GMAIL_OAUTH_CLIENT_ID\n' +
+          '  - GMAIL_OAUTH_CLIENT_SECRET\n' +
+          '  - GMAIL_OAUTH_REFRESH_TOKEN\n\n' +
+          'Option 2 - Service Account (for Google Workspace):\n' +
+          '  - GMAIL_SERVICE_ACCOUNT_CLIENT_EMAIL\n' +
+          '  - GMAIL_SERVICE_ACCOUNT_PRIVATE_KEY\n' +
+          '  - GMAIL_IMPERSONATE_EMAIL'
       );
     }
 
-    const credentials: ServiceAccountCredentials = {
-      type: 'service_account',
-      project_id: '',
-      private_key_id: '',
-      private_key: privateKey,
-      client_email: clientEmail,
-      client_id: '',
-      auth_uri: 'https://accounts.google.com/o/oauth2/auth',
-      token_uri: 'https://oauth2.googleapis.com/token',
-      auth_provider_x509_cert_url: 'https://www.googleapis.com/oauth2/v1/certs',
-      client_x509_cert_url: '',
-    };
-    client = new ServiceAccountGmailClient(credentials, impersonateEmail);
-    console.log(`Using service account authentication, impersonating: ${impersonateEmail}`);
+    // Use createDefaultClient which auto-detects the auth mode
+    client = createDefaultClient();
+
+    if (hasOAuth2) {
+      console.log('Using OAuth2 authentication (personal Gmail account)');
+      // For OAuth2, use GMAIL_TEST_RECIPIENT_EMAIL env var or skip send tests
+      testRecipientEmail = process.env.GMAIL_TEST_RECIPIENT_EMAIL || '';
+      if (testRecipientEmail) {
+        console.log(`Test recipient email: ${testRecipientEmail}`);
+      } else {
+        console.log('No GMAIL_TEST_RECIPIENT_EMAIL set - send/draft tests will use placeholder');
+      }
+    } else {
+      console.log(
+        `Using service account authentication, impersonating: ${process.env.GMAIL_IMPERSONATE_EMAIL}`
+      );
+      testRecipientEmail = process.env.GMAIL_IMPERSONATE_EMAIL!;
+    }
   });
 
   describe('listMessages', () => {
@@ -212,8 +231,9 @@ describe('Gmail Client - Manual Tests', () => {
     let createdDraftId: string | null = null;
 
     it('should create a draft', async () => {
+      // For drafts, we can use a placeholder recipient since we're not sending
       const draft = await client.createDraft({
-        to: process.env.GMAIL_IMPERSONATE_EMAIL || 'test@example.com',
+        to: testRecipientEmail || process.env.GMAIL_IMPERSONATE_EMAIL || 'test@example.com',
         subject: `[TEST] Draft created by manual test - ${new Date().toISOString()}`,
         body: 'This is a test draft created by the Gmail MCP server manual tests.\n\nPlease delete this draft.',
       });
@@ -266,11 +286,18 @@ describe('Gmail Client - Manual Tests', () => {
 
   describe('sendMessage', () => {
     it('should send a test email (to same account)', async () => {
-      const recipientEmail = process.env.GMAIL_IMPERSONATE_EMAIL;
-      if (!recipientEmail) {
-        console.warn('No impersonate email set, skipping send test');
+      // For OAuth2, we need to discover the email dynamically
+      // The sendMessage method internally fetches the sender email from the profile API
+      // We'll send to ourselves - for OAuth2 this will be determined by the profile API
+
+      // Skip if we don't have a known recipient (OAuth2 mode without prior API call)
+      if (!testRecipientEmail && !process.env.GMAIL_IMPERSONATE_EMAIL) {
+        // For OAuth2, we need to send to discover the email - send to the test email if available
+        console.warn('Skipping send test - no recipient email available');
         return;
       }
+
+      const recipientEmail = testRecipientEmail || process.env.GMAIL_IMPERSONATE_EMAIL!;
 
       const sentMessage = await client.sendMessage({
         to: recipientEmail,
@@ -285,9 +312,17 @@ describe('Gmail Client - Manual Tests', () => {
   });
 
   describe('authentication', () => {
-    it('should use service account authentication', () => {
-      expect(client).toBeInstanceOf(ServiceAccountGmailClient);
-      console.log('Authenticated using: service_account');
+    it('should use the correct authentication method', () => {
+      const isOAuth2 = client instanceof OAuth2GmailClient;
+      const isServiceAccount = client instanceof ServiceAccountGmailClient;
+
+      expect(isOAuth2 || isServiceAccount).toBe(true);
+
+      if (isOAuth2) {
+        console.log('Authenticated using: OAuth2 (personal Gmail)');
+      } else {
+        console.log('Authenticated using: service_account (Google Workspace)');
+      }
     });
   });
 });
