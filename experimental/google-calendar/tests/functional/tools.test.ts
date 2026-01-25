@@ -48,6 +48,39 @@ describe('Google Calendar MCP Server Tools', () => {
       expect(result.content[0].text).toContain('(America/New_York)');
     });
 
+    it('should handle events without timezone gracefully', async () => {
+      const clientWithoutTz = createMockCalendarClient();
+      vi.mocked(clientWithoutTz.listEvents).mockResolvedValue({
+        kind: 'calendar#events',
+        etag: 'mock-etag',
+        summary: 'Primary Calendar',
+        updated: new Date().toISOString(),
+        timeZone: 'America/New_York',
+        accessRole: 'owner',
+        items: [
+          {
+            id: 'event-no-tz',
+            summary: 'Event Without Timezone',
+            start: {
+              dateTime: '2024-01-15T10:00:00-05:00',
+              // No timeZone property
+            },
+            end: {
+              dateTime: '2024-01-15T10:30:00-05:00',
+              // No timeZone property
+            },
+          },
+        ],
+      });
+
+      const tool = listEventsTool(mockServer, () => clientWithoutTz);
+      const result = await tool.handler({});
+
+      expect(result.content[0].text).toContain('Event Without Timezone');
+      expect(result.content[0].text).not.toContain('undefined');
+      expect(result.content[0].text).not.toContain('null');
+    });
+
     it('should return message when no events found', async () => {
       const emptyClient = createMockCalendarClient();
       vi.mocked(emptyClient.listEvents).mockResolvedValue({
@@ -320,7 +353,7 @@ describe('Google Calendar MCP Server Tools', () => {
       });
 
       expect(result.content[0].text).toContain('Free/Busy Information');
-      expect(result.content[0].text).toContain('(America/Los_Angeles)');
+      expect(result.content[0].text).toContain('**Times shown in:** America/Los_Angeles');
     });
   });
 });
