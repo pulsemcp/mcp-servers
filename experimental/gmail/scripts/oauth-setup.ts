@@ -30,7 +30,8 @@
 import http from 'node:http';
 import { OAuth2Client } from 'google-auth-library';
 
-const REDIRECT_URI = 'http://localhost:3000/callback';
+const PORT = parseInt(process.env.PORT || '3000', 10);
+const REDIRECT_URI = `http://localhost:${PORT}/callback`;
 const CALLBACK_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes
 const SCOPES = [
   'https://www.googleapis.com/auth/gmail.readonly',
@@ -69,7 +70,7 @@ async function main() {
   console.log('1. Open this URL in your browser:\n');
   console.log(`   ${authorizeUrl}\n`);
   console.log('2. Sign in and authorize the application');
-  console.log('3. You will be redirected to localhost:3000/callback\n');
+  console.log(`3. You will be redirected to localhost:${PORT}/callback\n`);
   console.log('Waiting for callback (5 minute timeout)...\n');
 
   const code = await waitForCallback();
@@ -133,7 +134,7 @@ function waitForCallback(): Promise<string> {
         return;
       }
 
-      const url = new URL(req.url, `http://localhost:3000`);
+      const url = new URL(req.url, `http://localhost:${PORT}`);
       const code = url.searchParams.get('code');
       const error = url.searchParams.get('error');
 
@@ -170,14 +171,14 @@ function waitForCallback(): Promise<string> {
       reject(new Error('OAuth callback timeout - no response within 5 minutes'));
     }, CALLBACK_TIMEOUT_MS);
 
-    server.listen(3000, () => {
+    server.listen(PORT, () => {
       // Server is listening
     });
 
     server.on('error', (err) => {
       clearTimeout(timeout);
       if ((err as NodeJS.ErrnoException).code === 'EADDRINUSE') {
-        reject(new Error('Port 3000 is already in use. Please free it and try again.'));
+        reject(new Error(`Port ${PORT} is already in use. Please free it or set PORT env var.`));
       } else {
         reject(err);
       }
