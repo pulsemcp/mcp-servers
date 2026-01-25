@@ -3,12 +3,18 @@ import type { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import type { IPulseSubregistryClient, ClientFactory } from '../../shared/src/client.js';
 import { listServersTool } from '../../shared/src/tools/list-servers.js';
 import { getServerTool } from '../../shared/src/tools/get-server.js';
+import { switchTenantIdTool } from '../../shared/src/tools/switch-tenant-id.js';
 
 // Create mock client factory
 function createMockClient(): IPulseSubregistryClient {
+  let tenantId: string | undefined;
   return {
     listServers: vi.fn(),
     getServer: vi.fn(),
+    setTenantId: vi.fn((id: string | undefined) => {
+      tenantId = id;
+    }),
+    getTenantId: vi.fn(() => tenantId),
   };
 }
 
@@ -373,5 +379,49 @@ describe('get_server tool', () => {
     const parsed = JSON.parse(result.content[0].text);
     expect(parsed.server.name).toBe('test-server');
     expect(parsed.server.description).toBe(longDescription);
+  });
+});
+
+describe('switch_tenant_id tool', () => {
+  let mockClient: IPulseSubregistryClient;
+  let mockServer: Server;
+  let clientFactory: ClientFactory;
+
+  beforeEach(() => {
+    mockClient = createMockClient();
+    mockServer = {} as Server;
+    clientFactory = () => mockClient;
+  });
+
+  it('should switch tenant ID successfully', async () => {
+    const tool = switchTenantIdTool(mockServer, clientFactory);
+    const result = await tool.handler({ tenant_id: 'new-tenant-123' });
+
+    expect(result.content[0].text).toBe('Tenant ID switched to: new-tenant-123');
+    expect(mockClient.setTenantId).toHaveBeenCalledWith('new-tenant-123');
+  });
+
+  it('should clear tenant ID when empty string is provided', async () => {
+    const tool = switchTenantIdTool(mockServer, clientFactory);
+    const result = await tool.handler({ tenant_id: '' });
+
+    expect(result.content[0].text).toBe('Tenant ID cleared. Using default (no tenant).');
+    expect(mockClient.setTenantId).toHaveBeenCalledWith(undefined);
+  });
+
+  it('should require tenant_id parameter', async () => {
+    const tool = switchTenantIdTool(mockServer, clientFactory);
+    const result = await tool.handler({});
+
+    expect(result.isError).toBe(true);
+    expect(result.content[0].text).toContain('Error switching tenant ID');
+  });
+
+  it('should have correct tool metadata', () => {
+    const tool = switchTenantIdTool(mockServer, clientFactory);
+
+    expect(tool.name).toBe('switch_tenant_id');
+    expect(tool.description).toContain('Switch the active tenant ID');
+    expect(tool.inputSchema.required).toContain('tenant_id');
   });
 });

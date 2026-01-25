@@ -21,6 +21,16 @@ const VERSION = packageJson.version;
 
 // Mock client implementation for integration testing
 class MockPulseSubregistryClient implements IPulseSubregistryClient {
+  private tenantId?: string;
+
+  setTenantId(tenantId: string | undefined): void {
+    this.tenantId = tenantId;
+  }
+
+  getTenantId(): string | undefined {
+    return this.tenantId;
+  }
+
   async listServers(options?: ListServersOptions): Promise<ListServersResponse> {
     const mockServers = process.env.MOCK_SERVERS_DATA;
     const mockSuccess = process.env.MOCK_LIST_SUCCESS !== 'false';
@@ -104,10 +114,12 @@ class MockPulseSubregistryClient implements IPulseSubregistryClient {
 }
 
 async function main() {
-  const { server, registerHandlers } = createMCPServer({ version: VERSION });
+  const showAdminTools = process.env.SHOW_ADMIN_TOOLS === 'true';
+  const { server, registerHandlers } = createMCPServer({ version: VERSION, showAdminTools });
 
   // Create mock client factory for testing
-  const mockClientFactory = () => new MockPulseSubregistryClient();
+  const mockClient = new MockPulseSubregistryClient();
+  const mockClientFactory = () => mockClient;
 
   await registerHandlers(server, mockClientFactory);
 
