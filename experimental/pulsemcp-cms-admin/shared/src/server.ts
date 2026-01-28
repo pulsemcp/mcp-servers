@@ -13,6 +13,7 @@ import type {
   MCPImplementation,
   MCPImplementationsResponse,
   SaveMCPImplementationParams,
+  CreateMCPImplementationParams,
   Provider,
   ProvidersResponse,
   OfficialMirrorQueueStatus,
@@ -88,6 +89,8 @@ export interface IPulseMCPAdminClient {
     id: number,
     params: SaveMCPImplementationParams
   ): Promise<MCPImplementation>;
+
+  createMCPImplementation(params: CreateMCPImplementationParams): Promise<MCPImplementation>;
 
   sendEmail(params: {
     from_email_address: string;
@@ -343,6 +346,13 @@ export class PulseMCPAdminClient implements IPulseMCPAdminClient {
       './pulsemcp-admin-client/lib/save-mcp-implementation.js'
     );
     return saveMCPImplementation(this.apiKey, this.baseUrl, id, params);
+  }
+
+  async createMCPImplementation(params: CreateMCPImplementationParams): Promise<MCPImplementation> {
+    const { createMCPImplementation } = await import(
+      './pulsemcp-admin-client/lib/create-mcp-implementation.js'
+    );
+    return createMCPImplementation(this.apiKey, this.baseUrl, params);
   }
 
   async sendEmail(params: {

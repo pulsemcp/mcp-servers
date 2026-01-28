@@ -6,6 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [0.6.3] - 2026-01-28
+
+### Added
+
+- `save_mcp_implementation` tool now supports **creating** new MCP implementations by omitting the `id` parameter
+  - When `id` is omitted, the tool creates a new implementation (requires `name` and `type` parameters)
+  - When `id` is provided, the tool updates the existing implementation (existing behavior preserved)
+  - Added new `createMCPImplementation` API client method for the underlying POST request
+  - Added `CreateMCPImplementationParams` type for creation-specific parameters
+
 ## [0.6.2] - 2026-01-19
 
 ### Added
