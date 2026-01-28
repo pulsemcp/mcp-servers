@@ -6,7 +6,10 @@ const PARAM_DESCRIPTIONS = {
   id: 'The ID of the unofficial mirror to update',
   name: 'Updated name of the unofficial mirror',
   version: 'Updated version of the mirror',
-  jsonb_data: 'Updated JSON data containing the mirror configuration',
+  server_json:
+    'Updated server.json content. This will be automatically wrapped in a { "server": ... } envelope. Use this for better ergonomics instead of jsonb_data.',
+  jsonb_data:
+    'Raw JSON data to store (advanced). If using server.json content, prefer the server_json parameter which auto-wraps it.',
   mcp_server_id: 'ID of the MCP server to link (set to null to unlink)',
   previous_name: 'Updated previous name (set to null to clear)',
   next_name: 'Updated next name (set to null to clear)',
@@ -16,6 +19,10 @@ const UpdateUnofficialMirrorSchema = z.object({
   id: z.number().describe(PARAM_DESCRIPTIONS.id),
   name: z.string().optional().describe(PARAM_DESCRIPTIONS.name),
   version: z.string().optional().describe(PARAM_DESCRIPTIONS.version),
+  server_json: z
+    .union([z.record(z.unknown()), z.string()])
+    .optional()
+    .describe(PARAM_DESCRIPTIONS.server_json),
   jsonb_data: z
     .union([z.record(z.unknown()), z.string()])
     .optional()
@@ -30,7 +37,20 @@ export function updateUnofficialMirror(_server: Server, clientFactory: ClientFac
     name: 'update_unofficial_mirror',
     description: `Update an existing unofficial mirror by its ID. Only provided fields will be updated.
 
-Example request:
+RECOMMENDED: Use the server_json parameter to update server.json content directly. It will be automatically wrapped in a { "server": ... } envelope as required by the PulseMCP Sub-Registry API.
+
+Example request using server_json (recommended):
+{
+  "id": 123,
+  "server_json": {
+    "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+    "name": "com.pulsemcp.mirror/example",
+    "title": "Example Server",
+    "version": "0.0.2"
+  }
+}
+
+Example request updating other fields:
 {
   "id": 123,
   "version": "1.1.0",
@@ -40,7 +60,7 @@ Example request:
 Use cases:
 - Link an unofficial mirror to an MCP server
 - Update the version or name of a mirror
-- Modify the JSON configuration data
+- Update the server.json configuration data
 - Unlink a mirror from an MCP server (set mcp_server_id to null)`,
     inputSchema: {
       type: 'object',
@@ -48,6 +68,10 @@ Use cases:
         id: { type: 'number', description: PARAM_DESCRIPTIONS.id },
         name: { type: 'string', description: PARAM_DESCRIPTIONS.name },
         version: { type: 'string', description: PARAM_DESCRIPTIONS.version },
+        server_json: {
+          oneOf: [{ type: 'object' }, { type: 'string' }],
+          description: PARAM_DESCRIPTIONS.server_json,
+        },
         jsonb_data: {
           oneOf: [{ type: 'object' }, { type: 'string' }],
           description: PARAM_DESCRIPTIONS.jsonb_data,
@@ -63,15 +87,23 @@ Use cases:
       const client = clientFactory();
 
       try {
-        const { id, jsonb_data, ...rest } = validatedArgs;
+        const { id, server_json, jsonb_data, ...rest } = validatedArgs;
+
+        // Determine jsonb_data: prefer server_json (auto-wrapped) over raw jsonb_data
+        let resolvedJsonbData: Record<string, unknown> | undefined;
+        if (server_json !== undefined) {
+          // Wrap server_json in { "server": ... } envelope
+          const serverContent =
+            typeof server_json === 'string' ? JSON.parse(server_json) : server_json;
+          resolvedJsonbData = { server: serverContent };
+        } else if (jsonb_data !== undefined) {
+          // Use raw jsonb_data as-is
+          resolvedJsonbData = typeof jsonb_data === 'string' ? JSON.parse(jsonb_data) : jsonb_data;
+        }
 
         const params = {
           ...rest,
-          ...(jsonb_data !== undefined
-            ? {
-                jsonb_data: typeof jsonb_data === 'string' ? JSON.parse(jsonb_data) : jsonb_data,
-              }
-            : {}),
+          ...(resolvedJsonbData !== undefined ? { jsonb_data: resolvedJsonbData } : {}),
         };
 
         if (Object.keys(params).length === 0) {

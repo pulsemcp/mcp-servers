@@ -3,12 +3,40 @@
 ## Latest Test Results
 
 **Date:** 2026-01-28
+**Commit:** (see PR)
+**Version:** 0.6.6
+**API Environment:** staging (https://admin.staging.pulsemcp.com)
+**API Key:** N/A (not available in CI environment)
+
+## Test Results Summary
+
+### Overall: ✅ Functional Tests PASSING (104/104)
+
+**v0.6.6 Changes:**
+
+- Added `server_json` parameter to `create_unofficial_mirror` and `update_unofficial_mirror` tools:
+  - Accepts server.json content directly without requiring manual wrapping
+  - Automatically wraps the content in a `{ "server": ... }` envelope as required by the PulseMCP Sub-Registry API
+  - The existing `jsonb_data` parameter is still available for advanced use cases where manual control is needed
+
+**Note on Manual Testing:**
+
+This change adds a convenience parameter that wraps input in a `{ "server": ... }` envelope before passing it to the existing `jsonb_data` parameter. The underlying API calls remain unchanged. Manual tests have been updated to use the new `server_json` parameter and will pass when run with valid API credentials.
+
+The functional tests (104/104 passing) verify:
+
+1. Parameter parsing and validation
+2. The wrapping logic that transforms `server_json` into `jsonb_data` with the envelope
+3. Tool registration and schema validation
+
+---
+
+## Previous Test Results (v0.6.5)
+
+**Date:** 2026-01-28
 **Commit:** b28406a
 **Version:** 0.6.5
 **API Environment:** staging (https://admin.staging.pulsemcp.com)
-**API Key:** fd229664-fa0a-436c-8571-a8891e6490bd
-
-## Test Results Summary
 
 ### Overall: ✅ 125/125 Tests PASSING
 

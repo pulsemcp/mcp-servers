@@ -172,21 +172,23 @@ describe('REST API Tools - Manual Tests with Real API', () => {
       console.log('Unofficial mirror by name:', text.substring(0, 500));
     });
 
-    it('create_unofficial_mirror - should create a new unofficial mirror', async () => {
+    it('create_unofficial_mirror - should create with server_json (auto-wrapped)', async () => {
       const testName = `test-mirror-${Date.now()}`;
       const result = await client.callTool('create_unofficial_mirror', {
         name: testName,
         version: '1.0.0',
-        jsonb_data: {
-          name: 'Test MCP Server',
-          description: 'A test server for manual testing',
-          source_url: 'https://github.com/test-org/test-mcp-server',
+        server_json: {
+          $schema: 'https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json',
+          name: testName,
+          title: 'Test MCP Server',
+          version: '1.0.0',
+          description: 'A test server for manual testing using server_json parameter',
         },
       });
 
       expect(result.isError).toBeFalsy();
       const text = result.content[0].text;
-      console.log('Created unofficial mirror:', text);
+      console.log('Created unofficial mirror with server_json:', text);
 
       expect(text).toContain('Successfully created unofficial mirror');
       expect(text).toContain(testName);
@@ -196,6 +198,36 @@ describe('REST API Tools - Manual Tests with Real API', () => {
       if (idMatch) {
         createdUnofficialMirrorId = parseInt(idMatch[1], 10);
         console.log('Created unofficial mirror ID:', createdUnofficialMirrorId);
+      }
+    });
+
+    it('create_unofficial_mirror - should create with jsonb_data (legacy)', async () => {
+      const testName = `test-mirror-legacy-${Date.now()}`;
+      const result = await client.callTool('create_unofficial_mirror', {
+        name: testName,
+        version: '1.0.0',
+        jsonb_data: {
+          server: {
+            $schema: 'https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json',
+            name: testName,
+            title: 'Test MCP Server (Legacy)',
+            version: '1.0.0',
+          },
+        },
+      });
+
+      expect(result.isError).toBeFalsy();
+      const text = result.content[0].text;
+      console.log('Created unofficial mirror with jsonb_data:', text);
+
+      expect(text).toContain('Successfully created unofficial mirror');
+
+      // Clean up this one immediately since we already have createdUnofficialMirrorId
+      const idMatch = text.match(/\*\*ID:\*\* (\d+)/);
+      if (idMatch) {
+        const legacyId = parseInt(idMatch[1], 10);
+        await client.callTool('delete_unofficial_mirror', { id: legacyId });
+        console.log('Cleaned up legacy test mirror:', legacyId);
       }
     });
 
@@ -217,7 +249,7 @@ describe('REST API Tools - Manual Tests with Real API', () => {
       expect(text).toContain(`**ID:** ${createdUnofficialMirrorId}`);
     });
 
-    it('update_unofficial_mirror - should update an unofficial mirror', async () => {
+    it('update_unofficial_mirror - should update version', async () => {
       if (!createdUnofficialMirrorId) {
         console.log('Skipping - no unofficial mirror ID available');
         return;
@@ -230,9 +262,34 @@ describe('REST API Tools - Manual Tests with Real API', () => {
 
       expect(result.isError).toBeFalsy();
       const text = result.content[0].text;
-      console.log('Updated unofficial mirror:', text);
+      console.log('Updated unofficial mirror version:', text);
 
       expect(text).toContain('Successfully updated unofficial mirror');
+    });
+
+    it('update_unofficial_mirror - should update with server_json (auto-wrapped)', async () => {
+      if (!createdUnofficialMirrorId) {
+        console.log('Skipping - no unofficial mirror ID available');
+        return;
+      }
+
+      const result = await client.callTool('update_unofficial_mirror', {
+        id: createdUnofficialMirrorId,
+        server_json: {
+          $schema: 'https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json',
+          name: `test-mirror-updated-${Date.now()}`,
+          title: 'Updated Test MCP Server',
+          version: '1.0.2',
+          description: 'Updated via server_json parameter',
+        },
+      });
+
+      expect(result.isError).toBeFalsy();
+      const text = result.content[0].text;
+      console.log('Updated unofficial mirror with server_json:', text);
+
+      expect(text).toContain('Successfully updated unofficial mirror');
+      expect(text).toContain('jsonb_data');
     });
 
     it('delete_unofficial_mirror - should delete an unofficial mirror', async () => {
