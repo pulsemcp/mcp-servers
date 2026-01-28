@@ -37,6 +37,12 @@ import type {
   UnifiedMCPServer,
   UnifiedMCPServersResponse,
   UpdateUnifiedMCPServerParams,
+  // Redirect types
+  Redirect,
+  RedirectsResponse,
+  RedirectStatus,
+  CreateRedirectParams,
+  UpdateRedirectParams,
 } from './types.js';
 
 // PulseMCP Admin API client interface
@@ -218,6 +224,22 @@ export interface IPulseMCPAdminClient {
     implementationId: number,
     params: UpdateUnifiedMCPServerParams
   ): Promise<UnifiedMCPServer>;
+
+  // Redirect REST API methods
+  getRedirects(params?: {
+    q?: string;
+    status?: RedirectStatus;
+    limit?: number;
+    offset?: number;
+  }): Promise<RedirectsResponse>;
+
+  getRedirect(id: number): Promise<Redirect>;
+
+  createRedirect(params: CreateRedirectParams): Promise<Redirect>;
+
+  updateRedirect(id: number, params: UpdateRedirectParams): Promise<Redirect>;
+
+  deleteRedirect(id: number): Promise<{ success: boolean; message: string }>;
 }
 
 // PulseMCP Admin API client implementation
@@ -595,6 +617,37 @@ export class PulseMCPAdminClient implements IPulseMCPAdminClient {
       './pulsemcp-admin-client/lib/update-unified-mcp-server.js'
     );
     return updateUnifiedMCPServer(this.apiKey, this.baseUrl, implementationId, params);
+  }
+
+  // Redirect REST API methods
+  async getRedirects(params?: {
+    q?: string;
+    status?: RedirectStatus;
+    limit?: number;
+    offset?: number;
+  }): Promise<RedirectsResponse> {
+    const { getRedirects } = await import('./pulsemcp-admin-client/lib/get-redirects.js');
+    return getRedirects(this.apiKey, this.baseUrl, params);
+  }
+
+  async getRedirect(id: number): Promise<Redirect> {
+    const { getRedirect } = await import('./pulsemcp-admin-client/lib/get-redirect.js');
+    return getRedirect(this.apiKey, this.baseUrl, id);
+  }
+
+  async createRedirect(params: CreateRedirectParams): Promise<Redirect> {
+    const { createRedirect } = await import('./pulsemcp-admin-client/lib/create-redirect.js');
+    return createRedirect(this.apiKey, this.baseUrl, params);
+  }
+
+  async updateRedirect(id: number, params: UpdateRedirectParams): Promise<Redirect> {
+    const { updateRedirect } = await import('./pulsemcp-admin-client/lib/update-redirect.js');
+    return updateRedirect(this.apiKey, this.baseUrl, id, params);
+  }
+
+  async deleteRedirect(id: number): Promise<{ success: boolean; message: string }> {
+    const { deleteRedirect } = await import('./pulsemcp-admin-client/lib/delete-redirect.js');
+    return deleteRedirect(this.apiKey, this.baseUrl, id);
   }
 }
 
