@@ -15,7 +15,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   - Removed `mcp_server_id` and `mcp_client_id` from create parameters (auto-created based on `type`)
   - Updated parameter descriptions to clarify server-only fields (`classification`, `implementation_language`)
   - Updated parameter descriptions to note that `provider_name` reuses existing providers when it matches a provider slug
-  - Manual tests gracefully skip if create endpoint not yet deployed to test environment
+  - Fixed manual tests to use lowercase `implementation_language` value per API validation
 
 ## [0.6.4] - 2026-01-28
 

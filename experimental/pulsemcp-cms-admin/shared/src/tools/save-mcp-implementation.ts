@@ -135,7 +135,7 @@ Example request (CREATE new implementation):
   "type": "server",
   "short_description": "A new MCP server for doing cool things",
   "classification": "community",
-  "implementation_language": "TypeScript",
+  "implementation_language": "typescript",
   "github_owner": "myorg",
   "github_repo": "my-mcp-server"
 }
@@ -147,7 +147,7 @@ Example request (UPDATE existing implementation):
   "short_description": "Access GitHub repositories and issues via MCP",
   "status": "live",
   "classification": "official",
-  "implementation_language": "TypeScript"
+  "implementation_language": "typescript"
 }
 
 Example request (with remote endpoints - new remote):

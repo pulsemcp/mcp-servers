@@ -240,16 +240,9 @@ describe('Draft MCP Implementations - Manual Tests with Real API', () => {
         // - mcp_server_id/mcp_client_id are created automatically based on type
       });
 
+      expect(result.isError).toBeFalsy();
       const text = result.content[0].text;
       console.log('Create result:', text);
-
-      // Skip test if endpoint not deployed yet (404)
-      if (text.includes('404 Not Found')) {
-        console.log('SKIPPED: Create implementation endpoint not deployed to this environment yet');
-        return;
-      }
-
-      expect(result.isError).toBeFalsy();
       expect(result.content).toHaveLength(1);
       expect(result.content[0].type).toBe('text');
 
