@@ -106,8 +106,8 @@ Example response:
           }
           content += '\n';
         }
-        if (server.recommended) {
-          content += `**Recommended:** Yes\n`;
+        if (server.recommended !== undefined) {
+          content += `**Recommended:** ${server.recommended ? 'Yes' : 'No'}\n`;
         }
 
         if (server.short_description) {

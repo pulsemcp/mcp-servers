@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [0.6.6] - 2026-01-28
+
+### Fixed
+
+- Fixed `update_mcp_server` response to show actual `recommended` value returned by API
+  - Now displays `**Recommended:** Yes` or `**Recommended:** No` after updates
+  - Changed "Fields updated:" to "Fields provided:" to clarify that these are the fields sent to the API, not necessarily what was persisted
+- Fixed `get_mcp_server` to display `recommended` status even when `false`
+  - Previously only showed "Recommended: Yes" when true, now shows "Yes" or "No" whenever the field is defined
+- Added missing `recommended`, `package_registry`, `package_name`, and `created_on_override` fields to `MCPImplementation` type definition
+
 ## [0.6.5] - 2026-01-28
 
 ### Fixed

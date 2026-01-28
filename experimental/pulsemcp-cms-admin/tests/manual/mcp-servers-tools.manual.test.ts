@@ -379,9 +379,9 @@ describe('mcp_servers Tools - Manual Tests with Real API', () => {
       expect(result.isError).toBeFalsy();
       const text = result.content[0].text;
 
-      // Check if recommended is displayed
+      // Check if recommended is displayed (now always shown when field is defined)
       if (text.includes('**Recommended:**')) {
-        expect(text).toContain('**Recommended:** Yes');
+        expect(text).toMatch(/\*\*Recommended:\*\* (Yes|No)/);
       }
 
       console.log('Recommended flag checked');

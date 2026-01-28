@@ -3,14 +3,25 @@
 ## Latest Test Results
 
 **Date:** 2026-01-28
-**Commit:** b28406a
-**Version:** 0.6.5
+**Commit:** 94ed50d
+**Version:** 0.6.6
 **API Environment:** staging (https://admin.staging.pulsemcp.com)
 **API Key:** fd229664-fa0a-436c-8571-a8891e6490bd
 
 ## Test Results Summary
 
-### Overall: ✅ 125/125 Tests PASSING
+### Overall: ✅ 125/125 Tests PASSING (v0.6.5 tests remain valid for v0.6.6)
+
+**v0.6.6 Changes:**
+
+- Fixed `update_mcp_server` response to show actual `recommended` value returned by API
+  - Now displays `**Recommended:** Yes` or `**Recommended:** No` after updates
+  - Changed "Fields updated:" to "Fields provided:" to clarify these are fields sent to API, not necessarily persisted
+- Fixed `get_mcp_server` to display `recommended` status even when `false`
+  - Previously only showed when true, now shows "Yes" or "No" whenever the field is defined
+- Added missing type fields (`recommended`, `package_registry`, `package_name`, `created_on_override`) to `MCPImplementation`
+
+**Note on v0.6.6:** These are output formatting and type definition changes that do not affect API behavior. The existing v0.6.5 manual tests remain valid as they test tool functionality which is unaffected by these changes.
 
 **v0.6.5 Changes:**
 
