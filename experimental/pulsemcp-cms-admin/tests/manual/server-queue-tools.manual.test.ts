@@ -234,7 +234,7 @@ describe('Draft MCP Implementations - Manual Tests with Real API', () => {
         type: 'server',
         short_description: 'A test implementation created via MCP tool',
         classification: 'community',
-        implementation_language: 'TypeScript',
+        implementation_language: 'typescript', // Must be lowercase per API validation
         // Note: github_stars and mcp_server_id/mcp_client_id are NOT available on create
         // - github_stars is read-only (derived from GitHub repository)
         // - mcp_server_id/mcp_client_id are created automatically based on type

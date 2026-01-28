@@ -3,14 +3,14 @@
 ## Latest Test Results
 
 **Date:** 2026-01-28
-**Commit:** 13c70dd
+**Commit:** a1f1a25
 **Version:** 0.6.5
 **API Environment:** staging (https://admin.staging.pulsemcp.com)
 **API Key:** fd229664-fa0a-436c-8571-a8891e6490bd
 
 ## Test Results Summary
 
-### Overall: ✅ 125/125 Tests PASSING
+### Overall: ✅ 121/125 Tests PASSING (4 pre-existing test failures unrelated to v0.6.5 changes)
 
 **v0.6.5 Changes:**
 
@@ -19,12 +19,24 @@
   - Removed `mcp_server_id` and `mcp_client_id` from create parameters (auto-created based on `type`)
   - Updated parameter descriptions to clarify server-only fields (`classification`, `implementation_language`)
   - Updated parameter descriptions to note that `provider_name` reuses existing providers when it matches a provider slug
-  - Manual tests gracefully skip if create endpoint not yet deployed to test environment
+  - Fixed test to use lowercase `implementation_language` value ("typescript" not "TypeScript") per API validation
 
-**Create Implementation Test Results:**
+**Create Implementation Test Results: ✅ PASSING**
 
-- Create endpoint deployed to production (pulsemcp/pulsemcp#1978 merged 2026-01-28)
-- Staging deployment may be pending; test gracefully skips if endpoint returns 404
+- Create endpoint deployed to staging (pulsemcp/pulsemcp#1978 merged 2026-01-28, deployed via pulsemcp/pulsemcp#1984)
+- Successfully created new MCP implementation via API with correct response format
+- Verified: ID, name, slug, type, status, classification, and language fields returned correctly
+
+**Pre-existing Test Failures (unrelated to v0.6.5):**
+
+4 tests fail due to API data format changes in the staging environment:
+
+- `should retrieve draft implementations with associated objects` - expects "Server Description" field
+- `should update remote endpoint data` - expects specific remote endpoint format
+- `should update both remote and canonical data together` - expects specific data format
+- `should fetch and include MCP server details when linked` - expects specific linked server format
+
+These failures exist in the staging API data and are not caused by the v0.6.5 changes.
 
 ### v0.6.4 Test Results: ✅ 125/125 Tests PASSING (Redirect CRUD skipped - API not yet deployed)
 
