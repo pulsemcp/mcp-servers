@@ -51,6 +51,7 @@ function createMockClient(overrides?: Partial<IPulseMCPAdminClient>): IPulseMCPA
     searchMCPImplementations: vi.fn(),
     getDraftMCPImplementations: vi.fn(),
     saveMCPImplementation: vi.fn(),
+    createMCPImplementation: vi.fn(),
     sendEmail: vi.fn(),
     searchProviders: vi.fn(),
     getProviderById: vi.fn(),
@@ -1264,6 +1265,7 @@ describe('Newsletter Tools', () => {
         getMCPClientById: vi.fn(),
         searchMCPImplementations: vi.fn(),
         saveMCPImplementation: vi.fn().mockResolvedValue(mockUpdatedImplementation),
+        createMCPImplementation: vi.fn(),
       };
 
       const tool = saveMCPImplementation(mockServer, () => mockClient);
@@ -1284,7 +1286,7 @@ describe('Newsletter Tools', () => {
 
       expect(result.content[0].type).toBe('text');
       const text = result.content[0].text;
-      expect(text).toContain('Successfully saved MCP implementation!');
+      expect(text).toContain('Successfully updated MCP implementation!');
       expect(text).toContain('Updated GitHub MCP Server');
       expect(text).toContain('100');
       expect(text).toContain('github-mcp-server');
@@ -1301,7 +1303,7 @@ describe('Newsletter Tools', () => {
       expect(text).toContain('- github_stars');
     });
 
-    it('should require ID parameter', async () => {
+    it('should require name and type when creating (no id)', async () => {
       const mockClient: IPulseMCPAdminClient = {
         getPosts: vi.fn(),
         getPost: vi.fn(),
@@ -1317,14 +1319,22 @@ describe('Newsletter Tools', () => {
         getMCPClientById: vi.fn(),
         searchMCPImplementations: vi.fn(),
         saveMCPImplementation: vi.fn(),
+        createMCPImplementation: vi.fn(),
       };
 
       const tool = saveMCPImplementation(mockServer, () => mockClient);
 
-      // Test with missing ID - should throw validation error
-      await expect(async () => {
-        await tool.handler({ name: 'Test' } as unknown);
-      }).rejects.toThrow();
+      // Test with missing type - should return error
+      const resultMissingType = await tool.handler({ name: 'Test' } as unknown);
+      expect(resultMissingType.isError).toBe(true);
+      expect(resultMissingType.content[0].text).toContain('type');
+      expect(resultMissingType.content[0].text).toContain('required');
+
+      // Test with missing name - should return error
+      const resultMissingName = await tool.handler({ type: 'server' } as unknown);
+      expect(resultMissingName.isError).toBe(true);
+      expect(resultMissingName.content[0].text).toContain('name');
+      expect(resultMissingName.content[0].text).toContain('required');
     });
 
     it('should handle no updates provided', async () => {
@@ -1343,6 +1353,7 @@ describe('Newsletter Tools', () => {
         getMCPClientById: vi.fn(),
         searchMCPImplementations: vi.fn(),
         saveMCPImplementation: vi.fn(),
+        createMCPImplementation: vi.fn(),
       };
 
       const tool = saveMCPImplementation(mockServer, () => mockClient);
@@ -1378,13 +1389,14 @@ describe('Newsletter Tools', () => {
         getMCPClientById: vi.fn(),
         searchMCPImplementations: vi.fn(),
         saveMCPImplementation: vi.fn().mockResolvedValue(mockUpdatedImplementation),
+        createMCPImplementation: vi.fn(),
       };
 
       const tool = saveMCPImplementation(mockServer, () => mockClient);
       const result = await tool.handler({ id: 100, status: 'live' });
 
       expect(mockClient.saveMCPImplementation).toHaveBeenCalledWith(100, { status: 'live' });
-      expect(result.content[0].text).toContain('Successfully saved MCP implementation!');
+      expect(result.content[0].text).toContain('Successfully updated MCP implementation!');
       expect(result.content[0].text).toContain('- status');
     });
 
@@ -1406,6 +1418,7 @@ describe('Newsletter Tools', () => {
         saveMCPImplementation: vi
           .fn()
           .mockRejectedValue(new Error('Validation failed: slug must be unique, name is required')),
+        createMCPImplementation: vi.fn(),
       };
 
       const tool = saveMCPImplementation(mockServer, () => mockClient);
@@ -1435,6 +1448,7 @@ describe('Newsletter Tools', () => {
         saveMCPImplementation: vi
           .fn()
           .mockRejectedValue(new Error('MCP implementation not found: 99999')),
+        createMCPImplementation: vi.fn(),
       };
 
       const tool = saveMCPImplementation(mockServer, () => mockClient);
@@ -1471,6 +1485,7 @@ describe('Newsletter Tools', () => {
         getMCPClientById: vi.fn(),
         searchMCPImplementations: vi.fn(),
         saveMCPImplementation: vi.fn().mockResolvedValue(mockUpdatedImplementation),
+        createMCPImplementation: vi.fn(),
       };
 
       const tool = saveMCPImplementation(mockServer, () => mockClient);
@@ -1485,7 +1500,7 @@ describe('Newsletter Tools', () => {
         mcp_client_id: null,
       });
 
-      expect(result.content[0].text).toContain('Successfully saved MCP implementation!');
+      expect(result.content[0].text).toContain('Successfully updated MCP implementation!');
       expect(result.content[0].text).toContain('- mcp_server_id');
       expect(result.content[0].text).toContain('- mcp_client_id');
     });
@@ -1522,6 +1537,7 @@ describe('Newsletter Tools', () => {
         getMCPClientById: vi.fn(),
         searchMCPImplementations: vi.fn(),
         saveMCPImplementation: vi.fn().mockResolvedValue(mockUpdatedImplementation),
+        createMCPImplementation: vi.fn(),
       };
 
       const tool = saveMCPImplementation(mockServer, () => mockClient);
@@ -1554,7 +1570,7 @@ describe('Newsletter Tools', () => {
         slug: 'ts-database',
       });
 
-      expect(result.content[0].text).toContain('Successfully saved MCP implementation!');
+      expect(result.content[0].text).toContain('Successfully updated MCP implementation!');
       expect(result.content[0].text).toContain('client');
       expect(result.content[0].text).toContain('archived');
       expect(result.content[0].text).toContain('community');
@@ -1576,6 +1592,7 @@ describe('Newsletter Tools', () => {
         getMCPClientById: vi.fn(),
         searchMCPImplementations: vi.fn(),
         saveMCPImplementation: vi.fn().mockRejectedValue(new Error('Invalid API key')),
+        createMCPImplementation: vi.fn(),
       };
 
       const tool = saveMCPImplementation(mockServer, () => mockClient);
