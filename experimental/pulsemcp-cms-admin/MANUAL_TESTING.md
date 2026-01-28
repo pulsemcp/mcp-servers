@@ -3,7 +3,7 @@
 ## Latest Test Results
 
 **Date:** 2026-01-28
-**Commit:** (see PR)
+**Commit:** 0f86f6c
 **Version:** 0.6.6
 **API Environment:** staging (https://admin.staging.pulsemcp.com)
 **API Key:** N/A (not available in CI environment)
