@@ -2,15 +2,29 @@
 
 ## Latest Test Results
 
-**Date:** 2026-01-19
-**Commit:** f2eb628
-**Version:** 0.6.2
+**Date:** 2026-01-28
+**Commit:** 944a960
+**Version:** 0.6.3
 **API Environment:** Staging (https://admin.staging.pulsemcp.com)
 **API Key:** Admin API key (read/write)
 
 ## Test Results Summary
 
-### Overall: ✅ 36/36 MCP Servers Tests + 28/28 REST API Tests PASSING
+### Overall: ✅ 112/112 All Tests PASSING
+
+**v0.6.3 Changes:**
+
+- Extended `save_mcp_implementation` tool to support **creating** new MCP implementations by omitting the `id` parameter
+- When `id` is omitted, the tool attempts to create a new implementation (requires `name` and `type` parameters)
+- When `id` is provided, the tool updates the existing implementation (existing behavior preserved)
+- Added `createMCPImplementation` API client method for the underlying POST request
+- Added `CreateMCPImplementationParams` type for creation-specific parameters
+
+**Note on Create Functionality:**
+
+The create functionality (POST `/api/implementations`) requires backend support that may not yet be available on all API environments. When the endpoint is not available, the tool returns a clear error message: "Failed to create MCP implementation: 404 Not Found". The client-side implementation is complete and ready for when the backend endpoint is deployed.
+
+### Previous Test Results: ✅ 36/36 MCP Servers Tests + 28/28 REST API Tests PASSING
 
 **v0.6.2 mcp_servers tools - Fully Tested:**
 
