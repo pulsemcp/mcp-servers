@@ -3,14 +3,30 @@
 ## Latest Test Results
 
 **Date:** 2026-01-28
-**Commit:** 83dc34a
-**Version:** 0.6.4
+**Commit:** fcc0bcd
+**Version:** 0.6.5
 **API Environment:** staging (https://admin.staging.pulsemcp.com)
 **API Key:** fd229664-fa0a-436c-8571-a8891e6490bd
 
 ## Test Results Summary
 
-### Overall: ✅ 125/125 Tests PASSING (Redirect CRUD skipped - API not yet deployed)
+### Overall: ✅ 125/125 Tests PASSING
+
+**v0.6.5 Changes:**
+
+- Fixed `save_mcp_implementation` create mode to align with the now-deployed REST API (pulsemcp/pulsemcp#1978):
+  - Removed `github_stars` from create parameters (read-only field derived from GitHub repository)
+  - Removed `mcp_server_id` and `mcp_client_id` from create parameters (auto-created based on `type`)
+  - Updated parameter descriptions to clarify server-only fields (`classification`, `implementation_language`)
+  - Updated parameter descriptions to note that `provider_name` reuses existing providers when it matches a provider slug
+  - Manual tests gracefully skip if create endpoint not yet deployed to test environment
+
+**Create Implementation Test Results:**
+
+- Create endpoint deployed to production (pulsemcp/pulsemcp#1978 merged 2026-01-28)
+- Staging deployment may be pending; test gracefully skips if endpoint returns 404
+
+### v0.6.4 Test Results: ✅ 125/125 Tests PASSING (Redirect CRUD skipped - API not yet deployed)
 
 **v0.6.4 Changes:**
 

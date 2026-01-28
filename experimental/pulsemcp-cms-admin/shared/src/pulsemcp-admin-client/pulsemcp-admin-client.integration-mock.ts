@@ -460,6 +460,8 @@ export function createMockPulseMCPAdminClient(mockData: MockData): IPulseMCPAdmi
 
     async createMCPImplementation(params: CreateMCPImplementationParams) {
       // Create a new implementation with mock data
+      // Note: github_stars is read-only (derived from GitHub)
+      // Note: mcp_server_id/mcp_client_id are auto-created based on type
       const newImpl: MCPImplementation = {
         id: Math.floor(Math.random() * 10000) + 1000,
         name: params.name,
@@ -468,13 +470,14 @@ export function createMockPulseMCPAdminClient(mockData: MockData): IPulseMCPAdmi
         slug: params.slug || params.name.toLowerCase().replace(/\s+/g, '-'),
         short_description: params.short_description,
         description: params.description,
-        classification: params.classification,
-        implementation_language: params.implementation_language,
+        classification: params.type === 'server' ? params.classification : undefined,
+        implementation_language:
+          params.type === 'server' ? params.implementation_language : undefined,
         url: params.url,
         provider_name: params.provider_name,
-        github_stars: params.github_stars,
-        mcp_server_id: params.mcp_server_id,
-        mcp_client_id: params.mcp_client_id,
+        github_stars: null, // Read-only field - derived from GitHub repository
+        mcp_server_id: params.type === 'server' ? Math.floor(Math.random() * 10000) : null,
+        mcp_client_id: params.type === 'client' ? Math.floor(Math.random() * 10000) : null,
         github_owner: params.github_owner,
         github_repo: params.github_repo,
         github_subfolder: params.github_subfolder,

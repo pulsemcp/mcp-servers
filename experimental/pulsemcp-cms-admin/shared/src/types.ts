@@ -250,24 +250,27 @@ export interface SaveMCPImplementationParams {
  * Parameters for creating a new MCP implementation.
  * Required fields: name, type
  * All other fields are optional.
+ *
+ * Note: Some fields from SaveMCPImplementationParams are NOT available on create:
+ * - github_stars: Read-only, derived from GitHub repository
+ * - mcp_server_id/mcp_client_id: Created automatically based on 'type'
  */
 export interface CreateMCPImplementationParams {
   // Required fields
   name: string; // Name of the MCP implementation
   type: 'server' | 'client'; // Implementation type
 
-  // Optional fields (same as SaveMCPImplementationParams)
+  // Optional fields
   short_description?: string;
   description?: string;
   status?: 'draft' | 'live' | 'archived';
   slug?: string;
   url?: string;
-  provider_name?: string;
-  github_stars?: number | null;
-  classification?: 'official' | 'community' | 'reference';
-  implementation_language?: string;
-  mcp_server_id?: number | null;
-  mcp_client_id?: number | null;
+  provider_name?: string; // If matches an existing provider's slug, reuses that provider
+  // Note: github_stars is read-only (derived from GitHub repository) - not available on create
+  classification?: 'official' | 'community' | 'reference'; // Server-only field
+  implementation_language?: string; // Server-only field
+  // Note: mcp_server_id/mcp_client_id are created automatically based on 'type' - not available on create
 
   // Provider creation/linking fields
   provider_id?: string | number; // "new" to create, or numeric ID to link existing

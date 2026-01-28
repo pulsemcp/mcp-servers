@@ -13,12 +13,18 @@ const PARAM_DESCRIPTIONS = {
   status: 'Publication status - "draft", "live", or "archived"',
   slug: 'URL-friendly slug identifier',
   url: 'URL to the implementation (GitHub repo, npm package, etc.)',
-  provider_name: 'Provider/author name',
-  github_stars: 'GitHub star count (integer, or null if unknown)',
-  classification: 'Implementation classification - "official", "community", or "reference"',
-  implementation_language: 'Programming language (e.g., "TypeScript", "Python", "Go")',
-  mcp_server_id: 'ID of associated MCP server record (null to unlink)',
-  mcp_client_id: 'ID of associated MCP client record (null to unlink)',
+  provider_name:
+    'Provider/author name. If matches an existing provider slug, reuses that provider instead of creating a duplicate.',
+  github_stars:
+    '(UPDATE ONLY) GitHub star count (integer, or null if unknown). Read-only on create - stars come from the associated GitHub repository.',
+  classification:
+    '(SERVER ONLY) Implementation classification - "official", "community", or "reference". Only applies to server type implementations.',
+  implementation_language:
+    '(SERVER ONLY) Programming language (e.g., "TypeScript", "Python", "Go"). Only applies to server type implementations.',
+  mcp_server_id:
+    '(UPDATE ONLY) ID of associated MCP server record (null to unlink). On create, this is automatically set based on type.',
+  mcp_client_id:
+    '(UPDATE ONLY) ID of associated MCP client record (null to unlink). On create, this is automatically set based on type.',
   // Provider creation/linking
   provider_id:
     'Provider ID: use "new" to create a new provider, or a numeric ID to link an existing one. Required when setting status to "live".',
@@ -176,7 +182,12 @@ Important notes:
 - Omit \`id\` to CREATE, provide \`id\` to UPDATE
 - When creating: \`name\` and \`type\` are required
 - When updating: only provided fields will be changed
-- Setting mcp_server_id or mcp_client_id to null will unlink the association
+- CREATE-ONLY restrictions:
+  - \`github_stars\` is read-only (derived from GitHub repository)
+  - \`mcp_server_id\`/\`mcp_client_id\` are created automatically based on \`type\`
+  - \`classification\` and \`implementation_language\` only apply to servers
+  - \`provider_name\` reuses existing provider if it matches a provider's slug
+- Setting mcp_server_id or mcp_client_id to null will unlink the association (UPDATE only)
 - Remote endpoints are for MCP servers only and configure how they can be accessed
 - Canonical URLs help identify the authoritative source for the implementation
 

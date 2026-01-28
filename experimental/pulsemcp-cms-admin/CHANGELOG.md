@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [0.6.5] - 2026-01-28
+
+### Fixed
+
+- Fixed `save_mcp_implementation` create mode to align with the now-deployed REST API:
+  - Removed `github_stars` from create parameters (read-only field derived from GitHub repository)
+  - Removed `mcp_server_id` and `mcp_client_id` from create parameters (auto-created based on `type`)
+  - Updated parameter descriptions to clarify server-only fields (`classification`, `implementation_language`)
+  - Updated parameter descriptions to note that `provider_name` reuses existing providers when it matches a provider slug
+  - Manual tests gracefully skip if create endpoint not yet deployed to test environment
+
 ## [0.6.4] - 2026-01-28
 
 ### Added

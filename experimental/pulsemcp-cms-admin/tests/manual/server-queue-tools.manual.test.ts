@@ -235,15 +235,17 @@ describe('Draft MCP Implementations - Manual Tests with Real API', () => {
         short_description: 'A test implementation created via MCP tool',
         classification: 'community',
         implementation_language: 'TypeScript',
+        // Note: github_stars and mcp_server_id/mcp_client_id are NOT available on create
+        // - github_stars is read-only (derived from GitHub repository)
+        // - mcp_server_id/mcp_client_id are created automatically based on type
       });
 
       const text = result.content[0].text;
       console.log('Create result:', text);
 
-      // NOTE: This test may fail if the backend POST /api/implementations endpoint doesn't exist yet.
-      // The client-side implementation is correct, but requires backend support.
+      // Skip test if endpoint not deployed yet (404)
       if (text.includes('404 Not Found')) {
-        console.log('SKIPPED: Backend POST /api/implementations endpoint not available');
+        console.log('SKIPPED: Create implementation endpoint not deployed to this environment yet');
         return;
       }
 
