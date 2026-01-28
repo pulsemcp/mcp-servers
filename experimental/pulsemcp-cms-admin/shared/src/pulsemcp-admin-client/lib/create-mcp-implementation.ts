@@ -34,30 +34,14 @@ export async function createMCPImplementation(
   if (params.provider_name !== undefined) {
     formData.append('mcp_implementation[provider_name]', params.provider_name);
   }
-  if (params.github_stars !== undefined) {
-    formData.append(
-      'mcp_implementation[github_stars]',
-      params.github_stars === null ? '' : params.github_stars.toString()
-    );
-  }
+  // Note: github_stars is read-only (derived from GitHub repository) - not sent on create
   if (params.classification !== undefined) {
     formData.append('mcp_implementation[classification]', params.classification);
   }
   if (params.implementation_language !== undefined) {
     formData.append('mcp_implementation[implementation_language]', params.implementation_language);
   }
-  if (params.mcp_server_id !== undefined) {
-    formData.append(
-      'mcp_implementation[mcp_server_id]',
-      params.mcp_server_id === null ? '' : params.mcp_server_id.toString()
-    );
-  }
-  if (params.mcp_client_id !== undefined) {
-    formData.append(
-      'mcp_implementation[mcp_client_id]',
-      params.mcp_client_id === null ? '' : params.mcp_client_id.toString()
-    );
-  }
+  // Note: mcp_server_id and mcp_client_id are created automatically based on 'type' - not sent on create
 
   // Provider creation/linking
   if (params.provider_id !== undefined) {

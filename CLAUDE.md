@@ -278,6 +278,7 @@ npm run test:manual
 - Manual tests exist to verify that real integrations work - a test that skips on failure defeats the entire purpose
 
 **If you find yourself writing a manual test that needs to "gracefully handle" a missing endpoint:**
+
 1. STOP - you are doing it wrong
 2. The backend endpoint must exist and be functional BEFORE you write client code for it
 3. Coordinate with the backend team first, get the endpoint deployed, THEN implement the client
