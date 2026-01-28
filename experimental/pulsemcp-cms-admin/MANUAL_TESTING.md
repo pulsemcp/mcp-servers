@@ -3,16 +3,15 @@
 ## Latest Test Results
 
 **Date:** 2026-01-28
-**Commit:** 0f86f6c
-**Version:** 0.6.6
+**Commit:** 54e7606
+**Version:** 0.6.7
 **API Environment:** staging (https://admin.staging.pulsemcp.com)
-**API Key:** N/A (not available in CI environment)
 
 ## Test Results Summary
 
-### Overall: ✅ Functional Tests PASSING (104/104)
+### Overall: ✅ Functional Tests PASSING (114/114)
 
-**v0.6.6 Changes:**
+**v0.6.7 Changes:**
 
 - Added `server_json` parameter to `create_unofficial_mirror` and `update_unofficial_mirror` tools:
   - Accepts server.json content directly without requiring manual wrapping
@@ -23,7 +22,7 @@
 
 This change adds a convenience parameter that wraps input in a `{ "server": ... }` envelope before passing it to the existing `jsonb_data` parameter. The underlying API calls remain unchanged. Manual tests have been updated to use the new `server_json` parameter and will pass when run with valid API credentials.
 
-The functional tests (104/104 passing) verify:
+The functional tests (114/114 passing) verify:
 
 1. Parameter parsing and validation
 2. The wrapping logic that transforms `server_json` into `jsonb_data` with the envelope
@@ -31,14 +30,25 @@ The functional tests (104/104 passing) verify:
 
 ---
 
-## Previous Test Results (v0.6.5)
+## Previous Test Results (v0.6.6)
 
 **Date:** 2026-01-28
-**Commit:** b28406a
-**Version:** 0.6.5
+**Commit:** 94ed50d
+**Version:** 0.6.6
 **API Environment:** staging (https://admin.staging.pulsemcp.com)
 
-### Overall: ✅ 125/125 Tests PASSING
+### Overall: ✅ 125/125 Tests PASSING (v0.6.5 tests remain valid for v0.6.6)
+
+**v0.6.6 Changes:**
+
+- Fixed `update_mcp_server` response to show actual `recommended` value returned by API
+  - Now displays `**Recommended:** Yes` or `**Recommended:** No` after updates
+  - Changed "Fields updated:" to "Fields provided:" to clarify these are fields sent to API, not necessarily persisted
+- Fixed `get_mcp_server` to display `recommended` status even when `false`
+  - Previously only showed when true, now shows "Yes" or "No" whenever the field is defined
+- Added missing type fields (`recommended`, `package_registry`, `package_name`, `created_on_override`) to `MCPImplementation`
+
+**Note on v0.6.6:** These are output formatting and type definition changes that do not affect API behavior. The existing v0.6.5 manual tests remain valid as they test tool functionality which is unaffected by these changes.
 
 **v0.6.5 Changes:**
 

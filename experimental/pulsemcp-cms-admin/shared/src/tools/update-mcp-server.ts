@@ -337,11 +337,15 @@ Create new provider:
           content += `**Remote Endpoints:** ${server.remotes.length}\n`;
         }
 
+        if (server.recommended !== undefined) {
+          content += `**Recommended:** ${server.recommended ? 'Yes' : 'No'}\n`;
+        }
+
         if (server.updated_at) {
           content += `**Updated:** ${server.updated_at}\n`;
         }
 
-        content += `\n**Fields updated:**\n`;
+        content += `\n**Fields provided:**\n`;
         Object.keys(updateParams).forEach((field) => {
           content += `- ${field}\n`;
         });
