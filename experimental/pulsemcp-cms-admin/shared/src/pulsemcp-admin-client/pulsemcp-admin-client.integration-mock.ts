@@ -7,6 +7,7 @@ import type {
   MCPClient,
   MCPImplementation,
   MCPImplementationsResponse,
+  CreateMCPImplementationParams,
   Provider,
   ProvidersResponse,
   OfficialMirrorQueueItem,
@@ -455,6 +456,35 @@ export function createMockPulseMCPAdminClient(mockData: MockData): IPulseMCPAdmi
       };
 
       return updatedImpl;
+    },
+
+    async createMCPImplementation(params: CreateMCPImplementationParams) {
+      // Create a new implementation with mock data
+      const newImpl: MCPImplementation = {
+        id: Math.floor(Math.random() * 10000) + 1000,
+        name: params.name,
+        type: params.type,
+        status: params.status || 'draft',
+        slug: params.slug || params.name.toLowerCase().replace(/\s+/g, '-'),
+        short_description: params.short_description,
+        description: params.description,
+        classification: params.classification,
+        implementation_language: params.implementation_language,
+        url: params.url,
+        provider_name: params.provider_name,
+        github_stars: params.github_stars,
+        mcp_server_id: params.mcp_server_id,
+        mcp_client_id: params.mcp_client_id,
+        github_owner: params.github_owner,
+        github_repo: params.github_repo,
+        github_subfolder: params.github_subfolder,
+        internal_notes: params.internal_notes,
+        canonical: params.canonical,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+
+      return newImpl;
     },
 
     async sendEmail(params) {

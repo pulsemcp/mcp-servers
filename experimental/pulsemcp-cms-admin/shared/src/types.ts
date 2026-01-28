@@ -246,6 +246,62 @@ export interface SaveMCPImplementationParams {
   internal_notes?: string; // Admin-only notes
 }
 
+/**
+ * Parameters for creating a new MCP implementation.
+ * Required fields: name, type
+ * All other fields are optional.
+ */
+export interface CreateMCPImplementationParams {
+  // Required fields
+  name: string; // Name of the MCP implementation
+  type: 'server' | 'client'; // Implementation type
+
+  // Optional fields (same as SaveMCPImplementationParams)
+  short_description?: string;
+  description?: string;
+  status?: 'draft' | 'live' | 'archived';
+  slug?: string;
+  url?: string;
+  provider_name?: string;
+  github_stars?: number | null;
+  classification?: 'official' | 'community' | 'reference';
+  implementation_language?: string;
+  mcp_server_id?: number | null;
+  mcp_client_id?: number | null;
+
+  // Provider creation/linking fields
+  provider_id?: string | number; // "new" to create, or numeric ID to link existing
+  provider_slug?: string; // Optional slug (auto-generated from name if omitted)
+  provider_url?: string; // Optional provider website URL
+
+  // GitHub repository fields
+  github_owner?: string; // GitHub organization or username
+  github_repo?: string; // Repository name
+  github_subfolder?: string; // Optional subfolder within repo (for monorepos)
+
+  // Package registry fields
+  package_registry?: string; // e.g., "npm", "pypi", "cargo"
+  package_name?: string; // e.g., "@modelcontextprotocol/server-filesystem"
+
+  // Flags
+  recommended?: boolean; // Mark this server as recommended by PulseMCP
+
+  // Date overrides
+  created_on_override?: string; // ISO date string to override the automatically derived created date
+
+  // Tags (for servers)
+  tags?: string[]; // Array of tag slugs to set on the server
+
+  // Remote endpoints (for servers)
+  remote?: RemoteEndpointParams[]; // Array of remote endpoint configurations
+
+  // Canonical URLs
+  canonical?: CanonicalUrlParams[]; // Array of canonical URL configurations
+
+  // Other fields
+  internal_notes?: string; // Admin-only notes
+}
+
 export interface Provider {
   id: number;
   name: string;
