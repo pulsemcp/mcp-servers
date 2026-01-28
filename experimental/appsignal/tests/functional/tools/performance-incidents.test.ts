@@ -84,13 +84,13 @@ describe('Performance Incident Tools', () => {
     vi.clearAllMocks();
   });
 
-  describe('get_performance_incidents', () => {
+  describe('get_perf_incidents', () => {
     it('should retrieve performance incidents with default parameters', async () => {
       // Register tools with the mock client
       registerToolsWithClient(mockClient);
 
       // Get the tool
-      const tool = registeredTools.get('get_performance_incidents');
+      const tool = registeredTools.get('get_perf_incidents');
       expect(tool).toBeDefined();
       expect(tool?.enabled).toBe(true);
 
@@ -163,7 +163,7 @@ describe('Performance Incident Tools', () => {
 
       registerToolsWithClient(customMockClient);
 
-      const tool = registeredTools.get('get_performance_incidents');
+      const tool = registeredTools.get('get_perf_incidents');
       const result = await tool?.handler({ states: ['CLOSED'] });
       const response = JSON.parse((result as ToolResult).content[0].text);
 
@@ -180,7 +180,7 @@ describe('Performance Incident Tools', () => {
 
       registerToolsWithClient(errorClient);
 
-      const tool = registeredTools.get('get_performance_incidents');
+      const tool = registeredTools.get('get_perf_incidents');
       const result = await tool?.handler({});
 
       expect((result as ToolResult).content[0].text).toContain(
@@ -193,14 +193,14 @@ describe('Performance Incident Tools', () => {
 
       registerToolsWithClient(mockClient);
 
-      const tool = registeredTools.get('get_performance_incidents');
+      const tool = registeredTools.get('get_perf_incidents');
       const result = await tool?.handler({});
 
       expect((result as ToolResult).content[0].text).toContain('Error: No app ID configured');
     });
   });
 
-  describe('get_performance_incident', () => {
+  describe('get_perf_incident', () => {
     it('should retrieve a specific performance incident', async () => {
       const mockIncident: PerformanceIncident = {
         id: 'perf-123',
@@ -233,7 +233,7 @@ describe('Performance Incident Tools', () => {
 
       registerToolsWithClient(customMockClient);
 
-      const tool = registeredTools.get('get_performance_incident');
+      const tool = registeredTools.get('get_perf_incident');
       const result = await tool?.handler({ incidentNumber: 'perf-123' });
       const response = JSON.parse((result as ToolResult).content[0].text);
 
@@ -250,7 +250,7 @@ describe('Performance Incident Tools', () => {
 
       registerToolsWithClient(customMockClient);
 
-      const tool = registeredTools.get('get_performance_incident');
+      const tool = registeredTools.get('get_perf_incident');
       const result = await tool?.handler({ incidentNumber: 'xyz' });
 
       expect((result as ToolResult).content[0].text).toContain(
@@ -259,7 +259,7 @@ describe('Performance Incident Tools', () => {
     });
   });
 
-  describe('get_performance_incident_sample', () => {
+  describe('get_perf_incident_sample', () => {
     it('should retrieve a performance incident sample', async () => {
       const mockSample: PerformanceIncidentSample = {
         id: 'sample-789',
@@ -290,7 +290,7 @@ describe('Performance Incident Tools', () => {
 
       registerToolsWithClient(customMockClient);
 
-      const tool = registeredTools.get('get_performance_incident_sample');
+      const tool = registeredTools.get('get_perf_incident_sample');
       const result = await tool?.handler({ incidentNumber: 'perf-123' });
       const response = JSON.parse((result as ToolResult).content[0].text);
 
@@ -298,7 +298,7 @@ describe('Performance Incident Tools', () => {
     });
   });
 
-  describe('get_performance_incident_sample_timeline', () => {
+  describe('get_perf_incident_sample_timeline', () => {
     it('should retrieve a performance incident sample timeline', async () => {
       const mockTimeline: PerformanceIncidentSampleTimeline = {
         sampleId: 'sample-789',
@@ -348,7 +348,7 @@ describe('Performance Incident Tools', () => {
 
       registerToolsWithClient(customMockClient);
 
-      const tool = registeredTools.get('get_performance_incident_sample_timeline');
+      const tool = registeredTools.get('get_perf_incident_sample_timeline');
       const result = await tool?.handler({ incidentNumber: 'perf-123' });
       const response = JSON.parse((result as ToolResult).content[0].text);
 

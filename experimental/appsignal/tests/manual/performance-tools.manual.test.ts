@@ -145,7 +145,7 @@ describe('AppSignal Performance Tools - Manual Test', () => {
       console.log('\n🔍 Fetching performance incidents...');
 
       // Test 1: Default call (should return OPEN incidents)
-      const result = await client.callTool('get_performance_incidents', {});
+      const result = await client.callTool('get_perf_incidents', {});
       const response = JSON.parse(result.content[0].text);
 
       console.log(
@@ -167,7 +167,7 @@ describe('AppSignal Performance Tools - Manual Test', () => {
 
       // Test 3: Empty states array should default to OPEN
       console.log('\n🔍 Testing empty states array handling...');
-      const emptyStatesResult = await client.callTool('get_performance_incidents', {
+      const emptyStatesResult = await client.callTool('get_perf_incidents', {
         states: [],
       });
       const emptyStatesResponse = JSON.parse(emptyStatesResult.content[0].text);
@@ -179,7 +179,7 @@ describe('AppSignal Performance Tools - Manual Test', () => {
       if (response.incidents.length === 0) {
         // Test 4: If no OPEN incidents, try ALL states to ensure API is working
         console.log('\n🔍 No OPEN incidents found, trying all states...');
-        const allStatesResult = await client.callTool('get_performance_incidents', {
+        const allStatesResult = await client.callTool('get_perf_incidents', {
           states: ['OPEN', 'CLOSED', 'WIP'],
         });
         const allStatesResponse = JSON.parse(allStatesResult.content[0].text);
@@ -231,7 +231,7 @@ describe('AppSignal Performance Tools - Manual Test', () => {
 
       // Test filtering by state
       console.log('\n🔍 Testing state filtering...');
-      const closedResult = await client.callTool('get_performance_incidents', {
+      const closedResult = await client.callTool('get_perf_incidents', {
         states: ['CLOSED'],
       });
       const closedResponse = JSON.parse(closedResult.content[0].text);
@@ -239,7 +239,7 @@ describe('AppSignal Performance Tools - Manual Test', () => {
 
       // Test pagination
       console.log('\n🔍 Testing pagination...');
-      const paginatedResult = await client.callTool('get_performance_incidents', {
+      const paginatedResult = await client.callTool('get_perf_incidents', {
         limit: 5,
         offset: 0,
       });
@@ -259,7 +259,7 @@ describe('AppSignal Performance Tools - Manual Test', () => {
 
   async function testPerformanceIncidentDetail(incidentNumber: string) {
     try {
-      const result = await client.callTool('get_performance_incident', { incidentNumber });
+      const result = await client.callTool('get_perf_incident', { incidentNumber });
       const incident = JSON.parse(result.content[0].text);
 
       console.log('Performance incident details:');
@@ -289,7 +289,7 @@ describe('AppSignal Performance Tools - Manual Test', () => {
     try {
       console.log(`\n🔍 Getting sample for incident ${incidentNumber}...`);
 
-      const result = await client.callTool('get_performance_incident_sample', { incidentNumber });
+      const result = await client.callTool('get_perf_incident_sample', { incidentNumber });
       const sample = JSON.parse(result.content[0].text);
 
       console.log('Performance sample details:');
@@ -327,7 +327,7 @@ describe('AppSignal Performance Tools - Manual Test', () => {
     try {
       console.log(`\n🔍 Getting timeline for incident ${incidentNumber}...`);
 
-      const result = await client.callTool('get_performance_incident_sample_timeline', {
+      const result = await client.callTool('get_perf_incident_sample_timeline', {
         incidentNumber,
       });
       const timeline = JSON.parse(result.content[0].text);
@@ -392,7 +392,7 @@ describe('AppSignal Performance Tools - Manual Test', () => {
 
       // Test non-existent incident
       console.log('Testing non-existent incident...');
-      const result = await client.callTool('get_performance_incident', {
+      const result = await client.callTool('get_perf_incident', {
         incidentNumber: 'non-existent-id-12345',
       });
 
@@ -401,7 +401,7 @@ describe('AppSignal Performance Tools - Manual Test', () => {
 
       // Test non-existent sample
       console.log('Testing non-existent sample...');
-      const sampleResult = await client.callTool('get_performance_incident_sample', {
+      const sampleResult = await client.callTool('get_perf_incident_sample', {
         incidentNumber: 'non-existent-id-12345',
       });
 

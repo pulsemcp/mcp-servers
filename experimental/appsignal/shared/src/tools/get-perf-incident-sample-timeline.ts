@@ -8,20 +8,18 @@ const PARAM_DESCRIPTIONS = {
   incidentNumber: 'The number of the performance incident to get the sample timeline for',
 } as const;
 
-export function getPerformanceIncidentSampleTimelineTool(
+export function getPerfIncidentSampleTimelineTool(
   _server: McpServer,
   clientFactory: () => IAppsignalClient
 ) {
-  const GetPerformanceIncidentSampleTimelineShape = {
+  const GetPerfIncidentSampleTimelineShape = {
     incidentNumber: z.string().describe(PARAM_DESCRIPTIONS.incidentNumber),
   };
 
-  const GetPerformanceIncidentSampleTimelineSchema = z.object(
-    GetPerformanceIncidentSampleTimelineShape
-  );
+  const GetPerfIncidentSampleTimelineSchema = z.object(GetPerfIncidentSampleTimelineShape);
 
   return {
-    name: 'get_performance_incident_sample_timeline',
+    name: 'get_perf_incident_sample_timeline',
     description: `Retrieve the detailed timeline for a performance incident sample from AppSignal. The timeline shows a hierarchical breakdown of all operations performed during a request, including database queries, view rendering, external API calls, and custom instrumentation. This is essential for identifying the exact bottlenecks in slow requests.
 
 Example response:
@@ -106,9 +104,9 @@ Use cases:
 - Understanding the call hierarchy and timing breakdown
 - Finding unexpected database queries or external API calls
 - Analyzing memory allocation patterns`,
-    inputSchema: GetPerformanceIncidentSampleTimelineShape,
+    inputSchema: GetPerfIncidentSampleTimelineShape,
     handler: async (args: unknown) => {
-      const { incidentNumber } = GetPerformanceIncidentSampleTimelineSchema.parse(args);
+      const { incidentNumber } = GetPerfIncidentSampleTimelineSchema.parse(args);
       const appId = getEffectiveAppId();
       if (!appId) {
         return {
