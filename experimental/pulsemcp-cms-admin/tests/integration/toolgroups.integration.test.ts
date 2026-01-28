@@ -303,8 +303,8 @@ describe('PulseMCP CMS Admin - Toolgroups Integration Tests', () => {
     it('should register all tools by default', async () => {
       const tools = await client.listTools();
 
-      // 6 newsletter + 5 server_queue + 7 official_queue + 5 unofficial_mirrors + 2 official_mirrors + 2 tenants + 5 mcp_jsons = 32 tools
-      expect(tools.tools).toHaveLength(32);
+      // 6 newsletter + 5 server_queue + 7 official_queue + 5 unofficial_mirrors + 2 official_mirrors + 2 tenants + 5 mcp_jsons + 3 mcp_servers + 5 redirects = 40 tools
+      expect(tools.tools).toHaveLength(40);
       const toolNames = tools.tools.map((t) => t.name);
 
       // Newsletter tools
@@ -347,6 +347,18 @@ describe('PulseMCP CMS Admin - Toolgroups Integration Tests', () => {
       expect(toolNames).toContain('create_mcp_json');
       expect(toolNames).toContain('update_mcp_json');
       expect(toolNames).toContain('delete_mcp_json');
+
+      // MCP servers tools
+      expect(toolNames).toContain('list_mcp_servers');
+      expect(toolNames).toContain('get_mcp_server');
+      expect(toolNames).toContain('update_mcp_server');
+
+      // Redirect tools
+      expect(toolNames).toContain('get_redirects');
+      expect(toolNames).toContain('get_redirect');
+      expect(toolNames).toContain('create_redirect');
+      expect(toolNames).toContain('update_redirect');
+      expect(toolNames).toContain('delete_redirect');
     });
   });
 
