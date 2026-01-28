@@ -267,6 +267,23 @@ npm run test:manual
 
 **Note**: Always use `.env` files in the MCP server's source root to store API keys and credentials. Never commit these files to version control.
 
+### CRITICAL: Manual Test Integrity Policy
+
+**Manual tests MUST actually test real functionality against real APIs. No exceptions.**
+
+- **NEVER** write manual tests that skip, bypass, or gracefully handle missing backend functionality
+- **NEVER** use patterns like `if (response.includes('404')) { return; }` to silently pass when an endpoint doesn't exist
+- **NEVER** implement client-side code for API endpoints that don't exist yet, then write "tests" that skip when the endpoint returns 404
+- If a backend API endpoint doesn't exist, **DO NOT** write the client code until the backend is ready
+- Manual tests exist to verify that real integrations work - a test that skips on failure defeats the entire purpose
+
+**If you find yourself writing a manual test that needs to "gracefully handle" a missing endpoint:**
+1. STOP - you are doing it wrong
+2. The backend endpoint must exist and be functional BEFORE you write client code for it
+3. Coordinate with the backend team first, get the endpoint deployed, THEN implement the client
+
+**Why this matters:** A merged PR with "passing" manual tests that actually skip broken functionality gives false confidence. It results in shipped code that doesn't work, discovered only when users try to use it.
+
 ## Creating New Servers
 
 1. Copy the `libs/mcp-server-template/` directory
@@ -383,6 +400,7 @@ Don't add: basic TypeScript fixes, standard npm troubleshooting, obvious file op
 - Manual tests should run against built code (not source) - create a `run-manual-built.js` script that builds the project first, then runs tests against the compiled JavaScript
 - CI should fail when MANUAL_TESTING.md isn't updated for the current PR, but NOT when tests fail (some failures might be expected due to API limitations)
 - **Manual test setup checklist**: Verify .env exists with real API keys, run `ci:install` to install all workspace dependencies, run `build:test` to build everything including test-mcp-client
+- **CRITICAL: Manual tests must actually pass against real APIs** - NEVER write tests that skip or gracefully handle missing backend endpoints. If an API endpoint doesn't exist, do not write client code for it. A "passing" test that silently skips on 404 is worse than no test at all because it provides false confidence
 
 ### Monorepo Dependency Management
 
