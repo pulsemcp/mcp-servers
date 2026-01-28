@@ -62,35 +62,36 @@ The tests will:
 
 ## Latest Test Results
 
-**Test Date:** 2025-12-09 18:48 PST
-**Branch:** claude/graphql-custom-query-tools
-**Commit:** 06b94df
+**Test Date:** 2025-01-28 19:58 PST
+**Branch:** tadasant/shorten-perf-tool-names
+**Commit:** c42feb3
 **Tested By:** Claude
-**Environment:** macOS, Node.js, Test Environment
+**Environment:** Linux, Node.js 20.19.2, Test Environment
 
 ### Test Results
 
 **Type:** Functional and integration testing
 **Status:** ✅ All 87 tests passed (11 test files)
 
-**Test Duration:** ~3.16s
+**Test Duration:** ~4.76s
 
 **Details:**
 
-This release adds three new GraphQL tools for custom query support:
+This release shortens performance-related tool names to reduce token usage:
 
-- `get_graphql_schema` - Returns a summary of the AppSignal GraphQL API schema
-- `get_graphql_schema_details` - Returns full GraphQL type definitions for specified type names
-- `custom_graphql_query` - Executes arbitrary GraphQL queries against the AppSignal API
+- `get_performance_incidents` → `get_perf_incidents`
+- `get_performance_incident` → `get_perf_incident`
+- `get_performance_incident_sample` → `get_perf_incident_sample`
+- `get_performance_incident_sample_timeline` → `get_perf_incident_sample_timeline`
+- `get_performance_samples` → `get_perf_samples`
 
 The feature was verified through:
 
-- ✅ All 87 existing tests pass (unchanged)
-- ✅ New tools properly registered (tool count increased from 20 to 23)
-- ✅ Schema parsing correctly extracts types, queries, and mutations
-- ✅ Integration tests with mock API
+- ✅ All 87 existing tests pass (updated with new tool names)
+- ✅ Tool registration tests verify new tool names are properly registered
+- ✅ Integration tests confirm tools function correctly with new names
 - ✅ All existing functionality preserved
 
-**Note:** The new GraphQL tools read from a static schema file and execute queries through the existing GraphQL client infrastructure. The schema parsing is pure file reading/regex that doesn't require real API testing. The custom query execution uses the same GraphQL client as existing tools which was previously tested with real API.
+**Note:** This is a straightforward code refactoring that only changes tool name strings and associated identifiers. No API interaction logic was modified. The underlying API calls remain identical, only the MCP tool name interface has changed. Manual API testing is not required for this type of change as it does not affect actual API interactions.
 
-**Summary:** Three new GraphQL tools have been added and verified through comprehensive functional and integration tests. All 87 tests pass.
+**Summary:** Performance tool names have been shortened from "performance" to "perf" across all 5 tools. All 87 tests pass with the updated names.

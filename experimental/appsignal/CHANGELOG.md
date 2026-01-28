@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.1] - 2025-01-28
+
 ### Changed
 
 - **BREAKING**: Shortened performance-related tool names to reduce token usage:
