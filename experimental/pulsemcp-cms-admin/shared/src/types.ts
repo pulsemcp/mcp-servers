@@ -715,3 +715,42 @@ export interface UpdateUnifiedMCPServerParams {
   // Internal notes
   internal_notes?: string;
 }
+
+// ============================================================
+// Redirect Types
+// URL redirects for managing PulseMCP website routing
+// ============================================================
+
+export type RedirectStatus = 'draft' | 'active' | 'paused' | 'archived';
+
+export interface Redirect {
+  id: number;
+  from: string; // Source path (e.g., "/old-page")
+  to: string; // Destination path or URL (e.g., "/new-page" or "https://example.com")
+  status: RedirectStatus;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface RedirectsResponse {
+  redirects: Redirect[];
+  pagination?: {
+    current_page: number;
+    total_pages: number;
+    total_count: number;
+    has_next?: boolean;
+    limit?: number;
+  };
+}
+
+export interface CreateRedirectParams {
+  from: string; // Source path to redirect from
+  to: string; // Destination path or URL to redirect to
+  status?: RedirectStatus; // Defaults to 'draft' if not specified
+}
+
+export interface UpdateRedirectParams {
+  from?: string;
+  to?: string;
+  status?: RedirectStatus;
+}

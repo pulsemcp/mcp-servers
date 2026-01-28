@@ -6,6 +6,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [0.6.4] - 2026-01-28
+
+### Added
+
+- Added new `redirects` / `redirects_readonly` tool groups for URL redirect management:
+  - `get_redirects`: List URL redirects with search, status filtering (draft/active/paused/archived), and pagination
+  - `get_redirect`: Get detailed information about a specific redirect by ID
+  - `create_redirect`: Create a new URL redirect entry with from/to paths and status
+  - `update_redirect`: Update an existing redirect's paths or status
+  - `delete_redirect`: Delete a redirect by ID (irreversible)
+- Added `Redirect`, `RedirectsResponse`, `RedirectStatus`, `CreateRedirectParams`, and `UpdateRedirectParams` types
+- Added 5 new API client methods: `getRedirects`, `getRedirect`, `createRedirect`, `updateRedirect`, `deleteRedirect`
+- Updated README documentation with redirect tools and tool groups
+
 ## [0.6.3] - 2026-01-28
 
 ### Added

@@ -41,6 +41,12 @@ import { deleteMcpJson } from './tools/delete-mcp-json.js';
 import { listMCPServers } from './tools/list-mcp-servers.js';
 import { getMCPServer } from './tools/get-mcp-server.js';
 import { updateMCPServer } from './tools/update-mcp-server.js';
+// Redirect tools
+import { getRedirects } from './tools/get-redirects.js';
+import { getRedirect } from './tools/get-redirect.js';
+import { createRedirect } from './tools/create-redirect.js';
+import { updateRedirect } from './tools/update-redirect.js';
+import { deleteRedirect } from './tools/delete-redirect.js';
 
 /**
  * Tool group definitions - groups of related tools that can be enabled/disabled together
@@ -58,6 +64,7 @@ import { updateMCPServer } from './tools/update-mcp-server.js';
  * - tenants_readonly: Tenant read-only tools
  * - mcp_jsons / mcp_jsons_readonly: MCP JSON configuration tools
  * - mcp_servers / mcp_servers_readonly: Unified MCP server tools (abstracted interface)
+ * - redirects / redirects_readonly: URL redirect management tools
  */
 export type ToolGroup =
   | 'newsletter'
@@ -75,7 +82,9 @@ export type ToolGroup =
   | 'mcp_jsons'
   | 'mcp_jsons_readonly'
   | 'mcp_servers'
-  | 'mcp_servers_readonly';
+  | 'mcp_servers_readonly'
+  | 'redirects'
+  | 'redirects_readonly';
 
 /** Base groups without _readonly suffix */
 type BaseToolGroup =
@@ -86,7 +95,8 @@ type BaseToolGroup =
   | 'official_mirrors'
   | 'tenants'
   | 'mcp_jsons'
-  | 'mcp_servers';
+  | 'mcp_servers'
+  | 'redirects';
 
 interface Tool {
   name: string;
@@ -160,6 +170,12 @@ const ALL_TOOLS: ToolDefinition[] = [
   { factory: listMCPServers, group: 'mcp_servers', isWriteOperation: false },
   { factory: getMCPServer, group: 'mcp_servers', isWriteOperation: false },
   { factory: updateMCPServer, group: 'mcp_servers', isWriteOperation: true },
+  // Redirect tools (CRUD)
+  { factory: getRedirects, group: 'redirects', isWriteOperation: false },
+  { factory: getRedirect, group: 'redirects', isWriteOperation: false },
+  { factory: createRedirect, group: 'redirects', isWriteOperation: true },
+  { factory: updateRedirect, group: 'redirects', isWriteOperation: true },
+  { factory: deleteRedirect, group: 'redirects', isWriteOperation: true },
 ];
 
 /**
@@ -182,6 +198,8 @@ const VALID_TOOL_GROUPS: ToolGroup[] = [
   'mcp_jsons_readonly',
   'mcp_servers',
   'mcp_servers_readonly',
+  'redirects',
+  'redirects_readonly',
 ];
 
 /**
@@ -196,6 +214,7 @@ const BASE_TOOL_GROUPS: BaseToolGroup[] = [
   'tenants',
   'mcp_jsons',
   'mcp_servers',
+  'redirects',
 ];
 
 /**
@@ -277,6 +296,8 @@ function shouldIncludeTool(toolDef: ToolDefinition, enabledGroups: ToolGroup[]):
  * - mcp_jsons_readonly: MCP JSON tools (read only)
  * - mcp_servers: Unified MCP server tools with abstracted interface (read + write)
  * - mcp_servers_readonly: Unified MCP server tools (read only)
+ * - redirects: URL redirect management tools (read + write)
+ * - redirects_readonly: URL redirect tools (read only)
  *
  * @param clientFactory - Factory function that creates client instances
  * @param enabledGroups - Optional comma-separated list of enabled tool groups (overrides env var)

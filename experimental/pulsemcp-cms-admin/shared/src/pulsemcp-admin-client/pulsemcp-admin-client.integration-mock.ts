@@ -1025,5 +1025,47 @@ export function createMockPulseMCPAdminClient(mockData: MockData): IPulseMCPAdmi
         updated_at: new Date().toISOString(),
       };
     },
+
+    // Redirect REST API methods (stub implementations)
+    async getRedirects() {
+      return { redirects: [], pagination: { current_page: 1, total_pages: 1, total_count: 0 } };
+    },
+
+    async getRedirect(id) {
+      return {
+        id,
+        from: '/old-page',
+        to: '/new-page',
+        status: 'active' as const,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+    },
+
+    async createRedirect(params) {
+      return {
+        id: 1,
+        from: params.from,
+        to: params.to,
+        status: params.status || ('draft' as const),
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+    },
+
+    async updateRedirect(id, params) {
+      return {
+        id,
+        from: params.from || '/old-page',
+        to: params.to || '/new-page',
+        status: params.status || ('active' as const),
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+    },
+
+    async deleteRedirect() {
+      return { success: true, message: 'Redirect deleted' };
+    },
   };
 }

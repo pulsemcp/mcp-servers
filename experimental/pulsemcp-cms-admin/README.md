@@ -74,6 +74,11 @@ This server is built and tested on macOS with Claude Desktop. It should work wit
 | `list_mcp_servers`                     | mcp_servers        | read       | List/search MCP servers with filtering by status, classification, pagination. |
 | `get_mcp_server`                       | mcp_servers        | read       | Get detailed MCP server info by slug (unified view of all admin UI fields).   |
 | `update_mcp_server`                    | mcp_servers        | write      | Update an MCP server's fields (all admin UI fields supported).                |
+| `get_redirects`                        | redirects          | read       | List URL redirects with search, status filtering, and pagination.             |
+| `get_redirect`                         | redirects          | read       | Get detailed redirect info by ID.                                             |
+| `create_redirect`                      | redirects          | write      | Create a new URL redirect entry.                                              |
+| `update_redirect`                      | redirects          | write      | Update an existing URL redirect by ID.                                        |
+| `delete_redirect`                      | redirects          | write      | Delete a URL redirect by ID (irreversible).                                   |
 
 # Tool Groups
 
@@ -102,6 +107,8 @@ This server organizes tools into groups that can be selectively enabled or disab
 | `mcp_jsons_readonly`          | 2     | MCP JSON configurations read-only            |
 | `mcp_servers`                 | 3     | Full MCP servers management (read + write)   |
 | `mcp_servers_readonly`        | 2     | MCP servers read-only (list, get)            |
+| `redirects`                   | 5     | Full URL redirect management (read + write)  |
+| `redirects_readonly`          | 2     | URL redirects read-only (list, get)          |
 
 ### Tools by Group
 
@@ -127,12 +134,15 @@ This server organizes tools into groups that can be selectively enabled or disab
 - **mcp_servers** / **mcp_servers_readonly**:
   - Read-only: `list_mcp_servers`, `get_mcp_server`
   - Write: `update_mcp_server`
+- **redirects** / **redirects_readonly**:
+  - Read-only: `get_redirects`, `get_redirect`
+  - Write: `create_redirect`, `update_redirect`, `delete_redirect`
 
 ## Environment Variables
 
-| Variable      | Description                                 | Default                                                                                                                      |
-| ------------- | ------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
-| `TOOL_GROUPS` | Comma-separated list of enabled tool groups | `newsletter,server_queue,official_queue,unofficial_mirrors,official_mirrors,tenants,mcp_jsons,mcp_servers` (all base groups) |
+| Variable      | Description                                 | Default                                                                                                                                |
+| ------------- | ------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| `TOOL_GROUPS` | Comma-separated list of enabled tool groups | `newsletter,server_queue,official_queue,unofficial_mirrors,official_mirrors,tenants,mcp_jsons,mcp_servers,redirects` (all base groups) |
 
 ## Examples
 
@@ -157,7 +167,7 @@ TOOL_GROUPS=server_queue_readonly
 Enable all groups with read-only access:
 
 ```bash
-TOOL_GROUPS=newsletter_readonly,server_queue_readonly,official_queue_readonly,unofficial_mirrors_readonly,official_mirrors_readonly,tenants_readonly,mcp_jsons_readonly,mcp_servers_readonly
+TOOL_GROUPS=newsletter_readonly,server_queue_readonly,official_queue_readonly,unofficial_mirrors_readonly,official_mirrors_readonly,tenants_readonly,mcp_jsons_readonly,mcp_servers_readonly,redirects_readonly
 ```
 
 Mix full and read-only access per group:
@@ -293,7 +303,7 @@ Add to your Claude Desktop configuration:
       "args": ["/path/to/pulsemcp-cms-admin/local/build/index.js"],
       "env": {
         "PULSEMCP_ADMIN_API_KEY": "your-api-key-here",
-        "TOOL_GROUPS": "newsletter,server_queue,official_queue,unofficial_mirrors,official_mirrors,tenants,mcp_jsons,mcp_servers"
+        "TOOL_GROUPS": "newsletter,server_queue,official_queue,unofficial_mirrors,official_mirrors,tenants,mcp_jsons,mcp_servers,redirects"
       }
     }
   }
@@ -310,7 +320,7 @@ For read-only access:
       "args": ["/path/to/pulsemcp-cms-admin/local/build/index.js"],
       "env": {
         "PULSEMCP_ADMIN_API_KEY": "your-api-key-here",
-        "TOOL_GROUPS": "newsletter_readonly,server_queue_readonly,official_queue_readonly,unofficial_mirrors_readonly,official_mirrors_readonly,tenants_readonly,mcp_jsons_readonly,mcp_servers_readonly"
+        "TOOL_GROUPS": "newsletter_readonly,server_queue_readonly,official_queue_readonly,unofficial_mirrors_readonly,official_mirrors_readonly,tenants_readonly,mcp_jsons_readonly,mcp_servers_readonly,redirects_readonly"
       }
     }
   }
