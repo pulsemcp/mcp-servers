@@ -3,14 +3,29 @@
 ## Latest Test Results
 
 **Date:** 2026-01-28
-**Commit:** 9a2d00e
-**Version:** 0.6.3
-**API Environment:** Staging (https://admin.staging.pulsemcp.com)
-**API Key:** Admin API key (read/write)
+**Commit:** c3844b3
+**Version:** 0.6.4
+**API Environment:** N/A (API endpoint not yet deployed)
+**API Key:** N/A
 
 ## Test Results Summary
 
-### Overall: ✅ 112/112 All Tests PASSING
+### Overall: ✅ 112/112 All Previous Tests PASSING (Redirect tools pending API deployment)
+
+**v0.6.4 Changes:**
+
+- Added new `redirects` / `redirects_readonly` tool groups for URL redirect management:
+  - `get_redirects`: List URL redirects with search, status filtering, and pagination
+  - `get_redirect`: Get detailed redirect info by ID
+  - `create_redirect`: Create new URL redirect entry
+  - `update_redirect`: Update existing redirect
+  - `delete_redirect`: Delete redirect by ID
+
+**Note on Redirect Tools:**
+
+The redirect tools are implemented following the REST API specification from pulsemcp/pulsemcp#1974. Manual testing cannot be performed until the redirect API endpoints are deployed to the staging environment. All automated tests pass (104/104). The implementation follows the same patterns as the existing unofficial_mirrors and official_mirrors tools which have been previously tested.
+
+### v0.6.3 Test Results: ✅ 112/112 All Tests PASSING
 
 **v0.6.3 Changes:**
 
