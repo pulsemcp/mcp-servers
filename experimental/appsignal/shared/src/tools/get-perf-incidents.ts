@@ -11,11 +11,8 @@ const PARAM_DESCRIPTIONS = {
   offset: 'Number of incidents to skip for pagination. Defaults to 0',
 } as const;
 
-export function getPerformanceIncidentsTool(
-  _server: McpServer,
-  clientFactory: () => IAppsignalClient
-) {
-  const GetPerformanceIncidentsShape = {
+export function getPerfIncidentsTool(_server: McpServer, clientFactory: () => IAppsignalClient) {
+  const GetPerfIncidentsShape = {
     states: z
       .array(z.enum(['OPEN', 'CLOSED', 'WIP']))
       .optional()
@@ -24,10 +21,10 @@ export function getPerformanceIncidentsTool(
     offset: z.number().optional().describe(PARAM_DESCRIPTIONS.offset),
   };
 
-  const GetPerformanceIncidentsSchema = z.object(GetPerformanceIncidentsShape);
+  const GetPerfIncidentsSchema = z.object(GetPerfIncidentsShape);
 
   return {
-    name: 'get_performance_incidents',
+    name: 'get_perf_incidents',
     description: `Retrieve a list of performance incidents from your AppSignal application. Performance incidents identify slow endpoints, database queries, and other performance bottlenecks in your application. This tool provides an overview of all performance issues affecting your application, with filtering and pagination capabilities.
 
 Example response:
@@ -89,10 +86,10 @@ Use cases:
 - Monitoring performance trends and patterns
 - Tracking the status of performance optimization efforts
 - Identifying N+1 queries and slow database operations`,
-    inputSchema: GetPerformanceIncidentsShape,
+    inputSchema: GetPerfIncidentsShape,
     handler: async (args: unknown) => {
       // Handle all parameter scenarios: {}, undefined, or missing entirely
-      const { states, limit, offset } = GetPerformanceIncidentsSchema.parse(args || {});
+      const { states, limit, offset } = GetPerfIncidentsSchema.parse(args || {});
       const appId = getEffectiveAppId();
       if (!appId) {
         return {

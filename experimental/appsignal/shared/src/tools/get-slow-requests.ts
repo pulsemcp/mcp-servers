@@ -35,7 +35,7 @@ For each slow incident, you get:
   - Timing breakdown by component (active_record, action_view, etc.)
   - Request metadata (controller, method, path, format)
 
-This is faster than calling get_performance_incidents followed by get_performance_incident_sample for each incident, making it ideal for quick performance triage.
+This is faster than calling get_perf_incidents followed by get_perf_incident_sample for each incident, making it ideal for quick performance triage.
 
 Example response:
 {
@@ -84,7 +84,7 @@ Common workflows:
 2. Review groupDurations to identify bottlenecks (database, rendering, etc.)
 3. Check hasNPlusOne flag and review active_record timing
 4. Use params and overview to understand request patterns
-5. If needed, get more details with get_performance_incident or get_performance_incident_sample_timeline`,
+5. If needed, get more details with get_perf_incident or get_perf_incident_sample_timeline`,
     inputSchema: GetSlowRequestsShape,
     handler: async (args: unknown) => {
       const { namespace, incidentLimit, samplesPerIncident } = GetSlowRequestsSchema.parse(

@@ -8,18 +8,18 @@ const PARAM_DESCRIPTIONS = {
   incidentNumber: 'The number of the performance incident to get a sample for',
 } as const;
 
-export function getPerformanceIncidentSampleTool(
+export function getPerfIncidentSampleTool(
   _server: McpServer,
   clientFactory: () => IAppsignalClient
 ) {
-  const GetPerformanceIncidentSampleShape = {
+  const GetPerfIncidentSampleShape = {
     incidentNumber: z.string().describe(PARAM_DESCRIPTIONS.incidentNumber),
   };
 
-  const GetPerformanceIncidentSampleSchema = z.object(GetPerformanceIncidentSampleShape);
+  const GetPerfIncidentSampleSchema = z.object(GetPerfIncidentSampleShape);
 
   return {
-    name: 'get_performance_incident_sample',
+    name: 'get_perf_incident_sample',
     description: `Retrieve a sample transaction for a specific performance incident from AppSignal. Samples provide detailed timing information about a specific slow request or operation, helping you understand exactly where time is being spent.
 
 💡 Recommended follow-up: After retrieving the sample, use the search_logs tool with:
@@ -71,9 +71,9 @@ Use cases:
 - Viewing request parameters and custom data for context
 - Checking if N+1 queries occurred in this specific sample
 - Understanding queue wait times vs actual processing time`,
-    inputSchema: GetPerformanceIncidentSampleShape,
+    inputSchema: GetPerfIncidentSampleShape,
     handler: async (args: unknown) => {
-      const { incidentNumber } = GetPerformanceIncidentSampleSchema.parse(args);
+      const { incidentNumber } = GetPerfIncidentSampleSchema.parse(args);
       const appId = getEffectiveAppId();
       if (!appId) {
         return {

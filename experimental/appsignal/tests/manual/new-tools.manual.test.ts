@@ -12,7 +12,7 @@ interface TestOutcome {
   details: {
     appsFound: boolean;
     appSelected: boolean;
-    getPerformanceSamplesWorks: boolean;
+    getPerfSamplesWorks: boolean;
     getMetricsWorks: boolean;
     getMetricsTimeseriesWorks: boolean;
     getDeployMarkersWorks: boolean;
@@ -24,7 +24,7 @@ interface TestOutcome {
 
 /**
  * Manual tests for the new AppSignal tools:
- * - get_performance_samples
+ * - get_perf_samples
  * - get_metrics
  * - get_metrics_timeseries
  * - get_deploy_markers
@@ -40,7 +40,7 @@ describe('AppSignal New Tools - Manual Test', () => {
     details: {
       appsFound: false,
       appSelected: false,
-      getPerformanceSamplesWorks: false,
+      getPerfSamplesWorks: false,
       getMetricsWorks: false,
       getMetricsTimeseriesWorks: false,
       getDeployMarkersWorks: false,
@@ -134,17 +134,17 @@ describe('AppSignal New Tools - Manual Test', () => {
     }
   });
 
-  it('should test get_performance_samples tool', async () => {
+  it('should test get_perf_samples tool', async () => {
     if (!selectedAppId) {
       console.log('⚠️  Skipping: No app selected');
       return;
     }
 
     try {
-      console.log('\n🔍 Testing get_performance_samples...');
+      console.log('\n🔍 Testing get_perf_samples...');
 
       // First get a performance incident
-      const incidentsResult = await client.callTool('get_performance_incidents', {
+      const incidentsResult = await client.callTool('get_perf_incidents', {
         states: ['OPEN'],
         limit: 1,
       });
@@ -160,7 +160,7 @@ describe('AppSignal New Tools - Manual Test', () => {
       const actionName = incident.actionNames[0];
       console.log(`Testing with action: ${actionName}`);
 
-      const result = await client.callTool('get_performance_samples', {
+      const result = await client.callTool('get_perf_samples', {
         actionName: actionName,
         limit: 5,
       });
@@ -215,10 +215,10 @@ describe('AppSignal New Tools - Manual Test', () => {
       expect(response.samples).toBeDefined();
       expect(Array.isArray(response.samples)).toBe(true);
 
-      outcome.details.getPerformanceSamplesWorks = true;
-      console.log('\n✓ get_performance_samples works correctly');
+      outcome.details.getPerfSamplesWorks = true;
+      console.log('\n✓ get_perf_samples works correctly');
     } catch (error) {
-      outcome.errors.push(`get_performance_samples failed: ${error}`);
+      outcome.errors.push(`get_perf_samples failed: ${error}`);
       console.error('❌ Error:', error);
     }
   });
@@ -475,7 +475,7 @@ describe('AppSignal New Tools - Manual Test', () => {
     console.log('='.repeat(60));
 
     const toolsWorking = [
-      outcome.details.getPerformanceSamplesWorks && 'get_performance_samples',
+      outcome.details.getPerfSamplesWorks && 'get_perf_samples',
       outcome.details.getMetricsWorks && 'get_metrics',
       outcome.details.getMetricsTimeseriesWorks && 'get_metrics_timeseries',
       outcome.details.getDeployMarkersWorks && 'get_deploy_markers',
@@ -488,7 +488,7 @@ describe('AppSignal New Tools - Manual Test', () => {
     }
 
     const toolsFailed = [
-      !outcome.details.getPerformanceSamplesWorks && 'get_performance_samples',
+      !outcome.details.getPerfSamplesWorks && 'get_perf_samples',
       !outcome.details.getMetricsWorks && 'get_metrics',
       !outcome.details.getMetricsTimeseriesWorks && 'get_metrics_timeseries',
       !outcome.details.getDeployMarkersWorks && 'get_deploy_markers',

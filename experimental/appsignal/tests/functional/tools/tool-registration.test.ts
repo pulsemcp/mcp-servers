@@ -83,12 +83,12 @@ describe('Tool Registration', () => {
     expect(registeredTools.has('get_log_incidents')).toBe(true);
     expect(registeredTools.has('get_exception_incidents')).toBe(true);
     expect(registeredTools.has('get_anomaly_incidents')).toBe(true);
-    expect(registeredTools.has('get_performance_incidents')).toBe(true);
-    expect(registeredTools.has('get_performance_incident')).toBe(true);
-    expect(registeredTools.has('get_performance_incident_sample')).toBe(true);
-    expect(registeredTools.has('get_performance_incident_sample_timeline')).toBe(true);
+    expect(registeredTools.has('get_perf_incidents')).toBe(true);
+    expect(registeredTools.has('get_perf_incident')).toBe(true);
+    expect(registeredTools.has('get_perf_incident_sample')).toBe(true);
+    expect(registeredTools.has('get_perf_incident_sample_timeline')).toBe(true);
     // Performance monitoring tools
-    expect(registeredTools.has('get_performance_samples')).toBe(true);
+    expect(registeredTools.has('get_perf_samples')).toBe(true);
     expect(registeredTools.has('get_metrics')).toBe(true);
     expect(registeredTools.has('get_metrics_timeseries')).toBe(true);
     expect(registeredTools.has('get_deploy_markers')).toBe(true);

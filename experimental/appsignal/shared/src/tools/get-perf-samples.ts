@@ -10,19 +10,16 @@ const PARAM_DESCRIPTIONS = {
   limit: 'Maximum number of samples to return. Defaults to 10',
 } as const;
 
-export function getPerformanceSamplesTool(
-  _server: McpServer,
-  clientFactory: () => IAppsignalClient
-) {
-  const GetPerformanceSamplesShape = {
+export function getPerfSamplesTool(_server: McpServer, clientFactory: () => IAppsignalClient) {
+  const GetPerfSamplesShape = {
     actionName: z.string().describe(PARAM_DESCRIPTIONS.actionName),
     limit: z.number().optional().describe(PARAM_DESCRIPTIONS.limit),
   };
 
-  const GetPerformanceSamplesSchema = z.object(GetPerformanceSamplesShape);
+  const GetPerfSamplesSchema = z.object(GetPerfSamplesShape);
 
   return {
-    name: 'get_performance_samples',
+    name: 'get_perf_samples',
     description: `Retrieve multiple recent performance samples for a specific controller action from AppSignal. Each sample represents a detailed snapshot of a slow request or operation, including timing breakdowns by component (database, view rendering, etc.), request parameters, and the full execution path.
 
 This tool provides broader context by showing multiple examples of the same performance issue, helping you identify patterns and understand if the problem is consistent or varies by request parameters.
@@ -90,9 +87,9 @@ Use cases:
 - Understanding which components (database, views) are consistently slow
 - Identifying if N+1 queries occur in all samples or just some
 - Getting a representative sample set for performance investigation`,
-    inputSchema: GetPerformanceSamplesShape,
+    inputSchema: GetPerfSamplesShape,
     handler: async (args: unknown) => {
-      const { actionName, limit } = GetPerformanceSamplesSchema.parse(args || {});
+      const { actionName, limit } = GetPerfSamplesSchema.parse(args || {});
       const appId = getEffectiveAppId();
       if (!appId) {
         return {

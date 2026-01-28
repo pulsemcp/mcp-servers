@@ -29,7 +29,7 @@ describe('AppSignal MCP Server Performance Tools Integration', () => {
       client = await createTestMCPClientWithMock(mockAppSignalClient);
 
       // Call the MCP tool
-      const result = await client.callTool('get_performance_incidents', {});
+      const result = await client.callTool('get_perf_incidents', {});
 
       // Verify the result
       const response = JSON.parse(result.content[0].text);
@@ -113,7 +113,7 @@ describe('AppSignal MCP Server Performance Tools Integration', () => {
       client = await createTestMCPClientWithMock(mockAppSignalClient);
 
       // Test filtering by 'closed' state
-      const result = await client.callTool('get_performance_incidents', {
+      const result = await client.callTool('get_perf_incidents', {
         states: ['CLOSED'],
       });
 
@@ -132,7 +132,7 @@ describe('AppSignal MCP Server Performance Tools Integration', () => {
 
       client = await createTestMCPClientWithMock(mockAppSignalClient);
 
-      const result = await client.callTool('get_performance_incidents', {});
+      const result = await client.callTool('get_perf_incidents', {});
 
       expect(result.content[0].text).toContain('Error fetching performance incidents');
       expect(result.content[0].text).toContain('API rate limit exceeded');
@@ -144,7 +144,7 @@ describe('AppSignal MCP Server Performance Tools Integration', () => {
       const mockAppSignalClient = createIntegrationMockAppsignalClient({});
       client = await createTestMCPClientWithMock(mockAppSignalClient);
 
-      const result = await client.callTool('get_performance_incident', {
+      const result = await client.callTool('get_perf_incident', {
         incidentNumber: 'perf-123',
       });
 
@@ -162,7 +162,7 @@ describe('AppSignal MCP Server Performance Tools Integration', () => {
       const mockAppSignalClient = createIntegrationMockAppsignalClient({});
       client = await createTestMCPClientWithMock(mockAppSignalClient);
 
-      const result = await client.callTool('get_performance_incident', {
+      const result = await client.callTool('get_perf_incident', {
         incidentNumber: 'non-existent',
       });
 
@@ -176,7 +176,7 @@ describe('AppSignal MCP Server Performance Tools Integration', () => {
       const mockAppSignalClient = createIntegrationMockAppsignalClient({});
       client = await createTestMCPClientWithMock(mockAppSignalClient);
 
-      const result = await client.callTool('get_performance_incident_sample', {
+      const result = await client.callTool('get_perf_incident_sample', {
         incidentNumber: 'perf-123',
       });
 
@@ -194,7 +194,7 @@ describe('AppSignal MCP Server Performance Tools Integration', () => {
       const mockAppSignalClient = createIntegrationMockAppsignalClient({});
       client = await createTestMCPClientWithMock(mockAppSignalClient);
 
-      const result = await client.callTool('get_performance_incident_sample', {
+      const result = await client.callTool('get_perf_incident_sample', {
         incidentNumber: 'non-existent',
       });
 
@@ -208,7 +208,7 @@ describe('AppSignal MCP Server Performance Tools Integration', () => {
       const mockAppSignalClient = createIntegrationMockAppsignalClient({});
       client = await createTestMCPClientWithMock(mockAppSignalClient);
 
-      const result = await client.callTool('get_performance_incident_sample_timeline', {
+      const result = await client.callTool('get_perf_incident_sample_timeline', {
         incidentNumber: 'perf-123',
       });
 
@@ -290,7 +290,7 @@ describe('AppSignal MCP Server Performance Tools Integration', () => {
       const mockAppSignalClient = createIntegrationMockAppsignalClient(mockData);
       client = await createTestMCPClientWithMock(mockAppSignalClient);
 
-      const result = await client.callTool('get_performance_incident_sample_timeline', {
+      const result = await client.callTool('get_perf_incident_sample_timeline', {
         incidentNumber: 'perf-nplusone',
       });
 
@@ -307,7 +307,7 @@ describe('AppSignal MCP Server Performance Tools Integration', () => {
       const mockAppSignalClient = createIntegrationMockAppsignalClient({});
       client = await createTestMCPClientWithMock(mockAppSignalClient);
 
-      const result = await client.callTool('get_performance_incident_sample_timeline', {
+      const result = await client.callTool('get_perf_incident_sample_timeline', {
         incidentNumber: 'non-existent',
       });
 

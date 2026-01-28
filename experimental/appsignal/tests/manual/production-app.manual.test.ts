@@ -257,8 +257,8 @@ describe('Production App Bug Fixes - Manual Test', () => {
     }
 
     // Test 1: Get performance incidents (default - OPEN state)
-    console.log('\n📊 Testing get_performance_incidents with default parameters...');
-    const openResult = await client.callTool('get_performance_incidents', {});
+    console.log('\n📊 Testing get_perf_incidents with default parameters...');
+    const openResult = await client.callTool('get_perf_incidents', {});
     const openData = JSON.parse(openResult.content[0].text);
 
     console.log(
@@ -270,8 +270,8 @@ describe('Production App Bug Fixes - Manual Test', () => {
     console.log('   ✅ Successfully found OPEN performance incidents!');
 
     // Test 2: Test with empty states array
-    console.log('\n📊 Testing get_performance_incidents with empty states array...');
-    const emptyStatesResult = await client.callTool('get_performance_incidents', {
+    console.log('\n📊 Testing get_perf_incidents with empty states array...');
+    const emptyStatesResult = await client.callTool('get_perf_incidents', {
       states: [],
     });
     const emptyStatesData = JSON.parse(emptyStatesResult.content[0].text);
@@ -281,8 +281,8 @@ describe('Production App Bug Fixes - Manual Test', () => {
     console.log('   ✅ Empty states correctly defaults to OPEN!');
 
     // Test 3: Test with all states
-    console.log('\n📊 Testing get_performance_incidents with all states...');
-    const allStatesResult = await client.callTool('get_performance_incidents', {
+    console.log('\n📊 Testing get_perf_incidents with all states...');
+    const allStatesResult = await client.callTool('get_perf_incidents', {
       states: ['OPEN', 'CLOSED', 'WIP'],
     });
     const allStatesData = JSON.parse(allStatesResult.content[0].text);
@@ -303,9 +303,9 @@ describe('Production App Bug Fixes - Manual Test', () => {
     // Test 5: Get details for first incident
     if (openData.incidents.length > 0) {
       const firstIncident = openData.incidents[0];
-      console.log(`\n🔍 Testing get_performance_incident for ID: ${firstIncident.id}`);
+      console.log(`\n🔍 Testing get_perf_incident for ID: ${firstIncident.id}`);
 
-      const detailResult = await client.callTool('get_performance_incident', {
+      const detailResult = await client.callTool('get_perf_incident', {
         incidentNumber: firstIncident.id,
       });
 

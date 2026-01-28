@@ -11,14 +11,14 @@ import { getExceptionIncidentsTool } from './tools/get-exception-incidents.js';
 import { getAnomalyIncidentsTool } from './tools/get-anomaly-incidents.js';
 import { IAppsignalClient } from './appsignal-client/appsignal-client.js';
 import { getEffectiveAppId, isAppIdLocked } from './state.js';
-import { getPerformanceIncidentsTool } from './tools/get-performance-incidents.js';
-import { getPerformanceIncidentTool } from './tools/get-performance-incident.js';
-import { getPerformanceIncidentSampleTool } from './tools/get-performance-incident-sample.js';
-import { getPerformanceIncidentSampleTimelineTool } from './tools/get-performance-incident-sample-timeline.js';
+import { getPerfIncidentsTool } from './tools/get-perf-incidents.js';
+import { getPerfIncidentTool } from './tools/get-perf-incident.js';
+import { getPerfIncidentSampleTool } from './tools/get-perf-incident-sample.js';
+import { getPerfIncidentSampleTimelineTool } from './tools/get-perf-incident-sample-timeline.js';
 import { getSlowRequestsTool } from './tools/get-slow-requests.js';
 import { getDeployMarkersTool } from './tools/get-deploy-markers.js';
 import { getMetricsTool } from './tools/get-metrics.js';
-import { getPerformanceSamplesTool } from './tools/get-performance-samples.js';
+import { getPerfSamplesTool } from './tools/get-perf-samples.js';
 import { getMetricsTimeseriesTool } from './tools/get-metrics-timeseries.js';
 import { getGraphqlSchemaTool } from './tools/get-graphql-schema.js';
 import { getGraphqlSchemaDetailsTool } from './tools/get-graphql-schema-details.js';
@@ -45,14 +45,14 @@ export function createRegisterTools(clientFactory: ClientFactory) {
       getLogIncidents?: RegisteredTool;
       getExceptionIncidents?: RegisteredTool;
       getAnomalyIncidents?: RegisteredTool;
-      getPerformanceIncidents?: RegisteredTool;
-      getPerformanceIncident?: RegisteredTool;
-      getPerformanceIncidentSample?: RegisteredTool;
-      getPerformanceIncidentSampleTimeline?: RegisteredTool;
+      getPerfIncidents?: RegisteredTool;
+      getPerfIncident?: RegisteredTool;
+      getPerfIncidentSample?: RegisteredTool;
+      getPerfIncidentSampleTimeline?: RegisteredTool;
       getSlowRequests?: RegisteredTool;
       getDeployMarkers?: RegisteredTool;
       getMetrics?: RegisteredTool;
-      getPerformanceSamples?: RegisteredTool;
+      getPerfSamples?: RegisteredTool;
       getMetricsTimeseries?: RegisteredTool;
       customGraphqlQuery?: RegisteredTool;
       [key: string]: RegisteredTool | undefined;
@@ -72,15 +72,14 @@ export function createRegisterTools(clientFactory: ClientFactory) {
       if (mainTools.getLogIncidents) mainTools.getLogIncidents.enable();
       if (mainTools.getExceptionIncidents) mainTools.getExceptionIncidents.enable();
       if (mainTools.getAnomalyIncidents) mainTools.getAnomalyIncidents.enable();
-      if (mainTools.getPerformanceIncidents) mainTools.getPerformanceIncidents.enable();
-      if (mainTools.getPerformanceIncident) mainTools.getPerformanceIncident.enable();
-      if (mainTools.getPerformanceIncidentSample) mainTools.getPerformanceIncidentSample.enable();
-      if (mainTools.getPerformanceIncidentSampleTimeline)
-        mainTools.getPerformanceIncidentSampleTimeline.enable();
+      if (mainTools.getPerfIncidents) mainTools.getPerfIncidents.enable();
+      if (mainTools.getPerfIncident) mainTools.getPerfIncident.enable();
+      if (mainTools.getPerfIncidentSample) mainTools.getPerfIncidentSample.enable();
+      if (mainTools.getPerfIncidentSampleTimeline) mainTools.getPerfIncidentSampleTimeline.enable();
       if (mainTools.getSlowRequests) mainTools.getSlowRequests.enable();
       if (mainTools.getDeployMarkers) mainTools.getDeployMarkers.enable();
       if (mainTools.getMetrics) mainTools.getMetrics.enable();
-      if (mainTools.getPerformanceSamples) mainTools.getPerformanceSamples.enable();
+      if (mainTools.getPerfSamples) mainTools.getPerfSamples.enable();
       if (mainTools.getMetricsTimeseries) mainTools.getMetricsTimeseries.enable();
       if (mainTools.customGraphqlQuery) mainTools.customGraphqlQuery.enable();
 
@@ -158,20 +157,20 @@ export function createRegisterTools(clientFactory: ClientFactory) {
       { def: getLogIncidentsTool(server, clientFactory), key: 'getLogIncidents' },
       { def: getExceptionIncidentsTool(server, clientFactory), key: 'getExceptionIncidents' },
       { def: getAnomalyIncidentsTool(server, clientFactory), key: 'getAnomalyIncidents' },
-      { def: getPerformanceIncidentsTool(server, clientFactory), key: 'getPerformanceIncidents' },
-      { def: getPerformanceIncidentTool(server, clientFactory), key: 'getPerformanceIncident' },
+      { def: getPerfIncidentsTool(server, clientFactory), key: 'getPerfIncidents' },
+      { def: getPerfIncidentTool(server, clientFactory), key: 'getPerfIncident' },
       {
-        def: getPerformanceIncidentSampleTool(server, clientFactory),
-        key: 'getPerformanceIncidentSample',
+        def: getPerfIncidentSampleTool(server, clientFactory),
+        key: 'getPerfIncidentSample',
       },
       {
-        def: getPerformanceIncidentSampleTimelineTool(server, clientFactory),
-        key: 'getPerformanceIncidentSampleTimeline',
+        def: getPerfIncidentSampleTimelineTool(server, clientFactory),
+        key: 'getPerfIncidentSampleTimeline',
       },
       { def: getSlowRequestsTool(server, clientFactory), key: 'getSlowRequests' },
       { def: getDeployMarkersTool(server, clientFactory), key: 'getDeployMarkers' },
       { def: getMetricsTool(server, clientFactory), key: 'getMetrics' },
-      { def: getPerformanceSamplesTool(server, clientFactory), key: 'getPerformanceSamples' },
+      { def: getPerfSamplesTool(server, clientFactory), key: 'getPerfSamples' },
       { def: getMetricsTimeseriesTool(server, clientFactory), key: 'getMetricsTimeseries' },
       { def: customGraphqlQueryTool(server, clientFactory), key: 'customGraphqlQuery' },
     ];
@@ -201,15 +200,15 @@ export function createRegisterTools(clientFactory: ClientFactory) {
       if (mainTools.getLogIncidents) mainTools.getLogIncidents.disable();
       if (mainTools.getExceptionIncidents) mainTools.getExceptionIncidents.disable();
       if (mainTools.getAnomalyIncidents) mainTools.getAnomalyIncidents.disable();
-      if (mainTools.getPerformanceIncidents) mainTools.getPerformanceIncidents.disable();
-      if (mainTools.getPerformanceIncident) mainTools.getPerformanceIncident.disable();
-      if (mainTools.getPerformanceIncidentSample) mainTools.getPerformanceIncidentSample.disable();
-      if (mainTools.getPerformanceIncidentSampleTimeline)
-        mainTools.getPerformanceIncidentSampleTimeline.disable();
+      if (mainTools.getPerfIncidents) mainTools.getPerfIncidents.disable();
+      if (mainTools.getPerfIncident) mainTools.getPerfIncident.disable();
+      if (mainTools.getPerfIncidentSample) mainTools.getPerfIncidentSample.disable();
+      if (mainTools.getPerfIncidentSampleTimeline)
+        mainTools.getPerfIncidentSampleTimeline.disable();
       if (mainTools.getSlowRequests) mainTools.getSlowRequests.disable();
       if (mainTools.getDeployMarkers) mainTools.getDeployMarkers.disable();
       if (mainTools.getMetrics) mainTools.getMetrics.disable();
-      if (mainTools.getPerformanceSamples) mainTools.getPerformanceSamples.disable();
+      if (mainTools.getPerfSamples) mainTools.getPerfSamples.disable();
       if (mainTools.getMetricsTimeseries) mainTools.getMetricsTimeseries.disable();
       if (mainTools.customGraphqlQuery) mainTools.customGraphqlQuery.disable();
     } else {

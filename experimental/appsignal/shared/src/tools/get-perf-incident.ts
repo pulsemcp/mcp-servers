@@ -8,18 +8,15 @@ const PARAM_DESCRIPTIONS = {
   incidentNumber: 'The number of the performance incident to retrieve',
 } as const;
 
-export function getPerformanceIncidentTool(
-  _server: McpServer,
-  clientFactory: () => IAppsignalClient
-) {
-  const GetPerformanceIncidentShape = {
+export function getPerfIncidentTool(_server: McpServer, clientFactory: () => IAppsignalClient) {
+  const GetPerfIncidentShape = {
     incidentNumber: z.string().describe(PARAM_DESCRIPTIONS.incidentNumber),
   };
 
-  const GetPerformanceIncidentSchema = z.object(GetPerformanceIncidentShape);
+  const GetPerfIncidentSchema = z.object(GetPerfIncidentShape);
 
   return {
-    name: 'get_performance_incident',
+    name: 'get_perf_incident',
     description: `Retrieve details about a specific performance incident from AppSignal. Performance incidents represent specific performance bottlenecks like slow endpoints, database queries, or external API calls. This tool provides detailed information about a single performance issue.
 
 Example response:
@@ -58,9 +55,9 @@ Use cases:
 - Understanding the impact and frequency of a performance bottleneck
 - Checking if an incident has N+1 query problems
 - Determining if samples are available for deeper analysis`,
-    inputSchema: GetPerformanceIncidentShape,
+    inputSchema: GetPerfIncidentShape,
     handler: async (args: unknown) => {
-      const { incidentNumber } = GetPerformanceIncidentSchema.parse(args);
+      const { incidentNumber } = GetPerfIncidentSchema.parse(args);
       const appId = getEffectiveAppId();
       if (!appId) {
         return {
