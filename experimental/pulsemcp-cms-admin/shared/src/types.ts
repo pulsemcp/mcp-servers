@@ -181,6 +181,12 @@ export interface MCPImplementation {
   internal_notes?: string;
   created_at?: string;
   updated_at?: string;
+  created_on_override?: string;
+  // Flags
+  recommended?: boolean;
+  // Package registry fields
+  package_registry?: string;
+  package_name?: string;
   // Associated objects (now inline from API)
   mcp_server?: MCPServer | null;
   mcp_client?: MCPClient | null;
