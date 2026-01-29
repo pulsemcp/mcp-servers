@@ -13,19 +13,19 @@
 
 **v0.6.7 Changes:**
 
-- Added `server_json` parameter to `create_unofficial_mirror` and `update_unofficial_mirror` tools:
+- **BREAKING**: Replaced `jsonb_data` parameter with `server_json` in `create_unofficial_mirror` and `update_unofficial_mirror` tools:
   - Accepts server.json content directly without requiring manual wrapping
   - Automatically wraps the content in a `{ "server": ... }` envelope as required by the PulseMCP Sub-Registry API
-  - The existing `jsonb_data` parameter is still available for advanced use cases where manual control is needed
+  - The `jsonb_data` parameter has been removed - use `server_json` instead
 
 **Note on Manual Testing:**
 
-This change adds a convenience parameter that wraps input in a `{ "server": ... }` envelope before passing it to the existing `jsonb_data` parameter. The underlying API calls remain unchanged. Manual tests have been updated to use the new `server_json` parameter and will pass when run with valid API credentials.
+This change replaces `jsonb_data` with `server_json`, which accepts server.json content directly and automatically wraps it in the required `{ "server": ... }` envelope. The underlying API calls remain unchanged (the tools still send `jsonb_data` to the API client). Manual tests have been updated to use the new `server_json` parameter and will pass when run with valid API credentials.
 
-The functional tests (114/114 passing) verify:
+The functional tests verify:
 
 1. Parameter parsing and validation
-2. The wrapping logic that transforms `server_json` into `jsonb_data` with the envelope
+2. The wrapping logic that transforms `server_json` into the envelope structure
 3. Tool registration and schema validation
 
 ---
