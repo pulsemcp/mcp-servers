@@ -325,7 +325,7 @@ These tools use the same API client patterns, form-encoded POST requests for act
    - API error handling (1 test)
    - Data consistency (1 test)
 
-4. **Draft MCP Implementations** (server-queue-tools.manual.test.ts): ✅ 17/17 PASSING
+4. **Draft MCP Implementations** (server-directory-tools.manual.test.ts): ✅ 17/17 PASSING
    - get_draft_mcp_implementations (5 tests)
    - save_mcp_implementation (8 tests)
    - Tool group filtering (1 test)
