@@ -124,6 +124,24 @@ describe('Unofficial Mirror Tools - server_json parameter', () => {
         next_name: 'new-name',
       });
     });
+
+    it('should return error for invalid JSON string', async () => {
+      const createMirrorMock = vi.fn().mockResolvedValue(mockMirrorResponse);
+      const mockClient = {
+        createUnofficialMirror: createMirrorMock,
+      };
+
+      const tool = createUnofficialMirror(mockServer, () => mockClient as never);
+      const result = await tool.handler({
+        name: 'test-mirror',
+        version: '1.0.0',
+        server_json: '{invalid json}',
+      });
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('Error creating unofficial mirror');
+      expect(createMirrorMock).not.toHaveBeenCalled();
+    });
   });
 
   describe('update_unofficial_mirror', () => {
@@ -211,6 +229,23 @@ describe('Unofficial Mirror Tools - server_json parameter', () => {
       });
 
       expect(result.content[0].text).toContain('No changes provided');
+      expect(updateMirrorMock).not.toHaveBeenCalled();
+    });
+
+    it('should return error for invalid JSON string', async () => {
+      const updateMirrorMock = vi.fn().mockResolvedValue(mockMirrorResponse);
+      const mockClient = {
+        updateUnofficialMirror: updateMirrorMock,
+      };
+
+      const tool = updateUnofficialMirror(mockServer, () => mockClient as never);
+      const result = await tool.handler({
+        id: 123,
+        server_json: '{invalid json}',
+      });
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('Error updating unofficial mirror');
       expect(updateMirrorMock).not.toHaveBeenCalled();
     });
   });
