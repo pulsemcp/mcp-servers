@@ -6,6 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [0.6.7] - 2026-01-28
+
+### Changed
+
+- **BREAKING**: Replaced `jsonb_data` parameter with `server_json` in `create_unofficial_mirror` and `update_unofficial_mirror` tools:
+  - `server_json` accepts server.json content directly without requiring manual wrapping
+  - Automatically wraps the content in a `{ "server": ... }` envelope as required by the PulseMCP Sub-Registry API
+  - The `jsonb_data` parameter has been removed - use `server_json` instead
+  - This improves ergonomics by eliminating the need for callers to remember the envelope structure
+
 ## [0.6.6] - 2026-01-28
 
 ### Fixed
