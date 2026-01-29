@@ -2,12 +2,31 @@
 
 ## Latest Test Results
 
+**Date:** 2026-01-29
+**Commit:** d917eda
+**Version:** 0.6.8
+**API Environment:** N/A (configuration change only)
+
+## Test Results Summary
+
+### Overall: ✅ Functional Tests PASSING (64/64 tools.test.ts)
+
+**v0.6.8 Changes:**
+
+- **BREAKING**: Renamed `server_queue` tool group to `server_directory`:
+  - `server_queue` → `server_directory`
+  - `server_queue_readonly` → `server_directory_readonly`
+  - This is a configuration name change only - no API behavior changes
+  - Manual tests not required as this is a tool group rename, not a functional change
+
+---
+
+## Previous Test Results (v0.6.7)
+
 **Date:** 2026-01-28
 **Commit:** 54e7606
 **Version:** 0.6.7
 **API Environment:** staging (https://admin.staging.pulsemcp.com)
-
-## Test Results Summary
 
 ### Overall: ✅ Functional Tests PASSING (114/114)
 

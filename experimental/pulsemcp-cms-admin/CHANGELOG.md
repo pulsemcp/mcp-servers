@@ -6,6 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [0.6.8] - 2026-01-29
+
+### Changed
+
+- **BREAKING**: Renamed `server_queue` tool group to `server_directory`:
+  - `server_queue` → `server_directory`
+  - `server_queue_readonly` → `server_directory_readonly`
+  - This better reflects the purpose of these tools (managing the MCP server directory, not a queue)
+  - Update your `TOOL_GROUPS` environment variable if you were using `server_queue` or `server_queue_readonly`
+
 ## [0.6.7] - 2026-01-28
 
 ### Changed

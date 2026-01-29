@@ -57,7 +57,7 @@ import { deleteRedirect } from './tools/delete-redirect.js';
  *
  * Groups:
  * - newsletter / newsletter_readonly: Newsletter-related tools (posts, authors, images)
- * - server_queue / server_queue_readonly: Server queue tools (search, drafts, providers, save, notifications)
+ * - server_directory / server_directory_readonly: Server directory tools (search, drafts, providers, save, notifications)
  * - official_queue / official_queue_readonly: Official mirror queue tools (list, get, approve, reject, unlink)
  * - unofficial_mirrors / unofficial_mirrors_readonly: Unofficial mirror CRUD tools
  * - official_mirrors_readonly: Official mirrors read-only tools (REST API)
@@ -69,8 +69,8 @@ import { deleteRedirect } from './tools/delete-redirect.js';
 export type ToolGroup =
   | 'newsletter'
   | 'newsletter_readonly'
-  | 'server_queue'
-  | 'server_queue_readonly'
+  | 'server_directory'
+  | 'server_directory_readonly'
   | 'official_queue'
   | 'official_queue_readonly'
   | 'unofficial_mirrors'
@@ -89,7 +89,7 @@ export type ToolGroup =
 /** Base groups without _readonly suffix */
 type BaseToolGroup =
   | 'newsletter'
-  | 'server_queue'
+  | 'server_directory'
   | 'official_queue'
   | 'unofficial_mirrors'
   | 'official_mirrors'
@@ -126,16 +126,16 @@ const ALL_TOOLS: ToolDefinition[] = [
   { factory: updateNewsletterPost, group: 'newsletter', isWriteOperation: true },
   { factory: uploadImage, group: 'newsletter', isWriteOperation: true },
   { factory: getAuthors, group: 'newsletter', isWriteOperation: false },
-  // Server queue tools
-  { factory: searchMCPImplementations, group: 'server_queue', isWriteOperation: false },
-  { factory: getDraftMCPImplementations, group: 'server_queue', isWriteOperation: false },
-  { factory: saveMCPImplementation, group: 'server_queue', isWriteOperation: true },
+  // Server directory tools
+  { factory: searchMCPImplementations, group: 'server_directory', isWriteOperation: false },
+  { factory: getDraftMCPImplementations, group: 'server_directory', isWriteOperation: false },
+  { factory: saveMCPImplementation, group: 'server_directory', isWriteOperation: true },
   {
     factory: sendMCPImplementationPostingNotification,
-    group: 'server_queue',
+    group: 'server_directory',
     isWriteOperation: true,
   },
-  { factory: findProviders, group: 'server_queue', isWriteOperation: false },
+  { factory: findProviders, group: 'server_directory', isWriteOperation: false },
   // Official mirror queue tools
   { factory: getOfficialMirrorQueueItems, group: 'official_queue', isWriteOperation: false },
   { factory: getOfficialMirrorQueueItem, group: 'official_queue', isWriteOperation: false },
@@ -184,8 +184,8 @@ const ALL_TOOLS: ToolDefinition[] = [
 const VALID_TOOL_GROUPS: ToolGroup[] = [
   'newsletter',
   'newsletter_readonly',
-  'server_queue',
-  'server_queue_readonly',
+  'server_directory',
+  'server_directory_readonly',
   'official_queue',
   'official_queue_readonly',
   'unofficial_mirrors',
@@ -207,7 +207,7 @@ const VALID_TOOL_GROUPS: ToolGroup[] = [
  */
 const BASE_TOOL_GROUPS: BaseToolGroup[] = [
   'newsletter',
-  'server_queue',
+  'server_directory',
   'official_queue',
   'unofficial_mirrors',
   'official_mirrors',
@@ -219,7 +219,7 @@ const BASE_TOOL_GROUPS: BaseToolGroup[] = [
 
 /**
  * Parse enabled tool groups from environment variable or parameter
- * @param enabledGroupsParam - Comma-separated list of tool groups (e.g., "newsletter,server_queue_readonly")
+ * @param enabledGroupsParam - Comma-separated list of tool groups (e.g., "newsletter,server_directory_readonly")
  * @returns Array of enabled tool groups
  */
 export function parseEnabledToolGroups(enabledGroupsParam?: string): ToolGroup[] {
@@ -278,14 +278,14 @@ function shouldIncludeTool(toolDef: ToolDefinition, enabledGroups: ToolGroup[]):
  * a factory pattern that accepts the server and clientFactory as parameters.
  *
  * Tool groups can be enabled/disabled via the TOOL_GROUPS environment variable
- * (comma-separated list, e.g., "newsletter,server_queue_readonly"). If not set, all
+ * (comma-separated list, e.g., "newsletter,server_directory_readonly"). If not set, all
  * base tool groups are enabled by default (full read+write access).
  *
  * Available tool groups:
  * - newsletter: All newsletter-related tools (read + write)
  * - newsletter_readonly: Newsletter tools (read only)
- * - server_queue: MCP implementation queue tools (read + write)
- * - server_queue_readonly: MCP implementation queue tools (read only)
+ * - server_directory: MCP server directory tools (read + write)
+ * - server_directory_readonly: MCP server directory tools (read only)
  * - official_queue: Official mirror queue tools (read + write)
  * - official_queue_readonly: Official mirror queue tools (read only)
  * - unofficial_mirrors: Unofficial mirror CRUD tools (read + write)

@@ -45,11 +45,11 @@ This server is built and tested on macOS with Claude Desktop. It should work wit
 | `update_newsletter_post`               | newsletter         | write      | Update an existing newsletter post's content and metadata (except status).    |
 | `upload_image`                         | newsletter         | write      | Upload an image and attach it to a specific newsletter post.                  |
 | `get_authors`                          | newsletter         | read       | Get a list of authors with optional search and pagination.                    |
-| `search_mcp_implementations`           | server_queue       | read       | Search for MCP servers and clients in the PulseMCP registry.                  |
-| `get_draft_mcp_implementations`        | server_queue       | read       | Retrieve paginated list of draft MCP implementations needing review.          |
-| `find_providers`                       | server_queue       | read       | Search for providers by ID, name, URL, or slug.                               |
-| `save_mcp_implementation`              | server_queue       | write      | Update an MCP implementation (replicates Admin panel "Save Changes" button).  |
-| `send_impl_posted_notif`               | server_queue       | write      | Send email notification when MCP implementation goes live.                    |
+| `search_mcp_implementations`           | server_directory   | read       | Search for MCP servers and clients in the PulseMCP registry.                  |
+| `get_draft_mcp_implementations`        | server_directory   | read       | Retrieve paginated list of draft MCP implementations needing review.          |
+| `find_providers`                       | server_directory   | read       | Search for providers by ID, name, URL, or slug.                               |
+| `save_mcp_implementation`              | server_directory   | write      | Update an MCP implementation (replicates Admin panel "Save Changes" button).  |
+| `send_impl_posted_notif`               | server_directory   | write      | Send email notification when MCP implementation goes live.                    |
 | `get_official_mirror_queue_items`      | official_queue     | read       | List and filter official mirror queue entries with pagination and search.     |
 | `get_official_mirror_queue_item`       | official_queue     | read       | Get detailed information about a single official mirror queue entry.          |
 | `approve_official_mirror_queue_item`   | official_queue     | write      | Approve a queue entry and link it to an existing MCP server (async).          |
@@ -89,33 +89,33 @@ This server organizes tools into groups that can be selectively enabled or disab
 
 ## Available Groups
 
-| Group                         | Tools | Description                                  |
-| ----------------------------- | ----- | -------------------------------------------- |
-| `newsletter`                  | 6     | Full newsletter management (read + write)    |
-| `newsletter_readonly`         | 3     | Newsletter read-only (get posts, authors)    |
-| `server_queue`                | 5     | Full MCP implementation queue (read + write) |
-| `server_queue_readonly`       | 3     | MCP implementation queue read-only           |
-| `official_queue`              | 7     | Full official mirror queue (read + write)    |
-| `official_queue_readonly`     | 2     | Official mirror queue read-only              |
-| `unofficial_mirrors`          | 5     | Full unofficial mirrors CRUD (read + write)  |
-| `unofficial_mirrors_readonly` | 2     | Unofficial mirrors read-only                 |
-| `official_mirrors`            | 2     | Official mirrors REST API (read-only)        |
-| `official_mirrors_readonly`   | 2     | Official mirrors read-only (alias)           |
-| `tenants`                     | 2     | Tenants REST API (read-only)                 |
-| `tenants_readonly`            | 2     | Tenants read-only (alias)                    |
-| `mcp_jsons`                   | 5     | Full MCP JSON configurations (read + write)  |
-| `mcp_jsons_readonly`          | 2     | MCP JSON configurations read-only            |
-| `mcp_servers`                 | 3     | Full MCP servers management (read + write)   |
-| `mcp_servers_readonly`        | 2     | MCP servers read-only (list, get)            |
-| `redirects`                   | 5     | Full URL redirect management (read + write)  |
-| `redirects_readonly`          | 2     | URL redirects read-only (list, get)          |
+| Group                         | Tools | Description                                 |
+| ----------------------------- | ----- | ------------------------------------------- |
+| `newsletter`                  | 6     | Full newsletter management (read + write)   |
+| `newsletter_readonly`         | 3     | Newsletter read-only (get posts, authors)   |
+| `server_directory`            | 5     | Full MCP server directory (read + write)    |
+| `server_directory_readonly`   | 3     | MCP server directory read-only              |
+| `official_queue`              | 7     | Full official mirror queue (read + write)   |
+| `official_queue_readonly`     | 2     | Official mirror queue read-only             |
+| `unofficial_mirrors`          | 5     | Full unofficial mirrors CRUD (read + write) |
+| `unofficial_mirrors_readonly` | 2     | Unofficial mirrors read-only                |
+| `official_mirrors`            | 2     | Official mirrors REST API (read-only)       |
+| `official_mirrors_readonly`   | 2     | Official mirrors read-only (alias)          |
+| `tenants`                     | 2     | Tenants REST API (read-only)                |
+| `tenants_readonly`            | 2     | Tenants read-only (alias)                   |
+| `mcp_jsons`                   | 5     | Full MCP JSON configurations (read + write) |
+| `mcp_jsons_readonly`          | 2     | MCP JSON configurations read-only           |
+| `mcp_servers`                 | 3     | Full MCP servers management (read + write)  |
+| `mcp_servers_readonly`        | 2     | MCP servers read-only (list, get)           |
+| `redirects`                   | 5     | Full URL redirect management (read + write) |
+| `redirects_readonly`          | 2     | URL redirects read-only (list, get)         |
 
 ### Tools by Group
 
 - **newsletter** / **newsletter_readonly**:
   - Read-only: `get_newsletter_posts`, `get_newsletter_post`, `get_authors`
   - Write: `draft_newsletter_post`, `update_newsletter_post`, `upload_image`
-- **server_queue** / **server_queue_readonly**:
+- **server_directory** / **server_directory_readonly**:
   - Read-only: `search_mcp_implementations`, `get_draft_mcp_implementations`, `find_providers`
   - Write: `save_mcp_implementation`, `send_impl_posted_notif`
 - **official_queue** / **official_queue_readonly**:
@@ -140,9 +140,9 @@ This server organizes tools into groups that can be selectively enabled or disab
 
 ## Environment Variables
 
-| Variable      | Description                                 | Default                                                                                                                                |
-| ------------- | ------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
-| `TOOL_GROUPS` | Comma-separated list of enabled tool groups | `newsletter,server_queue,official_queue,unofficial_mirrors,official_mirrors,tenants,mcp_jsons,mcp_servers,redirects` (all base groups) |
+| Variable      | Description                                 | Default                                                                                                                                    |
+| ------------- | ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| `TOOL_GROUPS` | Comma-separated list of enabled tool groups | `newsletter,server_directory,official_queue,unofficial_mirrors,official_mirrors,tenants,mcp_jsons,mcp_servers,redirects` (all base groups) |
 
 ## Examples
 
@@ -158,23 +158,23 @@ Enable only newsletter tools:
 TOOL_GROUPS=newsletter
 ```
 
-Enable server_queue with read-only access:
+Enable server_directory with read-only access:
 
 ```bash
-TOOL_GROUPS=server_queue_readonly
+TOOL_GROUPS=server_directory_readonly
 ```
 
 Enable all groups with read-only access:
 
 ```bash
-TOOL_GROUPS=newsletter_readonly,server_queue_readonly,official_queue_readonly,unofficial_mirrors_readonly,official_mirrors_readonly,tenants_readonly,mcp_jsons_readonly,mcp_servers_readonly,redirects_readonly
+TOOL_GROUPS=newsletter_readonly,server_directory_readonly,official_queue_readonly,unofficial_mirrors_readonly,official_mirrors_readonly,tenants_readonly,mcp_jsons_readonly,mcp_servers_readonly,redirects_readonly
 ```
 
 Mix full and read-only access per group:
 
 ```bash
-# Full newsletter access, read-only server_queue, no official_queue
-TOOL_GROUPS=newsletter,server_queue_readonly
+# Full newsletter access, read-only server_directory, no official_queue
+TOOL_GROUPS=newsletter,server_directory_readonly
 ```
 
 # Usage Tips
@@ -188,7 +188,7 @@ TOOL_GROUPS=newsletter,server_queue_readonly
 - Use MCP server/client slugs for featured content (e.g., "github-mcp", "claude-desktop")
 - Use `search_mcp_implementations` to discover MCP servers and clients in the PulseMCP registry
 - Enable or disable specific tool groups by setting `TOOL_GROUPS` environment variable
-- Use `_readonly` suffixes to restrict groups to read-only operations (e.g., `server_queue_readonly`)
+- Use `_readonly` suffixes to restrict groups to read-only operations (e.g., `server_directory_readonly`)
 - Use the `remote` array parameter in `save_mcp_implementation` to configure remote endpoints for MCP servers (transport, host_platform, authentication_method, etc.)
 - Use the `canonical` array parameter in `save_mcp_implementation` to set canonical URLs with scope (domain, subdomain, subfolder, or url)
 - Remote endpoints allow specifying how MCP servers can be accessed (direct URL, setup URL, authentication method, cost, etc.)
@@ -303,7 +303,7 @@ Add to your Claude Desktop configuration:
       "args": ["/path/to/pulsemcp-cms-admin/local/build/index.js"],
       "env": {
         "PULSEMCP_ADMIN_API_KEY": "your-api-key-here",
-        "TOOL_GROUPS": "newsletter,server_queue,official_queue,unofficial_mirrors,official_mirrors,tenants,mcp_jsons,mcp_servers,redirects"
+        "TOOL_GROUPS": "newsletter,server_directory,official_queue,unofficial_mirrors,official_mirrors,tenants,mcp_jsons,mcp_servers,redirects"
       }
     }
   }
@@ -320,7 +320,7 @@ For read-only access:
       "args": ["/path/to/pulsemcp-cms-admin/local/build/index.js"],
       "env": {
         "PULSEMCP_ADMIN_API_KEY": "your-api-key-here",
-        "TOOL_GROUPS": "newsletter_readonly,server_queue_readonly,official_queue_readonly,unofficial_mirrors_readonly,official_mirrors_readonly,tenants_readonly,mcp_jsons_readonly,mcp_servers_readonly,redirects_readonly"
+        "TOOL_GROUPS": "newsletter_readonly,server_directory_readonly,official_queue_readonly,unofficial_mirrors_readonly,official_mirrors_readonly,tenants_readonly,mcp_jsons_readonly,mcp_servers_readonly,redirects_readonly"
       }
     }
   }

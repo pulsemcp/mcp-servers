@@ -395,7 +395,7 @@ describe('Draft MCP Implementations - Manual Tests with Real API', () => {
   });
 
   describe('Tool group filtering', () => {
-    it('should list both tools in server_queue_all group', async () => {
+    it('should list both tools in server_directory_all group', async () => {
       const tools = await client.listTools();
 
       const toolNames = tools.tools.map((t) => t.name);

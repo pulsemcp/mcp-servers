@@ -686,8 +686,8 @@ describe('Newsletter Tools', () => {
 
   describe('parseEnabledToolGroups', () => {
     it('should parse valid tool groups from parameter', () => {
-      const groups = parseEnabledToolGroups('newsletter,server_queue,official_queue');
-      expect(groups).toEqual(['newsletter', 'server_queue', 'official_queue']);
+      const groups = parseEnabledToolGroups('newsletter,server_directory,official_queue');
+      expect(groups).toEqual(['newsletter', 'server_directory', 'official_queue']);
     });
 
     it('should parse single group', () => {
@@ -696,25 +696,25 @@ describe('Newsletter Tools', () => {
     });
 
     it('should parse readonly variants', () => {
-      const groups = parseEnabledToolGroups('newsletter_readonly,server_queue_readonly');
-      expect(groups).toEqual(['newsletter_readonly', 'server_queue_readonly']);
+      const groups = parseEnabledToolGroups('newsletter_readonly,server_directory_readonly');
+      expect(groups).toEqual(['newsletter_readonly', 'server_directory_readonly']);
     });
 
     it('should handle whitespace in group names', () => {
-      const groups = parseEnabledToolGroups('newsletter , server_queue , official_queue ');
-      expect(groups).toEqual(['newsletter', 'server_queue', 'official_queue']);
+      const groups = parseEnabledToolGroups('newsletter , server_directory , official_queue ');
+      expect(groups).toEqual(['newsletter', 'server_directory', 'official_queue']);
     });
 
     it('should filter out invalid group names', () => {
-      const groups = parseEnabledToolGroups('newsletter,invalid_group,server_queue');
-      expect(groups).toEqual(['newsletter', 'server_queue']);
+      const groups = parseEnabledToolGroups('newsletter,invalid_group,server_directory');
+      expect(groups).toEqual(['newsletter', 'server_directory']);
     });
 
     it('should return all base groups when empty string provided', () => {
       const groups = parseEnabledToolGroups('');
       expect(groups).toEqual([
         'newsletter',
-        'server_queue',
+        'server_directory',
         'official_queue',
         'unofficial_mirrors',
         'official_mirrors',
@@ -729,7 +729,7 @@ describe('Newsletter Tools', () => {
       const groups = parseEnabledToolGroups();
       expect(groups).toEqual([
         'newsletter',
-        'server_queue',
+        'server_directory',
         'official_queue',
         'unofficial_mirrors',
         'official_mirrors',
@@ -742,7 +742,7 @@ describe('Newsletter Tools', () => {
 
     it('should prioritize parameter over environment variable', () => {
       const originalEnv = process.env.TOOL_GROUPS;
-      process.env.TOOL_GROUPS = 'server_queue';
+      process.env.TOOL_GROUPS = 'server_directory';
 
       const groups = parseEnabledToolGroups('newsletter');
       expect(groups).toEqual(['newsletter']);
@@ -756,13 +756,13 @@ describe('Newsletter Tools', () => {
     });
 
     it('should deduplicate groups', () => {
-      const groups = parseEnabledToolGroups('newsletter,newsletter,server_queue');
-      expect(groups).toEqual(['newsletter', 'server_queue']);
+      const groups = parseEnabledToolGroups('newsletter,newsletter,server_directory');
+      expect(groups).toEqual(['newsletter', 'server_directory']);
     });
 
     it('should allow mixing base and readonly groups', () => {
-      const groups = parseEnabledToolGroups('newsletter,server_queue_readonly,official_queue');
-      expect(groups).toEqual(['newsletter', 'server_queue_readonly', 'official_queue']);
+      const groups = parseEnabledToolGroups('newsletter,server_directory_readonly,official_queue');
+      expect(groups).toEqual(['newsletter', 'server_directory_readonly', 'official_queue']);
     });
   });
 
@@ -814,14 +814,14 @@ describe('Newsletter Tools', () => {
       expect(toolNames).not.toContain('save_mcp_implementation');
     });
 
-    it('should register only server_queue tools when server_queue group is enabled', async () => {
+    it('should register only server_directory tools when server_directory group is enabled', async () => {
       const mockServer = new Server(
         { name: 'test', version: '1.0.0' },
         { capabilities: { tools: {} } }
       );
       const clientFactory = () => createMockClient2();
 
-      const registerTools = createRegisterTools(clientFactory, 'server_queue');
+      const registerTools = createRegisterTools(clientFactory, 'server_directory');
       registerTools(mockServer);
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -848,7 +848,7 @@ describe('Newsletter Tools', () => {
 
       const registerTools = createRegisterTools(
         clientFactory,
-        'newsletter,server_queue,official_queue'
+        'newsletter,server_directory,official_queue'
       );
       registerTools(mockServer);
 
@@ -857,7 +857,7 @@ describe('Newsletter Tools', () => {
       const listToolsHandler = handlers.get('tools/list');
       const result = await listToolsHandler({ method: 'tools/list', params: {} });
 
-      expect(result.tools).toHaveLength(18); // 6 newsletter + 5 server_queue + 7 official_queue
+      expect(result.tools).toHaveLength(18); // 6 newsletter + 5 server_directory + 7 official_queue
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const toolNames = result.tools.map((t: any) => t.name);
       expect(toolNames).toContain('get_newsletter_posts');
@@ -883,7 +883,7 @@ describe('Newsletter Tools', () => {
       const listToolsHandler = handlers.get('tools/list');
       const result = await listToolsHandler({ method: 'tools/list', params: {} });
 
-      // 6 newsletter + 5 server_queue + 7 official_queue + 5 unofficial_mirrors + 2 official_mirrors + 2 tenants + 5 mcp_jsons + 3 mcp_servers + 5 redirects = 40 tools
+      // 6 newsletter + 5 server_directory + 7 official_queue + 5 unofficial_mirrors + 2 official_mirrors + 2 tenants + 5 mcp_jsons + 3 mcp_servers + 5 redirects = 40 tools
       expect(result.tools).toHaveLength(40);
     });
 
@@ -923,7 +923,7 @@ describe('Newsletter Tools', () => {
 
       const registerTools = createRegisterTools(
         clientFactory,
-        'newsletter_readonly,server_queue_readonly,official_queue_readonly'
+        'newsletter_readonly,server_directory_readonly,official_queue_readonly'
       );
       registerTools(mockServer);
 
@@ -932,7 +932,7 @@ describe('Newsletter Tools', () => {
       const listToolsHandler = handlers.get('tools/list');
       const result = await listToolsHandler({ method: 'tools/list', params: {} });
 
-      // 3 newsletter read + 3 server_queue read + 2 official_queue read = 8 tools
+      // 3 newsletter read + 3 server_directory read + 2 official_queue read = 8 tools
       expect(result.tools).toHaveLength(8);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const toolNames = result.tools.map((t: any) => t.name);
@@ -953,8 +953,11 @@ describe('Newsletter Tools', () => {
       );
       const clientFactory = () => createMockClient2();
 
-      // Full access to newsletter, read-only to server_queue
-      const registerTools = createRegisterTools(clientFactory, 'newsletter,server_queue_readonly');
+      // Full access to newsletter, read-only to server_directory
+      const registerTools = createRegisterTools(
+        clientFactory,
+        'newsletter,server_directory_readonly'
+      );
       registerTools(mockServer);
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -962,7 +965,7 @@ describe('Newsletter Tools', () => {
       const listToolsHandler = handlers.get('tools/list');
       const result = await listToolsHandler({ method: 'tools/list', params: {} });
 
-      // 6 newsletter (all) + 3 server_queue read = 9 tools
+      // 6 newsletter (all) + 3 server_directory read = 9 tools
       expect(result.tools).toHaveLength(9);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const toolNames = result.tools.map((t: any) => t.name);
