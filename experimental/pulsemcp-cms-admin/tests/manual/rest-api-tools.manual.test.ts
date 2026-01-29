@@ -201,36 +201,6 @@ describe('REST API Tools - Manual Tests with Real API', () => {
       }
     });
 
-    it('create_unofficial_mirror - should create with jsonb_data (legacy)', async () => {
-      const testName = `test-mirror-legacy-${Date.now()}`;
-      const result = await client.callTool('create_unofficial_mirror', {
-        name: testName,
-        version: '1.0.0',
-        jsonb_data: {
-          server: {
-            $schema: 'https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json',
-            name: testName,
-            title: 'Test MCP Server (Legacy)',
-            version: '1.0.0',
-          },
-        },
-      });
-
-      expect(result.isError).toBeFalsy();
-      const text = result.content[0].text;
-      console.log('Created unofficial mirror with jsonb_data:', text);
-
-      expect(text).toContain('Successfully created unofficial mirror');
-
-      // Clean up this one immediately since we already have createdUnofficialMirrorId
-      const idMatch = text.match(/\*\*ID:\*\* (\d+)/);
-      if (idMatch) {
-        const legacyId = parseInt(idMatch[1], 10);
-        await client.callTool('delete_unofficial_mirror', { id: legacyId });
-        console.log('Cleaned up legacy test mirror:', legacyId);
-      }
-    });
-
     it('get_unofficial_mirror - should get a specific unofficial mirror', async () => {
       if (!createdUnofficialMirrorId) {
         console.log('Skipping - no unofficial mirror ID available');

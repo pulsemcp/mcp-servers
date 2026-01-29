@@ -7,9 +7,7 @@ const PARAM_DESCRIPTIONS = {
   name: 'Updated name of the unofficial mirror',
   version: 'Updated version of the mirror',
   server_json:
-    'Updated server.json content. This will be automatically wrapped in a { "server": ... } envelope. Use this for better ergonomics instead of jsonb_data.',
-  jsonb_data:
-    'Raw JSON data to store (advanced). If using server.json content, prefer the server_json parameter which auto-wraps it.',
+    'Updated server.json content. This will be automatically wrapped in a { "server": ... } envelope as required by the PulseMCP Sub-Registry API.',
   mcp_server_id: 'ID of the MCP server to link (set to null to unlink)',
   previous_name: 'Updated previous name (set to null to clear)',
   next_name: 'Updated next name (set to null to clear)',
@@ -23,10 +21,6 @@ const UpdateUnofficialMirrorSchema = z.object({
     .union([z.record(z.unknown()), z.string()])
     .optional()
     .describe(PARAM_DESCRIPTIONS.server_json),
-  jsonb_data: z
-    .union([z.record(z.unknown()), z.string()])
-    .optional()
-    .describe(PARAM_DESCRIPTIONS.jsonb_data),
   mcp_server_id: z.number().nullable().optional().describe(PARAM_DESCRIPTIONS.mcp_server_id),
   previous_name: z.string().nullable().optional().describe(PARAM_DESCRIPTIONS.previous_name),
   next_name: z.string().nullable().optional().describe(PARAM_DESCRIPTIONS.next_name),
@@ -37,9 +31,9 @@ export function updateUnofficialMirror(_server: Server, clientFactory: ClientFac
     name: 'update_unofficial_mirror',
     description: `Update an existing unofficial mirror by its ID. Only provided fields will be updated.
 
-RECOMMENDED: Use the server_json parameter to update server.json content directly. It will be automatically wrapped in a { "server": ... } envelope as required by the PulseMCP Sub-Registry API.
+The server_json parameter accepts server.json content directly and automatically wraps it in a { "server": ... } envelope as required by the PulseMCP Sub-Registry API.
 
-Example request using server_json (recommended):
+Example request updating server_json:
 {
   "id": 123,
   "server_json": {
@@ -72,10 +66,6 @@ Use cases:
           oneOf: [{ type: 'object' }, { type: 'string' }],
           description: PARAM_DESCRIPTIONS.server_json,
         },
-        jsonb_data: {
-          oneOf: [{ type: 'object' }, { type: 'string' }],
-          description: PARAM_DESCRIPTIONS.jsonb_data,
-        },
         mcp_server_id: { type: ['number', 'null'], description: PARAM_DESCRIPTIONS.mcp_server_id },
         previous_name: { type: ['string', 'null'], description: PARAM_DESCRIPTIONS.previous_name },
         next_name: { type: ['string', 'null'], description: PARAM_DESCRIPTIONS.next_name },
@@ -87,23 +77,19 @@ Use cases:
       const client = clientFactory();
 
       try {
-        const { id, server_json, jsonb_data, ...rest } = validatedArgs;
+        const { id, server_json, ...rest } = validatedArgs;
 
-        // Determine jsonb_data: prefer server_json (auto-wrapped) over raw jsonb_data
-        let resolvedJsonbData: Record<string, unknown> | undefined;
+        // If server_json provided, wrap it in { "server": ... } envelope
+        let jsonb_data: Record<string, unknown> | undefined;
         if (server_json !== undefined) {
-          // Wrap server_json in { "server": ... } envelope
           const serverContent =
             typeof server_json === 'string' ? JSON.parse(server_json) : server_json;
-          resolvedJsonbData = { server: serverContent };
-        } else if (jsonb_data !== undefined) {
-          // Use raw jsonb_data as-is
-          resolvedJsonbData = typeof jsonb_data === 'string' ? JSON.parse(jsonb_data) : jsonb_data;
+          jsonb_data = { server: serverContent };
         }
 
         const params = {
           ...rest,
-          ...(resolvedJsonbData !== undefined ? { jsonb_data: resolvedJsonbData } : {}),
+          ...(jsonb_data !== undefined ? { jsonb_data } : {}),
         };
 
         if (Object.keys(params).length === 0) {
