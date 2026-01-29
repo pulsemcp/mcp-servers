@@ -468,7 +468,7 @@ describe('PulseMCP CMS Admin MCP Server Integration Tests', () => {
     it('should list all available tools', async () => {
       const tools = await client.listTools();
 
-      // 6 newsletter + 5 server_queue_all + 7 official_queue_all = 18 tools
+      // 6 newsletter + 5 server_directory_all + 7 official_queue_all = 18 tools
       expect(tools.tools).toHaveLength(18);
       const toolNames = tools.tools.map((t) => t.name);
       // Newsletter tools
@@ -478,7 +478,7 @@ describe('PulseMCP CMS Admin MCP Server Integration Tests', () => {
       expect(toolNames).toContain('update_newsletter_post');
       expect(toolNames).toContain('upload_image');
       expect(toolNames).toContain('get_authors');
-      // Server queue tools
+      // Server directory tools
       expect(toolNames).toContain('search_mcp_implementations');
       expect(toolNames).toContain('get_draft_mcp_implementations');
       expect(toolNames).toContain('save_mcp_implementation');

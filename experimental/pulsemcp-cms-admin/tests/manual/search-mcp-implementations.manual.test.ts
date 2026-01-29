@@ -253,7 +253,7 @@ describe('search_mcp_implementations - Manual Tests with Real API', () => {
   });
 
   describe('Tool integration', () => {
-    it('should be listed in available tools when server_queue groups are enabled', async () => {
+    it('should be listed in available tools when server_directory groups are enabled', async () => {
       const tools = await client.listTools();
 
       const toolNames = tools.tools.map((t) => t.name);

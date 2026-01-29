@@ -49,7 +49,7 @@ describe('PulseMCP CMS Admin - Toolgroups Integration Tests', () => {
       expect(toolNames).not.toContain('search_mcp_implementations');
     });
 
-    it('should error when calling server_queue tool', async () => {
+    it('should error when calling server_directory tool', async () => {
       try {
         await client.callTool('search_mcp_implementations', {
           query: 'test',
@@ -63,7 +63,7 @@ describe('PulseMCP CMS Admin - Toolgroups Integration Tests', () => {
     });
   });
 
-  describe('server_queue group only', () => {
+  describe('server_directory group only', () => {
     let client: TestMCPClient;
 
     beforeAll(async () => {
@@ -76,7 +76,7 @@ describe('PulseMCP CMS Admin - Toolgroups Integration Tests', () => {
         serverPath: serverPath,
         env: {
           ...process.env,
-          TOOL_GROUPS: 'server_queue',
+          TOOL_GROUPS: 'server_directory',
           PULSEMCP_MOCK_DATA: JSON.stringify({}),
         },
       });
@@ -87,7 +87,7 @@ describe('PulseMCP CMS Admin - Toolgroups Integration Tests', () => {
       await client.disconnect();
     });
 
-    it('should only register server_queue tools', async () => {
+    it('should only register server_directory tools', async () => {
       const tools = await client.listTools();
 
       expect(tools.tools).toHaveLength(5); // search, get_drafts, find_providers, save, send_notification
@@ -112,7 +112,7 @@ describe('PulseMCP CMS Admin - Toolgroups Integration Tests', () => {
       expect(toolNames).not.toContain('get_official_mirror_queue_items');
     });
 
-    it('should successfully call server_queue tool', async () => {
+    it('should successfully call server_directory tool', async () => {
       const result = await client.callTool('search_mcp_implementations', {
         query: 'test',
       });
@@ -133,7 +133,7 @@ describe('PulseMCP CMS Admin - Toolgroups Integration Tests', () => {
     });
   });
 
-  describe('newsletter and server_queue groups enabled', () => {
+  describe('newsletter and server_directory groups enabled', () => {
     let client: TestMCPClient;
 
     beforeAll(async () => {
@@ -146,7 +146,7 @@ describe('PulseMCP CMS Admin - Toolgroups Integration Tests', () => {
         serverPath: serverPath,
         env: {
           ...process.env,
-          TOOL_GROUPS: 'newsletter,server_queue',
+          TOOL_GROUPS: 'newsletter,server_directory',
           PULSEMCP_MOCK_DATA: JSON.stringify({}),
         },
       });
@@ -157,10 +157,10 @@ describe('PulseMCP CMS Admin - Toolgroups Integration Tests', () => {
       await client.disconnect();
     });
 
-    it('should register newsletter and server_queue tools', async () => {
+    it('should register newsletter and server_directory tools', async () => {
       const tools = await client.listTools();
 
-      expect(tools.tools).toHaveLength(11); // 6 newsletter + 5 server_queue
+      expect(tools.tools).toHaveLength(11); // 6 newsletter + 5 server_directory
       const toolNames = tools.tools.map((t) => t.name);
 
       // All newsletter tools should be present
@@ -171,7 +171,7 @@ describe('PulseMCP CMS Admin - Toolgroups Integration Tests', () => {
       expect(toolNames).toContain('upload_image');
       expect(toolNames).toContain('get_authors');
 
-      // All server_queue tools should be present
+      // All server_directory tools should be present
       expect(toolNames).toContain('search_mcp_implementations');
       expect(toolNames).toContain('get_draft_mcp_implementations');
       expect(toolNames).toContain('find_providers');
@@ -303,7 +303,7 @@ describe('PulseMCP CMS Admin - Toolgroups Integration Tests', () => {
     it('should register all tools by default', async () => {
       const tools = await client.listTools();
 
-      // 6 newsletter + 5 server_queue + 7 official_queue + 5 unofficial_mirrors + 2 official_mirrors + 2 tenants + 5 mcp_jsons + 3 mcp_servers + 5 redirects = 40 tools
+      // 6 newsletter + 5 server_directory + 7 official_queue + 5 unofficial_mirrors + 2 official_mirrors + 2 tenants + 5 mcp_jsons + 3 mcp_servers + 5 redirects = 40 tools
       expect(tools.tools).toHaveLength(40);
       const toolNames = tools.tools.map((t) => t.name);
 
@@ -375,7 +375,7 @@ describe('PulseMCP CMS Admin - Toolgroups Integration Tests', () => {
         serverPath: serverPath,
         env: {
           ...process.env,
-          TOOL_GROUPS: 'newsletter_readonly,server_queue_readonly,official_queue_readonly',
+          TOOL_GROUPS: 'newsletter_readonly,server_directory_readonly,official_queue_readonly',
           PULSEMCP_MOCK_DATA: JSON.stringify({}),
         },
       });
@@ -389,7 +389,7 @@ describe('PulseMCP CMS Admin - Toolgroups Integration Tests', () => {
     it('should register only read-only tools from all groups', async () => {
       const tools = await client.listTools();
 
-      // 3 newsletter read + 3 server_queue read + 2 official_queue read = 8 tools
+      // 3 newsletter read + 3 server_directory read + 2 official_queue read = 8 tools
       expect(tools.tools).toHaveLength(8);
       const toolNames = tools.tools.map((t) => t.name);
 
@@ -427,8 +427,8 @@ describe('PulseMCP CMS Admin - Toolgroups Integration Tests', () => {
         serverPath: serverPath,
         env: {
           ...process.env,
-          // Full access to newsletter, read-only to server_queue, no official_queue
-          TOOL_GROUPS: 'newsletter,server_queue_readonly',
+          // Full access to newsletter, read-only to server_directory, no official_queue
+          TOOL_GROUPS: 'newsletter,server_directory_readonly',
           PULSEMCP_MOCK_DATA: JSON.stringify({}),
         },
       });
@@ -442,7 +442,7 @@ describe('PulseMCP CMS Admin - Toolgroups Integration Tests', () => {
     it('should allow different access levels per group', async () => {
       const tools = await client.listTools();
 
-      // 6 newsletter (all) + 3 server_queue (read-only) = 9 tools
+      // 6 newsletter (all) + 3 server_directory (read-only) = 9 tools
       expect(tools.tools).toHaveLength(9);
       const toolNames = tools.tools.map((t) => t.name);
 
