@@ -121,7 +121,7 @@ Here are more servers...
 | -------------------------------- | ------------------------------------------------------ | -------- | ------- |
 | `PULSEMCP_SUBREGISTRY_API_KEY`   | Your PulseMCP API key                                  | Yes      | N/A     |
 | `PULSEMCP_SUBREGISTRY_TENANT_ID` | Your tenant identifier (for multi-tenant use)          | No       | N/A     |
-| `SHOW_ADMIN_TOOLS`               | Set to `true` to enable admin tools (switch_tenant_id) | No       | N/A     |
+| `SHOW_ADMIN_TOOLS`               | Set to `true` to enable admin tools (switch_tenant_id) | No       | `false` |
 
 ## Claude Desktop
 
