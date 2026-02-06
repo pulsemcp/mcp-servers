@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-02-06
+
 ### Added
 
 - Table-level access control via `DYNAMODB_ALLOWED_TABLES` environment variable
@@ -17,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **BREAKING**: Renamed npm package from `dynamodb-mcp-server` to `aws-dynamodb-mcp-server` due to npm naming conflict with existing package
 - **BREAKING**: Removed `dynamodb_` prefix from all tool names (e.g., `dynamodb_get_item` is now `get_item`). MCP clients typically prefix tool names with the server name, making the prefix redundant.
 - Renamed `query` to `query_items` for clarity
 - Renamed `scan` to `scan_table` for clarity
