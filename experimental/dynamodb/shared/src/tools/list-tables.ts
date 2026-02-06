@@ -72,14 +72,28 @@ export function listTablesTool(
         // Filter tables based on allowed tables configuration
         const filteredTableNames = filterAllowedTables(result.tableNames || [], tableConfig);
 
+        // Filter lastEvaluatedTableName to avoid leaking table names not in the allowed list
+        let lastEvaluatedTableName = result.lastEvaluatedTableName;
+        if (
+          lastEvaluatedTableName &&
+          tableConfig.allowedTables &&
+          tableConfig.allowedTables.length > 0 &&
+          !tableConfig.allowedTables.includes(lastEvaluatedTableName)
+        ) {
+          // If the pagination cursor points to a non-allowed table, clear it
+          // This means pagination may not work perfectly with table filtering,
+          // but it prevents information leakage
+          lastEvaluatedTableName = undefined;
+        }
+
         return {
           content: [
             {
               type: 'text',
               text: JSON.stringify(
                 {
-                  ...result,
                   tableNames: filteredTableNames,
+                  lastEvaluatedTableName,
                 },
                 null,
                 2

@@ -76,7 +76,7 @@ DYNAMODB_ENABLED_TOOL_GROUPS="readonly,readwrite,admin"
 
 ```bash
 # Only allow specific operations
-DYNAMODB_ENABLED_TOOLS="dynamodb_get_item,dynamodb_query,dynamodb_scan"
+DYNAMODB_ENABLED_TOOLS="dynamodb_get_item,dynamodb_query_items,dynamodb_scan_table"
 ```
 
 **3. Blacklist Specific Tools**:
