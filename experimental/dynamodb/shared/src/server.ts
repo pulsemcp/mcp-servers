@@ -17,7 +17,7 @@ export interface CreateMCPServerOptions {
 export function createMCPServer(options: CreateMCPServerOptions) {
   const server = new Server(
     {
-      name: 'dynamodb-mcp-server',
+      name: 'aws-dynamodb-mcp-server',
       version: options.version,
     },
     {
