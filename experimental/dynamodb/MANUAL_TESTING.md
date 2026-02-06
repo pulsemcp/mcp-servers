@@ -72,8 +72,8 @@ The tests will:
 ## Latest Test Results
 
 **Test Date:** 2026-02-06
-**Branch:** ao/dynamodb-mcp-server
-**Commit:** 2045cab90bdc8124059f560af7d7a14a41b4a9c7
+**Branch:** ao/dynamodb-publish-0.2.0
+**Commit:** 52113f1 (version bump - no functional changes since original tests on 2045cab)
 **Tested By:** Agent Orchestrator
 **Environment:** AWS us-east-1 (test account)
 
