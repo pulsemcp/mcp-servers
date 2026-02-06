@@ -1,11 +1,11 @@
 {
-  "name": "s3-mcp-server",
+  "name": "@pulsemcp/s3",
   "version": "0.0.0",
   "description": "MCP server for AWS S3 operations with fine-grained tool access control",
   "main": "build/index.js",
   "type": "module",
   "bin": {
-    "s3-mcp-server": "./build/index.js"
+    "pulsemcp-s3": "./build/index.js"
   },
   "files": [
     "build/**/*.js",

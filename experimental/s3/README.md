@@ -104,7 +104,7 @@ Windows: `%APPDATA%\Claude\claude_desktop_config.json`
   "mcpServers": {
     "s3": {
       "command": "npx",
-      "args": ["-y", "s3-mcp-server"],
+      "args": ["-y", "@pulsemcp/s3"],
       "env": {
         "AWS_ACCESS_KEY_ID": "your-access-key-id",
         "AWS_SECRET_ACCESS_KEY": "your-secret-access-key",
