@@ -46,9 +46,9 @@ npm run test:manual
 
 ## Latest Test Results
 
-**Test Date:** 2026-02-05
-**Branch:** tadasant/s3-mcp-server
-**Commit:** 57c290823b66b8c05bef9029163cbec8cebc0660
+**Test Date:** 2026-02-06
+**Branch:** tadasant/s3-publish
+**Commit:** f632bcf
 **Tested By:** Claude Opus 4.5
 **Environment:** Node.js on Linux, AWS us-east-1
 
@@ -60,21 +60,21 @@ All manual tests passed successfully against a real AWS S3 account.
 
 ### Test Results
 
-| Test          | Result                  | Notes                                  |
-| ------------- | ----------------------- | -------------------------------------- |
-| List buckets  | :white_check_mark: PASS | Found 0 buckets (clean account)        |
-| Create bucket | :white_check_mark: PASS | Created mcp-s3-test-\* bucket          |
-| Head bucket   | :white_check_mark: PASS | Verified bucket exists                 |
-| Put object    | :white_check_mark: PASS | Uploaded test-folder/test-file.json    |
-| List objects  | :white_check_mark: PASS | Listed 1 object with prefix filter     |
-| Get object    | :white_check_mark: PASS | Retrieved object content correctly     |
-| Copy object   | :white_check_mark: PASS | Copied to test-folder/copied-file.json |
-| Delete object | :white_check_mark: PASS | Deleted test-folder/test-file.json     |
-| Delete bucket | :white_check_mark: PASS | Cleaned up test bucket                 |
+| Test          | Result                  | Notes                                   |
+| ------------- | ----------------------- | --------------------------------------- |
+| List buckets  | :white_check_mark: PASS | Found 1 bucket (persistent test bucket) |
+| Create bucket | :white_check_mark: PASS | Created mcp-s3-test-\* bucket           |
+| Head bucket   | :white_check_mark: PASS | Verified bucket exists                  |
+| Put object    | :white_check_mark: PASS | Uploaded test-folder/test-file.json     |
+| List objects  | :white_check_mark: PASS | Listed 1 object with prefix filter      |
+| Get object    | :white_check_mark: PASS | Retrieved object content correctly      |
+| Copy object   | :white_check_mark: PASS | Copied to test-folder/copied-file.json  |
+| Delete object | :white_check_mark: PASS | Deleted test-folder/test-file.json      |
+| Delete bucket | :white_check_mark: PASS | Cleaned up test bucket                  |
 
 ### Test Duration
 
-Total: 2.85s (tests: 2.21s)
+Total: 7.60s (tests: 6.90s)
 
 ---
 
