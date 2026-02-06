@@ -140,7 +140,7 @@ describe('DynamoDB MCP Server Integration', () => {
       const result = await client.readResource<{ text: string }>('dynamodb://config');
       const config = JSON.parse(result.contents[0].text);
 
-      expect(config.server.name).toBe('dynamodb-mcp-server');
+      expect(config.server.name).toBe('aws-dynamodb-mcp-server');
       expect(config.toolGroups).toBeDefined();
       expect(config.toolGroups.readonly).toContain('list_tables');
     });
