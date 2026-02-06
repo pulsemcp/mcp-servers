@@ -61,6 +61,10 @@ function validateEnvironment(): void {
       description: 'Comma-separated list of specific tools to disable',
     },
     {
+      name: 'S3_BUCKET',
+      description: 'Constrain all operations to a single bucket (hides bucket-level tools)',
+    },
+    {
       name: 'SKIP_HEALTH_CHECKS',
       description: 'Skip health checks on startup (set to "true" to skip)',
       defaultValue: 'false',
@@ -106,6 +110,9 @@ function validateEnvironment(): void {
   if (process.env.S3_DISABLED_TOOLS) {
     logWarning('config', `Disabled tools filter active: ${process.env.S3_DISABLED_TOOLS}`);
   }
+  if (process.env.S3_BUCKET) {
+    logInfo('config', `Bucket constraint active: ${process.env.S3_BUCKET}`);
+  }
 }
 
 // =============================================================================
@@ -127,6 +134,7 @@ async function performHealthChecks(): Promise<void> {
     const secretAccessKey = process.env.AWS_SECRET_ACCESS_KEY!;
     const region = process.env.AWS_REGION || process.env.AWS_DEFAULT_REGION || 'us-east-1';
     const endpoint = process.env.AWS_ENDPOINT_URL;
+    const constrainedBucket = process.env.S3_BUCKET;
 
     const client = new AwsS3Client({
       accessKeyId,
@@ -138,6 +146,19 @@ async function performHealthChecks(): Promise<void> {
     // Try to list buckets to validate credentials
     await client.listBuckets();
     logInfo('healthcheck', 'AWS credentials validated successfully');
+
+    // If S3_BUCKET is set, verify it exists and is accessible
+    if (constrainedBucket) {
+      const bucketExists = await client.headBucket(constrainedBucket);
+      if (!bucketExists) {
+        logError(
+          'healthcheck',
+          `Constrained bucket "${constrainedBucket}" does not exist or is not accessible`
+        );
+        process.exit(1);
+      }
+      logInfo('healthcheck', `Constrained bucket "${constrainedBucket}" verified`);
+    }
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     logError('healthcheck', `Failed to validate AWS credentials: ${message}`);
