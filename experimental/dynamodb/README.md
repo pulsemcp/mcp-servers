@@ -127,7 +127,7 @@ Add to your `claude_desktop_config.json`:
   "mcpServers": {
     "dynamodb": {
       "command": "npx",
-      "args": ["-y", "dynamodb-mcp-server"],
+      "args": ["-y", "aws-dynamodb-mcp-server"],
       "env": {
         "AWS_REGION": "us-east-1",
         "AWS_ACCESS_KEY_ID": "your-access-key",
@@ -148,7 +148,7 @@ For development with local DynamoDB or LocalStack:
   "mcpServers": {
     "dynamodb-local": {
       "command": "npx",
-      "args": ["-y", "dynamodb-mcp-server"],
+      "args": ["-y", "aws-dynamodb-mcp-server"],
       "env": {
         "AWS_REGION": "us-east-1",
         "AWS_ACCESS_KEY_ID": "local",

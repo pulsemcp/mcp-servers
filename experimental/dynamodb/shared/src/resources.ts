@@ -30,7 +30,7 @@ export function registerResources(server: Server, version: string) {
 
       const config = {
         server: {
-          name: 'dynamodb-mcp-server',
+          name: 'aws-dynamodb-mcp-server',
           version,
           transport: 'stdio',
         },
