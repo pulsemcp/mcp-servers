@@ -139,7 +139,7 @@ async function main() {
   const transport = new StdioServerTransport();
   await server.connect(transport);
 
-  logServerStart('dynamodb-mcp-server');
+  logServerStart('aws-dynamodb-mcp-server');
 }
 
 // Run the server

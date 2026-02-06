@@ -1,5 +1,5 @@
 {
-  "name": "dynamodb-mcp-server",
+  "name": "aws-dynamodb-mcp-server",
   "version": "0.1.0",
   "description": "MCP server for AWS DynamoDB with fine-grained tool control",
   "author": "PulseMCP",

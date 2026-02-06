@@ -1,11 +1,11 @@
 {
-  "name": "dynamodb-mcp-server",
+  "name": "aws-dynamodb-mcp-server",
   "version": "0.1.0",
   "description": "MCP server for AWS DynamoDB with fine-grained tool control",
   "main": "build/index.js",
   "type": "module",
   "bin": {
-    "dynamodb-mcp-server": "./build/index.js"
+    "aws-dynamodb-mcp-server": "./build/index.js"
   },
   "files": [
     "build/**/*.js",
