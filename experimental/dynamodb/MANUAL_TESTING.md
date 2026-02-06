@@ -73,7 +73,7 @@ The tests will:
 
 **Test Date:** 2026-02-06
 **Branch:** ao/dynamodb-publish-0.2.0
-**Commit:** e3ab7f5 (package rename only - no functional changes since original tests)
+**Commit:** 52113f1 (version bump - no functional changes since original tests on 2045cab)
 **Tested By:** Agent Orchestrator
 **Environment:** AWS us-east-1 (test account)
 
