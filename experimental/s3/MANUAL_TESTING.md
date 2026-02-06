@@ -47,8 +47,8 @@ npm run test:manual
 ## Latest Test Results
 
 **Test Date:** 2026-02-06
-**Branch:** main (code verified via PR #294)
-**Commit:** 80fe6e9
+**Branch:** tadasant/s3-publish
+**Commit:** 47ad04b
 **Tested By:** Claude Opus 4.5
 **Environment:** Node.js on Linux, AWS us-east-1
 
