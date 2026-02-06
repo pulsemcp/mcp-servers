@@ -1,7 +1,7 @@
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { ListToolsRequestSchema, CallToolRequestSchema } from '@modelcontextprotocol/sdk/types.js';
 import { ClientFactory } from './server.js';
-import { ToolGroup, DynamoDBToolName } from './types.js';
+import { ToolGroup, DynamoDBToolName, ToolFilterConfig } from './types.js';
 
 // Import all tools
 import { listTablesTool } from './tools/list-tables.js';
@@ -59,12 +59,6 @@ const ALL_TOOL_NAMES: DynamoDBToolName[] = [
   'dynamodb_delete_table',
   'dynamodb_update_table',
 ];
-
-export interface ToolFilterConfig {
-  enabledToolGroups?: ToolGroup[];
-  enabledTools?: DynamoDBToolName[];
-  disabledTools?: DynamoDBToolName[];
-}
 
 /**
  * Parse tool filter configuration from environment variables.
@@ -236,4 +230,4 @@ export function registerTools(server: Server) {
 }
 
 // Re-export types
-export { ToolGroup, DynamoDBToolName } from './types.js';
+export { ToolGroup, DynamoDBToolName, ToolFilterConfig } from './types.js';

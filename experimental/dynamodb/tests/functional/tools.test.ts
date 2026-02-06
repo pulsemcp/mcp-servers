@@ -10,6 +10,13 @@ import { getItemTool } from '../../shared/src/tools/get-item.js';
 import { putItemTool } from '../../shared/src/tools/put-item.js';
 import { queryTool } from '../../shared/src/tools/query.js';
 import { scanTool } from '../../shared/src/tools/scan.js';
+import { updateItemTool } from '../../shared/src/tools/update-item.js';
+import { deleteItemTool } from '../../shared/src/tools/delete-item.js';
+import { createTableTool } from '../../shared/src/tools/create-table.js';
+import { deleteTableTool } from '../../shared/src/tools/delete-table.js';
+import { updateTableTool } from '../../shared/src/tools/update-table.js';
+import { batchGetItemsTool } from '../../shared/src/tools/batch-get-items.js';
+import { batchWriteItemsTool } from '../../shared/src/tools/batch-write-items.js';
 
 describe('DynamoDB Tools', () => {
   let mockClient: IDynamoDBClient;
@@ -177,6 +184,146 @@ describe('DynamoDB Tools', () => {
         exclusiveStartKey: undefined,
         projectionExpression: undefined,
       });
+    });
+  });
+
+  describe('updateItemTool', () => {
+    it('should update an item', async () => {
+      (mockClient.updateItem as ReturnType<typeof vi.fn>).mockResolvedValue({
+        attributes: { userId: '123', name: 'Updated Name' },
+      });
+
+      const tool = updateItemTool(mockServer, clientFactory);
+      const result = await tool.handler({
+        tableName: 'Users',
+        key: { userId: '123' },
+        updateExpression: 'SET #name = :name',
+        expressionAttributeNames: { '#name': 'name' },
+        expressionAttributeValues: { ':name': 'Updated Name' },
+      });
+
+      expect(result.isError).toBeUndefined();
+      expect(result.content[0].text).toContain('success');
+    });
+  });
+
+  describe('deleteItemTool', () => {
+    it('should delete an item', async () => {
+      (mockClient.deleteItem as ReturnType<typeof vi.fn>).mockResolvedValue({});
+
+      const tool = deleteItemTool(mockServer, clientFactory);
+      const result = await tool.handler({
+        tableName: 'Users',
+        key: { userId: '123' },
+      });
+
+      expect(result.isError).toBeUndefined();
+      expect(result.content[0].text).toContain('success');
+    });
+  });
+
+  describe('createTableTool', () => {
+    it('should create a table', async () => {
+      (mockClient.createTable as ReturnType<typeof vi.fn>).mockResolvedValue({
+        tableName: 'NewTable',
+        tableStatus: 'CREATING',
+      });
+
+      const tool = createTableTool(mockServer, clientFactory);
+      const result = await tool.handler({
+        tableName: 'NewTable',
+        keySchema: [{ attributeName: 'pk', keyType: 'HASH' }],
+        attributeDefinitions: [{ attributeName: 'pk', attributeType: 'S' }],
+        billingMode: 'PAY_PER_REQUEST',
+      });
+
+      expect(result.isError).toBeUndefined();
+      expect(result.content[0].text).toContain('NewTable');
+      expect(result.content[0].text).toContain('CREATING');
+    });
+  });
+
+  describe('deleteTableTool', () => {
+    it('should delete a table', async () => {
+      (mockClient.deleteTable as ReturnType<typeof vi.fn>).mockResolvedValue({
+        tableName: 'OldTable',
+        tableStatus: 'DELETING',
+      });
+
+      const tool = deleteTableTool(mockServer, clientFactory);
+      const result = await tool.handler({
+        tableName: 'OldTable',
+      });
+
+      expect(result.isError).toBeUndefined();
+      expect(result.content[0].text).toContain('OldTable');
+    });
+  });
+
+  describe('updateTableTool', () => {
+    it('should update a table', async () => {
+      (mockClient.updateTable as ReturnType<typeof vi.fn>).mockResolvedValue({
+        tableName: 'ExistingTable',
+        tableStatus: 'UPDATING',
+      });
+
+      const tool = updateTableTool(mockServer, clientFactory);
+      const result = await tool.handler({
+        tableName: 'ExistingTable',
+        billingMode: 'PROVISIONED',
+        provisionedThroughput: {
+          readCapacityUnits: 5,
+          writeCapacityUnits: 5,
+        },
+      });
+
+      expect(result.isError).toBeUndefined();
+      expect(result.content[0].text).toContain('ExistingTable');
+    });
+  });
+
+  describe('batchGetItemsTool', () => {
+    it('should batch get items', async () => {
+      (mockClient.batchGetItems as ReturnType<typeof vi.fn>).mockResolvedValue({
+        responses: {
+          Users: [
+            { userId: '1', name: 'Alice' },
+            { userId: '2', name: 'Bob' },
+          ],
+        },
+      });
+
+      const tool = batchGetItemsTool(mockServer, clientFactory);
+      const result = await tool.handler({
+        requestItems: {
+          Users: {
+            keys: [{ userId: '1' }, { userId: '2' }],
+          },
+        },
+      });
+
+      expect(result.isError).toBeUndefined();
+      expect(result.content[0].text).toContain('Alice');
+      expect(result.content[0].text).toContain('Bob');
+    });
+  });
+
+  describe('batchWriteItemsTool', () => {
+    it('should batch write items', async () => {
+      (mockClient.batchWriteItems as ReturnType<typeof vi.fn>).mockResolvedValue({});
+
+      const tool = batchWriteItemsTool(mockServer, clientFactory);
+      const result = await tool.handler({
+        requestItems: {
+          Users: [
+            { putRequest: { item: { userId: '1', name: 'Alice' } } },
+            { deleteRequest: { key: { userId: '2' } } },
+          ],
+        },
+      });
+
+      expect(result.isError).toBeUndefined();
+      expect(result.content[0].text).toContain('success');
     });
   });
 });

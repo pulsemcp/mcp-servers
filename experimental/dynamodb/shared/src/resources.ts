@@ -5,7 +5,7 @@ import {
 } from '@modelcontextprotocol/sdk/types.js';
 import { getServerState } from './state.js';
 
-export function registerResources(server: Server) {
+export function registerResources(server: Server, version: string) {
   // List available resources
   server.setRequestHandler(ListResourcesRequestSchema, async () => {
     return {
@@ -31,7 +31,7 @@ export function registerResources(server: Server) {
       const config = {
         server: {
           name: 'dynamodb-mcp-server',
-          version: '0.1.0',
+          version,
           transport: 'stdio',
         },
         environment: {

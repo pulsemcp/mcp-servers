@@ -52,7 +52,7 @@ export function createMCPServer(options: CreateMCPServerOptions) {
         });
       });
 
-    registerResources(server);
+    registerResources(server, options.version);
     const registerTools = createRegisterTools(factory, options.toolFilterConfig);
     registerTools(server);
   };

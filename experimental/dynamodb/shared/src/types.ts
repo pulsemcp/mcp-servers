@@ -107,11 +107,11 @@ export type DynamoDBToolName =
   | 'dynamodb_get_item'
   | 'dynamodb_query'
   | 'dynamodb_scan'
+  | 'dynamodb_batch_get_items'
   // ReadWrite tools
   | 'dynamodb_put_item'
   | 'dynamodb_update_item'
   | 'dynamodb_delete_item'
-  | 'dynamodb_batch_get_items'
   | 'dynamodb_batch_write_items'
   // Admin tools
   | 'dynamodb_create_table'
