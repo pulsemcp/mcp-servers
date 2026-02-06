@@ -14,7 +14,7 @@ export const GetObjectSchema = z.object({
 
 export function getObjectTool(_server: Server, clientFactory: S3ClientFactory) {
   return {
-    name: 's3_get_object',
+    name: 'get_object',
     description: `Get the contents of an object from S3.
 
 Returns the object content as text along with metadata.

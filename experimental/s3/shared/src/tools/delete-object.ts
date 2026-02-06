@@ -14,7 +14,7 @@ export const DeleteObjectSchema = z.object({
 
 export function deleteObjectTool(_server: Server, clientFactory: S3ClientFactory) {
   return {
-    name: 's3_delete_object',
+    name: 'delete_object',
     description: `Delete an object from S3.
 
 Permanently removes the specified object from the bucket.

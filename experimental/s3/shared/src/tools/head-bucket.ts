@@ -12,7 +12,7 @@ export const HeadBucketSchema = z.object({
 
 export function headBucketTool(_server: Server, clientFactory: S3ClientFactory) {
   return {
-    name: 's3_head_bucket',
+    name: 'head_bucket',
     description: `Check if an S3 bucket exists and is accessible.
 
 Returns whether the bucket exists and the caller has permission to access it.

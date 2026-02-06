@@ -53,17 +53,17 @@ describe('Tool Filtering', () => {
     });
 
     it('should parse enabled tools from comma-separated list', () => {
-      const { enabledTools } = parseToolFilters('s3_list_buckets,s3_get_object');
+      const { enabledTools } = parseToolFilters('list_buckets,get_object');
       expect(enabledTools).not.toBeNull();
-      expect(enabledTools!.has('s3_list_buckets')).toBe(true);
-      expect(enabledTools!.has('s3_get_object')).toBe(true);
+      expect(enabledTools!.has('list_buckets')).toBe(true);
+      expect(enabledTools!.has('get_object')).toBe(true);
       expect(enabledTools!.size).toBe(2);
     });
 
     it('should parse disabled tools from comma-separated list', () => {
-      const { disabledTools } = parseToolFilters(undefined, 's3_delete_bucket,s3_delete_object');
-      expect(disabledTools.has('s3_delete_bucket')).toBe(true);
-      expect(disabledTools.has('s3_delete_object')).toBe(true);
+      const { disabledTools } = parseToolFilters(undefined, 'delete_bucket,delete_object');
+      expect(disabledTools.has('delete_bucket')).toBe(true);
+      expect(disabledTools.has('delete_object')).toBe(true);
       expect(disabledTools.size).toBe(2);
     });
   });
@@ -78,7 +78,7 @@ describe('S3 Tools', () => {
     mockClient = createMockS3Client();
   });
 
-  describe('s3_list_buckets', () => {
+  describe('list_buckets', () => {
     it('should list buckets successfully', async () => {
       mockClient.listBuckets.mockResolvedValue({
         buckets: [
@@ -107,7 +107,7 @@ describe('S3 Tools', () => {
     });
   });
 
-  describe('s3_list_objects', () => {
+  describe('list_objects', () => {
     it('should list objects with prefix', async () => {
       mockClient.listObjects.mockResolvedValue({
         objects: [
@@ -142,7 +142,7 @@ describe('S3 Tools', () => {
     });
   });
 
-  describe('s3_get_object', () => {
+  describe('get_object', () => {
     it('should get object content', async () => {
       mockClient.getObject.mockResolvedValue({
         content: '{"key": "value"}',
@@ -165,7 +165,7 @@ describe('S3 Tools', () => {
     });
   });
 
-  describe('s3_put_object', () => {
+  describe('put_object', () => {
     it('should put object with content', async () => {
       mockClient.putObject.mockResolvedValue({
         etag: '"newetag"',
@@ -191,7 +191,7 @@ describe('S3 Tools', () => {
     });
   });
 
-  describe('s3_delete_object', () => {
+  describe('delete_object', () => {
     it('should delete object', async () => {
       mockClient.deleteObject.mockResolvedValue(undefined);
 
@@ -207,7 +207,7 @@ describe('S3 Tools', () => {
     });
   });
 
-  describe('s3_create_bucket', () => {
+  describe('create_bucket', () => {
     it('should create bucket', async () => {
       mockClient.createBucket.mockResolvedValue(undefined);
 
@@ -231,7 +231,7 @@ describe('S3 Tools', () => {
     });
   });
 
-  describe('s3_delete_bucket', () => {
+  describe('delete_bucket', () => {
     it('should delete bucket', async () => {
       mockClient.deleteBucket.mockResolvedValue(undefined);
 
@@ -245,7 +245,7 @@ describe('S3 Tools', () => {
     });
   });
 
-  describe('s3_copy_object', () => {
+  describe('copy_object', () => {
     it('should copy object between buckets', async () => {
       mockClient.copyObject.mockResolvedValue({
         etag: '"copyetag"',
@@ -271,7 +271,7 @@ describe('S3 Tools', () => {
     });
   });
 
-  describe('s3_head_bucket', () => {
+  describe('head_bucket', () => {
     it('should check if bucket exists', async () => {
       mockClient.headBucket.mockResolvedValue(true);
 

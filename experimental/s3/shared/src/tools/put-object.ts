@@ -21,7 +21,7 @@ export const PutObjectSchema = z.object({
 
 export function putObjectTool(_server: Server, clientFactory: S3ClientFactory) {
   return {
-    name: 's3_put_object',
+    name: 'put_object',
     description: `Upload or update an object in S3.
 
 Creates a new object or overwrites an existing one with the provided content.

@@ -12,7 +12,7 @@ export const DeleteBucketSchema = z.object({
 
 export function deleteBucketTool(_server: Server, clientFactory: S3ClientFactory) {
   return {
-    name: 's3_delete_bucket',
+    name: 'delete_bucket',
     description: `Delete an S3 bucket.
 
 Permanently removes the specified bucket. The bucket must be empty before deletion.

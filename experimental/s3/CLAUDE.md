@@ -29,17 +29,19 @@ The S3 client (`shared/src/s3-client/`) wraps the AWS SDK v3:
 
 ## Available Tools
 
-| Tool               | Group     | Operation                    |
-| ------------------ | --------- | ---------------------------- |
-| `s3_list_buckets`  | readonly  | List all buckets             |
-| `s3_list_objects`  | readonly  | List objects with pagination |
-| `s3_get_object`    | readonly  | Get object content           |
-| `s3_head_bucket`   | readonly  | Check bucket existence       |
-| `s3_put_object`    | readwrite | Upload/update objects        |
-| `s3_delete_object` | readwrite | Delete objects               |
-| `s3_copy_object`   | readwrite | Copy objects                 |
-| `s3_create_bucket` | readwrite | Create buckets               |
-| `s3_delete_bucket` | readwrite | Delete buckets               |
+| Tool            | Group     | Operation                    |
+| --------------- | --------- | ---------------------------- |
+| `list_buckets`  | readonly  | List all buckets             |
+| `list_objects`  | readonly  | List objects with pagination |
+| `get_object`    | readonly  | Get object content           |
+| `head_bucket`   | readonly  | Check bucket existence       |
+| `put_object`    | readwrite | Upload/update objects        |
+| `delete_object` | readwrite | Delete objects               |
+| `copy_object`   | readwrite | Copy objects                 |
+| `create_bucket` | readwrite | Create buckets               |
+| `delete_bucket` | readwrite | Delete buckets               |
+
+Note: When `S3_BUCKET` is set, bucket-level tools (`list_buckets`, `create_bucket`, `delete_bucket`, `head_bucket`) are hidden and object-level tools automatically use the constrained bucket.
 
 ## Development
 
@@ -70,6 +72,7 @@ Optional:
 
 - `AWS_REGION` (default: us-east-1)
 - `AWS_ENDPOINT_URL` (for S3-compatible services)
+- `S3_BUCKET` (constrain to single bucket)
 - `S3_ENABLED_TOOLGROUPS`
 - `S3_ENABLED_TOOLS`
 - `S3_DISABLED_TOOLS`

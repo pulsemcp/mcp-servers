@@ -28,7 +28,7 @@ export const CreateBucketSchema = z.object({
 
 export function createBucketTool(_server: Server, clientFactory: S3ClientFactory) {
   return {
-    name: 's3_create_bucket',
+    name: 'create_bucket',
     description: `Create a new S3 bucket.
 
 Creates an empty bucket with the specified name in the given region.

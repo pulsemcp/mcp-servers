@@ -16,17 +16,17 @@ MCP server for AWS S3 operations with fine-grained tool access control. Supports
 
 ### Tools
 
-| Tool               | Group     | Description                                         |
-| ------------------ | --------- | --------------------------------------------------- |
-| `s3_list_buckets`  | readonly  | List all S3 buckets in the AWS account              |
-| `s3_list_objects`  | readonly  | List objects in a bucket with prefix and pagination |
-| `s3_get_object`    | readonly  | Get object contents as text                         |
-| `s3_head_bucket`   | readonly  | Check if a bucket exists and is accessible          |
-| `s3_put_object`    | readwrite | Upload or update an object                          |
-| `s3_delete_object` | readwrite | Delete an object from a bucket                      |
-| `s3_copy_object`   | readwrite | Copy an object within or across buckets             |
-| `s3_create_bucket` | readwrite | Create a new S3 bucket                              |
-| `s3_delete_bucket` | readwrite | Delete an empty S3 bucket                           |
+| Tool            | Group     | Description                                         |
+| --------------- | --------- | --------------------------------------------------- |
+| `list_buckets`  | readonly  | List all S3 buckets in the AWS account              |
+| `list_objects`  | readonly  | List objects in a bucket with prefix and pagination |
+| `get_object`    | readonly  | Get object contents as text                         |
+| `head_bucket`   | readonly  | Check if a bucket exists and is accessible          |
+| `put_object`    | readwrite | Upload or update an object                          |
+| `delete_object` | readwrite | Delete an object from a bucket                      |
+| `copy_object`   | readwrite | Copy an object within or across buckets             |
+| `create_bucket` | readwrite | Create a new S3 bucket                              |
+| `delete_bucket` | readwrite | Delete an empty S3 bucket                           |
 
 ### Resources
 
@@ -53,8 +53,25 @@ Control which tools are available via the `S3_ENABLED_TOOLGROUPS` environment va
 
 Fine-grained control over specific tools:
 
-- `S3_ENABLED_TOOLS="s3_list_buckets,s3_get_object"` - Only enable these tools
-- `S3_DISABLED_TOOLS="s3_delete_bucket,s3_delete_object"` - Disable these tools
+- `S3_ENABLED_TOOLS="list_buckets,get_object"` - Only enable these tools
+- `S3_DISABLED_TOOLS="delete_bucket,delete_object"` - Disable these tools
+
+### Single Bucket Mode
+
+Constrain all operations to a specific bucket using `S3_BUCKET`:
+
+```bash
+S3_BUCKET="my-bucket"
+```
+
+When set:
+
+- All object operations are automatically scoped to this bucket
+- Bucket-level tools (`list_buckets`, `create_bucket`, `delete_bucket`, `head_bucket`) are hidden
+- The `bucket` parameter is automatically injected and hidden from tool inputs
+- For `copy_object`, both source and destination are constrained to the specified bucket
+
+This is useful for restricting access to a single bucket without giving broader S3 permissions.
 
 ## Quick Start
 
@@ -62,16 +79,17 @@ Fine-grained control over specific tools:
 
 #### Environment Variables
 
-| Variable                | Required | Description                          | Default     |
-| ----------------------- | -------- | ------------------------------------ | ----------- |
-| `AWS_ACCESS_KEY_ID`     | Yes      | AWS access key ID                    | -           |
-| `AWS_SECRET_ACCESS_KEY` | Yes      | AWS secret access key                | -           |
-| `AWS_REGION`            | No       | AWS region for S3 operations         | `us-east-1` |
-| `AWS_ENDPOINT_URL`      | No       | Custom S3 endpoint (for MinIO, etc.) | -           |
-| `S3_ENABLED_TOOLGROUPS` | No       | Comma-separated tool groups          | All enabled |
-| `S3_ENABLED_TOOLS`      | No       | Specific tools to enable             | -           |
-| `S3_DISABLED_TOOLS`     | No       | Specific tools to disable            | -           |
-| `SKIP_HEALTH_CHECKS`    | No       | Skip credential validation           | `false`     |
+| Variable                | Required | Description                           | Default     |
+| ----------------------- | -------- | ------------------------------------- | ----------- |
+| `AWS_ACCESS_KEY_ID`     | Yes      | AWS access key ID                     | -           |
+| `AWS_SECRET_ACCESS_KEY` | Yes      | AWS secret access key                 | -           |
+| `AWS_REGION`            | No       | AWS region for S3 operations          | `us-east-1` |
+| `AWS_ENDPOINT_URL`      | No       | Custom S3 endpoint (for MinIO, etc.)  | -           |
+| `S3_BUCKET`             | No       | Constrain operations to single bucket | -           |
+| `S3_ENABLED_TOOLGROUPS` | No       | Comma-separated tool groups           | All enabled |
+| `S3_ENABLED_TOOLS`      | No       | Specific tools to enable              | -           |
+| `S3_DISABLED_TOOLS`     | No       | Specific tools to disable             | -           |
+| `SKIP_HEALTH_CHECKS`    | No       | Skip credential validation            | `false`     |
 
 ### Claude Desktop Configuration
 

@@ -21,7 +21,7 @@ export const ListObjectsSchema = z.object({
 
 export function listObjectsTool(_server: Server, clientFactory: S3ClientFactory) {
   return {
-    name: 's3_list_objects',
+    name: 'list_objects',
     description: `List objects in an S3 bucket with optional prefix filtering and pagination.
 
 Example response:

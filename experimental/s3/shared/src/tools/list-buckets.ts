@@ -6,7 +6,7 @@ export const ListBucketsSchema = z.object({});
 
 export function listBucketsTool(_server: Server, clientFactory: S3ClientFactory) {
   return {
-    name: 's3_list_buckets',
+    name: 'list_buckets',
     description: `List all S3 buckets in the AWS account.
 
 Returns a list of bucket names and their creation dates.

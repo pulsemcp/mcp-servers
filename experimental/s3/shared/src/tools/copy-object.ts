@@ -18,7 +18,7 @@ export const CopyObjectSchema = z.object({
 
 export function copyObjectTool(_server: Server, clientFactory: S3ClientFactory) {
   return {
-    name: 's3_copy_object',
+    name: 'copy_object',
     description: `Copy an object within S3 (same bucket or across buckets).
 
 Copies an object from one location to another. Can be used to rename objects or move them between buckets.

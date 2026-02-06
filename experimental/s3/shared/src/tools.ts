@@ -10,7 +10,7 @@ import { createBucketTool } from './tools/create-bucket.js';
 import { deleteBucketTool } from './tools/delete-bucket.js';
 import { copyObjectTool } from './tools/copy-object.js';
 import { headBucketTool } from './tools/head-bucket.js';
-import { logWarning } from './logging.js';
+import { logWarning, logInfo } from './logging.js';
 
 // =============================================================================
 // TOOL GROUPING SYSTEM
@@ -24,8 +24,12 @@ import { logWarning } from './logging.js';
 // Default: All groups enabled when not specified
 //
 // Individual tools can also be enabled/disabled using S3_ENABLED_TOOLS or S3_DISABLED_TOOLS:
-// S3_ENABLED_TOOLS="s3_list_buckets,s3_get_object" - only enable these specific tools
-// S3_DISABLED_TOOLS="s3_delete_bucket,s3_delete_object" - disable these specific tools
+// S3_ENABLED_TOOLS="list_buckets,get_object" - only enable these specific tools
+// S3_DISABLED_TOOLS="delete_bucket,delete_object" - disable these specific tools
+//
+// Bucket constraint: Set S3_BUCKET to constrain all operations to a single bucket.
+// When set, bucket-level tools (list_buckets, create_bucket, delete_bucket, head_bucket)
+// are hidden and the bucket parameter is automatically injected for object operations.
 // =============================================================================
 
 /**
@@ -110,36 +114,40 @@ type ToolFactory = (server: Server, clientFactory: S3ClientFactory) => Tool;
 interface ToolDefinition {
   factory: ToolFactory;
   groups: ToolGroup[];
+  /** If true, this tool operates at the bucket level and is hidden when S3_BUCKET is set */
+  bucketLevelOnly?: boolean;
+  /** List of bucket parameter names to inject when S3_BUCKET is set (e.g., ['bucket', 'sourceBucket', 'destBucket']) */
+  bucketParams?: string[];
 }
 
 /**
  * All available S3 tools with their group assignments.
  *
  * Read-only tools (readonly group):
- * - s3_list_buckets: List all buckets
- * - s3_list_objects: List objects in a bucket
- * - s3_get_object: Get object contents
- * - s3_head_bucket: Check if bucket exists
+ * - list_buckets: List all buckets (hidden when S3_BUCKET is set)
+ * - list_objects: List objects in a bucket
+ * - get_object: Get object contents
+ * - head_bucket: Check if bucket exists (hidden when S3_BUCKET is set)
  *
  * Write tools (readwrite group):
- * - s3_put_object: Upload/update objects
- * - s3_delete_object: Delete objects
- * - s3_copy_object: Copy objects
- * - s3_create_bucket: Create buckets
- * - s3_delete_bucket: Delete buckets
+ * - put_object: Upload/update objects
+ * - delete_object: Delete objects
+ * - copy_object: Copy objects (constrained to same bucket when S3_BUCKET is set)
+ * - create_bucket: Create buckets (hidden when S3_BUCKET is set)
+ * - delete_bucket: Delete buckets (hidden when S3_BUCKET is set)
  */
 const ALL_TOOLS: ToolDefinition[] = [
   // Read-only operations
-  { factory: listBucketsTool, groups: ['readonly'] },
-  { factory: listObjectsTool, groups: ['readonly'] },
-  { factory: getObjectTool, groups: ['readonly'] },
-  { factory: headBucketTool, groups: ['readonly'] },
+  { factory: listBucketsTool, groups: ['readonly'], bucketLevelOnly: true },
+  { factory: listObjectsTool, groups: ['readonly'], bucketParams: ['bucket'] },
+  { factory: getObjectTool, groups: ['readonly'], bucketParams: ['bucket'] },
+  { factory: headBucketTool, groups: ['readonly'], bucketLevelOnly: true },
   // Write operations
-  { factory: putObjectTool, groups: ['readwrite'] },
-  { factory: deleteObjectTool, groups: ['readwrite'] },
-  { factory: copyObjectTool, groups: ['readwrite'] },
-  { factory: createBucketTool, groups: ['readwrite'] },
-  { factory: deleteBucketTool, groups: ['readwrite'] },
+  { factory: putObjectTool, groups: ['readwrite'], bucketParams: ['bucket'] },
+  { factory: deleteObjectTool, groups: ['readwrite'], bucketParams: ['bucket'] },
+  { factory: copyObjectTool, groups: ['readwrite'], bucketParams: ['sourceBucket', 'destBucket'] },
+  { factory: createBucketTool, groups: ['readwrite'], bucketLevelOnly: true },
+  { factory: deleteBucketTool, groups: ['readwrite'], bucketLevelOnly: true },
 ];
 
 /**
@@ -150,6 +158,44 @@ export function getAllToolNames(): string[] {
   const mockServer = { setRequestHandler: () => {} } as unknown as Server;
   const mockFactory = (() => {}) as unknown as S3ClientFactory;
   return ALL_TOOLS.map((def) => def.factory(mockServer, mockFactory).name);
+}
+
+/**
+ * Wraps a tool to inject bucket parameter(s) when S3_BUCKET is set.
+ */
+function wrapToolForBucketConstraint(
+  tool: Tool,
+  bucketParams: string[],
+  constrainedBucket: string
+): Tool {
+  // Modify input schema to remove bucket params (they're injected automatically)
+  const newProperties = { ...tool.inputSchema.properties };
+  const newRequired = (tool.inputSchema.required || []).filter((r) => !bucketParams.includes(r));
+
+  for (const param of bucketParams) {
+    delete newProperties[param];
+  }
+
+  // Update description to indicate bucket constraint
+  const constraintNote = `\n\n**Note:** Operations are constrained to bucket "${constrainedBucket}".`;
+
+  return {
+    ...tool,
+    description: tool.description + constraintNote,
+    inputSchema: {
+      type: 'object' as const,
+      properties: newProperties,
+      required: newRequired.length > 0 ? newRequired : undefined,
+    },
+    handler: async (args: unknown) => {
+      // Inject the constrained bucket into the args
+      const argsWithBucket = { ...(args as Record<string, unknown>) };
+      for (const param of bucketParams) {
+        argsWithBucket[param] = constrainedBucket;
+      }
+      return await tool.handler(argsWithBucket);
+    },
+  };
 }
 
 /**
@@ -165,6 +211,7 @@ export function getAllToolNames(): string[] {
  */
 export function createRegisterTools(clientFactory: S3ClientFactory, enabledGroups?: ToolGroup[]) {
   const groups = enabledGroups || parseEnabledToolGroups(process.env.S3_ENABLED_TOOLGROUPS);
+  const constrainedBucket = process.env.S3_BUCKET;
 
   // Parse individual tool filters
   const { enabledTools, disabledTools } = parseToolFilters(
@@ -174,10 +221,25 @@ export function createRegisterTools(clientFactory: S3ClientFactory, enabledGroup
 
   return (server: Server) => {
     // Filter tools by enabled groups first
-    const filteredToolDefs = ALL_TOOLS.filter((def) => def.groups.some((g) => groups.includes(g)));
+    let filteredToolDefs = ALL_TOOLS.filter((def) => def.groups.some((g) => groups.includes(g)));
+
+    // If S3_BUCKET is set, filter out bucket-level-only tools
+    if (constrainedBucket) {
+      filteredToolDefs = filteredToolDefs.filter((def) => !def.bucketLevelOnly);
+      logInfo('config', `Bucket constraint active: ${constrainedBucket}`);
+    }
 
     // Create tool instances
-    let tools = filteredToolDefs.map((def) => def.factory(server, clientFactory));
+    let tools = filteredToolDefs.map((def) => {
+      const tool = def.factory(server, clientFactory);
+
+      // If bucket is constrained and this tool has bucket params, wrap it
+      if (constrainedBucket && def.bucketParams && def.bucketParams.length > 0) {
+        return wrapToolForBucketConstraint(tool, def.bucketParams, constrainedBucket);
+      }
+
+      return tool;
+    });
 
     // Apply individual tool filters
     if (enabledTools) {
