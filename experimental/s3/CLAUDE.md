@@ -72,6 +72,7 @@ Optional:
 
 - `AWS_REGION` (default: us-east-1)
 - `AWS_ENDPOINT_URL` (for S3-compatible services)
+- `S3_FORCE_PATH_STYLE` (for MinIO/S3-compatible services requiring path-style addressing)
 - `S3_BUCKET` (constrain to single bucket)
 - `S3_ENABLED_TOOLGROUPS`
 - `S3_ENABLED_TOOLS`
