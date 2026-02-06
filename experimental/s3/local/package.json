@@ -1,6 +1,6 @@
 {
   "name": "s3-aws-mcp-server",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "MCP server for AWS S3 operations with fine-grained tool access control",
   "main": "build/index.js",
   "type": "module",

@@ -18,6 +18,7 @@ export interface S3ClientConfig {
   secretAccessKey: string;
   region: string;
   endpoint?: string;
+  forcePathStyle?: boolean;
 }
 
 export interface ListBucketsResult {
@@ -106,6 +107,7 @@ export class AwsS3Client implements IS3Client {
         secretAccessKey: config.secretAccessKey,
       },
       ...(config.endpoint && { endpoint: config.endpoint }),
+      ...(config.forcePathStyle !== undefined && { forcePathStyle: config.forcePathStyle }),
     });
   }
 

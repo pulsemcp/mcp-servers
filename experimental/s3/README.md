@@ -85,6 +85,7 @@ This is useful for restricting access to a single bucket without giving broader 
 | `AWS_SECRET_ACCESS_KEY` | Yes      | AWS secret access key                 | -           |
 | `AWS_REGION`            | No       | AWS region for S3 operations          | `us-east-1` |
 | `AWS_ENDPOINT_URL`      | No       | Custom S3 endpoint (for MinIO, etc.)  | -           |
+| `S3_FORCE_PATH_STYLE`   | No       | Use path-style addressing (for MinIO) | `false`     |
 | `S3_BUCKET`             | No       | Constrain operations to single bucket | -           |
 | `S3_ENABLED_TOOLGROUPS` | No       | Comma-separated tool groups           | All enabled |
 | `S3_ENABLED_TOOLS`      | No       | Specific tools to enable              | -           |
@@ -140,10 +141,13 @@ For MinIO, LocalStack, or other S3-compatible services:
     "AWS_ACCESS_KEY_ID": "minioadmin",
     "AWS_SECRET_ACCESS_KEY": "minioadmin",
     "AWS_REGION": "us-east-1",
-    "AWS_ENDPOINT_URL": "http://localhost:9000"
+    "AWS_ENDPOINT_URL": "http://localhost:9000",
+    "S3_FORCE_PATH_STYLE": "true"
   }
 }
 ```
+
+**Note:** `S3_FORCE_PATH_STYLE` is required for MinIO and some other S3-compatible services that use path-style addressing (`localhost:9000/bucket-name`) instead of virtual-hosted-style (`bucket-name.localhost:9000`).
 
 ## Development
 

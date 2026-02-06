@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.0.2] - 2026-02-06
+
+### Added
+
+- `S3_FORCE_PATH_STYLE` environment variable to enable path-style addressing for S3-compatible services like MinIO that require it (instead of virtual-hosted-style addressing)
+
 ## [0.0.1] - 2026-02-06
 
 ### Added

@@ -36,6 +36,7 @@ export function createMCPServer(options: CreateMCPServerOptions) {
         const secretAccessKey = process.env.AWS_SECRET_ACCESS_KEY;
         const region = process.env.AWS_REGION || process.env.AWS_DEFAULT_REGION || 'us-east-1';
         const endpoint = process.env.AWS_ENDPOINT_URL;
+        const forcePathStyle = process.env.S3_FORCE_PATH_STYLE === 'true';
 
         if (!accessKeyId || !secretAccessKey) {
           throw new Error(
@@ -48,6 +49,7 @@ export function createMCPServer(options: CreateMCPServerOptions) {
           secretAccessKey,
           region,
           endpoint,
+          forcePathStyle,
         });
       });
 
