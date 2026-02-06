@@ -48,7 +48,7 @@ npm run test:manual
 
 **Test Date:** 2026-02-06
 **Branch:** tadasant/s3-publish
-**Commit:** 47ad04b
+**Commit:** f632bcf
 **Tested By:** Claude Opus 4.5
 **Environment:** Node.js on Linux, AWS us-east-1
 
