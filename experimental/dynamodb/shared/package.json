@@ -1,0 +1,31 @@
+{
+  "name": "dynamodb-mcp-server-shared",
+  "version": "0.1.0",
+  "description": "Shared code for DynamoDB MCP server implementations",
+  "main": "build/index.js",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "lint": "eslint . --ext .ts,.tsx",
+    "lint:fix": "eslint . --ext .ts,.tsx --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.700.0",
+    "@aws-sdk/lib-dynamodb": "^3.700.0",
+    "@modelcontextprotocol/sdk": "^1.19.1",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.6",
+    "typescript": "^5.7.3"
+  },
+  "keywords": [
+    "mcp",
+    "dynamodb",
+    "aws"
+  ],
+  "author": "PulseMCP",
+  "license": "MIT"
+}

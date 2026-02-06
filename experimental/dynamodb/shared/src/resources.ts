@@ -1,0 +1,87 @@
+import { Server } from '@modelcontextprotocol/sdk/server/index.js';
+import {
+  ListResourcesRequestSchema,
+  ReadResourceRequestSchema,
+} from '@modelcontextprotocol/sdk/types.js';
+import { getServerState } from './state.js';
+
+export function registerResources(server: Server) {
+  // List available resources
+  server.setRequestHandler(ListResourcesRequestSchema, async () => {
+    return {
+      resources: [
+        {
+          uri: 'dynamodb://config',
+          name: 'Server Configuration',
+          description:
+            'Current DynamoDB MCP server configuration and status. Useful for debugging and verifying setup.',
+          mimeType: 'application/json',
+        },
+      ],
+    };
+  });
+
+  // Read resource contents
+  server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
+    const { uri } = request.params;
+
+    if (uri === 'dynamodb://config') {
+      const state = getServerState();
+
+      const config = {
+        server: {
+          name: 'dynamodb-mcp-server',
+          version: '0.1.0',
+          transport: 'stdio',
+        },
+        environment: {
+          AWS_REGION: process.env.AWS_REGION || process.env.AWS_DEFAULT_REGION || 'not set',
+          AWS_ACCESS_KEY_ID: process.env.AWS_ACCESS_KEY_ID ? '***configured***' : 'not set',
+          AWS_SECRET_ACCESS_KEY: process.env.AWS_SECRET_ACCESS_KEY ? '***configured***' : 'not set',
+          DYNAMODB_ENDPOINT: process.env.DYNAMODB_ENDPOINT || 'default (AWS)',
+          DYNAMODB_ENABLED_TOOL_GROUPS: process.env.DYNAMODB_ENABLED_TOOL_GROUPS || 'all (default)',
+          DYNAMODB_ENABLED_TOOLS: process.env.DYNAMODB_ENABLED_TOOLS || 'not set',
+          DYNAMODB_DISABLED_TOOLS: process.env.DYNAMODB_DISABLED_TOOLS || 'not set',
+          SKIP_HEALTH_CHECKS: process.env.SKIP_HEALTH_CHECKS || 'false',
+        },
+        state: {
+          selectedResourceId: state.selectedResourceId || 'none',
+          isResourceLocked: state.isResourceLocked,
+        },
+        capabilities: {
+          tools: true,
+          resources: true,
+        },
+        toolGroups: {
+          readonly: [
+            'dynamodb_list_tables',
+            'dynamodb_describe_table',
+            'dynamodb_get_item',
+            'dynamodb_query',
+            'dynamodb_scan',
+            'dynamodb_batch_get_items',
+          ],
+          readwrite: [
+            'dynamodb_put_item',
+            'dynamodb_update_item',
+            'dynamodb_delete_item',
+            'dynamodb_batch_write_items',
+          ],
+          admin: ['dynamodb_create_table', 'dynamodb_delete_table', 'dynamodb_update_table'],
+        },
+      };
+
+      return {
+        contents: [
+          {
+            uri: 'dynamodb://config',
+            mimeType: 'application/json',
+            text: JSON.stringify(config, null, 2),
+          },
+        ],
+      };
+    }
+
+    throw new Error(`Resource not found: ${uri}`);
+  });
+}
