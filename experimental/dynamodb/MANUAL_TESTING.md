@@ -73,7 +73,7 @@ The tests will:
 
 **Test Date:** 2026-02-06
 **Branch:** ao/dynamodb-mcp-server
-**Commit:** 15e92671fc99c0e2cc0d61a704962de05332b7f9
+**Commit:** 733c472f988b553647adae1aa03af76d13287eef
 **Tested By:** Agent Orchestrator
 **Environment:** AWS us-east-1 (test account)
 
