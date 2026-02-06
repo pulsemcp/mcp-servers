@@ -14,7 +14,14 @@ export const CreateBucketSchema = z.object({
     .string()
     .min(3)
     .max(63)
-    .regex(/^[a-z0-9][a-z0-9.-]*[a-z0-9]$/)
+    // AWS S3 bucket naming rules:
+    // - Start and end with lowercase letter or number
+    // - Can contain lowercase letters, numbers, and hyphens
+    // - No consecutive periods, no IP address format
+    .regex(/^[a-z0-9]([a-z0-9-]*[a-z0-9])?$/)
+    .refine((val) => !/^\d+\.\d+\.\d+\.\d+$/.test(val), {
+      message: 'Bucket name cannot be formatted as an IP address',
+    })
     .describe(PARAM_DESCRIPTIONS.bucket),
   region: z.string().optional().describe(PARAM_DESCRIPTIONS.region),
 });

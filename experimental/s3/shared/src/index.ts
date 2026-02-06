@@ -45,4 +45,4 @@ export {
 } from './state.js';
 
 // Logging exports (re-exported for convenience)
-export { logServerStart, logError, logWarning, logDebug } from './logging.js';
+export { logServerStart, logError, logWarning, logInfo, logDebug } from './logging.js';

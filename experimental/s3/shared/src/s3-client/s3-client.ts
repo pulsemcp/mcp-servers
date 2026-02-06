@@ -256,8 +256,22 @@ export class AwsS3Client implements IS3Client {
 
       await this.client.send(command);
       return true;
-    } catch {
-      return false;
+    } catch (error: unknown) {
+      // Only return false for NotFound errors (bucket doesn't exist)
+      // Re-throw permission errors and other failures
+      if (error instanceof Error && 'name' in error && error.name === 'NotFound') {
+        return false;
+      }
+      // Also check for $metadata.httpStatusCode which AWS SDK uses
+      if (
+        typeof error === 'object' &&
+        error !== null &&
+        '$metadata' in error &&
+        (error as { $metadata?: { httpStatusCode?: number } }).$metadata?.httpStatusCode === 404
+      ) {
+        return false;
+      }
+      throw error;
     }
   }
 
@@ -270,7 +284,8 @@ export class AwsS3Client implements IS3Client {
     const command = new CopyObjectCommand({
       Bucket: destBucket,
       Key: destKey,
-      CopySource: `${sourceBucket}/${sourceKey}`,
+      // URL-encode the source key to handle special characters
+      CopySource: `${sourceBucket}/${encodeURIComponent(sourceKey)}`,
     });
 
     const response = await this.client.send(command);

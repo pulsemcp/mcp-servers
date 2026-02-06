@@ -4,7 +4,7 @@ import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { createMCPServer, AwsS3Client } from '../shared/index.js';
-import { logServerStart, logError, logWarning } from '../shared/logging.js';
+import { logServerStart, logError, logWarning, logInfo } from '../shared/logging.js';
 
 // Read version from package.json
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -137,7 +137,7 @@ async function performHealthChecks(): Promise<void> {
 
     // Try to list buckets to validate credentials
     await client.listBuckets();
-    logWarning('healthcheck', 'AWS credentials validated successfully');
+    logInfo('healthcheck', 'AWS credentials validated successfully');
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     logError('healthcheck', `Failed to validate AWS credentials: ${message}`);

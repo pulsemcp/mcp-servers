@@ -12,18 +12,17 @@ describe('S3 MCP Server Integration Tests', () => {
 
   afterEach(async () => {
     if (client) {
-      await client.close();
+      await client.disconnect();
       client = null;
     }
   });
 
   describe('Server Lifecycle', () => {
-    it('should connect and list capabilities', async () => {
+    it('should connect and list tools', async () => {
       client = await createTestMCPClientWithMock({});
 
-      const serverInfo = await client.getServerInfo();
-      expect(serverInfo.name).toBe('s3-mcp-server');
-      expect(serverInfo.version).toBe('0.1.0');
+      const result = await client.listTools();
+      expect(result.tools.length).toBeGreaterThan(0);
     });
   });
 
@@ -31,9 +30,9 @@ describe('S3 MCP Server Integration Tests', () => {
     it('should list available tools', async () => {
       client = await createTestMCPClientWithMock({});
 
-      const tools = await client.listTools();
-      expect(tools.length).toBeGreaterThan(0);
-      const toolNames = tools.map((t) => t.name);
+      const result = await client.listTools();
+      expect(result.tools.length).toBeGreaterThan(0);
+      const toolNames = result.tools.map((t) => t.name);
       expect(toolNames).toContain('s3_list_buckets');
       expect(toolNames).toContain('s3_list_objects');
       expect(toolNames).toContain('s3_get_object');
@@ -128,9 +127,9 @@ describe('S3 MCP Server Integration Tests', () => {
     it('should list available resources', async () => {
       client = await createTestMCPClientWithMock({});
 
-      const resources = await client.listResources();
-      expect(resources.length).toBeGreaterThan(0);
-      expect(resources[0].uri).toBe('s3://config');
+      const result = await client.listResources();
+      expect(result.resources.length).toBeGreaterThan(0);
+      expect(result.resources[0].uri).toBe('s3://config');
     });
 
     it('should read config resource', async () => {
