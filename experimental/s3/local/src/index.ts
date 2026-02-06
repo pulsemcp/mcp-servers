@@ -48,6 +48,12 @@ function validateEnvironment(): void {
       description: 'Custom S3 endpoint URL (for S3-compatible services like MinIO)',
     },
     {
+      name: 'S3_FORCE_PATH_STYLE',
+      description:
+        'Use path-style addressing instead of virtual-hosted-style (required for MinIO and some S3-compatible services)',
+      defaultValue: 'false',
+    },
+    {
       name: 'S3_ENABLED_TOOLGROUPS',
       description: 'Comma-separated list of tool groups to enable (readonly, readwrite)',
       defaultValue: 'all groups enabled',
@@ -134,6 +140,7 @@ async function performHealthChecks(): Promise<void> {
     const secretAccessKey = process.env.AWS_SECRET_ACCESS_KEY!;
     const region = process.env.AWS_REGION || process.env.AWS_DEFAULT_REGION || 'us-east-1';
     const endpoint = process.env.AWS_ENDPOINT_URL;
+    const forcePathStyle = process.env.S3_FORCE_PATH_STYLE === 'true';
     const constrainedBucket = process.env.S3_BUCKET;
 
     const client = new AwsS3Client({
@@ -141,6 +148,7 @@ async function performHealthChecks(): Promise<void> {
       secretAccessKey,
       region,
       endpoint,
+      forcePathStyle,
     });
 
     // Try to list buckets to validate credentials
