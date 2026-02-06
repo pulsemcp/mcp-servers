@@ -158,7 +158,7 @@ describe('DynamoDB Table Filtering Manual Tests', () => {
 
     it('should allow scan on allowed table', async () => {
       const result = await restrictedClient.callTool<{ type: string; text: string }>(
-        'dynamodb_scan',
+        'dynamodb_scan_table',
         { tableName: ALLOWED_TABLE }
       );
 
@@ -208,7 +208,7 @@ describe('DynamoDB Table Filtering Manual Tests', () => {
 
     it('should deny scan on disallowed table', async () => {
       const result = await restrictedClient.callTool<{ type: string; text: string }>(
-        'dynamodb_scan',
+        'dynamodb_scan_table',
         { tableName: DISALLOWED_TABLE }
       );
 
@@ -218,7 +218,7 @@ describe('DynamoDB Table Filtering Manual Tests', () => {
 
     it('should deny query on disallowed table', async () => {
       const result = await restrictedClient.callTool<{ type: string; text: string }>(
-        'dynamodb_query',
+        'dynamodb_query_items',
         {
           tableName: DISALLOWED_TABLE,
           keyConditionExpression: 'pk = :pk',

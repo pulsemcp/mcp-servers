@@ -134,7 +134,7 @@ describe('DynamoDB MCP Server Manual Tests', () => {
     });
 
     it('should scan the table', async () => {
-      const result = await client.callTool<{ type: string; text: string }>('dynamodb_scan', {
+      const result = await client.callTool<{ type: string; text: string }>('dynamodb_scan_table', {
         tableName: TEST_TABLE_NAME,
       });
 

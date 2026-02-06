@@ -61,8 +61,8 @@ describe('DynamoDB MCP Server Integration', () => {
       expect(toolNames).toContain('dynamodb_list_tables');
       expect(toolNames).toContain('dynamodb_describe_table');
       expect(toolNames).toContain('dynamodb_get_item');
-      expect(toolNames).toContain('dynamodb_query');
-      expect(toolNames).toContain('dynamodb_scan');
+      expect(toolNames).toContain('dynamodb_query_items');
+      expect(toolNames).toContain('dynamodb_scan_table');
 
       // ReadWrite tools
       expect(toolNames).toContain('dynamodb_put_item');
@@ -114,7 +114,7 @@ describe('DynamoDB MCP Server Integration', () => {
     });
 
     it('should scan a table', async () => {
-      const result = await client.callTool<{ type: string; text: string }>('dynamodb_scan', {
+      const result = await client.callTool<{ type: string; text: string }>('dynamodb_scan_table', {
         tableName: 'Users',
       });
       const parsed = JSON.parse(result.content[0].text);

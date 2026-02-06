@@ -58,8 +58,8 @@ export function registerResources(server: Server, version: string) {
             'dynamodb_list_tables',
             'dynamodb_describe_table',
             'dynamodb_get_item',
-            'dynamodb_query',
-            'dynamodb_scan',
+            'dynamodb_query_items',
+            'dynamodb_scan_table',
             'dynamodb_batch_get_items',
           ],
           readwrite: [

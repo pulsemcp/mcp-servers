@@ -19,8 +19,8 @@ An MCP server for AWS DynamoDB with fine-grained tool control. Provides comprehe
 | `dynamodb_list_tables`     | List all DynamoDB tables with pagination |
 | `dynamodb_describe_table`  | Get table metadata, schema, and indexes  |
 | `dynamodb_get_item`        | Retrieve single item by primary key      |
-| `dynamodb_query`           | Query items using key conditions         |
-| `dynamodb_scan`            | Scan table with optional filters         |
+| `dynamodb_query_items`     | Query items using key conditions         |
+| `dynamodb_scan_table`      | Scan table with optional filters         |
 | `dynamodb_batch_get_items` | Get multiple items across tables         |
 
 ### ReadWrite Tools (Group: `readwrite`)

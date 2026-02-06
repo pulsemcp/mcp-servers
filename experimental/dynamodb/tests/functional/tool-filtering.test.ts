@@ -37,15 +37,15 @@ describe('Tool Filtering', () => {
     });
 
     it('should parse enabled tools whitelist', () => {
-      process.env.DYNAMODB_ENABLED_TOOLS = 'dynamodb_get_item,dynamodb_query';
+      process.env.DYNAMODB_ENABLED_TOOLS = 'dynamodb_get_item,dynamodb_query_items';
       const config = parseToolFilterConfig();
-      expect(config.enabledTools).toEqual(['dynamodb_get_item', 'dynamodb_query']);
+      expect(config.enabledTools).toEqual(['dynamodb_get_item', 'dynamodb_query_items']);
     });
 
     it('should filter invalid tool names', () => {
-      process.env.DYNAMODB_ENABLED_TOOLS = 'dynamodb_get_item,invalid_tool,dynamodb_scan';
+      process.env.DYNAMODB_ENABLED_TOOLS = 'dynamodb_get_item,invalid_tool,dynamodb_scan_table';
       const config = parseToolFilterConfig();
-      expect(config.enabledTools).toEqual(['dynamodb_get_item', 'dynamodb_scan']);
+      expect(config.enabledTools).toEqual(['dynamodb_get_item', 'dynamodb_scan_table']);
     });
 
     it('should parse disabled tools blacklist', () => {

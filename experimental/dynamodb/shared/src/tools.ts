@@ -54,8 +54,8 @@ const ALL_TOOL_NAMES: DynamoDBToolName[] = [
   'dynamodb_list_tables',
   'dynamodb_describe_table',
   'dynamodb_get_item',
-  'dynamodb_query',
-  'dynamodb_scan',
+  'dynamodb_query_items',
+  'dynamodb_scan_table',
   'dynamodb_put_item',
   'dynamodb_update_item',
   'dynamodb_delete_item',
@@ -205,8 +205,8 @@ const ALL_TOOLS: ToolDefinition[] = [
   { factory: listTablesTool, name: 'dynamodb_list_tables', groups: ['readonly'] },
   { factory: describeTableTool, name: 'dynamodb_describe_table', groups: ['readonly'] },
   { factory: getItemTool, name: 'dynamodb_get_item', groups: ['readonly'] },
-  { factory: queryTool, name: 'dynamodb_query', groups: ['readonly'] },
-  { factory: scanTool, name: 'dynamodb_scan', groups: ['readonly'] },
+  { factory: queryTool, name: 'dynamodb_query_items', groups: ['readonly'] },
+  { factory: scanTool, name: 'dynamodb_scan_table', groups: ['readonly'] },
   { factory: batchGetItemsTool, name: 'dynamodb_batch_get_items', groups: ['readonly'] },
 
   // ReadWrite tools
