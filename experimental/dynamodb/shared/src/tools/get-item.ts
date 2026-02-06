@@ -37,7 +37,7 @@ export function getItemTool(
   const tableConfig = tableFilterConfig || {};
 
   return {
-    name: 'dynamodb_get_item' as const,
+    name: 'get_item' as const,
     description: TOOL_DESCRIPTION,
     inputSchema: {
       type: 'object' as const,

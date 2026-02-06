@@ -41,7 +41,7 @@ export function batchWriteItemsTool(
   const tableConfig = tableFilterConfig || {};
 
   return {
-    name: 'dynamodb_batch_write_items' as const,
+    name: 'batch_write_items' as const,
     description: TOOL_DESCRIPTION,
     inputSchema: {
       type: 'object' as const,

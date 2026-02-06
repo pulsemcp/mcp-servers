@@ -59,14 +59,14 @@ describe('DynamoDB Table Filtering Manual Tests', () => {
     await restrictedClient.connect();
 
     // Create both test tables using admin client
-    await adminClient.callTool('dynamodb_create_table', {
+    await adminClient.callTool('create_table', {
       tableName: ALLOWED_TABLE,
       keySchema: [{ attributeName: 'pk', keyType: 'HASH' }],
       attributeDefinitions: [{ attributeName: 'pk', attributeType: 'S' }],
       billingMode: 'PAY_PER_REQUEST',
     });
 
-    await adminClient.callTool('dynamodb_create_table', {
+    await adminClient.callTool('create_table', {
       tableName: DISALLOWED_TABLE,
       keySchema: [{ attributeName: 'pk', keyType: 'HASH' }],
       attributeDefinitions: [{ attributeName: 'pk', attributeType: 'S' }],
@@ -81,12 +81,12 @@ describe('DynamoDB Table Filtering Manual Tests', () => {
     // Clean up test tables using admin client
     if (adminClient) {
       try {
-        await adminClient.callTool('dynamodb_delete_table', { tableName: ALLOWED_TABLE });
+        await adminClient.callTool('delete_table', { tableName: ALLOWED_TABLE });
       } catch {
         // Ignore cleanup errors
       }
       try {
-        await adminClient.callTool('dynamodb_delete_table', { tableName: DISALLOWED_TABLE });
+        await adminClient.callTool('delete_table', { tableName: DISALLOWED_TABLE });
       } catch {
         // Ignore cleanup errors
       }
@@ -101,7 +101,7 @@ describe('DynamoDB Table Filtering Manual Tests', () => {
   describe('list_tables filtering', () => {
     it('should only show allowed tables in list_tables', async () => {
       const result = await restrictedClient.callTool<{ type: string; text: string }>(
-        'dynamodb_list_tables',
+        'list_tables',
         {}
       );
 
@@ -119,7 +119,7 @@ describe('DynamoDB Table Filtering Manual Tests', () => {
   describe('Access to allowed table', () => {
     it('should allow describe_table on allowed table', async () => {
       const result = await restrictedClient.callTool<{ type: string; text: string }>(
-        'dynamodb_describe_table',
+        'describe_table',
         { tableName: ALLOWED_TABLE }
       );
 
@@ -129,13 +129,10 @@ describe('DynamoDB Table Filtering Manual Tests', () => {
     });
 
     it('should allow put_item on allowed table', async () => {
-      const result = await restrictedClient.callTool<{ type: string; text: string }>(
-        'dynamodb_put_item',
-        {
-          tableName: ALLOWED_TABLE,
-          item: { pk: 'test-1', name: 'Test Item' },
-        }
-      );
+      const result = await restrictedClient.callTool<{ type: string; text: string }>('put_item', {
+        tableName: ALLOWED_TABLE,
+        item: { pk: 'test-1', name: 'Test Item' },
+      });
 
       expect(result.isError).toBeFalsy();
       const parsed = JSON.parse(result.content[0].text);
@@ -143,13 +140,10 @@ describe('DynamoDB Table Filtering Manual Tests', () => {
     });
 
     it('should allow get_item on allowed table', async () => {
-      const result = await restrictedClient.callTool<{ type: string; text: string }>(
-        'dynamodb_get_item',
-        {
-          tableName: ALLOWED_TABLE,
-          key: { pk: 'test-1' },
-        }
-      );
+      const result = await restrictedClient.callTool<{ type: string; text: string }>('get_item', {
+        tableName: ALLOWED_TABLE,
+        key: { pk: 'test-1' },
+      });
 
       expect(result.isError).toBeFalsy();
       const parsed = JSON.parse(result.content[0].text);
@@ -157,10 +151,9 @@ describe('DynamoDB Table Filtering Manual Tests', () => {
     });
 
     it('should allow scan on allowed table', async () => {
-      const result = await restrictedClient.callTool<{ type: string; text: string }>(
-        'dynamodb_scan_table',
-        { tableName: ALLOWED_TABLE }
-      );
+      const result = await restrictedClient.callTool<{ type: string; text: string }>('scan_table', {
+        tableName: ALLOWED_TABLE,
+      });
 
       expect(result.isError).toBeFalsy();
       const parsed = JSON.parse(result.content[0].text);
@@ -171,7 +164,7 @@ describe('DynamoDB Table Filtering Manual Tests', () => {
   describe('Access denied on disallowed table', () => {
     it('should deny describe_table on disallowed table', async () => {
       const result = await restrictedClient.callTool<{ type: string; text: string }>(
-        'dynamodb_describe_table',
+        'describe_table',
         { tableName: DISALLOWED_TABLE }
       );
 
@@ -181,36 +174,29 @@ describe('DynamoDB Table Filtering Manual Tests', () => {
     });
 
     it('should deny put_item on disallowed table', async () => {
-      const result = await restrictedClient.callTool<{ type: string; text: string }>(
-        'dynamodb_put_item',
-        {
-          tableName: DISALLOWED_TABLE,
-          item: { pk: 'test-1', name: 'Should Fail' },
-        }
-      );
+      const result = await restrictedClient.callTool<{ type: string; text: string }>('put_item', {
+        tableName: DISALLOWED_TABLE,
+        item: { pk: 'test-1', name: 'Should Fail' },
+      });
 
       expect(result.isError).toBe(true);
       expect(result.content[0].text).toContain('Access denied');
     });
 
     it('should deny get_item on disallowed table', async () => {
-      const result = await restrictedClient.callTool<{ type: string; text: string }>(
-        'dynamodb_get_item',
-        {
-          tableName: DISALLOWED_TABLE,
-          key: { pk: 'test-1' },
-        }
-      );
+      const result = await restrictedClient.callTool<{ type: string; text: string }>('get_item', {
+        tableName: DISALLOWED_TABLE,
+        key: { pk: 'test-1' },
+      });
 
       expect(result.isError).toBe(true);
       expect(result.content[0].text).toContain('Access denied');
     });
 
     it('should deny scan on disallowed table', async () => {
-      const result = await restrictedClient.callTool<{ type: string; text: string }>(
-        'dynamodb_scan_table',
-        { tableName: DISALLOWED_TABLE }
-      );
+      const result = await restrictedClient.callTool<{ type: string; text: string }>('scan_table', {
+        tableName: DISALLOWED_TABLE,
+      });
 
       expect(result.isError).toBe(true);
       expect(result.content[0].text).toContain('Access denied');
@@ -218,7 +204,7 @@ describe('DynamoDB Table Filtering Manual Tests', () => {
 
     it('should deny query on disallowed table', async () => {
       const result = await restrictedClient.callTool<{ type: string; text: string }>(
-        'dynamodb_query_items',
+        'query_items',
         {
           tableName: DISALLOWED_TABLE,
           keyConditionExpression: 'pk = :pk',
@@ -232,7 +218,7 @@ describe('DynamoDB Table Filtering Manual Tests', () => {
 
     it('should deny update_item on disallowed table', async () => {
       const result = await restrictedClient.callTool<{ type: string; text: string }>(
-        'dynamodb_update_item',
+        'update_item',
         {
           tableName: DISALLOWED_TABLE,
           key: { pk: 'test-1' },
@@ -248,7 +234,7 @@ describe('DynamoDB Table Filtering Manual Tests', () => {
 
     it('should deny delete_item on disallowed table', async () => {
       const result = await restrictedClient.callTool<{ type: string; text: string }>(
-        'dynamodb_delete_item',
+        'delete_item',
         {
           tableName: DISALLOWED_TABLE,
           key: { pk: 'test-1' },
@@ -261,7 +247,7 @@ describe('DynamoDB Table Filtering Manual Tests', () => {
 
     it('should deny delete_table on disallowed table', async () => {
       const result = await restrictedClient.callTool<{ type: string; text: string }>(
-        'dynamodb_delete_table',
+        'delete_table',
         { tableName: DISALLOWED_TABLE }
       );
 
@@ -273,7 +259,7 @@ describe('DynamoDB Table Filtering Manual Tests', () => {
   describe('Batch operations with mixed tables', () => {
     it('should deny batch_get_items when any table is disallowed', async () => {
       const result = await restrictedClient.callTool<{ type: string; text: string }>(
-        'dynamodb_batch_get_items',
+        'batch_get_items',
         {
           requestItems: {
             [ALLOWED_TABLE]: { keys: [{ pk: 'test-1' }] },
@@ -289,7 +275,7 @@ describe('DynamoDB Table Filtering Manual Tests', () => {
 
     it('should deny batch_write_items when any table is disallowed', async () => {
       const result = await restrictedClient.callTool<{ type: string; text: string }>(
-        'dynamodb_batch_write_items',
+        'batch_write_items',
         {
           requestItems: {
             [ALLOWED_TABLE]: [{ putRequest: { item: { pk: 'batch-1' } } }],
@@ -307,7 +293,7 @@ describe('DynamoDB Table Filtering Manual Tests', () => {
   describe('Cleanup allowed table', () => {
     it('should allow delete_item on allowed table to clean up', async () => {
       const result = await restrictedClient.callTool<{ type: string; text: string }>(
-        'dynamodb_delete_item',
+        'delete_item',
         {
           tableName: ALLOWED_TABLE,
           key: { pk: 'test-1' },

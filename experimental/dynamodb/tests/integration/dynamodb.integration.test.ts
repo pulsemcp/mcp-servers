@@ -58,29 +58,26 @@ describe('DynamoDB MCP Server Integration', () => {
       const toolNames = result.tools.map((t: { name: string }) => t.name);
 
       // Readonly tools
-      expect(toolNames).toContain('dynamodb_list_tables');
-      expect(toolNames).toContain('dynamodb_describe_table');
-      expect(toolNames).toContain('dynamodb_get_item');
-      expect(toolNames).toContain('dynamodb_query_items');
-      expect(toolNames).toContain('dynamodb_scan_table');
+      expect(toolNames).toContain('list_tables');
+      expect(toolNames).toContain('describe_table');
+      expect(toolNames).toContain('get_item');
+      expect(toolNames).toContain('query_items');
+      expect(toolNames).toContain('scan_table');
 
       // ReadWrite tools
-      expect(toolNames).toContain('dynamodb_put_item');
-      expect(toolNames).toContain('dynamodb_update_item');
-      expect(toolNames).toContain('dynamodb_delete_item');
+      expect(toolNames).toContain('put_item');
+      expect(toolNames).toContain('update_item');
+      expect(toolNames).toContain('delete_item');
 
       // Admin tools
-      expect(toolNames).toContain('dynamodb_create_table');
-      expect(toolNames).toContain('dynamodb_delete_table');
+      expect(toolNames).toContain('create_table');
+      expect(toolNames).toContain('delete_table');
     });
   });
 
   describe('Table Operations', () => {
     it('should list tables', async () => {
-      const result = await client.callTool<{ type: string; text: string }>(
-        'dynamodb_list_tables',
-        {}
-      );
+      const result = await client.callTool<{ type: string; text: string }>('list_tables', {});
       const parsed = JSON.parse(result.content[0].text);
 
       expect(parsed.tableNames).toContain('Users');
@@ -88,12 +85,9 @@ describe('DynamoDB MCP Server Integration', () => {
     });
 
     it('should describe a table', async () => {
-      const result = await client.callTool<{ type: string; text: string }>(
-        'dynamodb_describe_table',
-        {
-          tableName: 'Users',
-        }
-      );
+      const result = await client.callTool<{ type: string; text: string }>('describe_table', {
+        tableName: 'Users',
+      });
       const parsed = JSON.parse(result.content[0].text);
 
       expect(parsed.tableName).toBe('Users');
@@ -103,7 +97,7 @@ describe('DynamoDB MCP Server Integration', () => {
 
   describe('Item Operations', () => {
     it('should get an item by key', async () => {
-      const result = await client.callTool<{ type: string; text: string }>('dynamodb_get_item', {
+      const result = await client.callTool<{ type: string; text: string }>('get_item', {
         tableName: 'Users',
         key: { userId: 'user1' },
       });
@@ -114,7 +108,7 @@ describe('DynamoDB MCP Server Integration', () => {
     });
 
     it('should scan a table', async () => {
-      const result = await client.callTool<{ type: string; text: string }>('dynamodb_scan_table', {
+      const result = await client.callTool<{ type: string; text: string }>('scan_table', {
         tableName: 'Users',
       });
       const parsed = JSON.parse(result.content[0].text);
@@ -124,7 +118,7 @@ describe('DynamoDB MCP Server Integration', () => {
     });
 
     it('should put a new item', async () => {
-      const result = await client.callTool<{ type: string; text: string }>('dynamodb_put_item', {
+      const result = await client.callTool<{ type: string; text: string }>('put_item', {
         tableName: 'Users',
         item: { userId: 'user3', name: 'Charlie', email: 'charlie@example.com' },
       });
@@ -148,7 +142,7 @@ describe('DynamoDB MCP Server Integration', () => {
 
       expect(config.server.name).toBe('dynamodb-mcp-server');
       expect(config.toolGroups).toBeDefined();
-      expect(config.toolGroups.readonly).toContain('dynamodb_list_tables');
+      expect(config.toolGroups.readonly).toContain('list_tables');
     });
   });
 });

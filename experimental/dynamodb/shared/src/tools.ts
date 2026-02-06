@@ -25,7 +25,7 @@ import { updateTableTool } from './tools/update-table.js';
 // available. You can filter tools in three ways:
 //
 // 1. TOOL GROUPS (DYNAMODB_ENABLED_TOOL_GROUPS):
-//    - 'readonly': list_tables, describe_table, get_item, query, scan, batch_get_items
+//    - 'readonly': list_tables, describe_table, get_item, query_items, scan_table, batch_get_items
 //    - 'readwrite': put_item, update_item, delete_item, batch_write_items
 //    - 'admin': create_table, delete_table, update_table
 //    Example: DYNAMODB_ENABLED_TOOL_GROUPS="readonly" (only read operations)
@@ -33,11 +33,11 @@ import { updateTableTool } from './tools/update-table.js';
 //
 // 2. ENABLED TOOLS (DYNAMODB_ENABLED_TOOLS):
 //    Whitelist specific tools (comma-separated)
-//    Example: DYNAMODB_ENABLED_TOOLS="dynamodb_get_item,dynamodb_query"
+//    Example: DYNAMODB_ENABLED_TOOLS="get_item,query_items"
 //
 // 3. DISABLED TOOLS (DYNAMODB_DISABLED_TOOLS):
 //    Blacklist specific tools (comma-separated)
-//    Example: DYNAMODB_DISABLED_TOOLS="dynamodb_delete_table,dynamodb_create_table"
+//    Example: DYNAMODB_DISABLED_TOOLS="delete_table,create_table"
 //
 // Priority: ENABLED_TOOLS > DISABLED_TOOLS > ENABLED_TOOL_GROUPS
 //
@@ -51,19 +51,19 @@ import { updateTableTool } from './tools/update-table.js';
 const ALL_TOOL_GROUPS: ToolGroup[] = ['readonly', 'readwrite', 'admin'];
 
 const ALL_TOOL_NAMES: DynamoDBToolName[] = [
-  'dynamodb_list_tables',
-  'dynamodb_describe_table',
-  'dynamodb_get_item',
-  'dynamodb_query_items',
-  'dynamodb_scan_table',
-  'dynamodb_put_item',
-  'dynamodb_update_item',
-  'dynamodb_delete_item',
-  'dynamodb_batch_get_items',
-  'dynamodb_batch_write_items',
-  'dynamodb_create_table',
-  'dynamodb_delete_table',
-  'dynamodb_update_table',
+  'list_tables',
+  'describe_table',
+  'get_item',
+  'query_items',
+  'scan_table',
+  'put_item',
+  'update_item',
+  'delete_item',
+  'batch_get_items',
+  'batch_write_items',
+  'create_table',
+  'delete_table',
+  'update_table',
 ];
 
 /**
@@ -202,23 +202,23 @@ interface ToolDefinition {
  */
 const ALL_TOOLS: ToolDefinition[] = [
   // Readonly tools
-  { factory: listTablesTool, name: 'dynamodb_list_tables', groups: ['readonly'] },
-  { factory: describeTableTool, name: 'dynamodb_describe_table', groups: ['readonly'] },
-  { factory: getItemTool, name: 'dynamodb_get_item', groups: ['readonly'] },
-  { factory: queryTool, name: 'dynamodb_query_items', groups: ['readonly'] },
-  { factory: scanTool, name: 'dynamodb_scan_table', groups: ['readonly'] },
-  { factory: batchGetItemsTool, name: 'dynamodb_batch_get_items', groups: ['readonly'] },
+  { factory: listTablesTool, name: 'list_tables', groups: ['readonly'] },
+  { factory: describeTableTool, name: 'describe_table', groups: ['readonly'] },
+  { factory: getItemTool, name: 'get_item', groups: ['readonly'] },
+  { factory: queryTool, name: 'query_items', groups: ['readonly'] },
+  { factory: scanTool, name: 'scan_table', groups: ['readonly'] },
+  { factory: batchGetItemsTool, name: 'batch_get_items', groups: ['readonly'] },
 
   // ReadWrite tools
-  { factory: putItemTool, name: 'dynamodb_put_item', groups: ['readwrite'] },
-  { factory: updateItemTool, name: 'dynamodb_update_item', groups: ['readwrite'] },
-  { factory: deleteItemTool, name: 'dynamodb_delete_item', groups: ['readwrite'] },
-  { factory: batchWriteItemsTool, name: 'dynamodb_batch_write_items', groups: ['readwrite'] },
+  { factory: putItemTool, name: 'put_item', groups: ['readwrite'] },
+  { factory: updateItemTool, name: 'update_item', groups: ['readwrite'] },
+  { factory: deleteItemTool, name: 'delete_item', groups: ['readwrite'] },
+  { factory: batchWriteItemsTool, name: 'batch_write_items', groups: ['readwrite'] },
 
   // Admin tools
-  { factory: createTableTool, name: 'dynamodb_create_table', groups: ['admin'] },
-  { factory: deleteTableTool, name: 'dynamodb_delete_table', groups: ['admin'] },
-  { factory: updateTableTool, name: 'dynamodb_update_table', groups: ['admin'] },
+  { factory: createTableTool, name: 'create_table', groups: ['admin'] },
+  { factory: deleteTableTool, name: 'delete_table', groups: ['admin'] },
+  { factory: updateTableTool, name: 'update_table', groups: ['admin'] },
 ];
 
 /**

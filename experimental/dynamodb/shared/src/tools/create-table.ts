@@ -82,7 +82,7 @@ export function createTableTool(
   const tableConfig = tableFilterConfig || {};
 
   return {
-    name: 'dynamodb_create_table' as const,
+    name: 'create_table' as const,
     description: TOOL_DESCRIPTION,
     inputSchema: {
       type: 'object' as const,

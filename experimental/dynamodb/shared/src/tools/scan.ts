@@ -62,7 +62,7 @@ export function scanTool(
   const tableConfig = tableFilterConfig || {};
 
   return {
-    name: 'dynamodb_scan_table' as const,
+    name: 'scan_table' as const,
     description: TOOL_DESCRIPTION,
     inputSchema: {
       type: 'object' as const,

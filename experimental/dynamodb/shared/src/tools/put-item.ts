@@ -54,7 +54,7 @@ export function putItemTool(
   const tableConfig = tableFilterConfig || {};
 
   return {
-    name: 'dynamodb_put_item' as const,
+    name: 'put_item' as const,
     description: TOOL_DESCRIPTION,
     inputSchema: {
       type: 'object' as const,

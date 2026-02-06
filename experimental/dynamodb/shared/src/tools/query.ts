@@ -68,7 +68,7 @@ export function queryTool(
   const tableConfig = tableFilterConfig || {};
 
   return {
-    name: 'dynamodb_query_items' as const,
+    name: 'query_items' as const,
     description: TOOL_DESCRIPTION,
     inputSchema: {
       type: 'object' as const,

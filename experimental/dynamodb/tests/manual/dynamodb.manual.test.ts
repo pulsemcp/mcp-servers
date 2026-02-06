@@ -46,7 +46,7 @@ describe('DynamoDB MCP Server Manual Tests', () => {
     // Clean up test table if it was created
     if (client) {
       try {
-        await client.callTool('dynamodb_delete_table', { tableName: TEST_TABLE_NAME });
+        await client.callTool('delete_table', { tableName: TEST_TABLE_NAME });
       } catch {
         // Table may not exist, ignore
       }
@@ -56,10 +56,7 @@ describe('DynamoDB MCP Server Manual Tests', () => {
 
   describe('Read-only Operations', () => {
     it('should list tables', async () => {
-      const result = await client.callTool<{ type: string; text: string }>(
-        'dynamodb_list_tables',
-        {}
-      );
+      const result = await client.callTool<{ type: string; text: string }>('list_tables', {});
 
       expect(result.isError).toBeFalsy();
       const parsed = JSON.parse(result.content[0].text);
@@ -69,15 +66,12 @@ describe('DynamoDB MCP Server Manual Tests', () => {
 
   describe('Table Management', () => {
     it('should create a table', async () => {
-      const result = await client.callTool<{ type: string; text: string }>(
-        'dynamodb_create_table',
-        {
-          tableName: TEST_TABLE_NAME,
-          keySchema: [{ attributeName: 'pk', keyType: 'HASH' }],
-          attributeDefinitions: [{ attributeName: 'pk', attributeType: 'S' }],
-          billingMode: 'PAY_PER_REQUEST',
-        }
-      );
+      const result = await client.callTool<{ type: string; text: string }>('create_table', {
+        tableName: TEST_TABLE_NAME,
+        keySchema: [{ attributeName: 'pk', keyType: 'HASH' }],
+        attributeDefinitions: [{ attributeName: 'pk', attributeType: 'S' }],
+        billingMode: 'PAY_PER_REQUEST',
+      });
 
       expect(result.isError).toBeFalsy();
       const parsed = JSON.parse(result.content[0].text);
@@ -88,12 +82,9 @@ describe('DynamoDB MCP Server Manual Tests', () => {
       // Wait for table to be active
       await new Promise((resolve) => setTimeout(resolve, 5000));
 
-      const result = await client.callTool<{ type: string; text: string }>(
-        'dynamodb_describe_table',
-        {
-          tableName: TEST_TABLE_NAME,
-        }
-      );
+      const result = await client.callTool<{ type: string; text: string }>('describe_table', {
+        tableName: TEST_TABLE_NAME,
+      });
 
       expect(result.isError).toBeFalsy();
       const parsed = JSON.parse(result.content[0].text);
@@ -107,7 +98,7 @@ describe('DynamoDB MCP Server Manual Tests', () => {
       // DynamoDB tables need time to become fully active after creation
       await new Promise((resolve) => setTimeout(resolve, 10000));
 
-      const result = await client.callTool<{ type: string; text: string }>('dynamodb_put_item', {
+      const result = await client.callTool<{ type: string; text: string }>('put_item', {
         tableName: TEST_TABLE_NAME,
         item: {
           pk: 'test-item-1',
@@ -122,7 +113,7 @@ describe('DynamoDB MCP Server Manual Tests', () => {
     });
 
     it('should get the item', async () => {
-      const result = await client.callTool<{ type: string; text: string }>('dynamodb_get_item', {
+      const result = await client.callTool<{ type: string; text: string }>('get_item', {
         tableName: TEST_TABLE_NAME,
         key: { pk: 'test-item-1' },
       });
@@ -134,7 +125,7 @@ describe('DynamoDB MCP Server Manual Tests', () => {
     });
 
     it('should scan the table', async () => {
-      const result = await client.callTool<{ type: string; text: string }>('dynamodb_scan_table', {
+      const result = await client.callTool<{ type: string; text: string }>('scan_table', {
         tableName: TEST_TABLE_NAME,
       });
 
@@ -144,7 +135,7 @@ describe('DynamoDB MCP Server Manual Tests', () => {
     });
 
     it('should update the item', async () => {
-      const result = await client.callTool<{ type: string; text: string }>('dynamodb_update_item', {
+      const result = await client.callTool<{ type: string; text: string }>('update_item', {
         tableName: TEST_TABLE_NAME,
         key: { pk: 'test-item-1' },
         updateExpression: 'SET #name = :newName',
@@ -159,7 +150,7 @@ describe('DynamoDB MCP Server Manual Tests', () => {
     });
 
     it('should delete the item', async () => {
-      const result = await client.callTool<{ type: string; text: string }>('dynamodb_delete_item', {
+      const result = await client.callTool<{ type: string; text: string }>('delete_item', {
         tableName: TEST_TABLE_NAME,
         key: { pk: 'test-item-1' },
         returnValues: 'ALL_OLD',
@@ -173,12 +164,9 @@ describe('DynamoDB MCP Server Manual Tests', () => {
 
   describe('Cleanup', () => {
     it('should delete the test table', async () => {
-      const result = await client.callTool<{ type: string; text: string }>(
-        'dynamodb_delete_table',
-        {
-          tableName: TEST_TABLE_NAME,
-        }
-      );
+      const result = await client.callTool<{ type: string; text: string }>('delete_table', {
+        tableName: TEST_TABLE_NAME,
+      });
 
       expect(result.isError).toBeFalsy();
       const parsed = JSON.parse(result.content[0].text);

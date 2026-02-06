@@ -12,33 +12,35 @@ An MCP server for AWS DynamoDB with fine-grained tool control. Provides comprehe
 
 ## Available Tools
 
+Tool names are kept short since MCP clients typically prefix them with the server name (e.g., `dynamodb:list_tables`).
+
 ### Readonly Tools (Group: `readonly`)
 
-| Tool                       | Description                              |
-| -------------------------- | ---------------------------------------- |
-| `dynamodb_list_tables`     | List all DynamoDB tables with pagination |
-| `dynamodb_describe_table`  | Get table metadata, schema, and indexes  |
-| `dynamodb_get_item`        | Retrieve single item by primary key      |
-| `dynamodb_query_items`     | Query items using key conditions         |
-| `dynamodb_scan_table`      | Scan table with optional filters         |
-| `dynamodb_batch_get_items` | Get multiple items across tables         |
+| Tool              | Description                              |
+| ----------------- | ---------------------------------------- |
+| `list_tables`     | List all DynamoDB tables with pagination |
+| `describe_table`  | Get table metadata, schema, and indexes  |
+| `get_item`        | Retrieve single item by primary key      |
+| `query_items`     | Query items using key conditions         |
+| `scan_table`      | Scan table with optional filters         |
+| `batch_get_items` | Get multiple items across tables         |
 
 ### ReadWrite Tools (Group: `readwrite`)
 
-| Tool                         | Description                 |
-| ---------------------------- | --------------------------- |
-| `dynamodb_put_item`          | Create or replace an item   |
-| `dynamodb_update_item`       | Update specific attributes  |
-| `dynamodb_delete_item`       | Delete item by primary key  |
-| `dynamodb_batch_write_items` | Batch put/delete operations |
+| Tool                | Description                 |
+| ------------------- | --------------------------- |
+| `put_item`          | Create or replace an item   |
+| `update_item`       | Update specific attributes  |
+| `delete_item`       | Delete item by primary key  |
+| `batch_write_items` | Batch put/delete operations |
 
 ### Admin Tools (Group: `admin`)
 
-| Tool                    | Description                 |
-| ----------------------- | --------------------------- |
-| `dynamodb_create_table` | Create a new table          |
-| `dynamodb_delete_table` | Delete a table and all data |
-| `dynamodb_update_table` | Update table settings       |
+| Tool           | Description                 |
+| -------------- | --------------------------- |
+| `create_table` | Create a new table          |
+| `delete_table` | Delete a table and all data |
+| `update_table` | Update table settings       |
 
 ## Configuration
 
@@ -76,14 +78,14 @@ DYNAMODB_ENABLED_TOOL_GROUPS="readonly,readwrite,admin"
 
 ```bash
 # Only allow specific operations
-DYNAMODB_ENABLED_TOOLS="dynamodb_get_item,dynamodb_query_items,dynamodb_scan_table"
+DYNAMODB_ENABLED_TOOLS="get_item,query_items,scan_table"
 ```
 
 **3. Blacklist Specific Tools**:
 
 ```bash
 # Enable all except dangerous operations
-DYNAMODB_DISABLED_TOOLS="dynamodb_delete_table,dynamodb_create_table"
+DYNAMODB_DISABLED_TOOLS="delete_table,create_table"
 ```
 
 **Priority**: `DYNAMODB_ENABLED_TOOLS` > `DYNAMODB_DISABLED_TOOLS` > `DYNAMODB_ENABLED_TOOL_GROUPS`

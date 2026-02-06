@@ -37,21 +37,21 @@ describe('Tool Filtering', () => {
     });
 
     it('should parse enabled tools whitelist', () => {
-      process.env.DYNAMODB_ENABLED_TOOLS = 'dynamodb_get_item,dynamodb_query_items';
+      process.env.DYNAMODB_ENABLED_TOOLS = 'get_item,query_items';
       const config = parseToolFilterConfig();
-      expect(config.enabledTools).toEqual(['dynamodb_get_item', 'dynamodb_query_items']);
+      expect(config.enabledTools).toEqual(['get_item', 'query_items']);
     });
 
     it('should filter invalid tool names', () => {
-      process.env.DYNAMODB_ENABLED_TOOLS = 'dynamodb_get_item,invalid_tool,dynamodb_scan_table';
+      process.env.DYNAMODB_ENABLED_TOOLS = 'get_item,invalid_tool,scan_table';
       const config = parseToolFilterConfig();
-      expect(config.enabledTools).toEqual(['dynamodb_get_item', 'dynamodb_scan_table']);
+      expect(config.enabledTools).toEqual(['get_item', 'scan_table']);
     });
 
     it('should parse disabled tools blacklist', () => {
-      process.env.DYNAMODB_DISABLED_TOOLS = 'dynamodb_delete_table,dynamodb_create_table';
+      process.env.DYNAMODB_DISABLED_TOOLS = 'delete_table,create_table';
       const config = parseToolFilterConfig();
-      expect(config.disabledTools).toEqual(['dynamodb_delete_table', 'dynamodb_create_table']);
+      expect(config.disabledTools).toEqual(['delete_table', 'create_table']);
     });
 
     it('should handle whitespace in tool lists', () => {

@@ -44,7 +44,7 @@ export function batchGetItemsTool(
   const tableConfig = tableFilterConfig || {};
 
   return {
-    name: 'dynamodb_batch_get_items' as const,
+    name: 'batch_get_items' as const,
     description: TOOL_DESCRIPTION,
     inputSchema: {
       type: 'object' as const,

@@ -38,7 +38,7 @@ export function deleteTableTool(
   const tableConfig = tableFilterConfig || {};
 
   return {
-    name: 'dynamodb_delete_table' as const,
+    name: 'delete_table' as const,
     description: TOOL_DESCRIPTION,
     inputSchema: {
       type: 'object' as const,

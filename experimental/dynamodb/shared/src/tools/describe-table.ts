@@ -42,7 +42,7 @@ export function describeTableTool(
   const tableConfig = tableFilterConfig || {};
 
   return {
-    name: 'dynamodb_describe_table' as const,
+    name: 'describe_table' as const,
     description: TOOL_DESCRIPTION,
     inputSchema: {
       type: 'object' as const,

@@ -41,7 +41,7 @@ export function listTablesTool(
   const tableConfig = tableFilterConfig || {};
 
   return {
-    name: 'dynamodb_list_tables' as const,
+    name: 'list_tables' as const,
     description: TOOL_DESCRIPTION,
     inputSchema: {
       type: 'object' as const,

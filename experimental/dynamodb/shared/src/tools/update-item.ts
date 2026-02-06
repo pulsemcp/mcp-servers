@@ -67,7 +67,7 @@ export function updateItemTool(
   const tableConfig = tableFilterConfig || {};
 
   return {
-    name: 'dynamodb_update_item' as const,
+    name: 'update_item' as const,
     description: TOOL_DESCRIPTION,
     inputSchema: {
       type: 'object' as const,

@@ -55,20 +55,15 @@ export function registerResources(server: Server, version: string) {
         },
         toolGroups: {
           readonly: [
-            'dynamodb_list_tables',
-            'dynamodb_describe_table',
-            'dynamodb_get_item',
-            'dynamodb_query_items',
-            'dynamodb_scan_table',
-            'dynamodb_batch_get_items',
+            'list_tables',
+            'describe_table',
+            'get_item',
+            'query_items',
+            'scan_table',
+            'batch_get_items',
           ],
-          readwrite: [
-            'dynamodb_put_item',
-            'dynamodb_update_item',
-            'dynamodb_delete_item',
-            'dynamodb_batch_write_items',
-          ],
-          admin: ['dynamodb_create_table', 'dynamodb_delete_table', 'dynamodb_update_table'],
+          readwrite: ['put_item', 'update_item', 'delete_item', 'batch_write_items'],
+          admin: ['create_table', 'delete_table', 'update_table'],
         },
       };
 
