@@ -73,7 +73,7 @@ The tests will:
 
 **Test Date:** 2026-02-06
 **Branch:** ao/dynamodb-mcp-server
-**Commit:** ffb0fea72af28e5a530d6a2898bfa01d45f094cb
+**Commit:** 2045cab90bdc8124059f560af7d7a14a41b4a9c7
 **Tested By:** Agent Orchestrator
 **Environment:** AWS us-east-1 (test account)
 
@@ -81,16 +81,17 @@ The tests will:
 
 | Metric      | Value |
 | ----------- | ----- |
-| Total Tests | 9     |
-| Passed      | 9     |
+| Total Tests | 25    |
+| Passed      | 25    |
 | Failed      | 0     |
 | Pass Rate   | 100%  |
 
 ### Test Files
 
-| File                      | Status             | Tests | Notes                                      |
-| ------------------------- | ------------------ | ----- | ------------------------------------------ |
-| `dynamodb.manual.test.ts` | :white_check_mark: | 9/9   | All tests passed against real AWS DynamoDB |
+| File                             | Status             | Tests | Notes                                                  |
+| -------------------------------- | ------------------ | ----- | ------------------------------------------------------ |
+| `dynamodb.manual.test.ts`        | :white_check_mark: | 9/9   | All tests passed against real AWS DynamoDB             |
+| `table-filtering.manual.test.ts` | :white_check_mark: | 16/16 | All table filtering tests passed against real DynamoDB |
 
 ### Detailed Results
 
@@ -118,15 +119,26 @@ The tests will:
 | Delete item | :white_check_mark: | Successfully deleted item                  |
 | Scan table  | :white_check_mark: | Successfully scanned table for items       |
 
+#### Table Filtering (DYNAMODB_ALLOWED_TABLES)
+
+| Test                                      | Status             | Notes                                           |
+| ----------------------------------------- | ------------------ | ----------------------------------------------- |
+| list_tables filters to allowed tables     | :white_check_mark: | Only allowed tables shown in list               |
+| Allowed table access                      | :white_check_mark: | All operations work on allowed tables (5 tests) |
+| Disallowed table access denied            | :white_check_mark: | All operations denied on other tables (8 tests) |
+| Batch operations with mixed tables denied | :white_check_mark: | Batch get/write fail if any table not allowed   |
+
 ### Known Issues / Limitations
 
 - Manual tests require valid AWS credentials with DynamoDB permissions
-- Tests create and delete a temporary table (mcp-test-\*) during execution
+- Tests create and delete temporary tables (mcp-test-\*) during execution
+- Table filtering tests create 2 tables which takes ~10s before tests can run
 
 ### API Behavior Notes
 
 - Table creation is asynchronous; tests include 10s wait time for table to become ACTIVE before item operations
 - All item operations use PAY_PER_REQUEST billing mode for test tables
+- DYNAMODB_ALLOWED_TABLES filtering is checked before any API call is made
 
 ---
 
