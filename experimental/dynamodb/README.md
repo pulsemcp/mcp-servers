@@ -102,6 +102,10 @@ When `DYNAMODB_ALLOWED_TABLES` is set:
 - `list_tables` only returns tables in the allowed list
 - Operations on non-allowed tables return an "Access denied" error
 - Batch operations fail if any table in the request is not allowed
+- Table names are matched **case-sensitively** (DynamoDB table names are case-sensitive)
+- When using pagination with `list_tables`, the `limit` applies before filtering
+
+**Note:** If not set or set to an empty string, all tables are accessible (no filtering).
 
 This is useful for:
 
