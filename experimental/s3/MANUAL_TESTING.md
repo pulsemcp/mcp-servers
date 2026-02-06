@@ -47,8 +47,8 @@ npm run test:manual
 ## Latest Test Results
 
 **Test Date:** 2026-02-06
-**Branch:** tadasant/s3-publish
-**Commit:** f632bcf
+**Branch:** tadasant/s3-force-path-style
+**Commit:** dcbd20d
 **Tested By:** Claude Opus 4.5
 **Environment:** Node.js on Linux, AWS us-east-1
 
@@ -57,6 +57,8 @@ npm run test:manual
 **Overall:** 9/9 tests passed (100%)
 
 All manual tests passed successfully against a real AWS S3 account.
+
+**Note:** This version bump adds `S3_FORCE_PATH_STYLE` env var support for MinIO compatibility. The core S3 functionality (tested above) remains unchanged - this is an optional configuration flag that doesn't affect behavior when not set.
 
 ### Test Results
 
