@@ -43,7 +43,7 @@ dynamodb/
 
 The server organizes tools into three groups for access control:
 
-- **readonly**: `list_tables`, `describe_table`, `get_item`, `query`, `scan`, `batch_get_items`
+- **readonly**: `list_tables`, `describe_table`, `get_item`, `query_items`, `scan_table`, `batch_get_items`
 - **readwrite**: `put_item`, `update_item`, `delete_item`, `batch_write_items`
 - **admin**: `create_table`, `delete_table`, `update_table`
 
