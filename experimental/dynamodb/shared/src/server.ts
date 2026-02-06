@@ -1,6 +1,6 @@
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { registerResources } from './resources.js';
-import { createRegisterTools, ToolFilterConfig } from './tools.js';
+import { createRegisterTools, ToolFilterConfig, TableFilterConfig } from './tools.js';
 import { IDynamoDBClient, DynamoDBClientImpl } from './dynamodb-client/dynamodb-client.js';
 
 // Re-export for convenience
@@ -11,6 +11,7 @@ export type ClientFactory = () => IDynamoDBClient;
 export interface CreateMCPServerOptions {
   version: string;
   toolFilterConfig?: ToolFilterConfig;
+  tableFilterConfig?: TableFilterConfig;
 }
 
 export function createMCPServer(options: CreateMCPServerOptions) {
@@ -53,7 +54,11 @@ export function createMCPServer(options: CreateMCPServerOptions) {
       });
 
     registerResources(server, options.version);
-    const registerTools = createRegisterTools(factory, options.toolFilterConfig);
+    const registerTools = createRegisterTools(
+      factory,
+      options.toolFilterConfig,
+      options.tableFilterConfig
+    );
     registerTools(server);
   };
 

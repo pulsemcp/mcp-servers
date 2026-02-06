@@ -1,6 +1,8 @@
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { z } from 'zod';
 import { IDynamoDBClient } from '../dynamodb-client/dynamodb-client.js';
+import { TableFilterConfig } from '../types.js';
+import { isTableAllowed, createTableAccessDeniedError } from '../tools.js';
 
 const PARAM_DESCRIPTIONS = {
   tableName: 'Name of the DynamoDB table to describe',
@@ -32,7 +34,13 @@ Returns comprehensive metadata including key schema, indexes, provisioned throug
 - Verify index availability
 - Monitor capacity and size`;
 
-export function describeTableTool(_server: Server, clientFactory: () => IDynamoDBClient) {
+export function describeTableTool(
+  _server: Server,
+  clientFactory: () => IDynamoDBClient,
+  tableFilterConfig?: TableFilterConfig
+) {
+  const tableConfig = tableFilterConfig || {};
+
   return {
     name: 'dynamodb_describe_table' as const,
     description: TOOL_DESCRIPTION,
@@ -49,6 +57,12 @@ export function describeTableTool(_server: Server, clientFactory: () => IDynamoD
     handler: async (args: unknown) => {
       try {
         const validatedArgs = DescribeTableSchema.parse(args);
+
+        // Check table access
+        if (!isTableAllowed(validatedArgs.tableName, tableConfig)) {
+          return createTableAccessDeniedError(validatedArgs.tableName);
+        }
+
         const client = clientFactory();
 
         const result = await client.describeTable(validatedArgs.tableName);

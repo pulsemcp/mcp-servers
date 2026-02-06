@@ -6,6 +6,7 @@ An MCP server for AWS DynamoDB with fine-grained tool control. Provides comprehe
 
 - **Complete DynamoDB Operations**: Tables, items, queries, scans, and batch operations
 - **Fine-grained Access Control**: Enable/disable tools by group or individually
+- **Table-level Access Control**: Restrict operations to specific tables
 - **AWS Credential Support**: Works with explicit credentials or AWS credential chain
 - **Custom Endpoints**: Support for local DynamoDB or LocalStack
 
@@ -52,6 +53,7 @@ An MCP server for AWS DynamoDB with fine-grained tool control. Provides comprehe
 | `DYNAMODB_ENABLED_TOOL_GROUPS` | No       | Comma-separated groups: `readonly`, `readwrite`, `admin` |
 | `DYNAMODB_ENABLED_TOOLS`       | No       | Whitelist specific tools                                 |
 | `DYNAMODB_DISABLED_TOOLS`      | No       | Blacklist specific tools                                 |
+| `DYNAMODB_ALLOWED_TABLES`      | No       | Restrict operations to specific tables (comma-separated) |
 
 ### Tool Access Control
 
@@ -85,6 +87,27 @@ DYNAMODB_DISABLED_TOOLS="dynamodb_delete_table,dynamodb_create_table"
 ```
 
 **Priority**: `DYNAMODB_ENABLED_TOOLS` > `DYNAMODB_DISABLED_TOOLS` > `DYNAMODB_ENABLED_TOOL_GROUPS`
+
+### Table-level Access Control
+
+Restrict all operations to specific tables only:
+
+```bash
+# Only allow access to Users and Orders tables
+DYNAMODB_ALLOWED_TABLES="Users,Orders"
+```
+
+When `DYNAMODB_ALLOWED_TABLES` is set:
+
+- `list_tables` only returns tables in the allowed list
+- Operations on non-allowed tables return an "Access denied" error
+- Batch operations fail if any table in the request is not allowed
+
+This is useful for:
+
+- Multi-tenant environments where each client should only access their tables
+- Development environments where you want to protect production tables
+- Limiting the blast radius of AI agents to specific tables
 
 ## Claude Desktop Configuration
 

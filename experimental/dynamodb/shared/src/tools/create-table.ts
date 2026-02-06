@@ -1,6 +1,8 @@
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { z } from 'zod';
 import { IDynamoDBClient } from '../dynamodb-client/dynamodb-client.js';
+import { TableFilterConfig } from '../types.js';
+import { isTableAllowed, createTableAccessDeniedError } from '../tools.js';
 
 const PARAM_DESCRIPTIONS = {
   tableName: 'Name of the table to create (3-255 characters)',
@@ -72,7 +74,13 @@ Creates a table with the specified primary key schema and billing mode.
 
 **Note:** Table creation is asynchronous. Use describeTable to check when status becomes ACTIVE.`;
 
-export function createTableTool(_server: Server, clientFactory: () => IDynamoDBClient) {
+export function createTableTool(
+  _server: Server,
+  clientFactory: () => IDynamoDBClient,
+  tableFilterConfig?: TableFilterConfig
+) {
+  const tableConfig = tableFilterConfig || {};
+
   return {
     name: 'dynamodb_create_table' as const,
     description: TOOL_DESCRIPTION,
@@ -132,6 +140,12 @@ export function createTableTool(_server: Server, clientFactory: () => IDynamoDBC
     handler: async (args: unknown) => {
       try {
         const validatedArgs = CreateTableSchema.parse(args);
+
+        // Check table access
+        if (!isTableAllowed(validatedArgs.tableName, tableConfig)) {
+          return createTableAccessDeniedError(validatedArgs.tableName);
+        }
+
         const client = clientFactory();
 
         // Validate that provisioned throughput is provided when billing mode is PROVISIONED

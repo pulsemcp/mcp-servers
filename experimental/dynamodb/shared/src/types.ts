@@ -126,3 +126,19 @@ export interface ToolFilterConfig {
   enabledTools?: DynamoDBToolName[];
   disabledTools?: DynamoDBToolName[];
 }
+
+/**
+ * Configuration for table access control.
+ * When allowedTables is set, operations are restricted to only those tables.
+ */
+export interface TableFilterConfig {
+  allowedTables?: string[];
+}
+
+/**
+ * Combined server configuration.
+ */
+export interface ServerConfig {
+  toolFilter?: ToolFilterConfig;
+  tableFilter?: TableFilterConfig;
+}

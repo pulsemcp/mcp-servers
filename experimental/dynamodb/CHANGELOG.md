@@ -9,7 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- None yet
+- Table-level access control via `DYNAMODB_ALLOWED_TABLES` environment variable
+  - Restricts operations to a specific set of tables
+  - `list_tables` filters results to only show allowed tables
+  - All other operations return "Access denied" error for non-allowed tables
+  - Batch operations validate all tables in the request
 
 ## [0.1.0] - 2026-02-06
 

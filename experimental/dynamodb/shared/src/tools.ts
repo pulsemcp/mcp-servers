@@ -1,7 +1,7 @@
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { ListToolsRequestSchema, CallToolRequestSchema } from '@modelcontextprotocol/sdk/types.js';
 import { ClientFactory } from './server.js';
-import { ToolGroup, DynamoDBToolName, ToolFilterConfig } from './types.js';
+import { ToolGroup, DynamoDBToolName, ToolFilterConfig, TableFilterConfig } from './types.js';
 
 // Import all tools
 import { listTablesTool } from './tools/list-tables.js';
@@ -40,6 +40,12 @@ import { updateTableTool } from './tools/update-table.js';
 //    Example: DYNAMODB_DISABLED_TOOLS="dynamodb_delete_table,dynamodb_create_table"
 //
 // Priority: ENABLED_TOOLS > DISABLED_TOOLS > ENABLED_TOOL_GROUPS
+//
+// 4. ALLOWED TABLES (DYNAMODB_ALLOWED_TABLES):
+//    Restrict operations to specific tables (comma-separated)
+//    Example: DYNAMODB_ALLOWED_TABLES="Users,Orders,Products"
+//    When set, operations on other tables are declined and list_tables filters results.
+//    Default: All tables allowed
 // =============================================================================
 
 const ALL_TOOL_GROUPS: ToolGroup[] = ['readonly', 'readwrite', 'admin'];
@@ -105,6 +111,62 @@ export function parseToolFilterConfig(): ToolFilterConfig {
   return config;
 }
 
+/**
+ * Parse table filter configuration from environment variables.
+ */
+export function parseTableFilterConfig(): TableFilterConfig {
+  const config: TableFilterConfig = {};
+
+  const tablesEnv = process.env.DYNAMODB_ALLOWED_TABLES;
+  if (tablesEnv) {
+    const tables = tablesEnv
+      .split(',')
+      .map((t) => t.trim())
+      .filter((t) => t.length > 0);
+    if (tables.length > 0) {
+      config.allowedTables = tables;
+    }
+  }
+
+  return config;
+}
+
+/**
+ * Check if a table is allowed based on the filter configuration.
+ * Returns true if no filter is configured or if the table is in the allowed list.
+ */
+export function isTableAllowed(tableName: string, config: TableFilterConfig): boolean {
+  if (!config.allowedTables || config.allowedTables.length === 0) {
+    return true;
+  }
+  return config.allowedTables.includes(tableName);
+}
+
+/**
+ * Filter a list of table names based on the table filter configuration.
+ */
+export function filterAllowedTables(tableNames: string[], config: TableFilterConfig): string[] {
+  if (!config.allowedTables || config.allowedTables.length === 0) {
+    return tableNames;
+  }
+  return tableNames.filter((name) => config.allowedTables!.includes(name));
+}
+
+/**
+ * Create an error response for table access denied.
+ */
+export function createTableAccessDeniedError(tableName: string) {
+  return {
+    content: [
+      {
+        type: 'text',
+        text: `Access denied: Table '${tableName}' is not in the allowed tables list. Configure DYNAMODB_ALLOWED_TABLES to include this table.`,
+      },
+    ],
+    isError: true,
+  };
+}
+
 // =============================================================================
 // TOOL DEFINITIONS
 // =============================================================================
@@ -123,7 +185,11 @@ interface Tool {
   }>;
 }
 
-type ToolFactory = (server: Server, clientFactory: ClientFactory) => Tool;
+type ToolFactory = (
+  server: Server,
+  clientFactory: ClientFactory,
+  tableFilterConfig?: TableFilterConfig
+) => Tool;
 
 interface ToolDefinition {
   factory: ToolFactory;
@@ -185,13 +251,18 @@ function filterTools(tools: ToolDefinition[], config: ToolFilterConfig): ToolDef
 /**
  * Creates a function to register all tools with the server.
  */
-export function createRegisterTools(clientFactory: ClientFactory, filterConfig?: ToolFilterConfig) {
-  const config = filterConfig || parseToolFilterConfig();
+export function createRegisterTools(
+  clientFactory: ClientFactory,
+  toolFilterConfig?: ToolFilterConfig,
+  tableFilterConfig?: TableFilterConfig
+) {
+  const toolConfig = toolFilterConfig || parseToolFilterConfig();
+  const tableConfig = tableFilterConfig || parseTableFilterConfig();
 
   return (server: Server) => {
     // Filter tools and create instances
-    const filteredToolDefs = filterTools(ALL_TOOLS, config);
-    const tools = filteredToolDefs.map((def) => def.factory(server, clientFactory));
+    const filteredToolDefs = filterTools(ALL_TOOLS, toolConfig);
+    const tools = filteredToolDefs.map((def) => def.factory(server, clientFactory, tableConfig));
 
     // List available tools
     server.setRequestHandler(ListToolsRequestSchema, async () => {
@@ -230,4 +301,4 @@ export function registerTools(server: Server) {
 }
 
 // Re-export types
-export { ToolGroup, DynamoDBToolName, ToolFilterConfig } from './types.js';
+export { ToolGroup, DynamoDBToolName, ToolFilterConfig, TableFilterConfig } from './types.js';

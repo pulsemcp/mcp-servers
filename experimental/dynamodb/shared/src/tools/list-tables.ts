@@ -1,6 +1,8 @@
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { z } from 'zod';
 import { IDynamoDBClient } from '../dynamodb-client/dynamodb-client.js';
+import { TableFilterConfig } from '../types.js';
+import { filterAllowedTables } from '../tools.js';
 
 const PARAM_DESCRIPTIONS = {
   exclusiveStartTableName:
@@ -31,7 +33,13 @@ Returns a list of table names with optional pagination support.
 
 **Note:** Results are paginated. Use lastEvaluatedTableName with exclusiveStartTableName for large table lists.`;
 
-export function listTablesTool(_server: Server, clientFactory: () => IDynamoDBClient) {
+export function listTablesTool(
+  _server: Server,
+  clientFactory: () => IDynamoDBClient,
+  tableFilterConfig?: TableFilterConfig
+) {
+  const tableConfig = tableFilterConfig || {};
+
   return {
     name: 'dynamodb_list_tables' as const,
     description: TOOL_DESCRIPTION,
@@ -61,11 +69,21 @@ export function listTablesTool(_server: Server, clientFactory: () => IDynamoDBCl
           validatedArgs.limit
         );
 
+        // Filter tables based on allowed tables configuration
+        const filteredTableNames = filterAllowedTables(result.tableNames || [], tableConfig);
+
         return {
           content: [
             {
               type: 'text',
-              text: JSON.stringify(result, null, 2),
+              text: JSON.stringify(
+                {
+                  ...result,
+                  tableNames: filteredTableNames,
+                },
+                null,
+                2
+              ),
             },
           ],
         };

@@ -1,6 +1,8 @@
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { z } from 'zod';
 import { IDynamoDBClient } from '../dynamodb-client/dynamodb-client.js';
+import { TableFilterConfig } from '../types.js';
+import { isTableAllowed, createTableAccessDeniedError } from '../tools.js';
 
 const PARAM_DESCRIPTIONS = {
   requestItems:
@@ -34,7 +36,13 @@ Efficiently fetches up to 100 items across multiple tables using their primary k
 
 **Note:** Maximum 100 items per request. Unprocessed keys should be retried with exponential backoff.`;
 
-export function batchGetItemsTool(_server: Server, clientFactory: () => IDynamoDBClient) {
+export function batchGetItemsTool(
+  _server: Server,
+  clientFactory: () => IDynamoDBClient,
+  tableFilterConfig?: TableFilterConfig
+) {
+  const tableConfig = tableFilterConfig || {};
+
   return {
     name: 'dynamodb_batch_get_items' as const,
     description: TOOL_DESCRIPTION,
@@ -66,6 +74,15 @@ export function batchGetItemsTool(_server: Server, clientFactory: () => IDynamoD
     handler: async (args: unknown) => {
       try {
         const validatedArgs = BatchGetItemsSchema.parse(args);
+
+        // Check table access for all tables in the request
+        const tableNames = Object.keys(validatedArgs.requestItems);
+        for (const tableName of tableNames) {
+          if (!isTableAllowed(tableName, tableConfig)) {
+            return createTableAccessDeniedError(tableName);
+          }
+        }
+
         const client = clientFactory();
 
         const result = await client.batchGetItems({

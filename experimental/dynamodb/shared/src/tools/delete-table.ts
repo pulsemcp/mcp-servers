@@ -1,6 +1,8 @@
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { z } from 'zod';
 import { IDynamoDBClient } from '../dynamodb-client/dynamodb-client.js';
+import { TableFilterConfig } from '../types.js';
+import { isTableAllowed, createTableAccessDeniedError } from '../tools.js';
 
 const PARAM_DESCRIPTIONS = {
   tableName: 'Name of the table to delete',
@@ -28,7 +30,13 @@ const TOOL_DESCRIPTION = `Delete a DynamoDB table and all its data.
 - You cannot delete a table that is currently being created or updated.
 - Once deleted, data cannot be recovered unless you have backups.`;
 
-export function deleteTableTool(_server: Server, clientFactory: () => IDynamoDBClient) {
+export function deleteTableTool(
+  _server: Server,
+  clientFactory: () => IDynamoDBClient,
+  tableFilterConfig?: TableFilterConfig
+) {
+  const tableConfig = tableFilterConfig || {};
+
   return {
     name: 'dynamodb_delete_table' as const,
     description: TOOL_DESCRIPTION,
@@ -45,6 +53,12 @@ export function deleteTableTool(_server: Server, clientFactory: () => IDynamoDBC
     handler: async (args: unknown) => {
       try {
         const validatedArgs = DeleteTableSchema.parse(args);
+
+        // Check table access
+        if (!isTableAllowed(validatedArgs.tableName, tableConfig)) {
+          return createTableAccessDeniedError(validatedArgs.tableName);
+        }
+
         const client = clientFactory();
 
         const result = await client.deleteTable(validatedArgs.tableName);

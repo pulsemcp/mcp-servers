@@ -1,6 +1,8 @@
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { z } from 'zod';
 import { IDynamoDBClient } from '../dynamodb-client/dynamodb-client.js';
+import { TableFilterConfig } from '../types.js';
+import { isTableAllowed, createTableAccessDeniedError } from '../tools.js';
 
 const PARAM_DESCRIPTIONS = {
   tableName: 'Name of the DynamoDB table',
@@ -44,7 +46,13 @@ Writes the entire item. If an item with the same primary key exists, it will be 
 
 **Note:** PutItem replaces the entire item. Use UpdateItem to modify specific attributes without affecting others.`;
 
-export function putItemTool(_server: Server, clientFactory: () => IDynamoDBClient) {
+export function putItemTool(
+  _server: Server,
+  clientFactory: () => IDynamoDBClient,
+  tableFilterConfig?: TableFilterConfig
+) {
+  const tableConfig = tableFilterConfig || {};
+
   return {
     name: 'dynamodb_put_item' as const,
     description: TOOL_DESCRIPTION,
@@ -85,6 +93,12 @@ export function putItemTool(_server: Server, clientFactory: () => IDynamoDBClien
     handler: async (args: unknown) => {
       try {
         const validatedArgs = PutItemSchema.parse(args);
+
+        // Check table access
+        if (!isTableAllowed(validatedArgs.tableName, tableConfig)) {
+          return createTableAccessDeniedError(validatedArgs.tableName);
+        }
+
         const client = clientFactory();
 
         const result = await client.putItem(validatedArgs.tableName, validatedArgs.item, {

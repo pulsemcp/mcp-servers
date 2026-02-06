@@ -1,6 +1,8 @@
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { z } from 'zod';
 import { IDynamoDBClient } from '../dynamodb-client/dynamodb-client.js';
+import { TableFilterConfig } from '../types.js';
+import { isTableAllowed, createTableAccessDeniedError } from '../tools.js';
 
 const PARAM_DESCRIPTIONS = {
   tableName: 'Name of the DynamoDB table',
@@ -57,7 +59,13 @@ Modifies only the specified attributes, leaving other attributes unchanged. Crea
 
 **Note:** UpdateItem is atomic and supports conditional updates for optimistic locking.`;
 
-export function updateItemTool(_server: Server, clientFactory: () => IDynamoDBClient) {
+export function updateItemTool(
+  _server: Server,
+  clientFactory: () => IDynamoDBClient,
+  tableFilterConfig?: TableFilterConfig
+) {
+  const tableConfig = tableFilterConfig || {};
+
   return {
     name: 'dynamodb_update_item' as const,
     description: TOOL_DESCRIPTION,
@@ -102,6 +110,12 @@ export function updateItemTool(_server: Server, clientFactory: () => IDynamoDBCl
     handler: async (args: unknown) => {
       try {
         const validatedArgs = UpdateItemSchema.parse(args);
+
+        // Check table access
+        if (!isTableAllowed(validatedArgs.tableName, tableConfig)) {
+          return createTableAccessDeniedError(validatedArgs.tableName);
+        }
+
         const client = clientFactory();
 
         const result = await client.updateItem(validatedArgs.tableName, validatedArgs.key, {

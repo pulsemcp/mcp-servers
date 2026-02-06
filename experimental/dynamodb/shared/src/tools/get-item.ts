@@ -1,6 +1,8 @@
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { z } from 'zod';
 import { IDynamoDBClient } from '../dynamodb-client/dynamodb-client.js';
+import { TableFilterConfig } from '../types.js';
+import { isTableAllowed, createTableAccessDeniedError } from '../tools.js';
 
 const PARAM_DESCRIPTIONS = {
   tableName: 'Name of the DynamoDB table',
@@ -27,7 +29,13 @@ Performs a direct lookup using the item's primary key for fast, efficient reads.
 
 **Note:** This is the most efficient way to retrieve a single item. Use Query for multiple items with the same partition key.`;
 
-export function getItemTool(_server: Server, clientFactory: () => IDynamoDBClient) {
+export function getItemTool(
+  _server: Server,
+  clientFactory: () => IDynamoDBClient,
+  tableFilterConfig?: TableFilterConfig
+) {
+  const tableConfig = tableFilterConfig || {};
+
   return {
     name: 'dynamodb_get_item' as const,
     description: TOOL_DESCRIPTION,
@@ -49,6 +57,12 @@ export function getItemTool(_server: Server, clientFactory: () => IDynamoDBClien
     handler: async (args: unknown) => {
       try {
         const validatedArgs = GetItemSchema.parse(args);
+
+        // Check table access
+        if (!isTableAllowed(validatedArgs.tableName, tableConfig)) {
+          return createTableAccessDeniedError(validatedArgs.tableName);
+        }
+
         const client = clientFactory();
 
         const result = await client.getItem(validatedArgs.tableName, validatedArgs.key);

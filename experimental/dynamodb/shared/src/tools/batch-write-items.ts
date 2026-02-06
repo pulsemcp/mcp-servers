@@ -1,6 +1,8 @@
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { z } from 'zod';
 import { IDynamoDBClient } from '../dynamodb-client/dynamodb-client.js';
+import { TableFilterConfig } from '../types.js';
+import { isTableAllowed, createTableAccessDeniedError } from '../tools.js';
 
 const PARAM_DESCRIPTIONS = {
   requestItems:
@@ -31,7 +33,13 @@ Efficiently performs up to 25 put or delete operations across multiple tables.
 
 **Note:** Maximum 25 items per request, each item up to 400KB. BatchWriteItem does not support conditional writes or returning old values. Unprocessed items should be retried with exponential backoff.`;
 
-export function batchWriteItemsTool(_server: Server, clientFactory: () => IDynamoDBClient) {
+export function batchWriteItemsTool(
+  _server: Server,
+  clientFactory: () => IDynamoDBClient,
+  tableFilterConfig?: TableFilterConfig
+) {
+  const tableConfig = tableFilterConfig || {};
+
   return {
     name: 'dynamodb_batch_write_items' as const,
     description: TOOL_DESCRIPTION,
@@ -81,6 +89,15 @@ export function batchWriteItemsTool(_server: Server, clientFactory: () => IDynam
     handler: async (args: unknown) => {
       try {
         const validatedArgs = BatchWriteItemsSchema.parse(args);
+
+        // Check table access for all tables in the request
+        const tableNames = Object.keys(validatedArgs.requestItems);
+        for (const tableName of tableNames) {
+          if (!isTableAllowed(tableName, tableConfig)) {
+            return createTableAccessDeniedError(tableName);
+          }
+        }
+
         const client = clientFactory();
 
         const result = await client.batchWriteItems({

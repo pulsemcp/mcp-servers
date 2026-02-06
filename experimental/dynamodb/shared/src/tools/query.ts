@@ -1,6 +1,8 @@
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { z } from 'zod';
 import { IDynamoDBClient } from '../dynamodb-client/dynamodb-client.js';
+import { TableFilterConfig } from '../types.js';
+import { isTableAllowed, createTableAccessDeniedError } from '../tools.js';
 
 const PARAM_DESCRIPTIONS = {
   tableName: 'Name of the DynamoDB table',
@@ -58,7 +60,13 @@ Efficiently retrieves multiple items that share the same partition key, with opt
 
 **Note:** Query is more efficient than Scan. Always prefer Query when you know the partition key.`;
 
-export function queryTool(_server: Server, clientFactory: () => IDynamoDBClient) {
+export function queryTool(
+  _server: Server,
+  clientFactory: () => IDynamoDBClient,
+  tableFilterConfig?: TableFilterConfig
+) {
+  const tableConfig = tableFilterConfig || {};
+
   return {
     name: 'dynamodb_query' as const,
     description: TOOL_DESCRIPTION,
@@ -115,6 +123,12 @@ export function queryTool(_server: Server, clientFactory: () => IDynamoDBClient)
     handler: async (args: unknown) => {
       try {
         const validatedArgs = QuerySchema.parse(args);
+
+        // Check table access
+        if (!isTableAllowed(validatedArgs.tableName, tableConfig)) {
+          return createTableAccessDeniedError(validatedArgs.tableName);
+        }
+
         const client = clientFactory();
 
         const result = await client.query(validatedArgs.tableName, {

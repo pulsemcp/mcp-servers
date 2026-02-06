@@ -42,6 +42,7 @@ export function registerResources(server: Server, version: string) {
           DYNAMODB_ENABLED_TOOL_GROUPS: process.env.DYNAMODB_ENABLED_TOOL_GROUPS || 'all (default)',
           DYNAMODB_ENABLED_TOOLS: process.env.DYNAMODB_ENABLED_TOOLS || 'not set',
           DYNAMODB_DISABLED_TOOLS: process.env.DYNAMODB_DISABLED_TOOLS || 'not set',
+          DYNAMODB_ALLOWED_TABLES: process.env.DYNAMODB_ALLOWED_TABLES || 'all (default)',
           SKIP_HEALTH_CHECKS: process.env.SKIP_HEALTH_CHECKS || 'false',
         },
         state: {

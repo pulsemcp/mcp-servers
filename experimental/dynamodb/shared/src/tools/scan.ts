@@ -1,6 +1,8 @@
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { z } from 'zod';
 import { IDynamoDBClient } from '../dynamodb-client/dynamodb-client.js';
+import { TableFilterConfig } from '../types.js';
+import { isTableAllowed, createTableAccessDeniedError } from '../tools.js';
 
 const PARAM_DESCRIPTIONS = {
   tableName: 'Name of the DynamoDB table',
@@ -52,7 +54,13 @@ Reads every item in the table and applies optional filters. Use with caution on 
 
 **Warning:** Scan reads every item in the table, consuming significant read capacity. Use Query when possible. For large tables, always use pagination with limit and exclusiveStartKey.`;
 
-export function scanTool(_server: Server, clientFactory: () => IDynamoDBClient) {
+export function scanTool(
+  _server: Server,
+  clientFactory: () => IDynamoDBClient,
+  tableFilterConfig?: TableFilterConfig
+) {
+  const tableConfig = tableFilterConfig || {};
+
   return {
     name: 'dynamodb_scan' as const,
     description: TOOL_DESCRIPTION,
@@ -97,6 +105,12 @@ export function scanTool(_server: Server, clientFactory: () => IDynamoDBClient) 
     handler: async (args: unknown) => {
       try {
         const validatedArgs = ScanSchema.parse(args);
+
+        // Check table access
+        if (!isTableAllowed(validatedArgs.tableName, tableConfig)) {
+          return createTableAccessDeniedError(validatedArgs.tableName);
+        }
+
         const client = clientFactory();
 
         const result = await client.scan(validatedArgs.tableName, {

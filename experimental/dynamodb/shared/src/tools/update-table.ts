@@ -1,6 +1,8 @@
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { z } from 'zod';
 import { IDynamoDBClient } from '../dynamodb-client/dynamodb-client.js';
+import { TableFilterConfig } from '../types.js';
+import { isTableAllowed, createTableAccessDeniedError } from '../tools.js';
 
 const PARAM_DESCRIPTIONS = {
   tableName: 'Name of the table to update',
@@ -48,7 +50,13 @@ Modify table billing mode and provisioned capacity settings.
 - You can only switch billing modes once per 24 hours.
 - GSI updates require separate globalSecondaryIndexUpdates (not supported in this simplified tool).`;
 
-export function updateTableTool(_server: Server, clientFactory: () => IDynamoDBClient) {
+export function updateTableTool(
+  _server: Server,
+  clientFactory: () => IDynamoDBClient,
+  tableFilterConfig?: TableFilterConfig
+) {
+  const tableConfig = tableFilterConfig || {};
+
   return {
     name: 'dynamodb_update_table' as const,
     description: TOOL_DESCRIPTION,
@@ -79,6 +87,12 @@ export function updateTableTool(_server: Server, clientFactory: () => IDynamoDBC
     handler: async (args: unknown) => {
       try {
         const validatedArgs = UpdateTableSchema.parse(args);
+
+        // Check table access
+        if (!isTableAllowed(validatedArgs.tableName, tableConfig)) {
+          return createTableAccessDeniedError(validatedArgs.tableName);
+        }
+
         const client = clientFactory();
 
         // At least one update parameter must be provided
