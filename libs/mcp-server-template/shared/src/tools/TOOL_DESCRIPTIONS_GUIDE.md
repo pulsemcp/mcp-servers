@@ -6,6 +6,24 @@ This guide provides comprehensive instructions for writing effective tool descri
 
 Tool descriptions in MCP serve as the primary documentation that users see when listing available tools. They should be comprehensive, clear, and provide all necessary context for effective tool usage.
 
+## Tool Naming Conventions
+
+### Keep Tool Names Short (No Server Prefixes)
+
+**Don't** prefix tool names with the server name (e.g., `dynamodb_get_item`, `appsignal_list_apps`).
+
+**Do** use short, descriptive names (e.g., `get_item`, `list_apps`).
+
+**Why?** Most MCP clients automatically prefix tool names with the server name when displaying them to users. For example, a tool named `get_item` in a DynamoDB server will appear as `dynamodb:get_item` or `dynamodb.get_item` to users. Adding your own prefix creates redundancy like `dynamodb:dynamodb_get_item`.
+
+### Naming Best Practices
+
+- Use `snake_case` for tool names
+- Start with a verb describing the action: `get_`, `list_`, `create_`, `update_`, `delete_`, `search_`, `query_`
+- Be specific but concise: `query_items` instead of just `query`
+- Avoid abbreviations unless universally understood
+- Keep names under 25 characters when possible
+
 ## Anatomy of a Good Tool Description
 
 A complete tool description should include:
