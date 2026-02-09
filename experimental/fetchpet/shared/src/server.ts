@@ -84,6 +84,9 @@ export class FetchPetClient implements IFetchPetClient {
   // Store pending claim data for submission confirmation
   private pendingClaimData: ClaimSubmissionData | null = null;
   private pendingConfirmationToken: string | null = null;
+  private pendingTokenCreatedAt: number | null = null;
+  // Token expires after 2 minutes (browser modal may close after this)
+  private static readonly TOKEN_EXPIRY_MS = 120_000;
 
   constructor(config: FetchPetConfig) {
     this.config = config;
@@ -432,6 +435,7 @@ The user MUST explicitly confirm they want to submit this claim before calling s
     if (validationErrors.length === 0) {
       this.pendingClaimData = claimData;
       this.pendingConfirmationToken = confirmationToken;
+      this.pendingTokenCreatedAt = Date.now();
     }
 
     return claimData;
@@ -445,12 +449,26 @@ The user MUST explicitly confirm they want to submit this claim before calling s
     // receiving user confirmation.
     const page = await this.ensureBrowser();
 
-    // Verify confirmation token matches
+    // Verify confirmation token matches and hasn't expired
     if (!this.pendingConfirmationToken || this.pendingConfirmationToken !== confirmationToken) {
       return {
         success: false,
         message:
           'Invalid or expired confirmation token. Please call prepare_claim_to_submit first to get a new token.',
+      };
+    }
+
+    if (
+      this.pendingTokenCreatedAt &&
+      Date.now() - this.pendingTokenCreatedAt > FetchPetClient.TOKEN_EXPIRY_MS
+    ) {
+      this.pendingClaimData = null;
+      this.pendingConfirmationToken = null;
+      this.pendingTokenCreatedAt = null;
+      return {
+        success: false,
+        message:
+          'Confirmation token has expired. The claim form may no longer be open. Please call prepare_claim_to_submit again.',
       };
     }
 
@@ -495,6 +513,7 @@ The user MUST explicitly confirm they want to submit this claim before calling s
       // Clear pending data
       this.pendingClaimData = null;
       this.pendingConfirmationToken = null;
+      this.pendingTokenCreatedAt = null;
 
       return {
         success: true,
@@ -526,6 +545,7 @@ The user MUST explicitly confirm they want to submit this claim before calling s
       // Clear pending data
       this.pendingClaimData = null;
       this.pendingConfirmationToken = null;
+      this.pendingTokenCreatedAt = null;
 
       return {
         success: true,
@@ -728,19 +748,22 @@ The user MUST explicitly confirm they want to submit this claim before calling s
             }
           }
         }
-        // Fallback: click the first Details button
-        const first = document.querySelector('.closed-claim-details-popup');
-        if (first instanceof HTMLElement) {
-          first.click();
-          return true;
-        }
         return false;
       }, claimNumber);
 
-      if (clicked) {
-        await page.waitForSelector('.MuiDialog-root.generic-dialog', { timeout: 5000 });
-        await page.waitForTimeout(1000);
+      if (!clicked) {
+        return {
+          claimId,
+          petName: '',
+          claimDate: '',
+          claimAmount: '',
+          status: '',
+          error: `Could not find historical claim ${claimId} on the claims page`,
+        };
       }
+
+      await page.waitForSelector('.MuiDialog-root.generic-dialog', { timeout: 5000 });
+      await page.waitForTimeout(1000);
     } else {
       // For active claims, navigate to active tab and click "See summary"
       await page.goto(`${BASE_URL}/claims/active`, { waitUntil: 'domcontentloaded' });
@@ -773,14 +796,15 @@ The user MUST explicitly confirm they want to submit this claim before calling s
         }
       }
 
-      // Fallback: click the first "See summary" link
       if (!foundModal) {
-        const firstSeeSummary = await page.$('.details-link');
-        if (firstSeeSummary) {
-          await firstSeeSummary.click();
-          await page.waitForSelector('.MuiDialog-root.generic-dialog', { timeout: 5000 });
-          await page.waitForTimeout(1000);
-        }
+        return {
+          claimId,
+          petName: '',
+          claimDate: '',
+          claimAmount: '',
+          status: '',
+          error: `Could not find active claim matching "${claimId}" on the claims page`,
+        };
       }
     }
 

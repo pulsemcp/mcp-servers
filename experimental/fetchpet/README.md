@@ -6,8 +6,7 @@ MCP server for Fetch Pet insurance claims management using Playwright automation
 
 - **Prepare Claims** - Fill out claim forms with validation (without submitting)
 - **Submit Claims** - Actually submit prepared claims with explicit user confirmation
-- **View Active Claims** - See all pending/processing claims
-- **View Historical Claims** - See all completed/approved/denied claims
+- **View All Claims** - See all claims (active and historical) in a single call
 - **Claim Details** - Get detailed information including EOB and invoice downloads
 
 ## Tools
@@ -16,8 +15,7 @@ MCP server for Fetch Pet insurance claims management using Playwright automation
 | ------------------------- | ------------------------------------------------------------------- |
 | `prepare_claim_to_submit` | Prepare a claim form for submission (validates but does NOT submit) |
 | `submit_claim`            | Submit a prepared claim (requires user confirmation token)          |
-| `get_active_claims`       | Get list of pending/processing claims                               |
-| `get_historical_claims`   | Get list of completed/approved/denied claims                        |
+| `get_claims`              | Get all claims (both active/pending and historical/completed)       |
 | `get_claim_details`       | Get detailed claim info including EOB and invoice downloads         |
 
 ## Setup

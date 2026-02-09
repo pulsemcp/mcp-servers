@@ -33,6 +33,7 @@ export interface ClaimDetails extends Claim {
   notes?: string;
   submittedDate?: string;
   processedDate?: string;
+  error?: string;
 }
 
 /**

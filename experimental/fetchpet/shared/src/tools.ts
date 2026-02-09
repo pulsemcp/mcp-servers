@@ -347,6 +347,18 @@ export function createRegisterTools(
           const fetchPetClient = await getClient();
           const details = await fetchPetClient.getClaimDetails(validated.claim_id);
 
+          if (details.error) {
+            return {
+              content: [
+                {
+                  type: 'text',
+                  text: details.error,
+                },
+              ],
+              isError: true,
+            };
+          }
+
           const lines = [
             `**Claim Details: ${details.claimId}**`,
             '',

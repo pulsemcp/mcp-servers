@@ -33,6 +33,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Replace non-null assertions with explicit null checks in `getReadyClient`
 - Support multi-word pet names in active claim detail popup extraction
 - Add `policyNumber` field to `ClaimDetails` interface and tool output
+- Add confirmation token expiry (2 minutes) to prevent stale form submissions
+- Return error instead of silently falling back to first claim when `getClaimDetails` cannot find the requested claim ID
+- Update README.md to reflect consolidated `get_claims` tool
 
 ## [0.1.0] - 2026-02-08
 
