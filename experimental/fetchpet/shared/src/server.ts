@@ -187,7 +187,7 @@ export class FetchPetClient implements IFetchPetClient {
 
     // Navigate to login page
     await this.page.goto(BASE_URL, { waitUntil: 'domcontentloaded' });
-    await this.page.waitForLoadState('networkidle');
+    await this.page.waitForTimeout(3000);
 
     // Fill in login credentials - Fetch Pet uses a React app
     // Try to find email input
@@ -212,19 +212,30 @@ export class FetchPetClient implements IFetchPetClient {
       await this.page.fill('input[placeholder*="password" i]', this.config.password);
     }
 
-    // Click sign in button
+    // Click sign in button and wait for navigation simultaneously
+    // The login click triggers a full page navigation that destroys the execution context,
+    // so we must use Promise.all to avoid "Execution context was destroyed" errors.
     const signInButton = await this.page.$(
       'button[type="submit"], button:has-text("Sign In"), button:has-text("Log In"), button:has-text("Login")'
     );
     if (signInButton) {
-      await signInButton.click();
+      await Promise.all([
+        this.page.waitForURL((url) => !url.toString().includes('login'), {
+          timeout: this.config.timeout,
+        }),
+        signInButton.click(),
+      ]);
     } else {
-      await this.page.click('button:has-text("Sign"), button:has-text("Log")');
+      await Promise.all([
+        this.page.waitForURL((url) => !url.toString().includes('login'), {
+          timeout: this.config.timeout,
+        }),
+        this.page.click('button:has-text("Sign"), button:has-text("Log")'),
+      ]);
     }
 
-    // Wait for navigation to complete (should redirect away from login)
-    await this.page.waitForLoadState('networkidle');
-    await this.page.waitForTimeout(2000);
+    // Wait for SPA to settle after redirect
+    await this.page.waitForTimeout(3000);
 
     // Verify login was successful by checking URL or presence of dashboard elements
     const currentUrl = this.page.url();
@@ -255,7 +266,13 @@ export class FetchPetClient implements IFetchPetClient {
 
     // Navigate to claims page and click "Submit a claim" button
     await page.goto(`${BASE_URL}/claims/active`, { waitUntil: 'domcontentloaded' });
-    await page.waitForLoadState('networkidle');
+    // Wait for the page to render (claim cards or the submit button)
+    await page
+      .waitForSelector('.claim-card-data-list, button:has-text("Submit a claim"), .filled-btn', {
+        timeout: 10000,
+      })
+      .catch(() => {});
+    await page.waitForTimeout(2000);
 
     // Look for "Submit a claim" button to open the modal (it's a teal/filled button)
     const submitClaimButton = await page.$(
@@ -457,7 +474,7 @@ The user MUST explicitly confirm they want to submit this claim before calling s
     }
 
     await submitButton.click();
-    await page.waitForLoadState('networkidle');
+    await page.waitForTimeout(3000);
     await page.waitForTimeout(2000);
 
     // Check for success confirmation
@@ -526,7 +543,13 @@ The user MUST explicitly confirm they want to submit this claim before calling s
     const page = await this.ensureBrowser();
 
     await page.goto(`${BASE_URL}/claims/active`, { waitUntil: 'domcontentloaded' });
-    await page.waitForLoadState('networkidle');
+    // Wait for claim cards or a "no claims" indicator to appear
+    await page
+      .waitForSelector('.claim-card-data-list, .no-claims, .claims-empty', { timeout: 10000 })
+      .catch(() => {
+        // If neither appears, the page may still be loading or truly has no claims
+      });
+    await page.waitForTimeout(2000);
 
     // Make sure we're on the Active tab
     const activeTab = await page.$('a[href="/claims/active"], a:has-text("Active")');
@@ -536,7 +559,10 @@ The user MUST explicitly confirm they want to submit this claim before calling s
       );
       if (!isActive) {
         await activeTab.click();
-        await page.waitForLoadState('networkidle');
+        await page
+          .waitForSelector('.claim-card-data-list, .no-claims, .claims-empty', { timeout: 10000 })
+          .catch(() => {});
+        await page.waitForTimeout(2000);
       }
     }
 
@@ -548,153 +574,313 @@ The user MUST explicitly confirm they want to submit this claim before calling s
 
     // Navigate directly to the closed/history claims page
     await page.goto(`${BASE_URL}/claims/closed`, { waitUntil: 'domcontentloaded' });
-    await page.waitForLoadState('networkidle');
+    // Wait for history claim elements or empty state
+    await page
+      .waitForSelector('.claims-coverage-container, .claim-number-closed, .no-claims', {
+        timeout: 10000,
+      })
+      .catch(() => {});
+    await page.waitForTimeout(2000);
 
-    return this.extractClaimsFromPage(page, 'approved');
+    // History tab uses a different table-like layout with different CSS classes
+    // than the Active tab's card layout. Extract using history-specific selectors.
+    return this.extractHistoricalClaimsFromPage(page);
+  }
+
+  /**
+   * Extract claims from the History tab's table layout.
+   * History uses .claim-number-closed, .closed-claim-price, .claims-history-title
+   * which is completely different from the Active tab's .claim-card-data-list structure.
+   */
+  private async extractHistoricalClaimsFromPage(page: import('playwright').Page): Promise<Claim[]> {
+    return page.evaluate(() => {
+      const claims: Array<{
+        claimId: string;
+        petName: string;
+        claimDate: string;
+        claimAmount: string;
+        status: string;
+        description?: string;
+      }> = [];
+
+      // Each pet has a container with .claims-history-title for the pet name
+      // followed by rows of claims with .claim-number-closed and .closed-claim-price
+      const containers = Array.from(document.querySelectorAll('.claims-coverage-container'));
+
+      for (const container of containers) {
+        const petNameEl = container.querySelector('.claims-history-title');
+        const petName = petNameEl?.textContent?.trim() || 'Unknown Pet';
+
+        // Each claim row has .claim-number-closed elements (claim ID and date)
+        // and .closed-claim-price for the amount
+        const claimNumbers = container.querySelectorAll('.claim-number-closed');
+        const claimPrices = container.querySelectorAll('.closed-claim-price');
+
+        // Claim numbers come in pairs: [claimId, date, claimId, date, ...]
+        for (let i = 0; i < claimNumbers.length; i += 2) {
+          const claimIdText = claimNumbers[i]?.textContent?.trim() || '';
+          const dateText = claimNumbers[i + 1]?.textContent?.trim() || '';
+          const priceIndex = Math.floor(i / 2);
+          const amount = claimPrices[priceIndex]?.textContent?.trim() || '';
+
+          // Clean claim ID (remove # prefix)
+          const cleanClaimId = claimIdText.replace('#', '');
+
+          claims.push({
+            claimId: cleanClaimId || `history-${priceIndex}`,
+            petName,
+            claimDate: dateText,
+            claimAmount: amount,
+            status: 'closed',
+          });
+        }
+      }
+
+      return claims;
+    });
   }
 
   async getClaimDetails(claimId: string): Promise<ClaimDetails> {
     const page = await this.ensureBrowser();
 
-    await page.goto(`${BASE_URL}/claims/active`, { waitUntil: 'domcontentloaded' });
-    await page.waitForLoadState('networkidle');
+    // Determine if this is a history claim (numeric ID like "006207086") or active claim
+    const isHistoryClaim = /^\d+$/.test(claimId);
 
-    let foundModal = false;
+    if (isHistoryClaim) {
+      // For history claims, navigate to history tab and click the matching "Details" button
+      await page.goto(`${BASE_URL}/claims/closed`, { waitUntil: 'domcontentloaded' });
+      await page
+        .waitForSelector('.claims-coverage-container, .claim-number-closed', { timeout: 10000 })
+        .catch(() => {});
+      await page.waitForTimeout(2000);
 
-    // Try to match claim cards by content derived from the generated claimId
-    // Generated IDs look like: "claim-0-nova-dental cleaning"
-    // Strip the "claim-N-" prefix to get the meaningful search terms
-    const searchTerms = claimId
-      .replace(/^claim-\d+-/, '')
-      .replace(/-/g, ' ')
-      .trim();
+      // Find the claim row matching this ID and click its Details button
+      const claimNumber = `#${claimId}`;
+      const clicked = await page.evaluate((targetId) => {
+        const claimNums = document.querySelectorAll('.claim-number-closed');
+        for (let i = 0; i < claimNums.length; i++) {
+          if (claimNums[i].textContent?.trim() === targetId) {
+            // The Details button is in the sibling .right-box of the parent flex container
+            const row = claimNums[i].closest('.d-flex.align-items-center');
+            const detailsBtn = row?.querySelector('.closed-claim-details-popup');
+            if (detailsBtn instanceof HTMLElement) {
+              detailsBtn.click();
+              return true;
+            }
+          }
+        }
+        // Fallback: click the first Details button
+        const first = document.querySelector('.closed-claim-details-popup');
+        if (first instanceof HTMLElement) {
+          first.click();
+          return true;
+        }
+        return false;
+      }, claimNumber);
 
-    const claimCards = await page.$$('.claim-card-data-list');
+      if (clicked) {
+        await page.waitForSelector('.MuiDialog-root.generic-dialog', { timeout: 5000 });
+        await page.waitForTimeout(1000);
+      }
+    } else {
+      // For active claims, navigate to active tab and click "See summary"
+      await page.goto(`${BASE_URL}/claims/active`, { waitUntil: 'domcontentloaded' });
+      await page.waitForSelector('.claim-card-data-list', { timeout: 10000 }).catch(() => {});
+      await page.waitForTimeout(2000);
 
-    if (searchTerms && searchTerms !== 'unknown') {
-      for (const card of claimCards) {
-        const cardText = ((await card.textContent()) || '').toLowerCase();
-        const terms = searchTerms.toLowerCase();
+      let foundModal = false;
 
-        if (cardText.includes(terms)) {
-          const seeSummaryLink = await card.$('.details-link');
-          if (seeSummaryLink) {
-            await seeSummaryLink.click();
-            await page.waitForTimeout(2000);
-            foundModal = true;
-            break;
+      // Try to match by content from generated claimId (e.g. "claim-0-nova-lameness")
+      const searchTerms = claimId
+        .replace(/^claim-\d+-/, '')
+        .replace(/-/g, ' ')
+        .trim();
+
+      const claimCards = await page.$$('.claim-card-data-list');
+
+      if (searchTerms && searchTerms !== 'unknown') {
+        for (const card of claimCards) {
+          const cardText = ((await card.textContent()) || '').toLowerCase();
+          if (cardText.includes(searchTerms.toLowerCase())) {
+            const seeSummaryLink = await card.$('.details-link');
+            if (seeSummaryLink) {
+              await seeSummaryLink.click();
+              await page.waitForSelector('.MuiDialog-root.generic-dialog', { timeout: 5000 });
+              await page.waitForTimeout(1000);
+              foundModal = true;
+              break;
+            }
           }
         }
       }
-    }
 
-    // If no specific match, open the first claim's summary
-    if (!foundModal) {
-      const firstSeeSummary = await page.$('.details-link');
-      if (firstSeeSummary) {
-        await firstSeeSummary.click();
-        await page.waitForTimeout(2000);
-        foundModal = true;
-      }
-    }
-
-    // If still not found, try History tab
-    if (!foundModal) {
-      const historyTab = await page.$('a[href="/claims/closed"], a:has-text("History")');
-      if (historyTab) {
-        await historyTab.click();
-        await page.waitForLoadState('networkidle');
-
+      // Fallback: click the first "See summary" link
+      if (!foundModal) {
         const firstSeeSummary = await page.$('.details-link');
         if (firstSeeSummary) {
           await firstSeeSummary.click();
-          await page.waitForTimeout(2000);
-          foundModal = true;
+          await page.waitForSelector('.MuiDialog-root.generic-dialog', { timeout: 5000 });
+          await page.waitForTimeout(1000);
         }
       }
     }
 
-    // Extract claim details from the modal
+    // Extract claim details from the MuiDialog popup
+    // Both active and history popups use MuiDialog-root.generic-dialog
     const details = await page.evaluate(() => {
-      const modal = document.querySelector(
-        '.claim-details-popup-container, .claim-details-popup, [role="dialog"]'
-      );
-      const container = modal || document.body;
-      const text = container.textContent || '';
+      const dialog = document.querySelector('.MuiDialog-root.generic-dialog .MuiDialog-paper');
+      if (!dialog) return null;
 
+      const text = dialog.textContent || '';
+
+      // Claim ID: either "CLAIM #006207086" (history) or "#006271662" (active)
       const claimIdMatch = text.match(/#(\d+)/);
-      const petMatch = text.match(/(\w+)'s claim/i);
+
+      // Pet name: use DOM selectors for reliable extraction
+      // Active popup: "Nova's claim" in .fw-700 title
+      // History popup: <span class="claim-id-number" title="Nova">Nova</span> under Pet label
+      let petName: string | undefined;
+      const petIdEl = dialog.querySelector('.claim-part');
+      if (petIdEl?.textContent?.trim() === 'Pet') {
+        // History popup: pet name is in the next sibling's .claim-id-number
+        const petValueEl = petIdEl.parentElement?.querySelector('.claim-id-number');
+        petName = petValueEl?.textContent?.trim() || petValueEl?.getAttribute('title') || undefined;
+      }
+      if (!petName) {
+        // Active popup: "Nova's claim" pattern
+        const petMatch = text.match(/(\w+)'s claim/i);
+        petName = petMatch?.[1];
+      }
+
+      // Status: "Status: Approved" (active) or "approved" in message (history)
+      const statusEl = dialog.querySelector('.status-text.status');
+      let status = statusEl?.textContent?.trim().toLowerCase();
+      if (!status) {
+        if (text.includes('approved')) status = 'approved';
+        else if (text.includes('denied')) status = 'denied';
+        else status = 'unknown';
+      }
+
+      // Reason for visit (active popup only)
+      const reasonMatch = text.match(/Reason for visit\s*([^\n]+)/i);
+
+      // Date: "Date of visit 01/19/2026" (active) or "Invoice date 12/31/2025" (history)
       const dateMatch =
         text.match(/Date of visit\s*(\d{1,2}\/\d{1,2}\/\d{4})/i) ||
+        text.match(/Invoice date\s*(\d{1,2}\/\d{1,2}\/\d{4})/i) ||
         text.match(/(\d{1,2}\/\d{1,2}\/\d{4})/);
-      const payoutMatch = text.match(/Payout\s*\$?([\d,.]+)/i);
-      const statusMatch = text.match(/Status:\s*(\w+)/i);
-      const reasonMatch = text.match(/Reason for visit\s*([^\n]+)/i);
+
+      // Amount: "Payout $94.88" (active) or "Invoice amount $876.71" (history)
+      const payoutEl = dialog.querySelector('.claim-invoice-details.fw-700');
+      let claimAmount = payoutEl?.textContent?.trim();
+      if (!claimAmount) {
+        const amountEl = dialog.querySelector('.claim-value');
+        claimAmount = amountEl?.textContent?.trim();
+      }
+      if (!claimAmount) {
+        const amountMatch = text.match(/\$[\d,.]+/);
+        claimAmount = amountMatch?.[0];
+      }
+
+      // Policy number (history popup)
+      const policyMatch = text.match(/#(WAG\w+-\d+)/);
+
+      // List all document types available
+      const docElements = Array.from(dialog.querySelectorAll('.claims-record-description'));
+      const documents: string[] = [];
+      for (const doc of docElements) {
+        const docName = doc.textContent?.trim();
+        if (docName) documents.push(docName);
+      }
 
       return {
         claimId: claimIdMatch?.[1] || 'unknown',
-        petName: petMatch?.[1] || 'Unknown Pet',
+        petName: petName || 'Unknown Pet',
         claimDate: dateMatch?.[1] || '',
-        claimAmount: payoutMatch ? `$${payoutMatch[1]}` : '',
-        status: statusMatch?.[1]?.toLowerCase() || 'unknown',
+        claimAmount: claimAmount || '',
+        status,
         description: reasonMatch?.[1]?.trim(),
-        providerName: undefined,
-        reimbursementAmount: payoutMatch ? `$${payoutMatch[1]}` : undefined,
-        deductible: undefined,
-        copay: undefined,
+        policyNumber: policyMatch ? `#${policyMatch[1]}` : undefined,
+        documents,
       };
     });
 
-    // Look for and download EOB if available
-    const eobLink = await page.$('.claim-details-popup div:has-text("Explanation of Benefits")');
+    if (!details) {
+      return {
+        claimId,
+        petName: 'Unknown Pet',
+        claimDate: '',
+        claimAmount: '',
+        status: 'unknown',
+      };
+    }
+
+    // Try to download EOB and Invoice documents from the popup
+    // Documents are listed with .claims-record-description text inside clickable containers
     let localEobPath: string | undefined;
     let eobSummary: string | undefined;
+    let localInvoicePath: string | undefined;
+    let invoiceSummary: string | undefined;
 
-    if (eobLink) {
+    const dialogSelector = '.MuiDialog-root.generic-dialog .MuiDialog-paper';
+
+    // Download EOB if listed in documents
+    if (details.documents.includes('Explanation of Benefits')) {
       try {
-        const downloadPromise = page.waitForEvent('download', { timeout: 10000 });
-        await eobLink.click();
-        const download = await downloadPromise;
+        const eobClickable = await page.$(
+          `${dialogSelector} .claims-record-description:text("Explanation of Benefits")`
+        );
+        if (eobClickable) {
+          // Click the parent container which is the clickable element
+          const parent = await eobClickable.evaluateHandle((el) => el.closest('.cursor-pointer'));
+          if (parent) {
+            const downloadPromise = page.waitForEvent('download', { timeout: 10000 });
+            await (parent as import('playwright').ElementHandle<Element>).click();
+            const download = await downloadPromise;
 
-        const safeClaimId = details.claimId.replace(/[^a-zA-Z0-9]/g, '');
-        localEobPath = join(this.config.downloadDir, `eob_${safeClaimId}_${Date.now()}.pdf`);
-        await download.saveAs(localEobPath);
-
-        eobSummary = `EOB downloaded to: ${localEobPath}`;
+            const safeClaimId = details.claimId.replace(/[^a-zA-Z0-9]/g, '');
+            localEobPath = join(this.config.downloadDir, `eob_${safeClaimId}_${Date.now()}.pdf`);
+            await download.saveAs(localEobPath);
+            eobSummary = `EOB downloaded to: ${localEobPath}`;
+          }
+        }
       } catch {
         eobSummary = 'EOB link found but download failed';
       }
     }
 
-    // Look for and download invoice if available
-    const invoiceLink = await page.$(
-      '.claim-details-popup div:has-text("Invoice"):not(:has-text("Explanation"))'
-    );
-    let localInvoicePath: string | undefined;
-    let invoiceSummary: string | undefined;
-
-    if (invoiceLink) {
+    // Download first Invoice if listed in documents
+    if (details.documents.includes('Invoice')) {
       try {
-        const downloadPromise = page.waitForEvent('download', { timeout: 10000 });
-        await invoiceLink.click();
-        const download = await downloadPromise;
-
-        const safeClaimId = details.claimId.replace(/[^a-zA-Z0-9]/g, '');
-        localInvoicePath = join(
-          this.config.downloadDir,
-          `invoice_${safeClaimId}_${Date.now()}.pdf`
+        const invoiceElements = await page.$$(
+          `${dialogSelector} .claims-record-description:text("Invoice")`
         );
-        await download.saveAs(localInvoicePath);
+        // Take the first Invoice element (skip "Explanation of Benefits" which also has a similar structure)
+        const invoiceEl = invoiceElements[0];
+        if (invoiceEl) {
+          const parent = await invoiceEl.evaluateHandle((el) => el.closest('.cursor-pointer'));
+          if (parent) {
+            const downloadPromise = page.waitForEvent('download', { timeout: 10000 });
+            await (parent as import('playwright').ElementHandle<Element>).click();
+            const download = await downloadPromise;
 
-        invoiceSummary = `Invoice downloaded to: ${localInvoicePath}`;
+            const safeClaimId = details.claimId.replace(/[^a-zA-Z0-9]/g, '');
+            localInvoicePath = join(
+              this.config.downloadDir,
+              `invoice_${safeClaimId}_${Date.now()}.pdf`
+            );
+            await download.saveAs(localInvoicePath);
+            invoiceSummary = `Invoice downloaded to: ${localInvoicePath}`;
+          }
+        }
       } catch {
         invoiceSummary = 'Invoice link found but download failed';
       }
     }
 
-    // Close the modal
+    // Close the dialog
     const closeButton = await page.$(
-      '.claim-details-popup img[alt="img"], .claim-details-popup [class*="close"]'
+      `${dialogSelector} .simple-dialog-close-icon, ${dialogSelector} img[alt="img"], ${dialogSelector} img[alt="Close"]`
     );
     if (closeButton) {
       await closeButton.click();
@@ -702,7 +888,12 @@ The user MUST explicitly confirm they want to submit this claim before calling s
     }
 
     return {
-      ...details,
+      claimId: details.claimId,
+      petName: details.petName,
+      claimDate: details.claimDate,
+      claimAmount: details.claimAmount,
+      status: details.status,
+      description: details.description,
       eobSummary,
       invoiceSummary,
       localEobPath,

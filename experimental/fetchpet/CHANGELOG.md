@@ -12,12 +12,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Wire up configurable `TIMEOUT` env var via `page.setDefaultTimeout()`
 - Fix `getClaimDetails` matching logic that always matched the first claim card
 - Remove unused `eobFileUrl`/`invoiceFileUrl` variables from `ClaimDetails` interface
-- Replace many hardcoded `waitForTimeout` calls with `waitForLoadState('networkidle')`
+- Replace `waitForLoadState('networkidle')` with `waitForSelector` + `waitForTimeout` to prevent SPA hangs
 - Navigate `getHistoricalClaims` directly to `/claims/closed` instead of `/claims/active`
 - Add early return in `prepareClaimToSubmit` when submit button is not found
 - Use more specific form error selectors to avoid false positives
 - Include index in generated claim IDs for uniqueness
 - Extract shared `extractClaimsFromPage` helper to reduce code duplication
+- Add `extractHistoricalClaimsFromPage` for history tab's different DOM structure
+- Fix pet name extraction in `getClaimDetails` using DOM selectors instead of unreliable regex
+- Fix login flow to use `Promise.all([waitForURL, click])` to avoid "Execution context destroyed" errors
 - Update Chrome user agent string to recent version (131)
 - Document pet selection limitation for multi-pet accounts
 
