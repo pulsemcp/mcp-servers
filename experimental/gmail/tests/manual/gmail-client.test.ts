@@ -311,6 +311,91 @@ describe('Gmail Client - Manual Tests', () => {
     });
   });
 
+  describe('getAttachment', () => {
+    it('should download attachments from an email with attachments', async () => {
+      // Search for emails with attachments
+      const listResult = await client.listMessages({
+        q: 'has:attachment',
+        maxResults: 5,
+      });
+
+      if (listResult.messages.length === 0) {
+        console.warn('No emails with attachments found - skipping attachment test');
+        return;
+      }
+
+      // Find an email that actually has downloadable attachments
+      let foundAttachment = false;
+      for (const msg of listResult.messages) {
+        const message = await client.getMessage(msg.id, { format: 'full' });
+
+        // Recursively find attachments in parts
+        const findAttachments = (
+          parts: Array<{
+            filename?: string;
+            mimeType: string;
+            body?: { attachmentId?: string; size: number };
+            parts?: typeof parts;
+          }>
+        ): Array<{ filename: string; attachmentId: string; mimeType: string; size: number }> => {
+          const result: Array<{
+            filename: string;
+            attachmentId: string;
+            mimeType: string;
+            size: number;
+          }> = [];
+          for (const part of parts) {
+            if (part.filename && part.body?.attachmentId) {
+              result.push({
+                filename: part.filename,
+                attachmentId: part.body.attachmentId,
+                mimeType: part.mimeType,
+                size: part.body.size,
+              });
+            }
+            if (part.parts) {
+              result.push(...findAttachments(part.parts));
+            }
+          }
+          return result;
+        };
+
+        const attachments = message.payload?.parts ? findAttachments(message.payload.parts) : [];
+
+        if (attachments.length > 0) {
+          const att = attachments[0];
+          console.log(
+            `Found attachment: "${att.filename}" (${att.mimeType}, ${Math.round(att.size / 1024)} KB) on message ${msg.id}`
+          );
+
+          // Download the attachment
+          const data = await client.getAttachment(msg.id, att.attachmentId);
+
+          expect(data).toHaveProperty('data');
+          expect(data).toHaveProperty('size');
+          expect(data.data.length).toBeGreaterThan(0);
+          expect(data.size).toBeGreaterThan(0);
+
+          console.log(
+            `Downloaded attachment: ${data.size} bytes, base64url data length: ${data.data.length}`
+          );
+
+          // Verify we can decode the base64url data
+          const buffer = Buffer.from(data.data.replace(/-/g, '+').replace(/_/g, '/'), 'base64');
+          expect(buffer.length).toBeGreaterThan(0);
+          console.log(`Decoded to ${buffer.length} bytes of binary data`);
+
+          foundAttachment = true;
+          break;
+        }
+      }
+
+      if (!foundAttachment) {
+        console.warn('Checked 5 emails but none had downloadable attachments');
+      }
+    });
+  });
+
   describe('authentication', () => {
     it('should use the correct authentication method', () => {
       const isOAuth2 = client instanceof OAuth2GmailClient;

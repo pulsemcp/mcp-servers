@@ -71,9 +71,22 @@ The tests will:
 **Branch:** tadasant/gmail-download-attachments
 **Commit:** a0eb643
 **Tested By:** Claude Code
-**Environment:** Node.js (functional and integration tests only - no API credential changes)
+**Environment:** Node.js with service account auth (tadas@tadasant.com)
 
 ### Test Results
+
+**Manual Tests (real Gmail API):**
+
+```
+Manual Tests: 13 passed (13)
+  - listMessages: 2 tests (inbox listing, query filtering)
+  - getMessage: 3 tests (full format, metadata format, body decoding)
+  - modifyMessage: 1 test (star/unstar labels)
+  - drafts: 4 tests (create, list, get, delete)
+  - sendMessage: 1 test (send to same account)
+  - getAttachment: 1 test (download real attachment - event.ics, 1786 bytes)
+  - authentication: 1 test (service account detection)
+```
 
 **Automated Tests (mocked):**
 
@@ -83,27 +96,27 @@ Functional Tests: 66 passed (66)
   - tools.test.ts: 54 tests (all tool tests including 14 download_email_attachments tests)
 Integration Tests: 15 passed (15)
   - 4 download_email_attachments integration tests (save to /tmp/, inline mode, no attachments, non-existent email)
-Total: 81 tests passing
+Total: 94 tests passing (13 manual + 66 functional + 15 integration)
 ```
 
-**Overall:** All manual tests passed
+**Overall:** All tests passed
 
 ### Notes
 
 - New `download_email_attachments` tool added - saves attachments to /tmp/ by default, with `inline` option for direct content
-- This feature uses the existing Gmail API `messages.attachments.get` endpoint (read-only)
-- No changes to authentication or API client configuration - existing manual test coverage for API interactions remains valid
+- `getAttachment` API verified against real Gmail API - successfully downloaded a 1786-byte event.ics attachment
+- Filenames sanitized with `path.basename()` to prevent path traversal; duplicates auto-deduplicated
 - 14 functional tests cover: save to /tmp/, save specific file, inline mode, text decoding, binary base64, no attachments, filename not found, require email_id, API errors, size limit (inline only), nested MIME structures, path traversal sanitization, duplicate filename deduplication, getAttachment failure
 - 4 integration tests cover: save to /tmp/ flow, inline mode, no-attachment case, error handling
 
 ## Historical Test Runs
 
-| Date       | Commit  | Status | Notes                                                               |
-| ---------- | ------- | ------ | ------------------------------------------------------------------- |
-| 2026-02-09 | a0eb643 | PASS   | v0.1.1 - download_email_attachments, 66 functional + 15 integration |
-| 2026-01-25 | 9604fdc | PASS   | v0.1.0 - OAuth2 support, 12 manual + 64 functional + 11 integration |
-| 2026-01-24 | b02e4cd | PASS   | v0.0.5 - include_html parameter, 12 manual + 52 automated           |
-| 2026-01-24 | f3d5154 | PASS   | All 12 manual tests + 58 automated tests passing                    |
-| 2026-01-23 | d728dca | PASS   | v0.0.4 - New tools (search, change, draft, send), 46 tests          |
-| 2026-01-03 | 36568ff | PASS   | v0.0.3 - Publish fix, 7 manual tests passing                        |
-| 2026-01-03 | e668d3d | PASS   | v0.0.1 - Initial release, 7 manual tests passing                    |
+| Date       | Commit  | Status | Notes                                                                           |
+| ---------- | ------- | ------ | ------------------------------------------------------------------------------- |
+| 2026-02-09 | a0eb643 | PASS   | v0.1.1 - download_email_attachments, 13 manual + 66 functional + 15 integration |
+| 2026-01-25 | 9604fdc | PASS   | v0.1.0 - OAuth2 support, 12 manual + 64 functional + 11 integration             |
+| 2026-01-24 | b02e4cd | PASS   | v0.0.5 - include_html parameter, 12 manual + 52 automated                       |
+| 2026-01-24 | f3d5154 | PASS   | All 12 manual tests + 58 automated tests passing                                |
+| 2026-01-23 | d728dca | PASS   | v0.0.4 - New tools (search, change, draft, send), 46 tests                      |
+| 2026-01-03 | 36568ff | PASS   | v0.0.3 - Publish fix, 7 manual tests passing                                    |
+| 2026-01-03 | e668d3d | PASS   | v0.0.1 - Initial release, 7 manual tests passing                                |
