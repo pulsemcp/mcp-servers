@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-02-09
+
+### Added
+
+- `download_email_attachments` tool for downloading attachment content from emails
+  - Downloads all attachments in a single call by default, or a specific one via the `filename` parameter
+  - Text-based attachments (text/\*, JSON, XML) are returned as decoded text content
+  - Binary attachments (PDF, images, etc.) are returned as base64-encoded data
+  - 25 MB total size limit per request to prevent overwhelming the context window
+  - Available in all tool groups (readonly, readwrite, readwrite_external) since downloading doesn't modify mailbox state
+  - Addresses [issue #302](https://github.com/pulsemcp/mcp-servers/issues/302)
+
 ## [0.1.0] - 2026-01-25
 
 ### Added

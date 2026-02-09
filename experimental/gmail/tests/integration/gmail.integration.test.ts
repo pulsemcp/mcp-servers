@@ -32,12 +32,13 @@ describe('Gmail MCP Server Integration Tests', () => {
     it('should list available tools', async () => {
       const result = await client!.listTools();
       const tools = result.tools;
-      expect(tools.length).toBe(6);
+      expect(tools.length).toBe(7);
 
       const toolNames = tools.map((t) => t.name);
       expect(toolNames).toContain('list_email_conversations');
       expect(toolNames).toContain('get_email_conversation');
       expect(toolNames).toContain('search_email_conversations');
+      expect(toolNames).toContain('download_email_attachments');
       expect(toolNames).toContain('change_email_conversation');
       expect(toolNames).toContain('draft_email');
       expect(toolNames).toContain('send_email');

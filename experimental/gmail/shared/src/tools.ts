@@ -7,6 +7,7 @@ import { changeEmailConversationTool } from './tools/change-email-conversation.j
 import { draftEmailTool } from './tools/draft-email.js';
 import { sendEmailTool } from './tools/send-email.js';
 import { searchEmailConversationsTool } from './tools/search-email-conversations.js';
+import { downloadEmailAttachmentsTool } from './tools/download-email-attachments.js';
 
 /**
  * Generic tool interface
@@ -55,6 +56,10 @@ const ALL_TOOLS: ToolDefinition[] = [
   { factory: getEmailConversationTool, groups: ['readonly', 'readwrite', 'readwrite_external'] },
   {
     factory: searchEmailConversationsTool,
+    groups: ['readonly', 'readwrite', 'readwrite_external'],
+  },
+  {
+    factory: downloadEmailAttachmentsTool,
     groups: ['readonly', 'readwrite', 'readwrite_external'],
   },
   // Write tools (available in readwrite and readwrite_external)

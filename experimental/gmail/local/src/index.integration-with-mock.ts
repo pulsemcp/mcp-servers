@@ -251,6 +251,19 @@ function createMockClient(): IGmailClient {
       return sentMessage;
     },
 
+    async getAttachment(_messageId: string, attachmentId: string) {
+      const mockData: Record<string, string> = {
+        att_001: Buffer.from('Mock PDF content').toString('base64url'),
+      };
+
+      const data = mockData[attachmentId];
+      if (!data) {
+        throw new Error(`Attachment not found: ${attachmentId}`);
+      }
+
+      return { data, size: Buffer.from(data, 'base64url').length };
+    },
+
     async sendDraft(draftId) {
       const draft = mockDrafts.find((d) => d.id === draftId);
       if (!draft) {

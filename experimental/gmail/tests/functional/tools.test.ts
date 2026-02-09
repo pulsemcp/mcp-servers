@@ -7,6 +7,7 @@ import { searchEmailConversationsTool } from '../../shared/src/tools/search-emai
 import { changeEmailConversationTool } from '../../shared/src/tools/change-email-conversation.js';
 import { draftEmailTool } from '../../shared/src/tools/draft-email.js';
 import { sendEmailTool } from '../../shared/src/tools/send-email.js';
+import { downloadEmailAttachmentsTool } from '../../shared/src/tools/download-email-attachments.js';
 import type { IGmailClient } from '../../shared/src/server.js';
 
 describe('Gmail MCP Server Tools', () => {
@@ -660,6 +661,192 @@ describe('Gmail MCP Server Tools', () => {
 
       expect(result.isError).toBe(true);
       expect(result.content[0].text).toContain('Error sending email');
+    });
+  });
+
+  describe('download_email_attachments', () => {
+    const emailWithAttachments = {
+      id: 'msg_att',
+      threadId: 'thread_att',
+      labelIds: ['INBOX'],
+      snippet: 'Email with attachments',
+      historyId: '12345',
+      internalDate: String(Date.now()),
+      payload: {
+        mimeType: 'multipart/mixed',
+        headers: [
+          { name: 'Subject', value: 'Files Attached' },
+          { name: 'From', value: 'sender@example.com' },
+          { name: 'To', value: 'me@example.com' },
+          { name: 'Date', value: new Date().toISOString() },
+        ],
+        parts: [
+          {
+            partId: '0',
+            mimeType: 'text/plain',
+            body: {
+              size: 50,
+              data: Buffer.from('See attached files').toString('base64url'),
+            },
+          },
+          {
+            partId: '1',
+            mimeType: 'application/pdf',
+            filename: 'invoice.pdf',
+            body: {
+              attachmentId: 'att_001',
+              size: 102400,
+            },
+          },
+          {
+            partId: '2',
+            mimeType: 'text/csv',
+            filename: 'data.csv',
+            body: {
+              attachmentId: 'att_002',
+              size: 2048,
+            },
+          },
+        ],
+      },
+    };
+
+    it('should download all attachments by default', async () => {
+      (mockClient.getMessage as ReturnType<typeof vi.fn>).mockResolvedValue(emailWithAttachments);
+      const tool = downloadEmailAttachmentsTool(mockServer, () => mockClient);
+      const result = await tool.handler({ email_id: 'msg_att' });
+
+      expect(result.content[0].text).toContain('# Downloaded Attachments (2)');
+      expect(result.content[0].text).toContain('invoice.pdf');
+      expect(result.content[0].text).toContain('data.csv');
+      expect(mockClient.getAttachment).toHaveBeenCalledWith('msg_att', 'att_001');
+      expect(mockClient.getAttachment).toHaveBeenCalledWith('msg_att', 'att_002');
+    });
+
+    it('should download a specific attachment by filename', async () => {
+      (mockClient.getMessage as ReturnType<typeof vi.fn>).mockResolvedValue(emailWithAttachments);
+      const tool = downloadEmailAttachmentsTool(mockServer, () => mockClient);
+      const result = await tool.handler({ email_id: 'msg_att', filename: 'invoice.pdf' });
+
+      expect(result.content[0].text).toContain('# Downloaded Attachments (1)');
+      expect(result.content[0].text).toContain('invoice.pdf');
+      expect(result.content[0].text).not.toContain('data.csv');
+      expect(mockClient.getAttachment).toHaveBeenCalledWith('msg_att', 'att_001');
+      expect(mockClient.getAttachment).toHaveBeenCalledTimes(1);
+    });
+
+    it('should decode text-based attachments', async () => {
+      (mockClient.getMessage as ReturnType<typeof vi.fn>).mockResolvedValue(emailWithAttachments);
+      const tool = downloadEmailAttachmentsTool(mockServer, () => mockClient);
+      const result = await tool.handler({ email_id: 'msg_att', filename: 'data.csv' });
+
+      // text/csv is text-based, so content should be decoded
+      expect(result.content[0].text).toContain('Column1,Column2');
+      expect(result.content[0].text).toContain('value1,value2');
+    });
+
+    it('should return base64 for binary attachments', async () => {
+      (mockClient.getMessage as ReturnType<typeof vi.fn>).mockResolvedValue(emailWithAttachments);
+      const tool = downloadEmailAttachmentsTool(mockServer, () => mockClient);
+      const result = await tool.handler({ email_id: 'msg_att', filename: 'invoice.pdf' });
+
+      expect(result.content[0].text).toContain('**MIME Type:** application/pdf');
+      expect(result.content[0].text).toContain('**Encoding:** base64');
+    });
+
+    it('should handle email with no attachments', async () => {
+      (mockClient.getMessage as ReturnType<typeof vi.fn>).mockResolvedValue({
+        id: 'msg_no_att',
+        threadId: 'thread_no_att',
+        labelIds: ['INBOX'],
+        snippet: 'No attachments here',
+        historyId: '12345',
+        internalDate: String(Date.now()),
+        payload: {
+          mimeType: 'text/plain',
+          headers: [
+            { name: 'Subject', value: 'Plain Email' },
+            { name: 'From', value: 'sender@example.com' },
+            { name: 'To', value: 'me@example.com' },
+            { name: 'Date', value: new Date().toISOString() },
+          ],
+          body: {
+            size: 50,
+            data: Buffer.from('Just text').toString('base64url'),
+          },
+        },
+      });
+
+      const tool = downloadEmailAttachmentsTool(mockServer, () => mockClient);
+      const result = await tool.handler({ email_id: 'msg_no_att' });
+
+      expect(result.content[0].text).toContain('No attachments found');
+    });
+
+    it('should error when filename not found', async () => {
+      (mockClient.getMessage as ReturnType<typeof vi.fn>).mockResolvedValue(emailWithAttachments);
+      const tool = downloadEmailAttachmentsTool(mockServer, () => mockClient);
+      const result = await tool.handler({ email_id: 'msg_att', filename: 'nonexistent.txt' });
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('not found');
+      expect(result.content[0].text).toContain('invoice.pdf');
+      expect(result.content[0].text).toContain('data.csv');
+    });
+
+    it('should require email_id parameter', async () => {
+      const tool = downloadEmailAttachmentsTool(mockServer, () => mockClient);
+      const result = await tool.handler({});
+
+      expect(result.isError).toBe(true);
+    });
+
+    it('should handle API errors', async () => {
+      (mockClient.getMessage as ReturnType<typeof vi.fn>).mockRejectedValue(
+        new Error('Message not found: msg_999')
+      );
+      const tool = downloadEmailAttachmentsTool(mockServer, () => mockClient);
+      const result = await tool.handler({ email_id: 'msg_999' });
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('Error downloading attachment(s)');
+    });
+
+    it('should reject when total size exceeds limit', async () => {
+      (mockClient.getMessage as ReturnType<typeof vi.fn>).mockResolvedValue({
+        id: 'msg_large',
+        threadId: 'thread_large',
+        labelIds: ['INBOX'],
+        snippet: 'Large attachments',
+        historyId: '12345',
+        internalDate: String(Date.now()),
+        payload: {
+          mimeType: 'multipart/mixed',
+          headers: [
+            { name: 'Subject', value: 'Large Files' },
+            { name: 'From', value: 'sender@example.com' },
+            { name: 'To', value: 'me@example.com' },
+            { name: 'Date', value: new Date().toISOString() },
+          ],
+          parts: [
+            {
+              partId: '1',
+              mimeType: 'application/zip',
+              filename: 'huge-file.zip',
+              body: {
+                attachmentId: 'att_large',
+                size: 30 * 1024 * 1024, // 30 MB
+              },
+            },
+          ],
+        },
+      });
+
+      const tool = downloadEmailAttachmentsTool(mockServer, () => mockClient);
+      const result = await tool.handler({ email_id: 'msg_large' });
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('exceeds the 25 MB limit');
     });
   });
 });
