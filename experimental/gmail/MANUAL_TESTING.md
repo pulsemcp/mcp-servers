@@ -69,7 +69,7 @@ The tests will:
 
 **Test Date:** 2026-02-09
 **Branch:** tadasant/gmail-download-attachments
-**Commit:** fb60a08
+**Commit:** 2e45bf6
 **Tested By:** Claude Code
 **Environment:** Node.js with service account auth (tadas@tadasant.com)
 
@@ -121,7 +121,7 @@ Total: 98 tests passing (17 manual + 66 functional + 15 integration)
 
 | Date       | Commit  | Status | Notes                                                                           |
 | ---------- | ------- | ------ | ------------------------------------------------------------------------------- |
-| 2026-02-09 | fb60a08 | PASS   | v0.1.1 - download_email_attachments, 13 manual + 66 functional + 15 integration |
+| 2026-02-09 | 2e45bf6 | PASS   | v0.1.1 - download_email_attachments, 17 manual + 66 functional + 15 integration |
 | 2026-01-25 | 9604fdc | PASS   | v0.1.0 - OAuth2 support, 12 manual + 64 functional + 11 integration             |
 | 2026-01-24 | b02e4cd | PASS   | v0.0.5 - include_html parameter, 12 manual + 52 automated                       |
 | 2026-01-24 | f3d5154 | PASS   | All 12 manual tests + 58 automated tests passing                                |
