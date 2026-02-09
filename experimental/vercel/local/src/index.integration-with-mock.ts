@@ -29,7 +29,7 @@ async function main() {
   const clientFactory = () => createIntegrationMockVercelClient(mockData);
 
   const { server, registerHandlers } = createMCPServer({ version: VERSION });
-  await registerHandlers(server, clientFactory);
+  await registerHandlers(clientFactory);
 
   await server.connect(transport);
 }

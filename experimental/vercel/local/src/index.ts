@@ -85,7 +85,7 @@ async function main() {
   validateEnvironment();
 
   const { server, registerHandlers } = createMCPServer({ version: VERSION });
-  await registerHandlers(server);
+  await registerHandlers();
 
   const transport = new StdioServerTransport();
   await server.connect(transport);

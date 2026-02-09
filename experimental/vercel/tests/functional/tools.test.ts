@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
+import { ListToolsRequestSchema } from '@modelcontextprotocol/sdk/types.js';
 import { listDeploymentsTool } from '../../shared/src/tools/list-deployments.js';
 import { getDeploymentTool } from '../../shared/src/tools/get-deployment.js';
 import { listProjectsTool } from '../../shared/src/tools/list-projects.js';
@@ -173,40 +174,64 @@ describe('Tools', () => {
   });
 
   describe('tool groups', () => {
-    it('should only register readonly tools when readonly group is enabled', () => {
-      const registerTools = createRegisterTools(clientFactory, ['readonly']);
+    // Helper to capture tool names from createRegisterTools
+    type ToolListHandler = (req: unknown) => Promise<{ tools: { name: string }[] }>;
 
-      const toolServer = new Server(
-        { name: 'test', version: '1.0.0' },
-        { capabilities: { tools: {} } }
-      );
+    async function getRegisteredToolNames(groups: ('readonly' | 'readwrite')[]): Promise<string[]> {
+      const registerTools = createRegisterTools(clientFactory, groups);
+
+      let listToolsHandler: ToolListHandler | null = null;
+      const toolServer = {
+        setRequestHandler: (schema: unknown, handler: ToolListHandler) => {
+          if (schema === ListToolsRequestSchema) {
+            listToolsHandler = handler;
+          }
+        },
+      } as unknown as Server;
 
       registerTools(toolServer);
 
-      // Verify the readwrite tools are not registered by checking the tools list
-      // We test this via createRegisterTools returning only the correct set
-      const readwriteRegister = createRegisterTools(clientFactory, ['readwrite']);
-      const readwriteServer = new Server(
-        { name: 'test', version: '1.0.0' },
-        { capabilities: { tools: {} } }
-      );
-      readwriteRegister(readwriteServer);
+      const result = (await listToolsHandler!({})) as { tools: { name: string }[] };
+      return result.tools.map((t) => t.name);
+    }
 
-      // Both should register without error - the group filtering is tested
-      // by verifying that the registration completes successfully
-      expect(true).toBe(true);
+    it('should only register readonly tools when readonly group is enabled', async () => {
+      const toolNames = await getRegisteredToolNames(['readonly']);
+
+      // Should include readonly tools
+      expect(toolNames).toContain('list_deployments');
+      expect(toolNames).toContain('get_deployment');
+      expect(toolNames).toContain('list_projects');
+      expect(toolNames).toContain('get_deployment_events');
+      expect(toolNames).toContain('get_runtime_logs');
+      // Should NOT include readwrite-only tools
+      expect(toolNames).not.toContain('create_deployment');
+      expect(toolNames).not.toContain('cancel_deployment');
+      expect(toolNames).not.toContain('delete_deployment');
+      expect(toolNames).not.toContain('promote_deployment');
+      expect(toolNames).not.toContain('rollback_deployment');
+      expect(toolNames).toHaveLength(5);
     });
 
-    it('should register all tools when both groups are enabled', () => {
-      const registerTools = createRegisterTools(clientFactory, ['readonly', 'readwrite']);
+    it('should register all tools when both groups are enabled', async () => {
+      const toolNames = await getRegisteredToolNames(['readonly', 'readwrite']);
 
-      const toolServer = new Server(
-        { name: 'test', version: '1.0.0' },
-        { capabilities: { tools: {} } }
-      );
+      expect(toolNames).toContain('list_deployments');
+      expect(toolNames).toContain('create_deployment');
+      expect(toolNames).toContain('cancel_deployment');
+      expect(toolNames).toContain('delete_deployment');
+      expect(toolNames).toContain('promote_deployment');
+      expect(toolNames).toContain('rollback_deployment');
+      expect(toolNames).toHaveLength(10);
+    });
 
-      registerTools(toolServer);
-      expect(true).toBe(true);
+    it('should only register readwrite tools when readwrite group is enabled', async () => {
+      const toolNames = await getRegisteredToolNames(['readwrite']);
+
+      // All 10 tools are in the readwrite group (readonly tools have both groups)
+      expect(toolNames).toHaveLength(10);
+      expect(toolNames).toContain('create_deployment');
+      expect(toolNames).toContain('list_deployments');
     });
   });
 });

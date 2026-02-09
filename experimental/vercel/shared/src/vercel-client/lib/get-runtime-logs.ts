@@ -1,4 +1,5 @@
 import type { RuntimeLogEntry } from '../../types.js';
+import { logWarning } from '../../logging.js';
 
 export async function getRuntimeLogs(
   baseUrl: string,
@@ -19,7 +20,7 @@ export async function getRuntimeLogs(
   const response = await fetch(url, {
     headers: {
       ...headers,
-      Accept: 'application/json',
+      Accept: 'application/stream+json',
     },
   });
 
@@ -41,7 +42,10 @@ export async function getRuntimeLogs(
       const entry = JSON.parse(line) as RuntimeLogEntry;
       entries.push(entry);
     } catch {
-      // Skip malformed lines
+      logWarning(
+        'getRuntimeLogs',
+        `Skipping malformed runtime log line: ${line.substring(0, 100)}`
+      );
     }
   }
 

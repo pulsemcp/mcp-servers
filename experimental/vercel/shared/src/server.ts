@@ -144,7 +144,7 @@ export function createMCPServer(options: CreateMCPServerOptions) {
     }
   );
 
-  const registerHandlers = async (server: Server, clientFactory?: ClientFactory) => {
+  const registerHandlers = async (clientFactory?: ClientFactory) => {
     const factory =
       clientFactory ||
       (() => {

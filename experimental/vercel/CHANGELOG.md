@@ -18,3 +18,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Functional tests for all tools
 - Integration tests with mocked Vercel API
 - Manual test infrastructure for real API testing
+- Validation that `gitRef`, `gitRepoId`, and `gitType` must all be provided together in `create_deployment`
+- Warning logging for malformed runtime log lines
+
+### Fixed
+
+- Rollback deployment API endpoint uses correct version (`/v9` instead of `/v1`)
+- Runtime logs `Accept` header uses `application/stream+json` for NDJSON format
+- `ci:install` script properly installs dependencies in shared/local subdirectories

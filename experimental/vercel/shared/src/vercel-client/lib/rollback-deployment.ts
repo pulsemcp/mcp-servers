@@ -13,7 +13,7 @@ export async function rollbackDeployment(
   }
 
   const queryString = params.toString();
-  const url = `${baseUrl}/v1/projects/${encodeURIComponent(projectId)}/rollback/${encodeURIComponent(deploymentId)}${queryString ? `?${queryString}` : ''}`;
+  const url = `${baseUrl}/v9/projects/${encodeURIComponent(projectId)}/rollback/${encodeURIComponent(deploymentId)}${queryString ? `?${queryString}` : ''}`;
 
   const body: Record<string, unknown> = {};
   if (description) body.description = description;

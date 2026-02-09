@@ -16,20 +16,31 @@ const PARAM_DESCRIPTIONS = {
     'Git provider type. Options: "github", "gitlab", "bitbucket". Required when using gitRef.',
 } as const;
 
-const CreateDeploymentSchema = z.object({
-  name: z.string().min(1).describe(PARAM_DESCRIPTIONS.name),
-  target: z
-    .enum(['production', 'preview', 'staging'])
-    .optional()
-    .describe(PARAM_DESCRIPTIONS.target),
-  deploymentId: z.string().optional().describe(PARAM_DESCRIPTIONS.deploymentId),
-  gitRef: z.string().optional().describe(PARAM_DESCRIPTIONS.gitRef),
-  gitRepoId: z.string().optional().describe(PARAM_DESCRIPTIONS.gitRepoId),
-  gitType: z
-    .enum(['github', 'gitlab', 'bitbucket'])
-    .optional()
-    .describe(PARAM_DESCRIPTIONS.gitType),
-});
+const CreateDeploymentSchema = z
+  .object({
+    name: z.string().min(1).describe(PARAM_DESCRIPTIONS.name),
+    target: z
+      .enum(['production', 'preview', 'staging'])
+      .optional()
+      .describe(PARAM_DESCRIPTIONS.target),
+    deploymentId: z.string().optional().describe(PARAM_DESCRIPTIONS.deploymentId),
+    gitRef: z.string().optional().describe(PARAM_DESCRIPTIONS.gitRef),
+    gitRepoId: z.string().optional().describe(PARAM_DESCRIPTIONS.gitRepoId),
+    gitType: z
+      .enum(['github', 'gitlab', 'bitbucket'])
+      .optional()
+      .describe(PARAM_DESCRIPTIONS.gitType),
+  })
+  .refine(
+    (data) => {
+      const gitFields = [data.gitRef, data.gitRepoId, data.gitType];
+      const provided = gitFields.filter(Boolean).length;
+      return provided === 0 || provided === 3;
+    },
+    {
+      message: 'gitRef, gitRepoId, and gitType must all be provided together',
+    }
+  );
 
 const TOOL_DESCRIPTION = `Create a new Vercel deployment or redeploy an existing one.
 
