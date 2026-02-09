@@ -236,7 +236,20 @@ export function downloadEmailAttachmentsTool(_server: Server, clientFactory: Cli
 
         // Fetch the email to discover attachments
         const email = await client.getMessage(parsed.email_id, { format: 'full' });
-        const allAttachments = getAttachmentInfos(email.payload?.parts);
+        const allAttachments: AttachmentInfo[] = [];
+
+        // Check payload-level attachment (single-part email with attachment)
+        if (email.payload?.filename && email.payload?.body?.attachmentId) {
+          allAttachments.push({
+            filename: email.payload.filename,
+            mimeType: email.payload.mimeType,
+            size: email.payload.body.size,
+            attachmentId: email.payload.body.attachmentId,
+          });
+        }
+
+        // Check nested parts for attachments
+        allAttachments.push(...getAttachmentInfos(email.payload?.parts));
 
         if (allAttachments.length === 0) {
           return {

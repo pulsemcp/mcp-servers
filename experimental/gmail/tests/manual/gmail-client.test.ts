@@ -319,10 +319,10 @@ describe('Gmail Client - Manual Tests', () => {
         maxResults: 5,
       });
 
-      if (listResult.messages.length === 0) {
-        console.warn('No emails with attachments found - skipping attachment test');
-        return;
-      }
+      expect(
+        listResult.messages.length,
+        'No emails with attachments found in test account - this test requires at least one email with an attachment'
+      ).toBeGreaterThan(0);
 
       // Find an email that actually has downloadable attachments
       let foundAttachment = false;
@@ -390,9 +390,7 @@ describe('Gmail Client - Manual Tests', () => {
         }
       }
 
-      if (!foundAttachment) {
-        console.warn('Checked 5 emails but none had downloadable attachments');
-      }
+      expect(foundAttachment).toBe(true);
     });
   });
 
