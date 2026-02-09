@@ -99,7 +99,7 @@ describe('Gmail MCP Server Integration Tests', () => {
   });
 
   describe('download_email_attachments', () => {
-    it('should download all attachments from an email', async () => {
+    it('should save attachments to /tmp/ by default', async () => {
       const result = await client!.callTool('download_email_attachments', {
         email_id: 'msg_003',
       });
@@ -108,6 +108,21 @@ describe('Gmail MCP Server Integration Tests', () => {
       expect(result.content[0].type).toBe('text');
       expect(result.content[0].text).toContain('Downloaded Attachments (1)');
       expect(result.content[0].text).toContain('invoice.pdf');
+      expect(result.content[0].text).toContain('/tmp/gmail-attachments-msg_003/invoice.pdf');
+      expect(result.content[0].text).toContain('Saved Files');
+    });
+
+    it('should return inline content when inline=true', async () => {
+      const result = await client!.callTool('download_email_attachments', {
+        email_id: 'msg_003',
+        inline: true,
+      });
+
+      expect(result.content).toHaveLength(1);
+      expect(result.content[0].type).toBe('text');
+      expect(result.content[0].text).toContain('Downloaded Attachments (1)');
+      expect(result.content[0].text).toContain('invoice.pdf');
+      expect(result.content[0].text).not.toContain('Saved Files');
     });
 
     it('should handle email with no attachments', async () => {

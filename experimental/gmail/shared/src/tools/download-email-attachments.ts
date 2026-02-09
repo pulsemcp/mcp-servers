@@ -1,10 +1,12 @@
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
+import { writeFile, mkdir } from 'fs/promises';
+import { join } from 'path';
 import { z } from 'zod';
 import type { ClientFactory } from '../server.js';
 import type { EmailPart } from '../types.js';
 
-/** Maximum total size (in bytes) for all attachments in a single request (25 MB) */
-const MAX_TOTAL_SIZE = 25 * 1024 * 1024;
+/** Maximum total size (in bytes) for inline attachments (25 MB) */
+const MAX_INLINE_SIZE = 25 * 1024 * 1024;
 
 const PARAM_DESCRIPTIONS = {
   email_id:
@@ -13,32 +15,37 @@ const PARAM_DESCRIPTIONS = {
   filename:
     'Optional filename to download a specific attachment. ' +
     'If omitted, all attachments on the email are downloaded.',
+  inline:
+    'When true, return attachment content directly in the response (text-based files as text, binary as base64). ' +
+    'When false (default), save attachments to /tmp/ and return file paths.',
 } as const;
 
 export const DownloadEmailAttachmentsSchema = z.object({
   email_id: z.string().min(1).describe(PARAM_DESCRIPTIONS.email_id),
   filename: z.string().optional().describe(PARAM_DESCRIPTIONS.filename),
+  inline: z.boolean().optional().default(false).describe(PARAM_DESCRIPTIONS.inline),
 });
 
 const TOOL_DESCRIPTION = `Download attachment content from a specific email.
 
-By default, downloads all attachments on the email. Use the filename parameter to download a specific one.
+By default, saves all attachments to /tmp/ and returns the file paths. Use the inline parameter to return content directly in the response instead.
 
 **Parameters:**
 - email_id: The unique identifier of the email (required)
 - filename: Download only the attachment matching this filename (optional)
+- inline: If true, return content in the response instead of saving to files (optional, default: false)
 
-**Returns:**
-For text-based attachments (text/*, JSON, XML): the decoded text content.
-For binary attachments (PDF, images, etc.): base64-encoded data.
+**Default behavior (inline=false):**
+Saves attachments as files to /tmp/ and returns the full file paths. Best for binary files or large attachments where you need to process the file afterward.
+
+**Inline behavior (inline=true):**
+Returns content directly. Text-based attachments (text/*, JSON, XML) are decoded to text. Binary attachments (PDF, images, etc.) are returned as base64. Total size is capped at 25 MB.
 
 **Use cases:**
 - Download invoices, receipts, or documents attached to emails
 - Extract data from CSV or text file attachments
 - Access PDF attachments for processing
 - Batch-download all attachments from an email in one call
-
-**Size limit:** Total attachment size is capped at 25 MB per request.
 
 **Note:** Use get_email_conversation first to see attachment metadata (filenames, sizes, types) before downloading.`;
 
@@ -92,6 +99,83 @@ function isTextMimeType(mimeType: string): boolean {
   return false;
 }
 
+interface DownloadedAttachment extends AttachmentInfo {
+  data: string;
+}
+
+/**
+ * Builds inline response with attachment content in the response text
+ */
+function buildInlineResponse(results: DownloadedAttachment[]) {
+  const outputParts: string[] = [];
+
+  const summaryLines = results.map((r, i) => {
+    const sizeKb = Math.round(r.size / 1024);
+    return `${i + 1}. ${r.filename} (${r.mimeType}, ${sizeKb} KB)`;
+  });
+  outputParts.push(`# Downloaded Attachments (${results.length})\n\n${summaryLines.join('\n')}`);
+
+  for (const result of results) {
+    const base64Data = base64UrlToBase64(result.data);
+
+    if (isTextMimeType(result.mimeType)) {
+      const textContent = Buffer.from(base64Data, 'base64').toString('utf-8');
+      outputParts.push(`---\n## ${result.filename}\n\n${textContent}`);
+    } else {
+      outputParts.push(
+        `---\n## ${result.filename}\n\n` +
+          `**MIME Type:** ${result.mimeType}\n` +
+          `**Encoding:** base64\n\n` +
+          `\`\`\`\n${base64Data}\n\`\`\``
+      );
+    }
+  }
+
+  return {
+    content: [{ type: 'text', text: outputParts.join('\n\n') }],
+  };
+}
+
+/**
+ * Saves attachments to /tmp/ and returns file paths
+ */
+async function buildFileResponse(results: DownloadedAttachment[], emailId: string) {
+  const dir = join('/tmp', `gmail-attachments-${emailId}`);
+  await mkdir(dir, { recursive: true });
+
+  const savedFiles: { filename: string; path: string; mimeType: string; size: number }[] = [];
+
+  for (const result of results) {
+    const base64Data = base64UrlToBase64(result.data);
+    const buffer = Buffer.from(base64Data, 'base64');
+    const filePath = join(dir, result.filename);
+    await writeFile(filePath, buffer);
+    savedFiles.push({
+      filename: result.filename,
+      path: filePath,
+      mimeType: result.mimeType,
+      size: buffer.length,
+    });
+  }
+
+  const outputParts: string[] = [];
+
+  const summaryLines = savedFiles.map((f, i) => {
+    const sizeKb = Math.round(f.size / 1024);
+    return `${i + 1}. ${f.filename} (${f.mimeType}, ${sizeKb} KB)`;
+  });
+  outputParts.push(`# Downloaded Attachments (${savedFiles.length})\n\n${summaryLines.join('\n')}`);
+
+  outputParts.push('## Saved Files\n');
+  for (const file of savedFiles) {
+    outputParts.push(`- **${file.filename}**: \`${file.path}\``);
+  }
+
+  return {
+    content: [{ type: 'text', text: outputParts.join('\n') }],
+  };
+}
+
 export function downloadEmailAttachmentsTool(_server: Server, clientFactory: ClientFactory) {
   return {
     name: 'download_email_attachments',
@@ -106,6 +190,10 @@ export function downloadEmailAttachmentsTool(_server: Server, clientFactory: Cli
         filename: {
           type: 'string',
           description: PARAM_DESCRIPTIONS.filename,
+        },
+        inline: {
+          type: 'boolean',
+          description: PARAM_DESCRIPTIONS.inline,
         },
       },
       required: ['email_id'],
@@ -143,21 +231,23 @@ export function downloadEmailAttachmentsTool(_server: Server, clientFactory: Cli
           }
         }
 
-        // Check total size
-        const totalSize = targetAttachments.reduce((sum, a) => sum + a.size, 0);
-        if (totalSize > MAX_TOTAL_SIZE) {
-          const totalMb = (totalSize / (1024 * 1024)).toFixed(1);
-          return {
-            content: [
-              {
-                type: 'text',
-                text:
-                  `Total attachment size (${totalMb} MB) exceeds the 25 MB limit. ` +
-                  `Use the filename parameter to download attachments individually.`,
-              },
-            ],
-            isError: true,
-          };
+        // For inline mode, enforce size limit
+        if (parsed.inline) {
+          const totalSize = targetAttachments.reduce((sum, a) => sum + a.size, 0);
+          if (totalSize > MAX_INLINE_SIZE) {
+            const totalMb = (totalSize / (1024 * 1024)).toFixed(1);
+            return {
+              content: [
+                {
+                  type: 'text',
+                  text:
+                    `Total attachment size (${totalMb} MB) exceeds the 25 MB limit for inline mode. ` +
+                    `Use inline=false (default) to save to files, or use the filename parameter to download individually.`,
+                },
+              ],
+              isError: true,
+            };
+          }
         }
 
         // Download all target attachments concurrently
@@ -168,38 +258,11 @@ export function downloadEmailAttachmentsTool(_server: Server, clientFactory: Cli
           })
         );
 
-        // Build response
-        const outputParts: string[] = [];
-
-        // Summary header
-        const summaryLines = results.map((r, i) => {
-          const sizeKb = Math.round(r.size / 1024);
-          return `${i + 1}. ${r.filename} (${r.mimeType}, ${sizeKb} KB)`;
-        });
-        outputParts.push(
-          `# Downloaded Attachments (${results.length})\n\n${summaryLines.join('\n')}`
-        );
-
-        // Each attachment's content
-        for (const result of results) {
-          const base64Data = base64UrlToBase64(result.data);
-
-          if (isTextMimeType(result.mimeType)) {
-            const textContent = Buffer.from(base64Data, 'base64').toString('utf-8');
-            outputParts.push(`---\n## ${result.filename}\n\n${textContent}`);
-          } else {
-            outputParts.push(
-              `---\n## ${result.filename}\n\n` +
-                `**MIME Type:** ${result.mimeType}\n` +
-                `**Encoding:** base64\n\n` +
-                `\`\`\`\n${base64Data}\n\`\`\``
-            );
-          }
+        if (parsed.inline) {
+          return buildInlineResponse(results);
+        } else {
+          return await buildFileResponse(results, parsed.email_id);
         }
-
-        return {
-          content: [{ type: 'text', text: outputParts.join('\n\n') }],
-        };
       } catch (error) {
         return {
           content: [

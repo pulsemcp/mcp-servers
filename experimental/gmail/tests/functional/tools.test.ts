@@ -10,6 +10,11 @@ import { sendEmailTool } from '../../shared/src/tools/send-email.js';
 import { downloadEmailAttachmentsTool } from '../../shared/src/tools/download-email-attachments.js';
 import type { IGmailClient } from '../../shared/src/server.js';
 
+vi.mock('fs/promises', () => ({
+  writeFile: vi.fn().mockResolvedValue(undefined),
+  mkdir: vi.fn().mockResolvedValue(undefined),
+}));
+
 describe('Gmail MCP Server Tools', () => {
   let mockClient: IGmailClient;
   let mockServer: Server;
@@ -711,7 +716,7 @@ describe('Gmail MCP Server Tools', () => {
       },
     };
 
-    it('should download all attachments by default', async () => {
+    it('should save all attachments to /tmp/ by default', async () => {
       (mockClient.getMessage as ReturnType<typeof vi.fn>).mockResolvedValue(emailWithAttachments);
       const tool = downloadEmailAttachmentsTool(mockServer, () => mockClient);
       const result = await tool.handler({ email_id: 'msg_att' });
@@ -719,36 +724,59 @@ describe('Gmail MCP Server Tools', () => {
       expect(result.content[0].text).toContain('# Downloaded Attachments (2)');
       expect(result.content[0].text).toContain('invoice.pdf');
       expect(result.content[0].text).toContain('data.csv');
+      expect(result.content[0].text).toContain('/tmp/gmail-attachments-msg_att/invoice.pdf');
+      expect(result.content[0].text).toContain('/tmp/gmail-attachments-msg_att/data.csv');
+      expect(result.content[0].text).toContain('Saved Files');
       expect(mockClient.getAttachment).toHaveBeenCalledWith('msg_att', 'att_001');
       expect(mockClient.getAttachment).toHaveBeenCalledWith('msg_att', 'att_002');
     });
 
-    it('should download a specific attachment by filename', async () => {
+    it('should save a specific attachment by filename to /tmp/', async () => {
       (mockClient.getMessage as ReturnType<typeof vi.fn>).mockResolvedValue(emailWithAttachments);
       const tool = downloadEmailAttachmentsTool(mockServer, () => mockClient);
       const result = await tool.handler({ email_id: 'msg_att', filename: 'invoice.pdf' });
 
       expect(result.content[0].text).toContain('# Downloaded Attachments (1)');
-      expect(result.content[0].text).toContain('invoice.pdf');
+      expect(result.content[0].text).toContain('/tmp/gmail-attachments-msg_att/invoice.pdf');
       expect(result.content[0].text).not.toContain('data.csv');
       expect(mockClient.getAttachment).toHaveBeenCalledWith('msg_att', 'att_001');
       expect(mockClient.getAttachment).toHaveBeenCalledTimes(1);
     });
 
-    it('should decode text-based attachments', async () => {
+    it('should return inline content when inline=true', async () => {
       (mockClient.getMessage as ReturnType<typeof vi.fn>).mockResolvedValue(emailWithAttachments);
       const tool = downloadEmailAttachmentsTool(mockServer, () => mockClient);
-      const result = await tool.handler({ email_id: 'msg_att', filename: 'data.csv' });
+      const result = await tool.handler({ email_id: 'msg_att', inline: true });
+
+      expect(result.content[0].text).toContain('# Downloaded Attachments (2)');
+      expect(result.content[0].text).toContain('invoice.pdf');
+      expect(result.content[0].text).toContain('data.csv');
+      expect(result.content[0].text).not.toContain('Saved Files');
+      expect(result.content[0].text).not.toContain('/tmp/');
+    });
+
+    it('should decode text-based attachments inline', async () => {
+      (mockClient.getMessage as ReturnType<typeof vi.fn>).mockResolvedValue(emailWithAttachments);
+      const tool = downloadEmailAttachmentsTool(mockServer, () => mockClient);
+      const result = await tool.handler({
+        email_id: 'msg_att',
+        filename: 'data.csv',
+        inline: true,
+      });
 
       // text/csv is text-based, so content should be decoded
       expect(result.content[0].text).toContain('Column1,Column2');
       expect(result.content[0].text).toContain('value1,value2');
     });
 
-    it('should return base64 for binary attachments', async () => {
+    it('should return base64 for binary attachments inline', async () => {
       (mockClient.getMessage as ReturnType<typeof vi.fn>).mockResolvedValue(emailWithAttachments);
       const tool = downloadEmailAttachmentsTool(mockServer, () => mockClient);
-      const result = await tool.handler({ email_id: 'msg_att', filename: 'invoice.pdf' });
+      const result = await tool.handler({
+        email_id: 'msg_att',
+        filename: 'invoice.pdf',
+        inline: true,
+      });
 
       expect(result.content[0].text).toContain('**MIME Type:** application/pdf');
       expect(result.content[0].text).toContain('**Encoding:** base64');
@@ -887,11 +915,13 @@ describe('Gmail MCP Server Tools', () => {
       expect(result.content[0].text).toContain('# Downloaded Attachments (2)');
       expect(result.content[0].text).toContain('report.pdf');
       expect(result.content[0].text).toContain('screenshot.png');
+      expect(result.content[0].text).toContain('/tmp/gmail-attachments-msg_nested/report.pdf');
+      expect(result.content[0].text).toContain('/tmp/gmail-attachments-msg_nested/screenshot.png');
       expect(mockClient.getAttachment).toHaveBeenCalledWith('msg_nested', 'att_001');
       expect(mockClient.getAttachment).toHaveBeenCalledWith('msg_nested', 'att_003');
     });
 
-    it('should reject when total size exceeds limit', async () => {
+    it('should reject when total size exceeds limit in inline mode', async () => {
       (mockClient.getMessage as ReturnType<typeof vi.fn>).mockResolvedValue({
         id: 'msg_large',
         threadId: 'thread_large',
@@ -922,7 +952,7 @@ describe('Gmail MCP Server Tools', () => {
       });
 
       const tool = downloadEmailAttachmentsTool(mockServer, () => mockClient);
-      const result = await tool.handler({ email_id: 'msg_large' });
+      const result = await tool.handler({ email_id: 'msg_large', inline: true });
 
       expect(result.isError).toBe(true);
       expect(result.content[0].text).toContain('exceeds the 25 MB limit');

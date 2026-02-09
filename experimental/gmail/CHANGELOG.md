@@ -9,10 +9,10 @@ All notable changes to this project will be documented in this file.
 ### Added
 
 - `download_email_attachments` tool for downloading attachment content from emails
+  - By default, saves attachments to `/tmp/` and returns full file paths — ideal for binary files or subsequent processing
+  - Optional `inline` parameter returns content directly in the response (text decoded, binary as base64)
   - Downloads all attachments in a single call by default, or a specific one via the `filename` parameter
-  - Text-based attachments (text/\*, JSON, XML) are returned as decoded text content
-  - Binary attachments (PDF, images, etc.) are returned as base64-encoded data
-  - 25 MB total size limit per request to prevent overwhelming the context window
+  - 25 MB size limit applies only in inline mode to prevent context window overflow
   - Available in all tool groups (readonly, readwrite, readwrite_external) since downloading doesn't modify mailbox state
   - Addresses [issue #302](https://github.com/pulsemcp/mcp-servers/issues/302)
 
