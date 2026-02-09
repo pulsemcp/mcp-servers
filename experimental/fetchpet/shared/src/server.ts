@@ -582,6 +582,14 @@ The user MUST explicitly confirm they want to submit this claim before calling s
       .catch(() => {});
     await page.waitForTimeout(2000);
 
+    // The history page initially shows only the most recent 3 claims per pet.
+    // Click "View all" to expand and show the complete history.
+    const viewAllLinks = await page.$$('.view-all-label .cursor-pointer, .view-all-label span');
+    for (const link of viewAllLinks) {
+      await link.click();
+      await page.waitForTimeout(1000);
+    }
+
     // History tab uses a different table-like layout with different CSS classes
     // than the Active tab's card layout. Extract using history-specific selectors.
     return this.extractHistoricalClaimsFromPage(page);

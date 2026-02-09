@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Include index in generated claim IDs for uniqueness
 - Extract shared `extractClaimsFromPage` helper to reduce code duplication
 - Add `extractHistoricalClaimsFromPage` for history tab's different DOM structure
+- Click "View all" on history page to expand beyond the default 3 most recent claims per pet
 - Fix pet name extraction in `getClaimDetails` using DOM selectors instead of unreliable regex
 - Fix login flow to use `Promise.all([waitForURL, click])` to avoid "Execution context destroyed" errors
 - Update Chrome user agent string to recent version (131)
