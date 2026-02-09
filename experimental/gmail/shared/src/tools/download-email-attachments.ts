@@ -1,6 +1,6 @@
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { writeFile, mkdir } from 'fs/promises';
-import { join } from 'path';
+import { join, basename, extname } from 'path';
 import { z } from 'zod';
 import type { ClientFactory } from '../server.js';
 import type { EmailPart } from '../types.js';
@@ -137,18 +137,49 @@ function buildInlineResponse(results: DownloadedAttachment[]) {
 }
 
 /**
+ * Sanitizes a filename to prevent path traversal attacks.
+ * Strips directory components and falls back to 'attachment' if empty.
+ */
+function sanitizeFilename(filename: string): string {
+  return basename(filename) || 'attachment';
+}
+
+/**
+ * Returns a unique filename, appending (1), (2), etc. if the name already exists.
+ */
+function deduplicateFilename(name: string, usedNames: Set<string>): string {
+  if (!usedNames.has(name)) {
+    usedNames.add(name);
+    return name;
+  }
+  const ext = extname(name);
+  const base = name.slice(0, name.length - ext.length);
+  let counter = 1;
+  let candidate: string;
+  do {
+    candidate = `${base} (${counter})${ext}`;
+    counter++;
+  } while (usedNames.has(candidate));
+  usedNames.add(candidate);
+  return candidate;
+}
+
+/**
  * Saves attachments to /tmp/ and returns file paths
  */
 async function buildFileResponse(results: DownloadedAttachment[], emailId: string) {
-  const dir = join('/tmp', `gmail-attachments-${emailId}`);
+  const safeEmailId = emailId.replace(/[^a-zA-Z0-9_-]/g, '_');
+  const dir = join('/tmp', `gmail-attachments-${safeEmailId}`);
   await mkdir(dir, { recursive: true });
 
   const savedFiles: { filename: string; path: string; mimeType: string; size: number }[] = [];
+  const usedNames = new Set<string>();
 
   for (const result of results) {
     const base64Data = base64UrlToBase64(result.data);
     const buffer = Buffer.from(base64Data, 'base64');
-    const filePath = join(dir, result.filename);
+    const safeName = deduplicateFilename(sanitizeFilename(result.filename), usedNames);
+    const filePath = join(dir, safeName);
     await writeFile(filePath, buffer);
     savedFiles.push({
       filename: result.filename,

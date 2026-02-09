@@ -957,6 +957,101 @@ describe('Gmail MCP Server Tools', () => {
       expect(result.isError).toBe(true);
       expect(result.content[0].text).toContain('exceeds the 25 MB limit');
     });
+
+    it('should sanitize path traversal in filenames', async () => {
+      (mockClient.getMessage as ReturnType<typeof vi.fn>).mockResolvedValue({
+        id: 'msg_traversal',
+        threadId: 'thread_traversal',
+        labelIds: ['INBOX'],
+        snippet: 'Malicious attachment',
+        historyId: '12345',
+        internalDate: String(Date.now()),
+        payload: {
+          mimeType: 'multipart/mixed',
+          headers: [
+            { name: 'Subject', value: 'Path Traversal' },
+            { name: 'From', value: 'attacker@example.com' },
+            { name: 'To', value: 'me@example.com' },
+            { name: 'Date', value: new Date().toISOString() },
+          ],
+          parts: [
+            {
+              partId: '1',
+              mimeType: 'application/pdf',
+              filename: '../../etc/passwd',
+              body: {
+                attachmentId: 'att_001',
+                size: 1024,
+              },
+            },
+          ],
+        },
+      });
+
+      const tool = downloadEmailAttachmentsTool(mockServer, () => mockClient);
+      const result = await tool.handler({ email_id: 'msg_traversal' });
+
+      // File path should use sanitized basename only, not the traversal path
+      expect(result.content[0].text).toContain('/tmp/gmail-attachments-msg_traversal/passwd');
+      // Must NOT contain the traversal path in the saved file location
+      expect(result.content[0].text).not.toContain('`: `/etc/passwd');
+      expect(result.content[0].text).not.toContain(
+        '`: `/tmp/gmail-attachments-msg_traversal/../../'
+      );
+    });
+
+    it('should deduplicate filenames when attachments share the same name', async () => {
+      (mockClient.getMessage as ReturnType<typeof vi.fn>).mockResolvedValue({
+        id: 'msg_dup',
+        threadId: 'thread_dup',
+        labelIds: ['INBOX'],
+        snippet: 'Duplicate names',
+        historyId: '12345',
+        internalDate: String(Date.now()),
+        payload: {
+          mimeType: 'multipart/mixed',
+          headers: [
+            { name: 'Subject', value: 'Duplicates' },
+            { name: 'From', value: 'sender@example.com' },
+            { name: 'To', value: 'me@example.com' },
+            { name: 'Date', value: new Date().toISOString() },
+          ],
+          parts: [
+            {
+              partId: '1',
+              mimeType: 'image/png',
+              filename: 'image.png',
+              body: { attachmentId: 'att_001', size: 1024 },
+            },
+            {
+              partId: '2',
+              mimeType: 'image/png',
+              filename: 'image.png',
+              body: { attachmentId: 'att_003', size: 2048 },
+            },
+          ],
+        },
+      });
+
+      const tool = downloadEmailAttachmentsTool(mockServer, () => mockClient);
+      const result = await tool.handler({ email_id: 'msg_dup' });
+
+      expect(result.content[0].text).toContain('/tmp/gmail-attachments-msg_dup/image.png');
+      expect(result.content[0].text).toContain('/tmp/gmail-attachments-msg_dup/image (1).png');
+    });
+
+    it('should handle getAttachment failure during download', async () => {
+      (mockClient.getMessage as ReturnType<typeof vi.fn>).mockResolvedValue(emailWithAttachments);
+      (mockClient.getAttachment as ReturnType<typeof vi.fn>).mockRejectedValue(
+        new Error('Attachment download failed')
+      );
+
+      const tool = downloadEmailAttachmentsTool(mockServer, () => mockClient);
+      const result = await tool.handler({ email_id: 'msg_att' });
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('Error downloading attachment(s)');
+    });
   });
 });
 
