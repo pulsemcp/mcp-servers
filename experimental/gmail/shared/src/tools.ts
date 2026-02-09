@@ -30,7 +30,8 @@ type ToolFactory = (server: Server, clientFactory: ClientFactory) => Tool;
 
 /**
  * Available tool groups for Gmail MCP server
- * - readonly: Read-only operations (list, get, search emails)
+ * - readonly: Read-only Gmail operations (list, get, search, download_attachments)
+ *   Note: download_email_attachments writes to local /tmp/ but does not modify mailbox state
  * - readwrite: Read and write operations (includes readonly + modify, draft)
  * - readwrite_external: External communication operations (includes readwrite + send_email)
  */
@@ -46,7 +47,7 @@ interface ToolDefinition {
 /**
  * All available tools with their group assignments
  *
- * readonly: list_email_conversations, get_email_conversation, search_email_conversations
+ * readonly: list_email_conversations, get_email_conversation, search_email_conversations, download_email_attachments
  * readwrite: all readonly tools + change_email_conversation, draft_email
  * readwrite_external: all readwrite tools + send_email (external communication)
  */
