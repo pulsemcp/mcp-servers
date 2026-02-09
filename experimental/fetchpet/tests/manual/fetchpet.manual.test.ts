@@ -77,9 +77,9 @@ describe('Fetch Pet Manual Tests', () => {
     }
   });
 
-  describe('get_active_claims', () => {
-    it('should get active claims from real Fetch Pet', async () => {
-      const testName = 'get_active_claims - real claims';
+  describe('get_claims', () => {
+    it('should get all claims from real Fetch Pet', async () => {
+      const testName = 'get_claims - real claims';
 
       if (!client) {
         reportOutcome(testName, 'WARNING', 'Skipped - no credentials provided');
@@ -87,7 +87,7 @@ describe('Fetch Pet Manual Tests', () => {
       }
 
       try {
-        const result = await client.callTool('get_active_claims', {});
+        const result = await client.callTool('get_claims', {});
 
         expect(result).toHaveProperty('content');
         const text = (result as { content: Array<{ text: string }> }).content[0].text;
@@ -95,9 +95,9 @@ describe('Fetch Pet Manual Tests', () => {
         if (text.startsWith('Error')) {
           reportOutcome(testName, 'FAILURE', 'API error: ' + text.substring(0, 200));
           throw new Error(text);
-        } else if (text.includes('active claim') || text.includes('No active claims')) {
-          reportOutcome(testName, 'SUCCESS', 'Active claims retrieved');
-          console.log('   First 500 chars:', text.substring(0, 500));
+        } else if (text.includes('claim(s)') || text.includes('No claims found')) {
+          reportOutcome(testName, 'SUCCESS', 'Claims retrieved');
+          console.log('   Full response:', text);
         } else {
           reportOutcome(testName, 'WARNING', 'Unexpected response format');
           console.log('   Response:', text.substring(0, 300));
@@ -110,43 +110,7 @@ describe('Fetch Pet Manual Tests', () => {
         );
         throw error;
       }
-    }, 60000);
-  });
-
-  describe('get_historical_claims', () => {
-    it('should get historical claims from real Fetch Pet', async () => {
-      const testName = 'get_historical_claims - real claims';
-
-      if (!client) {
-        reportOutcome(testName, 'WARNING', 'Skipped - no credentials provided');
-        return;
-      }
-
-      try {
-        const result = await client.callTool('get_historical_claims', {});
-
-        expect(result).toHaveProperty('content');
-        const text = (result as { content: Array<{ text: string }> }).content[0].text;
-
-        if (text.startsWith('Error')) {
-          reportOutcome(testName, 'FAILURE', 'API error: ' + text.substring(0, 200));
-          throw new Error(text);
-        } else if (text.includes('historical claim') || text.includes('No historical claims')) {
-          reportOutcome(testName, 'SUCCESS', 'Historical claims retrieved');
-          console.log('   First 500 chars:', text.substring(0, 500));
-        } else {
-          reportOutcome(testName, 'WARNING', 'Unexpected response format');
-          console.log('   Response:', text.substring(0, 300));
-        }
-      } catch (error) {
-        reportOutcome(
-          testName,
-          'FAILURE',
-          error instanceof Error ? error.message : 'Unknown error'
-        );
-        throw error;
-      }
-    }, 60000);
+    }, 90000);
   });
 
   describe('get_claim_details', () => {
@@ -159,8 +123,8 @@ describe('Fetch Pet Manual Tests', () => {
       }
 
       try {
-        // First get historical claims to find a real claim ID
-        const claimsResult = await client.callTool('get_historical_claims', {});
+        // First get claims to find a real claim ID
+        const claimsResult = await client.callTool('get_claims', {});
         const claimsText = (claimsResult as { content: Array<{ text: string }> }).content[0].text;
 
         // Try to extract a claim ID from the results

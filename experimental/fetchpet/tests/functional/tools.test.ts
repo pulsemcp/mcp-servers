@@ -109,25 +109,15 @@ describe('Fetch Pet Tools', () => {
     });
   });
 
-  describe('get_active_claims', () => {
-    it('should return active claims', async () => {
-      const result = await callTool('get_active_claims', {});
+  describe('get_claims', () => {
+    it('should return all claims (active and historical)', async () => {
+      const result = await callTool('get_claims', {});
 
       const text = (result as { content: Array<{ text: string }> }).content[0].text;
-      expect(text).toContain('active claim');
+      expect(text).toContain('claim(s)');
       expect(text).toContain('Buddy');
       expect(text).toContain('pending');
       expect(text).toContain('$250.00');
-    });
-  });
-
-  describe('get_historical_claims', () => {
-    it('should return historical claims', async () => {
-      const result = await callTool('get_historical_claims', {});
-
-      const text = (result as { content: Array<{ text: string }> }).content[0].text;
-      expect(text).toContain('historical claim');
-      expect(text).toContain('Buddy');
       expect(text).toContain('approved');
       expect(text).toContain('$500.00');
     });

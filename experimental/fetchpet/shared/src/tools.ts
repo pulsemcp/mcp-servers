@@ -44,13 +44,11 @@ You must provide the confirmation_token from prepare_claim_to_submit.
 
 Returns the claim ID/confirmation number if successful.`;
 
-const GET_ACTIVE_CLAIMS_DESCRIPTION = `Get all active/pending insurance claims from Fetch Pet.
+const GET_CLAIMS_DESCRIPTION = `Get all insurance claims from Fetch Pet, including both active and historical.
 
-Returns a list of claims that are currently:
-- Pending review
-- Processing
-- Awaiting additional information
-- Recently submitted
+Returns a combined list of:
+- Active claims (pending, processing, recently submitted)
+- Historical claims (approved, denied, closed)
 
 Each claim includes:
 - Claim ID
@@ -58,22 +56,7 @@ Each claim includes:
 - Claim date
 - Amount
 - Current status
-- Provider name (if available)`;
-
-const GET_HISTORICAL_CLAIMS_DESCRIPTION = `Get all historical/completed insurance claims from Fetch Pet.
-
-Returns a list of claims that have been:
-- Approved and paid
-- Denied
-- Closed/processed
-
-Each claim includes:
-- Claim ID
-- Pet name
-- Claim date
-- Amount
-- Final status
-- Provider name (if available)`;
+- Description (if available)`;
 
 const GET_CLAIM_DETAILS_DESCRIPTION = `Get detailed information about a specific claim on Fetch Pet.
 
@@ -291,8 +274,8 @@ export function createRegisterTools(
       },
     },
     {
-      name: 'get_active_claims',
-      description: GET_ACTIVE_CLAIMS_DESCRIPTION,
+      name: 'get_claims',
+      description: GET_CLAIMS_DESCRIPTION,
       inputSchema: {
         type: 'object' as const,
         properties: {},
@@ -300,14 +283,14 @@ export function createRegisterTools(
       handler: async () => {
         try {
           const fetchPetClient = await getClient();
-          const claims = await fetchPetClient.getActiveClaims();
+          const claims = await fetchPetClient.getClaims();
 
           if (claims.length === 0) {
             return {
               content: [
                 {
                   type: 'text',
-                  text: 'No active claims found. All your claims may be completed or you may not have submitted any claims yet.',
+                  text: 'No claims found. You may not have submitted any claims yet.',
                 },
               ],
             };
@@ -328,7 +311,7 @@ export function createRegisterTools(
             content: [
               {
                 type: 'text',
-                text: `Found ${claims.length} active claim(s):\n\n${formattedClaims}`,
+                text: `Found ${claims.length} claim(s):\n\n${formattedClaims}`,
               },
             ],
           };
@@ -337,62 +320,7 @@ export function createRegisterTools(
             content: [
               {
                 type: 'text',
-                text: `Error getting active claims: ${error instanceof Error ? error.message : String(error)}`,
-              },
-            ],
-            isError: true,
-          };
-        }
-      },
-    },
-    {
-      name: 'get_historical_claims',
-      description: GET_HISTORICAL_CLAIMS_DESCRIPTION,
-      inputSchema: {
-        type: 'object' as const,
-        properties: {},
-      },
-      handler: async () => {
-        try {
-          const fetchPetClient = await getClient();
-          const claims = await fetchPetClient.getHistoricalClaims();
-
-          if (claims.length === 0) {
-            return {
-              content: [
-                {
-                  type: 'text',
-                  text: 'No historical claims found. You may not have any completed claims yet.',
-                },
-              ],
-            };
-          }
-
-          const formattedClaims = claims
-            .map(
-              (claim, i) =>
-                `${i + 1}. **Claim ${claim.claimId}**
-   Pet: ${claim.petName}
-   Date: ${claim.claimDate || 'N/A'}
-   Amount: ${claim.claimAmount || 'N/A'}
-   Status: ${claim.status}${claim.providerName ? `\n   Provider: ${claim.providerName}` : ''}${claim.description ? `\n   Description: ${claim.description}` : ''}`
-            )
-            .join('\n\n');
-
-          return {
-            content: [
-              {
-                type: 'text',
-                text: `Found ${claims.length} historical claim(s):\n\n${formattedClaims}`,
-              },
-            ],
-          };
-        } catch (error) {
-          return {
-            content: [
-              {
-                type: 'text',
-                text: `Error getting historical claims: ${error instanceof Error ? error.message : String(error)}`,
+                text: `Error getting claims: ${error instanceof Error ? error.message : String(error)}`,
               },
             ],
             isError: true,

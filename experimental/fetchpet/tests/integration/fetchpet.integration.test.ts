@@ -55,15 +55,14 @@ describe('Fetch Pet MCP Server Integration Tests', () => {
       const toolNames = tools.map((t) => t.name);
       expect(toolNames).toContain('prepare_claim_to_submit');
       expect(toolNames).toContain('submit_claim');
-      expect(toolNames).toContain('get_active_claims');
-      expect(toolNames).toContain('get_historical_claims');
+      expect(toolNames).toContain('get_claims');
       expect(toolNames).toContain('get_claim_details');
     });
 
-    it('should have 5 tools total', async () => {
+    it('should have 4 tools total', async () => {
       const result = await client.listTools();
       const tools = result.tools as Tool[];
-      expect(tools.length).toBe(5);
+      expect(tools.length).toBe(4);
     });
   });
 
@@ -99,31 +98,23 @@ describe('Fetch Pet MCP Server Integration Tests', () => {
       expect(detailsTool!.inputSchema.required).toContain('claim_id');
     });
 
-    it('get_active_claims should have no required parameters', async () => {
+    it('get_claims should have no required parameters', async () => {
       const result = await client.listTools();
       const tools = result.tools as Tool[];
-      const activeTool = tools.find((t) => t.name === 'get_active_claims');
+      const claimsTool = tools.find((t) => t.name === 'get_claims');
 
-      expect(activeTool).toBeDefined();
-      expect(activeTool!.inputSchema.required).toBeUndefined();
+      expect(claimsTool).toBeDefined();
+      expect(claimsTool!.inputSchema.required).toBeUndefined();
     });
   });
 
   describe('Tool Execution', () => {
-    it('should get active claims', async () => {
-      const result = await client.callTool('get_active_claims', {});
+    it('should get claims', async () => {
+      const result = await client.callTool('get_claims', {});
 
       expect(result).toHaveProperty('content');
       const content = (result as { content: Array<{ text: string }> }).content[0];
-      expect(content.text).toContain('active claim');
-    });
-
-    it('should get historical claims', async () => {
-      const result = await client.callTool('get_historical_claims', {});
-
-      expect(result).toHaveProperty('content');
-      const content = (result as { content: Array<{ text: string }> }).content[0];
-      expect(content.text).toContain('historical claim');
+      expect(content.text).toContain('claim');
     });
 
     it('should get claim details', async () => {

@@ -85,7 +85,7 @@ The user MUST explicitly confirm they want to submit this claim before calling s
     };
   }
 
-  async getActiveClaims(): Promise<Claim[]> {
+  async getClaims(): Promise<Claim[]> {
     return [
       {
         claimId: 'MOCK-ACTIVE-001',
@@ -105,11 +105,6 @@ The user MUST explicitly confirm they want to submit this claim before calling s
         description: 'Dental cleaning',
         providerName: 'Pet Dental Care',
       },
-    ];
-  }
-
-  async getHistoricalClaims(): Promise<Claim[]> {
-    return [
       {
         claimId: 'MOCK-HIST-001',
         petName: 'Buddy',

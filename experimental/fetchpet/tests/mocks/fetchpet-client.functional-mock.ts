@@ -69,7 +69,7 @@ The user MUST explicitly confirm they want to submit this claim before calling s
       };
     },
 
-    async getActiveClaims(): Promise<Claim[]> {
+    async getClaims(): Promise<Claim[]> {
       return [
         {
           claimId: 'TEST-ACTIVE-001',
@@ -80,11 +80,6 @@ The user MUST explicitly confirm they want to submit this claim before calling s
           description: 'Annual checkup',
           providerName: 'Test Vet Clinic',
         },
-      ];
-    },
-
-    async getHistoricalClaims(): Promise<Claim[]> {
-      return [
         {
           claimId: 'TEST-HIST-001',
           petName: 'Buddy',

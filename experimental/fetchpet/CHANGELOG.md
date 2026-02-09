@@ -7,13 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **BREAKING**: Consolidate `get_active_claims` and `get_historical_claims` into single `get_claims` tool that returns all claims (both active and historical)
+
 ### Fixed
 
+- Fix EOB/Invoice document downloads by intercepting popup tabs with blob: URLs instead of relying on browser download events
 - Wire up configurable `TIMEOUT` env var via `page.setDefaultTimeout()`
 - Fix `getClaimDetails` matching logic that always matched the first claim card
 - Remove unused `eobFileUrl`/`invoiceFileUrl` variables from `ClaimDetails` interface
 - Replace `waitForLoadState('networkidle')` with `waitForSelector` + `waitForTimeout` to prevent SPA hangs
-- Navigate `getHistoricalClaims` directly to `/claims/closed` instead of `/claims/active`
+- Navigate directly to `/claims/closed` for historical claims instead of `/claims/active`
 - Add early return in `prepareClaimToSubmit` when submit button is not found
 - Use more specific form error selectors to avoid false positives
 - Include index in generated claim IDs for uniqueness

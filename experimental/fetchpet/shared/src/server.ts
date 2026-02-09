@@ -8,7 +8,7 @@ import type {
   ClaimSubmissionResult,
 } from './types.js';
 import { randomBytes } from 'crypto';
-import { mkdirSync, existsSync } from 'fs';
+import { mkdirSync, existsSync, writeFileSync } from 'fs';
 import { join } from 'path';
 
 const BASE_URL = 'https://my.fetchpet.com';
@@ -45,14 +45,9 @@ export interface IFetchPetClient {
   submitClaim(confirmationToken: string): Promise<ClaimSubmissionResult>;
 
   /**
-   * Get list of active/pending claims
+   * Get all claims (both active and historical)
    */
-  getActiveClaims(): Promise<Claim[]>;
-
-  /**
-   * Get list of historical/completed claims
-   */
-  getHistoricalClaims(): Promise<Claim[]>;
+  getClaims(): Promise<Claim[]>;
 
   /**
    * Get detailed information about a specific claim
@@ -107,8 +102,8 @@ export class FetchPetClient implements IFetchPetClient {
 
   /**
    * Extract claim data from active claim cards on the current page.
-   * Used by getActiveClaims. Historical claims use extractHistoricalClaimsFromPage
-   * due to a completely different DOM structure on the history tab.
+   * The history tab uses extractHistoricalClaimsFromPage instead,
+   * due to a completely different DOM structure.
    */
   private async extractClaimsFromPage(
     page: import('playwright').Page,
@@ -544,42 +539,22 @@ The user MUST explicitly confirm they want to submit this claim before calling s
     };
   }
 
-  async getActiveClaims(): Promise<Claim[]> {
+  async getClaims(): Promise<Claim[]> {
     const page = await this.ensureBrowser();
+    const allClaims: Claim[] = [];
 
+    // 1. Get active claims from the Active tab
     await page.goto(`${BASE_URL}/claims/active`, { waitUntil: 'domcontentloaded' });
-    // Wait for claim cards or a "no claims" indicator to appear
     await page
       .waitForSelector('.claim-card-data-list, .no-claims, .claims-empty', { timeout: 10000 })
-      .catch(() => {
-        // If neither appears, the page may still be loading or truly has no claims
-      });
+      .catch(() => {});
     await page.waitForTimeout(2000);
 
-    // Make sure we're on the Active tab
-    const activeTab = await page.$('a[href="/claims/active"], a:has-text("Active")');
-    if (activeTab) {
-      const isActive = await activeTab.evaluate(
-        (el) => el.classList.contains('active') || el.getAttribute('aria-current') === 'page'
-      );
-      if (!isActive) {
-        await activeTab.click();
-        await page
-          .waitForSelector('.claim-card-data-list, .no-claims, .claims-empty', { timeout: 10000 })
-          .catch(() => {});
-        await page.waitForTimeout(2000);
-      }
-    }
+    const activeClaims = await this.extractClaimsFromPage(page, 'pending');
+    allClaims.push(...activeClaims);
 
-    return this.extractClaimsFromPage(page, 'pending');
-  }
-
-  async getHistoricalClaims(): Promise<Claim[]> {
-    const page = await this.ensureBrowser();
-
-    // Navigate directly to the closed/history claims page
+    // 2. Get historical claims from the History tab
     await page.goto(`${BASE_URL}/claims/closed`, { waitUntil: 'domcontentloaded' });
-    // Wait for history claim elements or empty state
     await page
       .waitForSelector('.claims-coverage-container, .claim-number-closed, .no-claims', {
         timeout: 10000,
@@ -587,17 +562,17 @@ The user MUST explicitly confirm they want to submit this claim before calling s
       .catch(() => {});
     await page.waitForTimeout(2000);
 
-    // The history page initially shows only the most recent 3 claims per pet.
-    // Click "View all" to expand and show the complete history.
+    // Click "View all" to expand beyond the default 3 most recent claims per pet
     const viewAllLinks = await page.$$('.view-all-label .cursor-pointer, .view-all-label span');
     for (const link of viewAllLinks) {
       await link.click();
       await page.waitForTimeout(1000);
     }
 
-    // History tab uses a different table-like layout with different CSS classes
-    // than the Active tab's card layout. Extract using history-specific selectors.
-    return this.extractHistoricalClaimsFromPage(page);
+    const historicalClaims = await this.extractHistoricalClaimsFromPage(page);
+    allClaims.push(...historicalClaims);
+
+    return allClaims;
   }
 
   /**
@@ -651,6 +626,77 @@ The user MUST explicitly confirm they want to submit this claim before calling s
 
       return claims;
     });
+  }
+
+  /**
+   * Download a document by clicking its link, which opens a popup with a blob: iframe.
+   * Fetches the blob data from the popup and saves it to disk.
+   */
+  private async downloadDocumentFromPopup(
+    page: import('playwright').Page,
+    selector: string,
+    filePrefix: string
+  ): Promise<{ localPath?: string; summary?: string }> {
+    try {
+      const descEl = await page.$(selector);
+      if (!descEl) {
+        return { summary: `Document link not found` };
+      }
+
+      // Click the parent .cursor-pointer container to trigger the popup
+      const parent = await descEl.evaluateHandle((el) => el.closest('.cursor-pointer'));
+      if (!parent) {
+        return { summary: `Document container not found` };
+      }
+
+      // Listen for new popup page before clicking
+      const popupPromise = page.context().waitForEvent('page', { timeout: 15000 });
+      await (parent as import('playwright').ElementHandle<Element>).click();
+      const popup = await popupPromise;
+
+      // Wait for the popup to load its content
+      await popup.waitForLoadState('domcontentloaded').catch(() => {});
+      await popup.waitForTimeout(3000);
+
+      // The popup contains an <iframe> with a blob: URL pointing to the PDF
+      const blobData = await popup.evaluate(async () => {
+        const iframe = document.querySelector('iframe');
+        if (!iframe?.src) return null;
+
+        const response = await fetch(iframe.src);
+        const blob = await response.blob();
+        const buffer = await blob.arrayBuffer();
+        // Convert to base64 for transfer back to Node.js
+        const bytes = new Uint8Array(buffer);
+        let binary = '';
+        for (let i = 0; i < bytes.length; i++) {
+          binary += String.fromCharCode(bytes[i]);
+        }
+        return { base64: btoa(binary), type: blob.type, size: blob.size };
+      });
+
+      // Close the popup
+      await popup.close();
+
+      if (!blobData) {
+        return { summary: 'Document popup opened but no PDF content found' };
+      }
+
+      // Save the blob to disk
+      const ext = blobData.type.includes('pdf') ? 'pdf' : 'bin';
+      const filePath = join(this.config.downloadDir, `${filePrefix}_${Date.now()}.${ext}`);
+      const buffer = Buffer.from(blobData.base64, 'base64');
+      writeFileSync(filePath, buffer);
+
+      return {
+        localPath: filePath,
+        summary: `Downloaded (${Math.round(blobData.size / 1024)}KB) to: ${filePath}`,
+      };
+    } catch (error) {
+      return {
+        summary: `Document download failed: ${error instanceof Error ? error.message : String(error)}`,
+      };
+    }
   }
 
   async getClaimDetails(claimId: string): Promise<ClaimDetails> {
@@ -828,8 +874,9 @@ The user MUST explicitly confirm they want to submit this claim before calling s
       };
     }
 
-    // Try to download EOB and Invoice documents from the popup
-    // Documents are listed with .claims-record-description text inside clickable containers
+    // Download documents from the popup.
+    // Fetch Pet opens documents in a new popup tab with a blob: URL inside an iframe.
+    // We click the document link, wait for the popup, fetch the blob, and save to disk.
     let localEobPath: string | undefined;
     let eobSummary: string | undefined;
     let localInvoicePath: string | undefined;
@@ -839,56 +886,24 @@ The user MUST explicitly confirm they want to submit this claim before calling s
 
     // Download EOB if listed in documents
     if (details.documents.includes('Explanation of Benefits')) {
-      try {
-        const eobClickable = await page.$(
-          `${dialogSelector} .claims-record-description:text("Explanation of Benefits")`
-        );
-        if (eobClickable) {
-          // Click the parent container which is the clickable element
-          const parent = await eobClickable.evaluateHandle((el) => el.closest('.cursor-pointer'));
-          if (parent) {
-            const downloadPromise = page.waitForEvent('download', { timeout: 10000 });
-            await (parent as import('playwright').ElementHandle<Element>).click();
-            const download = await downloadPromise;
-
-            const safeClaimId = details.claimId.replace(/[^a-zA-Z0-9]/g, '');
-            localEobPath = join(this.config.downloadDir, `eob_${safeClaimId}_${Date.now()}.pdf`);
-            await download.saveAs(localEobPath);
-            eobSummary = `EOB downloaded to: ${localEobPath}`;
-          }
-        }
-      } catch {
-        eobSummary = 'EOB link found but download failed';
-      }
+      const result = await this.downloadDocumentFromPopup(
+        page,
+        `${dialogSelector} .claims-record-description:text("Explanation of Benefits")`,
+        `eob_${details.claimId.replace(/[^a-zA-Z0-9]/g, '')}`
+      );
+      localEobPath = result.localPath;
+      eobSummary = result.summary;
     }
 
     // Download first Invoice if listed in documents
     if (details.documents.includes('Invoice')) {
-      try {
-        const invoiceElements = await page.$$(
-          `${dialogSelector} .claims-record-description:text("Invoice")`
-        );
-        // Take the first Invoice element (skip "Explanation of Benefits" which also has a similar structure)
-        const invoiceEl = invoiceElements[0];
-        if (invoiceEl) {
-          const parent = await invoiceEl.evaluateHandle((el) => el.closest('.cursor-pointer'));
-          if (parent) {
-            const downloadPromise = page.waitForEvent('download', { timeout: 10000 });
-            await (parent as import('playwright').ElementHandle<Element>).click();
-            const download = await downloadPromise;
-
-            const safeClaimId = details.claimId.replace(/[^a-zA-Z0-9]/g, '');
-            localInvoicePath = join(
-              this.config.downloadDir,
-              `invoice_${safeClaimId}_${Date.now()}.pdf`
-            );
-            await download.saveAs(localInvoicePath);
-            invoiceSummary = `Invoice downloaded to: ${localInvoicePath}`;
-          }
-        }
-      } catch {
-        invoiceSummary = 'Invoice link found but download failed';
-      }
+      const result = await this.downloadDocumentFromPopup(
+        page,
+        `${dialogSelector} .claims-record-description:text-is("Invoice")`,
+        `invoice_${details.claimId.replace(/[^a-zA-Z0-9]/g, '')}`
+      );
+      localInvoicePath = result.localPath;
+      invoiceSummary = result.summary;
     }
 
     // Close the dialog
