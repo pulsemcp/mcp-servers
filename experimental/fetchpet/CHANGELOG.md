@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Wire up configurable `TIMEOUT` env var via `page.setDefaultTimeout()`
+- Fix `getClaimDetails` matching logic that always matched the first claim card
+- Remove unused `eobFileUrl`/`invoiceFileUrl` variables from `ClaimDetails` interface
+- Replace many hardcoded `waitForTimeout` calls with `waitForLoadState('networkidle')`
+- Navigate `getHistoricalClaims` directly to `/claims/closed` instead of `/claims/active`
+- Add early return in `prepareClaimToSubmit` when submit button is not found
+- Use more specific form error selectors to avoid false positives
+- Include index in generated claim IDs for uniqueness
+- Extract shared `extractClaimsFromPage` helper to reduce code duplication
+- Update Chrome user agent string to recent version (131)
+- Document pet selection limitation for multi-pet accounts
+
 ## [0.1.0] - 2026-02-08
 
 ### Added

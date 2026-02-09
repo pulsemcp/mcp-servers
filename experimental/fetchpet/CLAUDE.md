@@ -80,9 +80,11 @@ npm run lint             # Check linting
 The Fetch Pet website uses a React SPA. Key selector patterns:
 
 - Login form: `input[type="email"]`, `input[type="password"]`, `button[type="submit"]`
-- Claim forms: Various input patterns with name/placeholder matching
-- Claim lists: Elements with class patterns like `claim-row`, `claim-item`
-- Download links: `a:has-text("EOB")`, `a:has-text("Invoice")`
+- Claim cards: `.claim-card-data-list` with `.pet-name`, `.status-text.status`, `.claim-invoice-details.fw-700`
+- Claim details modal: `.claim-details-popup-container`, `.details-link` to open
+- Vet selection: `.rbt-input-main` (typeahead input)
+- Diagnosis selection: `.MuiAutocomplete-input`
+- Download links: `div:has-text("Explanation of Benefits")`, `div:has-text("Invoice")`
 
 ## Known Limitations
 
@@ -90,3 +92,4 @@ The Fetch Pet website uses a React SPA. Key selector patterns:
 2. **Dynamic Content**: Some content loads asynchronously
 3. **Bot Detection**: Uses stealth plugin but may still be detected occasionally
 4. **Website Changes**: Selectors may break if Fetch Pet updates their UI
+5. **Pet Selection**: The claim form pre-populates the pet based on the account; the `pet_name` parameter is used for identification but may not select a specific pet on multi-pet accounts

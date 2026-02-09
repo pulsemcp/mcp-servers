@@ -19,6 +19,9 @@ After calling this tool, you will receive:
 
 **IMPORTANT**: The user MUST explicitly confirm they want to submit before calling submit_claim.
 
+Note: On multi-pet accounts, the form may default to the first pet regardless of pet_name.
+The pet_name is used to identify the claim but may not control which pet is selected in the form.
+
 Required parameters:
 - pet_name: Name of the pet for this claim
 - invoice_date: Date of the veterinary invoice

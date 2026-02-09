@@ -24,8 +24,6 @@ export interface Claim {
 export interface ClaimDetails extends Claim {
   eobSummary?: string;
   invoiceSummary?: string;
-  eobFileUrl?: string;
-  invoiceFileUrl?: string;
   localEobPath?: string;
   localInvoicePath?: string;
   reimbursementAmount?: string;

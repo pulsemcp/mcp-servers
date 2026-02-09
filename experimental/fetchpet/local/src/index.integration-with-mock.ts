@@ -145,8 +145,6 @@ The user MUST explicitly confirm they want to submit this claim before calling s
       copay: '$0.00',
       eobSummary: 'EOB available for download',
       invoiceSummary: 'Invoice available for download',
-      eobFileUrl: 'https://example.com/eob.pdf',
-      invoiceFileUrl: 'https://example.com/invoice.pdf',
     };
   }
 

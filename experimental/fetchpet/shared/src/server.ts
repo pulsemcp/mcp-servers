@@ -105,6 +105,56 @@ export class FetchPetClient implements IFetchPetClient {
     return this.page;
   }
 
+  /**
+   * Extract claim data from claim cards on the current page.
+   * Shared between getActiveClaims and getHistoricalClaims.
+   */
+  private async extractClaimsFromPage(
+    page: import('playwright').Page,
+    defaultStatus: string
+  ): Promise<Claim[]> {
+    const claims: Claim[] = [];
+    const claimCards = await page.$$('.claim-card-data-list');
+
+    for (let i = 0; i < claimCards.length; i++) {
+      const card = claimCards[i];
+
+      // Get pet name from .pet-name or .claims-title
+      const petEl = await card.$('.pet-name, .claims-title');
+      const petName = petEl ? (await petEl.textContent())?.trim() || 'Unknown Pet' : 'Unknown Pet';
+
+      // Get status from .status-text.status
+      const statusEl = await card.$('.status-text.status');
+      const status = statusEl
+        ? (await statusEl.textContent())?.trim().toLowerCase() || defaultStatus
+        : defaultStatus;
+
+      // Get payout/amount from .claim-invoice-details.fw-700
+      const amountEl = await card.$('.claim-invoice-details.fw-700');
+      const claimAmount = amountEl ? (await amountEl.textContent())?.trim() || '' : '';
+
+      // Get reason for visit from .treated-for, .disease
+      const reasonEl = await card.$('.treated-for, .disease, .claim-id.treated-for');
+      const description = reasonEl ? (await reasonEl.textContent())?.trim() : undefined;
+
+      // Include index to ensure uniqueness when pet+description are the same
+      const claimId = `claim-${i}-${petName}-${description || 'unknown'}`
+        .replace(/\s+/g, '-')
+        .toLowerCase();
+
+      claims.push({
+        claimId,
+        petName,
+        claimDate: '', // Date not visible on card, only in modal
+        claimAmount,
+        status,
+        description,
+      });
+    }
+
+    return claims;
+  }
+
   async initialize(): Promise<void> {
     if (this.isInitialized) {
       return;
@@ -128,16 +178,16 @@ export class FetchPetClient implements IFetchPetClient {
     this.context = await this.browser.newContext({
       viewport: { width: 1920, height: 1080 },
       userAgent:
-        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-      // Set download behavior
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
       acceptDownloads: true,
     });
 
     this.page = await this.context.newPage();
+    this.page.setDefaultTimeout(this.config.timeout);
 
     // Navigate to login page
     await this.page.goto(BASE_URL, { waitUntil: 'domcontentloaded' });
-    await this.page.waitForTimeout(3000);
+    await this.page.waitForLoadState('networkidle');
 
     // Fill in login credentials - Fetch Pet uses a React app
     // Try to find email input
@@ -172,8 +222,9 @@ export class FetchPetClient implements IFetchPetClient {
       await this.page.click('button:has-text("Sign"), button:has-text("Log")');
     }
 
-    // Wait for navigation to complete (should redirect to dashboard)
-    await this.page.waitForTimeout(5000);
+    // Wait for navigation to complete (should redirect away from login)
+    await this.page.waitForLoadState('networkidle');
+    await this.page.waitForTimeout(2000);
 
     // Verify login was successful by checking URL or presence of dashboard elements
     const currentUrl = this.page.url();
@@ -204,7 +255,7 @@ export class FetchPetClient implements IFetchPetClient {
 
     // Navigate to claims page and click "Submit a claim" button
     await page.goto(`${BASE_URL}/claims/active`, { waitUntil: 'domcontentloaded' });
-    await page.waitForTimeout(3000);
+    await page.waitForLoadState('networkidle');
 
     // Look for "Submit a claim" button to open the modal (it's a teal/filled button)
     const submitClaimButton = await page.$(
@@ -215,13 +266,26 @@ export class FetchPetClient implements IFetchPetClient {
       await page.waitForTimeout(2000);
     } else {
       validationErrors.push('Could not find "Submit a claim" button');
+      // Return early - no point filling out a form that doesn't exist
+      return this.buildClaimResult(
+        petName,
+        invoiceDate,
+        invoiceAmount,
+        providerName,
+        claimDescription,
+        invoiceFilePath,
+        medicalRecordsPath,
+        validationErrors
+      );
     }
 
+    // Note: petName is used for claim identification but pet selection in the form
+    // is typically pre-populated based on the user's account. If the account has
+    // multiple pets, the form may default to the first pet regardless of petName.
+
     // 1. Select primary vet - uses a typeahead input with class rbt-input-main
-    // The vet might already be pre-selected (like "Twin Cities Vet Hospital")
     const vetInput = await page.$('.rbt-input-main, input[placeholder="Search vets"]');
     if (vetInput) {
-      // Clear and type the provider name
       await vetInput.click({ clickCount: 3 }); // Select all
       await vetInput.fill(providerName);
       await page.waitForTimeout(1000);
@@ -233,7 +297,6 @@ export class FetchPetClient implements IFetchPetClient {
         await page.waitForTimeout(500);
       }
     } else {
-      // Vet might be pre-selected, check if there's already a value
       const existingVet = await page.$('.rbt-input-main');
       if (!existingVet) {
         validationErrors.push('Could not find vet selection field');
@@ -249,7 +312,6 @@ export class FetchPetClient implements IFetchPetClient {
       await diagnosisInput.fill(claimDescription);
       await page.waitForTimeout(1000);
 
-      // Look for autocomplete dropdown option and click it
       const diagOption = await page.$(
         '.MuiAutocomplete-listbox [role="option"], [role="listbox"] [role="option"]'
       );
@@ -259,18 +321,16 @@ export class FetchPetClient implements IFetchPetClient {
       }
     }
 
-    // 3. Fill in additional details (optional textarea) - placeholder "Describe the visit"
+    // 3. Fill in additional details (optional textarea)
     const detailsTextarea = await page.$('textarea[placeholder="Describe the visit"], textarea');
     if (detailsTextarea) {
-      // Combine date and amount info into details
       await detailsTextarea.fill(
         `Date: ${invoiceDate}, Amount: ${invoiceAmount}. ${claimDescription}`
       );
     }
 
-    // 4. Handle invoice file upload - "Upload invoice" button
+    // 4. Handle invoice file upload
     if (invoiceFilePath) {
-      // Find file input (may be hidden behind a button)
       const invoiceUpload = await page.$('input[type="file"]');
       if (invoiceUpload) {
         await invoiceUpload.setInputFiles(invoiceFilePath);
@@ -284,7 +344,6 @@ export class FetchPetClient implements IFetchPetClient {
 
     // 5. Handle medical records upload (optional)
     if (medicalRecordsPath) {
-      // Look for the second file input for medical records
       const uploadInputs = await page.$$('input[type="file"]');
       if (uploadInputs.length > 1) {
         await uploadInputs[1].setInputFiles(medicalRecordsPath);
@@ -292,11 +351,9 @@ export class FetchPetClient implements IFetchPetClient {
       }
     }
 
-    // Check for form validation errors
+    // Check for form validation errors (scope to form elements only)
     await page.waitForTimeout(1000);
-    const formErrors = await page.$$(
-      '.error, [class*="error"], .invalid-feedback, [class*="validation"]'
-    );
+    const formErrors = await page.$$('.invalid-feedback, .form-error, [class*="field-error"]');
     for (const errorEl of formErrors) {
       const errorText = await errorEl.textContent();
       if (errorText && errorText.trim() && !validationErrors.includes(errorText.trim())) {
@@ -304,6 +361,28 @@ export class FetchPetClient implements IFetchPetClient {
       }
     }
 
+    return this.buildClaimResult(
+      petName,
+      invoiceDate,
+      invoiceAmount,
+      providerName,
+      claimDescription,
+      invoiceFilePath,
+      medicalRecordsPath,
+      validationErrors
+    );
+  }
+
+  private buildClaimResult(
+    petName: string,
+    invoiceDate: string,
+    invoiceAmount: string,
+    providerName: string,
+    claimDescription: string,
+    invoiceFilePath: string | undefined,
+    medicalRecordsPath: string | undefined,
+    validationErrors: string[]
+  ): ClaimSubmissionData {
     // Generate confirmation token
     const confirmationToken = randomBytes(16).toString('hex');
 
@@ -378,7 +457,8 @@ The user MUST explicitly confirm they want to submit this claim before calling s
     }
 
     await submitButton.click();
-    await page.waitForTimeout(5000);
+    await page.waitForLoadState('networkidle');
+    await page.waitForTimeout(2000);
 
     // Check for success confirmation
     const successMessage = await page.$(
@@ -445,9 +525,8 @@ The user MUST explicitly confirm they want to submit this claim before calling s
   async getActiveClaims(): Promise<Claim[]> {
     const page = await this.ensureBrowser();
 
-    // Navigate to active claims page - Fetch Pet uses /claims/active
     await page.goto(`${BASE_URL}/claims/active`, { waitUntil: 'domcontentloaded' });
-    await page.waitForTimeout(3000);
+    await page.waitForLoadState('networkidle');
 
     // Make sure we're on the Active tab
     const activeTab = await page.$('a[href="/claims/active"], a:has-text("Active")');
@@ -457,143 +536,59 @@ The user MUST explicitly confirm they want to submit this claim before calling s
       );
       if (!isActive) {
         await activeTab.click();
-        await page.waitForTimeout(2000);
+        await page.waitForLoadState('networkidle');
       }
     }
 
-    // Extract claims from the page using Fetch Pet's actual structure
-    // Note: Fetch Pet shows claims on Active tab even if Approved - these are recent claims
-    const claims: Claim[] = [];
-    const claimCards = await page.$$('.claim-card-data-list');
-
-    for (const card of claimCards) {
-      // Get pet name from .pet-name or .claims-title
-      const petEl = await card.$('.pet-name, .claims-title');
-      const petName = petEl ? (await petEl.textContent())?.trim() || 'Unknown Pet' : 'Unknown Pet';
-
-      // Get status from .status-text.status
-      const statusEl = await card.$('.status-text.status');
-      const status = statusEl
-        ? (await statusEl.textContent())?.trim().toLowerCase() || 'pending'
-        : 'pending';
-
-      // Get payout/amount from .claim-invoice-details.fw-700
-      const amountEl = await card.$('.claim-invoice-details.fw-700');
-      const claimAmount = amountEl ? (await amountEl.textContent())?.trim() || '' : '';
-
-      // Get reason for visit from .treated-for, .disease
-      const reasonEl = await card.$('.treated-for, .disease, .claim-id.treated-for');
-      const description = reasonEl ? (await reasonEl.textContent())?.trim() : undefined;
-
-      // To get claim ID, we need to click "See summary" and extract from modal
-      // For now, generate a temporary ID based on available info
-      const claimId = `claim-${petName}-${description || 'unknown'}`
-        .replace(/\s+/g, '-')
-        .toLowerCase();
-
-      claims.push({
-        claimId,
-        petName,
-        claimDate: '', // Date not visible on card, only in modal
-        claimAmount,
-        status,
-        description,
-      });
-    }
-
-    return claims;
+    return this.extractClaimsFromPage(page, 'pending');
   }
 
   async getHistoricalClaims(): Promise<Claim[]> {
     const page = await this.ensureBrowser();
 
-    // Navigate to claims page and click History tab
-    await page.goto(`${BASE_URL}/claims/active`, { waitUntil: 'domcontentloaded' });
-    await page.waitForTimeout(3000);
+    // Navigate directly to the closed/history claims page
+    await page.goto(`${BASE_URL}/claims/closed`, { waitUntil: 'domcontentloaded' });
+    await page.waitForLoadState('networkidle');
 
-    // Click on the History tab - Fetch Pet uses /claims/closed for history
-    const historyTab = await page.$('a[href="/claims/closed"], a:has-text("History")');
-    if (historyTab) {
-      await historyTab.click();
-      await page.waitForTimeout(2000);
-    }
-
-    // Extract claims from the page using Fetch Pet's actual structure
-    const claims: Claim[] = [];
-    const claimCards = await page.$$('.claim-card-data-list');
-
-    for (const card of claimCards) {
-      // Get pet name from .pet-name or .claims-title
-      const petEl = await card.$('.pet-name, .claims-title');
-      const petName = petEl ? (await petEl.textContent())?.trim() || 'Unknown Pet' : 'Unknown Pet';
-
-      // Get status from .status-text.status
-      const statusEl = await card.$('.status-text.status');
-      const status = statusEl
-        ? (await statusEl.textContent())?.trim().toLowerCase() || 'approved'
-        : 'approved';
-
-      // Get payout/amount from .claim-invoice-details.fw-700
-      const amountEl = await card.$('.claim-invoice-details.fw-700');
-      const claimAmount = amountEl ? (await amountEl.textContent())?.trim() || '' : '';
-
-      // Get reason for visit from .treated-for, .disease
-      const reasonEl = await card.$('.treated-for, .disease, .claim-id.treated-for');
-      const description = reasonEl ? (await reasonEl.textContent())?.trim() : undefined;
-
-      // Generate a temporary ID based on available info
-      const claimId = `claim-${petName}-${description || 'unknown'}`
-        .replace(/\s+/g, '-')
-        .toLowerCase();
-
-      claims.push({
-        claimId,
-        petName,
-        claimDate: '', // Date not visible on card, only in modal
-        claimAmount,
-        status,
-        description,
-      });
-    }
-
-    return claims;
+    return this.extractClaimsFromPage(page, 'approved');
   }
 
   async getClaimDetails(claimId: string): Promise<ClaimDetails> {
     const page = await this.ensureBrowser();
 
-    // Navigate to claims page
     await page.goto(`${BASE_URL}/claims/active`, { waitUntil: 'domcontentloaded' });
-    await page.waitForTimeout(3000);
+    await page.waitForLoadState('networkidle');
 
-    // Find the first claim and click "See summary" to open modal
-    // Note: claimId might be a generated ID from getActiveClaims, so we just open the first matching claim
     let foundModal = false;
 
-    // Try to find claim cards and click "See summary" on the first one
-    // Or if claimId contains specific info, try to match
+    // Try to match claim cards by content derived from the generated claimId
+    // Generated IDs look like: "claim-0-nova-dental cleaning"
+    // Strip the "claim-N-" prefix to get the meaningful search terms
+    const searchTerms = claimId
+      .replace(/^claim-\d+-/, '')
+      .replace(/-/g, ' ')
+      .trim();
+
     const claimCards = await page.$$('.claim-card-data-list');
 
-    for (const card of claimCards) {
-      const cardText = (await card.textContent()) || '';
+    if (searchTerms && searchTerms !== 'unknown') {
+      for (const card of claimCards) {
+        const cardText = ((await card.textContent()) || '').toLowerCase();
+        const terms = searchTerms.toLowerCase();
 
-      // Check if this card matches the claimId (which might contain pet name and condition)
-      const normalizedId = claimId.toLowerCase().replace(/[^a-z0-9]/g, '');
-      const normalizedCardText = cardText.toLowerCase().replace(/[^a-z0-9]/g, '');
-
-      if (normalizedCardText.includes(normalizedId) || normalizedId.includes('claim')) {
-        // Click "See summary" on this card
-        const seeSummaryLink = await card.$('.details-link');
-        if (seeSummaryLink) {
-          await seeSummaryLink.click();
-          await page.waitForTimeout(2000);
-          foundModal = true;
-          break;
+        if (cardText.includes(terms)) {
+          const seeSummaryLink = await card.$('.details-link');
+          if (seeSummaryLink) {
+            await seeSummaryLink.click();
+            await page.waitForTimeout(2000);
+            foundModal = true;
+            break;
+          }
         }
       }
     }
 
-    // If no specific match, just click the first "See summary"
+    // If no specific match, open the first claim's summary
     if (!foundModal) {
       const firstSeeSummary = await page.$('.details-link');
       if (firstSeeSummary) {
@@ -608,7 +603,7 @@ The user MUST explicitly confirm they want to submit this claim before calling s
       const historyTab = await page.$('a[href="/claims/closed"], a:has-text("History")');
       if (historyTab) {
         await historyTab.click();
-        await page.waitForTimeout(2000);
+        await page.waitForLoadState('networkidle');
 
         const firstSeeSummary = await page.$('.details-link');
         if (firstSeeSummary) {
@@ -621,31 +616,19 @@ The user MUST explicitly confirm they want to submit this claim before calling s
 
     // Extract claim details from the modal
     const details = await page.evaluate(() => {
-      // Look for the claim details popup modal
       const modal = document.querySelector(
         '.claim-details-popup-container, .claim-details-popup, [role="dialog"]'
       );
       const container = modal || document.body;
       const text = container.textContent || '';
 
-      // Extract claim ID from modal - looks like #006271662
       const claimIdMatch = text.match(/#(\d+)/);
-
-      // Extract pet name from title like "Nova's claim"
       const petMatch = text.match(/(\w+)'s claim/i);
-
-      // Extract date of visit
       const dateMatch =
         text.match(/Date of visit\s*(\d{1,2}\/\d{1,2}\/\d{4})/i) ||
         text.match(/(\d{1,2}\/\d{1,2}\/\d{4})/);
-
-      // Extract payout from .claim-invoice-details or text
       const payoutMatch = text.match(/Payout\s*\$?([\d,.]+)/i);
-
-      // Extract status
       const statusMatch = text.match(/Status:\s*(\w+)/i);
-
-      // Extract reason for visit
       const reasonMatch = text.match(/Reason for visit\s*([^\n]+)/i);
 
       return {
@@ -662,14 +645,12 @@ The user MUST explicitly confirm they want to submit this claim before calling s
       };
     });
 
-    // Look for and download EOB if available - Fetch Pet uses "Explanation of Benefits" link in modal
+    // Look for and download EOB if available
     const eobLink = await page.$('.claim-details-popup div:has-text("Explanation of Benefits")');
     let localEobPath: string | undefined;
-    let eobFileUrl: string | undefined;
     let eobSummary: string | undefined;
 
     if (eobLink) {
-      // Try to download the EOB by clicking the link
       try {
         const downloadPromise = page.waitForEvent('download', { timeout: 10000 });
         await eobLink.click();
@@ -690,11 +671,9 @@ The user MUST explicitly confirm they want to submit this claim before calling s
       '.claim-details-popup div:has-text("Invoice"):not(:has-text("Explanation"))'
     );
     let localInvoicePath: string | undefined;
-    let invoiceFileUrl: string | undefined;
     let invoiceSummary: string | undefined;
 
     if (invoiceLink) {
-      // Try to download the invoice
       try {
         const downloadPromise = page.waitForEvent('download', { timeout: 10000 });
         await invoiceLink.click();
@@ -713,7 +692,7 @@ The user MUST explicitly confirm they want to submit this claim before calling s
       }
     }
 
-    // Close the modal by clicking the X icon
+    // Close the modal
     const closeButton = await page.$(
       '.claim-details-popup img[alt="img"], .claim-details-popup [class*="close"]'
     );
@@ -726,8 +705,6 @@ The user MUST explicitly confirm they want to submit this claim before calling s
       ...details,
       eobSummary,
       invoiceSummary,
-      eobFileUrl: eobFileUrl || undefined,
-      invoiceFileUrl: invoiceFileUrl || undefined,
       localEobPath,
       localInvoicePath,
     };
