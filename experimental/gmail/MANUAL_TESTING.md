@@ -78,14 +78,20 @@ The tests will:
 **Manual Tests (real Gmail API):**
 
 ```
-Manual Tests: 13 passed (13)
-  - listMessages: 2 tests (inbox listing, query filtering)
-  - getMessage: 3 tests (full format, metadata format, body decoding)
-  - modifyMessage: 1 test (star/unstar labels)
-  - drafts: 4 tests (create, list, get, delete)
-  - sendMessage: 1 test (send to same account)
-  - getAttachment: 1 test (download real attachment - event.ics, 1786 bytes)
-  - authentication: 1 test (service account detection)
+Manual Tests: 17 passed (17)
+  gmail-client.test.ts: 13 tests
+    - listMessages: 2 tests (inbox listing, query filtering)
+    - getMessage: 3 tests (full format, metadata format, body decoding)
+    - modifyMessage: 1 test (star/unstar labels)
+    - drafts: 4 tests (create, list, get, delete)
+    - sendMessage: 1 test (send to same account)
+    - getAttachment: 1 test (download real attachment - event.ics, 1786 bytes)
+    - authentication: 1 test (service account detection)
+  download-attachments.test.ts: 4 tests (E2E MCP tool via TestMCPClient)
+    - save attachment to /tmp/ and verify file exists on disk (775ms)
+    - download via tool AND direct API, compare byte-for-byte — 1786 bytes match exactly (561ms)
+    - inline mode returns content directly, no /tmp/ paths (432ms)
+    - download all attachments, verify each file on disk (411ms)
 ```
 
 **Automated Tests (mocked):**
@@ -96,7 +102,7 @@ Functional Tests: 66 passed (66)
   - tools.test.ts: 54 tests (all tool tests including 14 download_email_attachments tests)
 Integration Tests: 15 passed (15)
   - 4 download_email_attachments integration tests (save to /tmp/, inline mode, no attachments, non-existent email)
-Total: 94 tests passing (13 manual + 66 functional + 15 integration)
+Total: 98 tests passing (17 manual + 66 functional + 15 integration)
 ```
 
 **Overall:** All tests passed
@@ -104,10 +110,12 @@ Total: 94 tests passing (13 manual + 66 functional + 15 integration)
 ### Notes
 
 - New `download_email_attachments` tool added - saves attachments to /tmp/ by default, with `inline` option for direct content
-- `getAttachment` API verified against real Gmail API - successfully downloaded a 1786-byte event.ics attachment
+- **E2E file integrity verified**: attachment saved by MCP tool matches direct Gmail API download byte-for-byte (1786 bytes, event.ics)
 - Filenames sanitized with `path.basename()` to prevent path traversal; duplicates auto-deduplicated
+- Payload-level attachments (single-part emails) detected in addition to nested MIME parts
 - 14 functional tests cover: save to /tmp/, save specific file, inline mode, text decoding, binary base64, no attachments, filename not found, require email_id, API errors, size limit (inline only), nested MIME structures, path traversal sanitization, duplicate filename deduplication, getAttachment failure
 - 4 integration tests cover: save to /tmp/ flow, inline mode, no-attachment case, error handling
+- 4 E2E manual tests cover: file save + verify on disk, byte-for-byte integrity check, inline mode, all-attachments download
 
 ## Historical Test Runs
 

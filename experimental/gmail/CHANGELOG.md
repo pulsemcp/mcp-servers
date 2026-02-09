@@ -13,7 +13,10 @@ All notable changes to this project will be documented in this file.
   - Optional `inline` parameter returns content directly in the response (text decoded, binary as base64)
   - Downloads all attachments in a single call by default, or a specific one via the `filename` parameter
   - 25 MB size limit applies only in inline mode to prevent context window overflow
+  - Detects attachments at both payload level (single-part emails) and nested MIME parts
+  - Filenames sanitized to prevent path traversal; duplicates auto-deduplicated
   - Available in all tool groups (readonly, readwrite, readwrite_external) since downloading doesn't modify mailbox state
+  - E2E manual tests verify file integrity byte-for-byte against direct API download
   - Addresses [issue #302](https://github.com/pulsemcp/mcp-servers/issues/302)
 
 ## [0.1.0] - 2026-01-25
