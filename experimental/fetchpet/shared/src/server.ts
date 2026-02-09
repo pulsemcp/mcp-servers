@@ -106,8 +106,9 @@ export class FetchPetClient implements IFetchPetClient {
   }
 
   /**
-   * Extract claim data from claim cards on the current page.
-   * Shared between getActiveClaims and getHistoricalClaims.
+   * Extract claim data from active claim cards on the current page.
+   * Used by getActiveClaims. Historical claims use extractHistoricalClaimsFromPage
+   * due to a completely different DOM structure on the history tab.
    */
   private async extractClaimsFromPage(
     page: import('playwright').Page,
@@ -442,6 +443,11 @@ The user MUST explicitly confirm they want to submit this claim before calling s
   }
 
   async submitClaim(confirmationToken: string): Promise<ClaimSubmissionResult> {
+    // NOTE: This method assumes the claim form is still open from prepareClaimToSubmit.
+    // The browser state (open modal with filled form) must be preserved between calls.
+    // If too much time passes, the SPA may close the modal or navigate away, causing
+    // the submit button to not be found. The AI agent should call this promptly after
+    // receiving user confirmation.
     const page = await this.ensureBrowser();
 
     // Verify confirmation token matches
@@ -475,7 +481,6 @@ The user MUST explicitly confirm they want to submit this claim before calling s
 
     await submitButton.click();
     await page.waitForTimeout(3000);
-    await page.waitForTimeout(2000);
 
     // Check for success confirmation
     const successMessage = await page.$(
@@ -755,8 +760,8 @@ The user MUST explicitly confirm they want to submit this claim before calling s
         petName = petValueEl?.textContent?.trim() || petValueEl?.getAttribute('title') || undefined;
       }
       if (!petName) {
-        // Active popup: "Nova's claim" pattern
-        const petMatch = text.match(/(\w+)'s claim/i);
+        // Active popup: "Nova's claim" or "Mr Whiskers's claim" pattern
+        const petMatch = text.match(/(.+?)'s claim/i);
         petName = petMatch?.[1];
       }
 
@@ -902,6 +907,7 @@ The user MUST explicitly confirm they want to submit this claim before calling s
       claimAmount: details.claimAmount,
       status: details.status,
       description: details.description,
+      policyNumber: details.policyNumber,
       eobSummary,
       invoiceSummary,
       localEobPath,
@@ -1038,15 +1044,21 @@ export function createMCPServer(options: CreateMCPServerOptions) {
     // If background login is in progress, wait for it
     if (loginPromise) {
       await loginPromise;
-      return activeClient!;
+      if (!activeClient) {
+        throw new Error('Client was not created during login');
+      }
+      return activeClient;
     }
 
-    // No background login started - create and initialize client now (legacy behavior)
+    // No background login started - create and initialize client now (fallback)
     if (!activeClient) {
       createClient();
     }
-    await activeClient!.initialize();
-    return activeClient!;
+    if (!activeClient) {
+      throw new Error('Failed to create client');
+    }
+    await activeClient.initialize();
+    return activeClient;
   };
 
   const registerHandlers = async (server: Server, clientFactory?: ClientFactory) => {

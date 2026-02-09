@@ -22,6 +22,7 @@ export interface Claim {
  * Detailed claim information including EOB and invoice
  */
 export interface ClaimDetails extends Claim {
+  policyNumber?: string;
   eobSummary?: string;
   invoiceSummary?: string;
   localEobPath?: string;

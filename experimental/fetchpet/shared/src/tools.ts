@@ -431,6 +431,9 @@ export function createRegisterTools(
           if (details.providerName) {
             lines.push(`Provider: ${details.providerName}`);
           }
+          if (details.policyNumber) {
+            lines.push(`Policy Number: ${details.policyNumber}`);
+          }
           if (details.description) {
             lines.push(`Description: ${details.description}`);
           }

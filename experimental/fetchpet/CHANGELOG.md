@@ -24,6 +24,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix login flow to use `Promise.all([waitForURL, click])` to avoid "Execution context destroyed" errors
 - Update Chrome user agent string to recent version (131)
 - Document pet selection limitation for multi-pet accounts
+- Remove duplicate `waitForTimeout` in `submitClaim`
+- Replace non-null assertions with explicit null checks in `getReadyClient`
+- Support multi-word pet names in active claim detail popup extraction
+- Add `policyNumber` field to `ClaimDetails` interface and tool output
 
 ## [0.1.0] - 2026-02-08
 
