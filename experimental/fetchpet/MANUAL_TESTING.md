@@ -5,7 +5,7 @@ This file tracks manual testing results for the Fetch Pet MCP Server.
 ## Latest Test Run
 
 **Date:** 2026-02-09
-**Commit:** 549aeb8
+**Commit:** ec5e19f
 **Tester:** Automated via Agent Orchestrator
 
 ### Test Results
@@ -13,7 +13,7 @@ This file tracks manual testing results for the Fetch Pet MCP Server.
 | Test                    | Result         | Notes                                                                                        |
 | ----------------------- | -------------- | -------------------------------------------------------------------------------------------- |
 | get_active_claims       | PASS           | Returns 2 active claims: Nova/Lameness/$94.88/Approved, Nova/Conjunctivitis/$121.10/Approved |
-| get_historical_claims   | PASS           | Returns 3 historical claims: #006207086/$876.71, #006207066/$48.61, #006093717/$466.80       |
+| get_historical_claims   | PASS           | Returns 8 historical claims after clicking "View all" (was 3 before fix)                     |
 | get_claim_details       | PASS           | Returns claim #006207086: Nova, Approved, 12/31/2025, $876.71. EOB/Invoice links found       |
 | prepare_claim_to_submit | PASS (WARNING) | Correctly reports "Invoice file is required" - expected without file                         |
 | submit_claim            | SKIPPED        | Intentionally skipped to avoid real claim submission                                         |
