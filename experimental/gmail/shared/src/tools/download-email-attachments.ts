@@ -88,6 +88,7 @@ function isTextMimeType(mimeType: string): boolean {
   if (mimeType.startsWith('text/')) return true;
   if (mimeType === 'application/json') return true;
   if (mimeType === 'application/xml') return true;
+  if (mimeType.endsWith('+json') || mimeType.endsWith('+xml')) return true;
   return false;
 }
 

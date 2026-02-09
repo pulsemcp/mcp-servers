@@ -98,6 +98,37 @@ describe('Gmail MCP Server Integration Tests', () => {
     });
   });
 
+  describe('download_email_attachments', () => {
+    it('should download all attachments from an email', async () => {
+      const result = await client!.callTool('download_email_attachments', {
+        email_id: 'msg_003',
+      });
+
+      expect(result.content).toHaveLength(1);
+      expect(result.content[0].type).toBe('text');
+      expect(result.content[0].text).toContain('Downloaded Attachments (1)');
+      expect(result.content[0].text).toContain('invoice.pdf');
+    });
+
+    it('should handle email with no attachments', async () => {
+      const result = await client!.callTool('download_email_attachments', {
+        email_id: 'msg_001',
+      });
+
+      expect(result.content).toHaveLength(1);
+      expect(result.content[0].text).toContain('No attachments found');
+    });
+
+    it('should handle non-existent email', async () => {
+      const result = await client!.callTool('download_email_attachments', {
+        email_id: 'non_existent_id',
+      });
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('Error');
+    });
+  });
+
   describe('change_email_conversation', () => {
     it('should mark email as read', async () => {
       const result = await client!.callTool('change_email_conversation', {

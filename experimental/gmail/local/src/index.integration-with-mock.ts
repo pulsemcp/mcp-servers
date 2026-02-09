@@ -78,6 +78,44 @@ const MOCK_EMAILS: Email[] = [
     },
     sizeEstimate: 2048,
   },
+  {
+    id: 'msg_003',
+    threadId: 'thread_003',
+    labelIds: ['INBOX'],
+    snippet: 'Please find the invoice attached...',
+    historyId: '12347',
+    internalDate: String(Date.now() - 1000 * 60 * 60), // 1 hour ago
+    payload: {
+      mimeType: 'multipart/mixed',
+      headers: [
+        { name: 'Subject', value: 'Invoice Attached' },
+        { name: 'From', value: 'billing@example.com' },
+        { name: 'To', value: 'me@example.com' },
+        { name: 'Date', value: new Date(Date.now() - 1000 * 60 * 60).toISOString() },
+        { name: 'Message-ID', value: '<msg003@example.com>' },
+      ],
+      parts: [
+        {
+          partId: '0',
+          mimeType: 'text/plain',
+          body: {
+            size: 40,
+            data: Buffer.from('Please find the invoice attached.').toString('base64url'),
+          },
+        },
+        {
+          partId: '1',
+          mimeType: 'application/pdf',
+          filename: 'invoice.pdf',
+          body: {
+            attachmentId: 'att_001',
+            size: 1024,
+          },
+        },
+      ],
+    },
+    sizeEstimate: 2048,
+  },
 ];
 
 const mockDrafts: Draft[] = [];

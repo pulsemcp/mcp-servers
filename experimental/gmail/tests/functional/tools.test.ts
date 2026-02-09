@@ -812,6 +812,85 @@ describe('Gmail MCP Server Tools', () => {
       expect(result.content[0].text).toContain('Error downloading attachment(s)');
     });
 
+    it('should extract attachments from nested MIME structure', async () => {
+      (mockClient.getMessage as ReturnType<typeof vi.fn>).mockResolvedValue({
+        id: 'msg_nested',
+        threadId: 'thread_nested',
+        labelIds: ['INBOX'],
+        snippet: 'Nested MIME email',
+        historyId: '12345',
+        internalDate: String(Date.now()),
+        payload: {
+          mimeType: 'multipart/mixed',
+          headers: [
+            { name: 'Subject', value: 'Nested Attachments' },
+            { name: 'From', value: 'sender@example.com' },
+            { name: 'To', value: 'me@example.com' },
+            { name: 'Date', value: new Date().toISOString() },
+          ],
+          parts: [
+            {
+              partId: '0',
+              mimeType: 'multipart/alternative',
+              body: { size: 0 },
+              parts: [
+                {
+                  partId: '0.0',
+                  mimeType: 'text/plain',
+                  body: {
+                    size: 20,
+                    data: Buffer.from('Body text').toString('base64url'),
+                  },
+                },
+                {
+                  partId: '0.1',
+                  mimeType: 'text/html',
+                  body: {
+                    size: 30,
+                    data: Buffer.from('<p>Body text</p>').toString('base64url'),
+                  },
+                },
+              ],
+            },
+            {
+              partId: '1',
+              mimeType: 'application/pdf',
+              filename: 'report.pdf',
+              body: {
+                attachmentId: 'att_001',
+                size: 4096,
+              },
+            },
+            {
+              partId: '2',
+              mimeType: 'multipart/mixed',
+              body: { size: 0 },
+              parts: [
+                {
+                  partId: '2.0',
+                  mimeType: 'image/png',
+                  filename: 'screenshot.png',
+                  body: {
+                    attachmentId: 'att_003',
+                    size: 2048,
+                  },
+                },
+              ],
+            },
+          ],
+        },
+      });
+
+      const tool = downloadEmailAttachmentsTool(mockServer, () => mockClient);
+      const result = await tool.handler({ email_id: 'msg_nested' });
+
+      expect(result.content[0].text).toContain('# Downloaded Attachments (2)');
+      expect(result.content[0].text).toContain('report.pdf');
+      expect(result.content[0].text).toContain('screenshot.png');
+      expect(mockClient.getAttachment).toHaveBeenCalledWith('msg_nested', 'att_001');
+      expect(mockClient.getAttachment).toHaveBeenCalledWith('msg_nested', 'att_003');
+    });
+
     it('should reject when total size exceeds limit', async () => {
       (mockClient.getMessage as ReturnType<typeof vi.fn>).mockResolvedValue({
         id: 'msg_large',

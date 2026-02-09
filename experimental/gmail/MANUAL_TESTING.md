@@ -78,11 +78,12 @@ The tests will:
 **Automated Tests (mocked):**
 
 ```
-Functional Tests: 73 passed (73)
+Functional Tests: 62 passed (62)
   - auth.test.ts: 12 tests (OAuth2 + service account client creation, preference, error cases, partial credential warnings)
-  - tools.test.ts: 61 tests (all tool tests including 8 new download_email_attachments tests)
-Integration Tests: 11 passed (11)
-Total: 84 tests passing
+  - tools.test.ts: 50 tests (all tool tests including 9 download_email_attachments tests with nested MIME coverage)
+Integration Tests: 14 passed (14)
+  - 3 new download_email_attachments integration tests (download all, no attachments, non-existent email)
+Total: 76 tests passing
 ```
 
 **Overall:** All manual tests passed
@@ -92,7 +93,8 @@ Total: 84 tests passing
 - New `download_email_attachments` tool added - downloads all attachments in a single call or specific ones by filename
 - This feature uses the existing Gmail API `messages.attachments.get` endpoint (read-only)
 - No changes to authentication or API client configuration - existing manual test coverage for API interactions remains valid
-- 8 new functional tests cover: download all, download by filename, text decoding, binary base64, no attachments, filename not found, API errors, size limit
+- 9 functional tests cover: download all, download by filename, text decoding, binary base64, no attachments, filename not found, API errors, size limit, nested MIME structures
+- 3 integration tests cover: full download flow with mock server, no-attachment case, error handling
 
 ## Historical Test Runs
 
