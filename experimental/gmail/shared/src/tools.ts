@@ -7,6 +7,7 @@ import { changeEmailConversationTool } from './tools/change-email-conversation.j
 import { draftEmailTool } from './tools/draft-email.js';
 import { sendEmailTool } from './tools/send-email.js';
 import { searchEmailConversationsTool } from './tools/search-email-conversations.js';
+import { downloadEmailAttachmentsTool } from './tools/download-email-attachments.js';
 
 /**
  * Generic tool interface
@@ -29,7 +30,8 @@ type ToolFactory = (server: Server, clientFactory: ClientFactory) => Tool;
 
 /**
  * Available tool groups for Gmail MCP server
- * - readonly: Read-only operations (list, get, search emails)
+ * - readonly: Read-only Gmail operations (list, get, search, download_attachments)
+ *   Note: download_email_attachments writes to local /tmp/ but does not modify mailbox state
  * - readwrite: Read and write operations (includes readonly + modify, draft)
  * - readwrite_external: External communication operations (includes readwrite + send_email)
  */
@@ -45,7 +47,7 @@ interface ToolDefinition {
 /**
  * All available tools with their group assignments
  *
- * readonly: list_email_conversations, get_email_conversation, search_email_conversations
+ * readonly: list_email_conversations, get_email_conversation, search_email_conversations, download_email_attachments
  * readwrite: all readonly tools + change_email_conversation, draft_email
  * readwrite_external: all readwrite tools + send_email (external communication)
  */
@@ -55,6 +57,10 @@ const ALL_TOOLS: ToolDefinition[] = [
   { factory: getEmailConversationTool, groups: ['readonly', 'readwrite', 'readwrite_external'] },
   {
     factory: searchEmailConversationsTool,
+    groups: ['readonly', 'readwrite', 'readwrite_external'],
+  },
+  {
+    factory: downloadEmailAttachmentsTool,
     groups: ['readonly', 'readwrite', 'readwrite_external'],
   },
   // Write tools (available in readwrite and readwrite_external)

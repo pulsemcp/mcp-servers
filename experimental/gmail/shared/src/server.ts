@@ -114,6 +114,11 @@ export interface IGmailClient {
    * Send a draft
    */
   sendDraft(draftId: string): Promise<Email>;
+
+  /**
+   * Get attachment data by message ID and attachment ID
+   */
+  getAttachment(messageId: string, attachmentId: string): Promise<{ data: string; size: number }>;
 }
 
 /**
@@ -289,6 +294,15 @@ abstract class BaseGmailClient implements IGmailClient {
     const headers = await this.getHeaders();
     const { sendDraft } = await import('./gmail-client/lib/send-message.js');
     return sendDraft(this.baseUrl, headers, draftId);
+  }
+
+  async getAttachment(
+    messageId: string,
+    attachmentId: string
+  ): Promise<{ data: string; size: number }> {
+    const headers = await this.getHeaders();
+    const { getAttachment } = await import('./gmail-client/lib/get-attachment.js');
+    return getAttachment(this.baseUrl, headers, messageId, attachmentId);
   }
 }
 

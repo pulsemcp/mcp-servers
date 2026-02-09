@@ -225,6 +225,21 @@ export function createMockGmailClient(): IGmailClient {
       return sentMessage;
     }),
 
+    getAttachment: vi.fn().mockImplementation(async (_messageId: string, attachmentId: string) => {
+      const mockData: Record<string, string> = {
+        att_001: Buffer.from('Mock PDF content for testing').toString('base64url'),
+        att_002: Buffer.from('Column1,Column2\nvalue1,value2\nvalue3,value4').toString('base64url'),
+        att_003: Buffer.from('Mock image binary data').toString('base64url'),
+      };
+
+      const data = mockData[attachmentId];
+      if (!data) {
+        throw new Error(`Attachment not found: ${attachmentId}`);
+      }
+
+      return { data, size: Buffer.from(data, 'base64url').length };
+    }),
+
     sendDraft: vi.fn().mockImplementation(async (draftId: string) => {
       const draft = mockDrafts.find((d) => d.id === draftId);
       if (!draft) {

@@ -7,7 +7,13 @@ import { searchEmailConversationsTool } from '../../shared/src/tools/search-emai
 import { changeEmailConversationTool } from '../../shared/src/tools/change-email-conversation.js';
 import { draftEmailTool } from '../../shared/src/tools/draft-email.js';
 import { sendEmailTool } from '../../shared/src/tools/send-email.js';
+import { downloadEmailAttachmentsTool } from '../../shared/src/tools/download-email-attachments.js';
 import type { IGmailClient } from '../../shared/src/server.js';
+
+vi.mock('fs/promises', () => ({
+  writeFile: vi.fn().mockResolvedValue(undefined),
+  mkdir: vi.fn().mockResolvedValue(undefined),
+}));
 
 describe('Gmail MCP Server Tools', () => {
   let mockClient: IGmailClient;
@@ -660,6 +666,391 @@ describe('Gmail MCP Server Tools', () => {
 
       expect(result.isError).toBe(true);
       expect(result.content[0].text).toContain('Error sending email');
+    });
+  });
+
+  describe('download_email_attachments', () => {
+    const emailWithAttachments = {
+      id: 'msg_att',
+      threadId: 'thread_att',
+      labelIds: ['INBOX'],
+      snippet: 'Email with attachments',
+      historyId: '12345',
+      internalDate: String(Date.now()),
+      payload: {
+        mimeType: 'multipart/mixed',
+        headers: [
+          { name: 'Subject', value: 'Files Attached' },
+          { name: 'From', value: 'sender@example.com' },
+          { name: 'To', value: 'me@example.com' },
+          { name: 'Date', value: new Date().toISOString() },
+        ],
+        parts: [
+          {
+            partId: '0',
+            mimeType: 'text/plain',
+            body: {
+              size: 50,
+              data: Buffer.from('See attached files').toString('base64url'),
+            },
+          },
+          {
+            partId: '1',
+            mimeType: 'application/pdf',
+            filename: 'invoice.pdf',
+            body: {
+              attachmentId: 'att_001',
+              size: 102400,
+            },
+          },
+          {
+            partId: '2',
+            mimeType: 'text/csv',
+            filename: 'data.csv',
+            body: {
+              attachmentId: 'att_002',
+              size: 2048,
+            },
+          },
+        ],
+      },
+    };
+
+    it('should save all attachments to /tmp/ by default', async () => {
+      (mockClient.getMessage as ReturnType<typeof vi.fn>).mockResolvedValue(emailWithAttachments);
+      const tool = downloadEmailAttachmentsTool(mockServer, () => mockClient);
+      const result = await tool.handler({ email_id: 'msg_att' });
+
+      expect(result.content[0].text).toContain('# Downloaded Attachments (2)');
+      expect(result.content[0].text).toContain('invoice.pdf');
+      expect(result.content[0].text).toContain('data.csv');
+      expect(result.content[0].text).toContain('/tmp/gmail-attachments-msg_att/invoice.pdf');
+      expect(result.content[0].text).toContain('/tmp/gmail-attachments-msg_att/data.csv');
+      expect(result.content[0].text).toContain('Saved Files');
+      expect(mockClient.getAttachment).toHaveBeenCalledWith('msg_att', 'att_001');
+      expect(mockClient.getAttachment).toHaveBeenCalledWith('msg_att', 'att_002');
+    });
+
+    it('should save a specific attachment by filename to /tmp/', async () => {
+      (mockClient.getMessage as ReturnType<typeof vi.fn>).mockResolvedValue(emailWithAttachments);
+      const tool = downloadEmailAttachmentsTool(mockServer, () => mockClient);
+      const result = await tool.handler({ email_id: 'msg_att', filename: 'invoice.pdf' });
+
+      expect(result.content[0].text).toContain('# Downloaded Attachments (1)');
+      expect(result.content[0].text).toContain('/tmp/gmail-attachments-msg_att/invoice.pdf');
+      expect(result.content[0].text).not.toContain('data.csv');
+      expect(mockClient.getAttachment).toHaveBeenCalledWith('msg_att', 'att_001');
+      expect(mockClient.getAttachment).toHaveBeenCalledTimes(1);
+    });
+
+    it('should return inline content when inline=true', async () => {
+      (mockClient.getMessage as ReturnType<typeof vi.fn>).mockResolvedValue(emailWithAttachments);
+      const tool = downloadEmailAttachmentsTool(mockServer, () => mockClient);
+      const result = await tool.handler({ email_id: 'msg_att', inline: true });
+
+      expect(result.content[0].text).toContain('# Downloaded Attachments (2)');
+      expect(result.content[0].text).toContain('invoice.pdf');
+      expect(result.content[0].text).toContain('data.csv');
+      expect(result.content[0].text).not.toContain('Saved Files');
+      expect(result.content[0].text).not.toContain('/tmp/');
+    });
+
+    it('should decode text-based attachments inline', async () => {
+      (mockClient.getMessage as ReturnType<typeof vi.fn>).mockResolvedValue(emailWithAttachments);
+      const tool = downloadEmailAttachmentsTool(mockServer, () => mockClient);
+      const result = await tool.handler({
+        email_id: 'msg_att',
+        filename: 'data.csv',
+        inline: true,
+      });
+
+      // text/csv is text-based, so content should be decoded
+      expect(result.content[0].text).toContain('Column1,Column2');
+      expect(result.content[0].text).toContain('value1,value2');
+    });
+
+    it('should return base64 for binary attachments inline', async () => {
+      (mockClient.getMessage as ReturnType<typeof vi.fn>).mockResolvedValue(emailWithAttachments);
+      const tool = downloadEmailAttachmentsTool(mockServer, () => mockClient);
+      const result = await tool.handler({
+        email_id: 'msg_att',
+        filename: 'invoice.pdf',
+        inline: true,
+      });
+
+      expect(result.content[0].text).toContain('**MIME Type:** application/pdf');
+      expect(result.content[0].text).toContain('**Encoding:** base64');
+    });
+
+    it('should handle email with no attachments', async () => {
+      (mockClient.getMessage as ReturnType<typeof vi.fn>).mockResolvedValue({
+        id: 'msg_no_att',
+        threadId: 'thread_no_att',
+        labelIds: ['INBOX'],
+        snippet: 'No attachments here',
+        historyId: '12345',
+        internalDate: String(Date.now()),
+        payload: {
+          mimeType: 'text/plain',
+          headers: [
+            { name: 'Subject', value: 'Plain Email' },
+            { name: 'From', value: 'sender@example.com' },
+            { name: 'To', value: 'me@example.com' },
+            { name: 'Date', value: new Date().toISOString() },
+          ],
+          body: {
+            size: 50,
+            data: Buffer.from('Just text').toString('base64url'),
+          },
+        },
+      });
+
+      const tool = downloadEmailAttachmentsTool(mockServer, () => mockClient);
+      const result = await tool.handler({ email_id: 'msg_no_att' });
+
+      expect(result.content[0].text).toContain('No attachments found');
+    });
+
+    it('should error when filename not found', async () => {
+      (mockClient.getMessage as ReturnType<typeof vi.fn>).mockResolvedValue(emailWithAttachments);
+      const tool = downloadEmailAttachmentsTool(mockServer, () => mockClient);
+      const result = await tool.handler({ email_id: 'msg_att', filename: 'nonexistent.txt' });
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('not found');
+      expect(result.content[0].text).toContain('invoice.pdf');
+      expect(result.content[0].text).toContain('data.csv');
+    });
+
+    it('should require email_id parameter', async () => {
+      const tool = downloadEmailAttachmentsTool(mockServer, () => mockClient);
+      const result = await tool.handler({});
+
+      expect(result.isError).toBe(true);
+    });
+
+    it('should handle API errors', async () => {
+      (mockClient.getMessage as ReturnType<typeof vi.fn>).mockRejectedValue(
+        new Error('Message not found: msg_999')
+      );
+      const tool = downloadEmailAttachmentsTool(mockServer, () => mockClient);
+      const result = await tool.handler({ email_id: 'msg_999' });
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('Error downloading attachment(s)');
+    });
+
+    it('should extract attachments from nested MIME structure', async () => {
+      (mockClient.getMessage as ReturnType<typeof vi.fn>).mockResolvedValue({
+        id: 'msg_nested',
+        threadId: 'thread_nested',
+        labelIds: ['INBOX'],
+        snippet: 'Nested MIME email',
+        historyId: '12345',
+        internalDate: String(Date.now()),
+        payload: {
+          mimeType: 'multipart/mixed',
+          headers: [
+            { name: 'Subject', value: 'Nested Attachments' },
+            { name: 'From', value: 'sender@example.com' },
+            { name: 'To', value: 'me@example.com' },
+            { name: 'Date', value: new Date().toISOString() },
+          ],
+          parts: [
+            {
+              partId: '0',
+              mimeType: 'multipart/alternative',
+              body: { size: 0 },
+              parts: [
+                {
+                  partId: '0.0',
+                  mimeType: 'text/plain',
+                  body: {
+                    size: 20,
+                    data: Buffer.from('Body text').toString('base64url'),
+                  },
+                },
+                {
+                  partId: '0.1',
+                  mimeType: 'text/html',
+                  body: {
+                    size: 30,
+                    data: Buffer.from('<p>Body text</p>').toString('base64url'),
+                  },
+                },
+              ],
+            },
+            {
+              partId: '1',
+              mimeType: 'application/pdf',
+              filename: 'report.pdf',
+              body: {
+                attachmentId: 'att_001',
+                size: 4096,
+              },
+            },
+            {
+              partId: '2',
+              mimeType: 'multipart/mixed',
+              body: { size: 0 },
+              parts: [
+                {
+                  partId: '2.0',
+                  mimeType: 'image/png',
+                  filename: 'screenshot.png',
+                  body: {
+                    attachmentId: 'att_003',
+                    size: 2048,
+                  },
+                },
+              ],
+            },
+          ],
+        },
+      });
+
+      const tool = downloadEmailAttachmentsTool(mockServer, () => mockClient);
+      const result = await tool.handler({ email_id: 'msg_nested' });
+
+      expect(result.content[0].text).toContain('# Downloaded Attachments (2)');
+      expect(result.content[0].text).toContain('report.pdf');
+      expect(result.content[0].text).toContain('screenshot.png');
+      expect(result.content[0].text).toContain('/tmp/gmail-attachments-msg_nested/report.pdf');
+      expect(result.content[0].text).toContain('/tmp/gmail-attachments-msg_nested/screenshot.png');
+      expect(mockClient.getAttachment).toHaveBeenCalledWith('msg_nested', 'att_001');
+      expect(mockClient.getAttachment).toHaveBeenCalledWith('msg_nested', 'att_003');
+    });
+
+    it('should reject when total size exceeds limit in inline mode', async () => {
+      (mockClient.getMessage as ReturnType<typeof vi.fn>).mockResolvedValue({
+        id: 'msg_large',
+        threadId: 'thread_large',
+        labelIds: ['INBOX'],
+        snippet: 'Large attachments',
+        historyId: '12345',
+        internalDate: String(Date.now()),
+        payload: {
+          mimeType: 'multipart/mixed',
+          headers: [
+            { name: 'Subject', value: 'Large Files' },
+            { name: 'From', value: 'sender@example.com' },
+            { name: 'To', value: 'me@example.com' },
+            { name: 'Date', value: new Date().toISOString() },
+          ],
+          parts: [
+            {
+              partId: '1',
+              mimeType: 'application/zip',
+              filename: 'huge-file.zip',
+              body: {
+                attachmentId: 'att_large',
+                size: 30 * 1024 * 1024, // 30 MB
+              },
+            },
+          ],
+        },
+      });
+
+      const tool = downloadEmailAttachmentsTool(mockServer, () => mockClient);
+      const result = await tool.handler({ email_id: 'msg_large', inline: true });
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('exceeds the 25 MB limit');
+    });
+
+    it('should sanitize path traversal in filenames', async () => {
+      (mockClient.getMessage as ReturnType<typeof vi.fn>).mockResolvedValue({
+        id: 'msg_traversal',
+        threadId: 'thread_traversal',
+        labelIds: ['INBOX'],
+        snippet: 'Malicious attachment',
+        historyId: '12345',
+        internalDate: String(Date.now()),
+        payload: {
+          mimeType: 'multipart/mixed',
+          headers: [
+            { name: 'Subject', value: 'Path Traversal' },
+            { name: 'From', value: 'attacker@example.com' },
+            { name: 'To', value: 'me@example.com' },
+            { name: 'Date', value: new Date().toISOString() },
+          ],
+          parts: [
+            {
+              partId: '1',
+              mimeType: 'application/pdf',
+              filename: '../../etc/passwd',
+              body: {
+                attachmentId: 'att_001',
+                size: 1024,
+              },
+            },
+          ],
+        },
+      });
+
+      const tool = downloadEmailAttachmentsTool(mockServer, () => mockClient);
+      const result = await tool.handler({ email_id: 'msg_traversal' });
+
+      // File path should use sanitized basename only, not the traversal path
+      expect(result.content[0].text).toContain('/tmp/gmail-attachments-msg_traversal/passwd');
+      // Must NOT contain the traversal path in the saved file location
+      expect(result.content[0].text).not.toContain('`: `/etc/passwd');
+      expect(result.content[0].text).not.toContain(
+        '`: `/tmp/gmail-attachments-msg_traversal/../../'
+      );
+    });
+
+    it('should deduplicate filenames when attachments share the same name', async () => {
+      (mockClient.getMessage as ReturnType<typeof vi.fn>).mockResolvedValue({
+        id: 'msg_dup',
+        threadId: 'thread_dup',
+        labelIds: ['INBOX'],
+        snippet: 'Duplicate names',
+        historyId: '12345',
+        internalDate: String(Date.now()),
+        payload: {
+          mimeType: 'multipart/mixed',
+          headers: [
+            { name: 'Subject', value: 'Duplicates' },
+            { name: 'From', value: 'sender@example.com' },
+            { name: 'To', value: 'me@example.com' },
+            { name: 'Date', value: new Date().toISOString() },
+          ],
+          parts: [
+            {
+              partId: '1',
+              mimeType: 'image/png',
+              filename: 'image.png',
+              body: { attachmentId: 'att_001', size: 1024 },
+            },
+            {
+              partId: '2',
+              mimeType: 'image/png',
+              filename: 'image.png',
+              body: { attachmentId: 'att_003', size: 2048 },
+            },
+          ],
+        },
+      });
+
+      const tool = downloadEmailAttachmentsTool(mockServer, () => mockClient);
+      const result = await tool.handler({ email_id: 'msg_dup' });
+
+      expect(result.content[0].text).toContain('/tmp/gmail-attachments-msg_dup/image.png');
+      expect(result.content[0].text).toContain('/tmp/gmail-attachments-msg_dup/image (1).png');
+    });
+
+    it('should handle getAttachment failure during download', async () => {
+      (mockClient.getMessage as ReturnType<typeof vi.fn>).mockResolvedValue(emailWithAttachments);
+      (mockClient.getAttachment as ReturnType<typeof vi.fn>).mockRejectedValue(
+        new Error('Attachment download failed')
+      );
+
+      const tool = downloadEmailAttachmentsTool(mockServer, () => mockClient);
+      const result = await tool.handler({ email_id: 'msg_att' });
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('Error downloading attachment(s)');
     });
   });
 });
