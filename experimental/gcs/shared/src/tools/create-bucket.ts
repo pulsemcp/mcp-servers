@@ -16,7 +16,7 @@ export const CreateBucketSchema = z.object({
     .max(63)
     // GCS bucket naming rules:
     // - Start and end with lowercase letter or number
-    // - Can contain lowercase letters, numbers, hyphens, and dots
+    // - Can contain lowercase letters, numbers, hyphens, underscores, and dots
     // - No consecutive dots or periods next to hyphens
     .regex(/^[a-z0-9]([a-z0-9._-]*[a-z0-9])?$/)
     .refine((val) => !/^\d+\.\d+\.\d+\.\d+$/.test(val), {
@@ -43,7 +43,7 @@ Example response:
 Bucket naming rules:
 - Must be globally unique across all Google Cloud projects
 - 3-63 characters long
-- Only lowercase letters, numbers, hyphens, and dots
+- Only lowercase letters, numbers, hyphens, underscores, and dots
 - Must start and end with a letter or number
 - Cannot be formatted as an IP address
 

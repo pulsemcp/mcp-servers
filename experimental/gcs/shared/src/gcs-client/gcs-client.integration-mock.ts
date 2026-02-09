@@ -36,7 +36,7 @@ export function createIntegrationMockGCSClient(mockData: MockGCSData = {}): IGCS
   ];
 
   // Deep clone objects to avoid mutation issues
-  const objects: MockGCSData['objects'] = JSON.parse(JSON.stringify(mockData.objects || {}));
+  const objects: MockGCSData['objects'] = structuredClone(mockData.objects || {});
 
   return {
     async listBuckets(): Promise<ListBucketsResult> {

@@ -90,7 +90,13 @@ export class GoogleCloudStorageClient implements IGCSClient {
     if (config.keyFilePath) {
       storageOptions.keyFilename = config.keyFilePath;
     } else if (config.keyFileContents) {
-      storageOptions.credentials = JSON.parse(config.keyFileContents);
+      try {
+        storageOptions.credentials = JSON.parse(config.keyFileContents);
+      } catch {
+        throw new Error(
+          'Failed to parse GCS_SERVICE_ACCOUNT_KEY_JSON: invalid JSON. Ensure the value is a valid JSON string.'
+        );
+      }
     }
     // If neither is provided, uses Application Default Credentials (ADC)
 
@@ -189,12 +195,8 @@ export class GoogleCloudStorageClient implements IGCSClient {
   }
 
   async headBucket(bucket: string): Promise<boolean> {
-    try {
-      const [exists] = await this.storage.bucket(bucket).exists();
-      return exists;
-    } catch {
-      return false;
-    }
+    const [exists] = await this.storage.bucket(bucket).exists();
+    return exists;
   }
 
   async copyObject(
@@ -208,11 +210,11 @@ export class GoogleCloudStorageClient implements IGCSClient {
 
     const [, apiResponse] = await sourceFile.copy(destFile);
 
+    const resource = (apiResponse as { resource?: { etag?: string; generation?: string } })
+      ?.resource;
     return {
-      etag: (apiResponse as { resource?: { etag?: string } })?.resource?.etag,
-      generation: (apiResponse as { resource?: { generation?: string } })?.resource?.generation
-        ? String((apiResponse as { resource?: { generation?: string } }).resource!.generation)
-        : undefined,
+      etag: resource?.etag,
+      generation: resource?.generation ? String(resource.generation) : undefined,
     };
   }
 }
