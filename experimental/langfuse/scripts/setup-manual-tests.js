@@ -18,7 +18,9 @@ console.log('🔧 Setting up manual test environment...\n');
 const envPath = path.join(rootDir, '.env');
 if (!existsSync(envPath)) {
   console.log('⚠️  No .env file found');
-  console.log('   Create one with LANGFUSE_SECRET_KEY, LANGFUSE_PUBLIC_KEY, and LANGFUSE_BASE_URL\n');
+  console.log(
+    '   Create one with LANGFUSE_SECRET_KEY, LANGFUSE_PUBLIC_KEY, and LANGFUSE_BASE_URL\n'
+  );
 } else {
   console.log('✅ .env file found\n');
 }
