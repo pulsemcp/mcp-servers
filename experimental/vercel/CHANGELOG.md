@@ -24,7 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Renamed npm package from `vercel-mcp-server` to `vercel-deployment-mcp-server`
+- Renamed npm package from `vercel-mcp-server` to `vercel-platform-mcp-server`
 
 ### Fixed
 
