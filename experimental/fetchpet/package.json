@@ -34,7 +34,7 @@
     "url": "git+https://github.com/pulsemcp/mcp-servers.git"
   },
   "devDependencies": {
-    "@types/node": "^24.0.0",
+    "@types/node": "^22.10.6",
     "@vitest/ui": "^3.2.3",
     "dotenv": "^16.6.1",
     "vitest": "^3.2.3"

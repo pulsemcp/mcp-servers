@@ -104,7 +104,7 @@ The assistant will:
 
 This MCP server uses Playwright to automate a browser session with Fetch Pet:
 
-1. **On first tool use**: Launches a browser and logs into your Fetch Pet account
+1. **On server start**: Launches a browser in the background and logs into your Fetch Pet account
 2. **Browser session persists**: All subsequent tool calls reuse the same logged-in session
 3. **Smart navigation**: Tools navigate to the appropriate pages as needed
 4. **Stealth mode**: Uses playwright-extra with stealth plugin to avoid bot detection

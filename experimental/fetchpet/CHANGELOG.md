@@ -35,7 +35,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add `policyNumber` field to `ClaimDetails` interface and tool output
 - Add confirmation token expiry (2 minutes) to prevent stale form submissions
 - Return error instead of silently falling back to first claim when `getClaimDetails` cannot find the requested claim ID
-- Update README.md to reflect consolidated `get_claims` tool
+- Update README.md to reflect consolidated `get_claims` tool and correct login timing description
+- Align `@types/node` version across all package.json files
+- Fix manual test claim ID regex to match lowercase generated IDs
 
 ## [0.1.0] - 2026-02-08
 

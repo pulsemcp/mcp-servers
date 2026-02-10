@@ -128,7 +128,7 @@ describe('Fetch Pet Manual Tests', () => {
         const claimsText = (claimsResult as { content: Array<{ text: string }> }).content[0].text;
 
         // Try to extract a claim ID from the results
-        const claimIdMatch = claimsText.match(/Claim\s+([A-Z0-9-]+)/);
+        const claimIdMatch = claimsText.match(/Claim\s+([A-Za-z0-9-]+)/);
         if (!claimIdMatch) {
           reportOutcome(testName, 'WARNING', 'No claims found to get details for');
           return;
