@@ -32,4 +32,27 @@ npm run test:manual
 
 ## Latest Test Results
 
-_No tests have been run yet._
+- **Commit:** 788fd225ad59d26b027d616737a6df97dfe0488f
+- **Date:** 2026-02-10
+- **Result:** 6/6 tests passed (100%)
+
+### Test Details
+
+| Test                                             | Result | Notes                                                    |
+| ------------------------------------------------ | ------ | -------------------------------------------------------- |
+| GET /api/public/traces - list traces             | PASS   | Listed 1 trace after seeding                             |
+| GET /api/public/traces - filter by name          | PASS   | Filtered traces by name "seed-trace"                     |
+| GET /api/public/traces/{traceId} - detail        | PASS   | Retrieved full trace detail with observations and scores |
+| GET /api/public/observations - list              | PASS   | Listed 2 observations (SPAN + GENERATION)                |
+| GET /api/public/observations - filter by traceId | PASS   | Filtered observations by traceId                         |
+| GET /api/public/observations/{id} - detail       | PASS   | Retrieved full observation detail with model info        |
+
+### Key Functionality Verified
+
+- Authentication via Basic Auth (publicKey:secretKey)
+- Trace listing with pagination metadata (page, limit, totalItems, totalPages)
+- Trace filtering by name
+- Trace detail retrieval with nested observations and scores arrays
+- Observation listing with type and model info
+- Observation filtering by traceId
+- Individual observation detail with latency, type, and model
