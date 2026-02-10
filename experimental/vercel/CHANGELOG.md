@@ -22,6 +22,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Warning logging for malformed runtime log lines
 - `get_runtime_logs` now supports filtering by time range (`since`/`until`), search text, log source, level, HTTP status code, direction, limit, and environment
 
+### Changed
+
+- Renamed npm package from `vercel-mcp-server` to `vercel-deployment-mcp-server`
+
 ### Fixed
 
 - Rollback deployment API endpoint uses correct version (`/v9` instead of `/v1`)

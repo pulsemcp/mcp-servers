@@ -1,11 +1,11 @@
 {
-  "name": "vercel-mcp-server",
+  "name": "vercel-deployment-mcp-server",
   "version": "0.0.0",
   "description": "Local implementation of Vercel MCP server",
   "main": "build/index.js",
   "type": "module",
   "bin": {
-    "vercel-mcp-server": "./build/index.js"
+    "vercel-deployment-mcp-server": "./build/index.js"
   },
   "files": [
     "build/**/*.js",

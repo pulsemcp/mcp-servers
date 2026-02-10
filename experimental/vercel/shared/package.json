@@ -1,5 +1,5 @@
 {
-  "name": "vercel-mcp-server-shared",
+  "name": "vercel-deployment-mcp-server-shared",
   "version": "0.0.0",
   "description": "Shared code for Vercel MCP server implementations",
   "main": "build/index.js",

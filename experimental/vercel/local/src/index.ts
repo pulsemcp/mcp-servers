@@ -90,7 +90,7 @@ async function main() {
   const transport = new StdioServerTransport();
   await server.connect(transport);
 
-  logServerStart('vercel-mcp-server');
+  logServerStart('vercel-deployment-mcp-server');
 }
 
 main().catch((error) => {

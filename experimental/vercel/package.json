@@ -1,5 +1,5 @@
 {
-  "name": "vercel-mcp-server",
+  "name": "vercel-deployment-mcp-server",
   "version": "0.0.0",
   "description": "MCP server for Vercel deployment management and runtime logs",
   "author": "PulseMCP",

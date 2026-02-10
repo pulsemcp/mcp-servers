@@ -150,7 +150,7 @@ export interface CreateMCPServerOptions {
 export function createMCPServer(options: CreateMCPServerOptions) {
   const server = new Server(
     {
-      name: 'vercel-mcp-server',
+      name: 'vercel-deployment-mcp-server',
       version: options.version,
     },
     {
