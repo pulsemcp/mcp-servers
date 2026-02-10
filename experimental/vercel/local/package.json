@@ -1,6 +1,6 @@
 {
   "name": "vercel-platform-mcp-server",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Local implementation of Vercel MCP server",
   "main": "build/index.js",
   "type": "module",
