@@ -4,7 +4,7 @@ import {
   ReadResourceRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js';
 
-export function registerResources(server: Server) {
+export function registerResources(server: Server, version: string = '0.0.0') {
   server.setRequestHandler(ListResourcesRequestSchema, async () => {
     return {
       resources: [
@@ -26,7 +26,7 @@ export function registerResources(server: Server) {
       const config = {
         server: {
           name: 'langfuse-mcp-server',
-          version: '0.1.0',
+          version,
           transport: 'stdio',
         },
         environment: {

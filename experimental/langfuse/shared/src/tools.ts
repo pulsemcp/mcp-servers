@@ -62,13 +62,3 @@ export function createRegisterTools(clientFactory: ClientFactory) {
     });
   };
 }
-
-export function registerTools(server: Server) {
-  const factory = () => {
-    throw new Error(
-      'No client factory provided - use createRegisterTools for dependency injection'
-    ) as never;
-  };
-  const register = createRegisterTools(factory);
-  register(server);
-}

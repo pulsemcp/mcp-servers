@@ -40,7 +40,7 @@ export function createMCPServer(options: CreateMCPServerOptions) {
         return new LangfuseClient(secretKey, publicKey, baseUrl);
       });
 
-    registerResources(server);
+    registerResources(server, options.version);
     const registerTools = createRegisterTools(factory);
     registerTools(server);
   };

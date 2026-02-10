@@ -1,7 +1,9 @@
 import { describe, it, expect, beforeAll } from 'vitest';
+import { LangfuseClient } from '../../shared/src/langfuse-client/langfuse-client.js';
+import type { ILangfuseClient } from '../../shared/src/langfuse-client/langfuse-client.js';
 
 /**
- * Manual tests that hit the real Langfuse API.
+ * Manual tests that hit the real Langfuse API via LangfuseClient.
  *
  * Prerequisites:
  * 1. Set up .env with LANGFUSE_SECRET_KEY, LANGFUSE_PUBLIC_KEY, LANGFUSE_BASE_URL
@@ -12,39 +14,34 @@ const BASE_URL = process.env.LANGFUSE_BASE_URL || 'https://us.cloud.langfuse.com
 const SECRET_KEY = process.env.LANGFUSE_SECRET_KEY;
 const PUBLIC_KEY = process.env.LANGFUSE_PUBLIC_KEY;
 
-function getAuthHeader(): string {
-  return 'Basic ' + Buffer.from(`${PUBLIC_KEY}:${SECRET_KEY}`).toString('base64');
-}
-
 describe('Langfuse Manual Tests', () => {
+  let client: ILangfuseClient;
+
   beforeAll(() => {
     if (!SECRET_KEY || !PUBLIC_KEY) {
       throw new Error(
         'LANGFUSE_SECRET_KEY and LANGFUSE_PUBLIC_KEY must be set in .env for manual tests'
       );
     }
+    client = new LangfuseClient(SECRET_KEY, PUBLIC_KEY, BASE_URL);
   });
 
-  describe('GET /api/public/traces', () => {
-    it('should list traces', async () => {
-      const response = await fetch(`${BASE_URL}/api/public/traces?limit=5`, {
-        headers: { Authorization: getAuthHeader() },
-      });
+  describe('getTraces', () => {
+    it('should list traces with default params', async () => {
+      const result = await client.getTraces({ limit: 5 });
 
-      expect(response.ok).toBe(true);
-      const body = await response.json();
-      expect(body).toHaveProperty('data');
-      expect(body).toHaveProperty('meta');
-      expect(body.meta).toHaveProperty('page');
-      expect(body.meta).toHaveProperty('limit');
-      expect(body.meta).toHaveProperty('totalItems');
-      expect(body.meta).toHaveProperty('totalPages');
-      expect(Array.isArray(body.data)).toBe(true);
+      expect(result).toHaveProperty('data');
+      expect(result).toHaveProperty('meta');
+      expect(result.meta).toHaveProperty('page');
+      expect(result.meta).toHaveProperty('limit');
+      expect(result.meta).toHaveProperty('totalItems');
+      expect(result.meta).toHaveProperty('totalPages');
+      expect(Array.isArray(result.data)).toBe(true);
 
-      console.log(`Found ${body.meta.totalItems} total traces, returned ${body.data.length}`);
+      console.log(`Found ${result.meta.totalItems} total traces, returned ${result.data.length}`);
 
-      if (body.data.length > 0) {
-        const trace = body.data[0];
+      if (result.data.length > 0) {
+        const trace = result.data[0];
         expect(trace).toHaveProperty('id');
         expect(trace).toHaveProperty('timestamp');
         expect(trace).toHaveProperty('tags');
@@ -53,41 +50,29 @@ describe('Langfuse Manual Tests', () => {
     });
 
     it('should filter traces by name', async () => {
-      const response = await fetch(`${BASE_URL}/api/public/traces?limit=5&name=seed-trace`, {
-        headers: { Authorization: getAuthHeader() },
-      });
+      const result = await client.getTraces({ limit: 5, name: 'seed-trace' });
 
-      expect(response.ok).toBe(true);
-      const body = await response.json();
-      expect(Array.isArray(body.data)).toBe(true);
+      expect(Array.isArray(result.data)).toBe(true);
 
-      for (const trace of body.data) {
+      for (const trace of result.data) {
         expect(trace.name).toBe('seed-trace');
       }
-      console.log(`Found ${body.data.length} traces with name "seed-trace"`);
+      console.log(`Found ${result.data.length} traces with name "seed-trace"`);
     });
   });
 
-  describe('GET /api/public/traces/{traceId}', () => {
+  describe('getTraceDetail', () => {
     it('should get trace detail for a known trace', async () => {
-      // First list traces to find one
-      const listResponse = await fetch(`${BASE_URL}/api/public/traces?limit=1`, {
-        headers: { Authorization: getAuthHeader() },
-      });
-      const listBody = await listResponse.json();
+      const list = await client.getTraces({ limit: 1 });
 
-      if (listBody.data.length === 0) {
+      if (list.data.length === 0) {
         console.log('No traces available - skipping detail test');
         return;
       }
 
-      const traceId = listBody.data[0].id;
-      const response = await fetch(`${BASE_URL}/api/public/traces/${traceId}`, {
-        headers: { Authorization: getAuthHeader() },
-      });
+      const traceId = list.data[0].id;
+      const trace = await client.getTraceDetail(traceId);
 
-      expect(response.ok).toBe(true);
-      const trace = await response.json();
       expect(trace.id).toBe(traceId);
       expect(trace).toHaveProperty('observations');
       expect(trace).toHaveProperty('scores');
@@ -100,22 +85,20 @@ describe('Langfuse Manual Tests', () => {
     });
   });
 
-  describe('GET /api/public/observations', () => {
+  describe('getObservations', () => {
     it('should list observations', async () => {
-      const response = await fetch(`${BASE_URL}/api/public/observations?limit=5`, {
-        headers: { Authorization: getAuthHeader() },
-      });
+      const result = await client.getObservations({ limit: 5 });
 
-      expect(response.ok).toBe(true);
-      const body = await response.json();
-      expect(body).toHaveProperty('data');
-      expect(body).toHaveProperty('meta');
-      expect(Array.isArray(body.data)).toBe(true);
+      expect(result).toHaveProperty('data');
+      expect(result).toHaveProperty('meta');
+      expect(Array.isArray(result.data)).toBe(true);
 
-      console.log(`Found ${body.meta.totalItems} total observations, returned ${body.data.length}`);
+      console.log(
+        `Found ${result.meta.totalItems} total observations, returned ${result.data.length}`
+      );
 
-      if (body.data.length > 0) {
-        const obs = body.data[0];
+      if (result.data.length > 0) {
+        const obs = result.data[0];
         expect(obs).toHaveProperty('id');
         expect(obs).toHaveProperty('type');
         console.log(`First observation: id=${obs.id}, type=${obs.type}, model=${obs.model}`);
@@ -123,58 +106,40 @@ describe('Langfuse Manual Tests', () => {
     });
 
     it('should filter observations by traceId', async () => {
-      // Find a trace first
-      const listResponse = await fetch(`${BASE_URL}/api/public/traces?limit=1`, {
-        headers: { Authorization: getAuthHeader() },
-      });
-      const listBody = await listResponse.json();
+      const traces = await client.getTraces({ limit: 1 });
 
-      if (listBody.data.length === 0) {
+      if (traces.data.length === 0) {
         console.log('No traces available - skipping observations by traceId test');
         return;
       }
 
-      const traceId = listBody.data[0].id;
-      const response = await fetch(
-        `${BASE_URL}/api/public/observations?traceId=${traceId}&limit=10`,
-        { headers: { Authorization: getAuthHeader() } }
-      );
+      const traceId = traces.data[0].id;
+      const result = await client.getObservations({ traceId, limit: 10 });
 
-      expect(response.ok).toBe(true);
-      const body = await response.json();
-      expect(Array.isArray(body.data)).toBe(true);
+      expect(Array.isArray(result.data)).toBe(true);
 
-      for (const obs of body.data) {
+      for (const obs of result.data) {
         expect(obs.traceId).toBe(traceId);
       }
-      console.log(`Found ${body.data.length} observations for trace ${traceId}`);
+      console.log(`Found ${result.data.length} observations for trace ${traceId}`);
     });
   });
 
-  describe('GET /api/public/observations/{observationId}', () => {
+  describe('getObservation', () => {
     it('should get observation detail', async () => {
-      // Find an observation first
-      const listResponse = await fetch(`${BASE_URL}/api/public/observations?limit=1`, {
-        headers: { Authorization: getAuthHeader() },
-      });
-      const listBody = await listResponse.json();
+      const list = await client.getObservations({ limit: 1 });
 
-      if (listBody.data.length === 0) {
+      if (list.data.length === 0) {
         console.log('No observations available - skipping detail test');
         return;
       }
 
-      const obsId = listBody.data[0].id;
-      const response = await fetch(`${BASE_URL}/api/public/observations/${obsId}`, {
-        headers: { Authorization: getAuthHeader() },
-      });
+      const obsId = list.data[0].id;
+      const obs = await client.getObservation(obsId);
 
-      expect(response.ok).toBe(true);
-      const obs = await response.json();
       expect(obs.id).toBe(obsId);
       expect(obs).toHaveProperty('type');
       expect(obs).toHaveProperty('startTime');
-      // Detail should include input/output
       console.log(
         `Observation ${obsId}: type=${obs.type}, model=${obs.model}, latency=${obs.latency}`
       );

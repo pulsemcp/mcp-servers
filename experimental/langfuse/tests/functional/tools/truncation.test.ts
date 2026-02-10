@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { truncateLargeFields, resetFileCounter } from '../../../shared/src/truncation.js';
 import { readFileSync, existsSync, unlinkSync } from 'fs';
 

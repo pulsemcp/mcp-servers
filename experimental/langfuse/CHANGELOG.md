@@ -18,4 +18,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Configuration resource at `langfuse://config` for debugging setup
 - Functional tests for all tools and truncation utility
 - Integration tests using TestMCPClient with mocked Langfuse API
-- Manual tests against real Langfuse API
+- Manual tests against real Langfuse API via LangfuseClient
+- Graceful error handling for /tmp file write failures during truncation

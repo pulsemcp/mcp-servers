@@ -34,9 +34,13 @@ export function truncateLargeFields(obj: unknown, currentPath: string = ''): unk
   if (typeof obj === 'string') {
     if (obj.length > MAX_INLINE_LENGTH) {
       const tmpPath = generateTmpPath(currentPath || 'field');
-      writeFileSync(tmpPath, obj, 'utf-8');
       const preview = obj.slice(0, MAX_INLINE_LENGTH);
-      return `${preview}... [TRUNCATED - full content (${obj.length} chars) saved to ${tmpPath} - use grep to search it]`;
+      try {
+        writeFileSync(tmpPath, obj, 'utf-8');
+        return `${preview}... [TRUNCATED - full content (${obj.length} chars) saved to ${tmpPath} - use grep to search it]`;
+      } catch {
+        return `${preview}... [TRUNCATED - ${obj.length} chars total, could not save to tmp file]`;
+      }
     }
     return obj;
   }
