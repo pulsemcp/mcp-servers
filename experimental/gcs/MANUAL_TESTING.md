@@ -14,9 +14,9 @@ npm run test:manual
 
 ## Test Results
 
-### 2026-02-10 - Initial Manual Testing
+### 2026-02-10 - v0.1.0 Manual Testing
 
-**Commit:** db3f636
+**Commit:** 7ad94af
 **Result:** 9/9 tests passed (100%)
 
 ```
