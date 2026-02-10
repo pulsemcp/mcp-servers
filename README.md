@@ -49,6 +49,7 @@ These are high-quality servers that we may discontinue if the official provider 
 | [slack](./experimental/slack/)                           | Slack workspace messaging and collaboration integration            | 0.0.1        | Not Started   | Teams using Slack for team communication                    | Requires Slack Bot Token; NOT officially affiliated with Slack                                                        |
 | [ssh](./experimental/ssh/)                               | SSH remote server management with agent authentication             | 0.1.2        | Not Started   | Developers needing SSH access to remote servers             | Supports SSH agent for passphrase-protected keys                                                                      |
 | [twist](./experimental/twist/)                           | Twist team messaging and collaboration platform integration        | 0.2.0        | Not Started   | Teams using Twist for asynchronous communication            | Requires Twist API bearer token and workspace ID                                                                      |
+| [vercel](./experimental/vercel/)                         | Vercel deployment management and runtime log retrieval             | 0.1.0        | Not Started   | Developers using Vercel for deployment and hosting          | Requires Vercel API token; Published as `vercel-platform-mcp-server`; NOT officially affiliated with Vercel           |
 
 ## Contributing
 
