@@ -1,6 +1,6 @@
 {
   "name": "gcs-google-mcp-server",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "MCP server for Google Cloud Storage operations with fine-grained tool access control",
   "main": "build/index.js",
   "type": "module",
