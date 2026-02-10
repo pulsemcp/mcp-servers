@@ -21,7 +21,7 @@ describe('Langfuse MCP Server Integration Tests', () => {
       client = await createTestMCPClientWithMock({});
 
       const serverInfo = await client.getServerInfo();
-      expect(serverInfo.name).toBe('langfuse-mcp-server');
+      expect(serverInfo.name).toBe('langfuse-observability-mcp-server');
       expect(serverInfo.version).toBe('0.1.0');
     });
   });
@@ -110,7 +110,7 @@ describe('Langfuse MCP Server Integration Tests', () => {
       });
 
       const config = JSON.parse(result.contents[0].text);
-      expect(config.server.name).toBe('langfuse-mcp-server');
+      expect(config.server.name).toBe('langfuse-observability-mcp-server');
     });
   });
 });

@@ -1,5 +1,5 @@
 {
-  "name": "langfuse-mcp-server",
+  "name": "langfuse-observability-mcp-server",
   "version": "0.1.0",
   "description": "MCP server for Langfuse LLM observability - trace and observation analysis",
   "author": "PulseMCP",

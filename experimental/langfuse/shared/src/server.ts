@@ -12,7 +12,7 @@ export interface CreateMCPServerOptions {
 export function createMCPServer(options: CreateMCPServerOptions) {
   const server = new Server(
     {
-      name: 'langfuse-mcp-server',
+      name: 'langfuse-observability-mcp-server',
       version: options.version,
     },
     {

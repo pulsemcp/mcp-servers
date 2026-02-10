@@ -1,12 +1,12 @@
 {
-  "name": "langfuse-mcp-server",
+  "name": "langfuse-observability-mcp-server",
   "version": "0.1.0",
   "description": "Local implementation of Langfuse MCP server",
   "mcpName": "com.pulsemcp.servers/langfuse",
   "main": "build/index.js",
   "type": "module",
   "bin": {
-    "langfuse-mcp-server": "./build/index.js"
+    "langfuse-observability-mcp-server": "./build/index.js"
   },
   "files": [
     "build/**/*.js",

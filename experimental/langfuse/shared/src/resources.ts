@@ -25,7 +25,7 @@ export function registerResources(server: Server, version: string = '0.0.0') {
     if (uri === 'langfuse://config') {
       const config = {
         server: {
-          name: 'langfuse-mcp-server',
+          name: 'langfuse-observability-mcp-server',
           version,
           transport: 'stdio',
         },

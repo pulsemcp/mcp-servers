@@ -1,5 +1,5 @@
 {
-  "name": "langfuse-mcp-server-shared",
+  "name": "langfuse-observability-mcp-server-shared",
   "version": "0.1.0",
   "description": "Shared code for Langfuse MCP server implementations",
   "main": "build/index.js",

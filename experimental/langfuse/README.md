@@ -58,7 +58,7 @@ Windows: `%APPDATA%\Claude\claude_desktop_config.json`
   "mcpServers": {
     "langfuse": {
       "command": "npx",
-      "args": ["-y", "langfuse-mcp-server"],
+      "args": ["-y", "langfuse-observability-mcp-server"],
       "env": {
         "LANGFUSE_SECRET_KEY": "sk-lf-your-secret-key",
         "LANGFUSE_PUBLIC_KEY": "pk-lf-your-public-key",
