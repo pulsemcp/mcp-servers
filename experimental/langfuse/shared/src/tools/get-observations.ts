@@ -38,7 +38,7 @@ const TOOL_DESCRIPTION = `List observations from Langfuse with optional filters 
 
 Returns a summary of each observation: id, traceId, type, name, model, timing, level, and usage/cost metrics. The input and output fields are omitted from the list view for brevity — use get_observation with a specific observation ID to see the full I/O.
 
-Typically used with traceId filter to list all observations within a specific trace. Can also be used to search across all traces by type, level, model, etc.
+Typically used with traceId filter to list all observations within a specific trace. Can also be used to search across all traces by type, level, etc.
 
 Any field value exceeding 1000 characters is automatically truncated and saved to a /tmp file. The truncated text includes the file path — use grep on that file to search within large values.
 

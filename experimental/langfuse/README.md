@@ -8,7 +8,7 @@ MCP server for readonly analysis of [Langfuse](https://langfuse.com) LLM traces 
 - Drill into full trace details including all nested observations and scores
 - List and filter observations by type (GENERATION, SPAN, EVENT), model, level, and more
 - Automatic truncation of large payloads (>1000 chars) to /tmp files with grep-friendly references
-- Readonly-only — no write operations, safe to use without risk of data modification
+- Read-only — no write operations, safe to use without risk of data modification
 
 ## Capabilities
 

@@ -32,8 +32,7 @@ export function registerResources(server: Server, version: string = '0.0.0') {
         environment: {
           LANGFUSE_SECRET_KEY: process.env.LANGFUSE_SECRET_KEY ? '***configured***' : 'not set',
           LANGFUSE_PUBLIC_KEY: process.env.LANGFUSE_PUBLIC_KEY ? '***configured***' : 'not set',
-          LANGFUSE_BASE_URL:
-            process.env.LANGFUSE_BASE_URL || 'https://cloud.langfuse.com (default)',
+          LANGFUSE_BASE_URL: process.env.LANGFUSE_BASE_URL || 'https://cloud.langfuse.com',
         },
         capabilities: {
           tools: true,
