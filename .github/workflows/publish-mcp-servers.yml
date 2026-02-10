@@ -8,7 +8,7 @@ on:
 jobs:
   wait-for-ci:
     name: Wait for CI
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     steps:
       - name: Wait for CI Build & Test Checks
         uses: actions/github-script@v7
@@ -68,7 +68,7 @@ jobs:
 
   detect-and-publish:
     needs: wait-for-ci
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     permissions:
       contents: write
       packages: write

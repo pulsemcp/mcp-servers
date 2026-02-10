@@ -15,7 +15,7 @@ on:
 jobs:
   functional-tests:
     name: AppSignal MCP Server Functional Tests
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
 
     defaults:
       run:
@@ -57,7 +57,7 @@ jobs:
 
   integration-tests:
     name: AppSignal MCP Server Integration Tests
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
 
     defaults:
       run:
