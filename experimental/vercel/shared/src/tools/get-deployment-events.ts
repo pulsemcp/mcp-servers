@@ -16,7 +16,7 @@ const GetDeploymentEventsSchema = z.object({
     .optional()
     .default('forward')
     .describe(PARAM_DESCRIPTIONS.direction),
-  limit: z.number().optional().default(100).describe(PARAM_DESCRIPTIONS.limit),
+  limit: z.number().min(-1).optional().default(100).describe(PARAM_DESCRIPTIONS.limit),
 });
 
 const TOOL_DESCRIPTION = `Get build logs (events) for a Vercel deployment.

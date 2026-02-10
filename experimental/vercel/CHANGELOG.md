@@ -27,3 +27,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Rollback deployment API endpoint uses correct version (`/v9` instead of `/v1`)
 - Runtime logs `Accept` header uses `application/stream+json` for NDJSON format
 - `ci:install` script properly installs dependencies in shared/local subdirectories
+- Use `!== undefined` checks consistently across all client functions to avoid dropping falsy values like `0`
+- Add `min(-1)` validation on `get_deployment_events` limit parameter
+- Exclude manual tests from default `npm test` run

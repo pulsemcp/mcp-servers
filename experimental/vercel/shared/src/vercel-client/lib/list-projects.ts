@@ -24,10 +24,10 @@ export async function listProjects(
 ): Promise<ListProjectsResponse> {
   const params = new URLSearchParams();
 
-  if (options.limit) params.set('limit', options.limit.toString());
-  if (options.since) params.set('since', options.since.toString());
-  if (options.until) params.set('until', options.until.toString());
-  if (options.search) params.set('search', options.search);
+  if (options.limit !== undefined) params.set('limit', options.limit.toString());
+  if (options.since !== undefined) params.set('since', options.since.toString());
+  if (options.until !== undefined) params.set('until', options.until.toString());
+  if (options.search !== undefined) params.set('search', options.search);
 
   if (teamParams) {
     const teamEntries = new URLSearchParams(teamParams);

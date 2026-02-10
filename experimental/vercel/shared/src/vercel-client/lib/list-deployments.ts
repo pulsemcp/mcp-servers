@@ -18,13 +18,13 @@ export async function listDeployments(
 ): Promise<ListDeploymentsResponse> {
   const params = new URLSearchParams();
 
-  if (options.app) params.set('app', options.app);
-  if (options.projectId) params.set('projectId', options.projectId);
-  if (options.limit) params.set('limit', options.limit.toString());
-  if (options.target) params.set('target', options.target);
-  if (options.state) params.set('state', options.state);
-  if (options.since) params.set('since', options.since.toString());
-  if (options.until) params.set('until', options.until.toString());
+  if (options.app !== undefined) params.set('app', options.app);
+  if (options.projectId !== undefined) params.set('projectId', options.projectId);
+  if (options.limit !== undefined) params.set('limit', options.limit.toString());
+  if (options.target !== undefined) params.set('target', options.target);
+  if (options.state !== undefined) params.set('state', options.state);
+  if (options.since !== undefined) params.set('since', options.since.toString());
+  if (options.until !== undefined) params.set('until', options.until.toString());
 
   if (teamParams) {
     const teamEntries = new URLSearchParams(teamParams);

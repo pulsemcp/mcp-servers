@@ -17,11 +17,11 @@ export async function getDeploymentEvents(
 ): Promise<DeploymentEvent[]> {
   const params = new URLSearchParams();
 
-  if (options.direction) params.set('direction', options.direction);
+  if (options.direction !== undefined) params.set('direction', options.direction);
   if (options.limit !== undefined) params.set('limit', options.limit.toString());
-  if (options.name) params.set('name', options.name);
-  if (options.since) params.set('since', options.since.toString());
-  if (options.until) params.set('until', options.until.toString());
+  if (options.name !== undefined) params.set('name', options.name);
+  if (options.since !== undefined) params.set('since', options.since.toString());
+  if (options.until !== undefined) params.set('until', options.until.toString());
 
   if (teamParams) {
     const teamEntries = new URLSearchParams(teamParams);
