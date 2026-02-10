@@ -47,7 +47,7 @@ vercel/
 - **Authentication**: Bearer token via `Authorization` header
 - **Base URL**: `https://api.vercel.com`
 - **Team scoping**: Appended as query parameters (`teamId`, `slug`)
-- **Runtime logs**: Stored for max 1 hour, returned as newline-delimited JSON
+- **Runtime logs**: Retention varies by plan (Hobby=1h, Pro=1d, Enterprise=3d, up to 30d with Observability Plus), returned as newline-delimited JSON
 - **Build logs**: Retrieved via deployment events endpoint
 - **Tool groups**: `readonly` (list/get operations) and `readwrite` (create/cancel/delete/promote/rollback)
 

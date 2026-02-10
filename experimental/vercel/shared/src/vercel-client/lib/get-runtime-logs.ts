@@ -7,10 +7,10 @@ export interface GetRuntimeLogsOptions {
   limit?: number;
   direction?: 'forward' | 'backward';
   search?: string;
-  source?: string;
-  level?: string;
+  source?: 'serverless' | 'edge-function' | 'edge-middleware' | 'static';
+  level?: 'info' | 'warning' | 'error' | 'fatal';
   statusCode?: number;
-  environment?: string;
+  environment?: 'production' | 'preview';
 }
 
 export async function getRuntimeLogs(
@@ -23,15 +23,15 @@ export async function getRuntimeLogs(
 ): Promise<RuntimeLogEntry[]> {
   const params = new URLSearchParams();
 
-  if (options.since) params.set('since', options.since.toString());
-  if (options.until) params.set('until', options.until.toString());
-  if (options.limit) params.set('limit', options.limit.toString());
-  if (options.direction) params.set('direction', options.direction);
-  if (options.search) params.set('search', options.search);
-  if (options.source) params.set('source', options.source);
-  if (options.level) params.set('level', options.level);
-  if (options.statusCode) params.set('statusCode', options.statusCode.toString());
-  if (options.environment) params.set('environment', options.environment);
+  if (options.since !== undefined) params.set('since', options.since.toString());
+  if (options.until !== undefined) params.set('until', options.until.toString());
+  if (options.limit !== undefined) params.set('limit', options.limit.toString());
+  if (options.direction !== undefined) params.set('direction', options.direction);
+  if (options.search !== undefined) params.set('search', options.search);
+  if (options.source !== undefined) params.set('source', options.source);
+  if (options.level !== undefined) params.set('level', options.level);
+  if (options.statusCode !== undefined) params.set('statusCode', options.statusCode.toString());
+  if (options.environment !== undefined) params.set('environment', options.environment);
 
   if (teamParams) {
     const teamEntries = new URLSearchParams(teamParams);

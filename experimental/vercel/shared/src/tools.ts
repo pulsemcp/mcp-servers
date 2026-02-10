@@ -107,7 +107,7 @@ export function createRegisterTools(clientFactory: ClientFactory, enabledGroups?
         throw new Error(`Unknown tool: ${name}`);
       }
 
-      return await tool.handler(args);
+      return await tool.handler(args ?? {});
     });
   };
 }
