@@ -208,7 +208,7 @@ describe('Langfuse MCP Server - Manual Tests', () => {
       expect(inputField).toContain('use grep to search it');
 
       // Extract the /tmp file path and verify it exists with full content
-      const pathMatch = inputField.match(/\/tmp\/langfuse_\S+\.txt/);
+      const pathMatch = inputField.match(/\/tmp\/langfuse_[a-zA-Z0-9_.-]+\.txt/);
       expect(pathMatch).not.toBeNull();
       expect(existsSync(pathMatch![0])).toBe(true);
 
@@ -224,7 +224,7 @@ describe('Langfuse MCP Server - Manual Tests', () => {
       expect(outputField).toContain('TRUNCATED');
       expect(outputField).toContain('/tmp/langfuse_');
 
-      const outputPathMatch = outputField.match(/\/tmp\/langfuse_\S+\.txt/);
+      const outputPathMatch = outputField.match(/\/tmp\/langfuse_[a-zA-Z0-9_.-]+\.txt/);
       expect(outputPathMatch).not.toBeNull();
       expect(existsSync(outputPathMatch![0])).toBe(true);
       console.log(`Truncation verified: output field saved to ${outputPathMatch![0]}`);
@@ -268,7 +268,7 @@ describe('Langfuse MCP Server - Manual Tests', () => {
       expect(inputField).toContain('/tmp/langfuse_');
 
       // Verify the /tmp file exists and has full content
-      const pathMatch = inputField.match(/\/tmp\/langfuse_\S+\.txt/);
+      const pathMatch = inputField.match(/\/tmp\/langfuse_[a-zA-Z0-9_.-]+\.txt/);
       expect(pathMatch).not.toBeNull();
       expect(existsSync(pathMatch![0])).toBe(true);
 
@@ -277,6 +277,17 @@ describe('Langfuse MCP Server - Manual Tests', () => {
       console.log(
         `Observation truncation verified: input saved to ${pathMatch![0]} (${savedContent.length} chars)`
       );
+
+      // The observation's output field should also be truncated
+      const outputField =
+        typeof parsed.output === 'string' ? parsed.output : JSON.stringify(parsed.output);
+      expect(outputField).toContain('TRUNCATED');
+      expect(outputField).toContain('/tmp/langfuse_');
+
+      const outputPathMatch = outputField.match(/\/tmp\/langfuse_[a-zA-Z0-9_.-]+\.txt/);
+      expect(outputPathMatch).not.toBeNull();
+      expect(existsSync(outputPathMatch![0])).toBe(true);
+      console.log(`Observation truncation verified: output saved to ${outputPathMatch![0]}`);
     });
   });
 });
