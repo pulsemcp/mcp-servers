@@ -14,6 +14,7 @@ import type {
   ListProjectsResponse,
   ListProjectsOptions,
 } from './vercel-client/lib/list-projects.js';
+import type { GetRuntimeLogsOptions } from './vercel-client/lib/get-runtime-logs.js';
 
 // =============================================================================
 // VERCEL API CLIENT INTERFACE
@@ -37,7 +38,11 @@ export interface IVercelClient {
   rollbackDeployment(projectId: string, deploymentId: string, description?: string): Promise<void>;
 
   // Logs
-  getRuntimeLogs(projectId: string, deploymentId: string): Promise<RuntimeLogEntry[]>;
+  getRuntimeLogs(
+    projectId: string,
+    deploymentId: string,
+    options?: GetRuntimeLogsOptions
+  ): Promise<RuntimeLogEntry[]>;
 }
 
 // =============================================================================
@@ -114,9 +119,20 @@ export class VercelClient implements IVercelClient {
     return getDeploymentEvents(this.baseUrl, this.headers, this.teamParams, idOrUrl, options);
   }
 
-  async getRuntimeLogs(projectId: string, deploymentId: string): Promise<RuntimeLogEntry[]> {
+  async getRuntimeLogs(
+    projectId: string,
+    deploymentId: string,
+    options?: GetRuntimeLogsOptions
+  ): Promise<RuntimeLogEntry[]> {
     const { getRuntimeLogs } = await import('./vercel-client/lib/get-runtime-logs.js');
-    return getRuntimeLogs(this.baseUrl, this.headers, this.teamParams, projectId, deploymentId);
+    return getRuntimeLogs(
+      this.baseUrl,
+      this.headers,
+      this.teamParams,
+      projectId,
+      deploymentId,
+      options
+    );
   }
 
   async listProjects(options?: ListProjectsOptions): Promise<ListProjectsResponse> {

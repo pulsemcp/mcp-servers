@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Manual test infrastructure for real API testing
 - Validation that `gitRef`, `gitRepoId`, and `gitType` must all be provided together in `create_deployment`
 - Warning logging for malformed runtime log lines
+- `get_runtime_logs` now supports filtering by time range (`since`/`until`), search text, log source, level, HTTP status code, direction, limit, and environment
 
 ### Fixed
 

@@ -171,6 +171,35 @@ describe('Tools', () => {
       expect(parsed).toHaveLength(1);
       expect(parsed[0].source).toBe('serverless');
     });
+
+    it('should pass filter parameters to client', async () => {
+      const tool = getRuntimeLogsTool(mockServer, clientFactory);
+      await tool.handler({
+        projectId: 'prj_test123',
+        deploymentId: 'dpl_test123',
+        since: 1700000000000,
+        until: 1700100000000,
+        limit: 50,
+        search: 'error',
+        source: 'serverless',
+        level: 'error',
+        statusCode: 500,
+        direction: 'backward',
+        environment: 'production',
+      });
+
+      expect(mockClient.getRuntimeLogs).toHaveBeenCalledWith('prj_test123', 'dpl_test123', {
+        since: 1700000000000,
+        until: 1700100000000,
+        limit: 50,
+        search: 'error',
+        source: 'serverless',
+        level: 'error',
+        statusCode: 500,
+        direction: 'backward',
+        environment: 'production',
+      });
+    });
   });
 
   describe('tool groups', () => {

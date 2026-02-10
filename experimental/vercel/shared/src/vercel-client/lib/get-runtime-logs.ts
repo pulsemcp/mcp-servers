@@ -1,14 +1,38 @@
 import type { RuntimeLogEntry } from '../../types.js';
 import { logWarning } from '../../logging.js';
 
+export interface GetRuntimeLogsOptions {
+  since?: number;
+  until?: number;
+  limit?: number;
+  direction?: 'forward' | 'backward';
+  search?: string;
+  source?: string;
+  level?: string;
+  statusCode?: number;
+  environment?: string;
+}
+
 export async function getRuntimeLogs(
   baseUrl: string,
   headers: Record<string, string>,
   teamParams: string,
   projectId: string,
-  deploymentId: string
+  deploymentId: string,
+  options: GetRuntimeLogsOptions = {}
 ): Promise<RuntimeLogEntry[]> {
   const params = new URLSearchParams();
+
+  if (options.since) params.set('since', options.since.toString());
+  if (options.until) params.set('until', options.until.toString());
+  if (options.limit) params.set('limit', options.limit.toString());
+  if (options.direction) params.set('direction', options.direction);
+  if (options.search) params.set('search', options.search);
+  if (options.source) params.set('source', options.source);
+  if (options.level) params.set('level', options.level);
+  if (options.statusCode) params.set('statusCode', options.statusCode.toString());
+  if (options.environment) params.set('environment', options.environment);
+
   if (teamParams) {
     const teamEntries = new URLSearchParams(teamParams);
     teamEntries.forEach((value, key) => params.set(key, value));
