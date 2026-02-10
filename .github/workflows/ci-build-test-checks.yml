@@ -12,7 +12,7 @@ on:
 jobs:
   ci-build-test-checks:
     name: CI Build & Test Checks Passed
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     permissions:
       checks: read
       pull-requests: read

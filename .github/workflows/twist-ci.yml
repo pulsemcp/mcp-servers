@@ -15,7 +15,7 @@ on:
 jobs:
   functional-tests:
     name: Twist MCP Server Functional Tests
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
 
     defaults:
       run:
@@ -57,7 +57,7 @@ jobs:
 
   integration-tests:
     name: Twist MCP Server Integration Tests
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
 
     defaults:
       run:
