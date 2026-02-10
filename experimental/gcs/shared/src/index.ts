@@ -1,7 +1,6 @@
 // Core server exports
 export { registerResources } from './resources.js';
 export {
-  registerTools,
   createRegisterTools,
   type ToolGroup,
   parseEnabledToolGroups,

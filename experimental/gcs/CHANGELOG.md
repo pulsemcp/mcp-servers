@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Fixed prepare-publish.js to exit with non-zero code on uncaught errors
+- Removed unused backward-compatibility registerTools function
+
 ## [0.1.0] - 2026-02-10
 
 ### Added

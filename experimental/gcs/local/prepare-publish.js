@@ -61,4 +61,7 @@ async function prepare() {
   console.log('Copied shared files to local package');
 }
 
-prepare().catch(console.error);
+prepare().catch((e) => {
+  console.error(e);
+  process.exit(1);
+});

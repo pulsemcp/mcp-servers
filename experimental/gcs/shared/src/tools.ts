@@ -259,14 +259,3 @@ export function createRegisterTools(clientFactory: GCSClientFactory, enabledGrou
     });
   };
 }
-
-// Keep the original registerTools for backward compatibility
-export function registerTools(server: Server) {
-  const factory = () => {
-    throw new Error(
-      'No client factory provided - use createRegisterTools for dependency injection'
-    );
-  };
-  const register = createRegisterTools(factory as GCSClientFactory);
-  register(server);
-}
