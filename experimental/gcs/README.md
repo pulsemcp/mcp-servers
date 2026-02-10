@@ -112,7 +112,7 @@ Windows: `%APPDATA%\Claude\claude_desktop_config.json`
   "mcpServers": {
     "gcs": {
       "command": "npx",
-      "args": ["-y", "gcs-mcp-server"],
+      "args": ["-y", "gcs-google-mcp-server"],
       "env": {
         "GCS_PROJECT_ID": "your-project-id",
         "GCS_SERVICE_ACCOUNT_KEY_FILE": "/path/to/service-account-key.json",

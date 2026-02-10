@@ -20,4 +20,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Config resource at gcs://config for debugging server state
 - Functional tests for all tools and tool filtering logic
 - Integration tests with TestMCPClient and mock GCS client
+- Manual tests for all operations against real GCS API
 - CI workflow for automated testing

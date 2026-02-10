@@ -195,8 +195,22 @@ export class GoogleCloudStorageClient implements IGCSClient {
   }
 
   async headBucket(bucket: string): Promise<boolean> {
-    const [exists] = await this.storage.bucket(bucket).exists();
-    return exists;
+    try {
+      await this.storage.bucket(bucket).getMetadata();
+      return true;
+    } catch (error: unknown) {
+      // Only return false for NotFound errors (bucket doesn't exist)
+      // Re-throw permission errors and other failures
+      if (
+        typeof error === 'object' &&
+        error !== null &&
+        'code' in error &&
+        (error as { code?: number }).code === 404
+      ) {
+        return false;
+      }
+      throw error;
+    }
   }
 
   async copyObject(
