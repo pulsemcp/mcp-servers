@@ -9,7 +9,11 @@ import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { TestMCPClient } from '../../../../../libs/test-mcp-client/build/index.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import 'dotenv/config';
+import dotenv from 'dotenv';
+
+// Use override: true to ensure .env values take precedence over any
+// pre-existing environment variables set by the shell/orchestrator
+dotenv.config({ override: true });
 import {
   TEST_PAGES,
   ENV_CONFIGS,
