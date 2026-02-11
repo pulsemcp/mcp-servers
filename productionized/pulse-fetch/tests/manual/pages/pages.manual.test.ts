@@ -64,6 +64,15 @@ function buildEnvForConfig(config: EnvVarConfig): Record<string, string> {
   return env;
 }
 
+/** Extract text from MCP content item (handles both resource and text types) */
+function getContentText(content: {
+  type: string;
+  resource?: { text: string };
+  text?: string;
+}): string {
+  return content.type === 'resource' ? content.resource!.text : content.text!;
+}
+
 const resolvedConfigs = resolveConfigs();
 
 describe('Pages Test Suite', () => {
@@ -124,7 +133,7 @@ describe('Pages Test Suite', () => {
             expect(result.content).toBeDefined();
             expect(result.content.length).toBeGreaterThan(0);
 
-            const text = (result.content[0] as { text: string }).text;
+            const text = getContentText(result.content[0] as Parameters<typeof getContentText>[0]);
             expect(text).toBeDefined();
 
             // Check strategy if expected
@@ -142,7 +151,7 @@ describe('Pages Test Suite', () => {
           } else {
             expect(result.isError).toBe(true);
 
-            const text = (result.content[0] as { text: string }).text;
+            const text = getContentText(result.content[0] as Parameters<typeof getContentText>[0]);
 
             // Extract diagnostics from error text
             const strategiesMatch = text?.match(/Strategies attempted: ([^\n]+)/);

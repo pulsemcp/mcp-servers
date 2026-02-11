@@ -49,7 +49,13 @@ describe('Scrape Tool via MCP', () => {
     expect(result.content).toBeDefined();
     expect(result.content.length).toBeGreaterThan(0);
 
-    const text = (result.content[0] as { text: string }).text;
+    // Scrape returns resource content type with text in resource.text
+    const content = result.content[0] as {
+      type: string;
+      resource?: { text: string };
+      text?: string;
+    };
+    const text = content.type === 'resource' ? content.resource!.text : content.text!;
     expect(text).toContain('Example Domain');
 
     console.log('Scrape tool successful');
@@ -66,7 +72,14 @@ describe('Scrape Tool via MCP', () => {
     expect(result.isError).toBe(true);
     expect(result.content).toBeDefined();
 
-    const text = (result.content[0] as { text: string }).text;
+    // Error responses use text content type
+    const errorContent = result.content[0] as {
+      type: string;
+      resource?: { text: string };
+      text?: string;
+    };
+    const text =
+      errorContent.type === 'resource' ? errorContent.resource!.text : errorContent.text!;
     expect(text).toContain('Failed to scrape');
 
     console.log('Error handling working correctly');
@@ -121,7 +134,14 @@ describe('Scrape Tool via MCP', () => {
       expect(result.isError).toBeFalsy();
       expect(result.content).toBeDefined();
 
-      const text = (result.content[0] as { text: string }).text;
+      // Scrape returns resource content type with text in resource.text
+      const extractContent = result.content[0] as {
+        type: string;
+        resource?: { text: string };
+        text?: string;
+      };
+      const text =
+        extractContent.type === 'resource' ? extractContent.resource!.text : extractContent.text!;
       expect(text).toBeDefined();
 
       console.log('Extraction successful');

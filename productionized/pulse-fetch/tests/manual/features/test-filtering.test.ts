@@ -37,7 +37,13 @@ describe('Content Filtering via MCP', () => {
     expect(result.content).toBeDefined();
     expect(result.content.length).toBeGreaterThan(0);
 
-    const text = (result.content[0] as { text: string }).text;
+    // Scrape returns resource content type with text in resource.text
+    const content = result.content[0] as {
+      type: string;
+      resource?: { text: string };
+      text?: string;
+    };
+    const text = content.type === 'resource' ? content.resource!.text : content.text!;
     expect(text).toBeDefined();
 
     console.log('Content length:', text.length, 'characters');

@@ -7,6 +7,15 @@ import 'dotenv/config';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+/** Extract text from MCP content item (handles both resource and text types) */
+function getContentText(content: {
+  type: string;
+  resource?: { text: string };
+  text?: string;
+}): string {
+  return content.type === 'resource' ? content.resource!.text : content.text!;
+}
+
 describe('Authentication Health Checks via MCP', () => {
   describe('Scraping Service Authentication', () => {
     describe('Firecrawl Authentication', () => {
@@ -47,7 +56,7 @@ describe('Authentication Health Checks via MCP', () => {
         expect(result.content).toBeDefined();
         expect(result.content.length).toBeGreaterThan(0);
 
-        const text = (result.content[0] as { text: string }).text;
+        const text = getContentText(result.content[0] as Parameters<typeof getContentText>[0]);
         expect(text).toBeDefined();
         expect(text.length).toBeGreaterThan(0);
 
@@ -93,7 +102,7 @@ describe('Authentication Health Checks via MCP', () => {
         expect(result.content).toBeDefined();
         expect(result.content.length).toBeGreaterThan(0);
 
-        const text = (result.content[0] as { text: string }).text;
+        const text = getContentText(result.content[0] as Parameters<typeof getContentText>[0]);
         expect(text).toBeDefined();
         expect(text.length).toBeGreaterThan(0);
 
@@ -141,7 +150,7 @@ describe('Authentication Health Checks via MCP', () => {
         expect(result.isError).toBeFalsy();
         expect(result.content).toBeDefined();
 
-        const text = (result.content[0] as { text: string }).text;
+        const text = getContentText(result.content[0] as Parameters<typeof getContentText>[0]);
         expect(text).toBeDefined();
 
         console.log('Anthropic authentication successful');
@@ -187,7 +196,7 @@ describe('Authentication Health Checks via MCP', () => {
         expect(result.isError).toBeFalsy();
         expect(result.content).toBeDefined();
 
-        const text = (result.content[0] as { text: string }).text;
+        const text = getContentText(result.content[0] as Parameters<typeof getContentText>[0]);
         expect(text).toBeDefined();
 
         console.log('OpenAI authentication successful');
@@ -246,7 +255,7 @@ describe('Authentication Health Checks via MCP', () => {
         expect(result.isError).toBeFalsy();
         expect(result.content).toBeDefined();
 
-        const text = (result.content[0] as { text: string }).text;
+        const text = getContentText(result.content[0] as Parameters<typeof getContentText>[0]);
         expect(text).toBeDefined();
 
         console.log('OpenAI-compatible service authentication successful');

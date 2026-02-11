@@ -7,6 +7,15 @@ import 'dotenv/config';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+/** Extract text from MCP content item (handles both resource and text types) */
+function getContentText(content: {
+  type: string;
+  resource?: { text: string };
+  text?: string;
+}): string {
+  return content.type === 'resource' ? content.resource!.text : content.text!;
+}
+
 describe('Extract Functionality via MCP', () => {
   const extractQuery = 'Extract the main heading and any description text from this page';
 
@@ -48,7 +57,7 @@ describe('Extract Functionality via MCP', () => {
       expect(result.content).toBeDefined();
       expect(result.content.length).toBeGreaterThan(0);
 
-      const text = (result.content[0] as { text: string }).text;
+      const text = getContentText(result.content[0] as Parameters<typeof getContentText>[0]);
       expect(text).toBeDefined();
       expect(text).toContain('Example Domain');
 
@@ -95,7 +104,7 @@ describe('Extract Functionality via MCP', () => {
       expect(result.content).toBeDefined();
       expect(result.content.length).toBeGreaterThan(0);
 
-      const text = (result.content[0] as { text: string }).text;
+      const text = getContentText(result.content[0] as Parameters<typeof getContentText>[0]);
       expect(text).toBeDefined();
       expect(text).toContain('Example Domain');
 
@@ -151,7 +160,7 @@ describe('Extract Functionality via MCP', () => {
       expect(result.content).toBeDefined();
       expect(result.content.length).toBeGreaterThan(0);
 
-      const text = (result.content[0] as { text: string }).text;
+      const text = getContentText(result.content[0] as Parameters<typeof getContentText>[0]);
       expect(text).toBeDefined();
 
       console.log('OpenAI-compatible extraction successful');

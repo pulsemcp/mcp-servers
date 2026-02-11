@@ -32,6 +32,7 @@ describe('Hatchbox MCP Server Manual Tests', () => {
       HATCHBOX_ACCOUNT_ID: accountId,
       HATCHBOX_APP_ID: appId,
       HATCHBOX_DEPLOY_KEY: deployKey,
+      READONLY: 'false',
     };
 
     if (serverIP) {
