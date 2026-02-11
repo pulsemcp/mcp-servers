@@ -1,11 +1,17 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { TestMCPClient } from '../../../../libs/test-mcp-client/build/index.js';
 import path from 'path';
+import os from 'os';
 import { fileURLToPath } from 'url';
-import 'dotenv/config';
+import dotenv from 'dotenv';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+// Use override: true to ensure .env values take precedence over any
+// pre-existing environment variables (e.g. OP_SERVICE_ACCOUNT_TOKEN
+// may already be set in the shell by the agent orchestrator)
+dotenv.config({ override: true });
 
 /**
  * Manual tests that hit the real 1Password CLI via the MCP server.
@@ -47,6 +53,7 @@ describe('1Password Manual Tests', () => {
       serverPath,
       env: {
         OP_SERVICE_ACCOUNT_TOKEN: process.env.OP_SERVICE_ACCOUNT_TOKEN,
+        OP_CONFIG_DIR: process.env.OP_CONFIG_DIR || path.join(os.tmpdir(), 'op-mcp-test-config'),
         SKIP_HEALTH_CHECKS: 'true',
       },
       debug: false,
