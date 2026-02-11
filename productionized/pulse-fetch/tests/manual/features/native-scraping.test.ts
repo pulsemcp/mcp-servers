@@ -1,46 +1,86 @@
-import { describe, it, expect } from 'vitest';
-import { NativeScrapingClient } from '../../../shared/src/scraping-client/native-scrape-client.js';
+import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { TestMCPClient } from '../../../../../libs/test-mcp-client/build/index.js';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import dotenv from 'dotenv';
 
-describe('Native Scraping Client', () => {
+// Use override: true to ensure .env values take precedence over any
+// pre-existing environment variables set by the shell/orchestrator
+dotenv.config({ override: true });
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+describe('Native Scraping via MCP', () => {
+  let client: TestMCPClient;
+
+  beforeAll(async () => {
+    const serverPath = path.join(__dirname, '../../../local/build/index.js');
+    client = new TestMCPClient({
+      serverPath,
+      env: {
+        SKIP_HEALTH_CHECKS: 'true',
+      },
+      debug: false,
+    });
+    await client.connect();
+  });
+
+  afterAll(async () => {
+    if (client) await client.disconnect();
+  });
+
   it('should scrape a simple page', async () => {
-    const client = new NativeScrapingClient();
     const url = 'https://example.com';
 
-    console.log(`🔍 Testing Native Scraping Client for: ${url}`);
+    console.log(`Testing Native Scraping for: ${url}`);
     console.log('============================================================');
 
-    const result = await client.scrape(url, { timeout: 10000 });
+    const result = await client.callTool('scrape', {
+      url,
+      timeout: 10000,
+    });
 
-    expect(result.success).toBe(true);
-    expect(result.data).toBeDefined();
-    expect(result.statusCode).toBe(200);
-    expect(result.contentType).toContain('text/html');
+    expect(result.isError).toBeFalsy();
+    expect(result.content).toBeDefined();
+    expect(result.content.length).toBeGreaterThan(0);
 
-    console.log(`✅ Native scraping successful`);
-    console.log(`📈 Status Code: ${result.statusCode}`);
-    console.log(`📊 Content-Type: ${result.contentType || 'unknown'}`);
-    console.log(`📝 Data length: ${result.data?.length || 0} characters`);
+    // Scrape returns resource content type with text in resource.text
+    const content = result.content[0] as {
+      type: string;
+      resource?: { text: string };
+      text?: string;
+    };
+    const text = content.type === 'resource' ? content.resource!.text : content.text!;
+    expect(text).toBeDefined();
+    expect(text.length).toBeGreaterThan(0);
+    expect(text).toContain('Example Domain');
 
-    // Basic content analysis
-    const hasTitle = /<title[^>]*>([^<]+)<\/title>/i.test(result.data!);
-    const hasStructuredContent = /<(article|main|section|div)[^>]*>/i.test(result.data!);
-
-    console.log('\n🔍 Content analysis:');
-    console.log(`  - Has title tag: ${hasTitle ? '✅' : '❌'}`);
-    console.log(`  - Has structured content: ${hasStructuredContent ? '✅' : '❌'}`);
-
-    expect(hasTitle).toBe(true);
-    expect(hasStructuredContent).toBe(true);
+    console.log('Native scraping successful');
+    console.log(`Content length: ${text.length} characters`);
   });
 
   it('should handle errors gracefully', async () => {
-    const client = new NativeScrapingClient();
-    const url = 'https://invalid-domain-that-does-not-exist-12345.com';
+    const url = 'https://httpstat.us/500';
 
-    const result = await client.scrape(url, { timeout: 10000 });
+    const result = await client.callTool('scrape', {
+      url,
+      timeout: 10000,
+      forceRescrape: true,
+    });
 
-    expect(result.success).toBe(false);
-    expect(result.error).toBeDefined();
-    // Note: statusCode is undefined for network errors
-  });
+    expect(result.isError).toBe(true);
+    expect(result.content).toBeDefined();
+
+    // Error responses use text content type
+    const content = result.content[0] as {
+      type: string;
+      resource?: { text: string };
+      text?: string;
+    };
+    const text = content.type === 'resource' ? content.resource!.text : content.text!;
+    expect(text).toContain('Failed to scrape');
+
+    console.log('Error handling working correctly');
+  }, 60000);
 });

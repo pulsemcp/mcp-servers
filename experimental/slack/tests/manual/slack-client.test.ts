@@ -1,70 +1,81 @@
-import { describe, it, expect, beforeAll } from 'vitest';
-import { SlackClient } from '../../shared/src/server.js';
-import { config } from 'dotenv';
+import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { TestMCPClient } from '../../../../libs/test-mcp-client/build/index.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import 'dotenv/config';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Load environment variables from .env file
-config({ path: path.join(__dirname, '../../.env') });
+/**
+ * Manual tests that hit the real Slack API via the MCP server.
+ * These tests are NOT run in CI and require actual API credentials.
+ *
+ * To run these tests:
+ * 1. Set up your .env file with SLACK_BOT_TOKEN
+ * 2. Run: npm run test:manual
+ */
+describe('Slack MCP Server - Manual Tests', () => {
+  let client: TestMCPClient;
 
-describe('Slack Client Manual Tests', () => {
-  let client: SlackClient;
-
-  beforeAll(() => {
+  beforeAll(async () => {
     const botToken = process.env.SLACK_BOT_TOKEN;
     if (!botToken) {
       throw new Error('SLACK_BOT_TOKEN environment variable is required');
     }
-    client = new SlackClient(botToken);
+
+    const serverPath = path.join(__dirname, '../../local/build/index.js');
+    client = new TestMCPClient({
+      serverPath,
+      env: {
+        SLACK_BOT_TOKEN: botToken,
+      },
+      debug: false,
+    });
+
+    await client.connect();
+  });
+
+  afterAll(async () => {
+    if (client) {
+      await client.disconnect();
+    }
   });
 
   describe('Channel Operations', () => {
     it('should list channels', async () => {
-      const channels = await client.getChannels();
+      const result = await client.callTool('slack_get_channels', {});
+      expect(result.isError).toBeFalsy();
 
-      expect(channels).toBeDefined();
-      expect(Array.isArray(channels)).toBe(true);
-      console.log(`Found ${channels.length} channels`);
+      const text = (result.content[0] as { text: string }).text;
+      expect(text).toContain('channel(s)');
+      console.log(`Found channels via slack_get_channels`);
 
-      if (channels.length > 0) {
-        console.log('First channel:', channels[0].name, channels[0].id);
+      const idMatch = text.match(/ID: (\S+)/);
+      if (idMatch) {
+        const nameMatch = text.match(/• #(\S+)/);
+        console.log('First channel:', nameMatch?.[1], idMatch[1]);
       }
     });
 
     it('should get channel info', async () => {
       // First get a channel ID
-      const channels = await client.getChannels();
-      expect(channels.length).toBeGreaterThan(0);
+      const channelsResult = await client.callTool('slack_get_channels', {});
+      expect(channelsResult.isError).toBeFalsy();
 
-      const channelId = channels[0].id;
-      const channelInfo = await client.getChannel(channelId);
+      const channelsText = (channelsResult.content[0] as { text: string }).text;
+      const idMatch = channelsText.match(/ID: (\S+)/);
+      expect(idMatch).toBeTruthy();
 
-      expect(channelInfo).toBeDefined();
-      expect(channelInfo.id).toBe(channelId);
-      console.log(`Channel: #${channelInfo.name}`);
-      console.log(`Members: ${channelInfo.num_members}`);
-    });
+      const channelId = idMatch![1];
+      const result = await client.callTool('slack_get_channel', {
+        channel_id: channelId,
+      });
+      expect(result.isError).toBeFalsy();
 
-    it('should get channel messages', async () => {
-      // First get a channel ID
-      const channels = await client.getChannels();
-      expect(channels.length).toBeGreaterThan(0);
-
-      const channelId = channels[0].id;
-      const result = await client.getMessages(channelId, { limit: 5 });
-
-      expect(result).toBeDefined();
-      expect(result.messages).toBeDefined();
-      console.log(`Found ${result.messages.length} messages`);
-
-      if (result.messages.length > 0) {
-        const msg = result.messages[0];
-        console.log(`Latest message: ${msg.text?.substring(0, 50)}...`);
-        console.log(`Timestamp: ${msg.ts}`);
-      }
+      const text = (result.content[0] as { text: string }).text;
+      expect(text).toContain('# Channel:');
+      console.log(`Channel info retrieved for ${channelId}`);
     });
   });
 
@@ -73,26 +84,37 @@ describe('Slack Client Manual Tests', () => {
     let postedMessageTs: string;
 
     beforeAll(async () => {
-      // Find or create a test channel
-      const channels = await client.getChannels();
-      // Use the first available channel for testing
-      // In a real test setup, you'd want a dedicated test channel
-      if (channels.length === 0) {
+      // Find a test channel
+      const channelsResult = await client.callTool('slack_get_channels', {});
+      expect(channelsResult.isError).toBeFalsy();
+
+      const channelsText = (channelsResult.content[0] as { text: string }).text;
+      const idMatch = channelsText.match(/ID: (\S+)/);
+      if (!idMatch) {
         throw new Error('No channels available for testing');
       }
-      testChannelId = channels[0].id;
-      console.log(`Using channel ${channels[0].name} (${testChannelId}) for message tests`);
+      testChannelId = idMatch[1];
+      const nameMatch = channelsText.match(/• #(\S+)/);
+      console.log(
+        `Using channel ${nameMatch?.[1] ?? 'unknown'} (${testChannelId}) for message tests`
+      );
     });
 
     it('should post a message', async () => {
       const testMessage = `Test message from Slack MCP Server at ${new Date().toISOString()}`;
-      const result = await client.postMessage(testChannelId, testMessage);
+      const result = await client.callTool('slack_post_message', {
+        channel_id: testChannelId,
+        text: testMessage,
+      });
+      expect(result.isError).toBeFalsy();
 
-      expect(result).toBeDefined();
-      expect(result.ts).toBeDefined();
-      postedMessageTs = result.ts;
+      const text = (result.content[0] as { text: string }).text;
+      expect(text).toContain('Message posted successfully');
+      const tsMatch = text.match(/Timestamp: (\S+)/);
+      expect(tsMatch).toBeTruthy();
+      postedMessageTs = tsMatch![1];
 
-      console.log(`Posted message with ts: ${result.ts}`);
+      console.log(`Posted message with ts: ${postedMessageTs}`);
     });
 
     it('should add a reaction to the posted message', async () => {
@@ -100,7 +122,15 @@ describe('Slack Client Manual Tests', () => {
         throw new Error('No message to react to - run post message test first');
       }
 
-      await client.addReaction(testChannelId, postedMessageTs, 'white_check_mark');
+      const result = await client.callTool('slack_react_to_message', {
+        channel_id: testChannelId,
+        message_ts: postedMessageTs,
+        emoji: 'white_check_mark',
+      });
+      expect(result.isError).toBeFalsy();
+
+      const text = (result.content[0] as { text: string }).text;
+      expect(text).toContain('Reaction added successfully');
       console.log('Added reaction successfully');
     });
 
@@ -110,10 +140,16 @@ describe('Slack Client Manual Tests', () => {
       }
 
       const updatedMessage = `Updated test message at ${new Date().toISOString()}`;
-      const result = await client.updateMessage(testChannelId, postedMessageTs, updatedMessage);
+      const result = await client.callTool('slack_update_message', {
+        channel_id: testChannelId,
+        message_ts: postedMessageTs,
+        text: updatedMessage,
+      });
+      expect(result.isError).toBeFalsy();
 
-      expect(result).toBeDefined();
-      expect(result.ts).toBe(postedMessageTs);
+      const text = (result.content[0] as { text: string }).text;
+      expect(text).toContain('Message updated successfully');
+      expect(text).toContain(postedMessageTs);
       console.log('Updated message successfully');
     });
 
@@ -123,13 +159,18 @@ describe('Slack Client Manual Tests', () => {
       }
 
       const replyMessage = `Thread reply at ${new Date().toISOString()}`;
-      const result = await client.postMessage(testChannelId, replyMessage, {
-        threadTs: postedMessageTs,
+      const result = await client.callTool('slack_reply_to_thread', {
+        channel_id: testChannelId,
+        thread_ts: postedMessageTs,
+        text: replyMessage,
       });
+      expect(result.isError).toBeFalsy();
 
-      expect(result).toBeDefined();
-      expect(result.ts).toBeDefined();
-      console.log(`Posted thread reply with ts: ${result.ts}`);
+      const text = (result.content[0] as { text: string }).text;
+      expect(text).toContain('Reply posted successfully');
+      const tsMatch = text.match(/Reply timestamp: (\S+)/);
+      expect(tsMatch).toBeTruthy();
+      console.log(`Posted thread reply with ts: ${tsMatch![1]}`);
     });
 
     it('should get thread with replies', async () => {
@@ -137,11 +178,20 @@ describe('Slack Client Manual Tests', () => {
         throw new Error('No thread to fetch - run post message and reply tests first');
       }
 
-      const result = await client.getThread(testChannelId, postedMessageTs);
+      const result = await client.callTool('slack_get_thread', {
+        channel_id: testChannelId,
+        thread_ts: postedMessageTs,
+      });
+      expect(result.isError).toBeFalsy();
 
-      expect(result).toBeDefined();
-      expect(result.messages.length).toBeGreaterThanOrEqual(1);
-      console.log(`Thread has ${result.messages.length} messages`);
+      const text = (result.content[0] as { text: string }).text;
+      expect(text).toContain('# Thread in channel');
+      const repliesMatch = text.match(/## Replies \((\d+)/);
+      if (repliesMatch) {
+        console.log(`Thread has ${repliesMatch[1]} replies`);
+      } else {
+        console.log('Thread retrieved (parent message only)');
+      }
     });
   });
 });

@@ -1,128 +1,174 @@
-import { describe, it, expect } from 'vitest';
-import {
-  AnthropicExtractClient,
-  OpenAIExtractClient,
-  OpenAICompatibleExtractClient,
-} from '../../../shared/src/extract/index.js';
-import type { LLMConfig } from '../../../shared/src/extract/index.js';
+import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { TestMCPClient } from '../../../../../libs/test-mcp-client/build/index.js';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import dotenv from 'dotenv';
 
-describe('Extract Functionality', () => {
-  const sampleContent = `
-    <div class="product">
-      <h1>Premium Wireless Headphones</h1>
-      <div class="price">$299.99</div>
-      <div class="availability">In Stock - Ships within 24 hours</div>
-      <div class="features">
-        <ul>
-          <li>Active Noise Cancellation</li>
-          <li>40-hour battery life</li>
-          <li>Premium leather ear cushions</li>
-        </ul>
-      </div>
-    </div>
-  `;
+// Use override: true to ensure .env values take precedence over any
+// pre-existing environment variables (e.g. empty ANTHROPIC_API_KEY)
+dotenv.config({ override: true });
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+/** Extract text from MCP content item (handles both resource and text types) */
+function getContentText(content: {
+  type: string;
+  resource?: { text: string };
+  text?: string;
+}): string {
+  return content.type === 'resource' ? content.resource!.text : content.text!;
+}
+
+describe('Extract Functionality via MCP', () => {
+  const extractQuery = 'Extract the main heading and any description text from this page';
 
   describe('Anthropic Extract', () => {
-    it('should extract product information', async () => {
-      const apiKey = process.env.LLM_API_KEY;
-      const provider = process.env.LLM_PROVIDER;
+    let client: TestMCPClient;
 
-      if (!apiKey || provider !== 'anthropic') {
-        console.log(
-          '⚠️  Skipping Anthropic test - LLM_API_KEY not set or LLM_PROVIDER not anthropic'
-        );
-        return;
+    beforeAll(async () => {
+      const apiKey = process.env.ANTHROPIC_API_KEY;
+      if (!apiKey) {
+        throw new Error('Anthropic extract tests require ANTHROPIC_API_KEY environment variable');
       }
 
-      console.log('🔧 Testing Anthropic Extract Client\n');
+      console.log('Testing Anthropic Extract via MCP\n');
 
-      const config: LLMConfig = {
-        provider: 'anthropic',
-        apiKey,
-      };
-
-      const client = new AnthropicExtractClient(config);
-      const query = 'Extract the product name, price, and availability status';
-
-      const result = await client.extract(sampleContent, query);
-
-      expect(result.success).toBe(true);
-      expect(result.content).toBeDefined();
-      expect(result.content).toContain('Premium Wireless Headphones');
-      expect(result.content).toContain('$299.99');
-      expect(result.content).toContain('In Stock');
-
-      console.log('✅ Anthropic extraction successful');
-      console.log('Response:', result.content);
+      const serverPath = path.join(__dirname, '../../../local/build/index.js');
+      client = new TestMCPClient({
+        serverPath,
+        env: {
+          ANTHROPIC_API_KEY: apiKey,
+          SKIP_HEALTH_CHECKS: 'true',
+        },
+        debug: false,
+      });
+      await client.connect();
     });
+
+    afterAll(async () => {
+      if (client) await client.disconnect();
+    });
+
+    it('should extract information from a page', async () => {
+      const result = await client.callTool('scrape', {
+        url: 'https://example.com',
+        extract: extractQuery,
+        timeout: 30000,
+      });
+
+      expect(result.isError).toBeFalsy();
+      expect(result.content).toBeDefined();
+      expect(result.content.length).toBeGreaterThan(0);
+
+      const text = getContentText(result.content[0] as Parameters<typeof getContentText>[0]);
+      expect(text).toBeDefined();
+      expect(text).toContain('Example Domain');
+
+      console.log('Anthropic extraction successful');
+      console.log('Response:', text?.slice(0, 200));
+    }, 60000);
   });
 
   describe('OpenAI Extract', () => {
-    it('should extract product information', async () => {
-      const apiKey = process.env.LLM_API_KEY;
-      const provider = process.env.LLM_PROVIDER;
+    let client: TestMCPClient;
 
-      if (!apiKey || provider !== 'openai') {
-        console.log('⚠️  Skipping OpenAI test - LLM_API_KEY not set or LLM_PROVIDER not openai');
-        return;
+    beforeAll(async () => {
+      const apiKey = process.env.OPENAI_API_KEY;
+      if (!apiKey) {
+        throw new Error('OpenAI extract tests require OPENAI_API_KEY environment variable');
       }
 
-      console.log('🔧 Testing OpenAI Extract Client\n');
+      console.log('Testing OpenAI Extract via MCP\n');
 
-      const config: LLMConfig = {
-        provider: 'openai',
-        apiKey,
-      };
-
-      const client = new OpenAIExtractClient(config);
-      const query = 'Extract the product name, price, and availability status';
-
-      const result = await client.extract(sampleContent, query);
-
-      expect(result.success).toBe(true);
-      expect(result.content).toBeDefined();
-      expect(result.content).toContain('Premium Wireless Headphones');
-      expect(result.content).toContain('$299.99');
-      expect(result.content).toContain('In Stock');
-
-      console.log('✅ OpenAI extraction successful');
-      console.log('Response:', result.content);
+      const serverPath = path.join(__dirname, '../../../local/build/index.js');
+      client = new TestMCPClient({
+        serverPath,
+        env: {
+          OPENAI_API_KEY: apiKey,
+          SKIP_HEALTH_CHECKS: 'true',
+        },
+        debug: false,
+      });
+      await client.connect();
     });
+
+    afterAll(async () => {
+      if (client) await client.disconnect();
+    });
+
+    it('should extract information from a page', async () => {
+      const result = await client.callTool('scrape', {
+        url: 'https://example.com',
+        extract: extractQuery,
+        timeout: 30000,
+      });
+
+      expect(result.isError).toBeFalsy();
+      expect(result.content).toBeDefined();
+      expect(result.content.length).toBeGreaterThan(0);
+
+      const text = getContentText(result.content[0] as Parameters<typeof getContentText>[0]);
+      expect(text).toBeDefined();
+      expect(text).toContain('Example Domain');
+
+      console.log('OpenAI extraction successful');
+      console.log('Response:', text?.slice(0, 200));
+    }, 60000);
   });
 
   describe('OpenAI-Compatible Extract', () => {
-    it('should extract product information', async () => {
-      const apiKey = process.env.LLM_API_KEY;
-      const apiBaseUrl = process.env.LLM_API_BASE_URL;
-      const model = process.env.LLM_MODEL;
-      const provider = process.env.LLM_PROVIDER;
+    let client: TestMCPClient;
 
-      if (!apiKey || !apiBaseUrl || !model || provider !== 'openai-compatible') {
-        console.log('⚠️  Skipping OpenAI-compatible test - required env vars not set');
-        return;
+    beforeAll(async () => {
+      const apiKey = process.env.OPENAI_COMPATIBLE_API_KEY;
+      const baseUrl = process.env.OPENAI_COMPATIBLE_BASE_URL;
+      const model = process.env.OPENAI_COMPATIBLE_MODEL;
+
+      if (!apiKey || !baseUrl || !model) {
+        throw new Error(
+          'OpenAI-compatible extract tests require OPENAI_COMPATIBLE_API_KEY, OPENAI_COMPATIBLE_BASE_URL, and OPENAI_COMPATIBLE_MODEL environment variables'
+        );
       }
 
-      console.log('🔧 Testing OpenAI-Compatible Extract Client');
-      console.log(`Provider: ${apiBaseUrl}`);
+      console.log('Testing OpenAI-Compatible Extract via MCP');
+      console.log(`Provider: ${baseUrl}`);
       console.log(`Model: ${model}\n`);
 
-      const config: LLMConfig = {
-        provider: 'openai-compatible',
-        apiKey,
-        apiBaseUrl,
-        model,
-      };
-
-      const client = new OpenAICompatibleExtractClient(config);
-      const query = 'Extract the product name, price, and availability status';
-
-      const result = await client.extract(sampleContent, query);
-
-      expect(result.success).toBe(true);
-      expect(result.content).toBeDefined();
-
-      console.log('✅ OpenAI-compatible extraction successful');
-      console.log('Response:', result.content);
+      const serverPath = path.join(__dirname, '../../../local/build/index.js');
+      client = new TestMCPClient({
+        serverPath,
+        env: {
+          OPENAI_COMPATIBLE_API_KEY: apiKey,
+          OPENAI_COMPATIBLE_BASE_URL: baseUrl,
+          OPENAI_COMPATIBLE_MODEL: model,
+          SKIP_HEALTH_CHECKS: 'true',
+        },
+        debug: false,
+      });
+      await client.connect();
     });
+
+    afterAll(async () => {
+      if (client) await client.disconnect();
+    });
+
+    it('should extract information from a page', async () => {
+      const result = await client.callTool('scrape', {
+        url: 'https://example.com',
+        extract: extractQuery,
+        timeout: 30000,
+      });
+
+      expect(result.isError).toBeFalsy();
+      expect(result.content).toBeDefined();
+      expect(result.content.length).toBeGreaterThan(0);
+
+      const text = getContentText(result.content[0] as Parameters<typeof getContentText>[0]);
+      expect(text).toBeDefined();
+
+      console.log('OpenAI-compatible extraction successful');
+      console.log('Response:', text?.slice(0, 200));
+    }, 60000);
   });
 });

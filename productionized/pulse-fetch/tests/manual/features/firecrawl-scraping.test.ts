@@ -1,41 +1,79 @@
-import { describe, it, expect } from 'vitest';
-import { FirecrawlScrapingClient } from '../../../shared/src/scraping-client/firecrawl-scrape-client.js';
+import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { TestMCPClient } from '../../../../../libs/test-mcp-client/build/index.js';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import dotenv from 'dotenv';
 
-describe('Firecrawl Scraping Client', () => {
-  it('should scrape and convert to markdown', async () => {
+// Use override: true to ensure .env values take precedence over any
+// pre-existing environment variables set by the shell/orchestrator
+dotenv.config({ override: true });
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+/** Extract text from MCP content item (handles both resource and text types) */
+function getContentText(content: {
+  type: string;
+  resource?: { text: string };
+  text?: string;
+}): string {
+  return content.type === 'resource' ? content.resource!.text : content.text!;
+}
+
+describe('Firecrawl Scraping via MCP', () => {
+  let client: TestMCPClient;
+
+  beforeAll(async () => {
     const apiKey = process.env.FIRECRAWL_API_KEY;
     if (!apiKey) {
-      console.log('⚠️  Skipping Firecrawl test - FIRECRAWL_API_KEY not set');
-      return;
+      throw new Error('Manual tests require FIRECRAWL_API_KEY environment variable');
     }
 
-    const client = new FirecrawlScrapingClient(apiKey);
+    console.log(`Using FIRECRAWL_API_KEY: ${apiKey.substring(0, 10)}...`);
+
+    const serverPath = path.join(__dirname, '../../../local/build/index.js');
+    client = new TestMCPClient({
+      serverPath,
+      env: {
+        FIRECRAWL_API_KEY: apiKey,
+        OPTIMIZE_FOR: 'speed',
+      },
+      debug: false,
+    });
+    await client.connect();
+  });
+
+  afterAll(async () => {
+    if (client) await client.disconnect();
+  });
+
+  it('should scrape and convert to markdown', async () => {
     const url = 'https://example.com';
 
-    console.log(`🔥 Testing Firecrawl Scraping Client for: ${url}`);
+    console.log(`Testing Firecrawl Scraping for: ${url}`);
     console.log('============================================================');
-    console.log(`🔑 Using API key: ${apiKey.substring(0, 10)}...`);
 
-    const result = await client.scrape(url);
+    const result = await client.callTool('scrape', {
+      url,
+      timeout: 30000,
+    });
 
-    expect(result.success).toBe(true);
-    expect(result.data).toBeDefined();
-    expect(result.data?.markdown).toBeDefined();
-    expect(result.data?.metadata).toBeDefined();
+    expect(result.isError).toBeFalsy();
+    expect(result.content).toBeDefined();
+    expect(result.content.length).toBeGreaterThan(0);
 
-    console.log(`✅ Firecrawl scraping successful`);
-    console.log(`📝 Markdown length: ${result.data!.markdown.length} characters`);
-    console.log(`📝 HTML length: ${result.data!.html.length} characters`);
-    console.log(`📊 Metadata keys: ${Object.keys(result.data!.metadata).join(', ')}`);
+    const text = getContentText(result.content[0] as Parameters<typeof getContentText>[0]);
+    expect(text).toBeDefined();
+    expect(text.length).toBeGreaterThan(0);
+    expect(text).toContain('Example Domain');
 
-    // Show markdown preview
-    console.log('\n📖 Markdown preview:');
+    console.log('Firecrawl scraping successful');
+    console.log(`Content length: ${text.length} characters`);
+
+    // Show content preview
+    console.log('\nContent preview:');
     console.log('----------------------------------------');
-    console.log(result.data!.markdown.slice(0, 200) + '...');
+    console.log(text.slice(0, 200) + '...');
     console.log('----------------------------------------');
-
-    // Check metadata
-    expect(result.data!.metadata.title).toBeDefined();
-    expect(result.data!.metadata.statusCode).toBe(200);
-  });
+  }, 60000);
 });

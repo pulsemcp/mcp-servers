@@ -1,249 +1,232 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import { PlaywrightClient } from '../../shared/src/server.js';
-import {
-  FileSystemScreenshotStorage,
-  ScreenshotStorageFactory,
-} from '../../shared/src/storage/index.js';
-import { promises as fs } from 'fs';
+import { TestMCPClient } from '../../../../libs/test-mcp-client/build/index.js';
 import path from 'path';
+import { fileURLToPath } from 'url';
 import os from 'os';
+import 'dotenv/config';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 /**
- * Manual tests for Screenshot Resource Storage
+ * Manual tests for Screenshot Resource Storage via MCP protocol
  *
- * These tests verify that screenshot storage works correctly with real browsers.
+ * These tests verify that screenshot storage works correctly through the MCP server layer,
+ * using browser_execute and browser_screenshot tools to drive screenshot capture and storage.
  * Run with: npm run test:manual
  */
 
 describe('Screenshot Resource Storage Manual Tests', () => {
-  let client: PlaywrightClient | null = null;
+  let client: TestMCPClient;
   let testStoragePath: string;
-  let storage: FileSystemScreenshotStorage;
+  const serverPath = path.join(__dirname, '../../local/build/index.js');
 
   beforeAll(async () => {
-    // Create a unique test storage directory
+    // Create a unique test storage directory path
     testStoragePath = path.join(os.tmpdir(), `playwright-storage-manual-${Date.now()}`);
-    process.env.SCREENSHOT_STORAGE_PATH = testStoragePath;
 
-    // Reset and create storage
-    ScreenshotStorageFactory.reset();
-    storage = new FileSystemScreenshotStorage(testStoragePath);
-    await storage.init();
-
-    // Create client and navigate to a page
-    client = new PlaywrightClient({
-      stealthMode: false,
-      headless: true,
-      timeout: 30000,
+    client = new TestMCPClient({
+      serverPath,
+      env: {
+        HEADLESS: 'true',
+        TIMEOUT: '30000',
+        STEALTH_MODE: 'false',
+        SCREENSHOT_STORAGE_PATH: testStoragePath,
+        PATH: process.env.PATH || '',
+      },
     });
+    await client.connect();
 
-    await client.execute(`
-      await page.goto('https://example.com');
-    `);
+    // Navigate to a page so screenshots have content
+    await client.callTool('browser_execute', {
+      code: `
+        await page.goto('https://example.com');
+      `,
+    });
   });
 
   afterAll(async () => {
-    if (client) {
-      await client.close();
-    }
-    // Clean up test storage directory
-    try {
-      await fs.rm(testStoragePath, { recursive: true, force: true });
-    } catch {
-      // Ignore cleanup errors
-    }
-    delete process.env.SCREENSHOT_STORAGE_PATH;
-    ScreenshotStorageFactory.reset();
+    await client.disconnect();
   });
 
-  describe('FileSystemScreenshotStorage with Real Screenshots', () => {
-    it('should save a real screenshot to storage', async () => {
-      // Take a real screenshot
-      const base64 = await client!.screenshot();
-      expect(base64).toBeDefined();
-      expect(base64.length).toBeGreaterThan(1000); // Real screenshots are much larger than test data
-
-      // Get page state for metadata
-      const state = await client!.getState();
-
-      // Save to storage
-      const uri = await storage.write(base64, {
-        pageUrl: state.currentUrl,
-        pageTitle: state.title,
+  describe('Screenshot Capture and Storage via MCP', () => {
+    it('should take a viewport screenshot and return image data', async () => {
+      const result = await client.callTool('browser_screenshot', {
         fullPage: false,
       });
 
-      console.log('Screenshot saved to:', uri);
+      expect(result.isError).toBeFalsy();
+      expect(result.content.length).toBeGreaterThan(0);
 
-      // Verify URI format
-      expect(uri).toMatch(/^file:\/\//);
-      expect(uri).toContain('.png');
+      // Find the image content
+      const imageContent = result.content.find(
+        (c: { type: string }) => (c as { type: string }).type === 'image'
+      ) as { type: string; data: string; mimeType: string } | undefined;
 
-      // Verify file exists on disk
-      const filePath = uri.replace('file://', '');
-      const fileExists = await fs
-        .access(filePath)
-        .then(() => true)
-        .catch(() => false);
-      expect(fileExists).toBe(true);
+      expect(imageContent).toBeDefined();
+      expect(imageContent!.mimeType).toBe('image/png');
+      expect(imageContent!.data.length).toBeGreaterThan(1000);
 
-      // Verify file size is reasonable (real PNG)
-      const stats = await fs.stat(filePath);
-      expect(stats.size).toBeGreaterThan(1000);
-      console.log('Screenshot file size:', stats.size, 'bytes');
+      // Verify it's valid base64 PNG data
+      const buffer = Buffer.from(imageContent!.data, 'base64');
+      expect(buffer.length).toBeGreaterThan(0);
+      console.log('Screenshot data size:', imageContent!.data.length, 'chars (base64)');
+
+      // Verify a resource_link is also returned (saved to storage)
+      const resourceLink = result.content.find(
+        (c: { type: string }) => (c as { type: string }).type === 'resource_link'
+      ) as { type: string; uri: string; name: string; mimeType: string } | undefined;
+
+      expect(resourceLink).toBeDefined();
+      expect(resourceLink!.uri).toMatch(/^file:\/\//);
+      expect(resourceLink!.uri).toContain('.png');
+      expect(resourceLink!.mimeType).toBe('image/png');
+      console.log('Screenshot saved to:', resourceLink!.uri);
     });
 
-    it('should save a full-page screenshot to storage', async () => {
-      // Take a full-page screenshot
-      const base64 = await client!.screenshot({ fullPage: true });
-      expect(base64).toBeDefined();
-
-      const state = await client!.getState();
-
-      const uri = await storage.write(base64, {
-        pageUrl: state.currentUrl,
-        pageTitle: state.title,
+    it('should take a full-page screenshot and return image data', async () => {
+      const result = await client.callTool('browser_screenshot', {
         fullPage: true,
       });
 
-      console.log('Full-page screenshot saved to:', uri);
+      expect(result.isError).toBeFalsy();
 
-      // Verify metadata file contains fullPage: true
-      const metadataPath = uri.replace('file://', '').replace('.png', '.json');
-      const metadata = JSON.parse(await fs.readFile(metadataPath, 'utf-8'));
-      expect(metadata.fullPage).toBe(true);
-      expect(metadata.pageUrl).toContain('example.com');
-      expect(metadata.pageTitle).toBe('Example Domain');
-      console.log('Screenshot metadata:', metadata);
+      // Find the image content
+      const imageContent = result.content.find(
+        (c: { type: string }) => (c as { type: string }).type === 'image'
+      ) as { type: string; data: string; mimeType: string } | undefined;
+
+      expect(imageContent).toBeDefined();
+      expect(imageContent!.data.length).toBeGreaterThan(1000);
+
+      // Verify a resource_link is returned
+      const resourceLink = result.content.find(
+        (c: { type: string }) => (c as { type: string }).type === 'resource_link'
+      ) as { type: string; uri: string } | undefined;
+
+      expect(resourceLink).toBeDefined();
+      expect(resourceLink!.uri).toMatch(/^file:\/\//);
+      console.log('Full-page screenshot saved to:', resourceLink!.uri);
     });
 
-    it('should read back a saved screenshot', async () => {
-      // Take and save a screenshot
-      const originalBase64 = await client!.screenshot();
-      const state = await client!.getState();
-
-      const uri = await storage.write(originalBase64, {
-        pageUrl: state.currentUrl,
-        pageTitle: state.title,
+    it('should save screenshot with saveOnly mode and return only resource link', async () => {
+      const result = await client.callTool('browser_screenshot', {
         fullPage: false,
+        resultHandling: 'saveOnly',
       });
 
-      // Read it back
-      const content = await storage.read(uri);
+      expect(result.isError).toBeFalsy();
+
+      // In saveOnly mode, there should be no inline image data
+      const imageContent = result.content.find(
+        (c: { type: string }) => (c as { type: string }).type === 'image'
+      );
+      expect(imageContent).toBeUndefined();
+
+      // There should be a resource_link
+      const resourceLink = result.content.find(
+        (c: { type: string }) => (c as { type: string }).type === 'resource_link'
+      ) as { type: string; uri: string; name: string; description: string } | undefined;
+
+      expect(resourceLink).toBeDefined();
+      expect(resourceLink!.uri).toMatch(/^file:\/\//);
+      expect(resourceLink!.uri).toContain('.png');
+      console.log('saveOnly screenshot URI:', resourceLink!.uri);
+    });
+
+    it('should list saved screenshots as resources', async () => {
+      // Take a couple more screenshots with delay to ensure different timestamps
+      await client.callTool('browser_screenshot', { fullPage: false });
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      await client.callTool('browser_screenshot', { fullPage: true });
+
+      // List resources
+      const resources = await client.listResources();
+
+      console.log('Listed', resources.resources.length, 'screenshot resources');
+      expect(resources.resources.length).toBeGreaterThanOrEqual(2);
+
+      // Verify resource structure
+      for (const resource of resources.resources) {
+        expect(resource.uri).toMatch(/^file:\/\//);
+        expect(resource.mimeType).toBe('image/png');
+        console.log('  -', resource.name);
+      }
+    });
+
+    it('should read back a saved screenshot resource', async () => {
+      // Take a screenshot and get its URI
+      const screenshotResult = await client.callTool('browser_screenshot', {
+        fullPage: false,
+        resultHandling: 'saveOnly',
+      });
+
+      const resourceLink = screenshotResult.content.find(
+        (c: { type: string }) => (c as { type: string }).type === 'resource_link'
+      ) as { type: string; uri: string } | undefined;
+
+      expect(resourceLink).toBeDefined();
+      const uri = resourceLink!.uri;
+
+      // Read the resource back
+      const readResult = await client.readResource(uri);
+
+      expect(readResult.contents.length).toBeGreaterThan(0);
+      const content = readResult.contents[0] as {
+        uri: string;
+        mimeType: string;
+        blob: string;
+      };
 
       expect(content.uri).toBe(uri);
       expect(content.mimeType).toBe('image/png');
-      expect(content.blob).toBe(originalBase64);
+      expect(content.blob.length).toBeGreaterThan(1000);
       console.log('Successfully read back screenshot, blob length:', content.blob.length);
     });
-
-    it('should list saved screenshots', async () => {
-      // Take multiple screenshots with delay to ensure different timestamps
-      const state = await client!.getState();
-
-      const screenshot1 = await client!.screenshot();
-      await storage.write(screenshot1, {
-        pageUrl: state.currentUrl,
-        pageTitle: state.title,
-        fullPage: false,
-      });
-
-      await new Promise((resolve) => setTimeout(resolve, 100));
-
-      const screenshot2 = await client!.screenshot({ fullPage: true });
-      await storage.write(screenshot2, {
-        pageUrl: state.currentUrl,
-        pageTitle: state.title,
-        fullPage: true,
-      });
-
-      // List all screenshots
-      const resources = await storage.list();
-
-      console.log('Listed', resources.length, 'screenshots');
-      expect(resources.length).toBeGreaterThanOrEqual(2);
-
-      // Verify resource structure
-      for (const resource of resources) {
-        expect(resource.uri).toMatch(/^file:\/\//);
-        expect(resource.mimeType).toBe('image/png');
-        expect(resource.metadata.timestamp).toBeDefined();
-        console.log('  -', resource.name, '| fullPage:', resource.metadata.fullPage);
-      }
-
-      // Verify sorted by timestamp descending (most recent first)
-      if (resources.length >= 2) {
-        const time0 = new Date(resources[0].metadata.timestamp).getTime();
-        const time1 = new Date(resources[1].metadata.timestamp).getTime();
-        expect(time0).toBeGreaterThanOrEqual(time1);
-      }
-    });
-
-    it('should delete a screenshot', async () => {
-      // Take and save a screenshot
-      const base64 = await client!.screenshot();
-      const state = await client!.getState();
-
-      const uri = await storage.write(base64, {
-        pageUrl: state.currentUrl,
-        pageTitle: state.title,
-        fullPage: false,
-      });
-
-      // Verify it exists
-      expect(await storage.exists(uri)).toBe(true);
-
-      // Delete it
-      await storage.delete(uri);
-
-      // Verify it's gone
-      expect(await storage.exists(uri)).toBe(false);
-      console.log('Successfully deleted screenshot:', uri);
-    });
   });
 
-  describe('Storage Factory with Environment Variable', () => {
-    it('should use SCREENSHOT_STORAGE_PATH environment variable', async () => {
-      // Factory should use the env var we set in beforeAll
-      const factoryStorage = await ScreenshotStorageFactory.create();
-
-      const base64 = await client!.screenshot();
-      const state = await client!.getState();
-
-      const uri = await factoryStorage.write(base64, {
-        pageUrl: state.currentUrl,
-        pageTitle: state.title,
-        fullPage: false,
-      });
-
-      // Verify it used our test storage path
-      expect(uri).toContain(testStoragePath);
-      console.log('Factory storage path verified:', uri);
-    });
-  });
-
-  describe('Screenshot on Different Pages', () => {
-    it('should capture screenshot after navigation', async () => {
+  describe('Screenshots on Different Pages', () => {
+    it('should capture screenshot after navigation to a different page', async () => {
       // Navigate to a different page
-      await client!.execute(`
-        await page.goto('https://httpbin.org/html');
-      `);
+      await client.callTool('browser_execute', {
+        code: `
+          await page.goto('https://httpbin.org/html');
+        `,
+      });
 
-      const base64 = await client!.screenshot();
-      const state = await client!.getState();
-
-      const uri = await storage.write(base64, {
-        pageUrl: state.currentUrl,
-        pageTitle: state.title,
+      const result = await client.callTool('browser_screenshot', {
         fullPage: false,
       });
 
-      // Read metadata
-      const metadataPath = uri.replace('file://', '').replace('.png', '.json');
-      const metadata = JSON.parse(await fs.readFile(metadataPath, 'utf-8'));
+      expect(result.isError).toBeFalsy();
 
-      expect(metadata.pageUrl).toContain('httpbin.org');
-      console.log('Captured screenshot of httpbin.org, metadata:', metadata);
+      // Verify image data is returned
+      const imageContent = result.content.find(
+        (c: { type: string }) => (c as { type: string }).type === 'image'
+      ) as { type: string; data: string } | undefined;
+
+      expect(imageContent).toBeDefined();
+      expect(imageContent!.data.length).toBeGreaterThan(100);
+
+      // Verify resource link is returned
+      const resourceLink = result.content.find(
+        (c: { type: string }) => (c as { type: string }).type === 'resource_link'
+      ) as { type: string; uri: string } | undefined;
+
+      expect(resourceLink).toBeDefined();
+      console.log('Captured screenshot of httpbin.org, saved to:', resourceLink!.uri);
+    });
+
+    it('should verify browser state reflects the current page', async () => {
+      const stateResult = await client.callTool('browser_get_state', {});
+
+      expect(stateResult.isError).toBeFalsy();
+      const text = (stateResult.content[0] as { type: string; text: string }).text;
+      const state = JSON.parse(text);
+
+      expect(state.isOpen).toBe(true);
+      expect(state.currentUrl).toContain('httpbin.org');
+      console.log('Current page URL:', state.currentUrl, '| Title:', state.title);
     });
   });
 });

@@ -39,14 +39,16 @@ describe('REST API Tools - Manual Tests with Real API', () => {
 
     const serverPath = path.join(__dirname, '../../local/build/index.js');
 
+    const env: Record<string, string> = {
+      PULSEMCP_ADMIN_API_KEY: process.env.PULSEMCP_ADMIN_API_KEY!,
+    };
+    if (process.env.PULSEMCP_ADMIN_API_URL) {
+      env.PULSEMCP_ADMIN_API_URL = process.env.PULSEMCP_ADMIN_API_URL;
+    }
+
     client = new TestMCPClient({
       serverPath: serverPath,
-      env: {
-        ...process.env,
-        PULSEMCP_ADMIN_API_KEY: process.env.PULSEMCP_ADMIN_API_KEY,
-        PULSEMCP_ADMIN_API_URL:
-          process.env.PULSEMCP_ADMIN_API_URL || 'https://staging.pulsemcp.com',
-      },
+      env,
     });
     await client.connect();
   });

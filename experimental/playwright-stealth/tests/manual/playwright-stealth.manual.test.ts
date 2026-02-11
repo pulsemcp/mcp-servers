@@ -1,57 +1,89 @@
-import { describe, it, expect, afterAll } from 'vitest';
-import { PlaywrightClient, MAX_SCREENSHOT_DIMENSION } from '../../shared/src/server.js';
+import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { TestMCPClient } from '../../../../libs/test-mcp-client/build/index.js';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import 'dotenv/config';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 /**
  * Manual tests for Playwright Stealth MCP Server
  *
- * These tests use a real browser and hit real websites.
+ * These tests use a real browser and hit real websites via the MCP protocol.
  * Run with: npm run test:manual
  *
  * Prerequisites:
  * - Run: npm run test:manual:setup (installs Playwright browsers)
  */
 
-describe('Playwright Client Manual Tests', () => {
-  let client: PlaywrightClient | null = null;
+// The screenshot dimension limit from the server (8000px)
+const MAX_SCREENSHOT_DIMENSION = 8000;
 
-  afterAll(async () => {
-    if (client) {
-      await client.close();
-    }
-  });
+describe('Playwright Client Manual Tests', () => {
+  const serverPath = path.join(__dirname, '../../local/build/index.js');
 
   describe('Standard Mode', () => {
+    let client: TestMCPClient;
+
+    beforeAll(async () => {
+      client = new TestMCPClient({
+        serverPath,
+        env: {
+          HEADLESS: 'true',
+          TIMEOUT: '30000',
+          STEALTH_MODE: 'false',
+          PATH: process.env.PATH || '',
+        },
+      });
+      await client.connect();
+    });
+
+    afterAll(async () => {
+      await client.disconnect();
+    });
+
     it('should navigate to a page and get title', async () => {
-      client = new PlaywrightClient({
-        stealthMode: false,
-        headless: true,
-        timeout: 30000,
-        navigationTimeout: 60000,
+      const result = await client.callTool('browser_execute', {
+        code: `
+          await page.goto('https://example.com');
+          return await page.title();
+        `,
       });
 
-      const result = await client.execute(`
-        await page.goto('https://example.com');
-        return await page.title();
-      `);
-
-      expect(result.success).toBe(true);
-      expect(result.result).toContain('Example Domain');
+      expect(result.isError).toBeFalsy();
+      const text = (result.content[0] as { type: string; text: string }).text;
+      expect(text).toContain('Example Domain');
     });
 
     it('should take a screenshot', async () => {
-      const screenshotResult = await client!.screenshot();
+      const result = await client.callTool('browser_screenshot', {
+        fullPage: false,
+      });
 
-      expect(screenshotResult).toBeDefined();
-      expect(screenshotResult.data.length).toBeGreaterThan(100);
-      expect(screenshotResult.wasClipped).toBe(false);
+      expect(result.isError).toBeFalsy();
+      // The screenshot tool returns image content (base64 data) and/or resource_link
+      expect(result.content.length).toBeGreaterThan(0);
 
-      // Verify it's valid base64
-      const buffer = Buffer.from(screenshotResult.data, 'base64');
-      expect(buffer.length).toBeGreaterThan(0);
+      // Find the image content in the result
+      const imageContent = result.content.find(
+        (c: { type: string }) => (c as { type: string }).type === 'image'
+      ) as { type: string; data: string; mimeType: string } | undefined;
+
+      if (imageContent) {
+        expect(imageContent.data.length).toBeGreaterThan(100);
+        // Verify it's valid base64
+        const buffer = Buffer.from(imageContent.data, 'base64');
+        expect(buffer.length).toBeGreaterThan(0);
+      }
     });
 
     it('should get browser state', async () => {
-      const state = await client!.getState();
+      const result = await client.callTool('browser_get_state', {});
+
+      expect(result.isError).toBeFalsy();
+      const text = (result.content[0] as { type: string; text: string }).text;
+      const state = JSON.parse(text);
 
       expect(state.isOpen).toBe(true);
       expect(state.currentUrl).toContain('example.com');
@@ -59,248 +91,343 @@ describe('Playwright Client Manual Tests', () => {
     });
 
     it('should close browser', async () => {
-      await client!.close();
+      const closeResult = await client.callTool('browser_close', {});
+      expect(closeResult.isError).toBeFalsy();
 
-      const state = await client!.getState();
+      const stateResult = await client.callTool('browser_get_state', {});
+      expect(stateResult.isError).toBeFalsy();
+      const text = (stateResult.content[0] as { type: string; text: string }).text;
+      const state = JSON.parse(text);
       expect(state.isOpen).toBe(false);
-
-      client = null;
     });
   });
 
   describe('Screenshot Dimension Limiting', () => {
-    it('should clip full-page screenshots that exceed dimension limits', async () => {
-      client = new PlaywrightClient({
-        stealthMode: false,
-        headless: true,
-        timeout: 30000,
-        navigationTimeout: 60000,
-      });
+    let client: TestMCPClient;
 
+    beforeAll(async () => {
+      client = new TestMCPClient({
+        serverPath,
+        env: {
+          HEADLESS: 'true',
+          TIMEOUT: '30000',
+          STEALTH_MODE: 'false',
+          PATH: process.env.PATH || '',
+        },
+      });
+      await client.connect();
+    });
+
+    afterAll(async () => {
+      await client.disconnect();
+    });
+
+    it('should clip full-page screenshots that exceed dimension limits', async () => {
       // Create a page with height exceeding the max dimension
       const targetHeight = MAX_SCREENSHOT_DIMENSION + 2000; // 10000px
-      await client.execute(`
-        await page.goto('about:blank');
-        await page.setContent(\`
-          <html>
-            <body style="margin: 0; padding: 0;">
-              <div style="width: 100%; height: ${targetHeight}px; background: linear-gradient(to bottom, red, blue);">
-                Tall page for testing screenshot clipping
-              </div>
-            </body>
-          </html>
-        \`);
-      `);
+      await client.callTool('browser_execute', {
+        code: `
+          await page.goto('about:blank');
+          await page.setContent(\`
+            <html>
+              <body style="margin: 0; padding: 0;">
+                <div style="width: 100%; height: ${targetHeight}px; background: linear-gradient(to bottom, red, blue);">
+                  Tall page for testing screenshot clipping
+                </div>
+              </body>
+            </html>
+          \`);
+        `,
+      });
 
       // Take a full-page screenshot
-      const screenshotResult = await client.screenshot({ fullPage: true });
+      const result = await client.callTool('browser_screenshot', {
+        fullPage: true,
+      });
 
-      expect(screenshotResult.wasClipped).toBe(true);
-      expect(screenshotResult.warning).toBeDefined();
-      expect(screenshotResult.warning).toContain(`${MAX_SCREENSHOT_DIMENSION}px limit`);
-      expect(screenshotResult.data.length).toBeGreaterThan(100);
+      expect(result.isError).toBeFalsy();
 
-      console.log('Screenshot clipping warning:', screenshotResult.warning);
+      // Look for the warning text about clipping
+      const warningContent = result.content.find(
+        (c: { type: string; text?: string }) =>
+          (c as { type: string; text?: string }).type === 'text' &&
+          (c as { type: string; text?: string }).text?.includes('Warning')
+      ) as { type: string; text: string } | undefined;
+
+      expect(warningContent).toBeDefined();
+      expect(warningContent!.text).toContain(`${MAX_SCREENSHOT_DIMENSION}px limit`);
+
+      console.log('Screenshot clipping warning:', warningContent!.text);
     });
 
     it('should not clip screenshots within dimension limits', async () => {
       // Navigate to a normal page with reasonable height
-      await client!.execute(`
-        await page.goto('https://example.com');
-      `);
+      await client.callTool('browser_execute', {
+        code: `
+          await page.goto('https://example.com');
+        `,
+      });
 
       // Take a full-page screenshot
-      const screenshotResult = await client!.screenshot({ fullPage: true });
+      const result = await client.callTool('browser_screenshot', {
+        fullPage: true,
+      });
 
-      expect(screenshotResult.wasClipped).toBe(false);
-      expect(screenshotResult.warning).toBeUndefined();
-      expect(screenshotResult.data.length).toBeGreaterThan(100);
+      expect(result.isError).toBeFalsy();
+
+      // There should be no warning text about clipping
+      const warningContent = result.content.find(
+        (c: { type: string; text?: string }) =>
+          (c as { type: string; text?: string }).type === 'text' &&
+          (c as { type: string; text?: string }).text?.includes('Warning')
+      );
+
+      expect(warningContent).toBeUndefined();
     });
 
     it('should not clip viewport-only screenshots regardless of page size', async () => {
-      // Create a tall page again
-      await client!.execute(`
-        await page.setContent(\`
-          <html>
-            <body style="margin: 0; padding: 0;">
-              <div style="width: 100%; height: 15000px; background: green;">
-                Very tall page
-              </div>
-            </body>
-          </html>
-        \`);
-      `);
+      // Create a tall page
+      await client.callTool('browser_execute', {
+        code: `
+          await page.setContent(\`
+            <html>
+              <body style="margin: 0; padding: 0;">
+                <div style="width: 100%; height: 15000px; background: green;">
+                  Very tall page
+                </div>
+              </body>
+            </html>
+          \`);
+        `,
+      });
 
       // Take a viewport-only screenshot (fullPage: false)
-      const screenshotResult = await client!.screenshot({ fullPage: false });
+      const result = await client.callTool('browser_screenshot', {
+        fullPage: false,
+      });
 
-      // Viewport screenshot should never be clipped
-      expect(screenshotResult.wasClipped).toBe(false);
-      expect(screenshotResult.warning).toBeUndefined();
-    });
+      expect(result.isError).toBeFalsy();
 
-    it('should clean up after dimension limit tests', async () => {
-      await client?.close();
-      client = null;
+      // Viewport screenshot should never have a clipping warning
+      const warningContent = result.content.find(
+        (c: { type: string; text?: string }) =>
+          (c as { type: string; text?: string }).type === 'text' &&
+          (c as { type: string; text?: string }).text?.includes('Warning')
+      );
+
+      expect(warningContent).toBeUndefined();
     });
   });
 
   describe('Stealth Mode', () => {
+    let client: TestMCPClient;
+
+    beforeAll(async () => {
+      client = new TestMCPClient({
+        serverPath,
+        env: {
+          HEADLESS: 'true',
+          TIMEOUT: '30000',
+          STEALTH_MODE: 'true',
+          PATH: process.env.PATH || '',
+        },
+      });
+      await client.connect();
+    });
+
+    afterAll(async () => {
+      await client.disconnect();
+    });
+
     it('should navigate with stealth mode enabled', async () => {
-      client = new PlaywrightClient({
-        stealthMode: true,
-        headless: true,
-        timeout: 30000,
-        navigationTimeout: 60000,
+      const result = await client.callTool('browser_execute', {
+        code: `
+          await page.goto('https://example.com');
+          return await page.title();
+        `,
       });
 
-      const result = await client.execute(`
-        await page.goto('https://example.com');
-        return await page.title();
-      `);
-
-      expect(result.success).toBe(true);
-      expect(result.result).toContain('Example Domain');
+      expect(result.isError).toBeFalsy();
+      const text = (result.content[0] as { type: string; text: string }).text;
+      expect(text).toContain('Example Domain');
     });
 
     it('should pass webdriver detection check', async () => {
-      const result = await client!.execute(`
-        await page.goto('https://bot.sannysoft.com');
-        await page.waitForTimeout(2000);
+      const result = await client.callTool('browser_execute', {
+        code: `
+          await page.goto('https://bot.sannysoft.com');
+          await page.waitForTimeout(2000);
 
-        // Get webdriver detection result
-        const webdriverResult = await page.evaluate(() => {
-          const rows = document.querySelectorAll('table tr');
-          for (const row of rows) {
-            const cells = row.querySelectorAll('td');
-            if (cells.length >= 2 && cells[0].textContent?.includes('Webdriver')) {
-              return cells[1].textContent?.trim() || 'unknown';
+          // Get webdriver detection result
+          const webdriverResult = await page.evaluate(() => {
+            const rows = document.querySelectorAll('table tr');
+            for (const row of rows) {
+              const cells = row.querySelectorAll('td');
+              if (cells.length >= 2 && cells[0].textContent?.includes('Webdriver')) {
+                return cells[1].textContent?.trim() || 'unknown';
+              }
             }
-          }
-          return 'not found';
-        });
+            return 'not found';
+          });
 
-        return webdriverResult;
-      `);
+          return webdriverResult;
+        `,
+      });
 
-      expect(result.success).toBe(true);
+      expect(result.isError).toBeFalsy();
+      const text = (result.content[0] as { type: string; text: string }).text;
       // With stealth mode, webdriver should not be detected
-      // Note: This may show 'missing' or similar rather than 'present'
-      console.log('Webdriver detection result:', result.result);
+      console.log('Webdriver detection result:', text);
     });
 
     it('should get config with stealth mode info', async () => {
-      const config = client!.getConfig();
+      const result = await client.callTool('browser_get_state', {});
 
-      expect(config.stealthMode).toBe(true);
-      expect(config.headless).toBe(true);
-    });
+      expect(result.isError).toBeFalsy();
+      const text = (result.content[0] as { type: string; text: string }).text;
+      const state = JSON.parse(text);
 
-    it('should close stealth browser', async () => {
-      await client!.close();
-      client = null;
+      expect(state.stealthMode).toBe(true);
+      expect(state.headless).toBe(true);
     });
   });
 
   describe('Anti-Bot Protection Tests', () => {
+    let client: TestMCPClient;
+
+    afterAll(async () => {
+      if (client) {
+        await client.disconnect();
+      }
+    });
+
     it('should fail to load claude.ai login WITHOUT stealth mode', async () => {
-      client = new PlaywrightClient({
-        stealthMode: false,
-        headless: true,
-        timeout: 30000,
-        navigationTimeout: 60000,
+      client = new TestMCPClient({
+        serverPath,
+        env: {
+          HEADLESS: 'true',
+          TIMEOUT: '30000',
+          STEALTH_MODE: 'false',
+          PATH: process.env.PATH || '',
+        },
+      });
+      await client.connect();
+
+      const result = await client.callTool('browser_execute', {
+        code: `
+          await page.goto('https://claude.ai/login', { waitUntil: 'domcontentloaded', timeout: 15000 });
+          await page.waitForTimeout(2000);
+
+          // Check if we're blocked or got a challenge page
+          const content = await page.content();
+          const url = page.url();
+
+          // Look for signs of being blocked
+          const isBlocked = content.includes('challenge') ||
+                           content.includes('captcha') ||
+                           content.includes('verify') ||
+                           content.includes('blocked') ||
+                           content.includes('cf-') ||
+                           url.includes('challenges');
+
+          return { url, isBlocked, hasLoginForm: content.includes('password') || content.includes('email') };
+        `,
       });
 
-      const result = await client.execute(`
-        await page.goto('https://claude.ai/login', { waitUntil: 'domcontentloaded', timeout: 15000 });
-        await page.waitForTimeout(2000);
+      console.log(
+        'Non-stealth claude.ai result:',
+        (result.content[0] as { type: string; text: string }).text
+      );
+      expect(result.isError).toBeFalsy();
 
-        // Check if we're blocked or got a challenge page
-        const content = await page.content();
-        const url = page.url();
-
-        // Look for signs of being blocked
-        const isBlocked = content.includes('challenge') ||
-                         content.includes('captcha') ||
-                         content.includes('verify') ||
-                         content.includes('blocked') ||
-                         content.includes('cf-') ||
-                         url.includes('challenges');
-
-        return { url, isBlocked, hasLoginForm: content.includes('password') || content.includes('email') };
-      `);
-
-      console.log('Non-stealth claude.ai result:', result.result);
-      expect(result.success).toBe(true);
-      // Non-stealth should likely be blocked or show challenge
+      // Disconnect so we can reconnect with different env
+      await client.disconnect();
     });
 
     it('should successfully load claude.ai login WITH stealth mode', async () => {
-      await client?.close();
-      client = new PlaywrightClient({
-        stealthMode: true,
-        headless: true,
-        timeout: 30000,
-        navigationTimeout: 60000,
+      client = new TestMCPClient({
+        serverPath,
+        env: {
+          HEADLESS: 'true',
+          TIMEOUT: '30000',
+          STEALTH_MODE: 'true',
+          PATH: process.env.PATH || '',
+        },
+      });
+      await client.connect();
+
+      const result = await client.callTool('browser_execute', {
+        code: `
+          await page.goto('https://claude.ai/login', { waitUntil: 'domcontentloaded', timeout: 15000 });
+          await page.waitForTimeout(2000);
+
+          // Check if we got through to the actual login page
+          const content = await page.content();
+          const url = page.url();
+
+          // Look for signs of being blocked
+          const isBlocked = content.includes('challenge') ||
+                           content.includes('captcha') ||
+                           content.includes('verify') ||
+                           content.includes('blocked') ||
+                           content.includes('cf-') ||
+                           url.includes('challenges');
+
+          return { url, isBlocked, hasLoginForm: content.includes('password') || content.includes('email') };
+        `,
       });
 
-      const result = await client.execute(`
-        await page.goto('https://claude.ai/login', { waitUntil: 'domcontentloaded', timeout: 15000 });
-        await page.waitForTimeout(2000);
-
-        // Check if we got through to the actual login page
-        const content = await page.content();
-        const url = page.url();
-
-        // Look for signs of being blocked
-        const isBlocked = content.includes('challenge') ||
-                         content.includes('captcha') ||
-                         content.includes('verify') ||
-                         content.includes('blocked') ||
-                         content.includes('cf-') ||
-                         url.includes('challenges');
-
-        return { url, isBlocked, hasLoginForm: content.includes('password') || content.includes('email') };
-      `);
-
-      console.log('Stealth claude.ai result:', result.result);
-      expect(result.success).toBe(true);
-      // Stealth mode should be able to get through
-    });
-
-    it('should clean up after anti-bot tests', async () => {
-      await client?.close();
-      client = null;
+      console.log(
+        'Stealth claude.ai result:',
+        (result.content[0] as { type: string; text: string }).text
+      );
+      expect(result.isError).toBeFalsy();
     });
   });
 
   describe('Error Handling', () => {
+    let client: TestMCPClient;
+
+    beforeAll(async () => {
+      client = new TestMCPClient({
+        serverPath,
+        env: {
+          HEADLESS: 'true',
+          TIMEOUT: '5000',
+          STEALTH_MODE: 'false',
+          PATH: process.env.PATH || '',
+        },
+      });
+      await client.connect();
+    });
+
+    afterAll(async () => {
+      await client.disconnect();
+    });
+
     it('should handle navigation errors gracefully', async () => {
-      client = new PlaywrightClient({
-        stealthMode: false,
-        headless: true,
-        timeout: 5000,
-        navigationTimeout: 5000,
+      const result = await client.callTool('browser_execute', {
+        code: `
+          await page.goto('https://this-domain-does-not-exist-12345.com', { timeout: 3000 });
+        `,
       });
 
-      const result = await client.execute(`
-        await page.goto('https://this-domain-does-not-exist-12345.com', { timeout: 3000 });
-      `);
-
-      expect(result.success).toBe(false);
-      expect(result.error).toBeDefined();
+      expect(result.isError).toBe(true);
+      const text = (result.content[0] as { type: string; text: string }).text;
+      expect(text).toContain('Error');
     });
 
     it('should handle execution timeout', async () => {
-      const result = await client!.execute(
-        `
-        await page.waitForTimeout(10000);
-      `,
-        { timeout: 1000 }
-      );
+      const result = await client.callTool('browser_execute', {
+        code: `
+          await page.waitForTimeout(10000);
+        `,
+        timeout: 1000,
+      });
 
-      expect(result.success).toBe(false);
-      expect(result.error).toContain('timed out');
+      expect(result.isError).toBe(true);
+      const text = (result.content[0] as { type: string; text: string }).text;
+      expect(text).toContain('timed out');
     });
   });
 
@@ -312,125 +439,150 @@ describe('Playwright Client Manual Tests', () => {
 
     const skipProxy = !proxyUrl;
 
+    let client: TestMCPClient;
+
+    afterAll(async () => {
+      if (client) {
+        await client.disconnect();
+      }
+    });
+
     it.skipIf(skipProxy)('should connect through proxy and get external IP', async () => {
       console.log('Proxy URL:', proxyUrl);
       console.log('Proxy Username:', proxyUsername);
       console.log('Proxy Password:', proxyPassword ? '***' : '(not set)');
 
-      client = new PlaywrightClient({
-        stealthMode: false,
-        headless: true,
-        timeout: 60000,
-        navigationTimeout: 60000,
-        proxy: {
-          server: proxyUrl!,
-          username: proxyUsername,
-          password: proxyPassword,
-        },
+      const env: Record<string, string> = {
+        HEADLESS: 'true',
+        TIMEOUT: '60000',
+        STEALTH_MODE: 'false',
+        PROXY_URL: proxyUrl!,
+        PATH: process.env.PATH || '',
+      };
+      if (proxyUsername) env.PROXY_USERNAME = proxyUsername;
+      if (proxyPassword) env.PROXY_PASSWORD = proxyPassword;
+
+      client = new TestMCPClient({
+        serverPath,
+        env,
+      });
+      await client.connect();
+
+      const result = await client.callTool('browser_execute', {
+        code: `
+          await page.goto('https://httpbin.org/ip', { timeout: 30000 });
+          const body = await page.textContent('body');
+          return JSON.parse(body);
+        `,
       });
 
-      const result = await client.execute(`
-        await page.goto('https://httpbin.org/ip', { timeout: 30000 });
-        const body = await page.textContent('body');
-        return JSON.parse(body);
-      `);
-
-      console.log('Proxy test result:', result);
-      if (!result.success) {
-        console.log('Proxy error:', result.error);
-        console.log('Console output:', result.consoleOutput);
-      }
-
-      expect(result.success).toBe(true);
-      console.log('Proxy IP result:', result.result);
+      console.log('Proxy test result:', (result.content[0] as { type: string; text: string }).text);
+      expect(result.isError).toBeFalsy();
+      const text = (result.content[0] as { type: string; text: string }).text;
       // The response should have an "origin" field with the proxy IP
-      expect(result.result).toContain('origin');
+      expect(text).toContain('origin');
     });
 
     it.skipIf(skipProxy)('should verify proxy IP differs from local IP', async () => {
-      // First get the proxy IP
-      const proxyResult = await client!.execute(`
-        await page.goto('https://httpbin.org/ip', { timeout: 30000 });
-        const body = await page.textContent('body');
-        return JSON.parse(body);
-      `);
-
-      await client!.close();
-
-      // Now get the direct IP (without proxy)
-      const directClient = new PlaywrightClient({
-        stealthMode: false,
-        headless: true,
-        timeout: 60000,
-        navigationTimeout: 60000,
+      // First get the proxy IP (client already connected with proxy from previous test)
+      const proxyResult = await client.callTool('browser_execute', {
+        code: `
+          await page.goto('https://httpbin.org/ip', { timeout: 30000 });
+          const body = await page.textContent('body');
+          return JSON.parse(body);
+        `,
       });
 
-      const directResult = await directClient.execute(`
-        await page.goto('https://httpbin.org/ip', { timeout: 30000 });
-        const body = await page.textContent('body');
-        return JSON.parse(body);
-      `);
+      // Disconnect proxy client
+      await client.disconnect();
 
-      await directClient.close();
+      // Now connect without proxy to get direct IP
+      const directClient = new TestMCPClient({
+        serverPath,
+        env: {
+          HEADLESS: 'true',
+          TIMEOUT: '60000',
+          STEALTH_MODE: 'false',
+          PATH: process.env.PATH || '',
+        },
+      });
+      await directClient.connect();
 
-      console.log('Proxy IP:', proxyResult.result);
-      console.log('Direct IP:', directResult.result);
+      const directResult = await directClient.callTool('browser_execute', {
+        code: `
+          await page.goto('https://httpbin.org/ip', { timeout: 30000 });
+          const body = await page.textContent('body');
+          return JSON.parse(body);
+        `,
+      });
 
-      expect(proxyResult.success).toBe(true);
-      expect(directResult.success).toBe(true);
+      await directClient.disconnect();
+
+      const proxyText = (proxyResult.content[0] as { type: string; text: string }).text;
+      const directText = (directResult.content[0] as { type: string; text: string }).text;
+
+      console.log('Proxy IP:', proxyText);
+      console.log('Direct IP:', directText);
+
+      expect(proxyResult.isError).toBeFalsy();
+      expect(directResult.isError).toBeFalsy();
       // IPs should be different (proxy should mask our real IP)
-      expect(proxyResult.result).not.toBe(directResult.result);
+      expect(proxyText).not.toBe(directText);
 
-      client = null;
+      // Reconnect proxy client for subsequent tests
+      const env: Record<string, string> = {
+        HEADLESS: 'true',
+        TIMEOUT: '60000',
+        STEALTH_MODE: 'true',
+        PROXY_URL: proxyUrl!,
+        PATH: process.env.PATH || '',
+      };
+      if (proxyUsername) env.PROXY_USERNAME = proxyUsername;
+      if (proxyPassword) env.PROXY_PASSWORD = proxyPassword;
+
+      client = new TestMCPClient({
+        serverPath,
+        env,
+      });
+      await client.connect();
     });
 
     it.skipIf(skipProxy)('should work with proxy + stealth mode combined', async () => {
-      client = new PlaywrightClient({
-        stealthMode: true,
-        headless: true,
-        timeout: 60000,
-        navigationTimeout: 60000,
-        proxy: {
-          server: proxyUrl!,
-          username: proxyUsername,
-          password: proxyPassword,
-        },
+      const result = await client.callTool('browser_execute', {
+        code: `
+          await page.goto('https://bot.sannysoft.com', { timeout: 30000 });
+          await page.waitForTimeout(2000);
+
+          // Get webdriver detection result
+          const webdriverResult = await page.evaluate(() => {
+            const rows = document.querySelectorAll('table tr');
+            for (const row of rows) {
+              const cells = row.querySelectorAll('td');
+              if (cells.length >= 2 && cells[0].textContent?.includes('Webdriver')) {
+                return cells[1].textContent?.trim() || 'unknown';
+              }
+            }
+            return 'not found';
+          });
+
+          return webdriverResult;
+        `,
       });
 
-      const result = await client.execute(`
-        await page.goto('https://bot.sannysoft.com', { timeout: 30000 });
-        await page.waitForTimeout(2000);
-
-        // Get webdriver detection result
-        const webdriverResult = await page.evaluate(() => {
-          const rows = document.querySelectorAll('table tr');
-          for (const row of rows) {
-            const cells = row.querySelectorAll('td');
-            if (cells.length >= 2 && cells[0].textContent?.includes('Webdriver')) {
-              return cells[1].textContent?.trim() || 'unknown';
-            }
-          }
-          return 'not found';
-        });
-
-        return webdriverResult;
-      `);
-
-      expect(result.success).toBe(true);
-      console.log('Proxy + Stealth webdriver detection result:', result.result);
+      expect(result.isError).toBeFalsy();
+      const text = (result.content[0] as { type: string; text: string }).text;
+      console.log('Proxy + Stealth webdriver detection result:', text);
     });
 
     it.skipIf(skipProxy)('should verify config shows proxy enabled', async () => {
-      const config = client!.getConfig();
+      const result = await client.callTool('browser_get_state', {});
 
-      expect(config.proxy).toBeDefined();
-      expect(config.proxy?.server).toBe(proxyUrl);
-      expect(config.stealthMode).toBe(true);
-    });
+      expect(result.isError).toBeFalsy();
+      const text = (result.content[0] as { type: string; text: string }).text;
+      const state = JSON.parse(text);
 
-    it.skipIf(skipProxy)('should close proxy browser', async () => {
-      await client?.close();
-      client = null;
+      expect(state.proxyEnabled).toBe(true);
+      expect(state.stealthMode).toBe(true);
     });
   });
 });

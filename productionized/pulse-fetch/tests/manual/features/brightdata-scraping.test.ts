@@ -1,47 +1,76 @@
-import { describe, it, expect } from 'vitest';
-import { BrightDataScrapingClient } from '../../../shared/src/scraping-client/brightdata-scrape-client.js';
+import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { TestMCPClient } from '../../../../../libs/test-mcp-client/build/index.js';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import dotenv from 'dotenv';
 
-describe('BrightData Scraping Client', () => {
-  it('should scrape a simple page', async () => {
+// Use override: true to ensure .env values take precedence over any
+// pre-existing environment variables set by the shell/orchestrator
+dotenv.config({ override: true });
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+/** Extract text from MCP content item (handles both resource and text types) */
+function getContentText(content: {
+  type: string;
+  resource?: { text: string };
+  text?: string;
+}): string {
+  return content.type === 'resource' ? content.resource!.text : content.text!;
+}
+
+describe('BrightData Scraping via MCP', () => {
+  let client: TestMCPClient;
+
+  beforeAll(async () => {
     const apiKey = process.env.BRIGHTDATA_API_KEY;
     if (!apiKey) {
-      console.log('⚠️  Skipping BrightData test - BRIGHTDATA_API_KEY not set');
-      return;
+      throw new Error('Manual tests require BRIGHTDATA_API_KEY environment variable');
     }
 
-    const client = new BrightDataScrapingClient(apiKey);
+    console.log(`Using BRIGHTDATA_API_KEY: ${apiKey.substring(0, 20)}...`);
+
+    const serverPath = path.join(__dirname, '../../../local/build/index.js');
+    client = new TestMCPClient({
+      serverPath,
+      env: {
+        BRIGHTDATA_API_KEY: apiKey,
+        OPTIMIZE_FOR: 'speed',
+      },
+      debug: false,
+    });
+    await client.connect();
+  });
+
+  afterAll(async () => {
+    if (client) await client.disconnect();
+  });
+
+  it('should scrape a simple page', async () => {
     const url = 'https://example.com';
 
-    console.log(`🌟 Testing BrightData Scraping Client for: ${url}`);
+    console.log(`Testing BrightData Scraping for: ${url}`);
     console.log('============================================================');
-    console.log(`🔑 Using API key: ${apiKey.substring(0, 20)}...`);
 
-    const result = await client.scrape(url);
+    const result = await client.callTool('scrape', {
+      url,
+      timeout: 30000,
+    });
 
-    if (!result.success) {
-      // BrightData might fail with 401 if token is invalid
-      console.log(`❌ BrightData scraping failed: ${result.error}`);
-      // Don't fail the test for auth errors
-      if (result.error?.includes('401')) {
-        console.log('⚠️  Skipping due to authentication error');
-        return;
-      }
-      expect(result.success).toBe(true);
-    }
+    expect(result.isError).toBeFalsy();
+    expect(result.content).toBeDefined();
+    expect(result.content.length).toBeGreaterThan(0);
 
-    expect(result.success).toBe(true);
-    expect(result.data).toBeDefined();
-    expect(result.data!.length).toBeGreaterThan(0);
+    const text = getContentText(result.content[0] as Parameters<typeof getContentText>[0]);
+    expect(text).toBeDefined();
+    expect(text.length).toBeGreaterThan(0);
 
-    console.log(`✅ BrightData scraping successful`);
-    console.log(`📝 Data length: ${result.data!.length} characters`);
+    console.log('BrightData scraping successful');
+    console.log(`Content length: ${text.length} characters`);
 
-    // Basic content analysis
-    const hasTitle = /<title[^>]*>([^<]+)<\/title>/i.test(result.data!);
-    const hasStructuredContent = /<(article|main|section|div)[^>]*>/i.test(result.data!);
-
-    console.log('\n🔍 Content analysis:');
-    console.log(`  - Has title tag: ${hasTitle ? '✅' : '❌'}`);
-    console.log(`  - Has structured content: ${hasStructuredContent ? '✅' : '❌'}`);
-  });
+    // Content analysis
+    console.log('\nContent analysis:');
+    console.log(`  - Contains "Example Domain": ${text.includes('Example Domain')}`);
+  }, 60000);
 });
