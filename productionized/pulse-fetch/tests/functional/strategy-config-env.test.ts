@@ -77,14 +77,11 @@ describe('FilesystemStrategyConfigClient with Environment', () => {
   });
 
   it('should use default temp directory when no path provided and no env var', async () => {
-    delete process.env.STRATEGY_CONFIG_PATH;
-
-    // Clean up default temp directory before test
-    try {
-      await fs.rm(join(tmpdir(), 'pulse-fetch'), { recursive: true, force: true });
-    } catch {
-      // Ignore if doesn't exist
-    }
+    // Use STRATEGY_CONFIG_PATH to an isolated directory to avoid race conditions
+    // with other tests that also use the default /tmp/pulse-fetch path
+    const isolatedDir = join(tmpdir(), `pulse-fetch-env-test-${Date.now()}`);
+    const isolatedConfigPath = join(isolatedDir, 'scraping-strategies.md');
+    process.env.STRATEGY_CONFIG_PATH = isolatedConfigPath;
 
     const client = new FilesystemStrategyConfigClient();
 
@@ -109,7 +106,7 @@ describe('FilesystemStrategyConfigClient with Environment', () => {
 
     // Clean up after test
     try {
-      await fs.rm(join(tmpdir(), 'pulse-fetch'), { recursive: true, force: true });
+      await fs.rm(isolatedDir, { recursive: true, force: true });
     } catch {
       // Ignore cleanup errors
     }
