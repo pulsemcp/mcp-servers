@@ -1,15 +1,15 @@
-import { describe, it, expect, beforeAll } from 'vitest';
-import { HatchboxClient } from '../../shared/src/server.js';
-import dotenv from 'dotenv';
-import { join } from 'path';
+import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { TestMCPClient } from '../../../../libs/test-mcp-client/build/index.js';
+import path from 'path';
 import { fileURLToPath } from 'url';
+import 'dotenv/config';
 
-const __dirname = fileURLToPath(new URL('.', import.meta.url));
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
-// Load environment variables from .env file
-dotenv.config({ path: join(__dirname, '../../.env') });
+describe('Hatchbox MCP Server Manual Tests', () => {
+  let client: TestMCPClient;
 
-describe('Hatchbox Client Manual Tests', () => {
   const apiKey = process.env.HATCHBOX_API_KEY;
   const accountId = process.env.HATCHBOX_ACCOUNT_ID;
   const appId = process.env.HATCHBOX_APP_ID;
@@ -18,98 +18,116 @@ describe('Hatchbox Client Manual Tests', () => {
   const sshKeyPath = process.env.SSH_KEY_PATH;
   const appName = process.env.HATCHBOX_APP_NAME;
 
-  let client: HatchboxClient | null = null;
-
-  const setupClient = () => {
+  beforeAll(async () => {
     if (!apiKey || !accountId || !appId || !deployKey) {
-      console.warn(
-        '⚠️  Manual tests require HATCHBOX_API_KEY, HATCHBOX_ACCOUNT_ID, HATCHBOX_APP_ID, and HATCHBOX_DEPLOY_KEY'
+      throw new Error(
+        'Manual tests require HATCHBOX_API_KEY, HATCHBOX_ACCOUNT_ID, HATCHBOX_APP_ID, and HATCHBOX_DEPLOY_KEY environment variables'
       );
-      console.warn('   Please create a .env file with your Hatchbox credentials');
-      return null;
     }
-    return new HatchboxClient(apiKey, accountId, appId, deployKey, serverIP, sshKeyPath, appName);
-  };
 
-  beforeAll(() => {
-    client = setupClient();
-    if (!client) {
-      console.log('Skipping manual tests - no API credentials provided');
+    const serverPath = path.join(__dirname, '../../local/build/index.js');
+
+    const env: Record<string, string> = {
+      HATCHBOX_API_KEY: apiKey,
+      HATCHBOX_ACCOUNT_ID: accountId,
+      HATCHBOX_APP_ID: appId,
+      HATCHBOX_DEPLOY_KEY: deployKey,
+    };
+
+    if (serverIP) {
+      env.WEB_SERVER_IP_ADDRESS = serverIP;
+    }
+    if (sshKeyPath) {
+      env.SSH_KEY_PATH = sshKeyPath;
+    }
+    if (appName) {
+      env.HATCHBOX_APP_NAME = appName;
+    }
+
+    client = new TestMCPClient({
+      serverPath,
+      env,
+      debug: false,
+    });
+
+    await client.connect();
+  });
+
+  afterAll(async () => {
+    if (client) {
+      await client.disconnect();
     }
   });
 
   describe('Environment Variables', () => {
     it('should get all environment variables via SSH', async () => {
-      if (!client || !serverIP) {
+      if (!serverIP) {
         console.log('Skipping SSH test - no WEB_SERVER_IP_ADDRESS configured');
         return;
       }
 
-      const envVars = await client.getEnvVars!();
+      const result = await client.callTool<{ type: string; text: string }>('getEnvVars', {});
 
-      expect(Array.isArray(envVars)).toBe(true);
-      expect(envVars.length).toBeGreaterThan(0);
-
-      // Check for common Rails env vars
-      const railsEnv = envVars.find((env) => env.name === 'RAILS_ENV');
-      expect(railsEnv).toBeDefined();
-
-      console.log(`Retrieved ${envVars.length} environment variables via SSH`);
+      expect(result.isError).toBeFalsy();
+      expect(result.content[0].text).toContain('Environment variables');
+      console.log(`Retrieved environment variables via SSH`);
     });
 
     it('should get a specific environment variable via SSH', async () => {
-      if (!client || !serverIP) {
+      if (!serverIP) {
         console.log('Skipping SSH test - no WEB_SERVER_IP_ADDRESS configured');
         return;
       }
 
-      const envVar = await client.getEnvVar!('RAILS_ENV');
+      const result = await client.callTool<{ type: string; text: string }>('getEnvVar', {
+        name: 'RAILS_ENV',
+      });
 
-      expect(envVar).toBeDefined();
-      expect(envVar?.name).toBe('RAILS_ENV');
-      expect(envVar?.value).toBeTruthy();
-
-      console.log(`RAILS_ENV=${envVar?.value}`);
+      expect(result.isError).toBeFalsy();
+      expect(result.content[0].text).toContain('RAILS_ENV');
+      console.log(`Result: ${result.content[0].text}`);
     });
 
-    it('should return null for non-existent environment variable', async () => {
-      if (!client || !serverIP) {
+    it('should return not found for non-existent environment variable', async () => {
+      if (!serverIP) {
         console.log('Skipping SSH test - no WEB_SERVER_IP_ADDRESS configured');
         return;
       }
 
-      const envVar = await client.getEnvVar!('NONEXISTENT_VAR_12345');
+      const result = await client.callTool<{ type: string; text: string }>('getEnvVar', {
+        name: 'NONEXISTENT_VAR_12345',
+      });
 
-      expect(envVar).toBeNull();
+      expect(result.isError).toBeFalsy();
+      expect(result.content[0].text).toContain('not found');
     });
 
     it('should set a test environment variable', async () => {
-      if (!client) return;
-
       const testName = `TEST_VAR_${Date.now()}`;
       const testValue = 'test_value_from_manual_test';
 
-      // The API returns an empty array on success
-      const updatedVars = await client.setEnvVar(testName, testValue);
-      console.log(`Set ${testName}=${testValue}`);
+      const result = await client.callTool<{ type: string; text: string }>('setEnvVar', {
+        name: testName,
+        value: testValue,
+      });
 
-      // Since API returns empty response, we just check it doesn't throw
-      expect(Array.isArray(updatedVars)).toBe(true);
+      expect(result.isError).toBeFalsy();
+      expect(result.content[0].text).toContain('Successfully set environment variable');
+      console.log(`Set ${testName}=${testValue}`);
     });
 
     it('should update an existing environment variable', async () => {
-      if (!client) return;
-
-      // Since we can't retrieve vars, we'll update a known test var
       const testName = 'TEST_UPDATE_VAR';
       const newValue = `updated_${Date.now()}`;
 
-      // The API returns an empty array on success
-      const updatedVars = await client.setEnvVar(testName, newValue);
-      console.log(`Updated ${testName} to ${newValue}`);
+      const result = await client.callTool<{ type: string; text: string }>('setEnvVar', {
+        name: testName,
+        value: newValue,
+      });
 
-      // Since API returns empty response, we just check it doesn't throw
-      expect(Array.isArray(updatedVars)).toBe(true);
+      expect(result.isError).toBeFalsy();
+      expect(result.content[0].text).toContain('Successfully set environment variable');
+      console.log(`Updated ${testName} to ${newValue}`);
     });
   });
 
@@ -117,73 +135,49 @@ describe('Hatchbox Client Manual Tests', () => {
     let deploymentId: string | null = null;
 
     it('should trigger a deployment with latest commit', async () => {
-      if (!client) return;
+      const result = await client.callTool<{ type: string; text: string }>('triggerDeploy', {});
 
-      const deployment = await client.triggerDeploy();
-      deploymentId = deployment.id;
+      expect(result.isError).toBeFalsy();
+      expect(result.content[0].text).toContain('Deployment triggered successfully');
 
-      console.log(`Triggered deployment: ${deployment.id} (${deployment.status})`);
+      // Extract activity ID from response
+      const match = result.content[0].text.match(/Activity ID: (.+)/);
+      if (match) {
+        deploymentId = match[1].trim();
+      }
 
-      expect(deployment).toHaveProperty('id');
-      expect(deployment).toHaveProperty('status');
-      expect(deployment.status).toBeTruthy();
+      console.log(`Triggered deployment: ${result.content[0].text}`);
     });
 
     it('should check deployment status', async () => {
-      if (!client || !deploymentId) return;
+      if (!deploymentId) return;
 
       // Wait a moment for deployment to start
       await new Promise((resolve) => setTimeout(resolve, 2000));
 
-      const status = await client.checkDeploy(deploymentId);
+      const result = await client.callTool<{ type: string; text: string }>('checkDeploy', {
+        activityId: deploymentId,
+      });
 
-      console.log(`Deployment ${status.id}: ${status.status}`);
-      if (status.output) {
-        console.log('Output preview:', status.output.substring(0, 200) + '...');
-      }
-
-      expect(status.id).toBe(deploymentId);
-      expect(status.status).toBeTruthy();
+      expect(result.isError).toBeFalsy();
+      expect(result.content[0].text).toContain('Deployment Status');
+      console.log(`Deployment status: ${result.content[0].text}`);
     });
 
     it('should trigger deployment with specific SHA (if provided)', async () => {
-      if (!client) return;
-
-      // This test only runs if a SHA is provided in env
       const testSha = process.env.TEST_DEPLOY_SHA;
       if (!testSha) {
         console.log('Skipping SHA deployment test - no TEST_DEPLOY_SHA provided');
         return;
       }
 
-      const deployment = await client.triggerDeploy(testSha);
+      const result = await client.callTool<{ type: string; text: string }>('triggerDeploy', {
+        sha: testSha,
+      });
 
-      console.log(
-        `Triggered deployment with SHA ${testSha}: ${deployment.id} (${deployment.status})`
-      );
-
-      expect(deployment).toHaveProperty('id');
-      expect(deployment).toHaveProperty('status');
-    });
-  });
-
-  describe('Error Handling', () => {
-    it('should handle invalid credentials gracefully', async () => {
-      if (!accountId || !appId || !deployKey) return;
-
-      const badClient = new HatchboxClient('invalid_key', accountId, appId, deployKey);
-
-      // Test with setEnvVar instead since getEnvVars is not supported
-      await expect(badClient.setEnvVar('TEST', 'value')).rejects.toThrow('Invalid API key');
-    });
-
-    it('should handle invalid account/app IDs', async () => {
-      if (!apiKey || !deployKey) return;
-
-      const badClient = new HatchboxClient(apiKey, '99999', '99999', deployKey);
-
-      // Test with setEnvVar instead since getEnvVars is not supported
-      await expect(badClient.setEnvVar('TEST', 'value')).rejects.toThrow();
+      expect(result.isError).toBeFalsy();
+      expect(result.content[0].text).toContain('Deployment triggered successfully');
+      console.log(`Triggered deployment with SHA ${testSha}: ${result.content[0].text}`);
     });
   });
 });

@@ -1,390 +1,282 @@
-import { describe, it, expect, beforeAll } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { TestMCPClient } from '../../../../libs/test-mcp-client/build/index.js';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import 'dotenv/config';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 /**
- * Manual tests that hit the real Vercel API.
+ * Manual tests that hit the real Vercel API via the MCP server.
  * These tests are NOT run in CI and require actual API credentials.
  *
  * To run these tests:
  * 1. Set up your .env file with VERCEL_TOKEN
  * 2. Run: npm run test:manual
  */
+describe('Vercel MCP Server - Manual Tests', () => {
+  let client: TestMCPClient;
 
-type TestOutcome = 'SUCCESS' | 'WARNING' | 'FAILURE';
-
-function reportOutcome(testName: string, outcome: TestOutcome, details?: string) {
-  const emoji = outcome === 'SUCCESS' ? '✅' : outcome === 'WARNING' ? '⚠️' : '❌';
-  console.log(`\n${emoji} ${testName}: ${outcome}`);
-  if (details) {
-    console.log(`   Details: ${details}`);
-  }
-}
-
-describe('Vercel Manual Tests', () => {
-  let token: string | undefined;
-
-  beforeAll(() => {
-    token = process.env.VERCEL_TOKEN;
+  beforeAll(async () => {
+    const token = process.env.VERCEL_TOKEN;
     if (!token) {
-      console.warn('⚠️  VERCEL_TOKEN not set in environment. Tests will be skipped.');
+      throw new Error('VERCEL_TOKEN environment variable is required');
+    }
+
+    const serverPath = path.join(__dirname, '../../local/build/index.js');
+    const env: Record<string, string> = {
+      VERCEL_TOKEN: token,
+    };
+
+    if (process.env.VERCEL_TEAM_ID) {
+      env.VERCEL_TEAM_ID = process.env.VERCEL_TEAM_ID;
+    }
+    if (process.env.VERCEL_TEAM_SLUG) {
+      env.VERCEL_TEAM_SLUG = process.env.VERCEL_TEAM_SLUG;
+    }
+
+    client = new TestMCPClient({
+      serverPath,
+      env,
+      debug: false,
+    });
+
+    await client.connect();
+  });
+
+  afterAll(async () => {
+    if (client) {
+      await client.disconnect();
     }
   });
 
   describe('list_deployments', () => {
     it('should list deployments from real API', async () => {
-      const testName = 'list_deployments - real API';
+      const result = await client.callTool('list_deployments', { limit: 5 });
+      expect(result.isError).toBeFalsy();
 
-      if (!token) {
-        reportOutcome(testName, 'WARNING', 'Skipped - no API token');
-        return;
-      }
+      const parsed = JSON.parse(result.content[0].text);
+      expect(parsed).toHaveProperty('deployments');
+      expect(parsed).toHaveProperty('pagination');
+      expect(Array.isArray(parsed.deployments)).toBe(true);
 
-      try {
-        const { VercelClient } = await import('../../shared/src/server.js');
-        const client = new VercelClient(
-          token,
-          process.env.VERCEL_TEAM_ID,
-          process.env.VERCEL_TEAM_SLUG
-        );
-
-        const result = await client.listDeployments({ limit: 5 });
-
-        expect(result).toHaveProperty('deployments');
-        expect(result).toHaveProperty('pagination');
-        expect(Array.isArray(result.deployments)).toBe(true);
-
-        reportOutcome(testName, 'SUCCESS', `Found ${result.deployments.length} deployments`);
-      } catch (error) {
-        reportOutcome(
-          testName,
-          'FAILURE',
-          error instanceof Error ? error.message : 'Unknown error'
-        );
-        throw error;
-      }
+      console.log(`Found ${parsed.deployments.length} deployments`);
     });
 
     it('should filter deployments by state', async () => {
-      const testName = 'list_deployments - filter by state';
+      const result = await client.callTool('list_deployments', {
+        limit: 5,
+        state: 'READY',
+      });
+      expect(result.isError).toBeFalsy();
 
-      if (!token) {
-        reportOutcome(testName, 'WARNING', 'Skipped - no API token');
-        return;
+      const parsed = JSON.parse(result.content[0].text);
+      expect(parsed).toHaveProperty('deployments');
+      expect(Array.isArray(parsed.deployments)).toBe(true);
+
+      // All returned deployments should be READY
+      for (const deployment of parsed.deployments) {
+        expect(deployment.state).toBe('READY');
       }
 
-      try {
-        const { VercelClient } = await import('../../shared/src/server.js');
-        const client = new VercelClient(
-          token,
-          process.env.VERCEL_TEAM_ID,
-          process.env.VERCEL_TEAM_SLUG
-        );
-
-        const result = await client.listDeployments({ limit: 5, state: 'READY' });
-
-        expect(result).toHaveProperty('deployments');
-        expect(Array.isArray(result.deployments)).toBe(true);
-        // All returned deployments should be READY
-        for (const deployment of result.deployments) {
-          expect(deployment.state).toBe('READY');
-        }
-
-        reportOutcome(testName, 'SUCCESS', `Found ${result.deployments.length} READY deployments`);
-      } catch (error) {
-        reportOutcome(
-          testName,
-          'FAILURE',
-          error instanceof Error ? error.message : 'Unknown error'
-        );
-        throw error;
-      }
+      console.log(`Found ${parsed.deployments.length} READY deployments`);
     });
   });
 
   describe('list_projects', () => {
     it('should list projects from real API', async () => {
-      const testName = 'list_projects - real API';
+      const result = await client.callTool('list_projects', { limit: 5 });
+      expect(result.isError).toBeFalsy();
 
-      if (!token) {
-        reportOutcome(testName, 'WARNING', 'Skipped - no API token');
-        return;
-      }
+      const parsed = JSON.parse(result.content[0].text);
+      expect(parsed).toHaveProperty('projects');
+      expect(Array.isArray(parsed.projects)).toBe(true);
 
-      try {
-        const { VercelClient } = await import('../../shared/src/server.js');
-        const client = new VercelClient(
-          token,
-          process.env.VERCEL_TEAM_ID,
-          process.env.VERCEL_TEAM_SLUG
-        );
-
-        const result = await client.listProjects({ limit: 5 });
-
-        expect(result).toHaveProperty('projects');
-        expect(Array.isArray(result.projects)).toBe(true);
-
-        reportOutcome(testName, 'SUCCESS', `Found ${result.projects.length} projects`);
-      } catch (error) {
-        reportOutcome(
-          testName,
-          'FAILURE',
-          error instanceof Error ? error.message : 'Unknown error'
-        );
-        throw error;
-      }
+      console.log(`Found ${parsed.projects.length} projects`);
     });
   });
 
   describe('get_deployment', () => {
     it('should get deployment details for a real deployment', async () => {
-      const testName = 'get_deployment - real API';
+      // First get a deployment to look up
+      const listResult = await client.callTool('list_deployments', { limit: 1 });
+      expect(listResult.isError).toBeFalsy();
 
-      if (!token) {
-        reportOutcome(testName, 'WARNING', 'Skipped - no API token');
+      const listParsed = JSON.parse(listResult.content[0].text);
+      if (listParsed.deployments.length === 0) {
+        console.log('No deployments found to test with');
         return;
       }
 
-      try {
-        const { VercelClient } = await import('../../shared/src/server.js');
-        const client = new VercelClient(
-          token,
-          process.env.VERCEL_TEAM_ID,
-          process.env.VERCEL_TEAM_SLUG
-        );
+      const deploymentId = listParsed.deployments[0].uid;
+      const result = await client.callTool('get_deployment', {
+        idOrUrl: deploymentId,
+      });
+      expect(result.isError).toBeFalsy();
 
-        // First get a deployment to look up
-        const deployments = await client.listDeployments({ limit: 1 });
-        if (deployments.deployments.length === 0) {
-          reportOutcome(testName, 'WARNING', 'No deployments found to test with');
-          return;
-        }
+      const parsed = JSON.parse(result.content[0].text);
+      expect(parsed).toHaveProperty('uid');
+      expect(parsed).toHaveProperty('state');
+      expect(parsed).toHaveProperty('readyState');
+      expect(parsed.uid).toBe(deploymentId);
 
-        const deploymentId = deployments.deployments[0].uid;
-        const result = await client.getDeployment(deploymentId);
-
-        expect(result).toHaveProperty('uid');
-        expect(result).toHaveProperty('state');
-        expect(result).toHaveProperty('readyState');
-        expect(result.uid).toBe(deploymentId);
-
-        reportOutcome(testName, 'SUCCESS', `Got deployment ${result.uid} (state: ${result.state})`);
-      } catch (error) {
-        reportOutcome(
-          testName,
-          'FAILURE',
-          error instanceof Error ? error.message : 'Unknown error'
-        );
-        throw error;
-      }
+      console.log(`Got deployment ${parsed.uid} (state: ${parsed.state})`);
     });
   });
 
   describe('get_deployment_events', () => {
     it('should get build logs for a real deployment', async () => {
-      const testName = 'get_deployment_events - real API';
+      const listResult = await client.callTool('list_deployments', { limit: 1 });
+      expect(listResult.isError).toBeFalsy();
 
-      if (!token) {
-        reportOutcome(testName, 'WARNING', 'Skipped - no API token');
+      const listParsed = JSON.parse(listResult.content[0].text);
+      if (listParsed.deployments.length === 0) {
+        console.log('No deployments found to test with');
         return;
       }
 
-      try {
-        const { VercelClient } = await import('../../shared/src/server.js');
-        const client = new VercelClient(
-          token,
-          process.env.VERCEL_TEAM_ID,
-          process.env.VERCEL_TEAM_SLUG
-        );
+      const deploymentId = listParsed.deployments[0].uid;
+      const result = await client.callTool('get_deployment_events', {
+        idOrUrl: deploymentId,
+        limit: 10,
+      });
+      expect(result.isError).toBeFalsy();
 
-        const deployments = await client.listDeployments({ limit: 1 });
-        if (deployments.deployments.length === 0) {
-          reportOutcome(testName, 'WARNING', 'No deployments found to test with');
-          return;
-        }
+      const parsed = JSON.parse(result.content[0].text);
+      expect(Array.isArray(parsed)).toBe(true);
 
-        const deploymentId = deployments.deployments[0].uid;
-        const result = await client.getDeploymentEvents(deploymentId, { limit: 10 });
-
-        expect(Array.isArray(result)).toBe(true);
-
-        reportOutcome(
-          testName,
-          'SUCCESS',
-          `Got ${result.length} build log events for ${deploymentId}`
-        );
-      } catch (error) {
-        reportOutcome(
-          testName,
-          'FAILURE',
-          error instanceof Error ? error.message : 'Unknown error'
-        );
-        throw error;
-      }
+      console.log(`Got ${parsed.length} build log events for ${deploymentId}`);
     });
   });
 
   describe('get_runtime_logs', () => {
     it('should get runtime logs for a real deployment', async () => {
-      const testName = 'get_runtime_logs - real API';
+      // Need a project + deployment
+      const projectsResult = await client.callTool('list_projects', { limit: 1 });
+      expect(projectsResult.isError).toBeFalsy();
 
-      if (!token) {
-        reportOutcome(testName, 'WARNING', 'Skipped - no API token');
+      const projectsParsed = JSON.parse(projectsResult.content[0].text);
+      if (projectsParsed.projects.length === 0) {
+        console.log('No projects found to test with');
         return;
       }
 
-      try {
-        const { VercelClient } = await import('../../shared/src/server.js');
-        const client = new VercelClient(
-          token,
-          process.env.VERCEL_TEAM_ID,
-          process.env.VERCEL_TEAM_SLUG
-        );
+      const projectId = projectsParsed.projects[0].id;
+      const deploymentsResult = await client.callTool('list_deployments', {
+        projectId,
+        limit: 1,
+        state: 'READY',
+      });
+      expect(deploymentsResult.isError).toBeFalsy();
 
-        // Need a project + deployment
-        const projects = await client.listProjects({ limit: 1 });
-        if (projects.projects.length === 0) {
-          reportOutcome(testName, 'WARNING', 'No projects found to test with');
-          return;
-        }
-
-        const projectId = projects.projects[0].id;
-        const deployments = await client.listDeployments({ projectId, limit: 1, state: 'READY' });
-        if (deployments.deployments.length === 0) {
-          reportOutcome(testName, 'WARNING', 'No READY deployments found to test with');
-          return;
-        }
-
-        const deploymentId = deployments.deployments[0].uid;
-        const result = await client.getRuntimeLogs(projectId, deploymentId);
-
-        expect(Array.isArray(result)).toBe(true);
-
-        reportOutcome(
-          testName,
-          'SUCCESS',
-          `Got ${result.length} runtime log entries for ${deploymentId}`
-        );
-      } catch (error) {
-        reportOutcome(
-          testName,
-          'FAILURE',
-          error instanceof Error ? error.message : 'Unknown error'
-        );
-        throw error;
+      const deploymentsParsed = JSON.parse(deploymentsResult.content[0].text);
+      if (deploymentsParsed.deployments.length === 0) {
+        console.log('No READY deployments found to test with');
+        return;
       }
+
+      const deploymentId = deploymentsParsed.deployments[0].uid;
+      const result = await client.callTool('get_runtime_logs', {
+        projectId,
+        deploymentId,
+      });
+      expect(result.isError).toBeFalsy();
+
+      const parsed = JSON.parse(result.content[0].text);
+      expect(Array.isArray(parsed)).toBe(true);
+
+      console.log(`Got ${parsed.length} runtime log entries for ${deploymentId}`);
     });
 
     it('should get runtime logs with filtering parameters', async () => {
-      const testName = 'get_runtime_logs - with filters';
+      const projectsResult = await client.callTool('list_projects', { limit: 1 });
+      expect(projectsResult.isError).toBeFalsy();
 
-      if (!token) {
-        reportOutcome(testName, 'WARNING', 'Skipped - no API token');
+      const projectsParsed = JSON.parse(projectsResult.content[0].text);
+      if (projectsParsed.projects.length === 0) {
+        console.log('No projects found to test with');
         return;
       }
 
-      try {
-        const { VercelClient } = await import('../../shared/src/server.js');
-        const client = new VercelClient(
-          token,
-          process.env.VERCEL_TEAM_ID,
-          process.env.VERCEL_TEAM_SLUG
-        );
+      const projectId = projectsParsed.projects[0].id;
+      const deploymentsResult = await client.callTool('list_deployments', {
+        projectId,
+        limit: 1,
+        state: 'READY',
+      });
+      expect(deploymentsResult.isError).toBeFalsy();
 
-        const projects = await client.listProjects({ limit: 1 });
-        if (projects.projects.length === 0) {
-          reportOutcome(testName, 'WARNING', 'No projects found to test with');
-          return;
-        }
-
-        const projectId = projects.projects[0].id;
-        const deployments = await client.listDeployments({ projectId, limit: 1, state: 'READY' });
-        if (deployments.deployments.length === 0) {
-          reportOutcome(testName, 'WARNING', 'No READY deployments found to test with');
-          return;
-        }
-
-        const deploymentId = deployments.deployments[0].uid;
-        const now = Date.now();
-        const oneHourAgo = now - 60 * 60 * 1000;
-
-        // Test with time range + level filter
-        const result = await client.getRuntimeLogs(projectId, deploymentId, {
-          since: oneHourAgo,
-          until: now,
-          level: 'error',
-          limit: 10,
-          direction: 'backward',
-        });
-
-        expect(Array.isArray(result)).toBe(true);
-
-        reportOutcome(
-          testName,
-          'SUCCESS',
-          `Got ${result.length} error log entries (last hour) for ${deploymentId}`
-        );
-      } catch (error) {
-        reportOutcome(
-          testName,
-          'FAILURE',
-          error instanceof Error ? error.message : 'Unknown error'
-        );
-        throw error;
+      const deploymentsParsed = JSON.parse(deploymentsResult.content[0].text);
+      if (deploymentsParsed.deployments.length === 0) {
+        console.log('No READY deployments found to test with');
+        return;
       }
+
+      const deploymentId = deploymentsParsed.deployments[0].uid;
+      const now = Date.now();
+      const oneHourAgo = now - 60 * 60 * 1000;
+
+      // Test with time range + level filter
+      const result = await client.callTool('get_runtime_logs', {
+        projectId,
+        deploymentId,
+        since: oneHourAgo,
+        until: now,
+        level: 'error',
+        limit: 10,
+        direction: 'backward',
+      });
+      expect(result.isError).toBeFalsy();
+
+      const parsed = JSON.parse(result.content[0].text);
+      expect(Array.isArray(parsed)).toBe(true);
+
+      console.log(`Got ${parsed.length} error log entries (last hour) for ${deploymentId}`);
     });
 
     it('should get runtime logs with search query', async () => {
-      const testName = 'get_runtime_logs - with search';
+      const projectsResult = await client.callTool('list_projects', { limit: 1 });
+      expect(projectsResult.isError).toBeFalsy();
 
-      if (!token) {
-        reportOutcome(testName, 'WARNING', 'Skipped - no API token');
+      const projectsParsed = JSON.parse(projectsResult.content[0].text);
+      if (projectsParsed.projects.length === 0) {
+        console.log('No projects found to test with');
         return;
       }
 
-      try {
-        const { VercelClient } = await import('../../shared/src/server.js');
-        const client = new VercelClient(
-          token,
-          process.env.VERCEL_TEAM_ID,
-          process.env.VERCEL_TEAM_SLUG
-        );
+      const projectId = projectsParsed.projects[0].id;
+      const deploymentsResult = await client.callTool('list_deployments', {
+        projectId,
+        limit: 1,
+        state: 'READY',
+      });
+      expect(deploymentsResult.isError).toBeFalsy();
 
-        const projects = await client.listProjects({ limit: 1 });
-        if (projects.projects.length === 0) {
-          reportOutcome(testName, 'WARNING', 'No projects found to test with');
-          return;
-        }
-
-        const projectId = projects.projects[0].id;
-        const deployments = await client.listDeployments({ projectId, limit: 1, state: 'READY' });
-        if (deployments.deployments.length === 0) {
-          reportOutcome(testName, 'WARNING', 'No READY deployments found to test with');
-          return;
-        }
-
-        const deploymentId = deployments.deployments[0].uid;
-
-        // Test with search query
-        const result = await client.getRuntimeLogs(projectId, deploymentId, {
-          search: 'GET',
-          source: 'serverless',
-          limit: 5,
-        });
-
-        expect(Array.isArray(result)).toBe(true);
-
-        reportOutcome(
-          testName,
-          'SUCCESS',
-          `Got ${result.length} log entries matching "GET" from serverless source for ${deploymentId}`
-        );
-      } catch (error) {
-        reportOutcome(
-          testName,
-          'FAILURE',
-          error instanceof Error ? error.message : 'Unknown error'
-        );
-        throw error;
+      const deploymentsParsed = JSON.parse(deploymentsResult.content[0].text);
+      if (deploymentsParsed.deployments.length === 0) {
+        console.log('No READY deployments found to test with');
+        return;
       }
+
+      const deploymentId = deploymentsParsed.deployments[0].uid;
+
+      // Test with search query
+      const result = await client.callTool('get_runtime_logs', {
+        projectId,
+        deploymentId,
+        search: 'GET',
+        source: 'serverless',
+        limit: 5,
+      });
+      expect(result.isError).toBeFalsy();
+
+      const parsed = JSON.parse(result.content[0].text);
+      expect(Array.isArray(parsed)).toBe(true);
+
+      console.log(
+        `Got ${parsed.length} log entries matching "GET" from serverless source for ${deploymentId}`
+      );
     });
   });
 });

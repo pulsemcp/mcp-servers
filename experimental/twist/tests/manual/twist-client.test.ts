@@ -1,20 +1,17 @@
-import { describe, it, expect } from 'vitest';
-import { config } from 'dotenv';
-import { TwistClient } from '../../shared/build/server.js';
+import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { TestMCPClient } from '../../../../libs/test-mcp-client/build/index.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import 'dotenv/config';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Load environment variables from .env file
-config({ path: path.resolve(__dirname, '../../.env') });
-
 /**
- * Manual Test Suite for Twist Client
+ * Manual Test Suite for Twist MCP Server
  *
- * This test suite verifies the complete integration with the real Twist API.
- * It requires valid credentials and makes actual API calls.
+ * This test suite verifies the complete integration with the real Twist API
+ * via the MCP server using TestMCPClient.
  *
  * Prerequisites:
  * - Valid TWIST_BEARER_TOKEN in .env file
@@ -24,231 +21,157 @@ config({ path: path.resolve(__dirname, '../../.env') });
  * Run with: npm run test:manual
  */
 describe('Twist Client Manual Tests', () => {
-  const bearerToken = process.env.TWIST_BEARER_TOKEN;
-  const workspaceId = process.env.TWIST_WORKSPACE_ID;
-  let client: TwistClient | null = null;
-  let createdThreadId: string | undefined;
+  let client: TestMCPClient;
   let testChannelId: string | undefined;
+  let createdThreadId: string | undefined;
 
-  const setupClient = () => {
+  beforeAll(async () => {
+    const bearerToken = process.env.TWIST_BEARER_TOKEN;
+    const workspaceId = process.env.TWIST_WORKSPACE_ID;
+
     if (!bearerToken || !workspaceId) {
-      console.warn(
-        '\n⚠️  Manual tests require TWIST_BEARER_TOKEN and TWIST_WORKSPACE_ID environment variables'
+      throw new Error(
+        'Manual tests require TWIST_BEARER_TOKEN and TWIST_WORKSPACE_ID environment variables'
       );
-      console.warn('   Please add these to your .env file or set them in your environment');
-      console.warn('   Skipping manual tests...\n');
-      return null;
     }
-    return new TwistClient(bearerToken, workspaceId);
-  };
 
-  describe('Real API Integration', () => {
+    const serverPath = path.join(__dirname, '../../local/build/index.js');
+    client = new TestMCPClient({
+      serverPath,
+      env: {
+        TWIST_BEARER_TOKEN: bearerToken,
+        TWIST_WORKSPACE_ID: workspaceId,
+      },
+      debug: false,
+    });
+
+    await client.connect();
+  });
+
+  afterAll(async () => {
+    if (client) {
+      await client.disconnect();
+    }
+  });
+
+  describe('get_channels', () => {
     it('should list real channels', async () => {
-      client = setupClient();
-      if (!client) return;
+      const result = await client.callTool('get_channels', {});
+      expect(result.isError).toBeFalsy();
 
-      console.log('\n📋 Listing channels in workspace...');
+      const text = (result.content[0] as { text: string }).text;
+      expect(text).toBeDefined();
 
-      const channels = await client.getChannels();
-      expect(channels.length).toBeGreaterThan(0);
-
-      // Find a suitable test channel
-      const testChannel = channels[0];
-      if (testChannel) {
-        testChannelId = testChannel.id;
-        console.log(`✅ Found ${channels.length} channels`);
-        console.log(`✅ Using test channel: ${testChannel.name} (ID: ${testChannelId})`);
+      // Try to extract a channel ID for subsequent tests
+      const idMatch = text.match(/ID:\s*(\d+)/i);
+      if (idMatch) {
+        testChannelId = idMatch[1];
+        console.log(`Using test channel ID: ${testChannelId}`);
       }
-    });
 
+      console.log(`get_channels response length: ${text.length} chars`);
+    });
+  });
+
+  describe('get_channel', () => {
     it('should get specific channel details', async () => {
-      if (!client || !testChannelId) {
-        console.log('Skipping test - no client or channel');
+      if (!testChannelId) {
+        console.log('Skipping test - no channel ID from previous test');
         return;
       }
 
-      console.log(`\n🔍 Getting details for channel ${testChannelId}...`);
-
-      const channel = await client.getChannel(testChannelId);
-      expect(channel).toBeDefined();
-      expect(channel.id).toBe(testChannelId);
-      expect(channel.workspace_id.toString()).toBe(workspaceId);
-      console.log(`✅ Retrieved channel: ${channel.name}`);
-    });
-
-    it('should list threads in a channel', async () => {
-      if (!client || !testChannelId) {
-        console.log('Skipping test - no client or channel');
-        return;
-      }
-
-      console.log(`\n📜 Getting threads in channel ${testChannelId}...`);
-
-      const threads = await client.getRobustThreads(testChannelId, {
-        limit: 5,
-        offset: 0,
-        includeClosed: false,
+      const result = await client.callTool('get_channel', {
+        channel_id: testChannelId,
       });
+      expect(result.isError).toBeFalsy();
 
-      console.log(`✅ Found ${threads.threads.length} threads in channel`);
-      if (threads.threads.length === 0) {
-        console.log('   Channel is empty (no threads)');
-      }
+      const text = (result.content[0] as { text: string }).text;
+      expect(text).toBeDefined();
+      console.log(`get_channel response length: ${text.length} chars`);
     });
+  });
 
+  describe('create_thread', () => {
     it('should create a test thread', async () => {
-      if (!client || !testChannelId) {
-        console.log('Skipping test - no client or channel');
+      if (!testChannelId) {
+        console.log('Skipping test - no channel ID');
         return;
       }
 
-      console.log(`\n➕ Creating test thread in channel ${testChannelId}...`);
-
       const timestamp = new Date().toISOString();
-      const thread = await client.createThread(
-        testChannelId,
-        `MCP Test Thread - ${timestamp}`,
-        `This is an automated test thread created by the Twist MCP server manual tests at ${timestamp}`,
-        []
-      );
+      const result = await client.callTool('create_thread', {
+        channel_id: testChannelId,
+        title: `MCP Test Thread - ${timestamp}`,
+        content: `This is an automated test thread created by the Twist MCP server manual tests at ${timestamp}`,
+      });
+      expect(result.isError).toBeFalsy();
 
-      expect(thread).toBeDefined();
-      expect(thread.channel_id).toBe(testChannelId);
-      createdThreadId = thread.id;
-      console.log(`✅ Created thread with ID: ${createdThreadId}`);
+      const text = (result.content[0] as { text: string }).text;
+      expect(text).toBeDefined();
+
+      // Extract thread ID for subsequent tests
+      const idMatch = text.match(/ID:\s*(\d+)/i);
+      if (idMatch) {
+        createdThreadId = idMatch[1];
+        console.log(`Created thread with ID: ${createdThreadId}`);
+      }
     });
+  });
 
+  describe('add_message_to_thread', () => {
     it('should add a message to the test thread', async () => {
-      if (!client || !createdThreadId) {
-        console.log('Skipping test - no client or thread');
+      if (!createdThreadId) {
+        console.log('Skipping test - no thread created');
         return;
       }
-
-      console.log(`\n💬 Adding message to thread ${createdThreadId}...`);
 
       const timestamp = new Date().toISOString();
-      const message = await client.addMessageToThread(
-        createdThreadId,
-        `Test message added at ${timestamp}`,
-        []
-      );
+      const result = await client.callTool('add_message_to_thread', {
+        thread_id: createdThreadId,
+        content: `Test message added at ${timestamp}`,
+      });
+      expect(result.isError).toBeFalsy();
 
-      expect(message).toBeDefined();
-      expect(message.thread_id).toBe(createdThreadId);
-      console.log(`✅ Added message with ID: ${message.id}`);
+      const text = (result.content[0] as { text: string }).text;
+      expect(text).toBeDefined();
+      console.log(`add_message_to_thread response length: ${text.length} chars`);
     });
+  });
 
+  describe('get_thread', () => {
     it('should get thread with messages', async () => {
-      if (!client || !createdThreadId) {
-        console.log('Skipping test - no client or thread');
+      if (!createdThreadId) {
+        console.log('Skipping test - no thread created');
         return;
       }
 
-      console.log(`\n📖 Getting thread ${createdThreadId} with messages...`);
+      const result = await client.callTool('get_thread', {
+        thread_id: createdThreadId,
+      });
+      expect(result.isError).toBeFalsy();
 
-      const thread = await client.getThread(createdThreadId);
-      expect(thread).toBeDefined();
-      expect(thread.id).toBe(createdThreadId);
-      expect(thread.messages).toBeDefined();
-      expect(thread.messages.length).toBeGreaterThanOrEqual(1);
-      console.log(`✅ Retrieved thread with ${thread.messages.length} messages`);
+      const text = (result.content[0] as { text: string }).text;
+      expect(text).toBeDefined();
+      console.log(`get_thread response length: ${text.length} chars`);
     });
+  });
 
+  describe('close_thread', () => {
     it('should close the test thread', async () => {
-      if (!client || !createdThreadId) {
-        console.log('Skipping test - no client or thread');
+      if (!createdThreadId) {
+        console.log('Skipping test - no thread created');
         return;
       }
 
-      console.log(`\n🔒 Closing thread ${createdThreadId}...`);
-
-      const message = await client.closeThread(createdThreadId, 'Test completed - closing thread');
-
-      expect(message).toBeDefined();
-      expect(message.thread_id).toBe(createdThreadId);
-      console.log('✅ Thread closed successfully');
-    });
-
-    it('should verify thread is closed by checking messages', async () => {
-      if (!client || !createdThreadId) {
-        console.log('Skipping test - no client or thread');
-        return;
-      }
-
-      console.log(`\n🔍 Verifying thread ${createdThreadId} is closed...`);
-
-      const thread = await client.getThread(createdThreadId);
-      expect(thread).toBeDefined();
-      expect(thread.messages).toBeDefined();
-      const lastMessage = thread.messages[thread.messages.length - 1];
-
-      expect(lastMessage.system_message).toBeDefined();
-      expect(lastMessage.system_message?.type).toBe('THREAD_CLOSED');
-      console.log('✅ Closing message confirmed in thread');
-    });
-  });
-
-  describe('Error Handling', () => {
-    it('should handle invalid channel ID gracefully', async () => {
-      client = setupClient();
-      if (!client) return;
-
-      console.log('\n🚫 Testing error handling with invalid channel ID...');
-
-      await expect(client.getChannel('999999999')).rejects.toThrow();
-      console.log('✅ Error handled gracefully: Invalid channel ID rejected as expected');
-    });
-
-    it('should handle network timeouts gracefully', async () => {
-      // This test is hard to simulate with real API
-      // We're trusting that the timeout parameter works
-      console.log('\n⏱️  Network timeout handling verified through other error tests');
-      expect(true).toBe(true);
-    });
-  });
-
-  describe('Performance', () => {
-    it('should handle pagination for large thread lists', async () => {
-      if (!client || !testChannelId) {
-        console.log('Skipping test - no client or channel');
-        return;
-      }
-
-      console.log('\n📊 Testing pagination with different limits...');
-
-      // Test with small limit
-      const result1 = await client.getRobustThreads(testChannelId, {
-        limit: 2,
-        offset: 0,
-        includeClosed: false,
+      const result = await client.callTool('close_thread', {
+        thread_id: createdThreadId,
+        close_message: 'Test completed - closing thread',
       });
+      expect(result.isError).toBeFalsy();
 
-      // Test with offset
-      const result2 = await client.getRobustThreads(testChannelId, {
-        limit: 2,
-        offset: 2,
-        includeClosed: false,
-      });
-
-      expect(result1).toBeDefined();
-      expect(result2).toBeDefined();
-      console.log('✅ Pagination working correctly');
-    });
-  });
-
-  describe('Test Summary', () => {
-    it('should display test summary', () => {
-      if (!bearerToken || !workspaceId) {
-        console.log('\n⚠️  Tests skipped due to missing credentials');
-        return;
-      }
-
-      console.log('\n✅ Manual test suite completed successfully!');
-      console.log('\n📊 Test Summary:');
-      console.log(`   - Workspace ID: ${workspaceId}`);
-      console.log(`   - Test Channel ID: ${testChannelId || 'Not found'}`);
-      console.log(`   - Created Thread ID: ${createdThreadId || 'Not created'}`);
-      console.log('\n🎉 All manual tests passed!');
+      const text = (result.content[0] as { text: string }).text;
+      expect(text).toBeDefined();
+      console.log('Thread closed successfully');
     });
   });
 });

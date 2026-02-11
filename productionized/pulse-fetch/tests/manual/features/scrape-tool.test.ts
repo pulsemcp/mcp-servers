@@ -1,108 +1,133 @@
-import { describe, it, expect } from 'vitest';
-import { scrapeTool } from '../../../shared/src/tools/scrape.js';
-import { Server } from '@modelcontextprotocol/sdk/server/index.js';
-import type {
-  ClientFactory,
-  StrategyConfigFactory,
-  IScrapingClients,
-} from '../../../shared/src/server.js';
-import { NativeFetcher, FirecrawlClient, BrightDataClient } from '../../../shared/src/server.js';
-import { FilesystemStrategyConfigClient } from '../../../shared/src/strategy-config/index.js';
+import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { TestMCPClient } from '../../../../../libs/test-mcp-client/build/index.js';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import 'dotenv/config';
 
-describe('Scrape Tool', () => {
-  const createMockServer = () =>
-    new Server({
-      name: 'test-server',
-      version: '1.0.0',
-    });
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
-  const createClientFactory = (): ClientFactory => {
-    return () => {
-      const firecrawlApiKey = process.env.FIRECRAWL_API_KEY;
-      const brightDataToken = process.env.BRIGHTDATA_API_KEY;
+describe('Scrape Tool via MCP', () => {
+  let client: TestMCPClient;
 
-      const clients: IScrapingClients = {
-        native: new NativeFetcher(),
-      };
-
-      if (firecrawlApiKey) {
-        clients.firecrawl = new FirecrawlClient(firecrawlApiKey);
-      }
-
-      if (brightDataToken) {
-        clients.brightData = new BrightDataClient(brightDataToken);
-      }
-
-      return clients;
+  beforeAll(async () => {
+    const env: Record<string, string> = {
+      SKIP_HEALTH_CHECKS: 'true',
     };
-  };
 
-  const strategyConfigFactory: StrategyConfigFactory = () => new FilesystemStrategyConfigClient();
+    // Pass through available API keys for full strategy testing
+    if (process.env.FIRECRAWL_API_KEY) {
+      env.FIRECRAWL_API_KEY = process.env.FIRECRAWL_API_KEY;
+    }
+    if (process.env.BRIGHTDATA_API_KEY) {
+      env.BRIGHTDATA_API_KEY = process.env.BRIGHTDATA_API_KEY;
+    }
+    if (process.env.OPTIMIZE_FOR) {
+      env.OPTIMIZE_FOR = process.env.OPTIMIZE_FOR;
+    }
+
+    const serverPath = path.join(__dirname, '../../../local/build/index.js');
+    client = new TestMCPClient({
+      serverPath,
+      env,
+      debug: false,
+    });
+    await client.connect();
+  });
+
+  afterAll(async () => {
+    if (client) await client.disconnect();
+  });
 
   it('should scrape a simple page with automatic strategy selection', async () => {
-    const server = createMockServer();
-    const clientFactory = createClientFactory();
-    const tool = scrapeTool(server, clientFactory, strategyConfigFactory);
-
-    const result = await tool.handler({
+    const result = await client.callTool('scrape', {
       url: 'https://example.com',
-      resultHandling: 'returnOnly',
       timeout: 10000,
     });
 
-    expect('isError' in result ? result.isError : undefined).toBeUndefined();
+    expect(result.isError).toBeFalsy();
     expect(result.content).toBeDefined();
     expect(result.content.length).toBeGreaterThan(0);
-    expect(result.content[0].type).toBe('text');
-    expect(result.content[0]?.text).toContain('Example Domain');
 
-    console.log('✅ Scrape tool successful');
-    console.log(`📝 Content length: ${result.content[0]?.text?.length || 0} characters`);
+    const text = (result.content[0] as { text: string }).text;
+    expect(text).toContain('Example Domain');
+
+    console.log('Scrape tool successful');
+    console.log(`Content length: ${text?.length || 0} characters`);
   });
 
   it('should handle errors gracefully', async () => {
-    const server = createMockServer();
-    const clientFactory = createClientFactory();
-    const tool = scrapeTool(server, clientFactory, strategyConfigFactory);
-
-    const result = await tool.handler({
+    const result = await client.callTool('scrape', {
       url: 'https://httpstat.us/500',
-      resultHandling: 'returnOnly',
       timeout: 10000,
       forceRescrape: true,
     });
 
-    expect('isError' in result ? result.isError : false).toBe(true);
+    expect(result.isError).toBe(true);
     expect(result.content).toBeDefined();
-    expect(result.content[0]?.text).toContain('Failed to scrape');
 
-    console.log('✅ Error handling working correctly');
-  }, 60000); // Increase test timeout to 60 seconds
+    const text = (result.content[0] as { text: string }).text;
+    expect(text).toContain('Failed to scrape');
+
+    console.log('Error handling working correctly');
+  }, 60000);
 
   it('should support content extraction when LLM is configured', async () => {
-    const hasLLM = process.env.LLM_PROVIDER && process.env.LLM_API_KEY;
-    if (!hasLLM) {
-      console.log('⚠️  Skipping extraction test - LLM not configured');
+    const hasAnthropicKey = !!process.env.ANTHROPIC_API_KEY;
+    const hasOpenAIKey = !!process.env.OPENAI_API_KEY;
+    const hasCompatibleKey = !!process.env.OPENAI_COMPATIBLE_API_KEY;
+
+    if (!hasAnthropicKey && !hasOpenAIKey && !hasCompatibleKey) {
+      console.log('Skipping extraction test - no LLM API keys configured');
       return;
     }
 
-    const server = createMockServer();
-    const clientFactory = createClientFactory();
-    const tool = scrapeTool(server, clientFactory, strategyConfigFactory);
+    // Create a new client with LLM keys for extraction
+    const extractEnv: Record<string, string> = {
+      SKIP_HEALTH_CHECKS: 'true',
+    };
+    if (process.env.ANTHROPIC_API_KEY) {
+      extractEnv.ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
+    }
+    if (process.env.OPENAI_API_KEY) {
+      extractEnv.OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+    }
+    if (process.env.OPENAI_COMPATIBLE_API_KEY) {
+      extractEnv.OPENAI_COMPATIBLE_API_KEY = process.env.OPENAI_COMPATIBLE_API_KEY;
+    }
+    if (process.env.OPENAI_COMPATIBLE_BASE_URL) {
+      extractEnv.OPENAI_COMPATIBLE_BASE_URL = process.env.OPENAI_COMPATIBLE_BASE_URL;
+    }
+    if (process.env.OPENAI_COMPATIBLE_MODEL) {
+      extractEnv.OPENAI_COMPATIBLE_MODEL = process.env.OPENAI_COMPATIBLE_MODEL;
+    }
 
-    const result = await tool.handler({
-      url: 'https://example.com',
-      extract: 'What is the main heading on this page?',
-      resultHandling: 'returnOnly',
-      timeout: 10000,
-      forceRescrape: true,
+    const serverPath = path.join(__dirname, '../../../local/build/index.js');
+    const extractClient = new TestMCPClient({
+      serverPath,
+      env: extractEnv,
+      debug: false,
     });
+    await extractClient.connect();
 
-    expect('isError' in result ? result.isError : false).toBe(false);
-    expect(result.content).toBeDefined();
-    expect(result.content[0]?.text).toBeDefined();
+    try {
+      const result = await extractClient.callTool('scrape', {
+        url: 'https://example.com',
+        extract: 'What is the main heading on this page?',
+        timeout: 30000,
+        forceRescrape: true,
+      });
 
-    console.log('✅ Extraction successful');
-    console.log('Response:', result.content[0]?.text?.slice(0, 200) + '...');
-  });
+      expect(result.isError).toBeFalsy();
+      expect(result.content).toBeDefined();
+
+      const text = (result.content[0] as { text: string }).text;
+      expect(text).toBeDefined();
+
+      console.log('Extraction successful');
+      console.log('Response:', text?.slice(0, 200) + '...');
+    } finally {
+      await extractClient.disconnect();
+    }
+  }, 60000);
 });

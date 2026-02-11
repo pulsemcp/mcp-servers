@@ -1,8 +1,14 @@
-import { describe, it, expect, beforeAll } from 'vitest';
-import { OnePasswordClient } from '../../shared/src/onepassword-client/onepassword-client.js';
+import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { TestMCPClient } from '../../../../libs/test-mcp-client/build/index.js';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import 'dotenv/config';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 /**
- * Manual tests that hit the real 1Password CLI.
+ * Manual tests that hit the real 1Password CLI via the MCP server.
  * These tests are NOT run in CI and require actual service account credentials.
  *
  * To run these tests:
@@ -28,17 +34,30 @@ function reportOutcome(testName: string, outcome: TestOutcome, details?: string)
 }
 
 describe('1Password Manual Tests', () => {
-  let client: OnePasswordClient;
-  let serviceAccountToken: string | undefined;
+  let client: TestMCPClient;
+  let firstVaultId: string | null = null;
 
-  beforeAll(() => {
-    // Check for required environment variables
-    serviceAccountToken = process.env.OP_SERVICE_ACCOUNT_TOKEN;
+  beforeAll(async () => {
+    if (!process.env.OP_SERVICE_ACCOUNT_TOKEN) {
+      throw new Error('Manual tests require OP_SERVICE_ACCOUNT_TOKEN environment variable');
+    }
 
-    if (!serviceAccountToken) {
-      console.warn('⚠️  OP_SERVICE_ACCOUNT_TOKEN not set in environment. Tests will be skipped.');
-    } else {
-      client = new OnePasswordClient(serviceAccountToken);
+    const serverPath = path.join(__dirname, '../../local/build/index.js');
+    client = new TestMCPClient({
+      serverPath,
+      env: {
+        OP_SERVICE_ACCOUNT_TOKEN: process.env.OP_SERVICE_ACCOUNT_TOKEN,
+        SKIP_HEALTH_CHECKS: 'true',
+      },
+      debug: false,
+    });
+
+    await client.connect();
+  });
+
+  afterAll(async () => {
+    if (client) {
+      await client.disconnect();
     }
   });
 
@@ -46,21 +65,26 @@ describe('1Password Manual Tests', () => {
     it('should list vaults with real CLI', async () => {
       const testName = 'list_vaults - real CLI call';
 
-      if (!serviceAccountToken) {
-        reportOutcome(testName, 'WARNING', 'Skipped - no service account token provided');
-        return;
-      }
-
       try {
-        const vaults = await client.getVaults();
+        const result = await client.callTool<{ type: string; text: string }>(
+          'onepassword_list_vaults',
+          {}
+        );
+
+        expect(result.isError).toBeFalsy();
+
+        const vaults = JSON.parse(result.content[0].text);
 
         expect(vaults).toBeInstanceOf(Array);
         expect(vaults.length).toBeGreaterThan(0);
         expect(vaults[0]).toHaveProperty('id');
         expect(vaults[0]).toHaveProperty('name');
 
+        // Store the first vault ID for subsequent tests
+        firstVaultId = vaults[0].id;
+
         reportOutcome(testName, 'SUCCESS', `Found ${vaults.length} vault(s)`);
-        console.log('Vaults:', vaults.map((v) => v.name).join(', '));
+        console.log('Vaults:', vaults.map((v: { name: string }) => v.name).join(', '));
       } catch (error) {
         reportOutcome(
           testName,
@@ -76,34 +100,29 @@ describe('1Password Manual Tests', () => {
     it('should list items in a vault with real CLI', async () => {
       const testName = 'list_items - real CLI call';
 
-      if (!serviceAccountToken) {
-        reportOutcome(testName, 'WARNING', 'Skipped - no service account token provided');
+      if (!firstVaultId) {
+        reportOutcome(testName, 'WARNING', 'Skipped - no vault ID from previous test');
         return;
       }
 
       try {
-        // First get vaults to find one to list items from
-        const vaults = await client.getVaults();
-        if (vaults.length === 0) {
-          reportOutcome(testName, 'WARNING', 'No vaults available to test');
-          return;
-        }
+        const result = await client.callTool<{ type: string; text: string }>(
+          'onepassword_list_items',
+          { vaultId: firstVaultId }
+        );
 
-        const items = await client.listItems(vaults[0].id);
+        expect(result.isError).toBeFalsy();
+
+        const items = JSON.parse(result.content[0].text);
 
         expect(items).toBeInstanceOf(Array);
 
         if (items.length > 0) {
-          expect(items[0]).toHaveProperty('id');
           expect(items[0]).toHaveProperty('title');
           expect(items[0]).toHaveProperty('category');
         }
 
-        reportOutcome(
-          testName,
-          'SUCCESS',
-          `Found ${items.length} item(s) in vault "${vaults[0].name}"`
-        );
+        reportOutcome(testName, 'SUCCESS', `Found ${items.length} item(s) in vault`);
       } catch (error) {
         reportOutcome(
           testName,
@@ -119,28 +138,33 @@ describe('1Password Manual Tests', () => {
     it('should get item details with real CLI', async () => {
       const testName = 'get_item - real CLI call';
 
-      if (!serviceAccountToken) {
-        reportOutcome(testName, 'WARNING', 'Skipped - no service account token provided');
+      if (!firstVaultId) {
+        reportOutcome(testName, 'WARNING', 'Skipped - no vault ID from previous test');
         return;
       }
 
       try {
-        // First get vaults and items to find one to get details for
-        const vaults = await client.getVaults();
-        if (vaults.length === 0) {
-          reportOutcome(testName, 'WARNING', 'No vaults available to test');
-          return;
-        }
+        // First list items to find one to get details for
+        const listResult = await client.callTool<{ type: string; text: string }>(
+          'onepassword_list_items',
+          { vaultId: firstVaultId }
+        );
 
-        const items = await client.listItems(vaults[0].id);
+        const items = JSON.parse(listResult.content[0].text);
         if (items.length === 0) {
           reportOutcome(testName, 'WARNING', 'No items available in vault to test');
           return;
         }
 
-        const item = await client.getItem(items[0].id, vaults[0].id);
+        const result = await client.callTool<{ type: string; text: string }>(
+          'onepassword_get_item',
+          { itemId: items[0].title, vaultId: firstVaultId }
+        );
 
-        expect(item).toHaveProperty('id');
+        expect(result.isError).toBeFalsy();
+
+        const item = JSON.parse(result.content[0].text);
+
         expect(item).toHaveProperty('title');
         expect(item).toHaveProperty('category');
         expect(item).toHaveProperty('vault');
@@ -163,32 +187,32 @@ describe('1Password Manual Tests', () => {
     it('should create a login with real CLI', async () => {
       const testName = 'create_login - real CLI call';
 
-      if (!serviceAccountToken) {
-        reportOutcome(testName, 'WARNING', 'Skipped - no service account token provided');
+      if (!firstVaultId) {
+        reportOutcome(testName, 'WARNING', 'Skipped - no vault ID from previous test');
         return;
       }
 
       try {
-        const vaults = await client.getVaults();
-        if (vaults.length === 0) {
-          reportOutcome(testName, 'WARNING', 'No vaults available to test');
-          return;
-        }
-
-        const item = await client.createLogin(
-          vaults[0].id,
-          `Test Login ${Date.now()}`,
-          'testuser',
-          'testpass123',
-          'https://example.com',
-          ['test', 'manual']
+        const result = await client.callTool<{ type: string; text: string }>(
+          'onepassword_create_login',
+          {
+            vaultId: firstVaultId,
+            title: `Test Login ${Date.now()}`,
+            username: 'testuser',
+            password: 'testpass123',
+            url: 'https://example.com',
+            tags: ['test', 'manual'],
+          }
         );
 
-        expect(item).toHaveProperty('id');
+        expect(result.isError).toBeFalsy();
+
+        const item = JSON.parse(result.content[0].text);
+
+        expect(item).toHaveProperty('title');
         expect(item.category).toBe('LOGIN');
 
         reportOutcome(testName, 'SUCCESS', `Created login "${item.title}"`);
-        console.log('Created item ID:', item.id);
       } catch (error) {
         reportOutcome(
           testName,

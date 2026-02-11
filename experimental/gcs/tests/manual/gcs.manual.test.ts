@@ -1,10 +1,19 @@
-import { describe, it, expect, beforeAll } from 'vitest';
-import { GoogleCloudStorageClient } from '../../shared/src/gcs-client/gcs-client.js';
+import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { TestMCPClient } from '../../../../libs/test-mcp-client/build/index.js';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import 'dotenv/config';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 /**
  * Manual tests for GCS MCP Server
  *
- * These tests run against real Google Cloud Storage. To run them:
+ * These tests run against real Google Cloud Storage via the MCP server.
+ * They exercise the full pipeline: MCP protocol -> tool handler -> GCS client -> GCS API.
+ *
+ * To run them:
  *
  * 1. Create a .env file in the gcs/ directory with:
  *    GCS_PROJECT_ID=your_project_id
@@ -22,10 +31,10 @@ const TEST_BUCKET_PREFIX = 'mcp-gcs-test-';
 const TEST_BUCKET = `${TEST_BUCKET_PREFIX}${Date.now()}`;
 
 describe('GCS Manual Tests', () => {
-  let client: GoogleCloudStorageClient;
+  let client: TestMCPClient;
   let bucketCreated = false;
 
-  beforeAll(() => {
+  beforeAll(async () => {
     const projectId = process.env.GCS_PROJECT_ID;
     const keyFileContents = process.env.GCS_SERVICE_ACCOUNT_KEY_JSON;
     const keyFilePath = process.env.GCS_SERVICE_ACCOUNT_KEY_FILE;
@@ -40,29 +49,58 @@ describe('GCS Manual Tests', () => {
       );
     }
 
-    client = new GoogleCloudStorageClient({
-      projectId,
-      keyFileContents,
-      keyFilePath,
+    const serverPath = path.join(__dirname, '../../local/build/index.js');
+    const env: Record<string, string> = {
+      GCS_PROJECT_ID: projectId,
+      SKIP_HEALTH_CHECKS: 'true',
+    };
+
+    if (keyFileContents) {
+      env.GCS_SERVICE_ACCOUNT_KEY_JSON = keyFileContents;
+    }
+    if (keyFilePath) {
+      env.GCS_SERVICE_ACCOUNT_KEY_FILE = keyFilePath;
+    }
+
+    client = new TestMCPClient({
+      serverPath,
+      env,
+      debug: false,
     });
+
+    await client.connect();
+  });
+
+  afterAll(async () => {
+    if (client) {
+      await client.disconnect();
+    }
   });
 
   describe('Bucket Operations', () => {
     it('should list buckets', async () => {
-      const result = await client.listBuckets();
+      const result = await client.callTool('list_buckets', {});
+      expect(result.isError).toBeFalsy();
 
-      expect(result).toHaveProperty('buckets');
-      expect(Array.isArray(result.buckets)).toBe(true);
-      console.log(`Found ${result.buckets.length} buckets`);
+      const parsed = JSON.parse((result.content[0] as { text: string }).text);
+      expect(parsed).toHaveProperty('buckets');
+      expect(Array.isArray(parsed.buckets)).toBe(true);
+      console.log(`Found ${parsed.buckets.length} buckets`);
     });
 
     it('should create a test bucket', async () => {
-      await client.createBucket(TEST_BUCKET);
+      const result = await client.callTool('create_bucket', { bucket: TEST_BUCKET });
+      expect(result.isError).toBeFalsy();
+
+      const parsed = JSON.parse((result.content[0] as { text: string }).text);
+      expect(parsed.success).toBe(true);
       bucketCreated = true;
 
       // Verify bucket exists
-      const exists = await client.headBucket(TEST_BUCKET);
-      expect(exists).toBe(true);
+      const headResult = await client.callTool('head_bucket', { bucket: TEST_BUCKET });
+      expect(headResult.isError).toBeFalsy();
+      const headParsed = JSON.parse((headResult.content[0] as { text: string }).text);
+      expect(headParsed.exists).toBe(true);
       console.log(`Created test bucket: ${TEST_BUCKET}`);
     });
 
@@ -72,8 +110,11 @@ describe('GCS Manual Tests', () => {
         return;
       }
 
-      const exists = await client.headBucket(TEST_BUCKET);
-      expect(exists).toBe(true);
+      const result = await client.callTool('head_bucket', { bucket: TEST_BUCKET });
+      expect(result.isError).toBeFalsy();
+
+      const parsed = JSON.parse((result.content[0] as { text: string }).text);
+      expect(parsed.exists).toBe(true);
     });
   });
 
@@ -90,12 +131,16 @@ describe('GCS Manual Tests', () => {
         return;
       }
 
-      const result = await client.putObject(TEST_BUCKET, testKey, testContent, {
+      const result = await client.callTool('put_object', {
+        bucket: TEST_BUCKET,
+        key: testKey,
+        content: testContent,
         contentType: 'application/json',
-        metadata: { 'test-metadata': 'test-value' },
       });
+      expect(result.isError).toBeFalsy();
 
-      expect(result).toHaveProperty('etag');
+      const parsed = JSON.parse((result.content[0] as { text: string }).text);
+      expect(parsed.success).toBe(true);
       console.log(`Put object: ${testKey}`);
     });
 
@@ -105,14 +150,17 @@ describe('GCS Manual Tests', () => {
         return;
       }
 
-      const result = await client.listObjects(TEST_BUCKET, {
+      const result = await client.callTool('list_objects', {
+        bucket: TEST_BUCKET,
         prefix: 'test-folder/',
       });
+      expect(result.isError).toBeFalsy();
 
-      expect(result).toHaveProperty('objects');
-      expect(result.objects.length).toBeGreaterThan(0);
-      expect(result.objects.some((obj) => obj.key === testKey)).toBe(true);
-      console.log(`Listed ${result.objects.length} objects with prefix 'test-folder/'`);
+      const parsed = JSON.parse((result.content[0] as { text: string }).text);
+      expect(parsed).toHaveProperty('objects');
+      expect(parsed.objects.length).toBeGreaterThan(0);
+      expect(parsed.objects.some((obj: { key: string }) => obj.key === testKey)).toBe(true);
+      console.log(`Listed ${parsed.objects.length} objects with prefix 'test-folder/'`);
     });
 
     it('should get an object', async () => {
@@ -121,12 +169,17 @@ describe('GCS Manual Tests', () => {
         return;
       }
 
-      const result = await client.getObject(TEST_BUCKET, testKey);
+      const result = await client.callTool('get_object', {
+        bucket: TEST_BUCKET,
+        key: testKey,
+      });
+      expect(result.isError).toBeFalsy();
 
-      expect(result).toHaveProperty('content');
-      expect(result.contentType).toBe('application/json');
-      const parsed = JSON.parse(result.content);
-      expect(parsed.message).toBe('Hello from MCP GCS test');
+      const parsed = JSON.parse((result.content[0] as { text: string }).text);
+      expect(parsed).toHaveProperty('content');
+      expect(parsed.contentType).toBe('application/json');
+      const content = JSON.parse(parsed.content);
+      expect(content.message).toBe('Hello from MCP GCS test');
       console.log(`Got object: ${testKey}`);
     });
 
@@ -137,13 +190,20 @@ describe('GCS Manual Tests', () => {
       }
 
       const destKey = 'test-folder/copied-file.json';
-      const result = await client.copyObject(TEST_BUCKET, testKey, TEST_BUCKET, destKey);
+      const result = await client.callTool('copy_object', {
+        sourceBucket: TEST_BUCKET,
+        sourceKey: testKey,
+        destBucket: TEST_BUCKET,
+        destKey: destKey,
+      });
+      expect(result.isError).toBeFalsy();
 
-      expect(result).toHaveProperty('etag');
+      const parsed = JSON.parse((result.content[0] as { text: string }).text);
+      expect(parsed.success).toBe(true);
       console.log(`Copied object to: ${destKey}`);
 
       // Cleanup copied file
-      await client.deleteObject(TEST_BUCKET, destKey);
+      await client.callTool('delete_object', { bucket: TEST_BUCKET, key: destKey });
     });
 
     it('should delete an object', async () => {
@@ -152,11 +212,20 @@ describe('GCS Manual Tests', () => {
         return;
       }
 
-      await client.deleteObject(TEST_BUCKET, testKey);
+      const result = await client.callTool('delete_object', {
+        bucket: TEST_BUCKET,
+        key: testKey,
+      });
+      expect(result.isError).toBeFalsy();
 
       // Verify object is deleted by trying to list it
-      const result = await client.listObjects(TEST_BUCKET, { prefix: testKey });
-      expect(result.objects.length).toBe(0);
+      const listResult = await client.callTool('list_objects', {
+        bucket: TEST_BUCKET,
+        prefix: testKey,
+      });
+      expect(listResult.isError).toBeFalsy();
+      const parsed = JSON.parse((listResult.content[0] as { text: string }).text);
+      expect(parsed.objects.length).toBe(0);
       console.log(`Deleted object: ${testKey}`);
     });
   });
@@ -169,16 +238,22 @@ describe('GCS Manual Tests', () => {
       }
 
       // First make sure bucket is empty
-      const objects = await client.listObjects(TEST_BUCKET);
-      for (const obj of objects.objects) {
-        await client.deleteObject(TEST_BUCKET, obj.key);
+      const listResult = await client.callTool('list_objects', { bucket: TEST_BUCKET });
+      expect(listResult.isError).toBeFalsy();
+      const parsed = JSON.parse((listResult.content[0] as { text: string }).text);
+
+      for (const obj of parsed.objects) {
+        await client.callTool('delete_object', { bucket: TEST_BUCKET, key: obj.key });
       }
 
-      await client.deleteBucket(TEST_BUCKET);
+      const deleteResult = await client.callTool('delete_bucket', { bucket: TEST_BUCKET });
+      expect(deleteResult.isError).toBeFalsy();
 
       // Verify bucket is deleted
-      const exists = await client.headBucket(TEST_BUCKET);
-      expect(exists).toBe(false);
+      const headResult = await client.callTool('head_bucket', { bucket: TEST_BUCKET });
+      expect(headResult.isError).toBeFalsy();
+      const headParsed = JSON.parse((headResult.content[0] as { text: string }).text);
+      expect(headParsed.exists).toBe(false);
       console.log(`Deleted test bucket: ${TEST_BUCKET}`);
     });
   });
