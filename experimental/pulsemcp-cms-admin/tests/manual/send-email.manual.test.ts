@@ -51,7 +51,7 @@ describe('send-email manual tests', () => {
 
   it('should send a test email to specified recipient', async () => {
     const result = await client.callTool('send_impl_posted_notif', {
-      implementation_id: 11371,
+      implementation_id: 10823,
       from_email_address: 'tadas@s.pulsemcp.com',
       from_name: 'Tadas at PulseMCP',
       reply_to_email_address: 'tadas@pulsemcp.com',
