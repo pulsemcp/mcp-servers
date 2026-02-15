@@ -1,3 +1,20 @@
+// Validate and cache the base URL at module load time
+const getBaseUrl = (): string => {
+  const baseUrl = process.env.FIRECRAWL_API_BASE_URL || 'https://api.firecrawl.dev';
+  
+  // Validate baseUrl to prevent injection attacks
+  if (
+    baseUrl &&
+    (!/^https?:\/\/[^\\]+$/.test(baseUrl) || baseUrl.includes('..'))
+  ) {
+    throw new Error('Invalid FIRECRAWL_API_BASE_URL');
+  }
+  
+  return baseUrl;
+};
+
+const FIRECRAWL_BASE_URL = getBaseUrl();
+
 export async function scrapeWithFirecrawl(
   apiKey: string,
   url: string,
@@ -13,7 +30,7 @@ export async function scrapeWithFirecrawl(
   error?: string;
 }> {
   try {
-    const response = await fetch('https://api.firecrawl.dev/v1/scrape', {
+    const response = await fetch(`${FIRECRAWL_BASE_URL}/v1/scrape`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
