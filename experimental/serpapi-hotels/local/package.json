@@ -1,6 +1,6 @@
 {
   "name": "serpapi-hotels-mcp-server",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "description": "MCP server for searching Google Hotels via SerpAPI — hotel search, pricing, ratings, and reviews",
   "main": "build/index.js",
   "type": "module",

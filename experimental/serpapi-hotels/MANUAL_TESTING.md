@@ -3,8 +3,8 @@
 ## Latest Test Results
 
 - **Test Date:** 2026-02-16
-- **Branch:** tadasant/serpapi-hotels-mcp-server
-- **Commit:** b372c5e
+- **Branch:** main
+- **Commit:** d90b212
 
 ### Summary
 
