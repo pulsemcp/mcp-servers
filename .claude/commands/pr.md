@@ -15,7 +15,9 @@ Follow this checklist when executing this:
 - [ ] Push it
 - [ ] Open a PR
 - [ ] Perform self-code review of the PR diff
-- [ ] Action any issues found during review
+- [ ] Action any issues found during self-review
+- [ ] Launch a subagent to perform a thorough PR review with fresh eyes (see "Subagent PR Review" section below)
+- [ ] Action critical and warning issues found during the subagent review. Push fixes if needed
 - [ ] Wait for CI to complete using the `wait-for-CI` skill
 - [ ] If CI fails, investigate the failure, fix it. Repeat until CI is passing
 - [ ] Think about what you learned during this PR creation process. Add any useful insights to the "Claude Learnings" section in the appropriate CLAUDE.md file (could be root or subdirectory)
@@ -93,6 +95,25 @@ Before waiting for CI, perform a self-code review of your PR diff:
    - Security concerns
 3. Fix any issues found and push the fixes
 
+#### Subagent PR Review
+
+After completing your self-review, launch a subagent to perform an independent code review with fresh eyes. This happens **before** waiting for CI — while CI runs on GitHub in the background, you perform the review locally, making efficient use of the wait time. The subagent reviews the same categories as your self-review but with fresh context, which helps catch issues that are easy to miss when you wrote the code yourself.
+
+Use the Task tool with `subagent_type: "general-purpose"` and a prompt like:
+
+> Review the PR diff for this branch. Run `gh pr diff` to see the changes. Look for:
+> - Logic errors, bugs, or incorrect behavior
+> - Missing edge cases or error handling
+> - Security concerns (injection, XSS, credential exposure, etc.)
+> - Violations of patterns and conventions in the codebase (check CLAUDE.md)
+> - Unnecessary changes, dead code, or debug artifacts
+> - Test coverage gaps for the changes made
+> - Documentation that needs updating
+>
+> For each issue found, provide the file path, line number, severity (critical/warning/nit), and a clear description of the problem and suggested fix.
+
+Action all critical and warning issues from the subagent review. Use your judgment on nit-level issues — fix quick ones but don't block the PR on them. Push fixes if any changes were made.
+
 #### CI Monitoring
 
-After completing your self-review (and actioning any issues), monitor CI status and fix any failures by following [ensure_ci_success.md](./ensure_ci_success.md).
+After completing the subagent review (and actioning any issues), monitor CI status and fix any failures by following [ensure_ci_success.md](./ensure_ci_success.md).
