@@ -11,7 +11,13 @@ export {
 } from './server.js';
 
 // State management exports
-export { getServerState, setAuthenticated, setRefreshToken, resetState } from './state.js';
+export {
+  getServerState,
+  setAuthenticated,
+  setRefreshToken,
+  clearRefreshToken,
+  resetState,
+} from './state.js';
 
 // Logging exports
 export { logServerStart, logError, logWarning, logDebug } from './logging.js';

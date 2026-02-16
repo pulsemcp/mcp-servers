@@ -28,6 +28,10 @@ export function setRefreshToken(token: string): void {
   state.refreshToken = token;
 }
 
+export function clearRefreshToken(): void {
+  state.refreshToken = null;
+}
+
 export function resetState(): void {
   state = {
     authenticated: false,

@@ -4,7 +4,7 @@ import { ClientFactory } from './server.js';
 import { searchFlightsTool } from './tools/search-flights.js';
 import { getSearchHistoryTool } from './tools/get-search-history.js';
 import { setRefreshTokenTool } from './tools/set-refresh-token.js';
-import { getServerState, setAuthenticated } from './state.js';
+import { getServerState, setAuthenticated, clearRefreshToken } from './state.js';
 import { logWarning } from './logging.js';
 
 export type ToolGroup = 'readonly' | 'write' | 'admin';
@@ -76,20 +76,24 @@ export function createRegisterTools(clientFactory: ClientFactory, enabledGroups?
       (def) => def.factory(server, clientFactory)
     );
 
+    // wrappedAuthedTools is populated after authTool is created (forward reference)
+    let wrappedAuthedTools: Tool[] = [];
+
     // Build the set_refresh_token tool with a callback that switches to authed mode
     const authTool = setRefreshTokenTool(async () => {
-      applyToolList(authedTools);
+      applyToolList(wrappedAuthedTools);
       await server.sendToolListChanged();
     });
 
     // Wrap authed tool handlers to detect auth failures and switch back
-    const wrappedAuthedTools: Tool[] = authedTools.map((tool) => ({
+    wrappedAuthedTools = authedTools.map((tool) => ({
       ...tool,
       handler: async (args: unknown) => {
         const result = await tool.handler(args);
         if (result.isError && isTokenRevoked(result.content)) {
           logWarning('auth', 'Token revoked during tool call, switching to set_refresh_token mode');
           setAuthenticated(false);
+          clearRefreshToken();
           applyToolList([authTool]);
           await server.sendToolListChanged();
         }

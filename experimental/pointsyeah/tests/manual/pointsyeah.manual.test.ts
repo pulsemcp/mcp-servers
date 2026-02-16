@@ -7,6 +7,8 @@ import 'dotenv/config';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+const hasToken = !!process.env.POINTSYEAH_REFRESH_TOKEN;
+
 /**
  * Manual tests for PointsYeah MCP Server
  *
@@ -15,7 +17,8 @@ const __dirname = path.dirname(__filename);
  *   2. After providing a valid token, flight search tools become available
  *   3. If token is revoked, server switches back to set_refresh_token
  *
- * Requires POINTSYEAH_REFRESH_TOKEN in .env for auth-dependent tests.
+ * Unauthenticated tests always run (no token needed).
+ * Authenticated and Direct Client tests require POINTSYEAH_REFRESH_TOKEN in .env.
  *
  * Run with: npm run test:manual
  */
@@ -99,10 +102,7 @@ describe('PointsYeah MCP Server - Manual Tests', () => {
     let tokenWorks = false;
 
     beforeAll(async () => {
-      if (!process.env.POINTSYEAH_REFRESH_TOKEN) {
-        console.log('POINTSYEAH_REFRESH_TOKEN not set, skipping authenticated tests');
-        return;
-      }
+      if (!hasToken) return;
 
       const serverPath = path.join(__dirname, '../../local/build/index.js');
 
@@ -110,7 +110,7 @@ describe('PointsYeah MCP Server - Manual Tests', () => {
       client = new TestMCPClient({
         serverPath,
         env: {
-          POINTSYEAH_REFRESH_TOKEN: process.env.POINTSYEAH_REFRESH_TOKEN,
+          POINTSYEAH_REFRESH_TOKEN: process.env.POINTSYEAH_REFRESH_TOKEN!,
         },
         debug: false,
       });
@@ -136,8 +136,8 @@ describe('PointsYeah MCP Server - Manual Tests', () => {
       }
     });
 
-    it('should expose flight search tools when authenticated', async () => {
-      if (!process.env.POINTSYEAH_REFRESH_TOKEN) {
+    it('should expose flight search tools or show set_refresh_token for expired token', async () => {
+      if (!hasToken) {
         console.log('Skipped: no POINTSYEAH_REFRESH_TOKEN');
         return;
       }
@@ -157,49 +157,43 @@ describe('PointsYeah MCP Server - Manual Tests', () => {
       console.log(`Authenticated tools: ${toolNames.join(', ')}`);
     });
 
-    it('should show config resource with authenticated status', async () => {
-      if (!process.env.POINTSYEAH_REFRESH_TOKEN || !tokenWorks) {
-        console.log('Skipped: token not available or expired');
-        return;
+    it.skipIf(!hasToken || !tokenWorks)(
+      'should show config resource with authenticated status',
+      async () => {
+        const result = await client.readResource('pointsyeah://config');
+        const config = JSON.parse(result.contents[0].text);
+
+        expect(config.authentication.status).toBe('authenticated');
+        console.log(`Config auth status: ${config.authentication.status}`);
       }
+    );
 
-      const result = await client.readResource('pointsyeah://config');
-      const config = JSON.parse(result.contents[0].text);
+    it.skipIf(!hasToken || !tokenWorks)(
+      'get_search_history - should return search history',
+      async () => {
+        const result = await client.callTool('get_search_history', {});
 
-      expect(config.authentication.status).toBe('authenticated');
-      console.log(`Config auth status: ${config.authentication.status}`);
-    });
-
-    it('get_search_history - should return search history', async () => {
-      if (!process.env.POINTSYEAH_REFRESH_TOKEN || !tokenWorks) {
-        console.log('Skipped: token not available or expired');
-        return;
+        expect(result.isError).toBeFalsy();
+        const parsed = JSON.parse(result.content[0].text);
+        expect(parsed).toBeDefined();
+        console.log(`Search history response: ${JSON.stringify(parsed).substring(0, 300)}`);
       }
+    );
 
-      const result = await client.callTool('get_search_history', {});
+    it.skipIf(!hasToken || !tokenWorks)(
+      'search_flights - should reject round-trip without returnDate',
+      async () => {
+        const result = await client.callTool('search_flights', {
+          departure: 'SFO',
+          arrival: 'NYC',
+          departDate: '2026-06-01',
+        });
 
-      expect(result.isError).toBeFalsy();
-      const parsed = JSON.parse(result.content[0].text);
-      expect(parsed).toBeDefined();
-      console.log(`Search history response: ${JSON.stringify(parsed).substring(0, 300)}`);
-    });
-
-    it('search_flights - should reject round-trip without returnDate', async () => {
-      if (!process.env.POINTSYEAH_REFRESH_TOKEN || !tokenWorks) {
-        console.log('Skipped: token not available or expired');
-        return;
+        expect(result.isError).toBe(true);
+        expect(result.content[0].text).toContain('returnDate is required');
+        console.log('Round-trip validation working correctly');
       }
-
-      const result = await client.callTool('search_flights', {
-        departure: 'SFO',
-        arrival: 'NYC',
-        departDate: '2026-06-01',
-      });
-
-      expect(result.isError).toBe(true);
-      expect(result.content[0].text).toContain('returnDate is required');
-      console.log('Round-trip validation working correctly');
-    });
+    );
   });
 
   // =========================================================================
@@ -207,108 +201,84 @@ describe('PointsYeah MCP Server - Manual Tests', () => {
   // =========================================================================
 
   describe('Direct Client - Cognito Auth', () => {
-    it('should refresh Cognito tokens with the real refresh token', async () => {
-      if (!process.env.POINTSYEAH_REFRESH_TOKEN) {
-        console.log('Skipped: no POINTSYEAH_REFRESH_TOKEN');
-        return;
-      }
-
+    it.skipIf(!hasToken)('should refresh Cognito tokens with the real refresh token', async () => {
       const { refreshCognitoTokens } =
         await import('../../shared/build/pointsyeah-client/lib/auth.js');
 
-      try {
-        const tokens = await refreshCognitoTokens(process.env.POINTSYEAH_REFRESH_TOKEN!);
+      const tokens = await refreshCognitoTokens(process.env.POINTSYEAH_REFRESH_TOKEN!);
 
-        expect(tokens).toBeDefined();
-        expect(tokens.idToken).toBeDefined();
-        expect(typeof tokens.idToken).toBe('string');
-        expect(tokens.idToken.length).toBeGreaterThan(100);
-        expect(tokens.accessToken).toBeDefined();
-        expect(tokens.expiresAt).toBeGreaterThan(Math.floor(Date.now() / 1000));
+      expect(tokens).toBeDefined();
+      expect(tokens.idToken).toBeDefined();
+      expect(typeof tokens.idToken).toBe('string');
+      expect(tokens.idToken.length).toBeGreaterThan(100);
+      expect(tokens.accessToken).toBeDefined();
+      expect(tokens.expiresAt).toBeGreaterThan(Math.floor(Date.now() / 1000));
 
-        console.log(`Cognito tokens refreshed successfully`);
-        console.log(`  ID token length: ${tokens.idToken.length}`);
-        console.log(`  Expires at: ${new Date(tokens.expiresAt * 1000).toISOString()}`);
-      } catch (error) {
-        if (error instanceof Error && error.message.includes('expired or revoked')) {
-          console.log('Token is expired/revoked — this is expected if token has gone stale');
-          // Still pass - the server handles this gracefully via set_refresh_token
-          return;
-        }
-        throw error;
-      }
+      console.log(`Cognito tokens refreshed successfully`);
+      console.log(`  ID token length: ${tokens.idToken.length}`);
+      console.log(`  Expires at: ${new Date(tokens.expiresAt * 1000).toISOString()}`);
     });
   });
 
   describe('Direct Client - Explorer Search API', () => {
-    it('should search for flights via explorer API and fetch details', async () => {
-      if (!process.env.POINTSYEAH_REFRESH_TOKEN) {
-        console.log('Skipped: no POINTSYEAH_REFRESH_TOKEN');
-        return;
-      }
+    it.skipIf(!hasToken)(
+      'should search for flights via explorer API and fetch details',
+      async () => {
+        const { refreshCognitoTokens } =
+          await import('../../shared/build/pointsyeah-client/lib/auth.js');
+        const { explorerSearch, fetchFlightDetail } =
+          await import('../../shared/build/pointsyeah-client/lib/explorer-search.js');
 
-      const { refreshCognitoTokens } =
-        await import('../../shared/build/pointsyeah-client/lib/auth.js');
-      const { explorerSearch, fetchFlightDetail } =
-        await import('../../shared/build/pointsyeah-client/lib/explorer-search.js');
-
-      let tokens;
-      try {
         console.log('Step 1: Refreshing Cognito tokens...');
-        tokens = await refreshCognitoTokens(process.env.POINTSYEAH_REFRESH_TOKEN!);
+        const tokens = await refreshCognitoTokens(process.env.POINTSYEAH_REFRESH_TOKEN!);
         console.log(
           `  Tokens obtained (expires ${new Date(tokens.expiresAt * 1000).toISOString()})`
         );
-      } catch (error) {
-        if (error instanceof Error && error.message.includes('expired or revoked')) {
-          console.log('Token is expired/revoked — skipping explorer API test');
-          return;
+
+        // Step 2: Search via explorer API
+        console.log('Step 2: Searching via explorer API...');
+        const searchResults = await explorerSearch(
+          {
+            departure: 'SFO',
+            arrival: 'NRT',
+            departDate: '2026-06-01',
+            tripType: '1',
+            adults: 1,
+            children: 0,
+            cabins: ['Economy', 'Business'],
+          },
+          tokens.idToken
+        );
+
+        expect(searchResults).toBeDefined();
+        expect(typeof searchResults.total).toBe('number');
+        expect(Array.isArray(searchResults.results)).toBe(true);
+
+        console.log(`  Total results in database: ${searchResults.total}`);
+        console.log(`  Results returned: ${searchResults.results.length}`);
+
+        if (searchResults.results.length > 0) {
+          const firstResult = searchResults.results[0];
+          console.log(`  First result: ${firstResult.program}`);
+          console.log(`    ${firstResult.departure.code} -> ${firstResult.arrival.code}`);
+          console.log(`    ${firstResult.miles.toLocaleString()} miles + $${firstResult.tax} tax`);
+
+          // Step 3: Fetch detail for first result
+          console.log('Step 3: Fetching flight detail...');
+          const detail = await fetchFlightDetail(firstResult.detail_url);
+
+          expect(detail).toBeDefined();
+          expect(detail.program).toBeDefined();
+          expect(detail.routes).toBeDefined();
+          expect(detail.routes.length).toBeGreaterThan(0);
+
+          console.log(`  Detail for: ${detail.program} (${detail.code})`);
+          console.log(`  Routes: ${detail.routes.length}`);
+        } else {
+          console.log('  No results found for this route/date');
         }
-        throw error;
-      }
-
-      // Step 2: Search via explorer API
-      console.log('Step 2: Searching via explorer API...');
-      const searchResults = await explorerSearch(
-        {
-          departure: 'SFO',
-          arrival: 'NRT',
-          departDate: '2026-06-01',
-          tripType: '1',
-          adults: 1,
-          children: 0,
-          cabins: ['Economy', 'Business'],
-        },
-        tokens.idToken
-      );
-
-      expect(searchResults).toBeDefined();
-      expect(typeof searchResults.total).toBe('number');
-      expect(Array.isArray(searchResults.results)).toBe(true);
-
-      console.log(`  Total results in database: ${searchResults.total}`);
-      console.log(`  Results returned: ${searchResults.results.length}`);
-
-      if (searchResults.results.length > 0) {
-        const firstResult = searchResults.results[0];
-        console.log(`  First result: ${firstResult.program}`);
-        console.log(`    ${firstResult.departure.code} -> ${firstResult.arrival.code}`);
-        console.log(`    ${firstResult.miles.toLocaleString()} miles + $${firstResult.tax} tax`);
-
-        // Step 3: Fetch detail for first result
-        console.log('Step 3: Fetching flight detail...');
-        const detail = await fetchFlightDetail(firstResult.detail_url);
-
-        expect(detail).toBeDefined();
-        expect(detail.program).toBeDefined();
-        expect(detail.routes).toBeDefined();
-        expect(detail.routes.length).toBeGreaterThan(0);
-
-        console.log(`  Detail for: ${detail.program} (${detail.code})`);
-        console.log(`  Routes: ${detail.routes.length}`);
-      } else {
-        console.log('  No results found for this route/date');
-      }
-    }, 60000);
+      },
+      60000
+    );
   });
 });

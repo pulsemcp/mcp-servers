@@ -24,11 +24,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `POINTSYEAH_REFRESH_TOKEN` environment variable is now optional (server starts in auth-needed mode without it)
 - Manual tests redesigned to always pass regardless of token availability
-
-### Changed
-
-- `POINTSYEAH_REFRESH_TOKEN` environment variable is now optional (server starts in auth-needed mode without it)
-- Manual tests redesigned to always pass regardless of token availability
   - Unauthenticated tests verify the auth-needed UX (no token required)
   - Authenticated tests gracefully handle expired/revoked tokens
 
