@@ -191,8 +191,8 @@ export function createIntegrationMockSerpApiClient(mockData: MockData = {}): ISe
           query: options.query,
           check_in_date: options.check_in_date,
           check_out_date: options.check_out_date,
-          adults: options.adults || 2,
-          currency: options.currency || 'USD',
+          adults: options.adults ?? 2,
+          currency: options.currency ?? 'USD',
         },
       };
     },
@@ -208,8 +208,8 @@ export function createIntegrationMockSerpApiClient(mockData: MockData = {}): ISe
           ...defaultDetailsResult.search_parameters,
           check_in_date: options.check_in_date,
           check_out_date: options.check_out_date,
-          adults: options.adults || 2,
-          currency: options.currency || 'USD',
+          adults: options.adults ?? 2,
+          currency: options.currency ?? 'USD',
         },
       };
     },

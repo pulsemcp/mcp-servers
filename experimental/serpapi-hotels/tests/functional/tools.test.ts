@@ -94,6 +94,18 @@ describe('SerpAPI Hotels Tools', () => {
       expect(content.text).toContain('Error');
     });
 
+    it('should return error when check_out_date is before check_in_date', async () => {
+      const result = await callTool('search_hotels', {
+        query: 'Hotels in Paris',
+        check_in_date: '2026-03-05',
+        check_out_date: '2026-03-01',
+      });
+
+      const content = (result as { content: Array<{ text: string }>; isError?: boolean })
+        .content[0];
+      expect(content.text).toContain('check_out_date must be after check_in_date');
+    });
+
     it('should include amenities and nearby places', async () => {
       const result = await callTool('search_hotels', {
         query: 'Hotels in New York',
@@ -188,6 +200,18 @@ describe('SerpAPI Hotels Tools', () => {
       const content = (result as { content: Array<{ text: string }>; isError?: boolean })
         .content[0];
       expect(content.text).toContain('Error');
+    });
+
+    it('should return error when check_out_date is before check_in_date', async () => {
+      const result = await callTool('get_hotel_details', {
+        property_token: 'test-token-1',
+        check_in_date: '2026-03-05',
+        check_out_date: '2026-03-01',
+      });
+
+      const content = (result as { content: Array<{ text: string }>; isError?: boolean })
+        .content[0];
+      expect(content.text).toContain('check_out_date must be after check_in_date');
     });
   });
 });

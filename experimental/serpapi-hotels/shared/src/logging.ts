@@ -8,17 +8,3 @@ export function logError(context: string, error: unknown): void {
   console.error(`[ERROR] ${context}: ${message}`);
   if (stack) console.error(stack);
 }
-
-export function logWarning(context: string, message: string): void {
-  console.error(`[WARN] ${context}: ${message}`);
-}
-
-export function logInfo(context: string, message: string): void {
-  console.error(`[INFO] ${context}: ${message}`);
-}
-
-export function logDebug(context: string, message: string): void {
-  if (process.env.NODE_ENV === 'development' || process.env.DEBUG) {
-    console.error(`[DEBUG] ${context}: ${message}`);
-  }
-}

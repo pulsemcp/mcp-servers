@@ -22,10 +22,10 @@ type ToolFactory = (server: Server, clientFactory: SerpApiClientFactory) => Tool
 
 const ALL_TOOLS: ToolFactory[] = [searchHotelsTool, getHotelDetailsTool];
 
+const ALL_TOOL_NAMES = ['search_hotels', 'get_hotel_details'];
+
 export function getAllToolNames(): string[] {
-  const mockServer = { setRequestHandler: () => {} } as unknown as Server;
-  const mockFactory = (() => {}) as unknown as SerpApiClientFactory;
-  return ALL_TOOLS.map((factory) => factory(mockServer, mockFactory).name);
+  return ALL_TOOL_NAMES;
 }
 
 export function createRegisterTools(clientFactory: SerpApiClientFactory) {

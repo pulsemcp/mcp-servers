@@ -14,8 +14,8 @@ export function createMockSerpApiClient(): ISerpApiClient {
           query: options.query,
           check_in_date: options.check_in_date,
           check_out_date: options.check_out_date,
-          adults: options.adults || 2,
-          currency: options.currency || 'USD',
+          adults: options.adults ?? 2,
+          currency: options.currency ?? 'USD',
         },
         total_results: 2,
         properties: [
@@ -103,8 +103,8 @@ export function createMockSerpApiClient(): ISerpApiClient {
         search_parameters: {
           check_in_date: options.check_in_date,
           check_out_date: options.check_out_date,
-          adults: options.adults || 2,
-          currency: options.currency || 'USD',
+          adults: options.adults ?? 2,
+          currency: options.currency ?? 'USD',
         },
         property: {
           name: 'Test Hotel Grand',

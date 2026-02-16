@@ -2,45 +2,56 @@ import { z } from 'zod';
 import type { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import type { SerpApiClientFactory } from '../server.js';
 
-export const GetHotelDetailsSchema = z.object({
-  property_token: z
-    .string()
-    .min(1)
-    .describe('Property token from a search_hotels result to get details for a specific hotel'),
-  check_in_date: z
-    .string()
-    .regex(/^\d{4}-\d{2}-\d{2}$/)
-    .describe('Check-in date in YYYY-MM-DD format'),
-  check_out_date: z
-    .string()
-    .regex(/^\d{4}-\d{2}-\d{2}$/)
-    .describe('Check-out date in YYYY-MM-DD format'),
-  adults: z
-    .number()
-    .int()
-    .min(1)
-    .max(20)
-    .default(2)
-    .describe('Number of adult guests (default: 2)'),
-  children: z.number().int().min(0).max(20).default(0).describe('Number of children (default: 0)'),
-  children_ages: z
-    .string()
-    .optional()
-    .describe('Comma-separated ages of children, 1-17 (e.g., "5,8,12")'),
-  currency: z
-    .string()
-    .min(3)
-    .max(3)
-    .default('USD')
-    .describe('Currency code for prices (e.g., "USD", "EUR", "GBP")'),
-  gl: z
-    .string()
-    .min(2)
-    .max(2)
-    .optional()
-    .describe('Country code for localization (e.g., "us", "uk", "fr")'),
-  hl: z.string().min(2).max(2).optional().describe('Language code (e.g., "en", "es", "fr")'),
-});
+export const GetHotelDetailsSchema = z
+  .object({
+    property_token: z
+      .string()
+      .min(1)
+      .describe('Property token from a search_hotels result to get details for a specific hotel'),
+    check_in_date: z
+      .string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/)
+      .describe('Check-in date in YYYY-MM-DD format'),
+    check_out_date: z
+      .string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/)
+      .describe('Check-out date in YYYY-MM-DD format'),
+    adults: z
+      .number()
+      .int()
+      .min(1)
+      .max(20)
+      .default(2)
+      .describe('Number of adult guests (default: 2)'),
+    children: z
+      .number()
+      .int()
+      .min(0)
+      .max(20)
+      .default(0)
+      .describe('Number of children (default: 0)'),
+    children_ages: z
+      .string()
+      .optional()
+      .describe('Comma-separated ages of children, 1-17 (e.g., "5,8,12")'),
+    currency: z
+      .string()
+      .min(3)
+      .max(3)
+      .default('USD')
+      .describe('Currency code for prices (e.g., "USD", "EUR", "GBP")'),
+    gl: z
+      .string()
+      .min(2)
+      .max(2)
+      .optional()
+      .describe('Country code for localization (e.g., "us", "uk", "fr")'),
+    hl: z.string().min(2).max(2).optional().describe('Language code (e.g., "en", "es", "fr")'),
+  })
+  .refine((data) => data.check_out_date > data.check_in_date, {
+    message: 'check_out_date must be after check_in_date',
+    path: ['check_out_date'],
+  });
 
 export function getHotelDetailsTool(_server: Server, clientFactory: SerpApiClientFactory) {
   return {
