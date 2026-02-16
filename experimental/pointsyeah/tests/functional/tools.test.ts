@@ -2,15 +2,6 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { searchFlightsTool } from '../../shared/src/tools/search-flights.js';
 import { getSearchHistoryTool } from '../../shared/src/tools/get-search-history.js';
-import {
-  getUserMembershipTool,
-  getUserPreferencesTool,
-} from '../../shared/src/tools/get-user-info.js';
-import {
-  getFlightRecommendationsTool,
-  getHotelRecommendationsTool,
-  getExplorerCountTool,
-} from '../../shared/src/tools/get-recommendations.js';
 import { createMockPointsYeahClient } from '../mocks/pointsyeah-client.functional-mock.js';
 import type { IPointsYeahClient } from '../../shared/src/server.js';
 
@@ -96,67 +87,6 @@ describe('PointsYeah Tools', () => {
       const parsed = JSON.parse(result.content[0].text);
       expect(parsed).toHaveLength(2);
       expect(parsed[0].route).toBe('SFO -> NYC');
-    });
-  });
-
-  describe('get_user_membership', () => {
-    it('should return membership info', async () => {
-      const tool = getUserMembershipTool(mockServer, clientFactory);
-      const result = await tool.handler({});
-
-      const parsed = JSON.parse(result.content[0].text);
-      expect(parsed.plan).toBe('free');
-      expect(parsed.status).toBe('active');
-    });
-  });
-
-  describe('get_user_preferences', () => {
-    it('should return user preferences', async () => {
-      const tool = getUserPreferencesTool(mockServer, clientFactory);
-      const result = await tool.handler({});
-
-      const parsed = JSON.parse(result.content[0].text);
-      expect(parsed.defaultCabin).toBe('Economy');
-      expect(parsed.preferredAirlines).toContain('UA');
-    });
-  });
-
-  describe('get_flight_recommendations', () => {
-    it('should return flight recommendations', async () => {
-      const tool = getFlightRecommendationsTool(mockServer, clientFactory);
-      const result = await tool.handler({});
-
-      const parsed = JSON.parse(result.content[0].text);
-      expect(parsed.recommendations).toHaveLength(1);
-      expect(parsed.recommendations[0].route).toBe('SFO -> NRT');
-    });
-
-    it('should accept a departure parameter', async () => {
-      const tool = getFlightRecommendationsTool(mockServer, clientFactory);
-      const result = await tool.handler({ departure: 'LAX' });
-
-      expect(result.content[0].type).toBe('text');
-    });
-  });
-
-  describe('get_hotel_recommendations', () => {
-    it('should return hotel recommendations', async () => {
-      const tool = getHotelRecommendationsTool(mockServer, clientFactory);
-      const result = await tool.handler({});
-
-      const parsed = JSON.parse(result.content[0].text);
-      expect(parsed.recommendations).toHaveLength(1);
-      expect(parsed.recommendations[0].hotel).toBe('Park Hyatt Tokyo');
-    });
-  });
-
-  describe('get_explorer_count', () => {
-    it('should return explorer count', async () => {
-      const tool = getExplorerCountTool(mockServer, clientFactory);
-      const result = await tool.handler({});
-
-      const parsed = JSON.parse(result.content[0].text);
-      expect(parsed.count).toBe(42);
     });
   });
 });

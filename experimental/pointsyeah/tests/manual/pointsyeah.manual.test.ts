@@ -52,22 +52,14 @@ describe('PointsYeah MCP Server - Manual Tests', () => {
   // =========================================================================
 
   describe('Tool Discovery', () => {
-    it('should list all 7 tools', async () => {
+    it('should list all 2 tools', async () => {
       const result = await client.listTools();
       // listTools() returns { tools: [...] }
       const tools = result.tools;
 
       expect(Array.isArray(tools)).toBe(true);
       const toolNames = tools.map((t: { name: string }) => t.name).sort();
-      expect(toolNames).toEqual([
-        'get_explorer_count',
-        'get_flight_recommendations',
-        'get_hotel_recommendations',
-        'get_search_history',
-        'get_user_membership',
-        'get_user_preferences',
-        'search_flights',
-      ]);
+      expect(toolNames).toEqual(['get_search_history', 'search_flights']);
 
       console.log(`Listed ${tools.length} tools: ${toolNames.join(', ')}`);
     });
@@ -114,11 +106,11 @@ describe('PointsYeah MCP Server - Manual Tests', () => {
 
   describe('Authentication - Cognito Token Refresh', () => {
     it('should successfully authenticate via Cognito and call an API', async () => {
-      // get_user_membership is a simple authenticated GET.
+      // get_search_history is a simple authenticated GET.
       // The very first MCP tool call can fail with a transient "fetch failed" error
       // while the subprocess warms up and Cognito tokens are being refreshed.
       // Retry up to 3 times with increasing delays to handle startup latency.
-      let result = await client.callTool('get_user_membership', {});
+      let result = await client.callTool('get_search_history', {});
 
       for (let attempt = 1; attempt <= 2 && result.isError; attempt++) {
         const delay = attempt * 5000;
@@ -126,7 +118,7 @@ describe('PointsYeah MCP Server - Manual Tests', () => {
           `Auth attempt ${attempt} failed: ${result.content[0].text} (retrying in ${delay}ms)`
         );
         await new Promise((resolve) => setTimeout(resolve, delay));
-        result = await client.callTool('get_user_membership', {});
+        result = await client.callTool('get_search_history', {});
       }
 
       if (result.isError) {
@@ -135,17 +127,17 @@ describe('PointsYeah MCP Server - Manual Tests', () => {
       expect(result.isError).toBeFalsy();
       const parsed = JSON.parse(result.content[0].text);
       expect(parsed).toBeDefined();
-      expect(parsed.code).toBe(0);
-      expect(parsed.success).toBe(true);
-      console.log(`Auth successful - membership response: ${JSON.stringify(parsed)}`);
+      console.log(
+        `Auth successful - search history response: ${JSON.stringify(parsed).substring(0, 300)}`
+      );
     }, 60000);
   });
 
   // =========================================================================
-  // READ-ONLY TOOLS - User API (plain HTTP, no Playwright needed)
+  // READ-ONLY TOOLS (plain HTTP, no Playwright needed)
   // =========================================================================
 
-  describe('Read-Only Tools - User API', () => {
+  describe('Read-Only Tools', () => {
     it('get_search_history - should return search history', async () => {
       const result = await client.callTool('get_search_history', {});
 
@@ -164,130 +156,6 @@ describe('PointsYeah MCP Server - Manual Tests', () => {
       } else {
         console.log(`Search history response: ${JSON.stringify(parsed).substring(0, 300)}`);
       }
-    });
-
-    it('get_user_membership - should return membership info', async () => {
-      const result = await client.callTool('get_user_membership', {});
-
-      expect(result.isError).toBeFalsy();
-      const parsed = JSON.parse(result.content[0].text);
-
-      expect(parsed).toBeDefined();
-      expect(parsed.code).toBe(0);
-      expect(parsed.success).toBe(true);
-      console.log(`Membership: ${JSON.stringify(parsed)}`);
-    });
-
-    it('get_user_preferences - should return user preferences', async () => {
-      const result = await client.callTool('get_user_preferences', {});
-
-      expect(result.isError).toBeFalsy();
-      const parsed = JSON.parse(result.content[0].text);
-
-      expect(parsed).toBeDefined();
-      expect(parsed.code).toBe(0);
-      expect(parsed.success).toBe(true);
-      expect(parsed.data).toBeDefined();
-      console.log(`User preferences keys: ${Object.keys(parsed.data).join(', ')}`);
-    });
-  });
-
-  // =========================================================================
-  // READ-ONLY TOOLS - Explorer API
-  // =========================================================================
-
-  describe('Read-Only Tools - Explorer API', () => {
-    it('get_explorer_count - should return a count of available deals', async () => {
-      const result = await client.callTool('get_explorer_count', {});
-
-      expect(result.isError).toBeFalsy();
-      const parsed = JSON.parse(result.content[0].text);
-
-      expect(parsed).toBeDefined();
-      expect(parsed.code).toBe(0);
-      expect(parsed.success).toBe(true);
-      expect(parsed.data).toBeDefined();
-      expect(typeof parsed.data.count).toBe('number');
-      expect(parsed.data.count).toBeGreaterThan(0);
-      console.log(`Explorer deal count: ${parsed.data.count.toLocaleString()}`);
-    });
-
-    it('get_flight_recommendations - should return flight deals without filter', async () => {
-      const result = await client.callTool('get_flight_recommendations', {});
-
-      expect(result.isError).toBeFalsy();
-      const parsed = JSON.parse(result.content[0].text);
-
-      expect(parsed).toBeDefined();
-      expect(parsed.code).toBe(0);
-      expect(parsed.success).toBe(true);
-      expect(parsed.data).toBeDefined();
-
-      // Validate routes structure
-      const routes = parsed.data.routes;
-      expect(Array.isArray(routes)).toBe(true);
-      expect(routes.length).toBeGreaterThan(0);
-
-      const firstRoute = routes[0];
-      expect(firstRoute.program).toBeDefined();
-      expect(firstRoute.departure).toBeDefined();
-      expect(firstRoute.arrival).toBeDefined();
-      expect(typeof firstRoute.miles).toBe('number');
-
-      console.log(`Flight recommendations: ${routes.length} routes`);
-      console.log(
-        `  First: ${firstRoute.departure.code} -> ${firstRoute.arrival.code} ` +
-          `via ${firstRoute.program} for ${firstRoute.miles.toLocaleString()} miles`
-      );
-    });
-
-    it('get_flight_recommendations - should handle departure filter parameter', async () => {
-      const result = await client.callTool('get_flight_recommendations', {
-        departure: 'SFO',
-      });
-
-      // The API may or may not support the departure filter via POST body -
-      // either a successful response or an API error is acceptable
-      if (result.isError) {
-        const errorText = result.content[0].text;
-        console.log(
-          `Flight recs with departure filter returned error: ${errorText.substring(0, 200)}`
-        );
-        // This is acceptable - the departure param may not be supported by the API
-        expect(errorText).toContain('Error');
-      } else {
-        const parsed = JSON.parse(result.content[0].text);
-        expect(parsed).toBeDefined();
-        console.log(`Flight recs (SFO filter): ${JSON.stringify(parsed).substring(0, 300)}...`);
-      }
-    });
-
-    it('get_hotel_recommendations - should return hotel deals', async () => {
-      const result = await client.callTool('get_hotel_recommendations', {});
-
-      expect(result.isError).toBeFalsy();
-      const parsed = JSON.parse(result.content[0].text);
-
-      expect(parsed).toBeDefined();
-      expect(parsed.code).toBe(0);
-      expect(parsed.success).toBe(true);
-      expect(Array.isArray(parsed.data)).toBe(true);
-      expect(parsed.data.length).toBeGreaterThan(0);
-
-      const firstHotel = parsed.data[0];
-      expect(firstHotel.property).toBeDefined();
-      expect(firstHotel.property.name).toBeDefined();
-      // points may be a number or an object depending on the hotel program
-      expect(firstHotel.points).toBeDefined();
-
-      console.log(`Hotel recommendations: ${parsed.data.length} properties`);
-      const pointsStr =
-        typeof firstHotel.points === 'number'
-          ? `${firstHotel.points.toLocaleString()} points`
-          : JSON.stringify(firstHotel.points);
-      console.log(
-        `  First: ${firstHotel.property.name} - ${pointsStr} (cash $${firstHotel.cash_price})`
-      );
     });
   });
 

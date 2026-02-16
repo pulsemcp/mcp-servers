@@ -9,14 +9,7 @@ import type {
 } from './types.js';
 import { refreshCognitoTokens } from './pointsyeah-client/lib/auth.js';
 import { fetchSearchResults } from './pointsyeah-client/lib/fetch-results.js';
-import {
-  getSearchHistory,
-  getUserMembership,
-  getUserPreferences,
-  getFlightRecommendations,
-  getHotelRecommendations,
-  getExplorerCount,
-} from './pointsyeah-client/lib/user-api.js';
+import { getSearchHistory } from './pointsyeah-client/lib/user-api.js';
 import { createSearchTask } from './pointsyeah-client/lib/search.js';
 import type { PlaywrightSearchDeps } from './pointsyeah-client/lib/search.js';
 import { logDebug, logWarning } from './logging.js';
@@ -30,11 +23,6 @@ export interface IPointsYeahClient {
     params: FlightSearchParams
   ): Promise<{ task: FlightSearchTask; results: FlightSearchResponse }>;
   getSearchHistory(): Promise<unknown>;
-  getUserMembership(): Promise<unknown>;
-  getUserPreferences(): Promise<unknown>;
-  getFlightRecommendations(body?: unknown): Promise<unknown>;
-  getHotelRecommendations(body?: unknown): Promise<unknown>;
-  getExplorerCount(): Promise<unknown>;
 }
 
 // =============================================================================
@@ -143,26 +131,6 @@ export class PointsYeahClient implements IPointsYeahClient {
 
   async getSearchHistory(): Promise<unknown> {
     return this.withAuth((idToken) => getSearchHistory(idToken));
-  }
-
-  async getUserMembership(): Promise<unknown> {
-    return this.withAuth((idToken) => getUserMembership(idToken));
-  }
-
-  async getUserPreferences(): Promise<unknown> {
-    return this.withAuth((idToken) => getUserPreferences(idToken));
-  }
-
-  async getFlightRecommendations(body?: unknown): Promise<unknown> {
-    return this.withAuth((idToken) => getFlightRecommendations(idToken, body));
-  }
-
-  async getHotelRecommendations(body?: unknown): Promise<unknown> {
-    return this.withAuth((idToken) => getHotelRecommendations(idToken, body));
-  }
-
-  async getExplorerCount(): Promise<unknown> {
-    return this.withAuth((idToken) => getExplorerCount(idToken));
   }
 }
 

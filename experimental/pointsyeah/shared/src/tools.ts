@@ -3,12 +3,6 @@ import { ListToolsRequestSchema, CallToolRequestSchema } from '@modelcontextprot
 import { ClientFactory } from './server.js';
 import { searchFlightsTool } from './tools/search-flights.js';
 import { getSearchHistoryTool } from './tools/get-search-history.js';
-import { getUserMembershipTool, getUserPreferencesTool } from './tools/get-user-info.js';
-import {
-  getFlightRecommendationsTool,
-  getHotelRecommendationsTool,
-  getExplorerCountTool,
-} from './tools/get-recommendations.js';
 
 export type ToolGroup = 'readonly' | 'write' | 'admin';
 
@@ -60,11 +54,6 @@ const ALL_TOOLS: ToolDefinition[] = [
   { factory: searchFlightsTool, groups: ['write', 'admin'] },
   // Read-only tools - only query existing data
   { factory: getSearchHistoryTool, groups: ['readonly', 'write', 'admin'] },
-  { factory: getUserMembershipTool, groups: ['readonly', 'write', 'admin'] },
-  { factory: getUserPreferencesTool, groups: ['readonly', 'write', 'admin'] },
-  { factory: getFlightRecommendationsTool, groups: ['readonly', 'write', 'admin'] },
-  { factory: getHotelRecommendationsTool, groups: ['readonly', 'write', 'admin'] },
-  { factory: getExplorerCountTool, groups: ['readonly', 'write', 'admin'] },
 ];
 
 export function createRegisterTools(clientFactory: ClientFactory, enabledGroups?: ToolGroup[]) {

@@ -63,14 +63,13 @@ The tests will:
 
 **Details:**
 
-This is the initial release of the PointsYeah MCP server. All 16 manual tests were run against the real PointsYeah API with a real user account.
+This is the initial release of the PointsYeah MCP server. All 16 manual tests were run against the real PointsYeah API with a real user account. Note: 5 tools were subsequently removed (get_flight_recommendations, get_hotel_recommendations, get_explorer_count, get_user_membership, get_user_preferences) as they were not needed. The remaining 2 tools (search_flights, get_search_history) were fully tested in the original run.
 
 **Test Categories:**
 
-- Tool & Resource Discovery (3 tests): Lists all 7 tools, config resource, and config content correctly
+- Tool & Resource Discovery (3 tests): Lists tools, config resource, and config content correctly
 - Authentication - Cognito Token Refresh (1 test): Successfully refreshes AWS Cognito tokens and calls API
-- Read-Only Tools - User API (3 tests): get_search_history, get_user_membership, get_user_preferences
-- Read-Only Tools - Explorer API (4 tests): get_explorer_count, get_flight_recommendations (with/without filter), get_hotel_recommendations
+- Read-Only Tools (1 test): get_search_history
 - Flight Search - Input Validation (3 tests): Rejects missing returnDate, invalid dates, and missing required fields
 - Direct Client - Cognito Auth (1 test): Directly calls refreshCognitoTokens() with real token
 - Direct Client - Flight Search via Playwright (1 test): Full Playwright browser automation flow with task creation and polling
@@ -78,9 +77,7 @@ This is the initial release of the PointsYeah MCP server. All 16 manual tests we
 **Key Findings:**
 
 1. The `fetch_result` polling endpoint returns `{result, status}` in `data`, not `{completed_sub_tasks, total_sub_tasks}` as the TypeScript types define
-2. Flight recommendations departure filter returns 500 - the API may not support filtering via POST body
-3. First MCP tool call can fail transiently during subprocess warmup; retry with delay resolves it
-4. MCP SDK has hardcoded 60s request timeout; flight search must be tested directly bypassing MCP protocol
-5. Hotel `points` field can be an object rather than a number depending on hotel program
+2. First MCP tool call can fail transiently during subprocess warmup; retry with delay resolves it
+3. MCP SDK has hardcoded 60s request timeout; flight search must be tested directly bypassing MCP protocol
 
-**Summary:** All 16 manual tests pass against the real PointsYeah API. The server correctly authenticates via AWS Cognito, performs award flight searches via Playwright browser automation, and retrieves user data and Explorer recommendations.
+**Summary:** All manual tests pass against the real PointsYeah API. The server correctly authenticates via AWS Cognito, performs award flight searches via Playwright browser automation, and retrieves search history.

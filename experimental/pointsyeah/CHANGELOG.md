@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Manual test suite with 16 tests covering all tools, resources, auth, and Playwright search
+- Manual test suite covering all tools, resources, auth, and Playwright search
 
 ### Changed
 
@@ -24,6 +24,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 
+- `get_flight_recommendations` tool and Explorer flight deals API
+- `get_hotel_recommendations` tool and Explorer hotel deals API
+- `get_explorer_count` tool and Explorer count API
+- `get_user_membership` tool and membership API
+- `get_user_preferences` tool and preferences API
 - Unused re-export file `pointsyeah-client.ts`
 - Unused types from `types.ts` (`ExplorerRecommendParamsSchema`, `UserMembership`, `UserPreferences`, `SearchHistoryEntry`)
 - Dead `registerTools` function and export from shared module

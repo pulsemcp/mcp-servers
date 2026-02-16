@@ -25,16 +25,11 @@ describe('PointsYeah MCP Server Integration Tests', () => {
 
       const result = await client.listTools();
       const tools = result.tools;
-      expect(tools.length).toBe(7);
+      expect(tools.length).toBe(2);
 
       const toolNames = tools.map((t: { name: string }) => t.name);
       expect(toolNames).toContain('search_flights');
       expect(toolNames).toContain('get_search_history');
-      expect(toolNames).toContain('get_user_membership');
-      expect(toolNames).toContain('get_user_preferences');
-      expect(toolNames).toContain('get_flight_recommendations');
-      expect(toolNames).toContain('get_hotel_recommendations');
-      expect(toolNames).toContain('get_explorer_count');
     });
 
     it('should execute search_flights with mock data', async () => {
@@ -86,28 +81,6 @@ describe('PointsYeah MCP Server Integration Tests', () => {
       expect(result.content[0].text).toContain('JetBlue TrueBlue');
       expect(result.content[0].text).toContain('23,300');
       expect(result.content[0].text).toContain('B615');
-    });
-
-    it('should execute get_user_membership', async () => {
-      const mockClient = createIntegrationMockPointsYeahClient({
-        membership: { plan: 'premium', status: 'active', expiresAt: '2027-01-01' },
-      });
-      client = await createTestMCPClientWithMock(mockClient);
-
-      const result = await client.callTool('get_user_membership', {});
-      const parsed = JSON.parse(result.content[0].text);
-      expect(parsed.plan).toBe('premium');
-    });
-
-    it('should execute get_explorer_count', async () => {
-      const mockClient = createIntegrationMockPointsYeahClient({
-        explorerCount: { count: 99 },
-      });
-      client = await createTestMCPClientWithMock(mockClient);
-
-      const result = await client.callTool('get_explorer_count', {});
-      const parsed = JSON.parse(result.content[0].text);
-      expect(parsed.count).toBe(99);
     });
   });
 

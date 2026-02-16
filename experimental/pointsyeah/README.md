@@ -6,10 +6,7 @@ An MCP server for searching award flights and travel deals via [PointsYeah](http
 
 - **Award Flight Search** - Search for flights using points/miles across multiple airline programs
 - **Bank Transfer Comparisons** - See transfer options from Chase, Amex, Citi, Capital One, Bilt, and Wells Fargo
-- **Flight Deal Recommendations** - Discover curated award flight deals and sweet spots
-- **Hotel Deal Recommendations** - Find hotel point redemption opportunities
 - **Search History** - Review your past award flight searches
-- **User Profile** - View membership and preference information
 
 ## Prerequisites
 
@@ -84,15 +81,10 @@ cd local && npm start
 
 ## Available Tools
 
-| Tool                         | Description                                                                  |
-| ---------------------------- | ---------------------------------------------------------------------------- |
-| `search_flights`             | Search for award flights using points/miles across multiple airline programs |
-| `get_search_history`         | Get past flight search history                                               |
-| `get_user_membership`        | Get user membership information                                              |
-| `get_user_preferences`       | Get user preferences                                                         |
-| `get_flight_recommendations` | Get flight deal recommendations from Explorer                                |
-| `get_hotel_recommendations`  | Get hotel deal recommendations from Explorer                                 |
-| `get_explorer_count`         | Get total count of available deals                                           |
+| Tool                 | Description                                                                  |
+| -------------------- | ---------------------------------------------------------------------------- |
+| `search_flights`     | Search for award flights using points/miles across multiple airline programs |
+| `get_search_history` | Get past flight search history                                               |
 
 ## Architecture
 
@@ -101,7 +93,7 @@ This server uses a two-step approach for flight searches:
 1. **Playwright** - The initial search request is encrypted client-side by PointsYeah. We use Playwright to navigate to the search page, inject authentication cookies, and intercept the search task creation response.
 2. **HTTP Polling** - Once a search task is created, results are polled via plain HTTP until all airline programs have responded.
 
-All other API calls (history, membership, recommendations, etc.) use plain HTTP requests with the Cognito ID token for authentication.
+All other API calls (history, etc.) use plain HTTP requests with the Cognito ID token for authentication.
 
 ### Authentication Flow
 

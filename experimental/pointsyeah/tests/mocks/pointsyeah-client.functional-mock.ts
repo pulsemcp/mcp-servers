@@ -59,25 +59,5 @@ export function createMockPointsYeahClient(): IPointsYeahClient {
       { route: 'SFO -> NYC', date: '2026-03-15' },
       { route: 'LAX -> LHR', date: '2026-03-10' },
     ]),
-
-    getUserMembership: vi.fn().mockResolvedValue({
-      plan: 'free',
-      status: 'active',
-    }),
-
-    getUserPreferences: vi.fn().mockResolvedValue({
-      defaultCabin: 'Economy',
-      preferredAirlines: ['UA', 'AA'],
-    }),
-
-    getFlightRecommendations: vi.fn().mockResolvedValue({
-      recommendations: [{ route: 'SFO -> NRT', points: 40000, program: 'ANA Mileage Club' }],
-    }),
-
-    getHotelRecommendations: vi.fn().mockResolvedValue({
-      recommendations: [{ hotel: 'Park Hyatt Tokyo', points: 25000, program: 'World of Hyatt' }],
-    }),
-
-    getExplorerCount: vi.fn().mockResolvedValue({ count: 42 }),
   };
 }

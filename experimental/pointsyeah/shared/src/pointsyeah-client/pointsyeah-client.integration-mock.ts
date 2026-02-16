@@ -9,11 +9,6 @@ import type {
 interface MockData {
   searchResults?: FlightResult[];
   searchHistory?: unknown[];
-  membership?: unknown;
-  preferences?: unknown;
-  flightRecommendations?: unknown;
-  hotelRecommendations?: unknown;
-  explorerCount?: unknown;
   [key: string]: unknown;
 }
 
@@ -86,44 +81,6 @@ export function createIntegrationMockPointsYeahClient(
 
     async getSearchHistory(): Promise<unknown> {
       return mockData.searchHistory || [];
-    },
-
-    async getUserMembership(): Promise<unknown> {
-      return (
-        mockData.membership || {
-          plan: 'free',
-          status: 'active',
-        }
-      );
-    },
-
-    async getUserPreferences(): Promise<unknown> {
-      return (
-        mockData.preferences || {
-          defaultCabin: 'Economy',
-          preferredAirlines: ['UA', 'AA'],
-        }
-      );
-    },
-
-    async getFlightRecommendations(_body?: unknown): Promise<unknown> {
-      return (
-        mockData.flightRecommendations || {
-          recommendations: [],
-        }
-      );
-    },
-
-    async getHotelRecommendations(_body?: unknown): Promise<unknown> {
-      return (
-        mockData.hotelRecommendations || {
-          recommendations: [],
-        }
-      );
-    },
-
-    async getExplorerCount(): Promise<unknown> {
-      return mockData.explorerCount || { count: 42 };
     },
   };
 }
