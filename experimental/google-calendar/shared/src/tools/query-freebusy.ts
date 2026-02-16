@@ -67,7 +67,8 @@ export function queryFreebusyTool(server: Server, clientFactory: ClientFactory) 
         const result = await client.queryFreebusy(request);
 
         let output = `# Free/Busy Information\n\n`;
-        output += `**Time Range:** ${new Date(result.timeMin).toLocaleString()} to ${new Date(result.timeMax).toLocaleString()}\n`;
+        const freebusyTimeOptions = parsed.timezone ? { timeZone: parsed.timezone } : undefined;
+        output += `**Time Range:** ${new Date(result.timeMin).toLocaleString(undefined, freebusyTimeOptions)} to ${new Date(result.timeMax).toLocaleString(undefined, freebusyTimeOptions)}\n`;
         if (parsed.timezone) {
           output += `**Times shown in:** ${parsed.timezone}\n`;
         }
@@ -94,8 +95,8 @@ export function queryFreebusyTool(server: Server, clientFactory: ClientFactory) 
           } else {
             output += `**Busy Periods:** ${busyPeriods.length}\n\n`;
             for (const period of busyPeriods) {
-              const start = new Date(period.start).toLocaleString();
-              const end = new Date(period.end).toLocaleString();
+              const start = new Date(period.start).toLocaleString(undefined, freebusyTimeOptions);
+              const end = new Date(period.end).toLocaleString(undefined, freebusyTimeOptions);
               output += `- ${start} to ${end}\n`;
             }
             output += '\n';
