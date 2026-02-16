@@ -4,6 +4,8 @@ All notable changes to the Google Flights MCP Server will be documented in this 
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-02-16
+
 ### Changed
 
 - Renamed npm package from `google-flights-google-mcp-server` to `google-flights-mcp-server`
