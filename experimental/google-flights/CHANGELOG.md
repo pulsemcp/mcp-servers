@@ -4,6 +4,12 @@ All notable changes to the Google Flights MCP Server will be documented in this 
 
 ## [Unreleased]
 
+### Added
+
+- `has_more` and `next_offset` fields in search_flights response for explicit pagination
+- Steering language in search_flights description to recommend filters for large result sets
+- Deal-hunting guidance in get_date_grid description for flexible travel dates
+
 ## [0.1.0] - 2026-02-16
 
 ### Added

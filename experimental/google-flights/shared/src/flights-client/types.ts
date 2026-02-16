@@ -85,6 +85,8 @@ export interface SearchFlightsResult {
   };
   total_results: number;
   showing: { offset: number; count: number };
+  has_more: boolean;
+  next_offset: number | null;
   flights: FlightOffer[];
 }
 

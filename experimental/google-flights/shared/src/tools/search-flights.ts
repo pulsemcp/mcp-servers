@@ -69,6 +69,10 @@ export function searchFlightsTool(_server: Server, clientFactory: FlightsClientF
 
 Returns structured flight data including prices, airlines, times, durations, stops, and individual flight segments with aircraft type and legroom.
 
+IMPORTANT — Handling large result sets: Popular routes often return 50-150+ flights. If total_results is high, recommend narrowing with filters (max_stops, sort_by, seat_class) rather than paginating through everything. For example, set max_stops to "nonstop" or sort_by to "price" to surface the most relevant options quickly.
+
+Pagination: The response includes has_more (boolean) and next_offset (number or null). To get the next page, call search_flights again with the same parameters but set offset to next_offset. Keep paginating while has_more is true. Each page returns up to max_results flights.
+
 Use find_airport_code first if you need to look up IATA airport codes.
 Use get_date_grid to find the cheapest dates before searching.`,
     inputSchema: {

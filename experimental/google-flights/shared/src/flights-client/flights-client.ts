@@ -420,6 +420,9 @@ export async function searchFlights(options: SearchFlightsOptions): Promise<Sear
       offset: options.offset,
       count: paginated.length,
     },
+    has_more: options.offset + paginated.length < totalResults,
+    next_offset:
+      options.offset + paginated.length < totalResults ? options.offset + paginated.length : null,
     flights: paginated,
   };
 }

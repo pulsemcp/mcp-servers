@@ -31,7 +31,7 @@ export function getDateGridTool(_server: Server, clientFactory: FlightsClientFac
     name: 'get_date_grid',
     description: `Get a date-price grid for a route showing the lowest flight price for each day.
 
-Returns an array of dates with their lowest prices, plus the overall cheapest date. Useful for finding the best travel dates before doing a detailed search.
+Returns an array of dates with their lowest prices, plus the overall cheapest date. Great for deal-hunting when the user has flexibility on travel dates — call this first to find the cheapest day, then use search_flights on that date.
 
 The grid typically covers ~60 days around the anchor date.`,
     inputSchema: {
