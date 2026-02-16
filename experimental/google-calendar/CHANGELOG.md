@@ -13,7 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Event times now display correctly in the event's timezone instead of the server's local timezone
   - Previously, UTC times were displayed as-is but labeled with the event's timezone (e.g., an 8:59 AM PST event showed as 4:59 PM labeled as America/Los_Angeles)
-  - Now uses `Intl.DateTimeFormat` with the event's timezone to show the correct local time
+  - Now passes the event's timezone to `toLocaleString()` to show the correct local time
   - Affects `create_calendar_event`, `update_calendar_event`, `get_calendar_event`, `list_calendar_events`, and `query_calendar_freebusy` tools
 
 ## [0.0.6] - 2026-01-25
