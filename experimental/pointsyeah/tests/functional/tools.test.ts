@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { searchFlightsTool } from '../../shared/src/tools/search-flights.js';
 import { getSearchHistoryTool } from '../../shared/src/tools/get-search-history.js';
@@ -75,6 +75,47 @@ describe('PointsYeah Tools', () => {
       const result = await tool.handler({});
 
       expect(result.isError).toBe(true);
+    });
+
+    it('should handle client errors gracefully', async () => {
+      const errorClient: IPointsYeahClient = {
+        searchFlights: vi.fn().mockRejectedValue(new Error('Playwright not available')),
+        getSearchHistory: vi.fn(),
+      };
+      const tool = searchFlightsTool(mockServer, () => errorClient);
+      const result = await tool.handler({
+        departure: 'SFO',
+        arrival: 'NYC',
+        departDate: '2026-04-01',
+        tripType: '1',
+      });
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('Playwright not available');
+    });
+
+    it('should handle empty search results', async () => {
+      const emptyClient: IPointsYeahClient = {
+        searchFlights: vi.fn().mockResolvedValue({
+          task: { task_id: 'mock-task', total_sub_tasks: 4, status: 'created' },
+          results: {
+            code: 0,
+            success: true,
+            data: { result: [], completed_sub_tasks: 4, total_sub_tasks: 4 },
+          },
+        }),
+        getSearchHistory: vi.fn(),
+      };
+      const tool = searchFlightsTool(mockServer, () => emptyClient);
+      const result = await tool.handler({
+        departure: 'SFO',
+        arrival: 'NYC',
+        departDate: '2026-04-01',
+        tripType: '1',
+      });
+
+      expect(result.isError).toBeFalsy();
+      expect(result.content[0].text).toContain('No award flights found');
     });
   });
 

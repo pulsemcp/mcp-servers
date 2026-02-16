@@ -76,7 +76,7 @@ This is the initial release of the PointsYeah MCP server. All 16 manual tests we
 
 **Key Findings:**
 
-1. The `fetch_result` polling endpoint returns `{result, status}` in `data`, not `{completed_sub_tasks, total_sub_tasks}` as the TypeScript types define
+1. The `fetch_result` polling endpoint returns `completed_sub_tasks` and `total_sub_tasks` in `data` alongside additional fields like `status` not in our TypeScript types
 2. First MCP tool call can fail transiently during subprocess warmup; retry with delay resolves it
 3. MCP SDK has hardcoded 60s request timeout; flight search must be tested directly bypassing MCP protocol
 

@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Manual test suite covering all tools, resources, auth, and Playwright search
+- Functional tests for client error handling and empty search results
 
 ### Changed
 
