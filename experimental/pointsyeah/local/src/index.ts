@@ -104,9 +104,12 @@ interface PlaywrightResponse {
 function createPlaywrightDeps(): { launchBrowser: () => Promise<PlaywrightBrowserContext> } {
   return {
     launchBrowser: async () => {
-      // Dynamic import so Playwright is not required at module load time
-      const { chromium } = await import('playwright');
-      const browser = await chromium.launch({ headless: true });
+      // Dynamic import so Playwright is not required at module load time.
+      // Use a variable to prevent TypeScript from statically resolving the module.
+      const moduleName = 'playwright';
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const pw: any = await import(moduleName);
+      const browser = await pw.chromium.launch({ headless: true });
       const context = await browser.newContext({
         userAgent:
           'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
@@ -131,8 +134,10 @@ function createPlaywrightDeps(): { launchBrowser: () => Promise<PlaywrightBrowse
               predicate: (response: PlaywrightResponse) => boolean,
               options?: { timeout?: number }
             ) => {
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
               const response = await page.waitForResponse(
-                (resp) => predicate({ url: () => resp.url(), json: () => resp.json() }),
+                (resp: { url: () => string; json: () => Promise<unknown> }) =>
+                  predicate({ url: () => resp.url(), json: () => resp.json() }),
                 { timeout: options?.timeout || 60000 }
               );
               return { url: () => response.url(), json: () => response.json() };
