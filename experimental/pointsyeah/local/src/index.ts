@@ -81,12 +81,12 @@ function validateEnvironment(): void {
 
 /**
  * Create a Playwright browser context factory.
- * Playwright is dynamically imported to keep it as an optional dependency.
+ * Playwright is dynamically imported for graceful degradation if unavailable.
  */
 function createPlaywrightDeps(): { launchBrowser: () => Promise<PlaywrightBrowserContext> } {
   return {
     launchBrowser: async () => {
-      // Dynamic import so Playwright is not required at module load time.
+      // Dynamic import for graceful degradation at runtime.
       // Use a variable to prevent TypeScript from statically resolving the module.
       const moduleName = 'playwright';
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
