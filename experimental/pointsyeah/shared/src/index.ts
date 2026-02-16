@@ -4,13 +4,14 @@ export { createRegisterTools, type ToolGroup, parseEnabledToolGroups } from './t
 export {
   createMCPServer,
   PointsYeahClient,
+  defaultClientFactory,
   type CreateMCPServerOptions,
   type ClientFactory,
   type IPointsYeahClient,
 } from './server.js';
 
 // State management exports
-export { getServerState, resetState } from './state.js';
+export { getServerState, setAuthenticated, setRefreshToken, resetState } from './state.js';
 
 // Logging exports
 export { logServerStart, logError, logWarning, logDebug } from './logging.js';

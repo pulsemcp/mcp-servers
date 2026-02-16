@@ -10,12 +10,21 @@ This MCP server integrates with PointsYeah, a travel rewards search engine. All 
 
 ## Key Design Decisions
 
+### Dynamic Authentication
+
+- Server starts with only `set_refresh_token` tool when unauthenticated
+- After a valid token is provided (via env var or tool), switches to flight search tools
+- If token is later revoked, automatically switches back to `set_refresh_token`
+- Uses `server.sendToolListChanged()` to notify MCP clients when tool list changes
+- Auth state is tracked in `state.ts` (module-level singleton)
+
 ### Authentication
 
 - Uses AWS Cognito `REFRESH_TOKEN_AUTH` flow
 - Tokens are refreshed lazily - only when within 5 minutes of expiry
 - The refresh token itself does not rotate; the same token works until it expires
 - All authenticated API calls use `withAuth()` which automatically retries on 401
+- Token revocation is detected by checking error messages for known patterns
 
 ### Flight Search (Two-Step)
 
@@ -30,11 +39,21 @@ This MCP server integrates with PointsYeah, a travel rewards search engine. All 
 
 ## Environment Variables
 
-- `POINTSYEAH_REFRESH_TOKEN` (required) - Cognito refresh token (~1784 char JWE)
+- `POINTSYEAH_REFRESH_TOKEN` (optional) - Cognito refresh token (~1784 char JWE). If not set, server starts in unauthenticated mode.
 - `ENABLED_TOOLGROUPS` (optional) - Tool group filter
+
+## Key Files
+
+- `shared/src/state.ts` - Auth state management (authenticated flag, refresh token)
+- `shared/src/tools.ts` - Dynamic tool registration with `applyToolList()` and `sendToolListChanged()`
+- `shared/src/tools/set-refresh-token.ts` - The `set_refresh_token` tool with token validation
+- `shared/src/server.ts` - `PointsYeahClient` reads token from state via getter
+- `local/src/index.ts` - Entry point with optional env token validation on startup
 
 ## Testing
 
-- Functional tests mock the `IPointsYeahClient` interface
+- Functional tests mock the `IPointsYeahClient` interface and test auth state transitions
 - Integration tests use `createIntegrationMockPointsYeahClient` with `TestMCPClient`
-- Manual tests require a real refresh token
+- Manual tests are designed to always pass regardless of token availability:
+  - Unauthenticated tests verify the auth-needed UX (no token required)
+  - Authenticated tests gracefully handle expired/revoked tokens

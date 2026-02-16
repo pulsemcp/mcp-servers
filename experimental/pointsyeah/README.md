@@ -17,10 +17,18 @@ An MCP server for searching award flights and travel deals via [PointsYeah](http
 
 ### Environment Variables
 
-| Variable                   | Required | Description                                          |
-| -------------------------- | -------- | ---------------------------------------------------- |
-| `POINTSYEAH_REFRESH_TOKEN` | Yes      | AWS Cognito refresh token from PointsYeah            |
-| `ENABLED_TOOLGROUPS`       | No       | Comma-separated tool groups to enable (default: all) |
+| Variable                   | Required | Description                                                                                               |
+| -------------------------- | -------- | --------------------------------------------------------------------------------------------------------- |
+| `POINTSYEAH_REFRESH_TOKEN` | No       | AWS Cognito refresh token from PointsYeah (optional — can be set at runtime via `set_refresh_token` tool) |
+| `ENABLED_TOOLGROUPS`       | No       | Comma-separated tool groups to enable (default: all)                                                      |
+
+### Authentication
+
+The server uses a dynamic authentication flow:
+
+1. **Without a token**: The server starts with only one tool — `set_refresh_token` — which includes step-by-step instructions for obtaining the token
+2. **After providing a valid token** (via environment variable or the tool): Flight search tools (`search_flights`, `get_search_history`) become available
+3. **If the token expires or is revoked**: The server automatically switches back to showing only `set_refresh_token`
 
 ### Obtaining the Refresh Token
 
@@ -35,9 +43,9 @@ An MCP server for searching award flights and travel deals via [PointsYeah](http
      .slice(1)
      .join('=');
    ```
-4. Copy the output and set it as `POINTSYEAH_REFRESH_TOKEN`
+4. Either set it as the `POINTSYEAH_REFRESH_TOKEN` environment variable, or provide it at runtime via the `set_refresh_token` tool
 
-> **Note:** The refresh token typically expires after 30-90 days. You'll need to repeat this process when it expires.
+> **Note:** The refresh token typically expires after 30-90 days. When it expires, the server will switch back to the `set_refresh_token` tool automatically.
 
 ### Claude Desktop Configuration
 
@@ -77,10 +85,11 @@ cd local && npm start
 
 ## Available Tools
 
-| Tool                 | Description                                                                  |
-| -------------------- | ---------------------------------------------------------------------------- |
-| `search_flights`     | Search for award flights using points/miles across multiple airline programs |
-| `get_search_history` | Get past flight search history                                               |
+| Tool                 | Description                                                                  | Available When  |
+| -------------------- | ---------------------------------------------------------------------------- | --------------- |
+| `set_refresh_token`  | Set the PointsYeah refresh token for authentication                          | Unauthenticated |
+| `search_flights`     | Search for award flights using points/miles across multiple airline programs | Authenticated   |
+| `get_search_history` | Get past flight search history                                               | Authenticated   |
 
 ## Architecture
 
@@ -93,12 +102,14 @@ All API calls use plain HTTP requests with the Cognito ID token for authenticati
 
 ### Authentication Flow
 
-PointsYeah uses AWS Cognito for authentication. The server:
+PointsYeah uses AWS Cognito for authentication. The server supports dynamic authentication:
 
-1. Takes a Cognito refresh token from the environment
-2. Exchanges it for access and ID tokens via Cognito's `InitiateAuth` API
-3. Refreshes tokens lazily when they're within 5 minutes of expiry
-4. Uses the ID token for all API requests
+1. On startup, if `POINTSYEAH_REFRESH_TOKEN` is set, validates it via Cognito. If valid, enters authenticated mode. If invalid/expired, enters unauthenticated mode.
+2. In unauthenticated mode, only the `set_refresh_token` tool is exposed, guiding the user to provide a valid token.
+3. Once authenticated, exchanges the refresh token for access and ID tokens via Cognito's `InitiateAuth` API.
+4. Refreshes tokens lazily when they're within 5 minutes of expiry.
+5. If a token is revoked mid-session (detected via API error), automatically switches back to unauthenticated mode.
+6. Uses MCP `sendToolListChanged()` to notify clients when the available tool set changes.
 
 ## Development
 

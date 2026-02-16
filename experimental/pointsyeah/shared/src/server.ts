@@ -1,6 +1,7 @@
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { registerResources } from './resources.js';
 import { createRegisterTools } from './tools.js';
+import { getServerState } from './state.js';
 import type {
   FlightSearchParams,
   FlightResult,
@@ -87,10 +88,15 @@ function normalizeDetailResponse(detail: ExplorerDetailResponse): FlightResult {
 export class PointsYeahClient implements IPointsYeahClient {
   private tokens: CognitoTokens | null = null;
   private refreshPromise: Promise<CognitoTokens> | null = null;
-  private refreshToken: string;
 
-  constructor(refreshToken: string) {
-    this.refreshToken = refreshToken;
+  private get refreshToken(): string {
+    const { refreshToken } = getServerState();
+    if (!refreshToken) {
+      throw new Error(
+        'Refresh token expired or revoked. Please re-login to PointsYeah and update POINTSYEAH_REFRESH_TOKEN.'
+      );
+    }
+    return refreshToken;
   }
 
   /**
@@ -208,4 +214,11 @@ export function createMCPServer(options: CreateMCPServerOptions) {
   };
 
   return { server, registerHandlers };
+}
+
+/**
+ * Default client factory that creates a PointsYeahClient reading the token from state.
+ */
+export function defaultClientFactory(): IPointsYeahClient {
+  return new PointsYeahClient();
 }
