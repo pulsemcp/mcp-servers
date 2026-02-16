@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-02-16
+
 ### Added
 
 - Dynamic authentication flow with `set_refresh_token` tool
@@ -17,6 +19,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `authentication` section in `pointsyeah://config` resource showing auth status
 - Centralized auth state management via `state.ts`
 - Functional tests for `set_refresh_token` tool and auth state transitions
+
+### Changed
+
+- `POINTSYEAH_REFRESH_TOKEN` environment variable is now optional (server starts in auth-needed mode without it)
+- Manual tests redesigned to always pass regardless of token availability
 
 ### Changed
 
