@@ -337,9 +337,8 @@ describe('PointsYeah MCP Server - Manual Tests', () => {
 
   describe('Direct Client - Cognito Auth', () => {
     it('should refresh Cognito tokens with the real refresh token', async () => {
-      const { refreshCognitoTokens } = await import(
-        '../../shared/build/pointsyeah-client/lib/auth.js'
-      );
+      const { refreshCognitoTokens } =
+        await import('../../shared/build/pointsyeah-client/lib/auth.js');
 
       const tokens = await refreshCognitoTokens(process.env.POINTSYEAH_REFRESH_TOKEN!);
 
@@ -362,12 +361,10 @@ describe('PointsYeah MCP Server - Manual Tests', () => {
 
   describe('Direct Client - Flight Search via Playwright', () => {
     it('should create a search task and poll for results', async () => {
-      const { refreshCognitoTokens } = await import(
-        '../../shared/build/pointsyeah-client/lib/auth.js'
-      );
-      const { createSearchTask } = await import(
-        '../../shared/build/pointsyeah-client/lib/search.js'
-      );
+      const { refreshCognitoTokens } =
+        await import('../../shared/build/pointsyeah-client/lib/auth.js');
+      const { createSearchTask } =
+        await import('../../shared/build/pointsyeah-client/lib/search.js');
 
       // Step 1: Get tokens
       console.log('Step 1: Refreshing Cognito tokens...');
