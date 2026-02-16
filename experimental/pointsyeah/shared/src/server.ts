@@ -43,6 +43,7 @@ export interface IPointsYeahClient {
 
 export class PointsYeahClient implements IPointsYeahClient {
   private tokens: CognitoTokens | null = null;
+  private refreshPromise: Promise<CognitoTokens> | null = null;
   private refreshToken: string;
   private playwright: PlaywrightSearchDeps;
 
@@ -53,15 +54,27 @@ export class PointsYeahClient implements IPointsYeahClient {
 
   /**
    * Ensure we have valid tokens, refreshing if needed.
-   * Uses Option B from spec: lazy refresh when token is within 5 minutes of expiry.
+   * Uses a mutex (refreshPromise) to prevent concurrent refresh calls.
    */
   private async ensureTokens(): Promise<CognitoTokens> {
     const now = Math.floor(Date.now() / 1000);
     const REFRESH_BUFFER = 5 * 60; // 5 minutes
 
     if (!this.tokens || this.tokens.expiresAt - now < REFRESH_BUFFER) {
-      logDebug('client', 'Tokens expired or expiring soon, refreshing...');
-      this.tokens = await refreshCognitoTokens(this.refreshToken);
+      if (!this.refreshPromise) {
+        logDebug('client', 'Tokens expired or expiring soon, refreshing...');
+        this.refreshPromise = refreshCognitoTokens(this.refreshToken)
+          .then((tokens) => {
+            this.tokens = tokens;
+            this.refreshPromise = null;
+            return tokens;
+          })
+          .catch((err) => {
+            this.refreshPromise = null;
+            throw err;
+          });
+      }
+      return this.refreshPromise;
     }
 
     return this.tokens;
@@ -75,11 +88,13 @@ export class PointsYeahClient implements IPointsYeahClient {
     try {
       return await fn(tokens.idToken);
     } catch (error) {
-      // If we get a 401-like error, try refreshing and retrying once
+      // If we get a 401, force a token refresh and retry once
       if (error instanceof Error && error.message.includes('401')) {
         logWarning('client', 'Got 401, refreshing tokens and retrying...');
-        this.tokens = await refreshCognitoTokens(this.refreshToken);
-        return await fn(this.tokens.idToken);
+        this.tokens = null;
+        this.refreshPromise = null;
+        const freshTokens = await this.ensureTokens();
+        return await fn(freshTokens.idToken);
       }
       throw error;
     }
@@ -175,23 +190,9 @@ export function createMCPServer(options: CreateMCPServerOptions) {
     }
   );
 
-  const registerHandlers = async (server: Server, clientFactory?: ClientFactory) => {
-    const factory =
-      clientFactory ||
-      (() => {
-        const refreshToken = process.env.POINTSYEAH_REFRESH_TOKEN;
-        if (!refreshToken) {
-          throw new Error('POINTSYEAH_REFRESH_TOKEN environment variable must be configured');
-        }
-
-        // Dynamic import to avoid requiring Playwright when using mocks
-        throw new Error(
-          'Default client factory requires Playwright setup. Use the local entry point.'
-        );
-      });
-
-    registerResources(server);
-    const registerTools = createRegisterTools(factory);
+  const registerHandlers = async (server: Server, clientFactory: ClientFactory) => {
+    registerResources(server, options.version);
+    const registerTools = createRegisterTools(clientFactory);
     registerTools(server);
   };
 

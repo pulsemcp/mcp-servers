@@ -1,8 +1,6 @@
 import type { CognitoTokens, CognitoAuthResult } from '../../types.js';
 import { logDebug, logError } from '../../logging.js';
-
-const COGNITO_ENDPOINT = 'https://cognito-idp.us-east-1.amazonaws.com/';
-const CLIENT_ID = '3im8jrentts1pguuouv5s57gfu';
+import { COGNITO_ENDPOINT, COGNITO_CLIENT_ID, FETCH_TIMEOUT_MS } from '../../constants.js';
 
 /**
  * Decode a JWT payload without verification (we just need the claims).
@@ -31,11 +29,12 @@ export async function refreshCognitoTokens(refreshToken: string): Promise<Cognit
     },
     body: JSON.stringify({
       AuthFlow: 'REFRESH_TOKEN_AUTH',
-      ClientId: CLIENT_ID,
+      ClientId: COGNITO_CLIENT_ID,
       AuthParameters: {
         REFRESH_TOKEN: refreshToken,
       },
     }),
+    signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
   });
 
   if (!response.ok) {

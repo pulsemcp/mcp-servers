@@ -1,8 +1,7 @@
 import type { FlightSearchParams, FlightSearchTask } from '../../types.js';
 import { logDebug } from '../../logging.js';
 import { getUserSubFromIdToken } from './auth.js';
-
-const CLIENT_ID = '3im8jrentts1pguuouv5s57gfu';
+import { COGNITO_CLIENT_ID } from '../../constants.js';
 
 const DEFAULT_BANKS = 'Amex,Bilt,Capital+One,Chase,Citi,WF';
 const DEFAULT_AIRLINE_PROGRAMS = 'AR,AM,AC,KL,AS,AA,AV,DL,EK,EY,AY,B6,LH,QF,SK,SQ,NK,TK,UA,VS,VA';
@@ -16,7 +15,7 @@ function buildCognitoCookies(
   idToken: string,
   refreshToken: string
 ): Array<{ name: string; value: string; domain: string; path: string }> {
-  const prefix = `CognitoIdentityServiceProvider.${CLIENT_ID}.${userId}`;
+  const prefix = `CognitoIdentityServiceProvider.${COGNITO_CLIENT_ID}.${userId}`;
   const domain = '.pointsyeah.com';
   const path = '/';
 
@@ -32,7 +31,7 @@ function buildCognitoCookies(
       path,
     },
     {
-      name: `CognitoIdentityServiceProvider.${CLIENT_ID}.LastAuthUser`,
+      name: `CognitoIdentityServiceProvider.${COGNITO_CLIENT_ID}.LastAuthUser`,
       value: userId,
       domain,
       path,
@@ -137,7 +136,7 @@ export async function createSearchTask(
       };
 
       if (!data.success) {
-        throw new Error(`Search task creation failed: ${JSON.stringify(data)}`);
+        throw new Error(`Search task creation failed (code: ${data.code})`);
       }
 
       logDebug('search', `Search task created: ${data.data.task_id}`);

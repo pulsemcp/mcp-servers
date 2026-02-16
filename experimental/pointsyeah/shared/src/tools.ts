@@ -56,14 +56,12 @@ interface ToolDefinition {
 }
 
 const ALL_TOOLS: ToolDefinition[] = [
-  // Flight search - the primary tool
-  { factory: searchFlightsTool, groups: ['readonly', 'write', 'admin'] },
-  // Search history
+  // Flight search creates a server-side task, so it's a write operation
+  { factory: searchFlightsTool, groups: ['write', 'admin'] },
+  // Read-only tools - only query existing data
   { factory: getSearchHistoryTool, groups: ['readonly', 'write', 'admin'] },
-  // User info tools
   { factory: getUserMembershipTool, groups: ['readonly', 'write', 'admin'] },
   { factory: getUserPreferencesTool, groups: ['readonly', 'write', 'admin'] },
-  // Explorer / recommendation tools
   { factory: getFlightRecommendationsTool, groups: ['readonly', 'write', 'admin'] },
   { factory: getHotelRecommendationsTool, groups: ['readonly', 'write', 'admin'] },
   { factory: getExplorerCountTool, groups: ['readonly', 'write', 'admin'] },
@@ -98,14 +96,4 @@ export function createRegisterTools(clientFactory: ClientFactory, enabledGroups?
       return await tool.handler(args);
     });
   };
-}
-
-export function registerTools(server: Server) {
-  const factory = () => {
-    throw new Error(
-      'No client factory provided - use createRegisterTools for dependency injection'
-    );
-  };
-  const register = createRegisterTools(factory);
-  register(server);
 }

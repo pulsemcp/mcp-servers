@@ -1,6 +1,5 @@
 import { logDebug } from '../../logging.js';
-
-const API_BASE = 'https://api.pointsyeah.com/v2/live';
+import { API_BASE, FETCH_TIMEOUT_MS } from '../../constants.js';
 
 /**
  * Make an authenticated GET request to the PointsYeah API.
@@ -11,11 +10,13 @@ async function apiGet(path: string, idToken: string): Promise<unknown> {
   const response = await fetch(`${API_BASE}${path}`, {
     method: 'GET',
     headers: {
+      // PointsYeah API expects the raw Cognito ID token without a Bearer prefix
       Authorization: idToken,
       'Content-Type': 'application/json',
       Origin: 'https://www.pointsyeah.com',
       Referer: 'https://www.pointsyeah.com/',
     },
+    signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
   });
 
   if (!response.ok) {
@@ -34,12 +35,14 @@ async function apiPost(path: string, idToken: string, body: unknown = {}): Promi
   const response = await fetch(`${API_BASE}${path}`, {
     method: 'POST',
     headers: {
+      // PointsYeah API expects the raw Cognito ID token without a Bearer prefix
       Authorization: idToken,
       'Content-Type': 'application/json',
       Origin: 'https://www.pointsyeah.com',
       Referer: 'https://www.pointsyeah.com/',
     },
     body: JSON.stringify(body),
+    signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
   });
 
   if (!response.ok) {

@@ -5,6 +5,10 @@ import { fileURLToPath } from 'url';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { createMCPServer, PointsYeahClient, setPlaywrightAvailable } from '../shared/index.js';
 import { logServerStart, logError, logWarning } from '../shared/logging.js';
+import type {
+  PlaywrightBrowserContext,
+  PlaywrightResponse,
+} from '../shared/pointsyeah-client/lib/search.js';
 
 // Read version from package.json
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -75,28 +79,6 @@ function validateEnvironment(): void {
 // PLAYWRIGHT BROWSER FACTORY
 // =============================================================================
 
-interface PlaywrightBrowserContext {
-  addCookies: (
-    cookies: Array<{ name: string; value: string; domain: string; path: string }>
-  ) => Promise<void>;
-  newPage: () => Promise<PlaywrightPage>;
-  close: () => Promise<void>;
-}
-
-interface PlaywrightPage {
-  goto: (url: string, options?: { waitUntil?: string; timeout?: number }) => Promise<void>;
-  waitForResponse: (
-    predicate: (response: PlaywrightResponse) => boolean,
-    options?: { timeout?: number }
-  ) => Promise<PlaywrightResponse>;
-  close: () => Promise<void>;
-}
-
-interface PlaywrightResponse {
-  url: () => string;
-  json: () => Promise<unknown>;
-}
-
 /**
  * Create a Playwright browser context factory.
  * Playwright is dynamically imported to keep it as an optional dependency.
@@ -165,12 +147,22 @@ async function main() {
 
   const refreshToken = process.env.POINTSYEAH_REFRESH_TOKEN!;
 
-  // Try to set up Playwright
-  let playwrightDeps: ReturnType<typeof createPlaywrightDeps>;
+  // Probe for Playwright availability at startup
+  let playwrightAvailable = false;
   try {
-    playwrightDeps = createPlaywrightDeps();
-    setPlaywrightAvailable(true);
+    const moduleName = 'playwright';
+    await import(moduleName);
+    playwrightAvailable = true;
   } catch {
+    // Playwright module not installed
+  }
+
+  setPlaywrightAvailable(playwrightAvailable);
+
+  let playwrightDeps: ReturnType<typeof createPlaywrightDeps>;
+  if (playwrightAvailable) {
+    playwrightDeps = createPlaywrightDeps();
+  } else {
     logWarning(
       'playwright',
       'Playwright not available. Flight search will not work. Install playwright to enable search.'

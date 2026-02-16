@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Added token refresh mutex to prevent concurrent Cognito refresh calls
+- Extracted shared constants (API URLs, Cognito config, fetch timeout) to `constants.ts`
+- Added `AbortSignal.timeout` to all HTTP fetch calls for consistent request timeouts
+- Classified `search_flights` as a write operation (removed from `readonly` tool group)
+- Improved 401 retry logic to reuse `ensureTokens()` instead of calling `refreshCognitoTokens` directly
+- Removed dead default client factory from `createMCPServer` (callers must now provide a `ClientFactory`)
+- Server version in config resource is now read from package.json instead of being hardcoded
+- Playwright type interfaces are now imported from `search.ts` instead of being duplicated in local entry point
+- Removed unused re-export file `pointsyeah-client.ts`
+- Removed unused types from `types.ts` (`ExplorerRecommendParamsSchema`, `UserMembership`, `UserPreferences`, `SearchHistoryEntry`)
+- Removed dead `registerTools` function and export from shared module
+- Fixed `prepare-publish.js` to exit with code 1 on unhandled errors
+
 ## [0.1.0] - 2026-02-16
 
 ### Added

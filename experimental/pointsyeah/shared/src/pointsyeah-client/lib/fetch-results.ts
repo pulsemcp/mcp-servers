@@ -1,7 +1,6 @@
 import type { FlightSearchResponse } from '../../types.js';
 import { logDebug } from '../../logging.js';
-
-const API2_BASE = 'https://api2.pointsyeah.com';
+import { API2_BASE, FETCH_TIMEOUT_MS } from '../../constants.js';
 
 /**
  * Poll for flight search results using a task ID.
@@ -16,12 +15,14 @@ export async function fetchSearchResults(
   const response = await fetch(`${API2_BASE}/flight/search/fetch_result`, {
     method: 'POST',
     headers: {
+      // PointsYeah API expects the raw Cognito ID token without a Bearer prefix
       Authorization: idToken,
       'Content-Type': 'application/json',
       Origin: 'https://www.pointsyeah.com',
       Referer: 'https://www.pointsyeah.com/',
     },
     body: JSON.stringify({ task_id: taskId }),
+    signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
   });
 
   if (!response.ok) {

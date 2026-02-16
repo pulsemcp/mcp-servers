@@ -105,33 +105,3 @@ export interface FlightSearchResponse {
     total_sub_tasks: number;
   };
 }
-
-// =============================================================================
-// EXPLORER / RECOMMENDATION TYPES
-// =============================================================================
-
-export const ExplorerRecommendParamsSchema = z.object({
-  departure: z.string().min(1).describe('Origin airport or city code for deal recommendations'),
-  type: z
-    .enum(['flight', 'hotel'])
-    .default('flight')
-    .describe('Type of deal recommendation: "flight" or "hotel". Default: "flight"'),
-});
-
-export type ExplorerRecommendParams = z.infer<typeof ExplorerRecommendParamsSchema>;
-
-// =============================================================================
-// USER TYPES
-// =============================================================================
-
-export interface UserMembership {
-  [key: string]: unknown;
-}
-
-export interface UserPreferences {
-  [key: string]: unknown;
-}
-
-export interface SearchHistoryEntry {
-  [key: string]: unknown;
-}

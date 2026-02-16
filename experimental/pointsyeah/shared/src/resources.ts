@@ -5,7 +5,7 @@ import {
 } from '@modelcontextprotocol/sdk/types.js';
 import { getServerState } from './state.js';
 
-export function registerResources(server: Server) {
+export function registerResources(server: Server, version: string) {
   server.setRequestHandler(ListResourcesRequestSchema, async () => {
     return {
       resources: [
@@ -29,7 +29,7 @@ export function registerResources(server: Server) {
       const config = {
         server: {
           name: 'pointsyeah-mcp-server',
-          version: '0.1.0',
+          version,
           transport: 'stdio',
         },
         environment: {
