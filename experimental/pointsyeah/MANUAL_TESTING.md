@@ -48,23 +48,23 @@ The tests will:
 
 ## Latest Test Results
 
-**Test Date:** 2026-02-16 07:40 UTC
-**Branch:** tadasant/pointsyeah-add-playwright-dep
-**Commit:** 88a5233
+**Test Date:** 2026-02-16
+**Branch:** ao/fix-pointsyeah-404-explorer-api
+**Commit:** 5e54ee8
 **Tested By:** Claude
 **Environment:** Linux, Node.js
 
 ### Test Results
 
-**Type:** Functional tests (packaging-only change, no runtime behavior modified)
-**Status:** All functional tests passed (8/8)
+**Type:** Functional + Integration tests
+**Status:** All functional tests passed (8/8), all integration tests passed (4/4)
 
-**Test Duration:** ~0.5s
+**Test Duration:** ~1s
 
 **Details:**
 
-This is a packaging-only change that adds `playwright` as a declared dependency in package.json (it was previously dynamically imported but not declared). No runtime code was modified. All 8 functional tests pass, confirming no regressions.
+Migrated flight search from broken `api2.pointsyeah.com` task-based API to new `api.pointsyeah.com/v2/live/explorer/search` direct HTTP API. Removed Playwright dependency entirely. All functional and integration tests pass with updated mocks reflecting the new explorer API response format.
 
-**Note:** Manual API tests from v0.1.0 (commit 7a179dd) remain valid since no runtime behavior changed. The only change is the addition of `playwright` to the `dependencies` field in `shared/package.json` and `local/package.json`.
+**Note:** Manual API tests could not be run because the provided Cognito refresh token is revoked. Manual testing with a valid refresh token is recommended before merging.
 
-**Summary:** Functional tests confirm no regressions from the dependency declaration change.
+**Summary:** Functional and integration tests confirm the explorer API migration works correctly. Manual API testing blocked by expired credentials.

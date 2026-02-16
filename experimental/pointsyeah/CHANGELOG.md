@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.2] - 2026-02-16
+
 ### Fixed
 
 - **BREAKING**: `search_flights` tool now works again (was returning 404 due to PointsYeah backend API migration)
