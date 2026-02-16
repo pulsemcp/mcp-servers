@@ -2,13 +2,13 @@
 
 ## Latest Test Results
 
-- **Test Date:** 2026-02-16
-- **Branch:** tadasant/serpapi-hotels-mcp-server
-- **Commit:** b372c5e
+**Test Date:** 2026-02-16
+**Branch:** main
+**Commit:** d90b212
 
 ### Summary
 
-All 11 manual tests pass against real SerpAPI with a valid API key.
+All manual tests passed — 11 tests pass against real SerpAPI with a valid API key.
 
 ### Test Files
 
