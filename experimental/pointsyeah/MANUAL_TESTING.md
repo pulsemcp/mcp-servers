@@ -1,66 +1,86 @@
 # Manual Testing Results
 
-## Test Run
+This file tracks the **most recent** manual test results for the PointsYeah MCP server.
 
-- **Commit:** 7a179dd
-- **Date:** 2026-02-16
-- **Result:** 16/16 tests passed (100%)
-- **Duration:** ~131 seconds
+**Note:** Each new test run should overwrite the previous results. We only maintain the latest test results here.
 
-## Test Categories and Results
+## Test Execution
 
-### Tool & Resource Discovery (3 tests - all pass)
+### Prerequisites
 
-- Lists all 7 tools correctly
-- Lists the config resource
-- Config resource reports correct version (0.1.0), Playwright availability, and token status
+1. **Commit your changes BEFORE running tests**
 
-### Authentication - Cognito Token Refresh (1 test - pass)
+   The test results will reference the current commit hash. If you have uncommitted changes, the commit hash will not represent what was actually tested:
 
-- Successfully refreshes Cognito tokens and calls the membership API
-- First call may fail transiently during MCP subprocess warmup; retry succeeds
+   ```bash
+   git add .
+   git commit -m "Your changes"
+   ```
 
-### Read-Only Tools - User API (3 tests - all pass)
+2. **Set up API credentials** - Ensure you have the necessary credentials in your `.env` file:
+   ```bash
+   # Create .env in experimental/pointsyeah/ with:
+   POINTSYEAH_REFRESH_TOKEN=your_refresh_token_here
+   ```
 
-- `get_search_history`: Returns 5 search history entries with filter/route/date details
-- `get_user_membership`: Returns `{code: 0, success: true, data: {status: false}}`
-- `get_user_preferences`: Returns preferences including airline programs, banks, cabins, favorite airports
+### First-Time Setup (or after clean checkout)
 
-### Read-Only Tools - Explorer API (4 tests - all pass)
+If you're running manual tests for the first time or in a fresh worktree:
 
-- `get_explorer_count`: Returns 9,914,233 available deals
-- `get_flight_recommendations` (no filter): Returns 9 routes (e.g., BOS -> SJU via DL for 8,800 miles)
-- `get_flight_recommendations` (SFO filter): API returns 500 - departure filter via POST body not supported by backend. Test handles this gracefully.
-- `get_hotel_recommendations`: Returns 9 hotel properties (e.g., Six Senses Douro Valley)
+```bash
+# This will verify environment, install dependencies, and build everything
+npm run test:manual:setup
+```
 
-### Flight Search - Input Validation (3 tests - all pass)
+### Running Tests
 
-- Rejects round-trip searches without returnDate
-- Rejects invalid date formats
-- Rejects missing required fields (departure, arrival, departDate)
+Once setup is complete, run manual tests:
 
-### Direct Client - Cognito Auth (1 test - pass)
+```bash
+npm run test:manual
+```
 
-- Directly calls `refreshCognitoTokens()` with real refresh token
-- Returns valid ID token (1218 chars), access token (1072 chars)
-- Token expiry correctly set ~1 hour in the future
+The tests will:
 
-### Direct Client - Flight Search via Playwright (1 test - pass)
+1. Build the project first (compiles TypeScript to JavaScript)
+2. Run tests against the built JavaScript code (not source TypeScript)
+3. This ensures we're testing the actual code that would be published
 
-- Creates search task via Playwright browser automation (task ID: 37131cab42ab419c97bbc9db810b511d)
-- Task created with 16 sub-tasks
-- First poll returned 17 results
-- Polling endpoint uses `{result, status}` format (not `{completed_sub_tasks, total_sub_tasks}` as typed)
-- Task expires with 404 after ~2 minutes; last successful response: `{code:0, success:true, data:{result:[], status:"done"}}`
+## Latest Test Results
 
-## Key Findings
+**Test Date:** 2026-02-16 03:45 UTC
+**Branch:** tadasant/pointsyeah-mcp-server
+**Commit:** 7a179dd
+**Tested By:** Claude
+**Environment:** Linux, Node.js with Playwright Chromium
 
-1. **API Response Format Discovery**: The `fetch_result` polling endpoint returns `{result, status}` in `data`, not `{completed_sub_tasks, total_sub_tasks}` as the TypeScript types assume. Results are returned incrementally per poll (not accumulated). The `FlightSearchResponse` type in `types.ts` should be updated to match the real API.
+### Test Results
 
-2. **Flight Recommendations Departure Filter**: The `explorer/recommend` POST endpoint returns 500 when a departure parameter is passed in the body. The departure filter feature may need a different API path or query parameter format.
+**Type:** Manual integration testing against real PointsYeah API
+**Status:** All manual tests passed (16/16)
 
-3. **MCP Subprocess Warmup**: The first tool call after connecting the MCP client sometimes fails with `fetch failed`. This is a transient issue during subprocess initialization. A retry with 5s delay resolves it.
+**Test Duration:** ~131s
 
-4. **MCP Protocol Timeout**: The MCP SDK has a hardcoded 60-second request timeout that cannot be overridden through `TestMCPClient`. Flight searches (which take 1-3 minutes) must be tested by calling the client library directly rather than through the MCP protocol.
+**Details:**
 
-5. **Hotel Points Format**: Some hotel recommendations have `points` as an object rather than a number, depending on the hotel program's pricing structure.
+This is the initial release of the PointsYeah MCP server. All 16 manual tests were run against the real PointsYeah API with a real user account.
+
+**Test Categories:**
+
+- Tool & Resource Discovery (3 tests): Lists all 7 tools, config resource, and config content correctly
+- Authentication - Cognito Token Refresh (1 test): Successfully refreshes AWS Cognito tokens and calls API
+- Read-Only Tools - User API (3 tests): get_search_history, get_user_membership, get_user_preferences
+- Read-Only Tools - Explorer API (4 tests): get_explorer_count, get_flight_recommendations (with/without filter), get_hotel_recommendations
+- Flight Search - Input Validation (3 tests): Rejects missing returnDate, invalid dates, and missing required fields
+- Direct Client - Cognito Auth (1 test): Directly calls refreshCognitoTokens() with real token
+- Direct Client - Flight Search via Playwright (1 test): Full Playwright browser automation flow with task creation and polling
+
+**Key Findings:**
+
+1. The `fetch_result` polling endpoint returns `{result, status}` in `data`, not `{completed_sub_tasks, total_sub_tasks}` as the TypeScript types define
+2. Flight recommendations departure filter returns 500 - the API may not support filtering via POST body
+3. First MCP tool call can fail transiently during subprocess warmup; retry with delay resolves it
+4. MCP SDK has hardcoded 60s request timeout; flight search must be tested directly bypassing MCP protocol
+5. Hotel `points` field can be an object rather than a number depending on hotel program
+
+**Summary:** All 16 manual tests pass against the real PointsYeah API. The server correctly authenticates via AWS Cognito, performs award flight searches via Playwright browser automation, and retrieves user data and Explorer recommendations.
