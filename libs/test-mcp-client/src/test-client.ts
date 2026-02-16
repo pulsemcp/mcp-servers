@@ -5,6 +5,7 @@ import {
   ListToolsResultSchema,
   ToolListChangedNotificationSchema,
 } from '@modelcontextprotocol/sdk/types.js';
+import { z } from 'zod';
 import { TestMCPClientOptions, ToolCallResult, ResourceReadResult } from './types.js';
 
 export class TestMCPClient {
@@ -69,7 +70,7 @@ export class TestMCPClient {
     this.listChangedHandler = undefined;
   }
 
-  async listTools(): Promise<typeof ListToolsResultSchema._type> {
+  async listTools(): Promise<z.infer<typeof ListToolsResultSchema>> {
     this.ensureConnected();
     return await this.client.listTools();
   }
@@ -91,7 +92,7 @@ export class TestMCPClient {
     };
   }
 
-  async listResources(): Promise<typeof ListResourcesResultSchema._type> {
+  async listResources(): Promise<z.infer<typeof ListResourcesResultSchema>> {
     this.ensureConnected();
     return await this.client.listResources();
   }
