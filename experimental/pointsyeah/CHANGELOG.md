@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Manual test suite with 16 tests covering all tools, resources, auth, and Playwright search
+
 ### Fixed
 
 - Added token refresh mutex to prevent concurrent Cognito refresh calls
