@@ -27,5 +27,5 @@ All notable changes to this project will be documented in this file.
 - Functional tests with mocked SerpAPI client
 - Integration tests using TestMCPClient
 - Manual tests for real API validation
-- Date validation: check_out_date must be after check_in_date, invalid dates rejected
+- Date validation: check_out_date must be after check_in_date, invalid calendar dates rejected (e.g., Feb 31)
 - 30-second request timeout on SerpAPI HTTP calls

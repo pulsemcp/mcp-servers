@@ -10,6 +10,7 @@ export {
 
 export { searchHotels } from './serpapi-client/lib/search-hotels.js';
 export { getHotelDetails } from './serpapi-client/lib/get-hotel-details.js';
+export { getHotelReviews } from './serpapi-client/lib/get-hotel-reviews.js';
 
 export type {
   HotelProperty,
@@ -20,6 +21,9 @@ export type {
   SearchHotelsResult,
   GetHotelDetailsOptions,
   HotelDetailsResult,
+  GetHotelReviewsOptions,
+  HotelReview,
+  HotelReviewsResult,
   HotelBrand,
 } from './types.js';
 
