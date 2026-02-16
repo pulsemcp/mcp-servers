@@ -79,8 +79,8 @@ describe('SerpAPI Hotels Tools', () => {
         check_out_date: '2026-03-05',
       });
 
-      const content = (result as { content: Array<{ text: string }>; isError?: boolean })
-        .content[0];
+      expect((result as { isError?: boolean }).isError).toBe(true);
+      const content = (result as { content: Array<{ text: string }> }).content[0];
       expect(content.text).toContain('Error');
     });
 
@@ -89,8 +89,8 @@ describe('SerpAPI Hotels Tools', () => {
         query: 'Hotels in Paris',
       });
 
-      const content = (result as { content: Array<{ text: string }>; isError?: boolean })
-        .content[0];
+      expect((result as { isError?: boolean }).isError).toBe(true);
+      const content = (result as { content: Array<{ text: string }> }).content[0];
       expect(content.text).toContain('Error');
     });
 
@@ -101,8 +101,8 @@ describe('SerpAPI Hotels Tools', () => {
         check_out_date: '2026-03-01',
       });
 
-      const content = (result as { content: Array<{ text: string }>; isError?: boolean })
-        .content[0];
+      expect((result as { isError?: boolean }).isError).toBe(true);
+      const content = (result as { content: Array<{ text: string }> }).content[0];
       expect(content.text).toContain('check_out_date must be after check_in_date');
     });
 
@@ -200,8 +200,8 @@ describe('SerpAPI Hotels Tools', () => {
         check_out_date: '2026-03-05',
       });
 
-      const content = (result as { content: Array<{ text: string }>; isError?: boolean })
-        .content[0];
+      expect((result as { isError?: boolean }).isError).toBe(true);
+      const content = (result as { content: Array<{ text: string }> }).content[0];
       expect(content.text).toContain('Error');
     });
 
@@ -213,8 +213,8 @@ describe('SerpAPI Hotels Tools', () => {
         check_out_date: '2026-03-01',
       });
 
-      const content = (result as { content: Array<{ text: string }>; isError?: boolean })
-        .content[0];
+      expect((result as { isError?: boolean }).isError).toBe(true);
+      const content = (result as { content: Array<{ text: string }> }).content[0];
       expect(content.text).toContain('check_out_date must be after check_in_date');
     });
   });

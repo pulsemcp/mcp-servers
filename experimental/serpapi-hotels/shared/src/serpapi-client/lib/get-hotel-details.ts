@@ -39,7 +39,7 @@ export async function getHotelDetails(
 
   const url = `https://serpapi.com/search?${params.toString()}`;
 
-  const response = await fetch(url);
+  const response = await fetch(url, { signal: AbortSignal.timeout(30000) });
   if (!response.ok) {
     const errorText = await response.text();
     throw new Error(`SerpAPI request failed (${response.status}): ${errorText}`);

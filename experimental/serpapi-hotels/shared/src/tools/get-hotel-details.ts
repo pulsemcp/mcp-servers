@@ -16,11 +16,13 @@ export const GetHotelDetailsSchema = z
       .describe('Property token from a search_hotels result to get details for a specific hotel'),
     check_in_date: z
       .string()
-      .regex(/^\d{4}-\d{2}-\d{2}$/)
+      .regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must be in YYYY-MM-DD format')
+      .refine((val) => !isNaN(new Date(val).getTime()), { message: 'Invalid date' })
       .describe('Check-in date in YYYY-MM-DD format'),
     check_out_date: z
       .string()
-      .regex(/^\d{4}-\d{2}-\d{2}$/)
+      .regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must be in YYYY-MM-DD format')
+      .refine((val) => !isNaN(new Date(val).getTime()), { message: 'Invalid date' })
       .describe('Check-out date in YYYY-MM-DD format'),
     adults: z
       .number()

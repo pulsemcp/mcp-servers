@@ -118,9 +118,9 @@ serpapi-hotels/
 │       │   ├── search-hotels.ts
 │       │   └── get-hotel-details.ts
 │       └── serpapi-client/   # SerpAPI client
-│           ├── serpapi-client.ts
 │           ├── serpapi-client.integration-mock.ts
 │           └── lib/
+│               ├── parse-property.ts
 │               ├── search-hotels.ts
 │               └── get-hotel-details.ts
 └── tests/
