@@ -102,6 +102,7 @@ After completing your self-review, launch a subagent to perform an independent c
 Use the Task tool with `subagent_type: "general-purpose"` and a prompt like:
 
 > Review the PR diff for this branch. Run `gh pr diff` to see the changes. Look for:
+>
 > - Logic errors, bugs, or incorrect behavior
 > - Missing edge cases or error handling
 > - Security concerns (injection, XSS, credential exposure, etc.)
