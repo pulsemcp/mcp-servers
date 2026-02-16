@@ -8,6 +8,7 @@ An MCP server for searching Google Hotels via the [SerpAPI](https://serpapi.com/
 | ------------------- | ----------------------------------------------------------------------------------------------------------- |
 | `search_hotels`     | Search for hotels with filters for price, rating, star class, amenities, and more                           |
 | `get_hotel_details` | Get detailed info for a specific hotel including review breakdowns and booking prices from multiple sources |
+| `get_hotel_reviews` | Get individual guest reviews with full text, ratings, sub-ratings, and hotel management responses           |
 
 ## Quick Start
 
@@ -75,6 +76,16 @@ After finding a hotel, use `get_hotel_details` with its `property_token` to get:
 - Check-in/out times
 - Nearby places with travel times
 
+### Read hotel reviews
+
+After finding a hotel, use `get_hotel_reviews` with its `property_token` to get:
+
+- Full review text from Google and third-party sources (TripAdvisor, etc.)
+- Reviewer ratings with sub-ratings (rooms, service, location)
+- Hotel management responses
+- Sorting by most helpful, most recent, highest/lowest score
+- Category filtering (from `get_hotel_details` review breakdown)
+
 ## Available Filters
 
 | Filter                    | Values                                                   |
@@ -116,13 +127,15 @@ serpapi-hotels/
 │       ├── logging.ts        # Logging utilities
 │       ├── tools/            # Individual tool implementations
 │       │   ├── search-hotels.ts
-│       │   └── get-hotel-details.ts
+│       │   ├── get-hotel-details.ts
+│       │   └── get-hotel-reviews.ts
 │       └── serpapi-client/   # SerpAPI client
 │           ├── serpapi-client.integration-mock.ts
 │           └── lib/
 │               ├── parse-property.ts
 │               ├── search-hotels.ts
-│               └── get-hotel-details.ts
+│               ├── get-hotel-details.ts
+│               └── get-hotel-reviews.ts
 └── tests/
     ├── functional/       # Unit tests with mocks
     ├── integration/      # Full MCP protocol tests

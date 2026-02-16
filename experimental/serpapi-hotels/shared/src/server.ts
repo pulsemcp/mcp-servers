@@ -3,16 +3,20 @@ import { registerResources } from './resources.js';
 import { createRegisterTools } from './tools.js';
 import { searchHotels } from './serpapi-client/lib/search-hotels.js';
 import { getHotelDetails } from './serpapi-client/lib/get-hotel-details.js';
+import { getHotelReviews } from './serpapi-client/lib/get-hotel-reviews.js';
 import type {
   SearchHotelsOptions,
   SearchHotelsResult,
   GetHotelDetailsOptions,
   HotelDetailsResult,
+  GetHotelReviewsOptions,
+  HotelReviewsResult,
 } from './types.js';
 
 export interface ISerpApiClient {
   searchHotels(options: SearchHotelsOptions): Promise<SearchHotelsResult>;
   getHotelDetails(options: GetHotelDetailsOptions): Promise<HotelDetailsResult>;
+  getHotelReviews(options: GetHotelReviewsOptions): Promise<HotelReviewsResult>;
 }
 
 export type SerpApiClientFactory = () => ISerpApiClient;
@@ -26,6 +30,10 @@ export class SerpApiClient implements ISerpApiClient {
 
   async getHotelDetails(options: GetHotelDetailsOptions): Promise<HotelDetailsResult> {
     return getHotelDetails(this.apiKey, options);
+  }
+
+  async getHotelReviews(options: GetHotelReviewsOptions): Promise<HotelReviewsResult> {
+    return getHotelReviews(this.apiKey, options);
   }
 }
 

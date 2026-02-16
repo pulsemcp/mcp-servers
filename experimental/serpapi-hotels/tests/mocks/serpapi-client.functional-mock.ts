@@ -4,6 +4,8 @@ import type {
   SearchHotelsResult,
   GetHotelDetailsOptions,
   HotelDetailsResult,
+  GetHotelReviewsOptions,
+  HotelReviewsResult,
 } from '../../shared/src/types.js';
 
 export function createMockSerpApiClient(): ISerpApiClient {
@@ -190,6 +192,69 @@ export function createMockSerpApiClient(): ISerpApiClient {
             neutral: 20,
           },
         ],
+      };
+    },
+
+    async getHotelReviews(options: GetHotelReviewsOptions): Promise<HotelReviewsResult> {
+      return {
+        search_parameters: {
+          property_token: options.property_token,
+          sort_by: options.sort_by ?? 1,
+        },
+        reviews: [
+          {
+            user: {
+              name: 'John Doe',
+              link: 'https://example.com/user/johndoe',
+              thumbnail: 'https://example.com/avatar.jpg',
+            },
+            source: 'Google',
+            rating: 5,
+            best_rating: 5,
+            date: '2 weeks ago',
+            snippet:
+              'Amazing hotel with great service! The room was spotless and the staff was incredibly friendly. Would definitely stay here again.',
+            images: [],
+            subratings: {
+              rooms: 5,
+              service: 5,
+              location: 4,
+            },
+            hotel_highlights: ['Great breakfast', 'Comfortable beds'],
+            attributes: [
+              { name: 'Trip type', snippet: 'Traveled as a couple' },
+              { name: 'Room type', snippet: 'Deluxe King Room' },
+            ],
+            response: {
+              date: '1 week ago',
+              snippet:
+                'Thank you for your wonderful review! We look forward to welcoming you back.',
+            },
+          },
+          {
+            user: {
+              name: 'Jane Smith',
+              link: null,
+              thumbnail: null,
+            },
+            source: 'TripAdvisor',
+            rating: 3,
+            best_rating: 5,
+            date: '1 month ago',
+            snippet:
+              'Decent hotel but the noise from the street was a bit much. Good location though.',
+            images: ['https://example.com/review-photo.jpg'],
+            subratings: {
+              rooms: 3,
+              service: 4,
+              location: 5,
+            },
+            hotel_highlights: [],
+            attributes: [{ name: 'Trip type', snippet: 'Traveled for business' }],
+            response: null,
+          },
+        ],
+        next_page_token: null,
       };
     },
   };

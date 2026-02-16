@@ -120,3 +120,46 @@ export interface HotelDetailsResult {
   property: HotelProperty;
   reviews_breakdown: ReviewsBreakdown[];
 }
+
+export interface GetHotelReviewsOptions {
+  property_token: string;
+  sort_by?: number;
+  category_token?: string;
+  source_number?: number;
+  hl?: string;
+  next_page_token?: string;
+}
+
+export interface HotelReview {
+  user: {
+    name: string;
+    link: string | null;
+    thumbnail: string | null;
+  };
+  source: string;
+  rating: number;
+  best_rating: number;
+  date: string;
+  snippet: string | null;
+  images: string[];
+  subratings: {
+    rooms: number | null;
+    service: number | null;
+    location: number | null;
+  };
+  hotel_highlights: string[];
+  attributes: { name: string; snippet: string }[];
+  response: {
+    date: string;
+    snippet: string;
+  } | null;
+}
+
+export interface HotelReviewsResult {
+  search_parameters: {
+    property_token: string;
+    sort_by: number;
+  };
+  reviews: HotelReview[];
+  next_page_token: string | null;
+}

@@ -52,12 +52,13 @@ describe('SerpAPI Hotels MCP Server Integration Tests', () => {
       const toolNames = tools.map((t) => t.name);
       expect(toolNames).toContain('search_hotels');
       expect(toolNames).toContain('get_hotel_details');
+      expect(toolNames).toContain('get_hotel_reviews');
     });
 
-    it('should have 2 tools total', async () => {
+    it('should have 3 tools total', async () => {
       const result = await client.listTools();
       const tools = result.tools as Tool[];
-      expect(tools.length).toBe(2);
+      expect(tools.length).toBe(3);
     });
   });
 
@@ -83,6 +84,15 @@ describe('SerpAPI Hotels MCP Server Integration Tests', () => {
       expect(detailsTool!.inputSchema.required).toContain('property_token');
       expect(detailsTool!.inputSchema.required).toContain('check_in_date');
       expect(detailsTool!.inputSchema.required).toContain('check_out_date');
+    });
+
+    it('get_hotel_reviews should have required parameters', async () => {
+      const result = await client.listTools();
+      const tools = result.tools as Tool[];
+      const reviewsTool = tools.find((t) => t.name === 'get_hotel_reviews');
+
+      expect(reviewsTool).toBeDefined();
+      expect(reviewsTool!.inputSchema.required).toContain('property_token');
     });
   });
 
@@ -125,6 +135,23 @@ describe('SerpAPI Hotels MCP Server Integration Tests', () => {
       expect(Array.isArray(parsed.reviews_breakdown)).toBe(true);
     });
 
+    it('should get hotel reviews', async () => {
+      const result = await client.callTool('get_hotel_reviews', {
+        property_token: 'mock-property-token-1',
+      });
+
+      expect(result).toHaveProperty('content');
+      const content = (result as { content: Array<{ text: string }> }).content[0];
+      const parsed = JSON.parse(content.text);
+
+      expect(parsed.reviews).toBeDefined();
+      expect(Array.isArray(parsed.reviews)).toBe(true);
+      expect(parsed.reviews.length).toBeGreaterThan(0);
+      expect(parsed.reviews[0].snippet).toBeDefined();
+      expect(parsed.reviews[0].rating).toBeDefined();
+      expect(parsed.reviews[0].user.name).toBeDefined();
+    });
+
     it('should search hotels with optional filters', async () => {
       const result = await client.callTool('search_hotels', {
         query: 'Hotels in Paris',
@@ -165,6 +192,7 @@ describe('SerpAPI Hotels MCP Server Integration Tests', () => {
       expect(config.server.name).toBe('serpapi-hotels-mcp-server');
       expect(config.availableTools).toContain('search_hotels');
       expect(config.availableTools).toContain('get_hotel_details');
+      expect(config.availableTools).toContain('get_hotel_reviews');
     });
   });
 });

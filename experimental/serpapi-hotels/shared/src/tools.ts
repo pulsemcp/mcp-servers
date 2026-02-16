@@ -3,6 +3,7 @@ import { ListToolsRequestSchema, CallToolRequestSchema } from '@modelcontextprot
 import type { SerpApiClientFactory } from './server.js';
 import { searchHotelsTool } from './tools/search-hotels.js';
 import { getHotelDetailsTool } from './tools/get-hotel-details.js';
+import { getHotelReviewsTool } from './tools/get-hotel-reviews.js';
 
 interface Tool {
   name: string;
@@ -20,9 +21,9 @@ interface Tool {
 
 type ToolFactory = (server: Server, clientFactory: SerpApiClientFactory) => Tool;
 
-const ALL_TOOLS: ToolFactory[] = [searchHotelsTool, getHotelDetailsTool];
+const ALL_TOOLS: ToolFactory[] = [searchHotelsTool, getHotelDetailsTool, getHotelReviewsTool];
 
-const ALL_TOOL_NAMES = ['search_hotels', 'get_hotel_details'];
+const ALL_TOOL_NAMES = ['search_hotels', 'get_hotel_details', 'get_hotel_reviews'];
 
 export function getAllToolNames(): string[] {
   return ALL_TOOL_NAMES;

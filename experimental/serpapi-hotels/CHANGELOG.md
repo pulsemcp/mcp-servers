@@ -17,6 +17,12 @@ All notable changes to this project will be documented in this file.
   - Prices from multiple booking sources
   - Review sentiment breakdown by category
   - Full amenity lists and nearby places
+- `get_hotel_reviews` tool for individual guest reviews
+  - Full review text snippets with ratings and sub-ratings
+  - Sorting by most helpful, most recent, highest/lowest score
+  - Filtering by review category or source
+  - Hotel management responses
+  - Pagination support
 - Server configuration resource at `serpapi-hotels://config`
 - Functional tests with mocked SerpAPI client
 - Integration tests using TestMCPClient

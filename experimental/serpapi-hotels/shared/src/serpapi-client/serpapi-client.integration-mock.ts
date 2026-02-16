@@ -4,11 +4,14 @@ import type {
   SearchHotelsResult,
   GetHotelDetailsOptions,
   HotelDetailsResult,
+  GetHotelReviewsOptions,
+  HotelReviewsResult,
 } from '../types.js';
 
 interface MockData {
   searchResults?: Record<string, SearchHotelsResult>;
   hotelDetails?: Record<string, HotelDetailsResult>;
+  hotelReviews?: Record<string, HotelReviewsResult>;
 }
 
 export function createIntegrationMockSerpApiClient(mockData: MockData = {}): ISerpApiClient & {
@@ -211,6 +214,67 @@ export function createIntegrationMockSerpApiClient(mockData: MockData = {}): ISe
           adults: options.adults ?? 2,
           currency: options.currency ?? 'USD',
         },
+      };
+    },
+
+    async getHotelReviews(options: GetHotelReviewsOptions): Promise<HotelReviewsResult> {
+      const key = options.property_token;
+      if (mockData.hotelReviews?.[key]) {
+        return mockData.hotelReviews[key];
+      }
+      return {
+        search_parameters: {
+          property_token: options.property_token,
+          sort_by: options.sort_by ?? 1,
+        },
+        reviews: [
+          {
+            user: {
+              name: 'Mock Reviewer',
+              link: 'https://example.com/user/mock',
+              thumbnail: 'https://example.com/avatar.jpg',
+            },
+            source: 'Google',
+            rating: 5,
+            best_rating: 5,
+            date: '2 weeks ago',
+            snippet: 'Excellent hotel with outstanding service and beautiful rooms.',
+            images: [],
+            subratings: {
+              rooms: 5,
+              service: 5,
+              location: 4,
+            },
+            hotel_highlights: ['Great breakfast', 'Comfortable beds'],
+            attributes: [{ name: 'Trip type', snippet: 'Traveled as a couple' }],
+            response: {
+              date: '1 week ago',
+              snippet: 'Thank you for your kind words!',
+            },
+          },
+          {
+            user: {
+              name: 'Another Reviewer',
+              link: null,
+              thumbnail: null,
+            },
+            source: 'TripAdvisor',
+            rating: 4,
+            best_rating: 5,
+            date: '1 month ago',
+            snippet: 'Great location and friendly staff. Room was a bit small but clean.',
+            images: ['https://example.com/review-photo.jpg'],
+            subratings: {
+              rooms: 3,
+              service: 5,
+              location: 5,
+            },
+            hotel_highlights: [],
+            attributes: [],
+            response: null,
+          },
+        ],
+        next_page_token: 'mock-reviews-next-page',
       };
     },
   };

@@ -218,4 +218,69 @@ describe('SerpAPI Hotels Tools', () => {
       expect(content.text).toContain('check_out_date must be after check_in_date');
     });
   });
+
+  describe('get_hotel_reviews', () => {
+    it('should get hotel reviews successfully', async () => {
+      const result = await callTool('get_hotel_reviews', {
+        property_token: 'test-token-1',
+      });
+
+      const content = (result as { content: Array<{ text: string }> }).content[0];
+      const parsed = JSON.parse(content.text);
+
+      expect(parsed.reviews).toHaveLength(2);
+      expect(parsed.reviews[0].user.name).toBe('John Doe');
+      expect(parsed.reviews[0].snippet).toContain('Amazing hotel');
+      expect(parsed.reviews[0].rating).toBe(5);
+      expect(parsed.reviews[0].source).toBe('Google');
+    });
+
+    it('should include subratings and hotel response', async () => {
+      const result = await callTool('get_hotel_reviews', {
+        property_token: 'test-token-1',
+      });
+
+      const content = (result as { content: Array<{ text: string }> }).content[0];
+      const parsed = JSON.parse(content.text);
+
+      expect(parsed.reviews[0].subratings.rooms).toBe(5);
+      expect(parsed.reviews[0].subratings.service).toBe(5);
+      expect(parsed.reviews[0].subratings.location).toBe(4);
+      expect(parsed.reviews[0].response).toBeDefined();
+      expect(parsed.reviews[0].response.snippet).toContain('Thank you');
+    });
+
+    it('should include review attributes and highlights', async () => {
+      const result = await callTool('get_hotel_reviews', {
+        property_token: 'test-token-1',
+      });
+
+      const content = (result as { content: Array<{ text: string }> }).content[0];
+      const parsed = JSON.parse(content.text);
+
+      expect(parsed.reviews[0].hotel_highlights).toContain('Great breakfast');
+      expect(parsed.reviews[0].attributes[0].name).toBe('Trip type');
+      expect(parsed.reviews[0].attributes[0].snippet).toBe('Traveled as a couple');
+    });
+
+    it('should handle reviews without hotel response', async () => {
+      const result = await callTool('get_hotel_reviews', {
+        property_token: 'test-token-1',
+      });
+
+      const content = (result as { content: Array<{ text: string }> }).content[0];
+      const parsed = JSON.parse(content.text);
+
+      expect(parsed.reviews[1].response).toBeNull();
+      expect(parsed.reviews[1].source).toBe('TripAdvisor');
+    });
+
+    it('should return error for missing property_token', async () => {
+      const result = await callTool('get_hotel_reviews', {});
+
+      expect((result as { isError?: boolean }).isError).toBe(true);
+      const content = (result as { content: Array<{ text: string }> }).content[0];
+      expect(content.text).toContain('Error');
+    });
+  });
 });
