@@ -50,21 +50,36 @@ The tests will:
 
 **Test Date:** 2026-02-16
 **Branch:** ao/fix-pointsyeah-404-explorer-api
-**Commit:** 5e54ee8
+**Commit:** 419855b
 **Tested By:** Claude
 **Environment:** Linux, Node.js
 
-### Test Results
+### Manual Test Results
 
-**Type:** Functional + Integration tests
+**Status:** 6 passed, 4 failed (10 total)
+**Test Duration:** ~19s
+
+**Passing tests (6/10):**
+
+- Tool Discovery: lists all 2 tools (search_flights, get_search_history)
+- Resources: lists config resource, reads it with correct version (0.1.2)
+- Input Validation: rejects round-trip without returnDate, rejects invalid date format, rejects missing required fields
+
+**Failing tests (4/10):** All failures are due to revoked Cognito refresh token (`NotAuthorizedException: Refresh Token has been revoked`), not code issues:
+
+- Authentication - Cognito Token Refresh
+- Read-Only Tools - get_search_history
+- Direct Client - Cognito Auth
+- Direct Client - Explorer Search API
+
+### Functional + Integration Test Results
+
 **Status:** All functional tests passed (8/8), all integration tests passed (4/4)
-
-**Test Duration:** ~1s
 
 **Details:**
 
-Migrated flight search from broken `api2.pointsyeah.com` task-based API to new `api.pointsyeah.com/v2/live/explorer/search` direct HTTP API. Removed Playwright dependency entirely. All functional and integration tests pass with updated mocks reflecting the new explorer API response format.
+Migrated flight search from broken `api2.pointsyeah.com` task-based API to new `api.pointsyeah.com/v2/live/explorer/search` direct HTTP API. Removed Playwright dependency entirely.
 
-**Note:** Manual API tests could not be run because the provided Cognito refresh token is revoked. Manual testing with a valid refresh token is recommended before merging.
+**Note:** Manual API tests that require authentication could not fully pass because the Cognito refresh token is revoked (likely due to inactivity-based revocation). Manual testing of the explorer search flow with a fresh, valid refresh token is recommended before merging.
 
-**Summary:** Functional and integration tests confirm the explorer API migration works correctly. Manual API testing blocked by expired credentials.
+**Summary:** All non-auth tests pass. Auth-dependent tests blocked by expired credentials. Functional and integration tests (with mocks) confirm the explorer API migration works correctly.
