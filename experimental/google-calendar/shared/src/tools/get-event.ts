@@ -51,7 +51,10 @@ export function getEventTool(server: Server, clientFactory: ClientFactory) {
 
         // Start time
         if (event.start?.dateTime) {
-          output += `**Start:** ${new Date(event.start.dateTime).toLocaleString()}`;
+          const startOptions = event.start.timeZone
+            ? { timeZone: event.start.timeZone }
+            : undefined;
+          output += `**Start:** ${new Date(event.start.dateTime).toLocaleString(undefined, startOptions)}`;
           if (event.start.timeZone) {
             output += ` (${event.start.timeZone})`;
           }
@@ -62,7 +65,8 @@ export function getEventTool(server: Server, clientFactory: ClientFactory) {
 
         // End time
         if (event.end?.dateTime) {
-          output += `**End:** ${new Date(event.end.dateTime).toLocaleString()}`;
+          const endOptions = event.end.timeZone ? { timeZone: event.end.timeZone } : undefined;
+          output += `**End:** ${new Date(event.end.dateTime).toLocaleString(undefined, endOptions)}`;
           if (event.end.timeZone) {
             output += ` (${event.end.timeZone})`;
           }

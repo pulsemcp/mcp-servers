@@ -237,7 +237,10 @@ export function updateEventTool(server: Server, clientFactory: ClientFactory) {
 
         // Start time
         if (result.start?.dateTime) {
-          output += `**Start:** ${new Date(result.start.dateTime).toLocaleString()}`;
+          const startOptions = result.start.timeZone
+            ? { timeZone: result.start.timeZone }
+            : undefined;
+          output += `**Start:** ${new Date(result.start.dateTime).toLocaleString(undefined, startOptions)}`;
           if (result.start.timeZone) {
             output += ` (${result.start.timeZone})`;
           }
@@ -248,7 +251,8 @@ export function updateEventTool(server: Server, clientFactory: ClientFactory) {
 
         // End time
         if (result.end?.dateTime) {
-          output += `**End:** ${new Date(result.end.dateTime).toLocaleString()}`;
+          const endOptions = result.end.timeZone ? { timeZone: result.end.timeZone } : undefined;
+          output += `**End:** ${new Date(result.end.dateTime).toLocaleString(undefined, endOptions)}`;
           if (result.end.timeZone) {
             output += ` (${result.end.timeZone})`;
           }
