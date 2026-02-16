@@ -11,7 +11,6 @@ An MCP server for searching award flights and travel deals via [PointsYeah](http
 ## Prerequisites
 
 - A PointsYeah account (free or premium)
-- [Playwright](https://playwright.dev/) installed for flight search functionality
 - Node.js 18+
 
 ## Configuration
@@ -68,9 +67,6 @@ cd mcp-servers/experimental/pointsyeah
 # Install dependencies
 npm run install-all
 
-# Install Playwright (required for flight search)
-npx playwright install chromium
-
 # Set up environment
 export POINTSYEAH_REFRESH_TOKEN="your-refresh-token"
 
@@ -90,10 +86,10 @@ cd local && npm start
 
 This server uses a two-step approach for flight searches:
 
-1. **Playwright** - The initial search request is encrypted client-side by PointsYeah. We use Playwright to navigate to the search page, inject authentication cookies, and intercept the search task creation response.
-2. **HTTP Polling** - Once a search task is created, results are polled via plain HTTP until all airline programs have responded.
+1. **Explorer Search** - HTTP POST to PointsYeah's explorer API with departure/arrival airports, date, and cabin classes. Returns summary results with CloudFront detail URLs.
+2. **Detail Fetch** - HTTP GET each detail URL to retrieve full route, segment, and transfer information. Up to 10 detail fetches per search.
 
-All other API calls (history, etc.) use plain HTTP requests with the Cognito ID token for authentication.
+All API calls use plain HTTP requests with the Cognito ID token for authentication.
 
 ### Authentication Flow
 
@@ -129,6 +125,5 @@ cd ../.. && npm run format
 ## Limitations
 
 - **Refresh token expiry** - The Cognito refresh token expires (typically 30-90 days). Users need to re-login and update the token.
-- **Playwright dependency** - Flight search requires Playwright with Chromium. Other tools work without it.
 - **Free plan limits** - PointsYeah may limit search frequency or result count on free plans.
-- **Frontend changes** - If PointsYeah changes their frontend, the Playwright-based search flow may need updating.
+- **API changes** - If PointsYeah changes their explorer API, the search flow may need updating.

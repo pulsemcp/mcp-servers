@@ -2,25 +2,15 @@
  * Server state management for PointsYeah MCP server.
  */
 
-interface ServerState {
-  /** Whether the server has been initialized */
-  initialized: boolean;
-}
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+interface ServerState {}
 
-let state: ServerState = {
-  initialized: false,
-};
+let state: ServerState = {};
 
 export function getServerState(): Readonly<ServerState> {
   return { ...state };
 }
 
-export function setInitialized(value: boolean): void {
-  state.initialized = value;
-}
-
 export function resetState(): void {
-  state = {
-    initialized: false,
-  };
+  state = {};
 }

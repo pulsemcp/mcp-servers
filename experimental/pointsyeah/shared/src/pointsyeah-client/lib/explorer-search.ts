@@ -8,7 +8,6 @@ import { API_BASE, FETCH_TIMEOUT_MS } from '../../constants.js';
 
 /**
  * Search for award flights using the PointsYeah explorer API.
- * This is a direct HTTP POST - no Playwright required.
  */
 export async function explorerSearch(
   params: FlightSearchParams,

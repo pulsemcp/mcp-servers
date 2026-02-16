@@ -142,10 +142,8 @@ export class PointsYeahClient implements IPointsYeahClient {
   }
 
   async searchFlights(params: FlightSearchParams): Promise<FlightSearchResults> {
-    const tokens = await this.ensureTokens();
-
-    // Step 1: Search the explorer API for matching flights
-    const searchResponse = await explorerSearch(params, tokens.idToken);
+    // Step 1: Search the explorer API for matching flights (with 401 retry)
+    const searchResponse = await this.withAuth((idToken) => explorerSearch(params, idToken));
 
     if (!searchResponse.results || searchResponse.results.length === 0) {
       return { total: 0, results: [] };
@@ -153,10 +151,10 @@ export class PointsYeahClient implements IPointsYeahClient {
 
     // Step 2: Fetch details for each result (contains full route/segment info)
     const MAX_DETAILS = 10; // Limit detail fetches to avoid excessive API calls
-    const detailUrls = searchResponse.results.slice(0, MAX_DETAILS);
+    const topResults = searchResponse.results.slice(0, MAX_DETAILS);
 
     const detailResults: FlightResult[] = [];
-    for (const result of detailUrls) {
+    for (const result of topResults) {
       try {
         const detail = await fetchFlightDetail(result.detail_url);
         detailResults.push(normalizeDetailResponse(detail));
