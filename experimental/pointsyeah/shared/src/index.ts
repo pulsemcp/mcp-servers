@@ -10,7 +10,7 @@ export {
 } from './server.js';
 
 // State management exports
-export { getServerState, setPlaywrightAvailable, resetState } from './state.js';
+export { getServerState, resetState } from './state.js';
 
 // Logging exports
 export { logServerStart, logError, logWarning, logDebug } from './logging.js';

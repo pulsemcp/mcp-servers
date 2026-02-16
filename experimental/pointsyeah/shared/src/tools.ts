@@ -50,7 +50,7 @@ interface ToolDefinition {
 }
 
 const ALL_TOOLS: ToolDefinition[] = [
-  // Flight search creates a server-side task, so it's a write operation
+  // Flight search queries external APIs, classified as write operation
   { factory: searchFlightsTool, groups: ['write', 'admin'] },
   // Read-only tools - only query existing data
   { factory: getSearchHistoryTool, groups: ['readonly', 'write', 'admin'] },

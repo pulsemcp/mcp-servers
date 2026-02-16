@@ -79,7 +79,7 @@ describe('PointsYeah Tools', () => {
 
     it('should handle client errors gracefully', async () => {
       const errorClient: IPointsYeahClient = {
-        searchFlights: vi.fn().mockRejectedValue(new Error('Playwright not available')),
+        searchFlights: vi.fn().mockRejectedValue(new Error('API request failed')),
         getSearchHistory: vi.fn(),
       };
       const tool = searchFlightsTool(mockServer, () => errorClient);
@@ -91,18 +91,14 @@ describe('PointsYeah Tools', () => {
       });
 
       expect(result.isError).toBe(true);
-      expect(result.content[0].text).toContain('Playwright not available');
+      expect(result.content[0].text).toContain('API request failed');
     });
 
     it('should handle empty search results', async () => {
       const emptyClient: IPointsYeahClient = {
         searchFlights: vi.fn().mockResolvedValue({
-          task: { task_id: 'mock-task', total_sub_tasks: 4, status: 'created' },
-          results: {
-            code: 0,
-            success: true,
-            data: { result: [], completed_sub_tasks: 4, total_sub_tasks: 4 },
-          },
+          total: 0,
+          results: [],
         }),
         getSearchHistory: vi.fn(),
       };

@@ -3,7 +3,6 @@ import {
   ListResourcesRequestSchema,
   ReadResourceRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js';
-import { getServerState } from './state.js';
 
 export function registerResources(server: Server, version: string) {
   server.setRequestHandler(ListResourcesRequestSchema, async () => {
@@ -24,8 +23,6 @@ export function registerResources(server: Server, version: string) {
     const { uri } = request.params;
 
     if (uri === 'pointsyeah://config') {
-      const state = getServerState();
-
       const config = {
         server: {
           name: 'pointsyeah-mcp-server',
@@ -37,9 +34,6 @@ export function registerResources(server: Server, version: string) {
             ? '***configured***'
             : 'not set',
           ENABLED_TOOLGROUPS: process.env.ENABLED_TOOLGROUPS || 'all (default)',
-        },
-        state: {
-          playwrightAvailable: state.playwrightAvailable,
         },
         capabilities: {
           tools: true,

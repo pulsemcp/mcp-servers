@@ -3,12 +3,8 @@ import { readFileSync } from 'fs';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
-import { createMCPServer, PointsYeahClient, setPlaywrightAvailable } from '../shared/index.js';
+import { createMCPServer, PointsYeahClient } from '../shared/index.js';
 import { logServerStart, logError, logWarning } from '../shared/logging.js';
-import type {
-  PlaywrightBrowserContext,
-  PlaywrightResponse,
-} from '../shared/pointsyeah-client/lib/search.js';
 
 // Read version from package.json
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -76,69 +72,6 @@ function validateEnvironment(): void {
 }
 
 // =============================================================================
-// PLAYWRIGHT BROWSER FACTORY
-// =============================================================================
-
-/**
- * Create a Playwright browser context factory.
- * Playwright is dynamically imported for graceful degradation if unavailable.
- */
-function createPlaywrightDeps(): { launchBrowser: () => Promise<PlaywrightBrowserContext> } {
-  return {
-    launchBrowser: async () => {
-      // Dynamic import for graceful degradation at runtime.
-      // Use a variable to prevent TypeScript from statically resolving the module.
-      const moduleName = 'playwright';
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const pw: any = await import(moduleName);
-      const browser = await pw.chromium.launch({ headless: true });
-      const context = await browser.newContext({
-        userAgent:
-          'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-      });
-
-      return {
-        addCookies: async (
-          cookies: Array<{ name: string; value: string; domain: string; path: string }>
-        ) => {
-          await context.addCookies(cookies);
-        },
-        newPage: async () => {
-          const page = await context.newPage();
-          return {
-            goto: async (url: string, options?: { waitUntil?: string; timeout?: number }) => {
-              await page.goto(url, {
-                waitUntil: (options?.waitUntil as 'domcontentloaded') || 'domcontentloaded',
-                timeout: options?.timeout || 60000,
-              });
-            },
-            waitForResponse: async (
-              predicate: (response: PlaywrightResponse) => boolean,
-              options?: { timeout?: number }
-            ) => {
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              const response = await page.waitForResponse(
-                (resp: { url: () => string; json: () => Promise<unknown> }) =>
-                  predicate({ url: () => resp.url(), json: () => resp.json() }),
-                { timeout: options?.timeout || 60000 }
-              );
-              return { url: () => response.url(), json: () => response.json() };
-            },
-            close: async () => {
-              await page.close();
-            },
-          };
-        },
-        close: async () => {
-          await context.close();
-          await browser.close();
-        },
-      };
-    },
-  };
-}
-
-// =============================================================================
 // MAIN ENTRY POINT
 // =============================================================================
 
@@ -147,36 +80,7 @@ async function main() {
 
   const refreshToken = process.env.POINTSYEAH_REFRESH_TOKEN!;
 
-  // Probe for Playwright availability at startup
-  let playwrightAvailable = false;
-  try {
-    const moduleName = 'playwright';
-    await import(moduleName);
-    playwrightAvailable = true;
-  } catch {
-    // Playwright module not installed
-  }
-
-  setPlaywrightAvailable(playwrightAvailable);
-
-  let playwrightDeps: ReturnType<typeof createPlaywrightDeps>;
-  if (playwrightAvailable) {
-    playwrightDeps = createPlaywrightDeps();
-  } else {
-    logWarning(
-      'playwright',
-      'Playwright not available. Flight search will not work. Install playwright to enable search.'
-    );
-    playwrightDeps = {
-      launchBrowser: async () => {
-        throw new Error(
-          'Playwright is not installed. Install it with: npx playwright install chromium'
-        );
-      },
-    };
-  }
-
-  const clientFactory = () => new PointsYeahClient(refreshToken, playwrightDeps);
+  const clientFactory = () => new PointsYeahClient(refreshToken);
 
   const { server, registerHandlers } = createMCPServer({ version: VERSION });
   await registerHandlers(server, clientFactory);

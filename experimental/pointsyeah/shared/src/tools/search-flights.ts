@@ -42,7 +42,7 @@ This tool searches PointsYeah for flight availability using points and miles. It
 - Discover transfer partner options from bank reward programs
 - Search for premium cabin availability (Business, First)
 
-**Note:** This tool requires Playwright for the initial search request. Search results are polled incrementally and may take 1-3 minutes to complete. Results include all available airline programs.`;
+**Note:** Results are sourced from PointsYeah's explorer database of recently-crawled award availability. Results show the best deals found across airline programs.`;
 
 function formatDuration(minutes: number): string {
   const hours = Math.floor(minutes / 60);
@@ -144,14 +144,14 @@ export function searchFlightsTool(_server: Server, clientFactory: () => IPointsY
         }
 
         const client = clientFactory();
-        const { task, results } = await client.searchFlights(params);
+        const searchResults = await client.searchFlights(params);
 
-        if (!results.data.result || results.data.result.length === 0) {
+        if (!searchResults.results || searchResults.results.length === 0) {
           return {
             content: [
               {
                 type: 'text',
-                text: `No award flights found for ${params.departure} -> ${params.arrival} on ${params.departDate}.\n\nTask ID: ${task.task_id}\nSub-tasks completed: ${results.data.completed_sub_tasks}/${results.data.total_sub_tasks}`,
+                text: `No award flights found for ${params.departure} -> ${params.arrival} on ${params.departDate}.`,
               },
             ],
           };
@@ -164,12 +164,11 @@ export function searchFlightsTool(_server: Server, clientFactory: () => IPointsY
           `**Date:** ${params.departDate}${params.returnDate ? ` - ${params.returnDate}` : ''}`,
           `**Passengers:** ${params.adults} adult(s)${params.children ? `, ${params.children} child(ren)` : ''}`,
           `**Cabins:** ${params.cabins.join(', ')}`,
-          `**Programs searched:** ${results.data.total_sub_tasks} | **Completed:** ${results.data.completed_sub_tasks}`,
-          `**Results found:** ${results.data.result.length} program(s)`,
+          `**Results found:** ${searchResults.results.length} program(s) (${searchResults.total.toLocaleString()} total in database)`,
           '',
         ];
 
-        const formattedResults = results.data.result.map(formatResult);
+        const formattedResults = searchResults.results.map(formatResult);
 
         return {
           content: [

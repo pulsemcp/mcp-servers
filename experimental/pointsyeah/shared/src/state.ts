@@ -3,24 +3,24 @@
  */
 
 interface ServerState {
-  /** Whether Playwright is available for flight searches */
-  playwrightAvailable: boolean;
+  /** Whether the server has been initialized */
+  initialized: boolean;
 }
 
 let state: ServerState = {
-  playwrightAvailable: false,
+  initialized: false,
 };
 
 export function getServerState(): Readonly<ServerState> {
   return { ...state };
 }
 
-export function setPlaywrightAvailable(available: boolean): void {
-  state.playwrightAvailable = available;
+export function setInitialized(value: boolean): void {
+  state.initialized = value;
 }
 
 export function resetState(): void {
   state = {
-    playwrightAvailable: false,
+    initialized: false,
   };
 }

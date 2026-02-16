@@ -4,55 +4,41 @@ import type { IPointsYeahClient } from '../../shared/src/server.js';
 export function createMockPointsYeahClient(): IPointsYeahClient {
   return {
     searchFlights: vi.fn().mockResolvedValue({
-      task: {
-        task_id: 'mock-task-123',
-        total_sub_tasks: 4,
-        status: 'created',
-      },
-      results: {
-        code: 0,
-        success: true,
-        data: {
-          result: [
+      total: 1,
+      results: [
+        {
+          program: 'United MileagePlus',
+          code: 'UA',
+          date: '2026-04-01',
+          departure: 'SFO',
+          arrival: 'EWR',
+          routes: [
             {
-              program: 'United MileagePlus',
-              code: 'UA',
-              date: '2026-04-01',
-              departure: 'SFO',
-              arrival: 'EWR',
-              routes: [
+              payment: {
+                currency: 'USD',
+                tax: 5.6,
+                miles: 25000,
+                cabin: 'Economy',
+                unit: 'points',
+                seats: 3,
+                cash_price: 0,
+              },
+              segments: [
                 {
-                  payment: {
-                    currency: 'USD',
-                    tax: 5.6,
-                    miles: 25000,
-                    cabin: 'Economy',
-                    unit: 'points',
-                    seats: 3,
-                    cash_price: 0,
-                  },
-                  segments: [
-                    {
-                      duration: 320,
-                      flight_number: 'UA123',
-                      dt: '2026-04-01T08:00:00',
-                      da: 'SFO',
-                      at: '2026-04-01T16:20:00',
-                      aa: 'EWR',
-                      cabin: 'Economy',
-                    },
-                  ],
-                  transfer: [
-                    { bank: 'Chase Ultimate Rewards', actual_points: 25000, points: 25000 },
-                  ],
+                  duration: 320,
+                  flight_number: 'UA123',
+                  dt: '2026-04-01T08:00:00',
+                  da: 'SFO',
+                  at: '2026-04-01T16:20:00',
+                  aa: 'EWR',
+                  cabin: 'Economy',
                 },
               ],
+              transfer: [{ bank: 'Chase Ultimate Rewards', actual_points: 25000, points: 25000 }],
             },
           ],
-          completed_sub_tasks: 4,
-          total_sub_tasks: 4,
         },
-      },
+      ],
     }),
 
     getSearchHistory: vi.fn().mockResolvedValue([

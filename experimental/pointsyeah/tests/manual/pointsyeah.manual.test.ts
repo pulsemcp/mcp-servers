@@ -12,7 +12,6 @@ const __dirname = path.dirname(__filename);
  *
  * These tests hit the REAL PointsYeah API and require:
  *   - POINTSYEAH_REFRESH_TOKEN environment variable (via .env file)
- *   - Playwright + Chromium installed (for flight search tests)
  *
  * Run with: npm run test:manual
  */
@@ -33,7 +32,6 @@ describe('PointsYeah MCP Server - Manual Tests', () => {
       serverPath,
       env: {
         POINTSYEAH_REFRESH_TOKEN: process.env.POINTSYEAH_REFRESH_TOKEN,
-        PLAYWRIGHT_BROWSERS_PATH: process.env.PLAYWRIGHT_BROWSERS_PATH || '',
       },
       debug: false,
     });
@@ -54,7 +52,6 @@ describe('PointsYeah MCP Server - Manual Tests', () => {
   describe('Tool Discovery', () => {
     it('should list all 2 tools', async () => {
       const result = await client.listTools();
-      // listTools() returns { tools: [...] }
       const tools = result.tools;
 
       expect(Array.isArray(tools)).toBe(true);
@@ -68,7 +65,6 @@ describe('PointsYeah MCP Server - Manual Tests', () => {
   describe('Resources', () => {
     it('should list the config resource', async () => {
       const result = await client.listResources();
-      // listResources() returns { resources: [...] }
       const resources = result.resources;
 
       expect(Array.isArray(resources)).toBe(true);
@@ -89,12 +85,10 @@ describe('PointsYeah MCP Server - Manual Tests', () => {
       const config = JSON.parse(result.contents[0].text);
 
       expect(config.server.name).toBe('pointsyeah-mcp-server');
-      expect(config.server.version).toBe('0.1.0');
       expect(config.environment.POINTSYEAH_REFRESH_TOKEN).toBe('***configured***');
       expect(config.capabilities.tools).toBe(true);
       expect(config.capabilities.resources).toBe(true);
 
-      console.log(`Playwright available: ${config.state.playwrightAvailable}`);
       console.log(`Server version: ${config.server.version}`);
     });
   });
@@ -134,7 +128,7 @@ describe('PointsYeah MCP Server - Manual Tests', () => {
   });
 
   // =========================================================================
-  // READ-ONLY TOOLS (plain HTTP, no Playwright needed)
+  // READ-ONLY TOOLS
   // =========================================================================
 
   describe('Read-Only Tools', () => {
@@ -144,9 +138,7 @@ describe('PointsYeah MCP Server - Manual Tests', () => {
       expect(result.isError).toBeFalsy();
       const parsed = JSON.parse(result.content[0].text);
 
-      // PointsYeah API wraps responses in {code, success, data}
       expect(parsed).toBeDefined();
-      // The response may be {code, success, data: [...]} or just [...]
       const history = Array.isArray(parsed) ? parsed : parsed.data;
       if (history && Array.isArray(history)) {
         console.log(`Search history: ${history.length} entries`);
@@ -197,10 +189,7 @@ describe('PointsYeah MCP Server - Manual Tests', () => {
   });
 
   // =========================================================================
-  // DIRECT CLIENT TESTS (bypass MCP protocol timeout for long operations)
-  //
-  // The MCP SDK has a 60-second request timeout. Flight searches take 1-5
-  // minutes (Playwright + polling), so we test the client library directly.
+  // DIRECT CLIENT TESTS
   // =========================================================================
 
   describe('Direct Client - Cognito Auth', () => {
@@ -227,201 +216,80 @@ describe('PointsYeah MCP Server - Manual Tests', () => {
     });
   });
 
-  describe('Direct Client - Flight Search via Playwright', () => {
-    it('should create a search task and poll for results', async () => {
+  describe('Direct Client - Explorer Search API', () => {
+    it('should search for flights via explorer API and fetch details', async () => {
       const { refreshCognitoTokens } =
         await import('../../shared/build/pointsyeah-client/lib/auth.js');
-      const { createSearchTask } =
-        await import('../../shared/build/pointsyeah-client/lib/search.js');
+      const { explorerSearch, fetchFlightDetail } =
+        await import('../../shared/build/pointsyeah-client/lib/explorer-search.js');
 
       // Step 1: Get tokens
       console.log('Step 1: Refreshing Cognito tokens...');
       const tokens = await refreshCognitoTokens(process.env.POINTSYEAH_REFRESH_TOKEN!);
       console.log(`  Tokens obtained (expires ${new Date(tokens.expiresAt * 1000).toISOString()})`);
 
-      // Step 2: Create Playwright browser deps
-      console.log('Step 2: Launching Playwright browser...');
-      const moduleName = 'playwright';
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const pw: any = await import(moduleName);
-      const browser = await pw.chromium.launch({ headless: true });
-      const context = await browser.newContext({
-        userAgent:
-          'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 ' +
-          '(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-      });
+      // Step 2: Search via explorer API
+      console.log('Step 2: Searching via explorer API...');
+      const searchResults = await explorerSearch(
+        {
+          departure: 'SFO',
+          arrival: 'NRT',
+          departDate: '2026-06-01',
+          tripType: '1',
+          adults: 1,
+          children: 0,
+          cabins: ['Economy', 'Business'],
+        },
+        tokens.idToken
+      );
 
-      const playwrightDeps = {
-        launchBrowser: async () => ({
-          addCookies: async (
-            cookies: Array<{ name: string; value: string; domain: string; path: string }>
-          ) => {
-            await context.addCookies(cookies);
-          },
-          newPage: async () => {
-            const page = await context.newPage();
-            return {
-              goto: async (url: string, options?: { waitUntil?: string; timeout?: number }) => {
-                await page.goto(url, {
-                  waitUntil: (options?.waitUntil as 'domcontentloaded') || 'domcontentloaded',
-                  timeout: options?.timeout || 60000,
-                });
-              },
-              waitForResponse: async (
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                predicate: (response: any) => boolean,
-                options?: { timeout?: number }
-              ) => {
-                const response = await page.waitForResponse(
-                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                  (resp: any) => predicate({ url: () => resp.url(), json: () => resp.json() }),
-                  { timeout: options?.timeout || 60000 }
-                );
-                return { url: () => response.url(), json: () => response.json() };
-              },
-              close: async () => {
-                await page.close();
-              },
-            };
-          },
-          close: async () => {
-            await context.close();
-            await browser.close();
-          },
-        }),
-      };
+      expect(searchResults).toBeDefined();
+      expect(typeof searchResults.total).toBe('number');
+      expect(Array.isArray(searchResults.results)).toBe(true);
 
-      try {
-        // Step 3: Create search task
-        console.log('Step 3: Creating search task via Playwright...');
-        const task = await createSearchTask(
-          {
-            departure: 'SFO',
-            arrival: 'NRT',
-            departDate: '2026-06-01',
-            tripType: '1',
-            adults: 1,
-            children: 0,
-            cabins: ['Economy', 'Business'],
-          },
-          tokens.accessToken,
-          tokens.idToken,
-          process.env.POINTSYEAH_REFRESH_TOKEN!,
-          playwrightDeps
+      console.log(`  Total results in database: ${searchResults.total}`);
+      console.log(`  Results returned: ${searchResults.results.length}`);
+
+      if (searchResults.results.length > 0) {
+        const firstResult = searchResults.results[0];
+        console.log(`  First result: ${firstResult.program}`);
+        console.log(`    ${firstResult.departure.code} -> ${firstResult.arrival.code}`);
+        console.log(`    ${firstResult.miles.toLocaleString()} miles + $${firstResult.tax} tax`);
+        console.log(`    Cabin: ${firstResult.cabin}, Stops: ${firstResult.stops}`);
+
+        // Step 3: Fetch detail for first result
+        console.log('Step 3: Fetching flight detail...');
+        const detail = await fetchFlightDetail(firstResult.detail_url);
+
+        expect(detail).toBeDefined();
+        expect(detail.program).toBeDefined();
+        expect(detail.routes).toBeDefined();
+        expect(detail.routes.length).toBeGreaterThan(0);
+
+        console.log(`  Detail for: ${detail.program} (${detail.code})`);
+        console.log(`  Routes: ${detail.routes.length}`);
+
+        const firstRoute = detail.routes[0];
+        console.log(`  First route:`);
+        console.log(
+          `    ${firstRoute.payment.miles.toLocaleString()} ${firstRoute.payment.unit} + $${firstRoute.payment.tax} tax`
         );
+        console.log(`    Segments: ${firstRoute.segments.length}`);
 
-        expect(task).toBeDefined();
-        expect(task.task_id).toBeDefined();
-        expect(typeof task.task_id).toBe('string');
-        expect(task.total_sub_tasks).toBeGreaterThan(0);
-
-        console.log(`  Task created: ${task.task_id}`);
-        console.log(`  Total sub-tasks: ${task.total_sub_tasks}`);
-
-        // Step 4: Poll for results using raw fetch to inspect actual response
-        console.log('Step 4: Polling for results...');
-        const POLL_INTERVAL_MS = 3000;
-        const MAX_POLLS = 60; // Up to 3 minutes
-
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        let lastResults: any = null;
-        for (let i = 0; i < MAX_POLLS; i++) {
-          await new Promise((resolve) => setTimeout(resolve, POLL_INTERVAL_MS));
-
-          const pollResponse = await fetch(
-            'https://api2.pointsyeah.com/flight/search/fetch_result',
-            {
-              method: 'POST',
-              headers: {
-                Authorization: tokens.idToken,
-                'Content-Type': 'application/json',
-                Origin: 'https://www.pointsyeah.com',
-                Referer: 'https://www.pointsyeah.com/',
-              },
-              body: JSON.stringify({ task_id: task.task_id }),
-              signal: AbortSignal.timeout(30000),
-            }
-          );
-
-          if (!pollResponse.ok) {
-            console.log(`  Poll ${i + 1}: HTTP ${pollResponse.status} ${pollResponse.statusText}`);
-            // If 404, the task may have expired - break early
-            if (pollResponse.status === 404) {
-              console.log('  Task not found - may have expired');
-              break;
-            }
-            continue;
-          }
-
-          lastResults = await pollResponse.json();
-
-          // Log raw response shape on first poll
-          if (i === 0) {
-            console.log(
-              `  First poll raw response keys: ${JSON.stringify(Object.keys(lastResults))}`
-            );
-            if (lastResults.data) {
-              console.log(`  data keys: ${JSON.stringify(Object.keys(lastResults.data))}`);
-            }
-          }
-
-          const completed = lastResults.data?.completed_sub_tasks ?? '?';
-          const total = lastResults.data?.total_sub_tasks ?? '?';
-          const resultCount = lastResults.data?.result?.length ?? 0;
-
-          console.log(`  Poll ${i + 1}: ${completed}/${total} sub-tasks, ${resultCount} results`);
-
-          if (
-            lastResults.data?.completed_sub_tasks != null &&
-            lastResults.data?.total_sub_tasks != null &&
-            lastResults.data.completed_sub_tasks >= lastResults.data.total_sub_tasks
-          ) {
-            break;
-          }
-        }
-
-        expect(lastResults).not.toBeNull();
-        console.log(`\n  Final response: ${JSON.stringify(lastResults).substring(0, 500)}...`);
-
-        // Validate basic structure
-        expect(lastResults.success).toBe(true);
-        expect(lastResults.data).toBeDefined();
-        expect(lastResults.data.result).toBeDefined();
-
-        if (lastResults.data.result.length > 0) {
-          const firstResult = lastResults.data.result[0];
-          expect(firstResult.program).toBeDefined();
-          expect(firstResult.routes).toBeDefined();
-          expect(firstResult.routes.length).toBeGreaterThan(0);
-
-          const firstRoute = firstResult.routes[0];
-          expect(firstRoute.payment).toBeDefined();
-          expect(typeof firstRoute.payment.miles).toBe('number');
-
-          console.log(`  Search complete!`);
+        for (const seg of firstRoute.segments) {
           console.log(
-            `  Total results: ${lastResults.data.result.length} programs with availability`
+            `      ${seg.flight.number}: ${seg.departure_info.airport.airport_code} -> ${seg.arrival_info.airport.airport_code} [${seg.cabin}]`
           );
+        }
+
+        if (firstRoute.transfer && firstRoute.transfer.length > 0) {
           console.log(
-            `  Sample: ${firstResult.program} (${firstResult.code}) - ` +
-              `${firstRoute.payment.miles.toLocaleString()} ${firstRoute.payment.unit} + ` +
-              `$${firstRoute.payment.tax} tax`
+            `    Transfers: ${firstRoute.transfer.map((t) => `${t.bank}: ${t.points.toLocaleString()} pts`).join(', ')}`
           );
-        } else {
-          console.log('  No results found (all sub-tasks completed with 0 results)');
         }
-      } finally {
-        try {
-          await context.close();
-        } catch {
-          /* already closed */
-        }
-        try {
-          await browser.close();
-        } catch {
-          /* already closed */
-        }
+      } else {
+        console.log('  No results found for this route/date');
       }
-    }, 300000); // 5 minute timeout
+    }, 60000);
   });
 });
