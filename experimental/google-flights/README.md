@@ -44,7 +44,7 @@ Windows: `%APPDATA%\Claude\claude_desktop_config.json`
   "mcpServers": {
     "google-flights": {
       "command": "npx",
-      "args": ["-y", "google-flights-google-mcp-server"]
+      "args": ["-y", "google-flights-mcp-server"]
     }
   }
 }

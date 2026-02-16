@@ -1,5 +1,5 @@
 {
-  "name": "google-flights-google-mcp-server",
+  "name": "google-flights-mcp-server",
   "version": "0.1.0",
   "description": "MCP server for searching Google Flights — flight search, date grid pricing, and airport lookup",
   "main": "build/index.js",

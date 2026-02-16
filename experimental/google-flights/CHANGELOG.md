@@ -10,6 +10,10 @@ All notable changes to the Google Flights MCP Server will be documented in this 
 - Steering language in search_flights description to recommend filters for large result sets
 - Deal-hunting guidance in get_date_grid description for flexible travel dates
 
+### Changed
+
+- Renamed npm package from `google-flights-google-mcp-server` to `google-flights-mcp-server`
+
 ## [0.1.0] - 2026-02-16
 
 ### Added
