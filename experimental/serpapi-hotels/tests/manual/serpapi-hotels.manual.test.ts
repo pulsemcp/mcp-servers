@@ -187,14 +187,31 @@ describe('SerpAPI Hotels MCP Server - Manual Tests', () => {
         return;
       }
 
-      const result = await client.callTool('get_hotel_details', {
-        property_token: propertyToken,
-        check_in_date: '2026-04-01',
-        check_out_date: '2026-04-05',
-      });
+      // Try multiple properties since some tokens may not work with the details endpoint
+      let parsed = null;
+      for (const prop of searchParsed.properties.slice(0, 3)) {
+        if (!prop.property_token) continue;
 
-      const content = (result as { content: Array<{ text: string }> }).content[0];
-      const parsed = JSON.parse(content.text);
+        const result = await client.callTool('get_hotel_details', {
+          query: 'Hotels in New York',
+          property_token: prop.property_token,
+          check_in_date: '2026-04-01',
+          check_out_date: '2026-04-05',
+        });
+
+        const content = (result as { content: Array<{ text: string }> }).content[0];
+        if (content.text.startsWith('Error')) {
+          console.log(`Property token ${prop.property_token} returned error, trying next...`);
+          continue;
+        }
+
+        parsed = JSON.parse(content.text);
+        break;
+      }
+
+      if (!parsed) {
+        throw new Error('All property tokens returned errors from SerpAPI details endpoint');
+      }
 
       expect(parsed.property).toBeDefined();
       expect(parsed.property.name).toBeDefined();

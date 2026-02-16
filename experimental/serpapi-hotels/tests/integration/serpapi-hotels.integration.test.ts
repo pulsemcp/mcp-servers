@@ -79,6 +79,7 @@ describe('SerpAPI Hotels MCP Server Integration Tests', () => {
       const detailsTool = tools.find((t) => t.name === 'get_hotel_details');
 
       expect(detailsTool).toBeDefined();
+      expect(detailsTool!.inputSchema.required).toContain('query');
       expect(detailsTool!.inputSchema.required).toContain('property_token');
       expect(detailsTool!.inputSchema.required).toContain('check_in_date');
       expect(detailsTool!.inputSchema.required).toContain('check_out_date');
@@ -107,6 +108,7 @@ describe('SerpAPI Hotels MCP Server Integration Tests', () => {
 
     it('should get hotel details', async () => {
       const result = await client.callTool('get_hotel_details', {
+        query: 'Hotels in New York',
         property_token: 'mock-property-token-1',
         check_in_date: '2026-03-01',
         check_out_date: '2026-03-05',

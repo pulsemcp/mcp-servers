@@ -1,9 +1,10 @@
 import type { GetHotelDetailsOptions, HotelDetailsResult, ReviewsBreakdown } from '../../types.js';
 import { parseProperty, type SerpApiRawProperty } from './parse-property.js';
 
-interface SerpApiDetailsResponse {
+// When property_token is provided, SerpAPI returns the hotel data at the
+// top level (not nested in a properties array).
+type SerpApiDetailsResponse = SerpApiRawProperty & {
   search_parameters?: Record<string, unknown>;
-  properties?: SerpApiRawProperty[];
   reviews_breakdown?: Array<{
     name?: string;
     description?: string;
@@ -13,7 +14,7 @@ interface SerpApiDetailsResponse {
     neutral?: number;
   }>;
   error?: string;
-}
+};
 
 export async function getHotelDetails(
   apiKey: string,
@@ -22,6 +23,7 @@ export async function getHotelDetails(
   const params = new URLSearchParams({
     engine: 'google_hotels',
     api_key: apiKey,
+    q: options.query,
     property_token: options.property_token,
     check_in_date: options.check_in_date,
     check_out_date: options.check_out_date,
@@ -49,12 +51,11 @@ export async function getHotelDetails(
     throw new Error(`SerpAPI error: ${data.error}`);
   }
 
-  const rawProperty = data.properties?.[0];
-  if (!rawProperty) {
+  if (!data.name) {
     throw new Error('No property details returned from SerpAPI');
   }
 
-  const property = parseProperty(rawProperty);
+  const property = parseProperty(data);
 
   const reviews_breakdown: ReviewsBreakdown[] = (data.reviews_breakdown ?? []).map((rb) => ({
     name: rb.name ?? '',

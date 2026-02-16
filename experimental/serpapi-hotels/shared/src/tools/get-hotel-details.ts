@@ -4,6 +4,12 @@ import type { SerpApiClientFactory } from '../server.js';
 
 export const GetHotelDetailsSchema = z
   .object({
+    query: z
+      .string()
+      .min(1)
+      .describe(
+        'The same hotel search query used in search_hotels (e.g., "Hotels in New York"). Required by the SerpAPI Google Hotels engine.'
+      ),
     property_token: z
       .string()
       .min(1)
@@ -58,12 +64,17 @@ export function getHotelDetailsTool(_server: Server, clientFactory: SerpApiClien
     name: 'get_hotel_details',
     description: `Get detailed information about a specific hotel from Google Hotels via SerpAPI.
 
-Use this after search_hotels to get full details for a specific property. Pass the property_token from a search result.
+Use this after search_hotels to get full details for a specific property. Pass both the original search query and the property_token from a search result.
 
 **Returns:** Complete hotel info including all booking prices from different sources, review sentiment breakdown (positive/negative/neutral by category like cleanliness, location, service), full amenity list, check-in/out times, nearby places with travel times, and GPS coordinates.`,
     inputSchema: {
       type: 'object' as const,
       properties: {
+        query: {
+          type: 'string',
+          description:
+            'The same hotel search query used in search_hotels (e.g., "Hotels in New York")',
+        },
         property_token: {
           type: 'string',
           description: 'Property token from search_hotels results',
@@ -80,7 +91,7 @@ Use this after search_hotels to get full details for a specific property. Pass t
         gl: { type: 'string', description: 'Country code for localization (e.g., "us")' },
         hl: { type: 'string', description: 'Language code (e.g., "en")' },
       },
-      required: ['property_token', 'check_in_date', 'check_out_date'],
+      required: ['query', 'property_token', 'check_in_date', 'check_out_date'],
     },
     handler: async (args: unknown) => {
       try {

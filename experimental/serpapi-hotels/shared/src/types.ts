@@ -98,6 +98,7 @@ export interface HotelBrand {
 }
 
 export interface GetHotelDetailsOptions {
+  query: string;
   property_token: string;
   check_in_date: string;
   check_out_date: string;

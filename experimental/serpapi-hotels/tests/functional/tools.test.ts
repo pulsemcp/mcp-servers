@@ -139,6 +139,7 @@ describe('SerpAPI Hotels Tools', () => {
   describe('get_hotel_details', () => {
     it('should get hotel details successfully', async () => {
       const result = await callTool('get_hotel_details', {
+        query: 'Hotels in New York',
         property_token: 'test-token-1',
         check_in_date: '2026-03-01',
         check_out_date: '2026-03-05',
@@ -155,6 +156,7 @@ describe('SerpAPI Hotels Tools', () => {
 
     it('should include reviews breakdown', async () => {
       const result = await callTool('get_hotel_details', {
+        query: 'Hotels in New York',
         property_token: 'test-token-1',
         check_in_date: '2026-03-01',
         check_out_date: '2026-03-05',
@@ -179,6 +181,7 @@ describe('SerpAPI Hotels Tools', () => {
 
     it('should include booking links from multiple sources', async () => {
       const result = await callTool('get_hotel_details', {
+        query: 'Hotels in New York',
         property_token: 'test-token-1',
         check_in_date: '2026-03-01',
         check_out_date: '2026-03-05',
@@ -191,7 +194,7 @@ describe('SerpAPI Hotels Tools', () => {
       expect(parsed.property.prices[1].source).toBe('Hotels.com');
     });
 
-    it('should return error for missing property_token', async () => {
+    it('should return error for missing required fields', async () => {
       const result = await callTool('get_hotel_details', {
         check_in_date: '2026-03-01',
         check_out_date: '2026-03-05',
@@ -204,6 +207,7 @@ describe('SerpAPI Hotels Tools', () => {
 
     it('should return error when check_out_date is before check_in_date', async () => {
       const result = await callTool('get_hotel_details', {
+        query: 'Hotels in New York',
         property_token: 'test-token-1',
         check_in_date: '2026-03-05',
         check_out_date: '2026-03-01',
