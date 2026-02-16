@@ -1,6 +1,6 @@
 {
   "name": "pointsyeah-mcp-server",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Local implementation of PointsYeah MCP server",
   "mcpName": "com.pulsemcp.servers/pointsyeah",
   "main": "build/index.js",
@@ -26,6 +26,7 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.19.1",
+    "playwright": "^1.49.1",
     "zod": "^3.24.1"
   },
   "devDependencies": {

@@ -7,10 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-02-16
+
 ### Added
 
 - Manual test suite covering all tools, resources, auth, and Playwright search
 - Functional tests for client error handling and empty search results
+- `playwright` as a direct dependency so flight search works when installed via `npx`
 
 ### Changed
 
