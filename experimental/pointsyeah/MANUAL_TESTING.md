@@ -48,36 +48,23 @@ The tests will:
 
 ## Latest Test Results
 
-**Test Date:** 2026-02-16 03:45 UTC
-**Branch:** tadasant/pointsyeah-mcp-server
-**Commit:** 7a179dd
+**Test Date:** 2026-02-16 07:40 UTC
+**Branch:** tadasant/pointsyeah-add-playwright-dep
+**Commit:** 88a5233
 **Tested By:** Claude
-**Environment:** Linux, Node.js with Playwright Chromium
+**Environment:** Linux, Node.js
 
 ### Test Results
 
-**Type:** Manual integration testing against real PointsYeah API
-**Status:** All manual tests passed (16/16)
+**Type:** Functional tests (packaging-only change, no runtime behavior modified)
+**Status:** All functional tests passed (8/8)
 
-**Test Duration:** ~131s
+**Test Duration:** ~0.5s
 
 **Details:**
 
-This is the initial release of the PointsYeah MCP server. All 16 manual tests were run against the real PointsYeah API with a real user account. Note: 5 tools were subsequently removed (get_flight_recommendations, get_hotel_recommendations, get_explorer_count, get_user_membership, get_user_preferences) as they were not needed. The remaining 2 tools (search_flights, get_search_history) were fully tested in the original run.
+This is a packaging-only change that adds `playwright` as a declared dependency in package.json (it was previously dynamically imported but not declared). No runtime code was modified. All 8 functional tests pass, confirming no regressions.
 
-**Test Categories:**
+**Note:** Manual API tests from v0.1.0 (commit 7a179dd) remain valid since no runtime behavior changed. The only change is the addition of `playwright` to the `dependencies` field in `shared/package.json` and `local/package.json`.
 
-- Tool & Resource Discovery (3 tests): Lists tools, config resource, and config content correctly
-- Authentication - Cognito Token Refresh (1 test): Successfully refreshes AWS Cognito tokens and calls API
-- Read-Only Tools (1 test): get_search_history
-- Flight Search - Input Validation (3 tests): Rejects missing returnDate, invalid dates, and missing required fields
-- Direct Client - Cognito Auth (1 test): Directly calls refreshCognitoTokens() with real token
-- Direct Client - Flight Search via Playwright (1 test): Full Playwright browser automation flow with task creation and polling
-
-**Key Findings:**
-
-1. The `fetch_result` polling endpoint returns `completed_sub_tasks` and `total_sub_tasks` in `data` alongside additional fields like `status` not in our TypeScript types
-2. First MCP tool call can fail transiently during subprocess warmup; retry with delay resolves it
-3. MCP SDK has hardcoded 60s request timeout; flight search must be tested directly bypassing MCP protocol
-
-**Summary:** All manual tests pass against the real PointsYeah API. The server correctly authenticates via AWS Cognito, performs award flight searches via Playwright browser automation, and retrieves search history.
+**Summary:** Functional tests confirm no regressions from the dependency declaration change.
