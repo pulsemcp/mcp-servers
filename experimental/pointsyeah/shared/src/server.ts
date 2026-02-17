@@ -98,7 +98,11 @@ export class PointsYeahClient implements IPointsYeahClient {
   async searchFlights(params: FlightSearchParams): Promise<FlightSearchResults> {
     const tokens = await this.ensureTokens();
 
-    // Step 1: Create search task via Playwright (handles encrypted request)
+    // Step 1: Create search task via Playwright (handles encrypted request).
+    // Note: createSearchTask doesn't use withAuth() because it passes tokens as browser
+    // cookies to the PointsYeah website, not as API headers. A 401 retry would require
+    // re-launching the browser. The 5-minute refresh buffer in ensureTokens() mitigates
+    // the risk of token expiry between refresh and browser navigation.
     const task = await createSearchTask(
       params,
       tokens.accessToken,

@@ -73,7 +73,7 @@ Tested with a valid (non-revoked) POINTSYEAH_REFRESH_TOKEN. All auth-dependent t
 - **Authenticated Mode (4 tests):**
   - Should expose all tools regardless of auth state
   - Config resource with authenticated status
-  - search_flights validation (returns valid results for authenticated user)
+  - search_flights input validation (rejects round-trip without returnDate)
   - Direct Client Cognito auth
 
 **Failed tests (1/10):**

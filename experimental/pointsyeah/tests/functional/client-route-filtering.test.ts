@@ -248,6 +248,23 @@ describe('PointsYeahClient live search', () => {
     );
   });
 
+  it('should return partial results when polling times out', async () => {
+    mockedCreateSearchTask.mockResolvedValue(makeTask());
+    // Always return incomplete (never reaches total_sub_tasks)
+    mockedFetchSearchResults.mockResolvedValue(
+      makeSearchResponse([makeFlightResult('United', 'SFO', 'NRT')], 2, 5)
+    );
+
+    const client = new PointsYeahClient(mockPlaywright);
+    const result = await runSearchWithFakeTimers(client, makeSearchParams());
+
+    // Should return partial results even though polling didn't complete
+    expect(result.results).toHaveLength(1);
+    expect(result.total).toBe(1);
+    // Should have polled MAX_POLLS (120) times
+    expect(mockedFetchSearchResults).toHaveBeenCalledTimes(120);
+  });
+
   it('should pass search params to createSearchTask', async () => {
     const task = makeTask();
     mockedCreateSearchTask.mockResolvedValue(task);
