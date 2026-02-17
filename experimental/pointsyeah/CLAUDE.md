@@ -2,44 +2,58 @@
 
 ## Architecture Overview
 
-This MCP server integrates with PointsYeah, a travel rewards search engine. The server uses two main approaches:
+This MCP server integrates with PointsYeah, a travel rewards search engine. All API calls use plain HTTP requests:
 
-1. **Playwright** for flight search (because the search request body is encrypted client-side)
-2. **Plain HTTP** for all other API calls (auth, polling, user data, recommendations)
+1. **Explorer Search API** (`api.pointsyeah.com/v2/live/explorer/search`) - Flight search via direct HTTP POST
+2. **CloudFront Detail URLs** - Full route/segment info for each search result
+3. **User APIs** (`api.pointsyeah.com/v2/live`) - History and other user data
 
 ## Key Design Decisions
+
+### Dynamic Authentication
+
+- Server starts with only `set_refresh_token` tool when unauthenticated
+- After a valid token is provided (via env var or tool), switches to flight search tools
+- If token is later revoked, automatically switches back to `set_refresh_token`
+- Uses `server.sendToolListChanged()` to notify MCP clients when tool list changes
+- Auth state is tracked in `state.ts` (module-level singleton)
 
 ### Authentication
 
 - Uses AWS Cognito `REFRESH_TOKEN_AUTH` flow
-- Tokens are refreshed lazily (Option B from spec) - only when within 5 minutes of expiry
+- Tokens are refreshed lazily - only when within 5 minutes of expiry
 - The refresh token itself does not rotate; the same token works until it expires
+- All authenticated API calls use `withAuth()` which automatically retries on 401
+- Token revocation is detected by checking error messages for known patterns
 
 ### Flight Search (Two-Step)
 
-1. **Create Task (Playwright)**: Navigate to search URL with injected Cognito cookies, intercept the `create_task` API response to get a `task_id`
-2. **Poll Results (HTTP)**: Poll `fetch_result` with the `task_id` every 3 seconds until all sub-tasks complete
-
-### Playwright Abstraction
-
-The Playwright dependency is abstracted behind interfaces (`PlaywrightSearchDeps`, `PlaywrightBrowserContext`, `PlaywrightPage`) so that:
-
-- Tests can inject mocks without requiring Playwright
-- The server can gracefully degrade when Playwright is not installed (non-search tools still work)
+1. **Explorer Search**: HTTP POST to `/explorer/search` with departure/arrival airports, date, cabin classes. Returns summary results with `detail_url` for each.
+2. **Detail Fetch**: HTTP GET each `detail_url` (CloudFront-hosted JSON) for full route, segment, and transfer information. Up to 10 detail fetches per search.
 
 ## API Domains
 
 - `cognito-idp.us-east-1.amazonaws.com` - Authentication
-- `api.pointsyeah.com` - User APIs (history, membership, preferences, explorer)
-- `api2.pointsyeah.com` - Flight search (create task, fetch results)
+- `api.pointsyeah.com` - Explorer search, user APIs (history)
+- CloudFront CDN - Flight detail JSON files
 
 ## Environment Variables
 
-- `POINTSYEAH_REFRESH_TOKEN` (required) - Cognito refresh token (~1784 char JWE)
+- `POINTSYEAH_REFRESH_TOKEN` (optional) - Cognito refresh token (~1784 char JWE). If not set, server starts in unauthenticated mode.
 - `ENABLED_TOOLGROUPS` (optional) - Tool group filter
+
+## Key Files
+
+- `shared/src/state.ts` - Auth state management (authenticated flag, refresh token)
+- `shared/src/tools.ts` - Dynamic tool registration with `applyToolList()` and `sendToolListChanged()`
+- `shared/src/tools/set-refresh-token.ts` - The `set_refresh_token` tool with token validation
+- `shared/src/server.ts` - `PointsYeahClient` reads token from state via getter
+- `local/src/index.ts` - Entry point with optional env token validation on startup
 
 ## Testing
 
-- Functional tests mock the `IPointsYeahClient` interface
+- Functional tests mock the `IPointsYeahClient` interface and test auth state transitions
 - Integration tests use `createIntegrationMockPointsYeahClient` with `TestMCPClient`
-- Manual tests require a real refresh token and Playwright
+- Manual tests are designed to always pass regardless of token availability:
+  - Unauthenticated tests verify the auth-needed UX (no token required)
+  - Authenticated tests gracefully handle expired/revoked tokens

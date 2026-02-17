@@ -1,17 +1,19 @@
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { registerResources } from './resources.js';
 import { createRegisterTools } from './tools.js';
+import { getServerState } from './state.js';
 import type {
   FlightSearchParams,
-  FlightSearchTask,
-  FlightSearchResponse,
+  FlightResult,
+  FlightSearchResults,
   CognitoTokens,
+  ExplorerDetailResponse,
+  ExplorerDetailRoute,
+  ExplorerDetailSegment,
 } from './types.js';
 import { refreshCognitoTokens } from './pointsyeah-client/lib/auth.js';
-import { fetchSearchResults } from './pointsyeah-client/lib/fetch-results.js';
+import { explorerSearch, fetchFlightDetail } from './pointsyeah-client/lib/explorer-search.js';
 import { getSearchHistory } from './pointsyeah-client/lib/user-api.js';
-import { createSearchTask } from './pointsyeah-client/lib/search.js';
-import type { PlaywrightSearchDeps } from './pointsyeah-client/lib/search.js';
 import { logDebug, logWarning } from './logging.js';
 
 // =============================================================================
@@ -19,10 +21,64 @@ import { logDebug, logWarning } from './logging.js';
 // =============================================================================
 
 export interface IPointsYeahClient {
-  searchFlights(
-    params: FlightSearchParams
-  ): Promise<{ task: FlightSearchTask; results: FlightSearchResponse }>;
+  searchFlights(params: FlightSearchParams): Promise<FlightSearchResults>;
   getSearchHistory(): Promise<unknown>;
+}
+
+// =============================================================================
+// DETAIL RESPONSE NORMALIZATION
+// =============================================================================
+
+/**
+ * Normalize an explorer detail segment into our standard FlightSegment format.
+ */
+function normalizeSegment(seg: ExplorerDetailSegment) {
+  return {
+    duration: seg.duration,
+    flight_number: seg.flight.number,
+    dt: seg.departure_info.date_time,
+    da: seg.departure_info.airport.airport_code,
+    at: seg.arrival_info.date_time,
+    aa: seg.arrival_info.airport.airport_code,
+    cabin: seg.cabin,
+  };
+}
+
+/**
+ * Normalize an explorer detail route into our standard FlightRoute format.
+ */
+function normalizeRoute(route: ExplorerDetailRoute) {
+  return {
+    payment: {
+      currency: route.payment.currency,
+      tax: route.payment.tax,
+      miles: route.payment.miles,
+      cabin: route.payment.cabin,
+      unit: route.payment.unit,
+      seats: route.payment.seats,
+      cash_price: route.payment.cash_price,
+    },
+    segments: route.segments.map(normalizeSegment),
+    transfer: (route.transfer || []).map((t) => ({
+      bank: t.bank,
+      actual_points: t.actual_points,
+      points: t.points,
+    })),
+  };
+}
+
+/**
+ * Convert an explorer detail response into our standard FlightResult format.
+ */
+function normalizeDetailResponse(detail: ExplorerDetailResponse): FlightResult {
+  return {
+    program: detail.program,
+    code: detail.code,
+    date: detail.date,
+    departure: detail.departure,
+    arrival: detail.arrival,
+    routes: detail.routes.map(normalizeRoute),
+  };
 }
 
 // =============================================================================
@@ -32,12 +88,15 @@ export interface IPointsYeahClient {
 export class PointsYeahClient implements IPointsYeahClient {
   private tokens: CognitoTokens | null = null;
   private refreshPromise: Promise<CognitoTokens> | null = null;
-  private refreshToken: string;
-  private playwright: PlaywrightSearchDeps;
 
-  constructor(refreshToken: string, playwright: PlaywrightSearchDeps) {
-    this.refreshToken = refreshToken;
-    this.playwright = playwright;
+  private get refreshToken(): string {
+    const { refreshToken } = getServerState();
+    if (!refreshToken) {
+      throw new Error(
+        'Refresh token expired or revoked. Please re-login to PointsYeah and update POINTSYEAH_REFRESH_TOKEN.'
+      );
+    }
+    return refreshToken;
   }
 
   /**
@@ -88,45 +147,35 @@ export class PointsYeahClient implements IPointsYeahClient {
     }
   }
 
-  async searchFlights(
-    params: FlightSearchParams
-  ): Promise<{ task: FlightSearchTask; results: FlightSearchResponse }> {
-    const tokens = await this.ensureTokens();
+  async searchFlights(params: FlightSearchParams): Promise<FlightSearchResults> {
+    // Step 1: Search the explorer API for matching flights (with 401 retry)
+    const searchResponse = await this.withAuth((idToken) => explorerSearch(params, idToken));
 
-    // Step 1: Create search task via Playwright
-    const task = await createSearchTask(
-      params,
-      tokens.accessToken,
-      tokens.idToken,
-      this.refreshToken,
-      this.playwright
-    );
+    if (!searchResponse.results || searchResponse.results.length === 0) {
+      return { total: 0, results: [] };
+    }
 
-    // Step 2: Poll for results until all sub-tasks complete
-    const POLL_INTERVAL_MS = 3000;
-    const MAX_POLLS = 120; // Up to 6 minutes of polling
-    let lastResults: FlightSearchResponse | null = null;
+    // Step 2: Fetch details for each result (contains full route/segment info)
+    const MAX_DETAILS = 10; // Limit detail fetches to avoid excessive API calls
+    const topResults = searchResponse.results.slice(0, MAX_DETAILS);
 
-    for (let i = 0; i < MAX_POLLS; i++) {
-      await new Promise((resolve) => setTimeout(resolve, POLL_INTERVAL_MS));
-
-      lastResults = await this.withAuth((idToken) => fetchSearchResults(task.task_id, idToken));
-
-      logDebug(
-        'search',
-        `Poll ${i + 1}: ${lastResults.data.completed_sub_tasks}/${lastResults.data.total_sub_tasks} sub-tasks complete, ${lastResults.data.result.length} results`
-      );
-
-      if (lastResults.data.completed_sub_tasks >= lastResults.data.total_sub_tasks) {
-        break;
+    const detailResults: FlightResult[] = [];
+    for (const result of topResults) {
+      try {
+        const detail = await fetchFlightDetail(result.detail_url);
+        detailResults.push(normalizeDetailResponse(detail));
+      } catch (error) {
+        logWarning(
+          'search',
+          `Failed to fetch detail for ${result.program} ${result.departure.code}->${result.arrival.code}: ${error instanceof Error ? error.message : 'Unknown error'}`
+        );
       }
     }
 
-    if (!lastResults) {
-      throw new Error('No results received from search');
-    }
-
-    return { task, results: lastResults };
+    return {
+      total: searchResponse.total,
+      results: detailResults,
+    };
   }
 
   async getSearchHistory(): Promise<unknown> {
@@ -165,4 +214,11 @@ export function createMCPServer(options: CreateMCPServerOptions) {
   };
 
   return { server, registerHandlers };
+}
+
+/**
+ * Default client factory that creates a PointsYeahClient reading the token from state.
+ */
+export function defaultClientFactory(): IPointsYeahClient {
+  return new PointsYeahClient();
 }

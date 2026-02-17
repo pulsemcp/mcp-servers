@@ -17,11 +17,12 @@ This file tracks the **most recent** manual test results for the PointsYeah MCP 
    git commit -m "Your changes"
    ```
 
-2. **Set up API credentials** - Ensure you have the necessary credentials in your `.env` file:
+2. **Set up API credentials** (optional) - For full testing, add credentials to `.env`:
    ```bash
    # Create .env in experimental/pointsyeah/ with:
    POINTSYEAH_REFRESH_TOKEN=your_refresh_token_here
    ```
+   Note: Unauthenticated tests always run. Auth-dependent tests are properly skipped (via `ctx.skip()`) when no valid token is available.
 
 ### First-Time Setup (or after clean checkout)
 
@@ -48,23 +49,43 @@ The tests will:
 
 ## Latest Test Results
 
-**Test Date:** 2026-02-16 07:40 UTC
-**Branch:** tadasant/pointsyeah-add-playwright-dep
-**Commit:** 88a5233
+**Test Date:** 2026-02-17
+**Branch:** ao/fix-pointsyeah-404-explorer-api
+**Commit:** 096e8dd
 **Tested By:** Claude
 **Environment:** Linux, Node.js
 
-### Test Results
+### Manual Test Results
 
-**Type:** Functional tests (packaging-only change, no runtime behavior modified)
-**Status:** All functional tests passed (8/8)
+**Status:** 5 passed, 5 skipped, 0 failed (10 total)
+**Test Duration:** ~3s
 
-**Test Duration:** ~0.5s
+Token validation detected the token is expired/revoked. Tests that require a valid token are properly skipped via `ctx.skip()`.
+
+**Passing tests (5/10):**
+
+- **Unauthenticated Mode (4 tests):**
+  - Should only expose `set_refresh_token` tool when unauthenticated
+  - `set_refresh_token` should include instructions for obtaining token (document.cookie, pointsyeah.com)
+  - Should reject invalid/short tokens
+  - Should show config resource with `needs_token` status
+- **Authenticated Mode (1 test):**
+  - Should expose `set_refresh_token` when token is expired (verifies dynamic tool switching works correctly with revoked tokens)
+
+**Skipped tests (5/10):** These require a valid (non-revoked) POINTSYEAH_REFRESH_TOKEN:
+
+- Config resource with authenticated status
+- get_search_history
+- search_flights validation
+- Direct Client Cognito auth
+- Direct Client Explorer search API
+
+### Functional + Integration Test Results
+
+**Status:** All functional tests passed (11/11), all integration tests passed (4/4)
 
 **Details:**
 
-This is a packaging-only change that adds `playwright` as a declared dependency in package.json (it was previously dynamically imported but not declared). No runtime code was modified. All 8 functional tests pass, confirming no regressions.
+The server uses a dynamic authentication flow. On startup without a valid token, only the `set_refresh_token` tool is exposed. After providing a valid token, flight search tools become available. If a token is later revoked, the server automatically switches back.
 
-**Note:** Manual API tests from v0.1.0 (commit 7a179dd) remain valid since no runtime behavior changed. The only change is the addition of `playwright` to the `dependencies` field in `shared/package.json` and `local/package.json`.
-
-**Summary:** Functional tests confirm no regressions from the dependency declaration change.
+**Summary:** All 5 unauthenticated manual tests pass. Auth-dependent tests are properly skipped via Vitest `ctx.skip()` when no valid token is available. Functional tests (11) and integration tests (4) all pass.

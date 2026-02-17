@@ -15,13 +15,7 @@
    npm run install-all
    ```
 
-3. Install Playwright (for flight search testing):
-
-   ```bash
-   npx playwright install chromium
-   ```
-
-4. Build:
+3. Build:
    ```bash
    npm run build
    ```

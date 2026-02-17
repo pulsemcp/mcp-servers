@@ -24,22 +24,22 @@ export function registerResources(server: Server, version: string) {
     const { uri } = request.params;
 
     if (uri === 'pointsyeah://config') {
-      const state = getServerState();
-
+      const { authenticated } = getServerState();
       const config = {
         server: {
           name: 'pointsyeah-mcp-server',
           version,
           transport: 'stdio',
         },
+        authentication: {
+          status: authenticated ? 'authenticated' : 'needs_token',
+          refreshTokenConfigured: !!getServerState().refreshToken,
+        },
         environment: {
           POINTSYEAH_REFRESH_TOKEN: process.env.POINTSYEAH_REFRESH_TOKEN
             ? '***configured***'
             : 'not set',
           ENABLED_TOOLGROUPS: process.env.ENABLED_TOOLGROUPS || 'all (default)',
-        },
-        state: {
-          playwrightAvailable: state.playwrightAvailable,
         },
         capabilities: {
           tools: true,

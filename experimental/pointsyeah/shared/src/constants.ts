@@ -7,10 +7,9 @@ export const COGNITO_CLIENT_ID = '3im8jrentts1pguuouv5s57gfu';
 export const COGNITO_ENDPOINT = `https://cognito-idp.${COGNITO_USER_POOL_REGION}.amazonaws.com/`;
 
 /**
- * PointsYeah API base URLs.
+ * PointsYeah API base URL.
  */
 export const API_BASE = 'https://api.pointsyeah.com/v2/live';
-export const API2_BASE = 'https://api2.pointsyeah.com';
 
 /**
  * Default fetch timeout in milliseconds.

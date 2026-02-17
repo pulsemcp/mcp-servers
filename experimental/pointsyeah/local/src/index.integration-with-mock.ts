@@ -9,7 +9,7 @@ import { readFileSync } from 'fs';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
-import { createMCPServer } from '../shared/index.js';
+import { createMCPServer, setAuthenticated, setRefreshToken } from '../shared/index.js';
 import { createIntegrationMockPointsYeahClient } from '../shared/pointsyeah-client/pointsyeah-client.integration-mock.js';
 
 // Read version from package.json
@@ -30,6 +30,10 @@ async function main() {
       console.error('Failed to parse POINTSYEAH_MOCK_DATA:', e);
     }
   }
+
+  // Integration tests use mocked data, so auth is always "valid"
+  setRefreshToken('mock-token');
+  setAuthenticated(true);
 
   const clientFactory = () => createIntegrationMockPointsYeahClient(mockData);
 

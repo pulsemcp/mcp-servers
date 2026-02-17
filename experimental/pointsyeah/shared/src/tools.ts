@@ -3,6 +3,9 @@ import { ListToolsRequestSchema, CallToolRequestSchema } from '@modelcontextprot
 import { ClientFactory } from './server.js';
 import { searchFlightsTool } from './tools/search-flights.js';
 import { getSearchHistoryTool } from './tools/get-search-history.js';
+import { setRefreshTokenTool } from './tools/set-refresh-token.js';
+import { getServerState, setAuthenticated, clearRefreshToken } from './state.js';
+import { logWarning } from './logging.js';
 
 export type ToolGroup = 'readonly' | 'write' | 'admin';
 
@@ -50,39 +53,91 @@ interface ToolDefinition {
 }
 
 const ALL_TOOLS: ToolDefinition[] = [
-  // Flight search creates a server-side task, so it's a write operation
+  // Flight search queries external APIs, classified as write operation
   { factory: searchFlightsTool, groups: ['write', 'admin'] },
   // Read-only tools - only query existing data
   { factory: getSearchHistoryTool, groups: ['readonly', 'write', 'admin'] },
 ];
 
+/**
+ * Creates a dynamic tool registration system that swaps between:
+ * - "auth needed" mode: only set_refresh_token is visible
+ * - "authenticated" mode: normal tools are visible, set_refresh_token is hidden
+ *
+ * When an auth failure is detected during tool use, the system automatically
+ * switches back to "auth needed" mode.
+ */
 export function createRegisterTools(clientFactory: ClientFactory, enabledGroups?: ToolGroup[]) {
   const groups = enabledGroups || parseEnabledToolGroups(process.env.ENABLED_TOOLGROUPS);
 
   return (server: Server) => {
-    const tools = ALL_TOOLS.filter((def) => def.groups.some((g) => groups.includes(g))).map((def) =>
-      def.factory(server, clientFactory)
+    // Build the normal (authenticated) tool list
+    const authedTools = ALL_TOOLS.filter((def) => def.groups.some((g) => groups.includes(g))).map(
+      (def) => def.factory(server, clientFactory)
     );
 
-    server.setRequestHandler(ListToolsRequestSchema, async () => {
-      return {
+    // wrappedAuthedTools is populated after authTool is created (forward reference)
+    let wrappedAuthedTools: Tool[] = [];
+
+    // Build the set_refresh_token tool with a callback that switches to authed mode
+    const authTool = setRefreshTokenTool(async () => {
+      applyToolList(wrappedAuthedTools);
+      await server.sendToolListChanged();
+    });
+
+    // Wrap authed tool handlers to detect auth failures and switch back
+    wrappedAuthedTools = authedTools.map((tool) => ({
+      ...tool,
+      handler: async (args: unknown) => {
+        const result = await tool.handler(args);
+        if (result.isError && isTokenRevoked(result.content)) {
+          logWarning('auth', 'Token revoked during tool call, switching to set_refresh_token mode');
+          setAuthenticated(false);
+          clearRefreshToken();
+          applyToolList([authTool]);
+          await server.sendToolListChanged();
+        }
+        return result;
+      },
+    }));
+
+    function applyToolList(tools: Tool[]) {
+      server.setRequestHandler(ListToolsRequestSchema, async () => ({
         tools: tools.map((tool) => ({
           name: tool.name,
           description: tool.description,
           inputSchema: tool.inputSchema,
         })),
-      };
-    });
+      }));
 
-    server.setRequestHandler(CallToolRequestSchema, async (request) => {
-      const { name, arguments: args } = request.params;
+      server.setRequestHandler(CallToolRequestSchema, async (request) => {
+        const { name, arguments: callArgs } = request.params;
+        const tool = tools.find((t) => t.name === name);
+        if (!tool) {
+          throw new Error(`Unknown tool: ${name}`);
+        }
+        return await tool.handler(callArgs);
+      });
+    }
 
-      const tool = tools.find((t) => t.name === name);
-      if (!tool) {
-        throw new Error(`Unknown tool: ${name}`);
-      }
-
-      return await tool.handler(args);
-    });
+    // Set initial tool list based on auth state
+    const { authenticated } = getServerState();
+    if (authenticated) {
+      applyToolList(wrappedAuthedTools);
+    } else {
+      applyToolList([authTool]);
+    }
   };
+}
+
+/**
+ * Check if a tool result indicates a revoked/expired token.
+ */
+function isTokenRevoked(content: Array<{ type: string; text: string }>): boolean {
+  const text = content.map((c) => c.text).join(' ');
+  return (
+    text.includes('Refresh token expired or revoked') ||
+    text.includes('NotAuthorizedException') ||
+    text.includes('update POINTSYEAH_REFRESH_TOKEN')
+  );
 }

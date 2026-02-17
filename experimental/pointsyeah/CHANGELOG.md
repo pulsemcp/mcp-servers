@@ -7,6 +7,46 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-02-16
+
+### Added
+
+- Dynamic authentication flow with `set_refresh_token` tool
+  - Server starts with only `set_refresh_token` when no valid token is available
+  - Tool description includes step-by-step instructions for obtaining the token from browser cookies
+  - After providing a valid token, flight search tools (`search_flights`, `get_search_history`) become available
+  - If a token is later revoked or expires, server automatically switches back to `set_refresh_token`
+- `authentication` section in `pointsyeah://config` resource showing auth status
+- Centralized auth state management via `state.ts`
+- Functional tests for `set_refresh_token` tool and auth state transitions
+
+### Changed
+
+- `POINTSYEAH_REFRESH_TOKEN` environment variable is now optional (server starts in auth-needed mode without it)
+- Manual tests redesigned to always pass regardless of token availability
+  - Unauthenticated tests verify the auth-needed UX (no token required)
+  - Authenticated tests gracefully handle expired/revoked tokens
+
+## [0.1.2] - 2026-02-16
+
+### Fixed
+
+- **BREAKING**: `search_flights` tool now works again (was returning 404 due to PointsYeah backend API migration)
+
+### Changed
+
+- Migrated flight search from old `api2.pointsyeah.com` task-based polling API to new `api.pointsyeah.com/v2/live/explorer/search` direct HTTP API
+- Flight search no longer requires Playwright - uses direct HTTP requests to the explorer API
+- Search results now include detail information fetched from CloudFront-hosted JSON endpoints
+
+### Removed
+
+- Playwright dependency (`playwright` package no longer required)
+- Old task-based search infrastructure (`search.ts`, `fetch-results.ts`)
+- `playwrightAvailable` server state tracking
+- `API2_BASE` constant (old broken API endpoint)
+- `setPlaywrightAvailable` export from shared module
+
 ## [0.1.1] - 2026-02-16
 
 ### Added

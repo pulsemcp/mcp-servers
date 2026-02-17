@@ -2,8 +2,15 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { searchFlightsTool } from '../../shared/src/tools/search-flights.js';
 import { getSearchHistoryTool } from '../../shared/src/tools/get-search-history.js';
+import { setRefreshTokenTool } from '../../shared/src/tools/set-refresh-token.js';
 import { createMockPointsYeahClient } from '../mocks/pointsyeah-client.functional-mock.js';
 import type { IPointsYeahClient } from '../../shared/src/server.js';
+import {
+  resetState,
+  getServerState,
+  setRefreshToken,
+  setAuthenticated,
+} from '../../shared/src/state.js';
 
 const mockServer = {} as Server;
 
@@ -14,6 +21,7 @@ describe('PointsYeah Tools', () => {
   beforeEach(() => {
     mockClient = createMockPointsYeahClient();
     clientFactory = () => mockClient;
+    resetState();
   });
 
   describe('search_flights', () => {
@@ -79,7 +87,7 @@ describe('PointsYeah Tools', () => {
 
     it('should handle client errors gracefully', async () => {
       const errorClient: IPointsYeahClient = {
-        searchFlights: vi.fn().mockRejectedValue(new Error('Playwright not available')),
+        searchFlights: vi.fn().mockRejectedValue(new Error('API request failed')),
         getSearchHistory: vi.fn(),
       };
       const tool = searchFlightsTool(mockServer, () => errorClient);
@@ -91,18 +99,14 @@ describe('PointsYeah Tools', () => {
       });
 
       expect(result.isError).toBe(true);
-      expect(result.content[0].text).toContain('Playwright not available');
+      expect(result.content[0].text).toContain('API request failed');
     });
 
     it('should handle empty search results', async () => {
       const emptyClient: IPointsYeahClient = {
         searchFlights: vi.fn().mockResolvedValue({
-          task: { task_id: 'mock-task', total_sub_tasks: 4, status: 'created' },
-          results: {
-            code: 0,
-            success: true,
-            data: { result: [], completed_sub_tasks: 4, total_sub_tasks: 4 },
-          },
+          total: 0,
+          results: [],
         }),
         getSearchHistory: vi.fn(),
       };
@@ -128,6 +132,43 @@ describe('PointsYeah Tools', () => {
       const parsed = JSON.parse(result.content[0].text);
       expect(parsed).toHaveLength(2);
       expect(parsed[0].route).toBe('SFO -> NYC');
+    });
+  });
+
+  describe('set_refresh_token', () => {
+    it('should reject tokens that are too short', async () => {
+      const onAuthSuccess = vi.fn();
+      const tool = setRefreshTokenTool(onAuthSuccess);
+      const result = await tool.handler({ refreshToken: 'too-short' });
+
+      expect(result.isError).toBe(true);
+      expect(onAuthSuccess).not.toHaveBeenCalled();
+    });
+
+    it('should have the correct tool metadata', () => {
+      const onAuthSuccess = vi.fn();
+      const tool = setRefreshTokenTool(onAuthSuccess);
+
+      expect(tool.name).toBe('set_refresh_token');
+      expect(tool.description).toContain('PointsYeah refresh token');
+      expect(tool.description).toContain('document.cookie');
+      expect(tool.inputSchema.required).toContain('refreshToken');
+    });
+
+    it('should track auth state transitions correctly', () => {
+      expect(getServerState().authenticated).toBe(false);
+      expect(getServerState().refreshToken).toBeNull();
+
+      setRefreshToken('valid-token');
+      setAuthenticated(true);
+
+      expect(getServerState().authenticated).toBe(true);
+      expect(getServerState().refreshToken).toBe('valid-token');
+
+      // Simulate token revocation
+      setAuthenticated(false);
+      expect(getServerState().authenticated).toBe(false);
+      expect(getServerState().refreshToken).toBe('valid-token');
     });
   });
 });
