@@ -13,6 +13,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Fix login timeout caused by `page.waitForURL` hanging when third-party resources fail to load (e.g. blocked analytics scripts). Replace `Promise.all([waitForURL, click])` with `click()` + `waitForFunction()` polling for URL change or dashboard elements
+- Fix false-positive login error detection by narrowing error selector from `[class*="error"]` (matched layout classes) to `.error-text, [role="alert"]` with empty text check
+- Fix claim details field selector to support both `<textarea>` and `<input>` elements (site changed form element type)
+- Fix `playwright-extra` import to use two-step import for ESM compatibility
+- Add debug screenshot on login failure for troubleshooting
 - Fix EOB/Invoice document downloads by intercepting popup tabs with blob: URLs instead of relying on browser download events
 - Wire up configurable `TIMEOUT` env var via `page.setDefaultTimeout()`
 - Fix `getClaimDetails` matching logic that always matched the first claim card

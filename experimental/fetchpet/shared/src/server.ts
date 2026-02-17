@@ -160,7 +160,8 @@ export class FetchPetClient implements IFetchPetClient {
     }
 
     // Use playwright-extra with stealth plugin for better bot detection avoidance
-    const { chromium } = await import('playwright-extra');
+    const playwrightExtra = await import('playwright-extra');
+    const chromium = playwrightExtra.chromium;
     const StealthPlugin = (await import('puppeteer-extra-plugin-stealth')).default;
 
     chromium.use(StealthPlugin());
@@ -211,27 +212,35 @@ export class FetchPetClient implements IFetchPetClient {
       await this.page.fill('input[placeholder*="password" i]', this.config.password);
     }
 
-    // Click sign in button and wait for navigation simultaneously
-    // The login click triggers a full page navigation that destroys the execution context,
-    // so we must use Promise.all to avoid "Execution context was destroyed" errors.
+    // Click sign in button, then wait for post-login indicators.
+    // We avoid Promise.all([waitForURL, click]) because waitForURL with the default
+    // 'load' waitUntil can hang when third-party resources (analytics, ads) fail to load.
+    // Instead, click the button and poll for URL change or dashboard elements.
     const signInButton = await this.page.$(
       'button[type="submit"], button:has-text("Sign In"), button:has-text("Log In"), button:has-text("Login")'
     );
     if (signInButton) {
-      await Promise.all([
-        this.page.waitForURL((url) => !url.toString().includes('login'), {
-          timeout: this.config.timeout,
-        }),
-        signInButton.click(),
-      ]);
+      await signInButton.click();
     } else {
-      await Promise.all([
-        this.page.waitForURL((url) => !url.toString().includes('login'), {
-          timeout: this.config.timeout,
-        }),
-        this.page.click('button:has-text("Sign"), button:has-text("Log")'),
-      ]);
+      await this.page.click('button:has-text("Sign"), button:has-text("Log")');
     }
+
+    // Wait for either: URL changes away from login, or dashboard nav appears
+    await this.page
+      .waitForFunction(
+        () => {
+          const url = window.location.href;
+          // Check URL no longer contains 'login'
+          if (!url.includes('login')) return true;
+          // Also check for dashboard elements (sidebar nav links)
+          if (document.querySelector('a[href="/claims"], a[href="/home"]')) return true;
+          return false;
+        },
+        { timeout: this.config.timeout }
+      )
+      .catch(() => {
+        // Fall through to the login verification below
+      });
 
     // Wait for SPA to settle after redirect
     await this.page.waitForTimeout(3000);
@@ -239,11 +248,18 @@ export class FetchPetClient implements IFetchPetClient {
     // Verify login was successful by checking URL or presence of dashboard elements
     const currentUrl = this.page.url();
     if (currentUrl.includes('login') || currentUrl.includes('signin')) {
-      // Check for error messages
-      const errorMsg = await this.page.$('.error, [class*="error"], [role="alert"]');
+      // Save debug screenshot for troubleshooting
+      await this.page
+        .screenshot({ path: join(this.config.downloadDir, 'login-debug.png') })
+        .catch(() => {});
+
+      // Check for specific login error messages (not generic error classes which may have false positives)
+      const errorMsg = await this.page.$('.error-text, [role="alert"]');
       if (errorMsg) {
-        const errorText = await errorMsg.textContent();
-        throw new Error(`Login failed: ${errorText || 'Invalid credentials'}`);
+        const errorText = (await errorMsg.textContent())?.trim();
+        if (errorText) {
+          throw new Error(`Login failed: ${errorText}`);
+        }
       }
       throw new Error('Login failed - still on login page. Check your credentials.');
     }
@@ -337,10 +353,12 @@ export class FetchPetClient implements IFetchPetClient {
       }
     }
 
-    // 3. Fill in additional details (optional textarea)
-    const detailsTextarea = await page.$('textarea[placeholder="Describe the visit"], textarea');
-    if (detailsTextarea) {
-      await detailsTextarea.fill(
+    // 3. Fill in additional details (optional - may be textarea or input)
+    const detailsField = await page.$(
+      'textarea[placeholder="Describe the visit"], textarea, input[aria-label*="details" i], input[placeholder="Describe the visit"]'
+    );
+    if (detailsField) {
+      await detailsField.fill(
         `Date: ${invoiceDate}, Amount: ${invoiceAmount}. ${claimDescription}`
       );
     }
@@ -1055,18 +1073,23 @@ export function createMCPServer(options: CreateMCPServerOptions) {
     }
 
     // Start login in background
-    loginPromise = activeClient!.initialize().catch((error) => {
-      loginFailed = true;
-      loginError = error instanceof Error ? error : new Error(String(error));
+    loginPromise = activeClient!
+      .initialize()
+      .then(() => {
+        // Login completed successfully
+      })
+      .catch((error) => {
+        loginFailed = true;
+        loginError = error instanceof Error ? error : new Error(String(error));
 
-      // Invoke callback to notify about login failure
-      if (onLoginFailed) {
-        onLoginFailed(loginError);
-      }
+        // Invoke callback to notify about login failure
+        if (onLoginFailed) {
+          onLoginFailed(loginError);
+        }
 
-      // Re-throw to make the promise rejected
-      throw loginError;
-    });
+        // Re-throw to make the promise rejected
+        throw loginError;
+      });
   };
 
   /**
