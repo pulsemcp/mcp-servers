@@ -171,3 +171,23 @@ export interface FlightSearchResults {
   total: number;
   results: FlightResult[];
 }
+
+// =============================================================================
+// LIVE SEARCH API TYPES (api2.pointsyeah.com task-based search)
+// =============================================================================
+
+export interface FlightSearchTask {
+  task_id: string;
+  total_sub_tasks: number;
+  status: string;
+}
+
+export interface FlightSearchResponse {
+  code: number;
+  success: boolean;
+  data: {
+    result: FlightResult[];
+    completed_sub_tasks: number;
+    total_sub_tasks: number;
+  };
+}

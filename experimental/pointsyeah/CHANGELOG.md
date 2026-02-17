@@ -9,14 +9,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Fixed search returning results for completely wrong routes (e.g., ICN->AMS when searching SFO->SAN)
-  - The explorer API may return cached/pre-crawled results for unrelated routes
-  - Results are now filtered to only include flights matching the requested departure and arrival airports
-  - Mismatched results are silently discarded instead of being shown to users
+- **BREAKING**: Fixed search returning results for completely wrong routes (e.g., ICN->AMS when searching SFO->SAN)
+  - Root cause: the explorer API (`/v2/live/explorer/search`) is a pre-crawled deals database that ignores search parameters entirely, returning random cached results
+  - Migrated back to the live search API (`api2.pointsyeah.com`) which performs real-time route-specific searches
+  - Uses Playwright to navigate to the PointsYeah search page, intercepting the encrypted `create_task` request, then polls `fetch_result` for incremental results
+  - This is the same approach used by the PointsYeah website itself for its "Live Search" feature
 
 ### Changed
 
-- Updated `search_flights` tool description to clarify that coverage varies by route and results come from a pre-crawled database
+- Re-added `playwright` as a dependency (required for the live search encrypted request flow)
+- Updated `search_flights` tool description to note live search timing (30-90 seconds)
+- Restored `search.ts` (Playwright-based task creation) and `fetch-results.ts` (HTTP polling)
 
 ## [0.2.1] - 2026-02-17
 

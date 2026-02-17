@@ -28,7 +28,7 @@ const PARAM_DESCRIPTIONS = {
 
 const TOOL_DESCRIPTION = `Search for award flights using points/miles across multiple airline loyalty programs.
 
-This tool searches PointsYeah for flight availability using points and miles. It checks availability across 20+ airline programs and shows transfer options from major bank programs (Chase, Amex, Citi, etc.).
+This tool searches PointsYeah for live flight availability using points and miles. It checks availability across 20+ airline programs and shows transfer options from major bank programs (Chase, Amex, Citi, etc.).
 
 **Returns:** A formatted list of flight options showing:
 - Airline program and points required
@@ -42,7 +42,7 @@ This tool searches PointsYeah for flight availability using points and miles. It
 - Discover transfer partner options from bank reward programs
 - Search for premium cabin availability (Business, First)
 
-**Note:** Results are sourced from PointsYeah's explorer database of recently-crawled award availability. Coverage varies by route — popular international routes typically have more availability than domestic routes. If no results are found, the route may not be in PointsYeah's database yet.`;
+**Note:** This performs a live search that may take 30-90 seconds to complete as it queries multiple airline programs in real time. Requires Playwright to be installed.`;
 
 function formatDuration(minutes: number): string {
   const hours = Math.floor(minutes / 60);

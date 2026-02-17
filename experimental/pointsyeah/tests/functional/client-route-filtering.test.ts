@@ -1,9 +1,12 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
 // Mock external dependencies before importing the client
-vi.mock('../../shared/src/pointsyeah-client/lib/explorer-search.js', () => ({
-  explorerSearch: vi.fn(),
-  fetchFlightDetail: vi.fn(),
+vi.mock('../../shared/src/pointsyeah-client/lib/search.js', () => ({
+  createSearchTask: vi.fn(),
+}));
+
+vi.mock('../../shared/src/pointsyeah-client/lib/fetch-results.js', () => ({
+  fetchSearchResults: vi.fn(),
 }));
 
 vi.mock('../../shared/src/pointsyeah-client/lib/auth.js', () => ({
@@ -25,40 +28,59 @@ vi.mock('../../shared/src/state.js', () => ({
 }));
 
 import { PointsYeahClient } from '../../shared/src/server.js';
-import {
-  explorerSearch,
-  fetchFlightDetail,
-} from '../../shared/src/pointsyeah-client/lib/explorer-search.js';
-import type { ExplorerSearchResponse, ExplorerDetailResponse } from '../../shared/src/types.js';
+import { createSearchTask } from '../../shared/src/pointsyeah-client/lib/search.js';
+import { fetchSearchResults } from '../../shared/src/pointsyeah-client/lib/fetch-results.js';
+import type {
+  FlightSearchParams,
+  FlightSearchTask,
+  FlightSearchResponse,
+} from '../../shared/src/types.js';
+import type { PlaywrightSearchDeps } from '../../shared/src/pointsyeah-client/lib/search.js';
 
-const mockedExplorerSearch = vi.mocked(explorerSearch);
-const mockedFetchFlightDetail = vi.mocked(fetchFlightDetail);
+const mockedCreateSearchTask = vi.mocked(createSearchTask);
+const mockedFetchSearchResults = vi.mocked(fetchSearchResults);
 
-function makeSearchResult(departure: string, arrival: string, program: string = 'TestProgram') {
+function makeSearchParams(overrides: Partial<FlightSearchParams> = {}): FlightSearchParams {
   return {
-    program,
-    departure_date: '2026-03-03',
-    departure: { code: departure, city: 'Test City', country_name: 'Test' },
-    arrival: { code: arrival, city: 'Test City', country_name: 'Test' },
-    miles: 10000,
-    tax: 5.6,
-    cabin: 'Economy',
-    detail_url: `https://cdn.example.com/${departure}-${arrival}.json`,
-    stops: 0,
-    seats: 3,
-    duration: 120,
-    transfer: [],
+    departure: 'SFO',
+    arrival: 'NRT',
+    departDate: '2026-03-03',
+    tripType: '1',
+    adults: 1,
+    children: 0,
+    cabins: ['Economy'],
+    ...overrides,
   };
 }
 
-function makeDetailResponse(
-  departure: string,
-  arrival: string,
-  program: string = 'TestProgram'
-): ExplorerDetailResponse {
+function makeTask(taskId: string = 'test-task-123'): FlightSearchTask {
+  return {
+    task_id: taskId,
+    total_sub_tasks: 5,
+    status: 'pending',
+  };
+}
+
+function makeSearchResponse(
+  results: FlightSearchResponse['data']['result'],
+  completed: number = 5,
+  total: number = 5
+): FlightSearchResponse {
+  return {
+    code: 0,
+    success: true,
+    data: {
+      result: results,
+      completed_sub_tasks: completed,
+      total_sub_tasks: total,
+    },
+  };
+}
+
+function makeFlightResult(program: string, departure: string, arrival: string) {
   return {
     program,
-    code: 'TP',
+    code: program.substring(0, 2).toUpperCase(),
     date: '2026-03-03',
     departure,
     arrival,
@@ -75,184 +97,177 @@ function makeDetailResponse(
         },
         segments: [
           {
-            departure_info: {
-              date_time: '2026-03-03T08:00:00',
-              airport: { airport_code: departure, city_name: 'Test' },
-            },
-            arrival_info: {
-              date_time: '2026-03-03T10:00:00',
-              airport: { airport_code: arrival, city_name: 'Test' },
-            },
-            cabin: 'Economy',
-            flight: { airline_code: 'TP', airline_name: 'TestAir', number: 'TP123' },
-            aircraft: '737',
             duration: 120,
+            flight_number: 'TP123',
+            dt: '2026-03-03T08:00:00',
+            da: departure,
+            at: '2026-03-03T10:00:00',
+            aa: arrival,
+            cabin: 'Economy',
           },
         ],
-        duration: 120,
-        transfer: null,
-        program: 'TestProgram',
-        code: 'TP',
+        transfer: [],
       },
     ],
   };
 }
 
-describe('PointsYeahClient route filtering', () => {
+const mockPlaywright: PlaywrightSearchDeps = {
+  launchBrowser: vi.fn(),
+};
+
+/**
+ * Helper: run searchFlights with fake timers advancing so poll delays resolve instantly.
+ * We kick off the search (which awaits setTimeout internally), then repeatedly
+ * advance timers and flush microtasks until the search promise settles.
+ */
+async function runSearchWithFakeTimers(
+  client: PointsYeahClient,
+  params: FlightSearchParams
+): Promise<{ total: number; results: FlightSearchResponse['data']['result'] }> {
+  const searchPromise = client.searchFlights(params);
+
+  // Advance timers in a loop until the promise resolves or rejects
+  let settled = false;
+  const resultHolder: { value?: Awaited<typeof searchPromise>; error?: unknown } = {};
+  searchPromise
+    .then((v) => {
+      resultHolder.value = v;
+      settled = true;
+    })
+    .catch((e) => {
+      resultHolder.error = e;
+      settled = true;
+    });
+
+  while (!settled) {
+    // Advance past the 3-second poll interval
+    await vi.advanceTimersByTimeAsync(3100);
+  }
+
+  if (resultHolder.error) throw resultHolder.error;
+  return resultHolder.value!;
+}
+
+describe('PointsYeahClient live search', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.useFakeTimers();
   });
 
-  it('should filter out results that do not match the requested route', async () => {
-    // API returns results for ICN->AMS when we searched for SFO->SAN
-    const searchResponse: ExplorerSearchResponse = {
-      total: 2,
-      results: [
-        makeSearchResult('ICN', 'AMS', 'Miles & More'),
-        makeSearchResult('ICN', 'AMS', 'Lufthansa'),
-      ],
-    };
-    mockedExplorerSearch.mockResolvedValue(searchResponse);
-
-    const client = new PointsYeahClient();
-    const result = await client.searchFlights({
-      departure: 'SFO',
-      arrival: 'SAN',
-      departDate: '2026-03-03',
-      tripType: '1',
-      adults: 1,
-      children: 0,
-      cabins: ['Economy'],
-    });
-
-    // All results should be filtered out since they don't match SFO->SAN
-    expect(result.results).toHaveLength(0);
-    expect(mockedFetchFlightDetail).not.toHaveBeenCalled();
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
-  it('should keep results that match the requested route', async () => {
-    const searchResponse: ExplorerSearchResponse = {
-      total: 1,
-      results: [makeSearchResult('SFO', 'SAN', 'United MileagePlus')],
-    };
-    mockedExplorerSearch.mockResolvedValue(searchResponse);
-    mockedFetchFlightDetail.mockResolvedValue(
-      makeDetailResponse('SFO', 'SAN', 'United MileagePlus')
+  it('should create a search task and poll for results', async () => {
+    const task = makeTask();
+    mockedCreateSearchTask.mockResolvedValue(task);
+    mockedFetchSearchResults.mockResolvedValue(
+      makeSearchResponse([makeFlightResult('United MileagePlus', 'SFO', 'NRT')])
     );
 
-    const client = new PointsYeahClient();
-    const result = await client.searchFlights({
-      departure: 'SFO',
-      arrival: 'SAN',
-      departDate: '2026-03-03',
-      tripType: '1',
-      adults: 1,
-      children: 0,
-      cabins: ['Economy'],
-    });
+    const client = new PointsYeahClient(mockPlaywright);
+    const result = await runSearchWithFakeTimers(client, makeSearchParams());
 
+    expect(mockedCreateSearchTask).toHaveBeenCalledTimes(1);
+    expect(mockedFetchSearchResults).toHaveBeenCalledTimes(1);
     expect(result.results).toHaveLength(1);
     expect(result.results[0].program).toBe('United MileagePlus');
-    expect(mockedFetchFlightDetail).toHaveBeenCalledTimes(1);
+    expect(result.total).toBe(1);
   });
 
-  it('should filter a mix of matching and non-matching results', async () => {
-    const searchResponse: ExplorerSearchResponse = {
-      total: 3,
-      results: [
-        makeSearchResult('SFO', 'SAN', 'United MileagePlus'),
-        makeSearchResult('ICN', 'AMS', 'Miles & More'),
-        makeSearchResult('SFO', 'SAN', 'Alaska Airlines'),
-      ],
-    };
-    mockedExplorerSearch.mockResolvedValue(searchResponse);
-    mockedFetchFlightDetail
-      .mockResolvedValueOnce(makeDetailResponse('SFO', 'SAN', 'United MileagePlus'))
-      .mockResolvedValueOnce(makeDetailResponse('SFO', 'SAN', 'Alaska Airlines'));
+  it('should poll multiple times until all sub-tasks complete', async () => {
+    const task = makeTask();
+    mockedCreateSearchTask.mockResolvedValue(task);
 
-    const client = new PointsYeahClient();
-    const result = await client.searchFlights({
-      departure: 'SFO',
-      arrival: 'SAN',
-      departDate: '2026-03-03',
-      tripType: '1',
-      adults: 1,
-      children: 0,
-      cabins: ['Economy'],
-    });
-
-    expect(result.results).toHaveLength(2);
-    expect(result.results[0].program).toBe('United MileagePlus');
-    expect(result.results[1].program).toBe('Alaska Airlines');
-    // Should only fetch details for matching results, not the ICN->AMS one
-    expect(mockedFetchFlightDetail).toHaveBeenCalledTimes(2);
-  });
-
-  it('should match case-insensitively', async () => {
-    const searchResponse: ExplorerSearchResponse = {
-      total: 1,
-      results: [makeSearchResult('sfo', 'san', 'United MileagePlus')],
-    };
-    mockedExplorerSearch.mockResolvedValue(searchResponse);
-    mockedFetchFlightDetail.mockResolvedValue(
-      makeDetailResponse('SFO', 'SAN', 'United MileagePlus')
+    // First poll: 2/5 complete, 1 result
+    mockedFetchSearchResults.mockResolvedValueOnce(
+      makeSearchResponse([makeFlightResult('United', 'SFO', 'NRT')], 2, 5)
+    );
+    // Second poll: 4/5 complete, 2 results
+    mockedFetchSearchResults.mockResolvedValueOnce(
+      makeSearchResponse(
+        [makeFlightResult('United', 'SFO', 'NRT'), makeFlightResult('ANA', 'SFO', 'NRT')],
+        4,
+        5
+      )
+    );
+    // Third poll: 5/5 complete, 3 results
+    mockedFetchSearchResults.mockResolvedValueOnce(
+      makeSearchResponse(
+        [
+          makeFlightResult('United', 'SFO', 'NRT'),
+          makeFlightResult('ANA', 'SFO', 'NRT'),
+          makeFlightResult('JAL', 'SFO', 'NRT'),
+        ],
+        5,
+        5
+      )
     );
 
-    const client = new PointsYeahClient();
-    const result = await client.searchFlights({
-      departure: 'SFO',
-      arrival: 'SAN',
-      departDate: '2026-03-03',
-      tripType: '1',
-      adults: 1,
-      children: 0,
-      cabins: ['Economy'],
-    });
+    const client = new PointsYeahClient(mockPlaywright);
+    const result = await runSearchWithFakeTimers(client, makeSearchParams());
 
-    expect(result.results).toHaveLength(1);
+    expect(mockedFetchSearchResults).toHaveBeenCalledTimes(3);
+    expect(result.results).toHaveLength(3);
+    expect(result.total).toBe(3);
   });
 
-  it('should filter results where only departure matches', async () => {
-    const searchResponse: ExplorerSearchResponse = {
-      total: 1,
-      results: [makeSearchResult('SFO', 'LAX', 'United MileagePlus')],
-    };
-    mockedExplorerSearch.mockResolvedValue(searchResponse);
+  it('should return empty results when search completes with no flights', async () => {
+    const task = makeTask();
+    mockedCreateSearchTask.mockResolvedValue(task);
+    mockedFetchSearchResults.mockResolvedValue(makeSearchResponse([]));
 
-    const client = new PointsYeahClient();
-    const result = await client.searchFlights({
-      departure: 'SFO',
-      arrival: 'SAN',
-      departDate: '2026-03-03',
-      tripType: '1',
-      adults: 1,
-      children: 0,
-      cabins: ['Economy'],
-    });
+    const client = new PointsYeahClient(mockPlaywright);
+    const result = await runSearchWithFakeTimers(client, makeSearchParams());
 
     expect(result.results).toHaveLength(0);
-    expect(mockedFetchFlightDetail).not.toHaveBeenCalled();
+    expect(result.total).toBe(0);
   });
 
-  it('should filter results where only arrival matches', async () => {
-    const searchResponse: ExplorerSearchResponse = {
-      total: 1,
-      results: [makeSearchResult('LAX', 'SAN', 'Southwest')],
-    };
-    mockedExplorerSearch.mockResolvedValue(searchResponse);
+  it('should throw when search task creation fails', async () => {
+    mockedCreateSearchTask.mockRejectedValue(new Error('Search task creation failed (code: 500)'));
 
-    const client = new PointsYeahClient();
-    const result = await client.searchFlights({
-      departure: 'SFO',
-      arrival: 'SAN',
-      departDate: '2026-03-03',
-      tripType: '1',
-      adults: 1,
-      children: 0,
-      cabins: ['Economy'],
+    const client = new PointsYeahClient(mockPlaywright);
+    await expect(runSearchWithFakeTimers(client, makeSearchParams())).rejects.toThrow(
+      'Search task creation failed'
+    );
+  });
+
+  it('should pass search params to createSearchTask', async () => {
+    const task = makeTask();
+    mockedCreateSearchTask.mockResolvedValue(task);
+    mockedFetchSearchResults.mockResolvedValue(makeSearchResponse([]));
+
+    const params = makeSearchParams({
+      departure: 'LAX',
+      arrival: 'LHR',
+      departDate: '2026-06-15',
+      tripType: '2',
+      returnDate: '2026-06-22',
+      cabins: ['Business', 'First'],
     });
 
-    expect(result.results).toHaveLength(0);
-    expect(mockedFetchFlightDetail).not.toHaveBeenCalled();
+    const client = new PointsYeahClient(mockPlaywright);
+    await runSearchWithFakeTimers(client, params);
+
+    expect(mockedCreateSearchTask).toHaveBeenCalledWith(
+      params,
+      'mock-access',
+      'mock-id-token',
+      'mock-refresh-token',
+      mockPlaywright
+    );
+  });
+
+  it('should pass task_id to fetchSearchResults', async () => {
+    const task = makeTask('my-task-456');
+    mockedCreateSearchTask.mockResolvedValue(task);
+    mockedFetchSearchResults.mockResolvedValue(makeSearchResponse([]));
+
+    const client = new PointsYeahClient(mockPlaywright);
+    await runSearchWithFakeTimers(client, makeSearchParams());
+
+    expect(mockedFetchSearchResults).toHaveBeenCalledWith('my-task-456', 'mock-id-token');
   });
 });
