@@ -234,6 +234,20 @@ describe('PointsYeahClient live search', () => {
     );
   });
 
+  it('should throw when polling returns success: false', async () => {
+    mockedCreateSearchTask.mockResolvedValue(makeTask());
+    mockedFetchSearchResults.mockResolvedValue({
+      code: 500,
+      success: false,
+      data: { result: [], completed_sub_tasks: 0, total_sub_tasks: 5 },
+    });
+
+    const client = new PointsYeahClient(mockPlaywright);
+    await expect(runSearchWithFakeTimers(client, makeSearchParams())).rejects.toThrow(
+      'Search polling failed'
+    );
+  });
+
   it('should pass search params to createSearchTask', async () => {
     const task = makeTask();
     mockedCreateSearchTask.mockResolvedValue(task);

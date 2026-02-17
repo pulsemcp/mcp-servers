@@ -164,7 +164,7 @@ export function searchFlightsTool(_server: Server, clientFactory: () => IPointsY
           `**Date:** ${params.departDate}${params.returnDate ? ` - ${params.returnDate}` : ''}`,
           `**Passengers:** ${params.adults} adult(s)${params.children ? `, ${params.children} child(ren)` : ''}`,
           `**Cabins:** ${params.cabins.join(', ')}`,
-          `**Results found:** ${searchResults.results.length} program(s) (${searchResults.total.toLocaleString()} total in database)`,
+          `**Results found:** ${searchResults.total} flight option(s)`,
           '',
         ];
 

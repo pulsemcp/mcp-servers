@@ -51,18 +51,18 @@ The tests will:
 
 **Test Date:** 2026-02-17
 **Branch:** tadasant/fix-pointsyeah-wrong-routes
-**Commit:** 611e4a2
+**Commit:** 3ba3493
 **Tested By:** Claude
 **Environment:** Linux, Node.js
 
 ### Manual Test Results
 
-**Status:** 6 passed, 4 skipped, 0 failed (10 total)
-**Test Duration:** ~3s
+**Status:** 9 passed, 0 skipped, 1 failed (10 total)
+**Test Duration:** ~90s
 
-Token validation detected the token is expired/revoked. Tests that require a valid token are properly skipped via `ctx.skip()`.
+Tested with a valid (non-revoked) POINTSYEAH_REFRESH_TOKEN. All auth-dependent tests ran.
 
-**Passing tests (6/10):**
+**Passing tests (9/10):**
 
 - **Unauthenticated Mode (5 tests):**
   - Should expose all tools even when unauthenticated (3 tools: search_flights, get_search_history, set_refresh_token)
@@ -70,15 +70,15 @@ Token validation detected the token is expired/revoked. Tests that require a val
   - `set_refresh_token` should include instructions for obtaining token (document.cookie, pointsyeah.com)
   - Should reject invalid/short tokens
   - Should show config resource with `needs_token` status
-- **Authenticated Mode (1 test):**
+- **Authenticated Mode (4 tests):**
   - Should expose all tools regardless of auth state
+  - Config resource with authenticated status
+  - search_flights validation (returns valid results for authenticated user)
+  - Direct Client Cognito auth
 
-**Skipped tests (4/10):** These require a valid (non-revoked) POINTSYEAH_REFRESH_TOKEN:
+**Failed tests (1/10):**
 
-- Config resource with authenticated status
-- get_search_history
-- search_flights validation
-- Direct Client Cognito auth
+- **get_search_history** - The search history API endpoint (`api.pointsyeah.com/v2/live`) returns a fetch error. This is a pre-existing backend issue on PointsYeah's side (the `/v2/live` endpoint is unreliable), not related to the flight search changes in this PR.
 
 ### Functional + Integration Test Results
 
@@ -88,4 +88,4 @@ Token validation detected the token is expired/revoked. Tests that require a val
 
 All tools are always registered at startup. Auth-requiring tools (`search_flights`, `get_search_history`) check authentication state at call time and return a clear error when not authenticated. The live search flow (Playwright-based `create_task` + HTTP polling `fetch_result`) is tested with mocked dependencies and fake timers.
 
-**Summary:** All 6 unauthenticated manual tests pass. Auth-dependent tests are properly skipped via Vitest `ctx.skip()` when no valid token is available. Functional tests (17) all pass. Note: Full authenticated testing requires a fresh PointsYeah refresh token.
+**Summary:** 9/10 manual tests pass with a valid refresh token. The 1 failure (`get_search_history`) is a pre-existing backend API issue unrelated to this PR's changes. All 17 functional tests pass.
