@@ -51,7 +51,7 @@ The tests will:
 
 **Test Date:** 2026-02-17
 **Branch:** ao/fix-pointsyeah-404-explorer-api
-**Commit:** _pending_ (will be updated after commit)
+**Commit:** 32484d9
 **Tested By:** Claude
 **Environment:** Linux, Node.js
 
