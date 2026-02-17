@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Migrated back to the live search API (`api2.pointsyeah.com`) which performs real-time route-specific searches
   - Uses Playwright to navigate to the PointsYeah search page, intercepting the encrypted `create_task` request, then polls `fetch_result` for incremental results
   - This is the same approach used by the PointsYeah website itself for its "Live Search" feature
+- Fixed `get_search_history` failing due to dead `api.pointsyeah.com` host; migrated to `api2.pointsyeah.com`
 
 ### Changed
 
@@ -30,6 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Removed `explorer-search.ts` and all Explorer API types (no longer used)
 - Removed explorer API manual test (the API returns wrong routes)
+- Removed dead `API_BASE` constant (`api.pointsyeah.com/v2/live` is unreachable)
 
 ## [0.2.1] - 2026-02-17
 

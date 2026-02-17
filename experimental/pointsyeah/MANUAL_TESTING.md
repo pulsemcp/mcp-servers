@@ -57,12 +57,12 @@ The tests will:
 
 ### Manual Test Results
 
-**Status:** 9 passed, 0 skipped, 1 failed (10 total)
-**Test Duration:** ~90s
+**Status:** 10 passed, 0 skipped, 0 failed (10 total)
+**Test Duration:** ~4s
 
 Tested with a valid (non-revoked) POINTSYEAH_REFRESH_TOKEN. All auth-dependent tests ran.
 
-**Passing tests (9/10):**
+**Passing tests (10/10):**
 
 - **Unauthenticated Mode (5 tests):**
   - Should expose all tools even when unauthenticated (3 tools: search_flights, get_search_history, set_refresh_token)
@@ -73,19 +73,17 @@ Tested with a valid (non-revoked) POINTSYEAH_REFRESH_TOKEN. All auth-dependent t
 - **Authenticated Mode (4 tests):**
   - Should expose all tools regardless of auth state
   - Config resource with authenticated status
+  - get_search_history (returns real search history data)
   - search_flights input validation (rejects round-trip without returnDate)
-  - Direct Client Cognito auth
-
-**Failed tests (1/10):**
-
-- **get_search_history** - The search history API endpoint (`api.pointsyeah.com/v2/live`) returns a fetch error. This is a pre-existing backend issue on PointsYeah's side (the `/v2/live` endpoint is unreliable), not related to the flight search changes in this PR.
+- **Direct Client (1 test):**
+  - Cognito auth token refresh
 
 ### Functional + Integration Test Results
 
-**Status:** All functional tests passed (17/17)
+**Status:** All functional tests passed (19/19)
 
 **Details:**
 
 All tools are always registered at startup. Auth-requiring tools (`search_flights`, `get_search_history`) check authentication state at call time and return a clear error when not authenticated. The live search flow (Playwright-based `create_task` + HTTP polling `fetch_result`) is tested with mocked dependencies and fake timers.
 
-**Summary:** 9/10 manual tests pass with a valid refresh token. The 1 failure (`get_search_history`) is a pre-existing backend API issue unrelated to this PR's changes. All 17 functional tests pass.
+**Summary:** All 10 manual tests pass with a valid refresh token. All 19 functional tests pass.
