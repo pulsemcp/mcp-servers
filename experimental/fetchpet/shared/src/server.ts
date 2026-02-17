@@ -160,7 +160,8 @@ export class FetchPetClient implements IFetchPetClient {
     }
 
     // Use playwright-extra with stealth plugin for better bot detection avoidance
-    const { chromium } = await import('playwright-extra');
+    const playwrightExtra = await import('playwright-extra');
+    const chromium = playwrightExtra.chromium;
     const StealthPlugin = (await import('puppeteer-extra-plugin-stealth')).default;
 
     chromium.use(StealthPlugin());
@@ -211,27 +212,44 @@ export class FetchPetClient implements IFetchPetClient {
       await this.page.fill('input[placeholder*="password" i]', this.config.password);
     }
 
-    // Click sign in button and wait for navigation simultaneously
-    // The login click triggers a full page navigation that destroys the execution context,
-    // so we must use Promise.all to avoid "Execution context was destroyed" errors.
+    // Click sign in button, then wait for post-login indicators.
+    // We avoid Promise.all([waitForURL, click]) because waitForURL with the default
+    // 'load' waitUntil can hang when third-party resources (analytics, ads) fail to load.
+    // Instead, click the button and poll for URL change or dashboard elements.
+    // Note: Splitting click() and waitForFunction() is safe here because Playwright's
+    // waitForFunction() survives page navigations by re-evaluating in new execution contexts,
+    // unlike waitForURL('load') which depends on the load event firing.
     const signInButton = await this.page.$(
       'button[type="submit"], button:has-text("Sign In"), button:has-text("Log In"), button:has-text("Login")'
     );
     if (signInButton) {
-      await Promise.all([
-        this.page.waitForURL((url) => !url.toString().includes('login'), {
-          timeout: this.config.timeout,
-        }),
-        signInButton.click(),
-      ]);
+      await signInButton.click();
     } else {
-      await Promise.all([
-        this.page.waitForURL((url) => !url.toString().includes('login'), {
-          timeout: this.config.timeout,
-        }),
-        this.page.click('button:has-text("Sign"), button:has-text("Log")'),
-      ]);
+      await this.page.click('button:has-text("Sign"), button:has-text("Log")');
     }
+
+    // Wait for either: URL changes away from login, or dashboard nav appears.
+    // On timeout, fall through to the login verification below which provides
+    // a more specific error message.
+    await this.page
+      .waitForFunction(
+        () => {
+          const url = window.location.href;
+          // Check URL no longer contains 'login'
+          if (!url.includes('login')) return true;
+          // Also check for dashboard elements (sidebar nav links)
+          if (document.querySelector('a[href="/claims"], a[href="/home"]')) return true;
+          return false;
+        },
+        { timeout: this.config.timeout }
+      )
+      .catch((error) => {
+        // Only swallow timeouts; re-throw unexpected errors
+        if (error instanceof Error && error.message.includes('Timeout')) {
+          return; // Fall through to login verification below
+        }
+        throw error;
+      });
 
     // Wait for SPA to settle after redirect
     await this.page.waitForTimeout(3000);
@@ -239,11 +257,18 @@ export class FetchPetClient implements IFetchPetClient {
     // Verify login was successful by checking URL or presence of dashboard elements
     const currentUrl = this.page.url();
     if (currentUrl.includes('login') || currentUrl.includes('signin')) {
-      // Check for error messages
-      const errorMsg = await this.page.$('.error, [class*="error"], [role="alert"]');
+      // Save debug screenshot for troubleshooting
+      await this.page
+        .screenshot({ path: join(this.config.downloadDir, `login-debug-${Date.now()}.png`) })
+        .catch(() => {});
+
+      // Check for specific login error messages (not generic error classes which may have false positives)
+      const errorMsg = await this.page.$('.error-text, [role="alert"]');
       if (errorMsg) {
-        const errorText = await errorMsg.textContent();
-        throw new Error(`Login failed: ${errorText || 'Invalid credentials'}`);
+        const errorText = (await errorMsg.textContent())?.trim();
+        if (errorText) {
+          throw new Error(`Login failed: ${errorText}`);
+        }
       }
       throw new Error('Login failed - still on login page. Check your credentials.');
     }
@@ -337,10 +362,12 @@ export class FetchPetClient implements IFetchPetClient {
       }
     }
 
-    // 3. Fill in additional details (optional textarea)
-    const detailsTextarea = await page.$('textarea[placeholder="Describe the visit"], textarea');
-    if (detailsTextarea) {
-      await detailsTextarea.fill(
+    // 3. Fill in additional details (optional - may be textarea or input)
+    const detailsField = await page.$(
+      'textarea[placeholder="Describe the visit"], textarea, input[aria-label*="details" i], input[placeholder="Describe the visit"]'
+    );
+    if (detailsField) {
+      await detailsField.fill(
         `Date: ${invoiceDate}, Amount: ${invoiceAmount}. ${claimDescription}`
       );
     }
@@ -523,16 +550,16 @@ The user MUST explicitly confirm they want to submit this claim before calling s
       };
     }
 
-    // Check for error
-    const errorMessage = await page.$(
-      '.error, [class*="error"], [role="alert"]:not(:has-text("success"))'
-    );
+    // Check for error (use specific selectors to avoid false positives from layout classes)
+    const errorMessage = await page.$('.error-text, [role="alert"]:not(:has-text("success"))');
     if (errorMessage) {
-      const errorText = await errorMessage.textContent();
-      return {
-        success: false,
-        message: `Submission failed: ${errorText}`,
-      };
+      const errorText = (await errorMessage.textContent())?.trim();
+      if (errorText) {
+        return {
+          success: false,
+          message: `Submission failed: ${errorText}`,
+        };
+      }
     }
 
     // Check URL for indication of success (redirected to claims list, etc.)
