@@ -25,11 +25,12 @@ describe('PointsYeah MCP Server Integration Tests', () => {
 
       const result = await client.listTools();
       const tools = result.tools;
-      expect(tools.length).toBe(2);
+      expect(tools.length).toBe(3);
 
       const toolNames = tools.map((t: { name: string }) => t.name);
       expect(toolNames).toContain('search_flights');
       expect(toolNames).toContain('get_search_history');
+      expect(toolNames).toContain('set_refresh_token');
     });
 
     it('should execute search_flights with mock data', async () => {

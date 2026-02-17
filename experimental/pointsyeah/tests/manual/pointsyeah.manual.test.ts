@@ -46,13 +46,9 @@ function skipUnlessHasToken(ctx: { skip: () => void }) {
 /**
  * Manual tests for PointsYeah MCP Server
  *
- * These tests verify the dynamic authentication flow:
- *   1. Server starts with only set_refresh_token tool (no env token)
- *   2. After providing a valid token, flight search tools become available
- *   3. If token is revoked, server switches back to set_refresh_token
- *
- * Unauthenticated tests always run (no token needed).
- * Authenticated and Direct Client tests require a valid POINTSYEAH_REFRESH_TOKEN in .env.
+ * All tools are always visible (search_flights, get_search_history, set_refresh_token).
+ * Auth-requiring tools return an error when not authenticated, directing users
+ * to call set_refresh_token first.
  *
  * Run with: npm run test:manual
  */
@@ -87,16 +83,31 @@ describe('PointsYeah MCP Server - Manual Tests', () => {
       }
     });
 
-    it('should only expose set_refresh_token tool when unauthenticated', async () => {
+    it('should expose all tools even when unauthenticated', async () => {
       const result = await client.listTools();
       const tools = result.tools;
       const toolNames = tools.map((t: { name: string }) => t.name);
 
-      expect(toolNames).toEqual(['set_refresh_token']);
-      expect(toolNames).not.toContain('search_flights');
-      expect(toolNames).not.toContain('get_search_history');
+      expect(toolNames).toContain('search_flights');
+      expect(toolNames).toContain('get_search_history');
+      expect(toolNames).toContain('set_refresh_token');
+      expect(tools.length).toBe(3);
 
       console.log(`Unauthenticated tools: ${toolNames.join(', ')}`);
+    });
+
+    it('search_flights should return auth error when unauthenticated', async () => {
+      const result = await client.callTool('search_flights', {
+        departure: 'SFO',
+        arrival: 'NYC',
+        departDate: '2026-06-01',
+        tripType: '1',
+      });
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('Authentication required');
+      expect(result.content[0].text).toContain('set_refresh_token');
+      console.log('search_flights correctly returns auth error when unauthenticated');
     });
 
     it('set_refresh_token should include instructions for obtaining token', async () => {
@@ -162,20 +173,16 @@ describe('PointsYeah MCP Server - Manual Tests', () => {
       }
     });
 
-    it('should expose flight search tools when token is valid, or set_refresh_token when expired', async (ctx) => {
+    it('should expose all tools regardless of auth state', async (ctx) => {
       skipUnlessHasToken(ctx);
 
       const result = await client.listTools();
       const toolNames = result.tools.map((t: { name: string }) => t.name);
 
-      if (tokenWorks) {
-        expect(toolNames.sort()).toEqual(['get_search_history', 'search_flights']);
-        console.log(`Authenticated tools: ${toolNames.join(', ')}`);
-      } else {
-        // Token is revoked — server should show set_refresh_token instead
-        expect(toolNames).toContain('set_refresh_token');
-        console.log('Token expired — server correctly shows set_refresh_token');
-      }
+      expect(toolNames).toContain('search_flights');
+      expect(toolNames).toContain('get_search_history');
+      expect(toolNames).toContain('set_refresh_token');
+      console.log(`Tools with token: ${toolNames.join(', ')}`);
     });
 
     it('should show config resource with authenticated status', async (ctx) => {

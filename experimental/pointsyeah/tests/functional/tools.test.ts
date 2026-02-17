@@ -137,17 +137,14 @@ describe('PointsYeah Tools', () => {
 
   describe('set_refresh_token', () => {
     it('should reject tokens that are too short', async () => {
-      const onAuthSuccess = vi.fn();
-      const tool = setRefreshTokenTool(onAuthSuccess);
+      const tool = setRefreshTokenTool();
       const result = await tool.handler({ refreshToken: 'too-short' });
 
       expect(result.isError).toBe(true);
-      expect(onAuthSuccess).not.toHaveBeenCalled();
     });
 
     it('should have the correct tool metadata', () => {
-      const onAuthSuccess = vi.fn();
-      const tool = setRefreshTokenTool(onAuthSuccess);
+      const tool = setRefreshTokenTool();
 
       expect(tool.name).toBe('set_refresh_token');
       expect(tool.description).toContain('PointsYeah refresh token');

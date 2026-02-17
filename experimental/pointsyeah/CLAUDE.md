@@ -10,12 +10,12 @@ This MCP server integrates with PointsYeah, a travel rewards search engine. All 
 
 ## Key Design Decisions
 
-### Dynamic Authentication
+### Static Tool Registration
 
-- Server starts with only `set_refresh_token` tool when unauthenticated
-- After a valid token is provided (via env var or tool), switches to flight search tools
-- If token is later revoked, automatically switches back to `set_refresh_token`
-- Uses `server.sendToolListChanged()` to notify MCP clients when tool list changes
+- All tools (`set_refresh_token`, `search_flights`, `get_search_history`) are always registered at startup
+- Auth-requiring tools check `getServerState().authenticated` at call time
+- When not authenticated, auth-requiring tools return: "Authentication required. Please call the set_refresh_token tool first."
+- This approach works with all MCP clients, including those that don't support `tools/list_changed` notifications (like Claude Code SDK)
 - Auth state is tracked in `state.ts` (module-level singleton)
 
 ### Authentication
@@ -45,7 +45,7 @@ This MCP server integrates with PointsYeah, a travel rewards search engine. All 
 ## Key Files
 
 - `shared/src/state.ts` - Auth state management (authenticated flag, refresh token)
-- `shared/src/tools.ts` - Dynamic tool registration with `applyToolList()` and `sendToolListChanged()`
+- `shared/src/tools.ts` - Static tool registration with auth check wrappers
 - `shared/src/tools/set-refresh-token.ts` - The `set_refresh_token` tool with token validation
 - `shared/src/server.ts` - `PointsYeahClient` reads token from state via getter
 - `local/src/index.ts` - Entry point with optional env token validation on startup
