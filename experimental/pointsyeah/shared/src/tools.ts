@@ -74,7 +74,7 @@ export function createRegisterTools(clientFactory: ClientFactory, enabledGroups?
   const groups = enabledGroups || parseEnabledToolGroups(process.env.ENABLED_TOOLGROUPS);
 
   return (server: Server) => {
-    // Build the authenticated tool list
+    // Build auth-requiring tools (these check auth state at call time)
     const authedTools = ALL_TOOLS.filter((def) => def.groups.some((g) => groups.includes(g))).map(
       (def) => def.factory(server, clientFactory)
     );
