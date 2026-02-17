@@ -11,13 +11,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **BREAKING**: Consolidate `get_active_claims` and `get_historical_claims` into single `get_claims` tool that returns all claims (both active and historical)
 
+### Added
+
+- Save debug screenshot on login failure for troubleshooting (timestamped in download directory)
+
 ### Fixed
 
 - Fix login timeout caused by `page.waitForURL` hanging when third-party resources fail to load (e.g. blocked analytics scripts). Replace `Promise.all([waitForURL, click])` with `click()` + `waitForFunction()` polling for URL change or dashboard elements
-- Fix false-positive login error detection by narrowing error selector from `[class*="error"]` (matched layout classes) to `.error-text, [role="alert"]` with empty text check
+- Fix false-positive error detection by narrowing error selectors from `[class*="error"]` (matched layout classes) to `.error-text, [role="alert"]` with empty text check (login and claim submission)
 - Fix claim details field selector to support both `<textarea>` and `<input>` elements (site changed form element type)
 - Fix `playwright-extra` import to use two-step import for ESM compatibility
-- Add debug screenshot on login failure for troubleshooting
 - Fix EOB/Invoice document downloads by intercepting popup tabs with blob: URLs instead of relying on browser download events
 - Wire up configurable `TIMEOUT` env var via `page.setDefaultTimeout()`
 - Fix `getClaimDetails` matching logic that always matched the first claim card
