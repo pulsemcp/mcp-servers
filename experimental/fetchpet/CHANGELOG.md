@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-02-17
+
 ### Changed
 
 - **BREAKING**: Consolidate `get_active_claims` and `get_historical_claims` into single `get_claims` tool that returns all claims (both active and historical)

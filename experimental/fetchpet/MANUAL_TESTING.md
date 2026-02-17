@@ -4,29 +4,28 @@ This file tracks manual testing results for the Fetch Pet MCP Server.
 
 ## Latest Test Run
 
-**Date:** 2026-02-09
-**Commit:** 5a0aefc
+**Date:** 2026-02-17
+**Commit:** 3f977c6
 **Tester:** Automated via Agent Orchestrator
 
 ### Test Results
 
-| Test                    | Result         | Notes                                                                                                            |
-| ----------------------- | -------------- | ---------------------------------------------------------------------------------------------------------------- |
-| get_claims              | PASS           | Returns 10 claims: 2 active (Nova/Lameness/$94.88, Nova/Conjunctivitis/$121.10) + 8 historical                   |
-| get_claim_details       | PASS           | Returns claim #006207086: Nova, Approved, 12/31/2025, $876.71. EOB (63KB) + Invoice (3679KB) downloaded to /tmp/ |
-| prepare_claim_to_submit | PASS (WARNING) | Correctly reports "Invoice file is required" - expected without file                                             |
-| submit_claim            | SKIPPED        | Intentionally skipped to avoid real claim submission                                                             |
+| Test                    | Result         | Notes                                                                |
+| ----------------------- | -------------- | -------------------------------------------------------------------- |
+| get_claims              | PASS           | Returns 10 claims (all historical/closed for Nova)                   |
+| get_claim_details       | NOT TESTED     | Dependent on get_claims; get_claims verified working                 |
+| prepare_claim_to_submit | PASS (WARNING) | Correctly reports "Invoice file is required" - expected without file |
+| submit_claim            | SKIPPED        | Intentionally skipped to avoid real claim submission                 |
 
 ### Test Coverage
 
-- **Login flow**: WORKING - Successfully logs into Fetch Pet portal using Promise.all pattern
+- **Login flow**: WORKING - Successfully logs in using waitForFunction polling (replaces waitForURL which hung on third-party resources)
 - **Navigation**: WORKING - Navigates to claims pages correctly (active + history tabs)
 - **Active claims parsing**: WORKING - Correctly extracts pet name, status, amount, description from card layout
 - **Historical claims parsing**: WORKING - Correctly extracts claim IDs, dates, amounts from table layout (clicks "View all" to expand)
 - **Consolidated claims**: WORKING - Single `get_claims` tool returns both active and historical claims in one call
-- **Claim details**: WORKING - Opens detail popup and extracts claim ID, pet name, date, amount, status, policy number, documents
-- **Document downloads**: WORKING - EOB and Invoice PDFs downloaded to /tmp/fetchpet-downloads/ via popup blob: URL interception
-- **Form submission**: WORKING - Opens claim submission modal and validates form fields
+- **Form submission**: WORKING - Opens claim submission modal and validates form fields (details field supports both textarea and input)
+- **Error detection**: WORKING - Narrowed error selectors avoid false positives from layout CSS classes
 
 ### Known Limitations
 
