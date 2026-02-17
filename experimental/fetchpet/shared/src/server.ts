@@ -267,10 +267,16 @@ export class FetchPetClient implements IFetchPetClient {
       if (errorMsg) {
         const errorText = (await errorMsg.textContent())?.trim();
         if (errorText) {
-          throw new Error(`Login failed: ${errorText}`);
+          throw new Error(
+            `Login failed for ${this.config.username}: ${errorText}. ` +
+              'Verify FETCHPET_PASSWORD is your Fetch Pet password (not an API token).'
+          );
         }
       }
-      throw new Error('Login failed - still on login page. Check your credentials.');
+      throw new Error(
+        `Login failed for ${this.config.username} - still on login page. ` +
+          'Check your credentials and verify FETCHPET_PASSWORD is set correctly.'
+      );
     }
 
     this.isInitialized = true;
@@ -1048,6 +1054,15 @@ export function createMCPServer(options: CreateMCPServerOptions) {
     if (!username || !password) {
       throw new Error(
         'FETCHPET_USERNAME and FETCHPET_PASSWORD environment variables must be configured'
+      );
+    }
+
+    // Warn if password looks like a token/PAT rather than a real password
+    if (password.startsWith('github_') || password.startsWith('ghp_') || password.length > 80) {
+      console.error(
+        '[WARN] credentials: FETCHPET_PASSWORD appears to be a token or API key (starts with ' +
+          `"${password.substring(0, 10)}...", length ${password.length}). ` +
+          'Ensure it is set to your Fetch Pet account password, not a GitHub or other API token.'
       );
     }
 

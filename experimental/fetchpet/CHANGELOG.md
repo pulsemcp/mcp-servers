@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Warn at startup when FETCHPET_PASSWORD looks like a token/API key instead of a real password
+- Include username and troubleshooting hint in login failure error messages
+
 ## [0.1.1] - 2026-02-17
 
 ### Changed
