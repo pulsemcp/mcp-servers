@@ -275,7 +275,7 @@ export class FetchPetClient implements IFetchPetClient {
       }
       throw new Error(
         `Login failed for ${this.config.username} - still on login page. ` +
-          'Check your credentials and verify FETCHPET_PASSWORD is set correctly.'
+          'Verify FETCHPET_PASSWORD is your Fetch Pet password (not an API token).'
       );
     }
 
@@ -1057,11 +1057,16 @@ export function createMCPServer(options: CreateMCPServerOptions) {
       );
     }
 
-    // Warn if password looks like a token/PAT rather than a real password
-    if (password.startsWith('github_') || password.startsWith('ghp_') || password.length > 80) {
+    // Warn if password looks like a token/PAT rather than a real password.
+    // Most tokens/API keys are 80+ chars; human passwords are typically shorter.
+    const tokenPrefixes = ['github_', 'ghp_', 'gho_', 'ghu_', 'ghs_', 'sk-', 'glpat-', 'npm_'];
+    const matchedPrefix = tokenPrefixes.find((prefix) => password.startsWith(prefix));
+    if (matchedPrefix || password.length > 80) {
+      const reason = matchedPrefix
+        ? 'starts with a known token prefix'
+        : `is ${password.length} characters long (unusually long for a password)`;
       console.error(
-        '[WARN] credentials: FETCHPET_PASSWORD appears to be a token or API key (starts with ' +
-          `"${password.substring(0, 10)}...", length ${password.length}). ` +
+        `[WARN] credentials: FETCHPET_PASSWORD ${reason}. ` +
           'Ensure it is set to your Fetch Pet account password, not a GitHub or other API token.'
       );
     }
