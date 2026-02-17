@@ -50,19 +50,19 @@ The tests will:
 ## Latest Test Results
 
 **Test Date:** 2026-02-17
-**Branch:** ao/fix-pointsyeah-404-explorer-api
-**Commit:** 5fa9891
+**Branch:** tadasant/fix-pointsyeah-wrong-routes
+**Commit:** 611e4a2
 **Tested By:** Claude
 **Environment:** Linux, Node.js
 
 ### Manual Test Results
 
-**Status:** 6 passed, 5 skipped, 0 failed (11 total)
+**Status:** 6 passed, 4 skipped, 0 failed (10 total)
 **Test Duration:** ~3s
 
 Token validation detected the token is expired/revoked. Tests that require a valid token are properly skipped via `ctx.skip()`.
 
-**Passing tests (6/11):**
+**Passing tests (6/10):**
 
 - **Unauthenticated Mode (5 tests):**
   - Should expose all tools even when unauthenticated (3 tools: search_flights, get_search_history, set_refresh_token)
@@ -73,20 +73,19 @@ Token validation detected the token is expired/revoked. Tests that require a val
 - **Authenticated Mode (1 test):**
   - Should expose all tools regardless of auth state
 
-**Skipped tests (5/11):** These require a valid (non-revoked) POINTSYEAH_REFRESH_TOKEN:
+**Skipped tests (4/10):** These require a valid (non-revoked) POINTSYEAH_REFRESH_TOKEN:
 
 - Config resource with authenticated status
 - get_search_history
 - search_flights validation
 - Direct Client Cognito auth
-- Direct Client Explorer search API
 
 ### Functional + Integration Test Results
 
-**Status:** All functional tests passed (11/11), all integration tests passed (4/4)
+**Status:** All functional tests passed (17/17)
 
 **Details:**
 
-All tools are always registered at startup. Auth-requiring tools (`search_flights`, `get_search_history`) check authentication state at call time and return a clear error when not authenticated. This works with all MCP clients regardless of `tools/list_changed` support.
+All tools are always registered at startup. Auth-requiring tools (`search_flights`, `get_search_history`) check authentication state at call time and return a clear error when not authenticated. The live search flow (Playwright-based `create_task` + HTTP polling `fetch_result`) is tested with mocked dependencies and fake timers.
 
-**Summary:** All 6 unauthenticated manual tests pass. Auth-dependent tests are properly skipped via Vitest `ctx.skip()` when no valid token is available. Functional tests (11) and integration tests (4) all pass.
+**Summary:** All 6 unauthenticated manual tests pass. Auth-dependent tests are properly skipped via Vitest `ctx.skip()` when no valid token is available. Functional tests (17) all pass. Note: Full authenticated testing requires a fresh PointsYeah refresh token.
