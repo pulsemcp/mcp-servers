@@ -16,11 +16,9 @@ The server needs a valid Cognito refresh token to access PointsYeah APIs. This t
 3. Run: document.cookie.split('; ').find(c => c.includes('.refreshToken=')).split('=').slice(1).join('=')
 4. Copy the output and pass it as the refreshToken parameter
 
-**Note:** Once a valid token is set, this tool will be hidden and the flight search tools will become available. If the token later expires or is revoked, this tool will reappear.`;
+**Note:** After setting a valid token, the flight search tools (search_flights, get_search_history) will work. If the token later expires or is revoked, call this tool again with a fresh token.`;
 
-export type OnAuthSuccess = () => Promise<void>;
-
-export function setRefreshTokenTool(onAuthSuccess: OnAuthSuccess) {
+export function setRefreshTokenTool() {
   return {
     name: 'set_refresh_token',
     description: TOOL_DESCRIPTION,
@@ -46,9 +44,6 @@ export function setRefreshTokenTool(onAuthSuccess: OnAuthSuccess) {
         // Token is valid — update state
         setRefreshToken(refreshToken);
         setAuthenticated(true);
-
-        // Notify the tool layer to swap tool lists
-        await onAuthSuccess();
 
         return {
           content: [

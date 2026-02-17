@@ -2,8 +2,8 @@
  * Server state management for PointsYeah MCP server.
  *
  * Tracks authentication state and the current refresh token.
- * When authenticated is false, only the set_refresh_token tool is exposed.
- * When authenticated is true, the normal tools are exposed instead.
+ * When authenticated is false, auth-requiring tools return an error
+ * directing users to call set_refresh_token.
  */
 
 interface ServerState {

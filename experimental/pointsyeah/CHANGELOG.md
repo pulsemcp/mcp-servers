@@ -5,7 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.2.1] - 2026-02-17
+
+### Fixed
+
+- **BREAKING**: Fixed flight search tools not appearing after `set_refresh_token` authentication
+  - MCP clients (including Claude Code SDK) don't support dynamic tool list changes via `tools/list_changed` notifications
+  - All tools are now always visible; auth-requiring tools return a clear error directing users to `set_refresh_token` when not authenticated
+  - Removed `sendToolListChanged()` dependency for client compatibility
+
+### Changed
+
+- `set_refresh_token` tool description updated to explain tools are always visible
 
 ## [0.2.0] - 2026-02-16
 

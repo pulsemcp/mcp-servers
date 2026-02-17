@@ -51,28 +51,29 @@ The tests will:
 
 **Test Date:** 2026-02-17
 **Branch:** ao/fix-pointsyeah-404-explorer-api
-**Commit:** 096e8dd
+**Commit:** 5fa9891
 **Tested By:** Claude
 **Environment:** Linux, Node.js
 
 ### Manual Test Results
 
-**Status:** 5 passed, 5 skipped, 0 failed (10 total)
+**Status:** 6 passed, 5 skipped, 0 failed (11 total)
 **Test Duration:** ~3s
 
 Token validation detected the token is expired/revoked. Tests that require a valid token are properly skipped via `ctx.skip()`.
 
-**Passing tests (5/10):**
+**Passing tests (6/11):**
 
-- **Unauthenticated Mode (4 tests):**
-  - Should only expose `set_refresh_token` tool when unauthenticated
+- **Unauthenticated Mode (5 tests):**
+  - Should expose all tools even when unauthenticated (3 tools: search_flights, get_search_history, set_refresh_token)
+  - search_flights should return auth error when unauthenticated
   - `set_refresh_token` should include instructions for obtaining token (document.cookie, pointsyeah.com)
   - Should reject invalid/short tokens
   - Should show config resource with `needs_token` status
 - **Authenticated Mode (1 test):**
-  - Should expose `set_refresh_token` when token is expired (verifies dynamic tool switching works correctly with revoked tokens)
+  - Should expose all tools regardless of auth state
 
-**Skipped tests (5/10):** These require a valid (non-revoked) POINTSYEAH_REFRESH_TOKEN:
+**Skipped tests (5/11):** These require a valid (non-revoked) POINTSYEAH_REFRESH_TOKEN:
 
 - Config resource with authenticated status
 - get_search_history
@@ -86,6 +87,6 @@ Token validation detected the token is expired/revoked. Tests that require a val
 
 **Details:**
 
-The server uses a dynamic authentication flow. On startup without a valid token, only the `set_refresh_token` tool is exposed. After providing a valid token, flight search tools become available. If a token is later revoked, the server automatically switches back.
+All tools are always registered at startup. Auth-requiring tools (`search_flights`, `get_search_history`) check authentication state at call time and return a clear error when not authenticated. This works with all MCP clients regardless of `tools/list_changed` support.
 
-**Summary:** All 5 unauthenticated manual tests pass. Auth-dependent tests are properly skipped via Vitest `ctx.skip()` when no valid token is available. Functional tests (11) and integration tests (4) all pass.
+**Summary:** All 6 unauthenticated manual tests pass. Auth-dependent tests are properly skipped via Vitest `ctx.skip()` when no valid token is available. Functional tests (11) and integration tests (4) all pass.

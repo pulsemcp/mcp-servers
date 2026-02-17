@@ -59,74 +59,74 @@ const ALL_TOOLS: ToolDefinition[] = [
   { factory: getSearchHistoryTool, groups: ['readonly', 'write', 'admin'] },
 ];
 
+const AUTH_REQUIRED_ERROR =
+  'Authentication required. Please call the set_refresh_token tool first with a valid PointsYeah refresh token.';
+
 /**
- * Creates a dynamic tool registration system that swaps between:
- * - "auth needed" mode: only set_refresh_token is visible
- * - "authenticated" mode: normal tools are visible, set_refresh_token is hidden
+ * Creates a static tool registration system that exposes all tools at startup.
  *
- * When an auth failure is detected during tool use, the system automatically
- * switches back to "auth needed" mode.
+ * Auth-requiring tools (search_flights, get_search_history) check authentication
+ * state at call time and return an error directing users to set_refresh_token
+ * if not authenticated. This approach is compatible with MCP clients that don't
+ * support dynamic tool list updates via tools/list_changed notifications.
  */
 export function createRegisterTools(clientFactory: ClientFactory, enabledGroups?: ToolGroup[]) {
   const groups = enabledGroups || parseEnabledToolGroups(process.env.ENABLED_TOOLGROUPS);
 
   return (server: Server) => {
-    // Build the normal (authenticated) tool list
+    // Build auth-requiring tools (these check auth state at call time)
     const authedTools = ALL_TOOLS.filter((def) => def.groups.some((g) => groups.includes(g))).map(
       (def) => def.factory(server, clientFactory)
     );
 
-    // wrappedAuthedTools is populated after authTool is created (forward reference)
-    let wrappedAuthedTools: Tool[] = [];
+    // Build the set_refresh_token tool
+    const authTool = setRefreshTokenTool();
 
-    // Build the set_refresh_token tool with a callback that switches to authed mode
-    const authTool = setRefreshTokenTool(async () => {
-      applyToolList(wrappedAuthedTools);
-      await server.sendToolListChanged();
-    });
-
-    // Wrap authed tool handlers to detect auth failures and switch back
-    wrappedAuthedTools = authedTools.map((tool) => ({
+    // Wrap authed tool handlers to:
+    // 1. Check auth state before executing
+    // 2. Detect token revocation during execution
+    const wrappedAuthedTools: Tool[] = authedTools.map((tool) => ({
       ...tool,
       handler: async (args: unknown) => {
+        // Check if authenticated before executing
+        if (!getServerState().authenticated) {
+          return {
+            content: [{ type: 'text', text: AUTH_REQUIRED_ERROR }],
+            isError: true,
+          };
+        }
+
         const result = await tool.handler(args);
+
+        // Detect token revocation and update state
         if (result.isError && isTokenRevoked(result.content)) {
-          logWarning('auth', 'Token revoked during tool call, switching to set_refresh_token mode');
+          logWarning('auth', 'Token revoked during tool call');
           setAuthenticated(false);
           clearRefreshToken();
-          applyToolList([authTool]);
-          await server.sendToolListChanged();
         }
         return result;
       },
     }));
 
-    function applyToolList(tools: Tool[]) {
-      server.setRequestHandler(ListToolsRequestSchema, async () => ({
-        tools: tools.map((tool) => ({
-          name: tool.name,
-          description: tool.description,
-          inputSchema: tool.inputSchema,
-        })),
-      }));
+    // All tools are always visible
+    const allTools = [...wrappedAuthedTools, authTool];
 
-      server.setRequestHandler(CallToolRequestSchema, async (request) => {
-        const { name, arguments: callArgs } = request.params;
-        const tool = tools.find((t) => t.name === name);
-        if (!tool) {
-          throw new Error(`Unknown tool: ${name}`);
-        }
-        return await tool.handler(callArgs);
-      });
-    }
+    server.setRequestHandler(ListToolsRequestSchema, async () => ({
+      tools: allTools.map((tool) => ({
+        name: tool.name,
+        description: tool.description,
+        inputSchema: tool.inputSchema,
+      })),
+    }));
 
-    // Set initial tool list based on auth state
-    const { authenticated } = getServerState();
-    if (authenticated) {
-      applyToolList(wrappedAuthedTools);
-    } else {
-      applyToolList([authTool]);
-    }
+    server.setRequestHandler(CallToolRequestSchema, async (request) => {
+      const { name, arguments: callArgs } = request.params;
+      const tool = allTools.find((t) => t.name === name);
+      if (!tool) {
+        throw new Error(`Unknown tool: ${name}`);
+      }
+      return await tool.handler(callArgs);
+    });
   };
 }
 
