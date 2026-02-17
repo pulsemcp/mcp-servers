@@ -20,8 +20,8 @@ const VERSION = packageJson.version;
 
 /**
  * If POINTSYEAH_REFRESH_TOKEN is set, validate it and seed auth state.
- * If not set or invalid, the server starts in "needs token" mode with
- * only the set_refresh_token tool available.
+ * If not set or invalid, auth-requiring tools will return errors
+ * directing users to call set_refresh_token.
  */
 async function initializeAuth(): Promise<void> {
   const envToken = process.env.POINTSYEAH_REFRESH_TOKEN;
@@ -29,8 +29,7 @@ async function initializeAuth(): Promise<void> {
   if (!envToken) {
     logWarning(
       'config',
-      'POINTSYEAH_REFRESH_TOKEN not set. Server starting in authentication mode — ' +
-        'only set_refresh_token tool will be available.'
+      'POINTSYEAH_REFRESH_TOKEN not set. Flight search tools will require authentication via set_refresh_token.'
     );
     return;
   }
