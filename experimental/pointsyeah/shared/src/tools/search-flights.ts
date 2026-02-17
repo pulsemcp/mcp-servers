@@ -42,7 +42,7 @@ This tool searches PointsYeah for flight availability using points and miles. It
 - Discover transfer partner options from bank reward programs
 - Search for premium cabin availability (Business, First)
 
-**Note:** Results are sourced from PointsYeah's explorer database of recently-crawled award availability. Results show the best deals found across airline programs.`;
+**Note:** Results are sourced from PointsYeah's explorer database of recently-crawled award availability. Coverage varies by route — popular international routes typically have more availability than domestic routes. If no results are found, the route may not be in PointsYeah's database yet.`;
 
 function formatDuration(minutes: number): string {
   const hours = Math.floor(minutes / 60);

@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+- Fixed search returning results for completely wrong routes (e.g., ICN->AMS when searching SFO->SAN)
+  - The explorer API may return cached/pre-crawled results for unrelated routes
+  - Results are now filtered to only include flights matching the requested departure and arrival airports
+  - Mismatched results are silently discarded instead of being shown to users
+
+### Changed
+
+- Updated `search_flights` tool description to clarify that coverage varies by route and results come from a pre-crawled database
+
 ## [0.2.1] - 2026-02-17
 
 ### Fixed

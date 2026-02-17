@@ -155,9 +155,29 @@ export class PointsYeahClient implements IPointsYeahClient {
       return { total: 0, results: [] };
     }
 
-    // Step 2: Fetch details for each result (contains full route/segment info)
+    // Step 2: Filter results to only include flights matching the requested route.
+    // The explorer API may return cached/pre-crawled results for unrelated routes.
+    const requestedDep = params.departure.toUpperCase();
+    const requestedArr = params.arrival.toUpperCase();
+    const matchingResults = searchResponse.results.filter((result) => {
+      const depMatch = result.departure.code.toUpperCase() === requestedDep;
+      const arrMatch = result.arrival.code.toUpperCase() === requestedArr;
+      if (!depMatch || !arrMatch) {
+        logDebug(
+          'search',
+          `Filtered out mismatched result: ${result.departure.code}->${result.arrival.code} (requested ${requestedDep}->${requestedArr})`
+        );
+      }
+      return depMatch && arrMatch;
+    });
+
+    if (matchingResults.length === 0) {
+      return { total: 0, results: [] };
+    }
+
+    // Step 3: Fetch details for each matching result (contains full route/segment info)
     const MAX_DETAILS = 10; // Limit detail fetches to avoid excessive API calls
-    const topResults = searchResponse.results.slice(0, MAX_DETAILS);
+    const topResults = matchingResults.slice(0, MAX_DETAILS);
 
     const detailResults: FlightResult[] = [];
     for (const result of topResults) {
