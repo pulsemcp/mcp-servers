@@ -7,7 +7,7 @@ This MCP server integrates with PointsYeah, a travel rewards search engine. The 
 1. **Live Search API** (`api2.pointsyeah.com`) - Task-based flight search with encrypted requests
    - `create_task`: Creates a search task (requires encrypted payload, handled by Playwright)
    - `fetch_result`: Polls for incremental results via plain HTTP POST
-2. **User APIs** (`api.pointsyeah.com/v2/live`) - History and other user data
+2. **User APIs** (`api2.pointsyeah.com`) - History and other user data
 
 ### Why Playwright?
 
@@ -44,8 +44,7 @@ The live search API (`api2.pointsyeah.com/flight/search/create_task`) requires a
 ## API Domains
 
 - `cognito-idp.us-east-1.amazonaws.com` - Authentication
-- `api2.pointsyeah.com` - Live search (create_task, fetch_result)
-- `api.pointsyeah.com` - User APIs (search history)
+- `api2.pointsyeah.com` - Live search (create_task, fetch_result) and User APIs (search history)
 
 ## Environment Variables
 
