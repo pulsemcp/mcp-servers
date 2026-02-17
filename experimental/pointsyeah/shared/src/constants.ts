@@ -9,7 +9,7 @@ export const COGNITO_ENDPOINT = `https://cognito-idp.${COGNITO_USER_POOL_REGION}
 /**
  * PointsYeah API base URL.
  */
-export const API_BASE = 'https://api.pointsyeah.com/v2/live';
+export const API2_BASE = 'https://api2.pointsyeah.com';
 
 /**
  * Default fetch timeout in milliseconds.

@@ -1,5 +1,5 @@
 import { logDebug } from '../../logging.js';
-import { API_BASE, FETCH_TIMEOUT_MS } from '../../constants.js';
+import { API2_BASE, FETCH_TIMEOUT_MS } from '../../constants.js';
 
 /**
  * Make an authenticated GET request to the PointsYeah API.
@@ -7,7 +7,7 @@ import { API_BASE, FETCH_TIMEOUT_MS } from '../../constants.js';
 async function apiGet(path: string, idToken: string): Promise<unknown> {
   logDebug('userApi', `GET ${path}`);
 
-  const response = await fetch(`${API_BASE}${path}`, {
+  const response = await fetch(`${API2_BASE}${path}`, {
     method: 'GET',
     headers: {
       // PointsYeah API expects the raw Cognito ID token without a Bearer prefix

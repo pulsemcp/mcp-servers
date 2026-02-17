@@ -50,79 +50,6 @@ export const FlightSearchParamsSchema = z.object({
 export type FlightSearchParams = z.infer<typeof FlightSearchParamsSchema>;
 
 // =============================================================================
-// EXPLORER SEARCH API TYPES (new PointsYeah API)
-// =============================================================================
-
-export interface ExplorerSearchResult {
-  program: string;
-  departure_date: string;
-  departure: { code: string; city: string; country_name: string };
-  arrival: { code: string; city: string; country_name: string };
-  miles: number;
-  tax: number;
-  cabin: string;
-  detail_url: string;
-  stops: number;
-  seats: number;
-  duration: number;
-  transfer: ExplorerTransferOption[];
-}
-
-export interface ExplorerTransferOption {
-  bank: string;
-  actual_points: number;
-  points: number;
-}
-
-export interface ExplorerSearchResponse {
-  total: number;
-  results: ExplorerSearchResult[];
-}
-
-export interface ExplorerDetailSegment {
-  departure_info: {
-    date_time: string;
-    airport: { airport_code: string; city_name: string };
-  };
-  arrival_info: {
-    date_time: string;
-    airport: { airport_code: string; city_name: string };
-  };
-  cabin: string;
-  flight: { airline_code: string; airline_name: string; number: string };
-  aircraft: string;
-  duration: number;
-}
-
-export interface ExplorerDetailRoute {
-  payment: {
-    currency: string;
-    tax: number;
-    miles: number;
-    cabin: string;
-    unit: string;
-    short_unit?: string;
-    seats: number;
-    cash_price: number;
-  };
-  segments: ExplorerDetailSegment[];
-  duration: number;
-  transfer: ExplorerTransferOption[] | null;
-  program: string;
-  code: string;
-  url?: string;
-}
-
-export interface ExplorerDetailResponse {
-  program: string;
-  code: string;
-  date: string;
-  departure: string;
-  arrival: string;
-  routes: ExplorerDetailRoute[];
-}
-
-// =============================================================================
 // NORMALIZED TYPES (used by tool output formatting)
 // =============================================================================
 
@@ -170,4 +97,24 @@ export interface FlightResult {
 export interface FlightSearchResults {
   total: number;
   results: FlightResult[];
+}
+
+// =============================================================================
+// LIVE SEARCH API TYPES (api2.pointsyeah.com task-based search)
+// =============================================================================
+
+export interface FlightSearchTask {
+  task_id: string;
+  total_sub_tasks: number;
+  status: string;
+}
+
+export interface FlightSearchResponse {
+  code: number;
+  success: boolean;
+  data: {
+    result: FlightResult[];
+    completed_sub_tasks: number;
+    total_sub_tasks: number;
+  };
 }

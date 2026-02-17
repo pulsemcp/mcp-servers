@@ -50,19 +50,19 @@ The tests will:
 ## Latest Test Results
 
 **Test Date:** 2026-02-17
-**Branch:** ao/fix-pointsyeah-404-explorer-api
-**Commit:** 5fa9891
+**Branch:** tadasant/fix-pointsyeah-wrong-routes
+**Commit:** bfe7414
 **Tested By:** Claude
 **Environment:** Linux, Node.js
 
 ### Manual Test Results
 
-**Status:** 6 passed, 5 skipped, 0 failed (11 total)
-**Test Duration:** ~3s
+**Status:** 10 passed, 0 skipped, 0 failed (10 total)
+**Test Duration:** ~4s
 
-Token validation detected the token is expired/revoked. Tests that require a valid token are properly skipped via `ctx.skip()`.
+Tested with a valid (non-revoked) POINTSYEAH_REFRESH_TOKEN. All auth-dependent tests ran.
 
-**Passing tests (6/11):**
+**Passing tests (10/10):**
 
 - **Unauthenticated Mode (5 tests):**
   - Should expose all tools even when unauthenticated (3 tools: search_flights, get_search_history, set_refresh_token)
@@ -70,23 +70,20 @@ Token validation detected the token is expired/revoked. Tests that require a val
   - `set_refresh_token` should include instructions for obtaining token (document.cookie, pointsyeah.com)
   - Should reject invalid/short tokens
   - Should show config resource with `needs_token` status
-- **Authenticated Mode (1 test):**
+- **Authenticated Mode (4 tests):**
   - Should expose all tools regardless of auth state
-
-**Skipped tests (5/11):** These require a valid (non-revoked) POINTSYEAH_REFRESH_TOKEN:
-
-- Config resource with authenticated status
-- get_search_history
-- search_flights validation
-- Direct Client Cognito auth
-- Direct Client Explorer search API
+  - Config resource with authenticated status
+  - get_search_history (returns real search history data)
+  - search_flights input validation (rejects round-trip without returnDate)
+- **Direct Client (1 test):**
+  - Cognito auth token refresh
 
 ### Functional + Integration Test Results
 
-**Status:** All functional tests passed (11/11), all integration tests passed (4/4)
+**Status:** All functional tests passed (19/19)
 
 **Details:**
 
-All tools are always registered at startup. Auth-requiring tools (`search_flights`, `get_search_history`) check authentication state at call time and return a clear error when not authenticated. This works with all MCP clients regardless of `tools/list_changed` support.
+All tools are always registered at startup. Auth-requiring tools (`search_flights`, `get_search_history`) check authentication state at call time and return a clear error when not authenticated. The live search flow (Playwright-based `create_task` + HTTP polling `fetch_result`) is tested with mocked dependencies and fake timers.
 
-**Summary:** All 6 unauthenticated manual tests pass. Auth-dependent tests are properly skipped via Vitest `ctx.skip()` when no valid token is available. Functional tests (11) and integration tests (4) all pass.
+**Summary:** All 10 manual tests pass with a valid refresh token. All 19 functional tests pass.

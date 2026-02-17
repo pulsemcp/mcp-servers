@@ -5,6 +5,34 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+## [0.2.2] - 2026-02-17
+
+### Fixed
+
+- **BREAKING**: Fixed search returning results for completely wrong routes (e.g., ICN->AMS when searching SFO->SAN)
+  - Root cause: the explorer API (`/v2/live/explorer/search`) is a pre-crawled deals database that ignores search parameters entirely, returning random cached results
+  - Migrated back to the live search API (`api2.pointsyeah.com`) which performs real-time route-specific searches
+  - Uses Playwright to navigate to the PointsYeah search page, intercepting the encrypted `create_task` request, then polls `fetch_result` for incremental results
+  - This is the same approach used by the PointsYeah website itself for its "Live Search" feature
+- Fixed `get_search_history` failing due to dead `api.pointsyeah.com` host; migrated to `api2.pointsyeah.com`
+
+### Changed
+
+- Re-added `playwright` as a dependency (required for the live search encrypted request flow)
+- Updated `search_flights` tool description to note live search timing (30-90 seconds)
+- Added `search.ts` (Playwright-based task creation) and `fetch-results.ts` (HTTP polling)
+- Added validation of `success` field in poll responses
+- Added timeout warning when polling exhausts max attempts without completing
+- Fixed results summary text to show flight option count instead of misleading "total in database"
+
+### Removed
+
+- Removed `explorer-search.ts` and all Explorer API types (no longer used)
+- Removed explorer API manual test (the API returns wrong routes)
+- Removed dead `API_BASE` constant (`api.pointsyeah.com/v2/live` is unreachable)
+
 ## [0.2.1] - 2026-02-17
 
 ### Fixed
