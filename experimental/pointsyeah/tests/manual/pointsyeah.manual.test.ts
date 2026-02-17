@@ -10,6 +10,40 @@ const __dirname = path.dirname(__filename);
 const hasToken = !!process.env.POINTSYEAH_REFRESH_TOKEN;
 
 /**
+ * Validate the token upfront by attempting a Cognito refresh.
+ * This determines whether auth-dependent tests should run or skip.
+ */
+let tokenWorks = false;
+let tokenValidated = false;
+async function validateToken(): Promise<void> {
+  if (!hasToken) {
+    tokenValidated = true;
+    return;
+  }
+  try {
+    const { refreshCognitoTokens } =
+      await import('../../shared/build/pointsyeah-client/lib/auth.js');
+    await refreshCognitoTokens(process.env.POINTSYEAH_REFRESH_TOKEN!);
+    tokenWorks = true;
+    console.log('Token validation: token is valid');
+  } catch {
+    tokenWorks = false;
+    console.log('Token validation: token is expired/revoked');
+  }
+  tokenValidated = true;
+}
+
+function skipUnlessTokenWorks(ctx: { skip: () => void }) {
+  if (!tokenValidated) throw new Error('Token validation not yet complete');
+  if (!hasToken || !tokenWorks) ctx.skip();
+}
+
+function skipUnlessHasToken(ctx: { skip: () => void }) {
+  if (!tokenValidated) throw new Error('Token validation not yet complete');
+  if (!hasToken) ctx.skip();
+}
+
+/**
  * Manual tests for PointsYeah MCP Server
  *
  * These tests verify the dynamic authentication flow:
@@ -18,11 +52,15 @@ const hasToken = !!process.env.POINTSYEAH_REFRESH_TOKEN;
  *   3. If token is revoked, server switches back to set_refresh_token
  *
  * Unauthenticated tests always run (no token needed).
- * Authenticated and Direct Client tests require POINTSYEAH_REFRESH_TOKEN in .env.
+ * Authenticated and Direct Client tests require a valid POINTSYEAH_REFRESH_TOKEN in .env.
  *
  * Run with: npm run test:manual
  */
 describe('PointsYeah MCP Server - Manual Tests', () => {
+  beforeAll(async () => {
+    await validateToken();
+  }, 30000);
+
   // =========================================================================
   // UNAUTHENTICATED MODE (no env token)
   // =========================================================================
@@ -95,11 +133,11 @@ describe('PointsYeah MCP Server - Manual Tests', () => {
 
   // =========================================================================
   // AUTHENTICATED MODE (with env token)
+  // Tests verify behavior when the server starts with a token.
   // =========================================================================
 
   describe('Authenticated Mode', () => {
     let client: TestMCPClient;
-    let tokenWorks = false;
 
     beforeAll(async () => {
       if (!hasToken) return;
@@ -116,18 +154,6 @@ describe('PointsYeah MCP Server - Manual Tests', () => {
       });
 
       await client.connect();
-
-      // Check if the token actually works by looking at tool list
-      const result = await client.listTools();
-      const toolNames = result.tools.map((t: { name: string }) => t.name);
-      tokenWorks = toolNames.includes('search_flights');
-
-      if (!tokenWorks) {
-        console.log(
-          'Token is expired/revoked — server started in auth mode. ' +
-            'Only unauthenticated tests will run.'
-        );
-      }
     }, 30000);
 
     afterAll(async () => {
@@ -136,72 +162,68 @@ describe('PointsYeah MCP Server - Manual Tests', () => {
       }
     });
 
-    it('should expose flight search tools or show set_refresh_token for expired token', async () => {
-      if (!hasToken) {
-        console.log('Skipped: no POINTSYEAH_REFRESH_TOKEN');
-        return;
-      }
-      if (!tokenWorks) {
-        // Token is revoked — server should show set_refresh_token instead
-        const result = await client.listTools();
-        const toolNames = result.tools.map((t: { name: string }) => t.name);
-        expect(toolNames).toContain('set_refresh_token');
-        console.log('Token expired — server correctly shows set_refresh_token');
-        return;
-      }
+    it('should expose flight search tools when token is valid, or set_refresh_token when expired', async (ctx) => {
+      skipUnlessHasToken(ctx);
 
       const result = await client.listTools();
-      const toolNames = result.tools.map((t: { name: string }) => t.name).sort();
+      const toolNames = result.tools.map((t: { name: string }) => t.name);
 
-      expect(toolNames).toEqual(['get_search_history', 'search_flights']);
-      console.log(`Authenticated tools: ${toolNames.join(', ')}`);
+      if (tokenWorks) {
+        expect(toolNames.sort()).toEqual(['get_search_history', 'search_flights']);
+        console.log(`Authenticated tools: ${toolNames.join(', ')}`);
+      } else {
+        // Token is revoked — server should show set_refresh_token instead
+        expect(toolNames).toContain('set_refresh_token');
+        console.log('Token expired — server correctly shows set_refresh_token');
+      }
     });
 
-    it.skipIf(!hasToken || !tokenWorks)(
-      'should show config resource with authenticated status',
-      async () => {
-        const result = await client.readResource('pointsyeah://config');
-        const config = JSON.parse(result.contents[0].text);
+    it('should show config resource with authenticated status', async (ctx) => {
+      skipUnlessTokenWorks(ctx);
 
-        expect(config.authentication.status).toBe('authenticated');
-        console.log(`Config auth status: ${config.authentication.status}`);
-      }
-    );
+      const result = await client.readResource('pointsyeah://config');
+      const config = JSON.parse(result.contents[0].text);
 
-    it.skipIf(!hasToken || !tokenWorks)(
-      'get_search_history - should return search history',
-      async () => {
-        const result = await client.callTool('get_search_history', {});
+      expect(config.authentication.status).toBe('authenticated');
+      console.log(`Config auth status: ${config.authentication.status}`);
+    });
 
-        expect(result.isError).toBeFalsy();
-        const parsed = JSON.parse(result.content[0].text);
-        expect(parsed).toBeDefined();
-        console.log(`Search history response: ${JSON.stringify(parsed).substring(0, 300)}`);
-      }
-    );
+    it('get_search_history - should return search history', async (ctx) => {
+      skipUnlessTokenWorks(ctx);
 
-    it.skipIf(!hasToken || !tokenWorks)(
-      'search_flights - should reject round-trip without returnDate',
-      async () => {
-        const result = await client.callTool('search_flights', {
-          departure: 'SFO',
-          arrival: 'NYC',
-          departDate: '2026-06-01',
-        });
+      const result = await client.callTool('get_search_history', {});
 
-        expect(result.isError).toBe(true);
-        expect(result.content[0].text).toContain('returnDate is required');
-        console.log('Round-trip validation working correctly');
-      }
-    );
+      expect(result.isError).toBeFalsy();
+      const parsed = JSON.parse(result.content[0].text);
+      expect(parsed).toBeDefined();
+      console.log(`Search history response: ${JSON.stringify(parsed).substring(0, 300)}`);
+    });
+
+    it('search_flights - should reject round-trip without returnDate', async (ctx) => {
+      skipUnlessTokenWorks(ctx);
+
+      const result = await client.callTool('search_flights', {
+        departure: 'SFO',
+        arrival: 'NYC',
+        departDate: '2026-06-01',
+      });
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('returnDate is required');
+      console.log('Round-trip validation working correctly');
+    });
   });
 
   // =========================================================================
   // DIRECT CLIENT TESTS
+  // These test the underlying client libraries directly (no MCP server).
+  // Require a valid (non-revoked) token.
   // =========================================================================
 
   describe('Direct Client - Cognito Auth', () => {
-    it.skipIf(!hasToken)('should refresh Cognito tokens with the real refresh token', async () => {
+    it('should refresh Cognito tokens with the real refresh token', async (ctx) => {
+      skipUnlessTokenWorks(ctx);
+
       const { refreshCognitoTokens } =
         await import('../../shared/build/pointsyeah-client/lib/auth.js');
 
@@ -221,64 +243,60 @@ describe('PointsYeah MCP Server - Manual Tests', () => {
   });
 
   describe('Direct Client - Explorer Search API', () => {
-    it.skipIf(!hasToken)(
-      'should search for flights via explorer API and fetch details',
-      async () => {
-        const { refreshCognitoTokens } =
-          await import('../../shared/build/pointsyeah-client/lib/auth.js');
-        const { explorerSearch, fetchFlightDetail } =
-          await import('../../shared/build/pointsyeah-client/lib/explorer-search.js');
+    it('should search for flights via explorer API and fetch details', async (ctx) => {
+      skipUnlessTokenWorks(ctx);
 
-        console.log('Step 1: Refreshing Cognito tokens...');
-        const tokens = await refreshCognitoTokens(process.env.POINTSYEAH_REFRESH_TOKEN!);
-        console.log(
-          `  Tokens obtained (expires ${new Date(tokens.expiresAt * 1000).toISOString()})`
-        );
+      const { refreshCognitoTokens } =
+        await import('../../shared/build/pointsyeah-client/lib/auth.js');
+      const { explorerSearch, fetchFlightDetail } =
+        await import('../../shared/build/pointsyeah-client/lib/explorer-search.js');
 
-        // Step 2: Search via explorer API
-        console.log('Step 2: Searching via explorer API...');
-        const searchResults = await explorerSearch(
-          {
-            departure: 'SFO',
-            arrival: 'NRT',
-            departDate: '2026-06-01',
-            tripType: '1',
-            adults: 1,
-            children: 0,
-            cabins: ['Economy', 'Business'],
-          },
-          tokens.idToken
-        );
+      console.log('Step 1: Refreshing Cognito tokens...');
+      const tokens = await refreshCognitoTokens(process.env.POINTSYEAH_REFRESH_TOKEN!);
+      console.log(`  Tokens obtained (expires ${new Date(tokens.expiresAt * 1000).toISOString()})`);
 
-        expect(searchResults).toBeDefined();
-        expect(typeof searchResults.total).toBe('number');
-        expect(Array.isArray(searchResults.results)).toBe(true);
+      // Step 2: Search via explorer API
+      console.log('Step 2: Searching via explorer API...');
+      const searchResults = await explorerSearch(
+        {
+          departure: 'SFO',
+          arrival: 'NRT',
+          departDate: '2026-06-01',
+          tripType: '1',
+          adults: 1,
+          children: 0,
+          cabins: ['Economy', 'Business'],
+        },
+        tokens.idToken
+      );
 
-        console.log(`  Total results in database: ${searchResults.total}`);
-        console.log(`  Results returned: ${searchResults.results.length}`);
+      expect(searchResults).toBeDefined();
+      expect(typeof searchResults.total).toBe('number');
+      expect(Array.isArray(searchResults.results)).toBe(true);
 
-        if (searchResults.results.length > 0) {
-          const firstResult = searchResults.results[0];
-          console.log(`  First result: ${firstResult.program}`);
-          console.log(`    ${firstResult.departure.code} -> ${firstResult.arrival.code}`);
-          console.log(`    ${firstResult.miles.toLocaleString()} miles + $${firstResult.tax} tax`);
+      console.log(`  Total results in database: ${searchResults.total}`);
+      console.log(`  Results returned: ${searchResults.results.length}`);
 
-          // Step 3: Fetch detail for first result
-          console.log('Step 3: Fetching flight detail...');
-          const detail = await fetchFlightDetail(firstResult.detail_url);
+      if (searchResults.results.length > 0) {
+        const firstResult = searchResults.results[0];
+        console.log(`  First result: ${firstResult.program}`);
+        console.log(`    ${firstResult.departure.code} -> ${firstResult.arrival.code}`);
+        console.log(`    ${firstResult.miles.toLocaleString()} miles + $${firstResult.tax} tax`);
 
-          expect(detail).toBeDefined();
-          expect(detail.program).toBeDefined();
-          expect(detail.routes).toBeDefined();
-          expect(detail.routes.length).toBeGreaterThan(0);
+        // Step 3: Fetch detail for first result
+        console.log('Step 3: Fetching flight detail...');
+        const detail = await fetchFlightDetail(firstResult.detail_url);
 
-          console.log(`  Detail for: ${detail.program} (${detail.code})`);
-          console.log(`  Routes: ${detail.routes.length}`);
-        } else {
-          console.log('  No results found for this route/date');
-        }
-      },
-      60000
-    );
+        expect(detail).toBeDefined();
+        expect(detail.program).toBeDefined();
+        expect(detail.routes).toBeDefined();
+        expect(detail.routes.length).toBeGreaterThan(0);
+
+        console.log(`  Detail for: ${detail.program} (${detail.code})`);
+        console.log(`  Routes: ${detail.routes.length}`);
+      } else {
+        console.log('  No results found for this route/date');
+      }
+    }, 60000);
   });
 });

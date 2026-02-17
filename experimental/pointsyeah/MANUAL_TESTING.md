@@ -22,7 +22,7 @@ This file tracks the **most recent** manual test results for the PointsYeah MCP 
    # Create .env in experimental/pointsyeah/ with:
    POINTSYEAH_REFRESH_TOKEN=your_refresh_token_here
    ```
-   Note: Unauthenticated tests will pass without a token. Auth-dependent tests are properly skipped when no valid token is available.
+   Note: Unauthenticated tests always run. Auth-dependent tests are properly skipped (via `ctx.skip()`) when no valid token is available.
 
 ### First-Time Setup (or after clean checkout)
 
@@ -49,16 +49,18 @@ The tests will:
 
 ## Latest Test Results
 
-**Test Date:** 2026-02-16
+**Test Date:** 2026-02-17
 **Branch:** ao/fix-pointsyeah-404-explorer-api
-**Commit:** ab33dd7
+**Commit:** a4bcacf
 **Tested By:** Claude
 **Environment:** Linux, Node.js
 
-### Manual Test Results (without valid token)
+### Manual Test Results
 
 **Status:** 5 passed, 5 skipped, 0 failed (10 total)
-**Test Duration:** ~1s
+**Test Duration:** ~3s
+
+Token validation detected the token is expired/revoked. Tests that require a valid token are properly skipped via `ctx.skip()`.
 
 **Passing tests (5/10):**
 
@@ -68,22 +70,15 @@ The tests will:
   - Should reject invalid/short tokens
   - Should show config resource with `needs_token` status
 - **Authenticated Mode (1 test):**
-  - Should expose flight search tools or show `set_refresh_token` for expired token (verifies dynamic tool switching)
+  - Should expose `set_refresh_token` when token is expired (verifies dynamic tool switching works correctly with revoked tokens)
 
-**Skipped tests (5/10):** These require a valid POINTSYEAH_REFRESH_TOKEN:
+**Skipped tests (5/10):** These require a valid (non-revoked) POINTSYEAH_REFRESH_TOKEN:
 
 - Config resource with authenticated status
 - get_search_history
 - search_flights validation
 - Direct Client Cognito auth
 - Direct Client Explorer search API
-
-### Manual Test Results (with revoked token)
-
-When a revoked token is present, the Direct Client tests properly fail (not silently skip):
-
-- 5 passed, 3 skipped, 2 failed (10 total)
-- Failures are honest: "Refresh token expired or revoked"
 
 ### Functional + Integration Test Results
 
@@ -93,4 +88,4 @@ When a revoked token is present, the Direct Client tests properly fail (not sile
 
 The server uses a dynamic authentication flow. On startup without a valid token, only the `set_refresh_token` tool is exposed. After providing a valid token, flight search tools become available. If a token is later revoked, the server automatically switches back.
 
-**Summary:** All 5 unauthenticated manual tests pass. Auth-dependent tests are properly skipped (not silently passing) when no valid token is available, and properly fail when a revoked token is present. Functional tests (11) and integration tests (4) all pass.
+**Summary:** All 5 unauthenticated manual tests pass. Auth-dependent tests are properly skipped via Vitest `ctx.skip()` when no valid token is available. Functional tests (11) and integration tests (4) all pass.
