@@ -20,6 +20,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Re-added `playwright` as a dependency (required for the live search encrypted request flow)
 - Updated `search_flights` tool description to note live search timing (30-90 seconds)
 - Restored `search.ts` (Playwright-based task creation) and `fetch-results.ts` (HTTP polling)
+- Added validation of `success` field in poll responses
+- Added timeout warning when polling exhausts max attempts without completing
+
+### Removed
+
+- Removed `explorer-search.ts` and all Explorer API types (no longer used)
+- Removed explorer API manual test (the API returns wrong routes)
 
 ## [0.2.1] - 2026-02-17
 

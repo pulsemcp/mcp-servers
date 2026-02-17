@@ -117,6 +117,10 @@ export class PointsYeahClient implements IPointsYeahClient {
 
       lastResults = await this.withAuth((idToken) => fetchSearchResults(task.task_id, idToken));
 
+      if (!lastResults.success) {
+        throw new Error(`Search polling failed (code: ${lastResults.code})`);
+      }
+
       logDebug(
         'search',
         `Poll ${i + 1}: ${lastResults.data.completed_sub_tasks}/${lastResults.data.total_sub_tasks} sub-tasks complete, ${lastResults.data.result.length} results`
@@ -129,6 +133,13 @@ export class PointsYeahClient implements IPointsYeahClient {
 
     if (!lastResults) {
       throw new Error('No results received from search');
+    }
+
+    if (lastResults.data.completed_sub_tasks < lastResults.data.total_sub_tasks) {
+      logWarning(
+        'search',
+        `Search timed out: ${lastResults.data.completed_sub_tasks}/${lastResults.data.total_sub_tasks} sub-tasks complete`
+      );
     }
 
     return {
@@ -177,7 +188,8 @@ export function createMCPServer(options: CreateMCPServerOptions) {
 
 /**
  * Default client factory that creates a PointsYeahClient with Playwright support.
- * Playwright is loaded dynamically so it's an optional dependency.
+ * Playwright is loaded dynamically to avoid import-time errors in environments
+ * where it may not be installed.
  */
 export function defaultClientFactory(): IPointsYeahClient {
   const playwrightDeps: PlaywrightSearchDeps = {
