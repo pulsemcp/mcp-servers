@@ -33,7 +33,7 @@ import type {
 } from '../types.js';
 
 /** Raw agent root shape as returned by the Rails API */
-interface RawAgentRoot {
+export interface RawAgentRoot {
   name: string;
   display_name: string;
   description: string;
@@ -46,15 +46,23 @@ interface RawAgentRoot {
   default_mcp_servers?: string[];
 }
 
-/** Raw configs response shape as returned by the Rails API */
+/**
+ * Raw configs response shape as returned by the Rails API.
+ * Note: mcp_servers and stop_conditions field names match our TypeScript
+ * interfaces directly. Only agent_roots fields diverge from the API naming.
+ */
 interface RawConfigsResponse {
   mcp_servers: MCPServerInfo[];
   agent_roots: RawAgentRoot[];
   stop_conditions: StopConditionInfo[];
 }
 
-/** Maps a raw API agent root to the normalized AgentRootInfo interface */
-function mapAgentRoot(raw: RawAgentRoot): AgentRootInfo {
+/**
+ * Maps a raw API agent root to the normalized AgentRootInfo interface.
+ * The `custom` and `default` fields from the API are intentionally omitted
+ * as they are not needed by MCP clients.
+ */
+export function mapAgentRoot(raw: RawAgentRoot): AgentRootInfo {
   return {
     name: raw.name,
     title: raw.display_name,
