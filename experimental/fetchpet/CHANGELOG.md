@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.2] - 2026-02-20
+
+### Fixed
+
+- Fix claim submission failing when "Medical records required" confirmation dialog appears after clicking Submit. The dialog's overlay intercepted pointer events, causing a 30-second timeout. Now detects and clicks "Submit anyway" to proceed
+- Fix invoice upload not handling the "Upload an invoice" dialog that appears after file selection, asking for invoice date and amount. Now fills the date via calendar picker with month navigation and amount, then clicks Continue
+- Fix date input using calendar picker with month navigation instead of `keyboard.type()`, which does not work with react-datepicker (calendar intercepts keystrokes)
+
 ## [0.1.1] - 2026-02-17
 
 ### Changed

@@ -377,7 +377,131 @@ export class FetchPetClient implements IFetchPetClient {
       const invoiceUpload = await page.$('input[type="file"]');
       if (invoiceUpload) {
         await invoiceUpload.setInputFiles(invoiceFilePath);
-        await page.waitForTimeout(1000);
+
+        // After uploading, an "Upload an invoice" dialog may appear asking for
+        // invoice date and amount. Wait for the dialog to appear rather than
+        // using a fixed timeout, which could miss slow-loading dialogs.
+        const invoiceDateInput = await page
+          .waitForSelector('input[placeholder="MM/DD/YYYY"]', { timeout: 5000 })
+          .catch(() => null);
+        if (invoiceDateInput) {
+          // Parse the invoice date to extract month, day, and year.
+          // Supports both YYYY-MM-DD (ISO) and MM/DD/YYYY (US) input formats.
+          let targetMonth = 0;
+          let targetDay = 0;
+          let targetYear = 0;
+          const isoMatch = invoiceDate.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+          const usMatch = invoiceDate.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+          if (isoMatch) {
+            [, targetYear, targetMonth, targetDay] = isoMatch.map(Number);
+          } else if (usMatch) {
+            [, targetMonth, targetDay, targetYear] = usMatch.map(Number);
+          }
+
+          if (targetMonth && targetDay && targetYear) {
+            // Use the calendar picker to select the date. keyboard.type() does not
+            // work with react-datepicker because clicking the input opens the calendar
+            // which intercepts keystrokes. Instead, navigate months and click the day.
+            await invoiceDateInput.click();
+            await page.waitForTimeout(500);
+
+            // Navigate to the correct month/year by clicking back/forward arrows
+            const monthNames = [
+              '',
+              'January',
+              'February',
+              'March',
+              'April',
+              'May',
+              'June',
+              'July',
+              'August',
+              'September',
+              'October',
+              'November',
+              'December',
+            ];
+            const targetLabel = `${monthNames[targetMonth]} ${targetYear}`;
+
+            for (let i = 0; i < 24; i++) {
+              const currentLabel = await page
+                .$eval('.react-datepicker__current-month', (el) => el.textContent)
+                .catch(() => null);
+              if (currentLabel === targetLabel) break;
+
+              // Determine direction: parse current month/year to compare
+              const currentMatch = currentLabel?.match(/^(\w+)\s+(\d{4})$/);
+              if (!currentMatch) {
+                validationErrors.push(
+                  `Could not parse calendar header "${currentLabel}" while navigating to ${targetLabel}`
+                );
+                break;
+              }
+              const currentMonthIdx = monthNames.indexOf(currentMatch[1]);
+              const currentYearNum = parseInt(currentMatch[2], 10);
+              const currentTotal = currentYearNum * 12 + currentMonthIdx;
+              const targetTotal = targetYear * 12 + targetMonth;
+
+              if (targetTotal < currentTotal) {
+                const prevBtn = await page.$('.react-datepicker__navigation--previous');
+                if (prevBtn) {
+                  await prevBtn.click();
+                  await page.waitForTimeout(300);
+                } else {
+                  validationErrors.push('Calendar does not allow navigating further back');
+                  break;
+                }
+              } else {
+                const nextBtn = await page.$('.react-datepicker__navigation--next');
+                if (nextBtn) {
+                  await nextBtn.click();
+                  await page.waitForTimeout(300);
+                } else {
+                  validationErrors.push('Calendar does not allow navigating further forward');
+                  break;
+                }
+              }
+            }
+
+            // Click the target day. react-datepicker uses 3-digit zero-padded
+            // day classes (e.g., --006 for the 6th, --015 for the 15th).
+            const dayPadded = String(targetDay).padStart(3, '0');
+            const dayEl = await page.$(
+              `.react-datepicker__day--${dayPadded}:not(.react-datepicker__day--outside-month)`
+            );
+            if (dayEl) {
+              await dayEl.click();
+              await page.waitForTimeout(500);
+            } else {
+              validationErrors.push(`Could not find day ${targetDay} in the calendar picker`);
+            }
+          } else {
+            validationErrors.push(
+              `Could not parse invoice date "${invoiceDate}". Expected YYYY-MM-DD or MM/DD/YYYY format.`
+            );
+          }
+
+          // Fill invoice amount
+          const amountInput = await page.$('input.invoice-amount');
+          if (amountInput) {
+            // Strip $ and any whitespace from the amount
+            const cleanAmount = invoiceAmount.replace(/[$\s,]/g, '');
+            await amountInput.click();
+            await amountInput.fill(cleanAmount);
+            await page.waitForTimeout(500);
+          } else {
+            validationErrors.push('Could not find invoice amount field in upload dialog');
+          }
+
+          // Click Continue to close the invoice upload dialog
+          const continueBtn = await page.$('button:has-text("Continue")');
+          if (continueBtn) {
+            await continueBtn.click();
+            await page.waitForTimeout(2000);
+          } else {
+            validationErrors.push('Could not find Continue button in invoice upload dialog');
+          }
+        }
       } else {
         validationErrors.push('Could not find invoice file upload field');
       }
@@ -507,9 +631,9 @@ The user MUST explicitly confirm they want to submit this claim before calling s
       };
     }
 
-    // Find and click the submit button
+    // Find and click the submit button on the claim form
     const submitButton = await page.$(
-      'button[type="submit"], button:has-text("Submit"), button:has-text("File Claim"), button:has-text("Submit Claim")'
+      'button.filled-btn:has-text("Submit"), button[type="submit"]:has-text("Submit"), button:has-text("File Claim"), button:has-text("Submit Claim")'
     );
 
     if (!submitButton) {
@@ -520,6 +644,18 @@ The user MUST explicitly confirm they want to submit this claim before calling s
     }
 
     await submitButton.click();
+
+    // After clicking Submit, a confirmation dialog may appear (e.g., "Medical records
+    // required to process your claim") with "Go Back" and "Submit anyway" buttons.
+    // This is a second MuiDialog that overlays the claim form and intercepts pointer events.
+    // Use waitForSelector to reliably detect it rather than a fixed timeout.
+    const submitAnywayButton = await page
+      .waitForSelector('button:has-text("Submit anyway")', { timeout: 5000 })
+      .catch(() => null);
+    if (submitAnywayButton) {
+      await submitAnywayButton.click();
+    }
+
     await page.waitForTimeout(3000);
 
     // Check for success confirmation

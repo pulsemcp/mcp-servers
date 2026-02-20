@@ -4,8 +4,8 @@ This file tracks manual testing results for the Fetch Pet MCP Server.
 
 ## Latest Test Run
 
-**Date:** 2026-02-17
-**Commit:** 3f977c6
+**Date:** 2026-02-20
+**Commit:** 7920291
 **Tester:** Automated via Agent Orchestrator
 
 ### Test Results
@@ -17,6 +17,18 @@ This file tracks manual testing results for the Fetch Pet MCP Server.
 | prepare_claim_to_submit | PASS (WARNING) | Correctly reports "Invoice file is required" - expected without file |
 | submit_claim            | SKIPPED        | Intentionally skipped to avoid real claim submission                 |
 
+### Playwright Manual Verification (0.1.2 changes)
+
+Manually verified via Playwright browser automation:
+
+1. **Invoice upload dialog handling**: Confirmed that after uploading an invoice file, a "Upload an invoice" MUI dialog appears asking for invoice date (MM/DD/YYYY date picker) and amount (input.invoice-amount). Verified the date picker uses `.react-datepicker__day` elements with month navigation via `.react-datepicker__navigation--previous/next` arrows. The Continue button dismisses the dialog.
+
+2. **Medical records confirmation dialog**: Confirmed that after clicking Submit on the claim form, a second MUI dialog (`MuiDialog-root generic-dialog undefined`) appears with "Medical records required to process your claim" message and "Go Back" / "Submit anyway" buttons. This dialog overlay was intercepting pointer events on the Submit button, causing 30-second timeouts. The fix detects and clicks "Submit anyway" to proceed.
+
+3. **End-to-end claim submission**: Successfully submitted a real claim for Nova (pet) at Twin Cities Vet Hospital, $53.52 for Nexgard Plus, invoice date 02/06/2026. The full flow completed: form fill -> invoice upload -> invoice dialog (date via calendar picker + amount) -> Submit -> "Medical records required" dialog -> "Submit anyway" -> "Claim received" confirmation. Claim status: Received.
+
+4. **Date input approach**: Verified that `keyboard.type()` does NOT work with react-datepicker (calendar opens on click and intercepts keystrokes, leaving input empty). Calendar picker approach with month navigation arrows works correctly, including cross-month navigation (tested navigating from February 2026 back to January 2026).
+
 ### Test Coverage
 
 - **Login flow**: WORKING - Successfully logs in using waitForFunction polling (replaces waitForURL which hung on third-party resources)
@@ -25,6 +37,8 @@ This file tracks manual testing results for the Fetch Pet MCP Server.
 - **Historical claims parsing**: WORKING - Correctly extracts claim IDs, dates, amounts from table layout (clicks "View all" to expand)
 - **Consolidated claims**: WORKING - Single `get_claims` tool returns both active and historical claims in one call
 - **Form submission**: WORKING - Opens claim submission modal and validates form fields (details field supports both textarea and input)
+- **Invoice upload dialog**: WORKING - Handles post-upload dialog with date picker and amount input
+- **Confirmation dialog**: WORKING - Handles "Medical records required" dialog by clicking "Submit anyway"
 - **Error detection**: WORKING - Narrowed error selectors avoid false positives from layout CSS classes
 
 ### Known Limitations

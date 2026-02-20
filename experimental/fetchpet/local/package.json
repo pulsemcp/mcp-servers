@@ -1,6 +1,6 @@
 {
   "name": "fetchpet-mcp-server",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "MCP server for Fetch Pet insurance claims management with Playwright automation",
   "main": "build/index.js",
   "type": "module",
