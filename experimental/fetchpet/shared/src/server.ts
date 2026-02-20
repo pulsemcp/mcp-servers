@@ -383,33 +383,34 @@ export class FetchPetClient implements IFetchPetClient {
         // invoice date and amount. Handle it if present.
         const invoiceDateInput = await page.$('input[placeholder="MM/DD/YYYY"]');
         if (invoiceDateInput) {
-          // Fill invoice date using the date picker.
-          // Parse the date from either YYYY-MM-DD or MM/DD/YYYY format.
-          let dayOfMonth: string | null = null;
+          // Parse the invoice date into MM/DD/YYYY format for the date picker.
+          // Supports both YYYY-MM-DD (ISO) and MM/DD/YYYY (US) input formats.
+          let dateForPicker: string | null = null;
           const isoMatch = invoiceDate.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
           const usMatch = invoiceDate.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
           if (isoMatch) {
-            dayOfMonth = parseInt(isoMatch[3], 10).toString();
+            const [, year, month, day] = isoMatch;
+            dateForPicker = `${month.padStart(2, '0')}/${day.padStart(2, '0')}/${year}`;
           } else if (usMatch) {
-            dayOfMonth = parseInt(usMatch[2], 10).toString();
+            dateForPicker = invoiceDate;
           }
 
-          if (dayOfMonth) {
+          if (dateForPicker) {
+            // Type the date directly into the input field rather than using the
+            // calendar picker. This avoids issues with month/year navigation when
+            // the invoice date is in a different month than the calendar default.
             await invoiceDateInput.click();
-            await page.waitForTimeout(500);
-
-            // Select the day from the calendar picker
-            const dayButtons = await page.$$(
-              '.react-datepicker__day:not(.react-datepicker__day--outside-month)'
-            );
-            for (const dayBtn of dayButtons) {
-              const dayText = await dayBtn.textContent();
-              if (dayText?.trim() === dayOfMonth) {
-                await dayBtn.click();
-                break;
-              }
+            await page.keyboard.type(dateForPicker);
+            // Click outside the date picker to close it
+            const dialogTitle = await page.$('h1, .claimForm-dialog-title');
+            if (dialogTitle) {
+              await dialogTitle.click();
             }
             await page.waitForTimeout(500);
+          } else {
+            validationErrors.push(
+              `Could not parse invoice date "${invoiceDate}". Expected YYYY-MM-DD or MM/DD/YYYY format.`
+            );
           }
 
           // Fill invoice amount
@@ -420,6 +421,8 @@ export class FetchPetClient implements IFetchPetClient {
             await amountInput.click();
             await amountInput.fill(cleanAmount);
             await page.waitForTimeout(500);
+          } else {
+            validationErrors.push('Could not find invoice amount field in upload dialog');
           }
 
           // Click Continue to close the invoice upload dialog
@@ -427,6 +430,8 @@ export class FetchPetClient implements IFetchPetClient {
           if (continueBtn) {
             await continueBtn.click();
             await page.waitForTimeout(2000);
+          } else {
+            validationErrors.push('Could not find Continue button in invoice upload dialog');
           }
         }
       } else {
@@ -558,10 +563,7 @@ The user MUST explicitly confirm they want to submit this claim before calling s
       };
     }
 
-    // Find and click the submit button on the claim form.
-    // The claim form is inside a MuiDialog with class "hide-claimForm".
-    // We need to target the submit button within this specific dialog to avoid
-    // accidentally clicking buttons in other overlapping dialogs.
+    // Find and click the submit button on the claim form
     const submitButton = await page.$(
       'button.filled-btn:has-text("Submit"), button[type="submit"]:has-text("Submit"), button:has-text("File Claim"), button:has-text("Submit Claim")'
     );
@@ -574,16 +576,19 @@ The user MUST explicitly confirm they want to submit this claim before calling s
     }
 
     await submitButton.click();
-    await page.waitForTimeout(3000);
 
     // After clicking Submit, a confirmation dialog may appear (e.g., "Medical records
     // required to process your claim") with "Go Back" and "Submit anyway" buttons.
     // This is a second MuiDialog that overlays the claim form and intercepts pointer events.
-    const submitAnywayButton = await page.$('button:has-text("Submit anyway")');
+    // Use waitForSelector to reliably detect it rather than a fixed timeout.
+    const submitAnywayButton = await page
+      .waitForSelector('button:has-text("Submit anyway")', { timeout: 5000 })
+      .catch(() => null);
     if (submitAnywayButton) {
       await submitAnywayButton.click();
-      await page.waitForTimeout(3000);
     }
+
+    await page.waitForTimeout(3000);
 
     // Check for success confirmation
     const successMessage = await page.$(
