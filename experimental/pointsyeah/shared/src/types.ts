@@ -114,7 +114,6 @@ export interface FlightSearchResponse {
   success: boolean;
   data: {
     result: FlightResult[];
-    completed_sub_tasks: number;
-    total_sub_tasks: number;
+    status: string; // "processing" | "done"
   };
 }
