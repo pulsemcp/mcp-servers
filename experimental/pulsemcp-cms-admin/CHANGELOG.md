@@ -20,6 +20,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   - `force_trigger_good_job_cron` - Force trigger a cron schedule immediately
   - `cleanup_good_jobs` - Clean up old jobs by status and age
 
+### Fixed
+
+- Fixed `list_good_job_processes` to parse the actual API response format (nested `data` wrapper with `state` object containing `hostname`, `pid`, and `schedulers`)
+- Fixed `get_good_job_queue_statistics` to parse per-status counts from the `by_status` nested object in the API response
+
 ## [0.6.8] - 2026-01-29
 
 ### Changed

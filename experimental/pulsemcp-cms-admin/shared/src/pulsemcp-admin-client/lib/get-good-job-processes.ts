@@ -1,12 +1,23 @@
 import type { GoodJobProcess } from '../../types.js';
 
+interface RailsScheduler {
+  queues: string;
+  max_threads: number;
+}
+
 interface RailsGoodJobProcess {
   id: string;
-  hostname: string;
-  pid: number;
-  queues?: string[];
-  max_threads?: number;
-  started_at?: string;
+  state: {
+    hostname: string;
+    pid: number;
+    schedulers?: RailsScheduler[];
+  };
+  created_at?: string;
+  updated_at?: string;
+}
+
+interface RailsProcessesResponse {
+  data: RailsGoodJobProcess[];
 }
 
 export async function getGoodJobProcesses(
@@ -35,14 +46,21 @@ export async function getGoodJobProcesses(
     );
   }
 
-  const data = (await response.json()) as RailsGoodJobProcess[];
+  const json = (await response.json()) as RailsProcessesResponse;
+  const processes = json.data;
 
-  return data.map((proc) => ({
-    id: proc.id,
-    hostname: proc.hostname,
-    pid: proc.pid,
-    queues: proc.queues,
-    max_threads: proc.max_threads,
-    started_at: proc.started_at,
-  }));
+  return processes.map((proc) => {
+    const schedulers = proc.state.schedulers ?? [];
+    const queues = schedulers.map((s) => s.queues);
+    const maxThreads = schedulers.reduce((sum, s) => sum + s.max_threads, 0);
+
+    return {
+      id: proc.id,
+      hostname: proc.state.hostname,
+      pid: proc.state.pid,
+      queues,
+      max_threads: maxThreads || undefined,
+      started_at: proc.created_at,
+    };
+  });
 }

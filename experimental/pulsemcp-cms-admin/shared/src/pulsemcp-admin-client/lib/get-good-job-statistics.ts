@@ -1,5 +1,18 @@
 import type { GoodJobStatistics } from '../../types.js';
 
+interface RailsStatisticsResponse {
+  total: number;
+  by_status: {
+    scheduled: number;
+    queued: number;
+    running: number;
+    succeeded: number;
+    discarded: number;
+    retried?: number;
+  };
+  by_queue?: Record<string, number>;
+}
+
 export async function getGoodJobStatistics(
   apiKey: string,
   baseUrl: string
@@ -24,15 +37,15 @@ export async function getGoodJobStatistics(
     throw new Error(`Failed to fetch job statistics: ${response.status} ${response.statusText}`);
   }
 
-  const data = (await response.json()) as GoodJobStatistics;
+  const data = (await response.json()) as RailsStatisticsResponse;
 
   return {
     total: data.total,
-    scheduled: data.scheduled,
-    queued: data.queued,
-    running: data.running,
-    succeeded: data.succeeded,
-    failed: data.failed,
-    discarded: data.discarded,
+    scheduled: data.by_status.scheduled,
+    queued: data.by_status.queued,
+    running: data.by_status.running,
+    succeeded: data.by_status.succeeded,
+    failed: data.by_status.retried ?? 0,
+    discarded: data.by_status.discarded,
   };
 }
