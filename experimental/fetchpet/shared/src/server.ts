@@ -377,11 +377,13 @@ export class FetchPetClient implements IFetchPetClient {
       const invoiceUpload = await page.$('input[type="file"]');
       if (invoiceUpload) {
         await invoiceUpload.setInputFiles(invoiceFilePath);
-        await page.waitForTimeout(2000);
 
         // After uploading, an "Upload an invoice" dialog may appear asking for
-        // invoice date and amount. Handle it if present.
-        const invoiceDateInput = await page.$('input[placeholder="MM/DD/YYYY"]');
+        // invoice date and amount. Wait for the dialog to appear rather than
+        // using a fixed timeout, which could miss slow-loading dialogs.
+        const invoiceDateInput = await page
+          .waitForSelector('input[placeholder="MM/DD/YYYY"]', { timeout: 5000 })
+          .catch(() => null);
         if (invoiceDateInput) {
           // Parse the invoice date to extract month, day, and year.
           // Supports both YYYY-MM-DD (ISO) and MM/DD/YYYY (US) input formats.
@@ -429,7 +431,12 @@ export class FetchPetClient implements IFetchPetClient {
 
               // Determine direction: parse current month/year to compare
               const currentMatch = currentLabel?.match(/^(\w+)\s+(\d{4})$/);
-              if (!currentMatch) break;
+              if (!currentMatch) {
+                validationErrors.push(
+                  `Could not parse calendar header "${currentLabel}" while navigating to ${targetLabel}`
+                );
+                break;
+              }
               const currentMonthIdx = monthNames.indexOf(currentMatch[1]);
               const currentYearNum = parseInt(currentMatch[2], 10);
               const currentTotal = currentYearNum * 12 + currentMonthIdx;
@@ -440,17 +447,24 @@ export class FetchPetClient implements IFetchPetClient {
                 if (prevBtn) {
                   await prevBtn.click();
                   await page.waitForTimeout(300);
+                } else {
+                  validationErrors.push('Calendar does not allow navigating further back');
+                  break;
                 }
               } else {
                 const nextBtn = await page.$('.react-datepicker__navigation--next');
                 if (nextBtn) {
                   await nextBtn.click();
                   await page.waitForTimeout(300);
+                } else {
+                  validationErrors.push('Calendar does not allow navigating further forward');
+                  break;
                 }
               }
             }
 
-            // Click the target day
+            // Click the target day. react-datepicker uses 3-digit zero-padded
+            // day classes (e.g., --006 for the 6th, --015 for the 15th).
             const dayPadded = String(targetDay).padStart(3, '0');
             const dayEl = await page.$(
               `.react-datepicker__day--${dayPadded}:not(.react-datepicker__day--outside-month)`
