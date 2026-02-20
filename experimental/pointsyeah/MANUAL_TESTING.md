@@ -49,20 +49,20 @@ The tests will:
 
 ## Latest Test Results
 
-**Test Date:** 2026-02-17
-**Branch:** tadasant/fix-pointsyeah-wrong-routes
-**Commit:** bfe7414
+**Test Date:** 2026-02-20
+**Branch:** tadasant/fix-pointsyeah-polling-api-change
+**Commit:** ec00d24
 **Tested By:** Claude
 **Environment:** Linux, Node.js
 
 ### Manual Test Results
 
-**Status:** 10 passed, 0 skipped, 0 failed (10 total)
-**Test Duration:** ~4s
+**Status:** 6 passed, 4 skipped, 0 failed (10 total)
+**Test Duration:** ~3s
 
-Tested with a valid (non-revoked) POINTSYEAH_REFRESH_TOKEN. All auth-dependent tests ran.
+Refresh token was revoked at time of manual test run. All 6 unauthenticated tests passed; 4 auth-dependent tests were properly skipped via `ctx.skip()`.
 
-**Passing tests (10/10):**
+**Passing tests (6/6):**
 
 - **Unauthenticated Mode (5 tests):**
   - Should expose all tools even when unauthenticated (3 tools: search_flights, get_search_history, set_refresh_token)
@@ -70,20 +70,27 @@ Tested with a valid (non-revoked) POINTSYEAH_REFRESH_TOKEN. All auth-dependent t
   - `set_refresh_token` should include instructions for obtaining token (document.cookie, pointsyeah.com)
   - Should reject invalid/short tokens
   - Should show config resource with `needs_token` status
-- **Authenticated Mode (4 tests):**
+- **Authenticated Mode (1 test):**
   - Should expose all tools regardless of auth state
-  - Config resource with authenticated status
-  - get_search_history (returns real search history data)
-  - search_flights input validation (rejects round-trip without returnDate)
-- **Direct Client (1 test):**
-  - Cognito auth token refresh
 
-### Functional + Integration Test Results
+**Skipped tests (4/4):** Auth-dependent tests skipped due to revoked token (config resource authenticated status, get_search_history, search_flights input validation, Cognito auth refresh).
+
+### End-to-End Verification
+
+The core fix (polling logic) was verified against the real PointsYeah API during development:
+
+- Authenticated via Cognito with a valid refresh token
+- Searched ORD→MIA on 2026-04-01 (Economy)
+- Playwright successfully created search task
+- Polling completed in 5 polls (~15s): 17 results on poll 1, 1 more on poll 4, `status: "done"` on poll 5
+- **18 total results** returned successfully (vs. previous 404 failure)
+
+### Functional Test Results
 
 **Status:** All functional tests passed (19/19)
 
 **Details:**
 
-All tools are always registered at startup. Auth-requiring tools (`search_flights`, `get_search_history`) check authentication state at call time and return a clear error when not authenticated. The live search flow (Playwright-based `create_task` + HTTP polling `fetch_result`) is tested with mocked dependencies and fake timers.
+All tools are always registered at startup. Auth-requiring tools (`search_flights`, `get_search_history`) check authentication state at call time and return a clear error when not authenticated. The live search flow (Playwright-based `create_task` + HTTP polling `fetch_result`) is tested with mocked dependencies and fake timers. Updated tests verify result accumulation across polls and `status`-based completion detection.
 
-**Summary:** All 10 manual tests pass with a valid refresh token. All 19 functional tests pass.
+**Summary:** 6 manual tests pass (4 skipped due to revoked token). Core fix verified end-to-end against real API. All 19 functional tests pass.
