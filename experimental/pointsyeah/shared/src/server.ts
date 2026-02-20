@@ -130,14 +130,15 @@ export class PointsYeahClient implements IPointsYeahClient {
       }
 
       // Accumulate results using program+date+departure+arrival as key
-      for (const result of pollResponse.data.result) {
+      const pollResults = pollResponse.data.result ?? [];
+      for (const result of pollResults) {
         const key = `${result.code}-${result.date}-${result.departure}-${result.arrival}`;
         allResults.set(key, result);
       }
 
       logDebug(
         'search',
-        `Poll ${i + 1}: status=${pollResponse.data.status}, ${pollResponse.data.result.length} results this poll, ${allResults.size} total`
+        `Poll ${i + 1}: status=${pollResponse.data.status}, ${pollResults.length} results this poll, ${allResults.size} total`
       );
 
       if (pollResponse.data.status === 'done') {

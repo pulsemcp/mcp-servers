@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Old code never broke out of the polling loop, causing task expiration and 404 errors
   - Polling now checks `data.status === 'done'` to determine completion
   - Results are accumulated across polls (API returns results in batches, not all at once)
+- Fixed crash when API returns `null` for `data.result` during polling (defensive null coalescing)
 
 ## [0.2.2] - 2026-02-17
 

@@ -113,7 +113,7 @@ export interface FlightSearchResponse {
   code: number;
   success: boolean;
   data: {
-    result: FlightResult[];
+    result: FlightResult[] | null;
     status: string; // "processing" | "done"
   };
 }
