@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.3] - 2026-02-20
+
+### Fixed
+
+- Fixed search failing with 404 after PointsYeah API changed `fetch_result` response format
+  - API now returns `status: "processing" | "done"` instead of `completed_sub_tasks`/`total_sub_tasks`
+  - Old code never broke out of the polling loop, causing task expiration and 404 errors
+  - Polling now checks `data.status === 'done'` to determine completion
+  - Results are accumulated across polls (API returns results in batches, not all at once)
+
 ## [0.2.2] - 2026-02-17
 
 ### Fixed

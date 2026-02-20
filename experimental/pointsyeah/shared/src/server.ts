@@ -4,7 +4,7 @@ import { createRegisterTools } from './tools.js';
 import { getServerState } from './state.js';
 import type {
   FlightSearchParams,
-  FlightSearchResponse,
+  FlightResult,
   FlightSearchResults,
   CognitoTokens,
 } from './types.js';
@@ -111,44 +111,50 @@ export class PointsYeahClient implements IPointsYeahClient {
       this.playwright
     );
 
-    // Step 2: Poll for results until all sub-tasks complete
+    // Step 2: Poll for results until search is done.
+    // Results arrive in batches across polls, so we accumulate them.
     const POLL_INTERVAL_MS = 3000;
     const MAX_POLLS = 120; // Up to 6 minutes of polling
-    let lastResults: FlightSearchResponse | null = null;
+    const allResults = new Map<string, FlightResult>();
+    let done = false;
 
     for (let i = 0; i < MAX_POLLS; i++) {
       await new Promise((resolve) => setTimeout(resolve, POLL_INTERVAL_MS));
 
-      lastResults = await this.withAuth((idToken) => fetchSearchResults(task.task_id, idToken));
+      const pollResponse = await this.withAuth((idToken) =>
+        fetchSearchResults(task.task_id, idToken)
+      );
 
-      if (!lastResults.success) {
-        throw new Error(`Search polling failed (code: ${lastResults.code})`);
+      if (!pollResponse.success) {
+        throw new Error(`Search polling failed (code: ${pollResponse.code})`);
+      }
+
+      // Accumulate results using program+date+departure+arrival as key
+      for (const result of pollResponse.data.result) {
+        const key = `${result.code}-${result.date}-${result.departure}-${result.arrival}`;
+        allResults.set(key, result);
       }
 
       logDebug(
         'search',
-        `Poll ${i + 1}: ${lastResults.data.completed_sub_tasks}/${lastResults.data.total_sub_tasks} sub-tasks complete, ${lastResults.data.result.length} results`
+        `Poll ${i + 1}: status=${pollResponse.data.status}, ${pollResponse.data.result.length} results this poll, ${allResults.size} total`
       );
 
-      if (lastResults.data.completed_sub_tasks >= lastResults.data.total_sub_tasks) {
+      if (pollResponse.data.status === 'done') {
+        done = true;
         break;
       }
     }
 
-    if (!lastResults) {
-      throw new Error('No results received from search');
+    if (!done) {
+      logWarning('search', `Search timed out after ${MAX_POLLS} polls`);
     }
 
-    if (lastResults.data.completed_sub_tasks < lastResults.data.total_sub_tasks) {
-      logWarning(
-        'search',
-        `Search timed out: ${lastResults.data.completed_sub_tasks}/${lastResults.data.total_sub_tasks} sub-tasks complete`
-      );
-    }
+    const results = Array.from(allResults.values());
 
     return {
-      total: lastResults.data.result.length,
-      results: lastResults.data.result,
+      total: results.length,
+      results,
     };
   }
 

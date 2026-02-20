@@ -63,16 +63,14 @@ function makeTask(taskId: string = 'test-task-123'): FlightSearchTask {
 
 function makeSearchResponse(
   results: FlightSearchResponse['data']['result'],
-  completed: number = 5,
-  total: number = 5
+  status: string = 'done'
 ): FlightSearchResponse {
   return {
     code: 0,
     success: true,
     data: {
       result: results,
-      completed_sub_tasks: completed,
-      total_sub_tasks: total,
+      status,
     },
   };
 }
@@ -176,39 +174,28 @@ describe('PointsYeahClient live search', () => {
     expect(result.total).toBe(1);
   });
 
-  it('should poll multiple times until all sub-tasks complete', async () => {
+  it('should poll multiple times until status is done, accumulating results', async () => {
     const task = makeTask();
     mockedCreateSearchTask.mockResolvedValue(task);
 
-    // First poll: 2/5 complete, 1 result
+    // First poll: processing, 1 result
     mockedFetchSearchResults.mockResolvedValueOnce(
-      makeSearchResponse([makeFlightResult('United', 'SFO', 'NRT')], 2, 5)
+      makeSearchResponse([makeFlightResult('United', 'SFO', 'NRT')], 'processing')
     );
-    // Second poll: 4/5 complete, 2 results
+    // Second poll: processing, 1 new result
     mockedFetchSearchResults.mockResolvedValueOnce(
-      makeSearchResponse(
-        [makeFlightResult('United', 'SFO', 'NRT'), makeFlightResult('ANA', 'SFO', 'NRT')],
-        4,
-        5
-      )
+      makeSearchResponse([makeFlightResult('ANA', 'SFO', 'NRT')], 'processing')
     );
-    // Third poll: 5/5 complete, 3 results
+    // Third poll: done, 1 new result
     mockedFetchSearchResults.mockResolvedValueOnce(
-      makeSearchResponse(
-        [
-          makeFlightResult('United', 'SFO', 'NRT'),
-          makeFlightResult('ANA', 'SFO', 'NRT'),
-          makeFlightResult('JAL', 'SFO', 'NRT'),
-        ],
-        5,
-        5
-      )
+      makeSearchResponse([makeFlightResult('JAL', 'SFO', 'NRT')], 'done')
     );
 
     const client = new PointsYeahClient(mockPlaywright);
     const result = await runSearchWithFakeTimers(client, makeSearchParams());
 
     expect(mockedFetchSearchResults).toHaveBeenCalledTimes(3);
+    // All 3 results accumulated across polls
     expect(result.results).toHaveLength(3);
     expect(result.total).toBe(3);
   });
@@ -239,7 +226,7 @@ describe('PointsYeahClient live search', () => {
     mockedFetchSearchResults.mockResolvedValue({
       code: 500,
       success: false,
-      data: { result: [], completed_sub_tasks: 0, total_sub_tasks: 5 },
+      data: { result: [], status: 'processing' },
     });
 
     const client = new PointsYeahClient(mockPlaywright);
@@ -250,9 +237,9 @@ describe('PointsYeahClient live search', () => {
 
   it('should return partial results when polling times out', async () => {
     mockedCreateSearchTask.mockResolvedValue(makeTask());
-    // Always return incomplete (never reaches total_sub_tasks)
+    // Always return processing (never reaches done)
     mockedFetchSearchResults.mockResolvedValue(
-      makeSearchResponse([makeFlightResult('United', 'SFO', 'NRT')], 2, 5)
+      makeSearchResponse([makeFlightResult('United', 'SFO', 'NRT')], 'processing')
     );
 
     const client = new PointsYeahClient(mockPlaywright);
