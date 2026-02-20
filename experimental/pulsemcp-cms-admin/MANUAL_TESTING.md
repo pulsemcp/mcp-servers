@@ -3,7 +3,7 @@
 ## Latest Test Results
 
 **Date:** 2026-02-20
-**Commit:** deb3bc6
+**Commit:** fc7edae
 **Version:** 0.6.9
 **API Environment:** staging (https://admin.staging.pulsemcp.com)
 **Backend Branch:** `add-goodjob-admin-api` (SHA: d40fb0ab)
