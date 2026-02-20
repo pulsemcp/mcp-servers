@@ -43,6 +43,14 @@ import type {
   RedirectStatus,
   CreateRedirectParams,
   UpdateRedirectParams,
+  // GoodJob types
+  GoodJob,
+  GoodJobsResponse,
+  GoodJobStatus,
+  GoodJobCronSchedulesResponse,
+  GoodJobProcessesResponse,
+  GoodJobStatistics,
+  GoodJobCleanupParams,
 } from './types.js';
 
 // PulseMCP Admin API client interface
@@ -240,6 +248,35 @@ export interface IPulseMCPAdminClient {
   updateRedirect(id: number, params: UpdateRedirectParams): Promise<Redirect>;
 
   deleteRedirect(id: number): Promise<{ success: boolean; message: string }>;
+
+  // GoodJob REST API methods
+  getGoodJobs(params?: {
+    queue_name?: string;
+    status?: GoodJobStatus;
+    job_class?: string;
+    after?: string;
+    before?: string;
+    limit?: number;
+    offset?: number;
+  }): Promise<GoodJobsResponse>;
+
+  getGoodJob(id: string): Promise<GoodJob>;
+
+  getGoodJobCronSchedules(): Promise<GoodJobCronSchedulesResponse>;
+
+  getGoodJobProcesses(): Promise<GoodJobProcessesResponse>;
+
+  getGoodJobStatistics(): Promise<GoodJobStatistics>;
+
+  retryGoodJob(id: string): Promise<GoodJob>;
+
+  discardGoodJob(id: string): Promise<GoodJob>;
+
+  rescheduleGoodJob(id: string, scheduledAt: string): Promise<GoodJob>;
+
+  forceTriggerGoodJobCron(cronKey: string): Promise<{ success: boolean; message: string }>;
+
+  cleanupGoodJobs(params?: GoodJobCleanupParams): Promise<{ success: boolean; message: string }>;
 }
 
 // PulseMCP Admin API client implementation
@@ -622,6 +659,72 @@ export class PulseMCPAdminClient implements IPulseMCPAdminClient {
   async deleteRedirect(id: number): Promise<{ success: boolean; message: string }> {
     const { deleteRedirect } = await import('./pulsemcp-admin-client/lib/delete-redirect.js');
     return deleteRedirect(this.apiKey, this.baseUrl, id);
+  }
+
+  // GoodJob REST API methods
+  async getGoodJobs(params?: {
+    queue_name?: string;
+    status?: GoodJobStatus;
+    job_class?: string;
+    after?: string;
+    before?: string;
+    limit?: number;
+    offset?: number;
+  }): Promise<GoodJobsResponse> {
+    const { getGoodJobs } = await import('./pulsemcp-admin-client/lib/get-good-jobs.js');
+    return getGoodJobs(this.apiKey, this.baseUrl, params);
+  }
+
+  async getGoodJob(id: string): Promise<GoodJob> {
+    const { getGoodJob } = await import('./pulsemcp-admin-client/lib/get-good-job.js');
+    return getGoodJob(this.apiKey, this.baseUrl, id);
+  }
+
+  async getGoodJobCronSchedules(): Promise<GoodJobCronSchedulesResponse> {
+    const { getGoodJobCronSchedules } =
+      await import('./pulsemcp-admin-client/lib/get-good-job-cron-schedules.js');
+    return getGoodJobCronSchedules(this.apiKey, this.baseUrl);
+  }
+
+  async getGoodJobProcesses(): Promise<GoodJobProcessesResponse> {
+    const { getGoodJobProcesses } =
+      await import('./pulsemcp-admin-client/lib/get-good-job-processes.js');
+    return getGoodJobProcesses(this.apiKey, this.baseUrl);
+  }
+
+  async getGoodJobStatistics(): Promise<GoodJobStatistics> {
+    const { getGoodJobStatistics } =
+      await import('./pulsemcp-admin-client/lib/get-good-job-statistics.js');
+    return getGoodJobStatistics(this.apiKey, this.baseUrl);
+  }
+
+  async retryGoodJob(id: string): Promise<GoodJob> {
+    const { retryGoodJob } = await import('./pulsemcp-admin-client/lib/retry-good-job.js');
+    return retryGoodJob(this.apiKey, this.baseUrl, id);
+  }
+
+  async discardGoodJob(id: string): Promise<GoodJob> {
+    const { discardGoodJob } = await import('./pulsemcp-admin-client/lib/discard-good-job.js');
+    return discardGoodJob(this.apiKey, this.baseUrl, id);
+  }
+
+  async rescheduleGoodJob(id: string, scheduledAt: string): Promise<GoodJob> {
+    const { rescheduleGoodJob } =
+      await import('./pulsemcp-admin-client/lib/reschedule-good-job.js');
+    return rescheduleGoodJob(this.apiKey, this.baseUrl, id, scheduledAt);
+  }
+
+  async forceTriggerGoodJobCron(cronKey: string): Promise<{ success: boolean; message: string }> {
+    const { forceTriggerGoodJobCron } =
+      await import('./pulsemcp-admin-client/lib/force-trigger-good-job-cron.js');
+    return forceTriggerGoodJobCron(this.apiKey, this.baseUrl, cronKey);
+  }
+
+  async cleanupGoodJobs(
+    params?: GoodJobCleanupParams
+  ): Promise<{ success: boolean; message: string }> {
+    const { cleanupGoodJobs } = await import('./pulsemcp-admin-client/lib/cleanup-good-jobs.js');
+    return cleanupGoodJobs(this.apiKey, this.baseUrl, params);
   }
 }
 

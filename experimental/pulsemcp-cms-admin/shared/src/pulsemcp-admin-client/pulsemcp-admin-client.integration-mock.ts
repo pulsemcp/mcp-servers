@@ -1070,5 +1070,83 @@ export function createMockPulseMCPAdminClient(mockData: MockData): IPulseMCPAdmi
     async deleteRedirect() {
       return { success: true, message: 'Redirect deleted' };
     },
+
+    // GoodJob REST API methods (stub implementations)
+    async getGoodJobs() {
+      return { jobs: [], pagination: { current_page: 1, total_pages: 1, total_count: 0 } };
+    },
+
+    async getGoodJob(id) {
+      return {
+        id,
+        job_class: 'TestJob',
+        queue_name: 'default',
+        status: 'finished' as const,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+    },
+
+    async getGoodJobCronSchedules() {
+      return { cron_schedules: [] };
+    },
+
+    async getGoodJobProcesses() {
+      return { processes: [] };
+    },
+
+    async getGoodJobStatistics() {
+      return {
+        total: 0,
+        finished: 0,
+        queued: 0,
+        running: 0,
+        scheduled: 0,
+        retried: 0,
+        discarded: 0,
+        error: 0,
+      };
+    },
+
+    async retryGoodJob(id) {
+      return {
+        id,
+        job_class: 'TestJob',
+        queue_name: 'default',
+        status: 'queued' as const,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+    },
+
+    async discardGoodJob(id) {
+      return {
+        id,
+        job_class: 'TestJob',
+        queue_name: 'default',
+        status: 'discarded' as const,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+    },
+
+    async rescheduleGoodJob(id) {
+      return {
+        id,
+        job_class: 'TestJob',
+        queue_name: 'default',
+        status: 'scheduled' as const,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+    },
+
+    async forceTriggerGoodJobCron(cronKey) {
+      return { success: true, message: `Triggered cron schedule "${cronKey}"` };
+    },
+
+    async cleanupGoodJobs() {
+      return { success: true, message: 'Good jobs cleaned up' };
+    },
   };
 }

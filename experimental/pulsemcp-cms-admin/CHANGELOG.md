@@ -6,6 +6,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Added
+
+- Added `good_jobs` and `good_jobs_readonly` tool groups for GoodJob background job management:
+  - `list_good_jobs` - List and filter background jobs by queue, status, class, and time range
+  - `get_good_job` - Get detailed information about a specific background job
+  - `list_good_job_cron_schedules` - View all configured cron schedules
+  - `list_good_job_processes` - Monitor active worker processes
+  - `get_good_job_statistics` - Get aggregate job counts by status
+  - `retry_good_job` - Retry a failed or errored job (write)
+  - `discard_good_job` - Discard a job so it won't be retried (write)
+  - `reschedule_good_job` - Reschedule a job to a different time (write)
+  - `force_trigger_good_job_cron` - Force-trigger a cron schedule immediately (write)
+  - `cleanup_good_jobs` - Clean up old jobs by age and status (write)
+
 ## [0.6.8] - 2026-01-29
 
 ### Changed

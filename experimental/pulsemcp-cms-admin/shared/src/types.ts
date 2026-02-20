@@ -763,3 +763,90 @@ export interface UpdateRedirectParams {
   to?: string;
   status?: RedirectStatus;
 }
+
+// ============================================================
+// GoodJob Types
+// Background job processing via GoodJob
+// ============================================================
+
+export type GoodJobStatus =
+  | 'scheduled'
+  | 'retried'
+  | 'queued'
+  | 'running'
+  | 'finished'
+  | 'discarded'
+  | 'error';
+
+export interface GoodJob {
+  id: string;
+  job_class: string;
+  queue_name: string;
+  status: GoodJobStatus;
+  error?: string;
+  serialized_params?: Record<string, unknown>;
+  scheduled_at?: string;
+  performed_at?: string;
+  finished_at?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface GoodJobsResponse {
+  jobs: GoodJob[];
+  pagination?: {
+    current_page: number;
+    total_pages: number;
+    total_count: number;
+    has_next?: boolean;
+    limit?: number;
+  };
+}
+
+export interface GoodJobCronSchedule {
+  cron_key: string;
+  job_class: string;
+  cron_schedule: string;
+  description?: string;
+  next_scheduled_at?: string;
+  last_run_at?: string;
+}
+
+export interface GoodJobCronSchedulesResponse {
+  cron_schedules: GoodJobCronSchedule[];
+}
+
+export interface GoodJobProcess {
+  id: string;
+  state: string;
+  hostname?: string;
+  pid?: number;
+  queues?: string[];
+  max_threads?: number;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface GoodJobProcessesResponse {
+  processes: GoodJobProcess[];
+}
+
+export interface GoodJobStatistics {
+  total: number;
+  finished: number;
+  queued: number;
+  running: number;
+  scheduled: number;
+  retried: number;
+  discarded: number;
+  error: number;
+}
+
+export interface GoodJobCleanupParams {
+  older_than_days?: number;
+  status?: GoodJobStatus;
+}
+
+export interface GoodJobRescheduleParams {
+  scheduled_at: string;
+}
