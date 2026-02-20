@@ -21,9 +21,13 @@ This file tracks manual testing results for the Fetch Pet MCP Server.
 
 Manually verified via Playwright browser automation:
 
-1. **Invoice upload dialog handling**: Confirmed that after uploading an invoice file, a "Upload an invoice" MUI dialog appears asking for invoice date (MM/DD/YYYY date picker) and amount (input.invoice-amount). Verified the date picker uses `.react-datepicker__day` elements and the Continue button dismisses the dialog.
+1. **Invoice upload dialog handling**: Confirmed that after uploading an invoice file, a "Upload an invoice" MUI dialog appears asking for invoice date (MM/DD/YYYY date picker) and amount (input.invoice-amount). Verified the date picker uses `.react-datepicker__day` elements with month navigation via `.react-datepicker__navigation--previous/next` arrows. The Continue button dismisses the dialog.
 
 2. **Medical records confirmation dialog**: Confirmed that after clicking Submit on the claim form, a second MUI dialog (`MuiDialog-root generic-dialog undefined`) appears with "Medical records required to process your claim" message and "Go Back" / "Submit anyway" buttons. This dialog overlay was intercepting pointer events on the Submit button, causing 30-second timeouts. The fix detects and clicks "Submit anyway" to proceed.
+
+3. **End-to-end claim submission**: Successfully submitted a real claim for Nova (pet) at Twin Cities Vet Hospital, $53.52 for Nexgard Plus, invoice date 02/06/2026. The full flow completed: form fill -> invoice upload -> invoice dialog (date via calendar picker + amount) -> Submit -> "Medical records required" dialog -> "Submit anyway" -> "Claim received" confirmation. Claim status: Received.
+
+4. **Date input approach**: Verified that `keyboard.type()` does NOT work with react-datepicker (calendar opens on click and intercepts keystrokes, leaving input empty). Calendar picker approach with month navigation arrows works correctly, including cross-month navigation (tested navigating from February 2026 back to January 2026).
 
 ### Test Coverage
 

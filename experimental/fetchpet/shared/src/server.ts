@@ -383,30 +383,84 @@ export class FetchPetClient implements IFetchPetClient {
         // invoice date and amount. Handle it if present.
         const invoiceDateInput = await page.$('input[placeholder="MM/DD/YYYY"]');
         if (invoiceDateInput) {
-          // Parse the invoice date into MM/DD/YYYY format for the date picker.
+          // Parse the invoice date to extract month, day, and year.
           // Supports both YYYY-MM-DD (ISO) and MM/DD/YYYY (US) input formats.
-          let dateForPicker: string | null = null;
+          let targetMonth = 0;
+          let targetDay = 0;
+          let targetYear = 0;
           const isoMatch = invoiceDate.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
           const usMatch = invoiceDate.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
           if (isoMatch) {
-            const [, year, month, day] = isoMatch;
-            dateForPicker = `${month.padStart(2, '0')}/${day.padStart(2, '0')}/${year}`;
+            [, targetYear, targetMonth, targetDay] = isoMatch.map(Number);
           } else if (usMatch) {
-            dateForPicker = invoiceDate;
+            [, targetMonth, targetDay, targetYear] = usMatch.map(Number);
           }
 
-          if (dateForPicker) {
-            // Type the date directly into the input field rather than using the
-            // calendar picker. This avoids issues with month/year navigation when
-            // the invoice date is in a different month than the calendar default.
+          if (targetMonth && targetDay && targetYear) {
+            // Use the calendar picker to select the date. keyboard.type() does not
+            // work with react-datepicker because clicking the input opens the calendar
+            // which intercepts keystrokes. Instead, navigate months and click the day.
             await invoiceDateInput.click();
-            await page.keyboard.type(dateForPicker);
-            // Click outside the date picker to close it
-            const dialogTitle = await page.$('h1, .claimForm-dialog-title');
-            if (dialogTitle) {
-              await dialogTitle.click();
-            }
             await page.waitForTimeout(500);
+
+            // Navigate to the correct month/year by clicking back/forward arrows
+            const monthNames = [
+              '',
+              'January',
+              'February',
+              'March',
+              'April',
+              'May',
+              'June',
+              'July',
+              'August',
+              'September',
+              'October',
+              'November',
+              'December',
+            ];
+            const targetLabel = `${monthNames[targetMonth]} ${targetYear}`;
+
+            for (let i = 0; i < 24; i++) {
+              const currentLabel = await page
+                .$eval('.react-datepicker__current-month', (el) => el.textContent)
+                .catch(() => null);
+              if (currentLabel === targetLabel) break;
+
+              // Determine direction: parse current month/year to compare
+              const currentMatch = currentLabel?.match(/^(\w+)\s+(\d{4})$/);
+              if (!currentMatch) break;
+              const currentMonthIdx = monthNames.indexOf(currentMatch[1]);
+              const currentYearNum = parseInt(currentMatch[2], 10);
+              const currentTotal = currentYearNum * 12 + currentMonthIdx;
+              const targetTotal = targetYear * 12 + targetMonth;
+
+              if (targetTotal < currentTotal) {
+                const prevBtn = await page.$('.react-datepicker__navigation--previous');
+                if (prevBtn) {
+                  await prevBtn.click();
+                  await page.waitForTimeout(300);
+                }
+              } else {
+                const nextBtn = await page.$('.react-datepicker__navigation--next');
+                if (nextBtn) {
+                  await nextBtn.click();
+                  await page.waitForTimeout(300);
+                }
+              }
+            }
+
+            // Click the target day
+            const dayPadded = String(targetDay).padStart(3, '0');
+            const dayEl = await page.$(
+              `.react-datepicker__day--${dayPadded}:not(.react-datepicker__day--outside-month)`
+            );
+            if (dayEl) {
+              await dayEl.click();
+              await page.waitForTimeout(500);
+            } else {
+              validationErrors.push(`Could not find day ${targetDay} in the calendar picker`);
+            }
           } else {
             validationErrors.push(
               `Could not parse invoice date "${invoiceDate}". Expected YYYY-MM-DD or MM/DD/YYYY format.`
