@@ -377,7 +377,58 @@ export class FetchPetClient implements IFetchPetClient {
       const invoiceUpload = await page.$('input[type="file"]');
       if (invoiceUpload) {
         await invoiceUpload.setInputFiles(invoiceFilePath);
-        await page.waitForTimeout(1000);
+        await page.waitForTimeout(2000);
+
+        // After uploading, an "Upload an invoice" dialog may appear asking for
+        // invoice date and amount. Handle it if present.
+        const invoiceDateInput = await page.$('input[placeholder="MM/DD/YYYY"]');
+        if (invoiceDateInput) {
+          // Fill invoice date using the date picker.
+          // Parse the date from either YYYY-MM-DD or MM/DD/YYYY format.
+          let dayOfMonth: string | null = null;
+          const isoMatch = invoiceDate.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+          const usMatch = invoiceDate.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+          if (isoMatch) {
+            dayOfMonth = parseInt(isoMatch[3], 10).toString();
+          } else if (usMatch) {
+            dayOfMonth = parseInt(usMatch[2], 10).toString();
+          }
+
+          if (dayOfMonth) {
+            await invoiceDateInput.click();
+            await page.waitForTimeout(500);
+
+            // Select the day from the calendar picker
+            const dayButtons = await page.$$(
+              '.react-datepicker__day:not(.react-datepicker__day--outside-month)'
+            );
+            for (const dayBtn of dayButtons) {
+              const dayText = await dayBtn.textContent();
+              if (dayText?.trim() === dayOfMonth) {
+                await dayBtn.click();
+                break;
+              }
+            }
+            await page.waitForTimeout(500);
+          }
+
+          // Fill invoice amount
+          const amountInput = await page.$('input.invoice-amount');
+          if (amountInput) {
+            // Strip $ and any whitespace from the amount
+            const cleanAmount = invoiceAmount.replace(/[$\s,]/g, '');
+            await amountInput.click();
+            await amountInput.fill(cleanAmount);
+            await page.waitForTimeout(500);
+          }
+
+          // Click Continue to close the invoice upload dialog
+          const continueBtn = await page.$('button:has-text("Continue")');
+          if (continueBtn) {
+            await continueBtn.click();
+            await page.waitForTimeout(2000);
+          }
+        }
       } else {
         validationErrors.push('Could not find invoice file upload field');
       }
@@ -507,9 +558,12 @@ The user MUST explicitly confirm they want to submit this claim before calling s
       };
     }
 
-    // Find and click the submit button
+    // Find and click the submit button on the claim form.
+    // The claim form is inside a MuiDialog with class "hide-claimForm".
+    // We need to target the submit button within this specific dialog to avoid
+    // accidentally clicking buttons in other overlapping dialogs.
     const submitButton = await page.$(
-      'button[type="submit"], button:has-text("Submit"), button:has-text("File Claim"), button:has-text("Submit Claim")'
+      'button.filled-btn:has-text("Submit"), button[type="submit"]:has-text("Submit"), button:has-text("File Claim"), button:has-text("Submit Claim")'
     );
 
     if (!submitButton) {
@@ -521,6 +575,15 @@ The user MUST explicitly confirm they want to submit this claim before calling s
 
     await submitButton.click();
     await page.waitForTimeout(3000);
+
+    // After clicking Submit, a confirmation dialog may appear (e.g., "Medical records
+    // required to process your claim") with "Go Back" and "Submit anyway" buttons.
+    // This is a second MuiDialog that overlays the claim form and intercepts pointer events.
+    const submitAnywayButton = await page.$('button:has-text("Submit anyway")');
+    if (submitAnywayButton) {
+      await submitAnywayButton.click();
+      await page.waitForTimeout(3000);
+    }
 
     // Check for success confirmation
     const successMessage = await page.$(
