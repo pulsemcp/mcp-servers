@@ -2,12 +2,71 @@
 
 ## Latest Test Results
 
+**Date:** 2026-02-20
+**Commit:** deb3bc6
+**Version:** Unreleased (post-0.6.8)
+**API Environment:** staging (https://admin.staging.pulsemcp.com)
+**Backend Branch:** `add-goodjob-admin-api` (SHA: d40fb0ab)
+
+## Test Results Summary
+
+### Overall: ✅ 21/21 GoodJob Manual Tests PASSING
+
+**GoodJob Tools Test Results (good-jobs-tools.manual.test.ts): ✅ 21/21 PASSING**
+
+**Tool Availability (1 test):**
+
+- All 10 good_jobs tools registered correctly with `TOOL_GROUPS=good_jobs`
+
+**Read-only Tools (8 tests):**
+
+- ✅ `list_good_jobs` - List without filters (1647 total jobs, pagination working)
+- ✅ `list_good_jobs` - Filter by status=succeeded (working)
+- ✅ `list_good_jobs` - Filter by queue_name=default (returns 0, only fast_jobs/cache_queue queues on staging)
+- ✅ `list_good_jobs` - Pagination with limit (working)
+- ✅ `list_good_jobs` - Pagination with offset (working)
+- ✅ `list_good_jobs` - Filter by status=failed (returns 0, no failed jobs on staging)
+- ✅ `get_good_job` - Get specific job by ID (full details returned)
+- ✅ `get_good_job` - Handle non-existent job ID (proper error message)
+
+**Read-only Tools with Known Issues (3 tests):**
+
+- ✅ `list_good_job_cron_schedules` - **KNOWN ISSUE**: Backend returns 500 Internal Server Error. Test passes by verifying the error is handled correctly. **Backend fix needed in pulsemcp/pulsemcp PR #2086.**
+- ✅ `list_good_job_processes` - Working after client fix (1 active process on staging: pulsemcp-staging with 3 schedulers across cache_queue, slow_jobs, fast_jobs)
+- ✅ `get_good_job_queue_statistics` - Working after client fix (total: 1647, succeeded: 1647, all others: 0)
+
+**Write Tools (9 tests):**
+
+- ✅ `retry_good_job` - Error handling for non-existent job (proper error message)
+- ✅ `retry_good_job` - No failed/discarded jobs on staging to retry (test skipped gracefully)
+- ✅ `discard_good_job` - Error handling for non-existent job (proper error message)
+- ✅ `reschedule_good_job` - Error handling for non-existent job (proper error message)
+- ✅ `reschedule_good_job` - No scheduled jobs on staging to reschedule (test skipped gracefully)
+- ✅ `force_trigger_good_job_cron` - Error handling for non-existent cron key (proper error message)
+- ✅ `force_trigger_good_job_cron` - Cannot test with real cron key (cron_schedules endpoint broken)
+- ✅ `cleanup_good_jobs` - Conservative cleanup (older_than_days=365, status=succeeded, deleted 0 jobs)
+- ✅ `cleanup_good_jobs` - Default params (deleted 0 jobs)
+
+### Client-Side Fixes Applied During Testing
+
+1. **`get-good-job-processes.ts`**: Fixed response parsing - API returns `{data: [{id, state: {hostname, pid, schedulers: [...]}}]}` not flat `[{id, hostname, pid, queues}]`. Extracts hostname/pid from `state`, derives queues from schedulers.
+
+2. **`get-good-job-statistics.ts`**: Fixed response parsing - API returns `{total, by_status: {scheduled, queued, ...}}` not flat `{total, scheduled, queued, ...}`. Maps `by_status` fields to expected flat structure. Note: API returns `retried` instead of `failed` in by_status.
+
+### Backend Issues Found (for pulsemcp/pulsemcp PR #2086)
+
+1. **`/api/good_jobs/cron_schedules` returns 500 Internal Server Error** - The endpoint exists but throws a server error. Needs investigation on the Rails side.
+
+2. **Statistics `by_status` uses `retried` instead of `failed`** - The statistics endpoint groups by `retried` count, but the job listing uses `failed` status. This mapping may need clarification.
+
+---
+
+## Previous Test Results (v0.6.8)
+
 **Date:** 2026-01-29
 **Commit:** 13ccbee
 **Version:** 0.6.8
 **API Environment:** N/A (configuration change only)
-
-## Test Results Summary
 
 ### Overall: ✅ Functional Tests PASSING (64/64 tools.test.ts)
 

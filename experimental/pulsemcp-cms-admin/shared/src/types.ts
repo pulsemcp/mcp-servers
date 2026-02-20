@@ -763,3 +763,81 @@ export interface UpdateRedirectParams {
   to?: string;
   status?: RedirectStatus;
 }
+
+// ============================================================
+// GoodJob Types
+// Background job management via the GoodJob API
+// ============================================================
+
+export type GoodJobStatus =
+  | 'scheduled'
+  | 'queued'
+  | 'running'
+  | 'succeeded'
+  | 'failed'
+  | 'discarded';
+
+export interface GoodJob {
+  id: string;
+  job_class: string;
+  queue_name: string;
+  status: GoodJobStatus;
+  scheduled_at?: string;
+  performed_at?: string;
+  finished_at?: string;
+  error?: string;
+  serialized_params?: Record<string, unknown>;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface GoodJobsResponse {
+  jobs: GoodJob[];
+  pagination?: {
+    current_page: number;
+    total_pages: number;
+    total_count: number;
+    has_next?: boolean;
+    limit?: number;
+  };
+}
+
+export interface GoodJobCronSchedule {
+  cron_key: string;
+  job_class: string;
+  cron_expression: string;
+  description?: string;
+  next_scheduled_at?: string;
+  last_run_at?: string;
+}
+
+export interface GoodJobProcess {
+  id: string;
+  hostname: string;
+  pid: number;
+  queues?: string[];
+  max_threads?: number;
+  started_at?: string;
+}
+
+export interface GoodJobStatistics {
+  total: number;
+  scheduled: number;
+  queued: number;
+  running: number;
+  succeeded: number;
+  failed: number;
+  discarded: number;
+}
+
+export interface GoodJobActionResponse {
+  success: boolean;
+  message: string;
+  job?: GoodJob;
+}
+
+export interface GoodJobCleanupResponse {
+  success: boolean;
+  message: string;
+  deleted_count?: number;
+}

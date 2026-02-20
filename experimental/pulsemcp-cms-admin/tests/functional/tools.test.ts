@@ -63,6 +63,45 @@ function createMockClient(overrides?: Partial<IPulseMCPAdminClient>): IPulseMCPA
     rejectOfficialMirrorQueueItem: vi.fn(),
     addOfficialMirrorToRegularQueue: vi.fn(),
     unlinkOfficialMirrorQueueItem: vi.fn(),
+    // Unofficial mirror methods
+    getUnofficialMirrors: vi.fn(),
+    getUnofficialMirror: vi.fn(),
+    createUnofficialMirror: vi.fn(),
+    updateUnofficialMirror: vi.fn(),
+    deleteUnofficialMirror: vi.fn(),
+    // Official mirror REST methods
+    getOfficialMirrors: vi.fn(),
+    getOfficialMirror: vi.fn(),
+    // Tenant methods
+    getTenants: vi.fn(),
+    getTenant: vi.fn(),
+    // MCP JSON methods
+    getMcpJsons: vi.fn(),
+    getMcpJson: vi.fn(),
+    createMcpJson: vi.fn(),
+    updateMcpJson: vi.fn(),
+    deleteMcpJson: vi.fn(),
+    // Unified MCP Server methods
+    getUnifiedMCPServers: vi.fn(),
+    getUnifiedMCPServer: vi.fn(),
+    updateUnifiedMCPServer: vi.fn(),
+    // Redirect methods
+    getRedirects: vi.fn(),
+    getRedirect: vi.fn(),
+    createRedirect: vi.fn(),
+    updateRedirect: vi.fn(),
+    deleteRedirect: vi.fn(),
+    // GoodJob methods
+    getGoodJobs: vi.fn(),
+    getGoodJob: vi.fn(),
+    getGoodJobCronSchedules: vi.fn(),
+    getGoodJobProcesses: vi.fn(),
+    getGoodJobStatistics: vi.fn(),
+    retryGoodJob: vi.fn(),
+    discardGoodJob: vi.fn(),
+    rescheduleGoodJob: vi.fn(),
+    forceTriggerGoodJobCron: vi.fn(),
+    cleanupGoodJobs: vi.fn(),
     ...overrides,
   };
 }
@@ -722,6 +761,7 @@ describe('Newsletter Tools', () => {
         'mcp_jsons',
         'mcp_servers',
         'redirects',
+        'good_jobs',
       ]);
     });
 
@@ -737,6 +777,7 @@ describe('Newsletter Tools', () => {
         'mcp_jsons',
         'mcp_servers',
         'redirects',
+        'good_jobs',
       ]);
     });
 
@@ -883,8 +924,8 @@ describe('Newsletter Tools', () => {
       const listToolsHandler = handlers.get('tools/list');
       const result = await listToolsHandler({ method: 'tools/list', params: {} });
 
-      // 6 newsletter + 5 server_directory + 7 official_queue + 5 unofficial_mirrors + 2 official_mirrors + 2 tenants + 5 mcp_jsons + 3 mcp_servers + 5 redirects = 40 tools
-      expect(result.tools).toHaveLength(40);
+      // 6 newsletter + 5 server_directory + 7 official_queue + 5 unofficial_mirrors + 2 official_mirrors + 2 tenants + 5 mcp_jsons + 3 mcp_servers + 5 redirects + 10 good_jobs = 50 tools
+      expect(result.tools).toHaveLength(50);
     });
 
     it('should register only read-only newsletter tools when newsletter_readonly group is enabled', async () => {
@@ -2020,6 +2061,391 @@ describe('Newsletter Tools', () => {
       // Write tools should NOT be present
       expect(toolNames).not.toContain('approve_official_mirror_queue_item');
       expect(toolNames).not.toContain('reject_official_mirror_queue_item');
+    });
+
+    it('should register all good_jobs tools when good_jobs group is enabled', async () => {
+      const mockServer = new Server(
+        { name: 'test', version: '1.0.0' },
+        { capabilities: { tools: {} } }
+      );
+      const clientFactory = () => createMockClient();
+
+      const registerTools = createRegisterTools(clientFactory, 'good_jobs');
+      registerTools(mockServer);
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const handlers = (mockServer as any)._requestHandlers;
+      const listToolsHandler = handlers.get('tools/list');
+      const result = await listToolsHandler({ method: 'tools/list', params: {} });
+
+      expect(result.tools).toHaveLength(10);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const toolNames = result.tools.map((t: any) => t.name);
+      expect(toolNames).toContain('list_good_jobs');
+      expect(toolNames).toContain('get_good_job');
+      expect(toolNames).toContain('list_good_job_cron_schedules');
+      expect(toolNames).toContain('list_good_job_processes');
+      expect(toolNames).toContain('get_good_job_queue_statistics');
+      expect(toolNames).toContain('retry_good_job');
+      expect(toolNames).toContain('discard_good_job');
+      expect(toolNames).toContain('reschedule_good_job');
+      expect(toolNames).toContain('force_trigger_good_job_cron');
+      expect(toolNames).toContain('cleanup_good_jobs');
+    });
+
+    it('should only register read-only tools when good_jobs_readonly is enabled', async () => {
+      const mockServer = new Server(
+        { name: 'test', version: '1.0.0' },
+        { capabilities: { tools: {} } }
+      );
+      const clientFactory = () => createMockClient();
+
+      const registerTools = createRegisterTools(clientFactory, 'good_jobs_readonly');
+      registerTools(mockServer);
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const handlers = (mockServer as any)._requestHandlers;
+      const listToolsHandler = handlers.get('tools/list');
+      const result = await listToolsHandler({ method: 'tools/list', params: {} });
+
+      expect(result.tools).toHaveLength(5); // Only read-only good_jobs tools
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const toolNames = result.tools.map((t: any) => t.name);
+      expect(toolNames).toContain('list_good_jobs');
+      expect(toolNames).toContain('get_good_job');
+      expect(toolNames).toContain('list_good_job_cron_schedules');
+      expect(toolNames).toContain('list_good_job_processes');
+      expect(toolNames).toContain('get_good_job_queue_statistics');
+      // Write tools should NOT be present
+      expect(toolNames).not.toContain('retry_good_job');
+      expect(toolNames).not.toContain('discard_good_job');
+      expect(toolNames).not.toContain('reschedule_good_job');
+      expect(toolNames).not.toContain('force_trigger_good_job_cron');
+      expect(toolNames).not.toContain('cleanup_good_jobs');
+    });
+  });
+
+  describe('GoodJob Tools', () => {
+    const mockServer = {} as Server;
+
+    describe('list_good_jobs', () => {
+      it('should fetch and format good jobs', async () => {
+        const { listGoodJobs } = await import('../../shared/src/tools/list-good-jobs.js');
+        const mockClient = createMockClient({
+          getGoodJobs: vi.fn().mockResolvedValue({
+            jobs: [
+              {
+                id: 'job-1',
+                job_class: 'SyncMCPServersJob',
+                queue_name: 'default',
+                status: 'succeeded',
+                scheduled_at: '2024-01-15T10:00:00Z',
+              },
+              {
+                id: 'job-2',
+                job_class: 'ProcessMirrorsJob',
+                queue_name: 'low_priority',
+                status: 'failed',
+                scheduled_at: '2024-01-15T11:00:00Z',
+                error: 'Connection timeout',
+              },
+            ],
+            pagination: {
+              current_page: 1,
+              total_pages: 1,
+              total_count: 2,
+              has_next: false,
+              limit: 30,
+            },
+          }),
+        });
+
+        const tool = listGoodJobs(mockServer, () => mockClient);
+        const result = await tool.handler({});
+
+        expect(mockClient.getGoodJobs).toHaveBeenCalledWith({});
+        expect(result.content[0].text).toContain('Found 2 jobs');
+        expect(result.content[0].text).toContain('SyncMCPServersJob');
+        expect(result.content[0].text).toContain('ProcessMirrorsJob');
+        expect(result.content[0].text).toContain('Connection timeout');
+      });
+
+      it('should pass filter parameters correctly', async () => {
+        const { listGoodJobs } = await import('../../shared/src/tools/list-good-jobs.js');
+        const mockClient = createMockClient({
+          getGoodJobs: vi.fn().mockResolvedValue({
+            jobs: [],
+            pagination: { current_page: 1, total_pages: 1, total_count: 0 },
+          }),
+        });
+
+        const tool = listGoodJobs(mockServer, () => mockClient);
+        await tool.handler({
+          queue_name: 'default',
+          status: 'failed',
+          job_class: 'SyncJob',
+          limit: 10,
+          offset: 5,
+        });
+
+        expect(mockClient.getGoodJobs).toHaveBeenCalledWith({
+          queue_name: 'default',
+          status: 'failed',
+          job_class: 'SyncJob',
+          after: undefined,
+          before: undefined,
+          limit: 10,
+          offset: 5,
+        });
+      });
+
+      it('should handle errors gracefully', async () => {
+        const { listGoodJobs } = await import('../../shared/src/tools/list-good-jobs.js');
+        const mockClient = createMockClient({
+          getGoodJobs: vi.fn().mockRejectedValue(new Error('API Error')),
+        });
+
+        const tool = listGoodJobs(mockServer, () => mockClient);
+        const result = await tool.handler({});
+
+        expect(result.isError).toBe(true);
+        expect(result.content[0].text).toContain('Error fetching good jobs: API Error');
+      });
+    });
+
+    describe('get_good_job', () => {
+      it('should fetch and format a single good job', async () => {
+        const { getGoodJob } = await import('../../shared/src/tools/get-good-job.js');
+        const mockClient = createMockClient({
+          getGoodJob: vi.fn().mockResolvedValue({
+            id: 'job-123',
+            job_class: 'SyncMCPServersJob',
+            queue_name: 'default',
+            status: 'failed',
+            scheduled_at: '2024-01-15T10:00:00Z',
+            performed_at: '2024-01-15T10:00:05Z',
+            finished_at: '2024-01-15T10:00:10Z',
+            error: 'Connection refused',
+            created_at: '2024-01-15T09:00:00Z',
+            updated_at: '2024-01-15T10:00:10Z',
+          }),
+        });
+
+        const tool = getGoodJob(mockServer, () => mockClient);
+        const result = await tool.handler({ id: 'job-123' });
+
+        expect(mockClient.getGoodJob).toHaveBeenCalledWith('job-123');
+        expect(result.content[0].text).toContain('GoodJob Details');
+        expect(result.content[0].text).toContain('job-123');
+        expect(result.content[0].text).toContain('SyncMCPServersJob');
+        expect(result.content[0].text).toContain('Connection refused');
+      });
+    });
+
+    describe('get_good_job_queue_statistics', () => {
+      it('should fetch and format statistics', async () => {
+        const { getGoodJobQueueStatistics } =
+          await import('../../shared/src/tools/get-good-job-queue-statistics.js');
+        const mockClient = createMockClient({
+          getGoodJobStatistics: vi.fn().mockResolvedValue({
+            total: 1500,
+            scheduled: 10,
+            queued: 5,
+            running: 3,
+            succeeded: 1400,
+            failed: 50,
+            discarded: 32,
+          }),
+        });
+
+        const tool = getGoodJobQueueStatistics(mockServer, () => mockClient);
+        const result = await tool.handler({});
+
+        expect(mockClient.getGoodJobStatistics).toHaveBeenCalled();
+        expect(result.content[0].text).toContain('GoodJob Queue Statistics');
+        expect(result.content[0].text).toContain('1500');
+        expect(result.content[0].text).toContain('Succeeded:** 1400');
+        expect(result.content[0].text).toContain('Failed:** 50');
+      });
+    });
+
+    describe('list_good_job_cron_schedules', () => {
+      it('should fetch and format cron schedules', async () => {
+        const { listGoodJobCronSchedules } =
+          await import('../../shared/src/tools/list-good-job-cron-schedules.js');
+        const mockClient = createMockClient({
+          getGoodJobCronSchedules: vi.fn().mockResolvedValue([
+            {
+              cron_key: 'sync_servers',
+              job_class: 'SyncMCPServersJob',
+              cron_expression: '0 */6 * * *',
+              description: 'Sync MCP servers every 6 hours',
+              next_scheduled_at: '2024-01-15T18:00:00Z',
+            },
+          ]),
+        });
+
+        const tool = listGoodJobCronSchedules(mockServer, () => mockClient);
+        const result = await tool.handler({});
+
+        expect(mockClient.getGoodJobCronSchedules).toHaveBeenCalled();
+        expect(result.content[0].text).toContain('Found 1 cron schedules');
+        expect(result.content[0].text).toContain('sync_servers');
+        expect(result.content[0].text).toContain('SyncMCPServersJob');
+        expect(result.content[0].text).toContain('0 */6 * * *');
+      });
+    });
+
+    describe('list_good_job_processes', () => {
+      it('should fetch and format processes', async () => {
+        const { listGoodJobProcesses } =
+          await import('../../shared/src/tools/list-good-job-processes.js');
+        const mockClient = createMockClient({
+          getGoodJobProcesses: vi.fn().mockResolvedValue([
+            {
+              id: 'proc-1',
+              hostname: 'worker-1.example.com',
+              pid: 12345,
+              queues: ['default', 'mailers'],
+              max_threads: 5,
+              started_at: '2024-01-15T08:00:00Z',
+            },
+          ]),
+        });
+
+        const tool = listGoodJobProcesses(mockServer, () => mockClient);
+        const result = await tool.handler({});
+
+        expect(mockClient.getGoodJobProcesses).toHaveBeenCalled();
+        expect(result.content[0].text).toContain('Found 1 active processes');
+        expect(result.content[0].text).toContain('worker-1.example.com');
+        expect(result.content[0].text).toContain('12345');
+        expect(result.content[0].text).toContain('default, mailers');
+      });
+    });
+
+    describe('retry_good_job', () => {
+      it('should retry a job successfully', async () => {
+        const { retryGoodJob } = await import('../../shared/src/tools/retry-good-job.js');
+        const mockClient = createMockClient({
+          retryGoodJob: vi.fn().mockResolvedValue({
+            success: true,
+            message: 'Job retried successfully',
+            job: { id: 'job-1', status: 'queued' },
+          }),
+        });
+
+        const tool = retryGoodJob(mockServer, () => mockClient);
+        const result = await tool.handler({ id: 'job-1' });
+
+        expect(mockClient.retryGoodJob).toHaveBeenCalledWith('job-1');
+        expect(result.content[0].text).toContain('Successfully retried job');
+        expect(result.content[0].text).toContain('Job retried successfully');
+      });
+    });
+
+    describe('discard_good_job', () => {
+      it('should discard a job successfully', async () => {
+        const { discardGoodJob } = await import('../../shared/src/tools/discard-good-job.js');
+        const mockClient = createMockClient({
+          discardGoodJob: vi.fn().mockResolvedValue({
+            success: true,
+            message: 'Job discarded',
+            job: { id: 'job-1', status: 'discarded' },
+          }),
+        });
+
+        const tool = discardGoodJob(mockServer, () => mockClient);
+        const result = await tool.handler({ id: 'job-1' });
+
+        expect(mockClient.discardGoodJob).toHaveBeenCalledWith('job-1');
+        expect(result.content[0].text).toContain('Successfully discarded job');
+      });
+    });
+
+    describe('reschedule_good_job', () => {
+      it('should reschedule a job successfully', async () => {
+        const { rescheduleGoodJob } = await import('../../shared/src/tools/reschedule-good-job.js');
+        const mockClient = createMockClient({
+          rescheduleGoodJob: vi.fn().mockResolvedValue({
+            success: true,
+            message: 'Job rescheduled',
+            job: {
+              id: 'job-1',
+              status: 'scheduled',
+              scheduled_at: '2024-01-16T10:00:00Z',
+            },
+          }),
+        });
+
+        const tool = rescheduleGoodJob(mockServer, () => mockClient);
+        const result = await tool.handler({
+          id: 'job-1',
+          scheduled_at: '2024-01-16T10:00:00Z',
+        });
+
+        expect(mockClient.rescheduleGoodJob).toHaveBeenCalledWith('job-1', '2024-01-16T10:00:00Z');
+        expect(result.content[0].text).toContain('Successfully rescheduled job');
+      });
+    });
+
+    describe('force_trigger_good_job_cron', () => {
+      it('should trigger a cron schedule successfully', async () => {
+        const { forceTriggerGoodJobCron } =
+          await import('../../shared/src/tools/force-trigger-good-job-cron.js');
+        const mockClient = createMockClient({
+          forceTriggerGoodJobCron: vi.fn().mockResolvedValue({
+            success: true,
+            message: 'Cron schedule triggered',
+          }),
+        });
+
+        const tool = forceTriggerGoodJobCron(mockServer, () => mockClient);
+        const result = await tool.handler({ cron_key: 'sync_servers' });
+
+        expect(mockClient.forceTriggerGoodJobCron).toHaveBeenCalledWith('sync_servers');
+        expect(result.content[0].text).toContain('Successfully triggered cron schedule');
+        expect(result.content[0].text).toContain('sync_servers');
+      });
+    });
+
+    describe('cleanup_good_jobs', () => {
+      it('should cleanup jobs successfully', async () => {
+        const { cleanupGoodJobs } = await import('../../shared/src/tools/cleanup-good-jobs.js');
+        const mockClient = createMockClient({
+          cleanupGoodJobs: vi.fn().mockResolvedValue({
+            success: true,
+            message: 'Cleanup completed',
+            deleted_count: 150,
+          }),
+        });
+
+        const tool = cleanupGoodJobs(mockServer, () => mockClient);
+        const result = await tool.handler({
+          older_than_days: 30,
+          status: 'succeeded',
+        });
+
+        expect(mockClient.cleanupGoodJobs).toHaveBeenCalledWith({
+          older_than_days: 30,
+          status: 'succeeded',
+        });
+        expect(result.content[0].text).toContain('Successfully cleaned up jobs');
+        expect(result.content[0].text).toContain('150');
+      });
+
+      it('should handle errors gracefully', async () => {
+        const { cleanupGoodJobs } = await import('../../shared/src/tools/cleanup-good-jobs.js');
+        const mockClient = createMockClient({
+          cleanupGoodJobs: vi.fn().mockRejectedValue(new Error('Permission denied')),
+        });
+
+        const tool = cleanupGoodJobs(mockServer, () => mockClient);
+        const result = await tool.handler({});
+
+        expect(result.isError).toBe(true);
+        expect(result.content[0].text).toContain('Error cleaning up good jobs: Permission denied');
+      });
     });
   });
 });

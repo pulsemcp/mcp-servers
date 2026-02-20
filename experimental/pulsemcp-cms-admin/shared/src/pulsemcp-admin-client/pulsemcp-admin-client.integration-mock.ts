@@ -1070,5 +1070,102 @@ export function createMockPulseMCPAdminClient(mockData: MockData): IPulseMCPAdmi
     async deleteRedirect() {
       return { success: true, message: 'Redirect deleted' };
     },
+
+    // GoodJob REST API methods (stub implementations)
+    async getGoodJobs() {
+      return { jobs: [], pagination: { current_page: 1, total_pages: 1, total_count: 0 } };
+    },
+
+    async getGoodJob(id) {
+      return {
+        id,
+        job_class: 'TestJob',
+        queue_name: 'default',
+        status: 'succeeded' as const,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+    },
+
+    async getGoodJobCronSchedules() {
+      return [];
+    },
+
+    async getGoodJobProcesses() {
+      return [];
+    },
+
+    async getGoodJobStatistics() {
+      return {
+        total: 0,
+        scheduled: 0,
+        queued: 0,
+        running: 0,
+        succeeded: 0,
+        failed: 0,
+        discarded: 0,
+      };
+    },
+
+    async retryGoodJob(id) {
+      return {
+        success: true,
+        message: `Job ${id} retried`,
+        job: {
+          id,
+          job_class: 'TestJob',
+          queue_name: 'default',
+          status: 'queued' as const,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        },
+      };
+    },
+
+    async discardGoodJob(id) {
+      return {
+        success: true,
+        message: `Job ${id} discarded`,
+        job: {
+          id,
+          job_class: 'TestJob',
+          queue_name: 'default',
+          status: 'discarded' as const,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        },
+      };
+    },
+
+    async rescheduleGoodJob(id) {
+      return {
+        success: true,
+        message: `Job ${id} rescheduled`,
+        job: {
+          id,
+          job_class: 'TestJob',
+          queue_name: 'default',
+          status: 'scheduled' as const,
+          scheduled_at: new Date().toISOString(),
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        },
+      };
+    },
+
+    async forceTriggerGoodJobCron(cronKey) {
+      return {
+        success: true,
+        message: `Cron schedule ${cronKey} triggered`,
+      };
+    },
+
+    async cleanupGoodJobs() {
+      return {
+        success: true,
+        message: 'Cleanup completed',
+        deleted_count: 0,
+      };
+    },
   };
 }

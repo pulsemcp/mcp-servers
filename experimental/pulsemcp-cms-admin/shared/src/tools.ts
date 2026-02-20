@@ -47,6 +47,17 @@ import { getRedirect } from './tools/get-redirect.js';
 import { createRedirect } from './tools/create-redirect.js';
 import { updateRedirect } from './tools/update-redirect.js';
 import { deleteRedirect } from './tools/delete-redirect.js';
+// GoodJob tools
+import { listGoodJobs } from './tools/list-good-jobs.js';
+import { getGoodJob } from './tools/get-good-job.js';
+import { listGoodJobCronSchedules } from './tools/list-good-job-cron-schedules.js';
+import { listGoodJobProcesses } from './tools/list-good-job-processes.js';
+import { getGoodJobQueueStatistics } from './tools/get-good-job-queue-statistics.js';
+import { retryGoodJob } from './tools/retry-good-job.js';
+import { discardGoodJob } from './tools/discard-good-job.js';
+import { rescheduleGoodJob } from './tools/reschedule-good-job.js';
+import { forceTriggerGoodJobCron } from './tools/force-trigger-good-job-cron.js';
+import { cleanupGoodJobs } from './tools/cleanup-good-jobs.js';
 
 /**
  * Tool group definitions - groups of related tools that can be enabled/disabled together
@@ -65,6 +76,7 @@ import { deleteRedirect } from './tools/delete-redirect.js';
  * - mcp_jsons / mcp_jsons_readonly: MCP JSON configuration tools
  * - mcp_servers / mcp_servers_readonly: Unified MCP server tools (abstracted interface)
  * - redirects / redirects_readonly: URL redirect management tools
+ * - good_jobs / good_jobs_readonly: GoodJob background job management tools
  */
 export type ToolGroup =
   | 'newsletter'
@@ -84,7 +96,9 @@ export type ToolGroup =
   | 'mcp_servers'
   | 'mcp_servers_readonly'
   | 'redirects'
-  | 'redirects_readonly';
+  | 'redirects_readonly'
+  | 'good_jobs'
+  | 'good_jobs_readonly';
 
 /** Base groups without _readonly suffix */
 type BaseToolGroup =
@@ -96,7 +110,8 @@ type BaseToolGroup =
   | 'tenants'
   | 'mcp_jsons'
   | 'mcp_servers'
-  | 'redirects';
+  | 'redirects'
+  | 'good_jobs';
 
 interface Tool {
   name: string;
@@ -176,6 +191,17 @@ const ALL_TOOLS: ToolDefinition[] = [
   { factory: createRedirect, group: 'redirects', isWriteOperation: true },
   { factory: updateRedirect, group: 'redirects', isWriteOperation: true },
   { factory: deleteRedirect, group: 'redirects', isWriteOperation: true },
+  // GoodJob tools
+  { factory: listGoodJobs, group: 'good_jobs', isWriteOperation: false },
+  { factory: getGoodJob, group: 'good_jobs', isWriteOperation: false },
+  { factory: listGoodJobCronSchedules, group: 'good_jobs', isWriteOperation: false },
+  { factory: listGoodJobProcesses, group: 'good_jobs', isWriteOperation: false },
+  { factory: getGoodJobQueueStatistics, group: 'good_jobs', isWriteOperation: false },
+  { factory: retryGoodJob, group: 'good_jobs', isWriteOperation: true },
+  { factory: discardGoodJob, group: 'good_jobs', isWriteOperation: true },
+  { factory: rescheduleGoodJob, group: 'good_jobs', isWriteOperation: true },
+  { factory: forceTriggerGoodJobCron, group: 'good_jobs', isWriteOperation: true },
+  { factory: cleanupGoodJobs, group: 'good_jobs', isWriteOperation: true },
 ];
 
 /**
@@ -200,6 +226,8 @@ const VALID_TOOL_GROUPS: ToolGroup[] = [
   'mcp_servers_readonly',
   'redirects',
   'redirects_readonly',
+  'good_jobs',
+  'good_jobs_readonly',
 ];
 
 /**
@@ -215,6 +243,7 @@ const BASE_TOOL_GROUPS: BaseToolGroup[] = [
   'mcp_jsons',
   'mcp_servers',
   'redirects',
+  'good_jobs',
 ];
 
 /**
@@ -298,6 +327,8 @@ function shouldIncludeTool(toolDef: ToolDefinition, enabledGroups: ToolGroup[]):
  * - mcp_servers_readonly: Unified MCP server tools (read only)
  * - redirects: URL redirect management tools (read + write)
  * - redirects_readonly: URL redirect tools (read only)
+ * - good_jobs: GoodJob background job management tools (read + write)
+ * - good_jobs_readonly: GoodJob tools (read only)
  *
  * @param clientFactory - Factory function that creates client instances
  * @param enabledGroups - Optional comma-separated list of enabled tool groups (overrides env var)
