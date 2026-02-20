@@ -295,7 +295,8 @@ describe('Agent Orchestrator MCP Server Integration Tests', () => {
       expect(result.content).toBeDefined();
       expect(result.content[0].type).toBe('text');
       expect(result.content[0].text).toContain('Push Notification Sent');
-      expect(result.content[0].text).toContain('Push notification queued');
+      expect(result.content[0].text).toContain('**Notification:** Needs API key to proceed');
+      expect(result.content[0].text).toContain('**Status:** Push notification queued');
     });
   });
 

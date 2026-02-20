@@ -3,7 +3,7 @@ import { z } from 'zod';
 import type { IAgentOrchestratorClient } from '../orchestrator-client/orchestrator-client.js';
 
 const PARAM_DESCRIPTIONS = {
-  session_id: 'Session ID (numeric) to send the push notification for.',
+  session_id: 'Session ID (numeric) or slug (string) to send the push notification for.',
   message:
     'The notification message to send. Should describe why human attention is needed (e.g., "Needs API key for Proctor MCP server to proceed").',
 } as const;
@@ -20,7 +20,7 @@ const TOOL_DESCRIPTION = `Send a push notification to the user about a session t
 - You want to alert the user about an important session status change
 
 **Parameters:**
-- **session_id**: The numeric ID of the session the notification relates to
+- **session_id**: The numeric ID or slug of the session the notification relates to
 - **message**: A clear, actionable message describing what the user needs to do
 
 **Note:** Use this sparingly - only for situations that truly require human attention.`;
@@ -54,11 +54,24 @@ export function sendPushNotificationTool(
 
         const response = await client.sendPushNotification(session_id, message);
 
+        if (!response.success) {
+          return {
+            content: [
+              {
+                type: 'text',
+                text: `Error sending push notification: ${response.message}`,
+              },
+            ],
+            isError: true,
+          };
+        }
+
         const lines = [
           `## Push Notification Sent`,
           '',
           `- **Session ID:** ${response.session_id}`,
-          `- **Message:** ${response.message}`,
+          `- **Notification:** ${message}`,
+          `- **Status:** ${response.message}`,
         ];
 
         return {

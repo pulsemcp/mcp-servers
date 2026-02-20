@@ -399,12 +399,11 @@ describe('Tools', () => {
       expect(result).toMatchObject({
         content: [{ type: 'text' }],
       });
-      expect((result as { content: Array<{ text: string }> }).content[0].text).toContain(
-        'Push Notification Sent'
-      );
-      expect((result as { content: Array<{ text: string }> }).content[0].text).toContain(
-        'Session ID'
-      );
+      const text = (result as { content: Array<{ text: string }> }).content[0].text;
+      expect(text).toContain('Push Notification Sent');
+      expect(text).toContain('Session ID');
+      expect(text).toContain('**Notification:** Needs API key to proceed');
+      expect(text).toContain('**Status:** Push notification queued');
       expect(mockClient.sendPushNotification).toHaveBeenCalledWith(1, 'Needs API key to proceed');
     });
 
@@ -423,6 +422,26 @@ describe('Tools', () => {
       expect(result.isError).toBe(true);
       expect((result as { content: Array<{ text: string }> }).content[0].text).toContain(
         'Session not found'
+      );
+    });
+
+    it('should handle success:false response', async () => {
+      mockClient.sendPushNotification = vi.fn().mockResolvedValue({
+        success: false,
+        message: 'Push notifications not enabled',
+        session_id: 1,
+      });
+
+      const tool = sendPushNotificationTool(mockServer, clientFactory);
+
+      const result = await tool.handler({
+        session_id: 1,
+        message: 'Test message',
+      });
+
+      expect(result.isError).toBe(true);
+      expect((result as { content: Array<{ text: string }> }).content[0].text).toContain(
+        'Push notifications not enabled'
       );
     });
 

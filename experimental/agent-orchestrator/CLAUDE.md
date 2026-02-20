@@ -21,11 +21,13 @@ agent-orchestrator/
 │   ├── src/
 │   │   ├── server.ts          # Server factory with DI
 │   │   ├── tools.ts           # Tool registration
-│   │   ├── tools/             # Individual tool implementations (4 tools)
+│   │   ├── tools/             # Individual tool implementations (6 tools)
 │   │   │   ├── search-sessions.ts  # List/search/filter sessions
 │   │   │   ├── get-session.ts      # Get session details with logs/transcripts
+│   │   │   ├── get-configs.ts      # Fetch all static configuration
 │   │   │   ├── start-session.ts    # Create and start new sessions
-│   │   │   └── action-session.ts   # Session actions (follow_up, pause, restart, archive, unarchive)
+│   │   │   ├── action-session.ts   # Session actions (follow_up, pause, restart, archive, unarchive)
+│   │   │   └── send-push-notification.ts # Send push notifications about sessions
 │   │   ├── orchestrator-client/  # REST API client
 │   │   │   ├── orchestrator-client.ts
 │   │   │   └── orchestrator-client.integration-mock.ts
@@ -54,12 +56,14 @@ Optional:
 
 ## Tools
 
-The server provides 4 tools with a simplified, consolidated API:
+The server provides 6 tools with a simplified, consolidated API:
 
 - **search_sessions** - List, filter, and search sessions (supports status filter, query search, pagination)
 - **get_session** - Get detailed session info with optional logs and subagent transcripts
+- **get_configs** - Fetch all static configuration (MCP servers, agent roots, stop conditions)
 - **start_session** - Create and optionally start a new agent session
-- **action_session** - Perform actions on sessions (follow_up, pause, restart, archive, unarchive)
+- **action_session** - Perform actions on sessions (follow_up, pause, restart, archive, unarchive, change_mcp_servers)
+- **send_push_notification** - Send push notifications to users about sessions needing attention
 
 ## Development
 
