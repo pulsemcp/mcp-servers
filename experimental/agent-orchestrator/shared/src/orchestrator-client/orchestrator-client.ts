@@ -27,8 +27,45 @@ import type {
   SubagentStatus,
   MCPServerInfo,
   MCPServersResponse,
+  AgentRootInfo,
+  StopConditionInfo,
   ConfigsResponse,
 } from '../types.js';
+
+/** Raw agent root shape as returned by the Rails API */
+interface RawAgentRoot {
+  name: string;
+  display_name: string;
+  description: string;
+  url: string;
+  default_branch?: string;
+  subdirectory?: string;
+  custom?: boolean;
+  default_stop_condition?: string;
+  default?: boolean;
+  default_mcp_servers?: string[];
+}
+
+/** Raw configs response shape as returned by the Rails API */
+interface RawConfigsResponse {
+  mcp_servers: MCPServerInfo[];
+  agent_roots: RawAgentRoot[];
+  stop_conditions: StopConditionInfo[];
+}
+
+/** Maps a raw API agent root to the normalized AgentRootInfo interface */
+function mapAgentRoot(raw: RawAgentRoot): AgentRootInfo {
+  return {
+    name: raw.name,
+    title: raw.display_name,
+    description: raw.description,
+    git_root: raw.url,
+    default_branch: raw.default_branch,
+    default_subdirectory: raw.subdirectory,
+    default_stop_condition: raw.default_stop_condition,
+    default_mcp_servers: raw.default_mcp_servers,
+  };
+}
 
 /**
  * Interface for the Agent Orchestrator API client.
@@ -410,6 +447,11 @@ export class AgentOrchestratorClient implements IAgentOrchestratorClient {
 
   // Unified Configs
   async getConfigs(): Promise<ConfigsResponse> {
-    return this.request<ConfigsResponse>('GET', '/configs');
+    const raw = await this.request<RawConfigsResponse>('GET', '/configs');
+    return {
+      mcp_servers: raw.mcp_servers,
+      agent_roots: raw.agent_roots.map(mapAgentRoot),
+      stop_conditions: raw.stop_conditions,
+    };
   }
 }
