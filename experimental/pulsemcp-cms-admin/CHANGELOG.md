@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [0.6.9] - 2026-02-20
+
 ### Added
 
 - Added `good_jobs` and `good_jobs_readonly` tool groups for GoodJob background job management
