@@ -65,24 +65,26 @@ The tests will:
 
 ## Latest Test Results
 
-**Test Date:** 2026-01-18
-**Branch:** agent-orchestrator/improve-start-session-docs
-**Commit:** 0be44d5
+**Test Date:** 2026-02-20
+**Branch:** tadasant/fix-get-configs-agent-root-fields
+**Commit:** 11526d0
 **Tested By:** Claude Code (automated)
 **Environment:** CI, unit tests and integration tests
 
 ### Summary
 
-**Overall:** :white_check_mark: SUCCESS - All 24 functional tests pass, 13 integration tests pass (100%)
+**Overall:** :white_check_mark: SUCCESS - All 55 functional tests pass, 13 integration tests pass (100%)
 
 | Test Category     | Status             | Tests |
 | ----------------- | ------------------ | ----- |
-| Tool Registration | :white_check_mark: | 1/1   |
+| Health Check      | :white_check_mark: | 31/31 |
 | search_sessions   | :white_check_mark: | 4/4   |
 | get_session       | :white_check_mark: | 4/4   |
 | start_session     | :white_check_mark: | 1/1   |
 | action_session    | :white_check_mark: | 8/8   |
-| get_configs       | :white_check_mark: | 6/6   |
+| get_configs       | :white_check_mark: | 5/5   |
+| Tool Definitions  | :white_check_mark: | 1/1   |
+| Tool Registration | :white_check_mark: | 1/1   |
 | Integration Tests | :white_check_mark: | 13/13 |
 
 ### Functionality Verified
@@ -96,29 +98,9 @@ The tests will:
 - :white_check_mark: **getConfigsWorks** - Fetch all static configs (MCP servers, agent roots, stop conditions)
 - :white_check_mark: **configResourcesWork** - MCP resources for individual config types
 
-### Test Details
+### Key Change in 0.2.2
 
-**5-tool interface:**
-
-- `search_sessions` - Search/list sessions with optional ID lookup
-- `get_session` - Get detailed session info with optional logs/transcripts
-- `start_session` - Create and start a new session
-- `action_session` - Perform actions (follow_up, pause, restart, archive, unarchive, change_mcp_servers)
-- `get_configs` - Fetch all static configuration in a single call
-
-**4 MCP resources:**
-
-- `agent-orchestrator://config` - Server configuration and status
-- `agent-orchestrator://configs/mcp-servers` - List of available MCP servers
-- `agent-orchestrator://configs/agent-roots` - Preconfigured repository settings
-- `agent-orchestrator://configs/stop-conditions` - Session completion criteria
-
-**New in 0.2.0:**
-
-- Added `get_configs` tool for unified static configuration access
-- Added MCP resources for individual config types (mcp-servers, agent-roots, stop-conditions)
-- **BREAKING:** Removed `get_available_mcp_servers` tool - use `get_configs` or resources instead
-- Functional tests: 24 pass, Integration tests: 13 pass
+- Fixed `get_configs` API response field mapping: the Rails API returns `url`, `display_name`, and `subdirectory` but the MCP interface expected `git_root`, `title`, and `default_subdirectory`. Added mapping layer in `AgentOrchestratorClient.getConfigs()`
 
 ---
 
