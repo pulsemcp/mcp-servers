@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.4] - 2026-02-20
+
+### Fixed
+
+- Fixed crash when API returns `null` for `data.result` during polling (defensive null coalescing)
+
 ## [0.2.3] - 2026-02-20
 
 ### Fixed

@@ -51,7 +51,7 @@ The tests will:
 
 **Test Date:** 2026-02-20
 **Branch:** tadasant/fix-pointsyeah-polling-api-change
-**Commit:** ec00d24
+**Commit:** b5fb699
 **Tested By:** Claude
 **Environment:** Linux, Node.js
 
@@ -93,4 +93,4 @@ The core fix (polling logic) was verified against the real PointsYeah API during
 
 All tools are always registered at startup. Auth-requiring tools (`search_flights`, `get_search_history`) check authentication state at call time and return a clear error when not authenticated. The live search flow (Playwright-based `create_task` + HTTP polling `fetch_result`) is tested with mocked dependencies and fake timers. Updated tests verify result accumulation across polls and `status`-based completion detection.
 
-**Summary:** 6 manual tests pass (4 skipped due to revoked token). Core fix verified end-to-end against real API. All 19 functional tests pass.
+**Summary:** 6 manual tests pass (4 skipped due to revoked token). All 19 functional tests pass. Null result array fix verified via TypeScript compilation and functional tests.
