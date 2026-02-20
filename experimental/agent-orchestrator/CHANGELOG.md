@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.3] - 2026-02-20
+
+### Added
+
+- New `send_push_notification` tool to send push notifications to users about sessions needing attention
+- `sendPushNotification` method on the API client (`POST /api/v1/notifications/push`)
+
 ## [0.2.2] - 2026-02-20
 
 ### Fixed

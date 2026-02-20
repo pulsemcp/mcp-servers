@@ -162,6 +162,13 @@ export interface ConfigsResponse {
   stop_conditions: StopConditionInfo[];
 }
 
+// Push notification response (from POST /api/v1/notifications/push)
+export interface SendPushNotificationResponse {
+  success: boolean;
+  message: string;
+  session_id: number;
+}
+
 // Create session request
 export interface CreateSessionRequest {
   agent_type?: string;

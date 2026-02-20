@@ -209,5 +209,11 @@ export function createMockOrchestratorClient(): IAgentOrchestratorClient {
     getMcpServers: vi.fn().mockResolvedValue(defaultMcpServers),
 
     getConfigs: vi.fn().mockResolvedValue(defaultConfigs),
+
+    sendPushNotification: vi.fn().mockResolvedValue({
+      success: true,
+      message: 'Push notification queued',
+      session_id: 1,
+    }),
   };
 }

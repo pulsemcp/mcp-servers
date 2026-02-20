@@ -2,12 +2,13 @@ import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { ListToolsRequestSchema, CallToolRequestSchema } from '@modelcontextprotocol/sdk/types.js';
 import { ClientFactory } from './server.js';
 
-// Simplified tool surface - 5 tools
+// Simplified tool surface - 6 tools
 import { searchSessionsTool } from './tools/search-sessions.js';
 import { startSessionTool } from './tools/start-session.js';
 import { getSessionTool } from './tools/get-session.js';
 import { actionSessionTool } from './tools/action-session.js';
 import { getConfigsTool } from './tools/get-configs.js';
+import { sendPushNotificationTool } from './tools/send-push-notification.js';
 
 // =============================================================================
 // TOOL GROUPING SYSTEM
@@ -93,6 +94,7 @@ interface ToolDefinition {
  * - get_session: Get detailed session info with optional logs/transcripts
  * - action_session: Perform actions (follow_up, pause, restart, archive, unarchive)
  * - get_configs: Fetch all static configuration (MCP servers, agent roots, stop conditions)
+ * - send_push_notification: Send a push notification about a session needing attention
  */
 const ALL_TOOLS: ToolDefinition[] = [
   // Read operations
@@ -103,6 +105,7 @@ const ALL_TOOLS: ToolDefinition[] = [
   // Write operations
   { factory: startSessionTool, groups: ['write', 'admin'] },
   { factory: actionSessionTool, groups: ['write', 'admin'] },
+  { factory: sendPushNotificationTool, groups: ['write', 'admin'] },
 ];
 
 /**

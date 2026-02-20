@@ -37,7 +37,7 @@ describe('Agent Orchestrator MCP Server Integration Tests', () => {
 
       const result = await client.listTools();
       const tools = result.tools;
-      expect(tools.length).toBe(5);
+      expect(tools.length).toBe(6);
 
       const toolNames = tools.map((t: { name: string }) => t.name);
       expect(toolNames).toContain('search_sessions');
@@ -45,6 +45,7 @@ describe('Agent Orchestrator MCP Server Integration Tests', () => {
       expect(toolNames).toContain('start_session');
       expect(toolNames).toContain('action_session');
       expect(toolNames).toContain('get_configs');
+      expect(toolNames).toContain('send_push_notification');
     });
 
     it('should execute search_sessions tool', async () => {
@@ -254,6 +255,47 @@ describe('Agent Orchestrator MCP Server Integration Tests', () => {
       expect(result.content[0].text).toContain('GitHub Development');
       expect(result.content[0].text).toContain('mcp-servers');
       expect(result.content[0].text).toContain('PR Merged');
+    });
+
+    it('should execute send_push_notification tool', async () => {
+      const mockClient = createIntegrationMockOrchestratorClient({
+        sessions: [
+          {
+            id: 1,
+            slug: 'test-session',
+            title: 'Test Session',
+            status: 'needs_input',
+            agent_type: 'claude_code',
+            prompt: 'Test prompt',
+            git_root: 'https://github.com/test/repo.git',
+            branch: 'main',
+            subdirectory: null,
+            execution_provider: 'local_filesystem',
+            stop_condition: null,
+            mcp_servers: [],
+            config: {},
+            metadata: {},
+            custom_metadata: {},
+            session_id: null,
+            job_id: null,
+            running_job_id: null,
+            archived_at: null,
+            created_at: '2025-01-15T14:30:00Z',
+            updated_at: '2025-01-15T14:35:00Z',
+          },
+        ],
+      });
+      client = await createTestMCPClientWithMock(mockClient);
+
+      const result = await client.callTool('send_push_notification', {
+        session_id: 1,
+        message: 'Needs API key to proceed',
+      });
+
+      expect(result.content).toBeDefined();
+      expect(result.content[0].type).toBe('text');
+      expect(result.content[0].text).toContain('Push Notification Sent');
+      expect(result.content[0].text).toContain('Push notification queued');
     });
   });
 
