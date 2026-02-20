@@ -67,27 +67,29 @@ The tests will:
 
 **Test Date:** 2026-02-20
 **Branch:** tadasant/add-send-push-notification-tool
-**Commit:** 797a439
+**Commit:** 2207f0e
 **Tested By:** Claude Code (automated)
-**Environment:** CI, unit tests and integration tests
+**Environment:** Production (ao.pulsemcp.com) + CI unit/integration tests
 
 ### Summary
 
-**Overall:** :white_check_mark: SUCCESS - All 60 functional tests pass, 14 integration tests pass (100%)
+**Overall:** :white_check_mark: SUCCESS - All 21 manual tests pass against production, 61 functional tests pass, 14 integration tests pass
 
-| Test Category          | Status             | Tests |
-| ---------------------- | ------------------ | ----- |
-| Health Check           | :white_check_mark: | 31/31 |
-| search_sessions        | :white_check_mark: | 4/4   |
-| get_session            | :white_check_mark: | 4/4   |
-| start_session          | :white_check_mark: | 1/1   |
-| action_session         | :white_check_mark: | 8/8   |
-| get_configs            | :white_check_mark: | 5/5   |
-| send_push_notification | :white_check_mark: | 3/3   |
-| Tool Definitions       | :white_check_mark: | 1/1   |
-| Map Agent Root         | :white_check_mark: | 2/2   |
-| Tool Registration      | :white_check_mark: | 1/1   |
-| Integration Tests      | :white_check_mark: | 14/14 |
+| Test Category                 | Status             | Tests |
+| ----------------------------- | ------------------ | ----- |
+| **Manual Tests (Production)** |                    |       |
+| Tool Registration             | :white_check_mark: | 1/1   |
+| search_sessions               | :white_check_mark: | 4/4   |
+| get_session                   | :white_check_mark: | 5/5   |
+| start_session                 | :white_check_mark: | 1/1   |
+| action_session                | :white_check_mark: | 5/5   |
+| get_configs                   | :white_check_mark: | 1/1   |
+| send_push_notification        | :white_check_mark: | 2/2   |
+| Resources                     | :white_check_mark: | 2/2   |
+| **Functional Tests (CI)**     |                    |       |
+| All functional tests          | :white_check_mark: | 61/61 |
+| **Integration Tests (CI)**    |                    |       |
+| All integration tests         | :white_check_mark: | 14/14 |
 
 ### Functionality Verified
 
