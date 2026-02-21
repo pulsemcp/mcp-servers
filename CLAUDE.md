@@ -32,24 +32,38 @@ This is a monorepo containing Model Context Protocol (MCP) servers built by Puls
 
 ## Verification
 - [x] <what you actually did to verify this works>
-- [x] <evidence of closed loop>
+- [x] <proof: concrete evidence it works — not just an assertion>
 ```
 
 The `## Verification` section documents how you closed the loop — what you _actually did_, not what _should be done_. Every checkbox must be checked before the PR is opened. If you can't verify something, explain why instead of leaving an unchecked box.
 
+### Proof: Show, Don't Tell
+
+Every verification item should include **proof** — concrete evidence that the change works. "Tested it and it works" is NOT proof. A screenshot, a test output, or a confirmation receipt IS proof.
+
+**Proof types and when to use them:**
+
+1. **E2E test report** — For backend/logic changes. Describe what you tested end-to-end and what happened. This is the most common type.
+2. **Screenshot** — For UI changes. **UI changes MUST include screenshots. No exceptions.**
+3. **External confirmation** — For tasks with external side effects (API calls, emails sent, deployments). Show the confirmation or response.
+
 Good examples:
 
-- `[x] Added tests in `experimental/my-server/src/**tests**/``
+- `[x] E2E: created a session via the API, verified it appeared in the dashboard with correct metadata`
+- `[x] Screenshot of updated settings page: ![settings](url)`
+- `[x] Ran migration on staging, verified column exists: `SELECT column_name FROM information_schema.columns WHERE table_name = 'users';``
+- `[x] Sent test email via new endpoint, confirmed delivery in Mailgun logs`
 - `[x] CI green (lint + tests pass)`
 - `[x] Self-reviewed PR diff — no unintended changes`
 
 Bad examples (NEVER do this):
 
-- `[ ] CI passes`
-- `[ ] Verify the server works end-to-end`
-- `[ ] Check that existing tests still pass`
+- `[ ] CI passes` — unchecked box, aspirational
+- `[ ] Verify the server works end-to-end` — unchecked box, aspirational
+- `[x] Tested it and it works` — this is an assertion, not proof. What did you test? What happened?
+- `[x] Verified the feature works correctly` — says nothing. Show what you did and what you saw
 
-Unchecked boxes in a PR description are useless — they describe aspirational work that nobody will do. Close the loop before handing the PR to a human.
+Unchecked boxes in a PR description are useless — they describe aspirational work that nobody will do. Checked boxes without proof are almost as bad — they're assertions without evidence. Close the loop with concrete proof before handing the PR to a human.
 
 ### IMPORTANT: Git Branch Management
 
