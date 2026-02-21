@@ -9,12 +9,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Functional tests for tool group parsing and filtering logic
+- 7 new tools covering ~30 new API endpoints across 4 domains (13 tools total):
+  - `manage_enqueued_messages` - Manage session message queue (list, get, create, update, delete, reorder, interrupt)
+  - `get_notifications` - Get/list notifications and badge count
+  - `action_notification` - Mark read, dismiss notifications (mark_read, mark_all_read, dismiss, dismiss_all_read)
+  - `search_triggers` - Search/list automation triggers with optional channels
+  - `action_trigger` - Create, update, delete, toggle triggers
+  - `get_system_health` - Get system health report and CLI status
+  - `action_health` - System maintenance actions (cleanup_processes, retry_sessions, archive_old, cli_refresh, cli_clear_cache)
+- 2 new tool groups: `triggers`/`triggers_readonly` and `health`/`health_readonly`
+- Extended `action_session` with 6 new actions: fork, refresh, refresh_all, update_notes, toggle_favorite, bulk_archive
+- Extended `get_session` with `transcript_format` parameter (text/json) for dedicated transcript endpoint
+- ~25 new API client methods for enqueued messages, triggers, notifications, health, and CLI operations
+- Comprehensive functional tests for all 13 tools and tool group filtering
 
 ### Changed
 
 - **BREAKING:** Replaced `ENABLED_TOOLGROUPS` environment variable with `TOOL_GROUPS` for consistency with other MCP servers in the repo
-- **BREAKING:** Replaced permission-based tool groups (`readonly`, `write`, `admin`) with domain-specific tool groups (`sessions`, `sessions_readonly`, `notifications`, `notifications_readonly`) following the base/readonly pattern used by other MCP servers
+- **BREAKING:** Replaced permission-based tool groups (`readonly`, `write`, `admin`) with domain-specific tool groups (`sessions`, `sessions_readonly`, `notifications`, `notifications_readonly`, `triggers`, `triggers_readonly`, `health`, `health_readonly`) following the base/readonly pattern used by other MCP servers
+- `action_session` `session_id` parameter is now optional (not required for `refresh_all` and `bulk_archive` actions)
 - Default behavior unchanged: all tools enabled when `TOOL_GROUPS` is not set
 
 ## [0.2.3] - 2026-02-20

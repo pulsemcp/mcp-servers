@@ -8,6 +8,9 @@ import type {
   AgentRootInfo,
   StopConditionInfo,
   ConfigsResponse,
+  EnqueuedMessage,
+  Trigger,
+  Notification,
 } from '../../shared/src/types.js';
 
 const defaultSession: Session = {
@@ -104,6 +107,53 @@ const defaultConfigs: ConfigsResponse = {
   mcp_servers: defaultMcpServers,
   agent_roots: defaultAgentRoots,
   stop_conditions: defaultStopConditions,
+};
+
+const defaultEnqueuedMessage: EnqueuedMessage = {
+  id: 1,
+  session_id: 1,
+  content: 'Follow up on the PR review',
+  stop_condition: null,
+  position: 1,
+  status: 'pending',
+  created_at: '2025-01-15T15:00:00Z',
+  updated_at: '2025-01-15T15:00:00Z',
+};
+
+const defaultTrigger: Trigger = {
+  id: 1,
+  name: 'Daily Report',
+  trigger_type: 'schedule',
+  status: 'enabled',
+  agent_root_name: 'mcp-servers',
+  prompt_template: 'Generate a daily status report',
+  stop_condition: null,
+  reuse_session: false,
+  mcp_servers: ['github-development'],
+  configuration: { interval: 1, unit: 'day' },
+  schedule_description: 'Every day at 9:00 AM',
+  last_session_id: null,
+  last_triggered_at: null,
+  last_polled_at: null,
+  sessions_created_count: 0,
+  created_at: '2025-01-15T14:00:00Z',
+  updated_at: '2025-01-15T14:00:00Z',
+};
+
+const defaultNotification: Notification = {
+  id: 1,
+  session_id: 1,
+  notification_type: 'session_needs_input',
+  read: false,
+  stale: false,
+  created_at: '2025-01-15T15:00:00Z',
+  updated_at: '2025-01-15T15:00:00Z',
+  session: {
+    id: 1,
+    slug: 'test-session',
+    title: 'Test Session',
+    status: 'needs_input',
+  },
 };
 
 export function createMockOrchestratorClient(): IAgentOrchestratorClient {
@@ -214,6 +264,181 @@ export function createMockOrchestratorClient(): IAgentOrchestratorClient {
       success: true,
       message: 'Push notification queued',
       session_id: 1,
+    }),
+
+    // Session Extensions
+    forkSession: vi.fn().mockResolvedValue({
+      session: { ...defaultSession, id: 3, title: 'Forked: Test Session' },
+      message: 'Session forked successfully',
+    }),
+
+    refreshSession: vi.fn().mockResolvedValue({
+      session: { ...defaultSession },
+      message: 'Session refreshed',
+    }),
+
+    refreshAllSessions: vi.fn().mockResolvedValue({
+      message: 'All sessions refreshed',
+      refreshed: 5,
+      restarted: 1,
+      continued: 0,
+      errors: 0,
+    }),
+
+    updateSessionNotes: vi.fn().mockResolvedValue({
+      ...defaultSession,
+    }),
+
+    toggleFavorite: vi.fn().mockResolvedValue({
+      ...defaultSession,
+      favorited: true,
+    }),
+
+    bulkArchiveSessions: vi.fn().mockResolvedValue({
+      archived_count: 3,
+      errors: [],
+    }),
+
+    getTranscript: vi.fn().mockResolvedValue({
+      transcript_text: 'User: Hello\nAssistant: Hi there!',
+    }),
+
+    // Enqueued Messages
+    listEnqueuedMessages: vi.fn().mockResolvedValue({
+      enqueued_messages: [defaultEnqueuedMessage],
+      pagination: { page: 1, per_page: 25, total_count: 1, total_pages: 1 },
+    }),
+
+    getEnqueuedMessage: vi.fn().mockResolvedValue(defaultEnqueuedMessage),
+
+    createEnqueuedMessage: vi.fn().mockResolvedValue({
+      ...defaultEnqueuedMessage,
+      id: 2,
+      content: 'New message',
+    }),
+
+    updateEnqueuedMessage: vi.fn().mockResolvedValue({
+      ...defaultEnqueuedMessage,
+      content: 'Updated message',
+    }),
+
+    deleteEnqueuedMessage: vi.fn().mockResolvedValue(undefined),
+
+    reorderEnqueuedMessage: vi.fn().mockResolvedValue({
+      ...defaultEnqueuedMessage,
+      position: 3,
+    }),
+
+    interruptEnqueuedMessage: vi.fn().mockResolvedValue({
+      session: { ...defaultSession, status: 'running' },
+      message: 'Message sent as interrupt',
+    }),
+
+    // Triggers
+    listTriggers: vi.fn().mockResolvedValue({
+      triggers: [defaultTrigger],
+      pagination: { page: 1, per_page: 25, total_count: 1, total_pages: 1 },
+    }),
+
+    getTrigger: vi.fn().mockResolvedValue({
+      trigger: defaultTrigger,
+      recent_sessions: [],
+    }),
+
+    createTrigger: vi.fn().mockResolvedValue({
+      ...defaultTrigger,
+      id: 2,
+      name: 'New Trigger',
+    }),
+
+    updateTrigger: vi.fn().mockResolvedValue({
+      ...defaultTrigger,
+      name: 'Updated Trigger',
+    }),
+
+    deleteTrigger: vi.fn().mockResolvedValue(undefined),
+
+    toggleTrigger: vi.fn().mockResolvedValue({
+      ...defaultTrigger,
+      status: 'disabled',
+    }),
+
+    getTriggerChannels: vi.fn().mockResolvedValue({
+      channels: [
+        { id: 'C123', name: 'general', is_private: false, num_members: 50 },
+        { id: 'C456', name: 'dev-team', is_private: true, num_members: 10 },
+      ],
+    }),
+
+    // Notification Management
+    listNotifications: vi.fn().mockResolvedValue({
+      notifications: [defaultNotification],
+      pagination: { page: 1, per_page: 25, total_count: 1, total_pages: 1 },
+    }),
+
+    getNotification: vi.fn().mockResolvedValue(defaultNotification),
+
+    getNotificationBadge: vi.fn().mockResolvedValue({
+      pending_count: 3,
+    }),
+
+    markNotificationRead: vi.fn().mockResolvedValue({
+      ...defaultNotification,
+      read: true,
+    }),
+
+    markAllNotificationsRead: vi.fn().mockResolvedValue({
+      marked_count: 3,
+      pending_count: 0,
+    }),
+
+    dismissNotification: vi.fn().mockResolvedValue(undefined),
+
+    dismissAllReadNotifications: vi.fn().mockResolvedValue({
+      dismissed_count: 2,
+      pending_count: 1,
+    }),
+
+    // Health
+    getHealth: vi.fn().mockResolvedValue({
+      health_report: {
+        sessions: { running: 5, waiting: 2, failed: 1 },
+        jobs: { queued: 3, active: 2 },
+      },
+      timestamp: '2025-01-15T15:00:00Z',
+      rails_env: 'production',
+      ruby_version: '3.3.0',
+    }),
+
+    cleanupProcesses: vi.fn().mockResolvedValue({
+      cleaned: 2,
+      message: 'Cleaned up 2 orphaned processes',
+    }),
+
+    retrySessions: vi.fn().mockResolvedValue({
+      retried: 3,
+      message: 'Retried 3 failed sessions',
+    }),
+
+    archiveOldSessions: vi.fn().mockResolvedValue({
+      archived: 10,
+      message: 'Archived 10 old sessions',
+    }),
+
+    // CLIs
+    getCliStatus: vi.fn().mockResolvedValue({
+      cli_status: { claude_code: 'installed', npm: 'installed' },
+      unauthenticated_count: 0,
+    }),
+
+    refreshCli: vi.fn().mockResolvedValue({
+      queued: true,
+      message: 'CLI refresh queued',
+    }),
+
+    clearCliCache: vi.fn().mockResolvedValue({
+      queued: true,
+      message: 'CLI cache clear queued',
     }),
   };
 }

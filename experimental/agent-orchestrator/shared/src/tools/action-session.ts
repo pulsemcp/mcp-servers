@@ -3,13 +3,17 @@ import { z } from 'zod';
 import type { IAgentOrchestratorClient } from '../orchestrator-client/orchestrator-client.js';
 
 const PARAM_DESCRIPTIONS = {
-  session_id: 'Session ID (numeric) or slug (string) to perform the action on.',
+  session_id:
+    'Session ID (numeric) or slug (string). Required for most actions. Not required for "refresh_all" and "bulk_archive".',
   action:
-    'Action to perform: "follow_up" (send prompt to paused session), "pause" (pause running session), "restart" (restart paused/failed session), "archive" (archive session), "unarchive" (restore archived session), "change_mcp_servers" (update MCP servers for session)',
+    'Action to perform: "follow_up", "pause", "restart", "archive", "unarchive", "change_mcp_servers", "fork", "refresh", "refresh_all", "update_notes", "toggle_favorite", "bulk_archive"',
   prompt:
     'Required for "follow_up" action. The prompt to send to the agent. Not used for other actions.',
   mcp_servers:
     'Required for "change_mcp_servers" action. Array of MCP server names to set for the session.',
+  message_index: 'Required for "fork" action. The transcript message index to fork from.',
+  session_notes: 'Required for "update_notes" action. The notes text to set on the session.',
+  session_ids: 'Required for "bulk_archive" action. Array of session IDs to archive.',
 } as const;
 
 const ACTION_ENUM = [
@@ -19,13 +23,22 @@ const ACTION_ENUM = [
   'archive',
   'unarchive',
   'change_mcp_servers',
+  'fork',
+  'refresh',
+  'refresh_all',
+  'update_notes',
+  'toggle_favorite',
+  'bulk_archive',
 ] as const;
 
 export const ActionSessionSchema = z.object({
-  session_id: z.union([z.string(), z.number()]).describe(PARAM_DESCRIPTIONS.session_id),
+  session_id: z.union([z.string(), z.number()]).optional().describe(PARAM_DESCRIPTIONS.session_id),
   action: z.enum(ACTION_ENUM).describe(PARAM_DESCRIPTIONS.action),
   prompt: z.string().optional().describe(PARAM_DESCRIPTIONS.prompt),
   mcp_servers: z.array(z.string()).optional().describe(PARAM_DESCRIPTIONS.mcp_servers),
+  message_index: z.number().optional().describe(PARAM_DESCRIPTIONS.message_index),
+  session_notes: z.string().optional().describe(PARAM_DESCRIPTIONS.session_notes),
+  session_ids: z.array(z.number()).optional().describe(PARAM_DESCRIPTIONS.session_ids),
 });
 
 const TOOL_DESCRIPTION = `Perform an action on an agent session.
@@ -37,19 +50,17 @@ const TOOL_DESCRIPTION = `Perform an action on an agent session.
 - **archive**: Archive a session (marks as completed)
 - **unarchive**: Restore an archived session to "needs_input" status
 - **change_mcp_servers**: Update the MCP servers for a session (requires "mcp_servers" parameter)
-
-**Status requirements:**
-- follow_up: Session must be "needs_input"
-- pause: Session must be "running"
-- restart: Session must be "needs_input" or "failed"
-- archive: Session can be in any status except "archived"
-- unarchive: Session must be "archived"
-- change_mcp_servers: Session can be in any status except "archived"
+- **fork**: Fork a session from a specific transcript message (requires "message_index")
+- **refresh**: Refresh a single session's status from the execution provider
+- **refresh_all**: Refresh all active sessions (no session_id needed)
+- **update_notes**: Update the notes on a session (requires "session_notes")
+- **toggle_favorite**: Toggle favorite status on a session
+- **bulk_archive**: Archive multiple sessions at once (requires "session_ids", no session_id needed)
 
 **Use cases:**
 - Provide additional instructions to an agent
-- Control session lifecycle (pause, restart)
-- Organize sessions (archive, unarchive)
+- Control session lifecycle (pause, restart, fork, refresh)
+- Organize sessions (archive, unarchive, bulk_archive, toggle_favorite, update_notes)
 - Reconfigure session MCP server access`;
 
 export function actionSessionTool(_server: Server, clientFactory: () => IAgentOrchestratorClient) {
@@ -77,14 +88,60 @@ export function actionSessionTool(_server: Server, clientFactory: () => IAgentOr
           items: { type: 'string' },
           description: PARAM_DESCRIPTIONS.mcp_servers,
         },
+        message_index: {
+          type: 'number',
+          description: PARAM_DESCRIPTIONS.message_index,
+        },
+        session_notes: {
+          type: 'string',
+          description: PARAM_DESCRIPTIONS.session_notes,
+        },
+        session_ids: {
+          type: 'array',
+          items: { type: 'number' },
+          description: PARAM_DESCRIPTIONS.session_ids,
+        },
       },
-      required: ['session_id', 'action'],
+      required: ['action'],
     },
     handler: async (args: unknown) => {
       try {
         const validatedArgs = ActionSessionSchema.parse(args);
         const client = clientFactory();
-        const { session_id, action, prompt, mcp_servers } = validatedArgs;
+        const {
+          session_id,
+          action,
+          prompt,
+          mcp_servers,
+          message_index,
+          session_notes,
+          session_ids,
+        } = validatedArgs;
+
+        // Actions that require session_id
+        const requiresSessionId = [
+          'follow_up',
+          'pause',
+          'restart',
+          'archive',
+          'unarchive',
+          'change_mcp_servers',
+          'fork',
+          'refresh',
+          'update_notes',
+          'toggle_favorite',
+        ];
+        if (requiresSessionId.includes(action) && !session_id) {
+          return {
+            content: [
+              {
+                type: 'text',
+                text: `Error: The "session_id" parameter is required for the "${action}" action.`,
+              },
+            ],
+            isError: true,
+          };
+        }
 
         // Validate that prompt is provided for follow_up action
         if (action === 'follow_up' && !prompt) {
@@ -112,11 +169,50 @@ export function actionSessionTool(_server: Server, clientFactory: () => IAgentOr
           };
         }
 
+        // Validate fork requires message_index
+        if (action === 'fork' && message_index === undefined) {
+          return {
+            content: [
+              {
+                type: 'text',
+                text: 'Error: The "message_index" parameter is required for the "fork" action.',
+              },
+            ],
+            isError: true,
+          };
+        }
+
+        // Validate update_notes requires session_notes
+        if (action === 'update_notes' && session_notes === undefined) {
+          return {
+            content: [
+              {
+                type: 'text',
+                text: 'Error: The "session_notes" parameter is required for the "update_notes" action.',
+              },
+            ],
+            isError: true,
+          };
+        }
+
+        // Validate bulk_archive requires session_ids
+        if (action === 'bulk_archive' && (!session_ids || session_ids.length === 0)) {
+          return {
+            content: [
+              {
+                type: 'text',
+                text: 'Error: The "session_ids" parameter is required for the "bulk_archive" action.',
+              },
+            ],
+            isError: true,
+          };
+        }
+
         let result: string;
 
         switch (action) {
           case 'follow_up': {
-            const response = await client.followUp(session_id, prompt!);
+            const response = await client.followUp(session_id!, prompt!);
             const lines = [
               `## Follow-up Sent`,
               '',
@@ -135,7 +231,7 @@ export function actionSessionTool(_server: Server, clientFactory: () => IAgentOr
           }
 
           case 'pause': {
-            const response = await client.pauseSession(session_id);
+            const response = await client.pauseSession(session_id!);
             const lines = [
               `## Session Paused`,
               '',
@@ -151,7 +247,7 @@ export function actionSessionTool(_server: Server, clientFactory: () => IAgentOr
           }
 
           case 'restart': {
-            const response = await client.restartSession(session_id);
+            const response = await client.restartSession(session_id!);
             const lines = [
               `## Session Restarted`,
               '',
@@ -170,7 +266,7 @@ export function actionSessionTool(_server: Server, clientFactory: () => IAgentOr
           }
 
           case 'archive': {
-            const session = await client.archiveSession(session_id);
+            const session = await client.archiveSession(session_id!);
             const lines = [
               `## Session Archived`,
               '',
@@ -184,7 +280,7 @@ export function actionSessionTool(_server: Server, clientFactory: () => IAgentOr
           }
 
           case 'unarchive': {
-            const session = await client.unarchiveSession(session_id);
+            const session = await client.unarchiveSession(session_id!);
             const lines = [
               `## Session Unarchived`,
               '',
@@ -197,7 +293,7 @@ export function actionSessionTool(_server: Server, clientFactory: () => IAgentOr
           }
 
           case 'change_mcp_servers': {
-            const session = await client.changeMcpServers(session_id, mcp_servers!);
+            const session = await client.changeMcpServers(session_id!, mcp_servers!);
             const lines = [
               `## MCP Servers Updated`,
               '',
@@ -205,6 +301,91 @@ export function actionSessionTool(_server: Server, clientFactory: () => IAgentOr
               `- **Title:** ${session.title}`,
               `- **MCP Servers:** ${session.mcp_servers.length > 0 ? session.mcp_servers.join(', ') : '(none)'}`,
             ];
+            result = lines.join('\n');
+            break;
+          }
+
+          case 'fork': {
+            const response = await client.forkSession(session_id!, message_index!);
+            const lines = [
+              `## Session Forked`,
+              '',
+              `- **New Session ID:** ${response.session.id}`,
+              `- **Title:** ${response.session.title}`,
+              `- **Status:** ${response.session.status}`,
+              `- **Message:** ${response.message}`,
+            ];
+            result = lines.join('\n');
+            break;
+          }
+
+          case 'refresh': {
+            const response = await client.refreshSession(session_id!);
+            const lines = [
+              `## Session Refreshed`,
+              '',
+              `- **Session ID:** ${response.session.id}`,
+              `- **Title:** ${response.session.title}`,
+              `- **Status:** ${response.session.status}`,
+              `- **Message:** ${response.message}`,
+            ];
+            result = lines.join('\n');
+            break;
+          }
+
+          case 'refresh_all': {
+            const response = await client.refreshAllSessions();
+            const lines = [
+              `## All Sessions Refreshed`,
+              '',
+              `- **Message:** ${response.message}`,
+              `- **Refreshed:** ${response.refreshed}`,
+              `- **Restarted:** ${response.restarted}`,
+              `- **Continued:** ${response.continued}`,
+              `- **Errors:** ${response.errors}`,
+            ];
+            result = lines.join('\n');
+            break;
+          }
+
+          case 'update_notes': {
+            const session = await client.updateSessionNotes(session_id!, session_notes!);
+            const lines = [
+              `## Session Notes Updated`,
+              '',
+              `- **Session ID:** ${session.id}`,
+              `- **Title:** ${session.title}`,
+            ];
+            result = lines.join('\n');
+            break;
+          }
+
+          case 'toggle_favorite': {
+            const session = await client.toggleFavorite(session_id!);
+            const lines = [
+              `## Favorite Toggled`,
+              '',
+              `- **Session ID:** ${session.id}`,
+              `- **Title:** ${session.title}`,
+              `- **Favorited:** ${session.favorited ? 'Yes' : 'No'}`,
+            ];
+            result = lines.join('\n');
+            break;
+          }
+
+          case 'bulk_archive': {
+            const response = await client.bulkArchiveSessions(session_ids!);
+            const lines = [
+              `## Bulk Archive Complete`,
+              '',
+              `- **Archived:** ${response.archived_count}`,
+            ];
+            if (response.errors.length > 0) {
+              lines.push(`- **Errors:** ${response.errors.length}`);
+              response.errors.forEach((err) => {
+                lines.push(`  - Session ${err.id}: ${err.error}`);
+              });
+            }
             result = lines.join('\n');
             break;
           }

@@ -87,11 +87,17 @@ export function createRegisterResources(clientFactory: ClientFactory) {
             resources: true,
           },
           toolGroups: {
-            sessions: 'All session tools (read + write): search, get, configs, start, action',
+            sessions:
+              'All session tools (read + write): search, get, configs, start, action, enqueued messages',
             sessions_readonly:
               'Session tools (read only): search_sessions, get_session, get_configs',
-            notifications: 'All notification tools (read + write): send_push_notification',
-            notifications_readonly: 'Notification tools (read only)',
+            notifications: 'All notification tools (read + write): get, send, mark read, dismiss',
+            notifications_readonly: 'Notification tools (read only): get_notifications',
+            triggers: 'All trigger tools (read + write): search, create, update, delete, toggle',
+            triggers_readonly: 'Trigger tools (read only): search_triggers',
+            health:
+              'All health tools (read + write): health report, CLI status, maintenance actions',
+            health_readonly: 'Health tools (read only): get_system_health',
           },
         };
 

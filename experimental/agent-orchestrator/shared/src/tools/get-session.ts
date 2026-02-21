@@ -7,6 +7,8 @@ const PARAM_DESCRIPTIONS = {
   id: 'Session ID (numeric) or slug (string). Examples: "1", "fix-auth-bug-20250115"',
   include_transcript:
     'Include the full transcript of the session. Default: false. Set to true for complete conversation history.',
+  transcript_format:
+    'Format for transcript retrieval: "text" (human-readable) or "json" (structured). Only used when include_transcript is true. When specified, fetches transcript via dedicated endpoint instead of inline.',
   include_logs:
     'Include logs for the session. Default: false. Use logs_page and logs_per_page for pagination.',
   logs_page: 'Page number for logs pagination. Default: 1',
@@ -20,6 +22,10 @@ const PARAM_DESCRIPTIONS = {
 export const GetSessionSchema = z.object({
   id: z.union([z.string(), z.number()]).describe(PARAM_DESCRIPTIONS.id),
   include_transcript: z.boolean().optional().describe(PARAM_DESCRIPTIONS.include_transcript),
+  transcript_format: z
+    .enum(['text', 'json'])
+    .optional()
+    .describe(PARAM_DESCRIPTIONS.transcript_format),
   include_logs: z.boolean().optional().describe(PARAM_DESCRIPTIONS.include_logs),
   logs_page: z.number().min(1).optional().describe(PARAM_DESCRIPTIONS.logs_page),
   logs_per_page: z.number().min(1).max(100).optional().describe(PARAM_DESCRIPTIONS.logs_per_page),
@@ -214,6 +220,11 @@ export function getSessionTool(_server: Server, clientFactory: () => IAgentOrche
           type: 'boolean',
           description: PARAM_DESCRIPTIONS.include_transcript,
         },
+        transcript_format: {
+          type: 'string',
+          enum: ['text', 'json'],
+          description: PARAM_DESCRIPTIONS.transcript_format,
+        },
         include_logs: {
           type: 'boolean',
           description: PARAM_DESCRIPTIONS.include_logs,
@@ -252,10 +263,27 @@ export function getSessionTool(_server: Server, clientFactory: () => IAgentOrche
         const validatedArgs = GetSessionSchema.parse(args);
         const client = clientFactory();
 
-        // Get session details
-        const session = await client.getSession(validatedArgs.id, validatedArgs.include_transcript);
+        // Get session details - if using transcript_format, fetch transcript separately
+        const useTranscriptEndpoint =
+          validatedArgs.include_transcript && validatedArgs.transcript_format;
+        const session = await client.getSession(
+          validatedArgs.id,
+          validatedArgs.include_transcript && !useTranscriptEndpoint
+        );
 
         let output = formatSessionDetails(session, validatedArgs.include_transcript || false);
+
+        // If transcript_format specified, use dedicated transcript endpoint
+        if (useTranscriptEndpoint) {
+          const transcriptResponse = await client.getTranscript(
+            session.id,
+            validatedArgs.transcript_format
+          );
+          output += '\n\n### Transcript';
+          output += '\n```';
+          output += `\n${transcriptResponse.transcript_text}`;
+          output += '\n```';
+        }
 
         // Get logs if requested
         if (validatedArgs.include_logs) {

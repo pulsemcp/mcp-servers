@@ -235,3 +235,208 @@ export interface UpdateSubagentTranscriptRequest {
   total_tokens?: number;
   tool_use_count?: number;
 }
+
+// =============================================================================
+// Enqueued Messages
+// =============================================================================
+
+export type EnqueuedMessageStatus = 'pending' | 'processing' | 'sent';
+
+export interface EnqueuedMessage {
+  id: number;
+  session_id: number;
+  content: string;
+  stop_condition: string | null;
+  position: number;
+  status: EnqueuedMessageStatus;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface EnqueuedMessagesResponse {
+  enqueued_messages: EnqueuedMessage[];
+  pagination: Pagination;
+}
+
+export interface EnqueuedMessageResponse {
+  enqueued_message: EnqueuedMessage;
+}
+
+export interface EnqueuedMessageInterruptResponse {
+  session: Session;
+  message: string;
+}
+
+// =============================================================================
+// Triggers
+// =============================================================================
+
+export type TriggerType = 'slack' | 'schedule';
+export type TriggerStatus = 'enabled' | 'disabled';
+
+export interface Trigger {
+  id: number;
+  name: string;
+  trigger_type: TriggerType;
+  status: TriggerStatus;
+  agent_root_name: string;
+  prompt_template: string;
+  stop_condition: string | null;
+  reuse_session: boolean;
+  mcp_servers: string[];
+  configuration: Record<string, unknown>;
+  schedule_description: string | null;
+  last_session_id: number | null;
+  last_triggered_at: string | null;
+  last_polled_at: string | null;
+  sessions_created_count: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TriggersResponse {
+  triggers: Trigger[];
+  pagination: Pagination;
+}
+
+export interface TriggerResponse {
+  trigger: Trigger;
+  recent_sessions?: Session[];
+}
+
+export interface TriggerChannelsResponse {
+  channels: Array<{
+    id: string;
+    name: string;
+    is_private: boolean;
+    num_members: number;
+  }>;
+}
+
+export interface CreateTriggerRequest {
+  name: string;
+  trigger_type: TriggerType;
+  agent_root_name: string;
+  prompt_template: string;
+  status?: TriggerStatus;
+  stop_condition?: string;
+  reuse_session?: boolean;
+  mcp_servers?: string[];
+  configuration?: Record<string, unknown>;
+}
+
+export interface UpdateTriggerRequest {
+  name?: string;
+  trigger_type?: TriggerType;
+  agent_root_name?: string;
+  prompt_template?: string;
+  status?: TriggerStatus;
+  stop_condition?: string;
+  reuse_session?: boolean;
+  mcp_servers?: string[];
+  configuration?: Record<string, unknown>;
+}
+
+// =============================================================================
+// Notifications
+// =============================================================================
+
+export interface Notification {
+  id: number;
+  session_id: number;
+  notification_type: string;
+  read: boolean;
+  stale: boolean;
+  created_at: string;
+  updated_at: string;
+  session?: {
+    id: number;
+    slug: string | null;
+    title: string;
+    status: string;
+  };
+}
+
+export interface NotificationsResponse {
+  notifications: Notification[];
+  pagination: Pagination;
+}
+
+export interface NotificationResponse {
+  notification: Notification;
+}
+
+export interface NotificationBadgeResponse {
+  pending_count: number;
+}
+
+export interface NotificationMarkAllReadResponse {
+  marked_count: number;
+  pending_count: number;
+}
+
+export interface NotificationDismissAllReadResponse {
+  dismissed_count: number;
+  pending_count: number;
+}
+
+// =============================================================================
+// Health
+// =============================================================================
+
+export interface HealthReport {
+  health_report: Record<string, unknown>;
+  timestamp: string;
+  rails_env: string;
+  ruby_version: string;
+}
+
+export interface HealthActionResponse {
+  [key: string]: unknown;
+}
+
+// =============================================================================
+// CLIs
+// =============================================================================
+
+export interface CliStatusResponse {
+  cli_status: Record<string, unknown>;
+  unauthenticated_count: number;
+}
+
+export interface CliActionResponse {
+  queued: boolean;
+  message: string;
+  [key: string]: unknown;
+}
+
+// =============================================================================
+// Session Extensions
+// =============================================================================
+
+export interface ForkSessionResponse {
+  session: Session;
+  message: string;
+}
+
+export interface RefreshSessionResponse {
+  session: Session;
+  message: string;
+}
+
+export interface RefreshAllSessionsResponse {
+  message: string;
+  refreshed: number;
+  restarted: number;
+  continued: number;
+  errors: number;
+}
+
+export interface BulkArchiveResponse {
+  archived_count: number;
+  errors: Array<{ id: number; error: string }>;
+}
+
+export interface TranscriptResponse {
+  transcript_text: string;
+}

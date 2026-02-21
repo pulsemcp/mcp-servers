@@ -2,13 +2,20 @@ import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { ListToolsRequestSchema, CallToolRequestSchema } from '@modelcontextprotocol/sdk/types.js';
 import { ClientFactory } from './server.js';
 
-// Simplified tool surface - 6 tools
+// 13 tools across 4 domains
 import { searchSessionsTool } from './tools/search-sessions.js';
 import { startSessionTool } from './tools/start-session.js';
 import { getSessionTool } from './tools/get-session.js';
 import { actionSessionTool } from './tools/action-session.js';
 import { getConfigsTool } from './tools/get-configs.js';
+import { manageEnqueuedMessagesTool } from './tools/manage-enqueued-messages.js';
 import { sendPushNotificationTool } from './tools/send-push-notification.js';
+import { getNotificationsTool } from './tools/get-notifications.js';
+import { actionNotificationTool } from './tools/action-notification.js';
+import { searchTriggersTool } from './tools/search-triggers.js';
+import { actionTriggerTool } from './tools/action-trigger.js';
+import { getSystemHealthTool } from './tools/get-system-health.js';
+import { actionHealthTool } from './tools/action-health.js';
 
 // =============================================================================
 // TOOL GROUPING SYSTEM
@@ -25,8 +32,10 @@ import { sendPushNotificationTool } from './tools/send-push-notification.js';
 // - Readonly group (e.g., 'sessions_readonly'): Includes only read operations
 //
 // Groups:
-// - sessions / sessions_readonly: Session management tools (search, get, start, action, configs)
-// - notifications / notifications_readonly: Push notification tools
+// - sessions / sessions_readonly: Session management tools (search, get, start, action, configs, enqueued messages)
+// - notifications / notifications_readonly: Notification tools (get, send, mark read, dismiss)
+// - triggers / triggers_readonly: Automation trigger management (search, create, update, delete, toggle)
+// - health / health_readonly: System health monitoring, CLI status, maintenance operations
 // =============================================================================
 
 /**
@@ -37,10 +46,14 @@ export type ToolGroup =
   | 'sessions'
   | 'sessions_readonly'
   | 'notifications'
-  | 'notifications_readonly';
+  | 'notifications_readonly'
+  | 'triggers'
+  | 'triggers_readonly'
+  | 'health'
+  | 'health_readonly';
 
 /** Base groups without _readonly suffix */
-type BaseToolGroup = 'sessions' | 'notifications';
+type BaseToolGroup = 'sessions' | 'notifications' | 'triggers' | 'health';
 
 /**
  * All valid tool groups (base groups and their _readonly variants)
@@ -50,12 +63,16 @@ const VALID_TOOL_GROUPS: ToolGroup[] = [
   'sessions_readonly',
   'notifications',
   'notifications_readonly',
+  'triggers',
+  'triggers_readonly',
+  'health',
+  'health_readonly',
 ];
 
 /**
  * Base groups (without _readonly suffix) - used for default "all groups" behavior
  */
-const BASE_TOOL_GROUPS: BaseToolGroup[] = ['sessions', 'notifications'];
+const BASE_TOOL_GROUPS: BaseToolGroup[] = ['sessions', 'notifications', 'triggers', 'health'];
 
 /**
  * Parse enabled tool groups from environment variable or parameter.
@@ -121,13 +138,20 @@ interface ToolDefinition {
 /**
  * All available tools with their group assignments.
  *
- * Simplified tool surface:
+ * 13 tools across 4 domains:
  * - search_sessions: Search/list/get sessions by ID (sessions, read)
  * - get_session: Get detailed session info with optional logs/transcripts (sessions, read)
  * - get_configs: Fetch all static configuration (sessions, read)
  * - start_session: Create a new session (sessions, write)
- * - action_session: Perform actions (follow_up, pause, restart, archive, unarchive) (sessions, write)
- * - send_push_notification: Send a push notification about a session needing attention (notifications, write)
+ * - action_session: Perform session actions (sessions, write)
+ * - manage_enqueued_messages: Manage session message queue (sessions, write)
+ * - get_notifications: Get/list notifications and badge count (notifications, read)
+ * - send_push_notification: Send a push notification (notifications, write)
+ * - action_notification: Mark read, dismiss notifications (notifications, write)
+ * - search_triggers: Search/list automation triggers (triggers, read)
+ * - action_trigger: Create, update, delete, toggle triggers (triggers, write)
+ * - get_system_health: Get system health report and CLI status (health, read)
+ * - action_health: System maintenance actions (health, write)
  */
 const ALL_TOOLS: ToolDefinition[] = [
   // Session tools - read operations
@@ -138,9 +162,26 @@ const ALL_TOOLS: ToolDefinition[] = [
   // Session tools - write operations
   { factory: startSessionTool, group: 'sessions', isWriteOperation: true },
   { factory: actionSessionTool, group: 'sessions', isWriteOperation: true },
+  { factory: manageEnqueuedMessagesTool, group: 'sessions', isWriteOperation: true },
 
-  // Notification tools
+  // Notification tools - read operations
+  { factory: getNotificationsTool, group: 'notifications', isWriteOperation: false },
+
+  // Notification tools - write operations
   { factory: sendPushNotificationTool, group: 'notifications', isWriteOperation: true },
+  { factory: actionNotificationTool, group: 'notifications', isWriteOperation: true },
+
+  // Trigger tools - read operations
+  { factory: searchTriggersTool, group: 'triggers', isWriteOperation: false },
+
+  // Trigger tools - write operations
+  { factory: actionTriggerTool, group: 'triggers', isWriteOperation: true },
+
+  // Health tools - read operations
+  { factory: getSystemHealthTool, group: 'health', isWriteOperation: false },
+
+  // Health tools - write operations
+  { factory: actionHealthTool, group: 'health', isWriteOperation: true },
 ];
 
 /**

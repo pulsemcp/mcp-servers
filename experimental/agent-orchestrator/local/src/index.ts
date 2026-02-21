@@ -41,7 +41,7 @@ function validateEnvironment(): void {
     {
       name: 'TOOL_GROUPS',
       description:
-        'Comma-separated list of tool groups to enable (sessions,sessions_readonly,notifications,notifications_readonly)',
+        'Comma-separated list of tool groups to enable (sessions,sessions_readonly,notifications,notifications_readonly,triggers,triggers_readonly,health,health_readonly)',
       defaultValue: 'all groups enabled',
     },
     {
