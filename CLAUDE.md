@@ -20,7 +20,36 @@ This is a monorepo containing Model Context Protocol (MCP) servers built by Puls
 - Branch naming: `<github-username>/<feature-description>` (e.g., `tadasant/fix-bug`)
 - Main branch has CI/CD
 - Always include test coverage for changes
-- PRs should have concise titles and detailed descriptions
+- PRs should have concise titles and detailed descriptions using this format:
+
+### PR Description Format
+
+**This overrides the default Claude Code PR template.** Do NOT use a `## Test plan` section with unchecked checkboxes. Instead, use this format:
+
+```
+## Summary
+<what changed and why>
+
+## Verification
+- [x] <what you actually did to verify this works>
+- [x] <evidence of closed loop>
+```
+
+The `## Verification` section documents how you closed the loop — what you _actually did_, not what _should be done_. Every checkbox must be checked before the PR is opened. If you can't verify something, explain why instead of leaving an unchecked box.
+
+Good examples:
+
+- `[x] Added tests in `experimental/my-server/src/**tests**/``
+- `[x] CI green (lint + tests pass)`
+- `[x] Self-reviewed PR diff — no unintended changes`
+
+Bad examples (NEVER do this):
+
+- `[ ] CI passes`
+- `[ ] Verify the server works end-to-end`
+- `[ ] Check that existing tests still pass`
+
+Unchecked boxes in a PR description are useless — they describe aspirational work that nobody will do. Close the loop before handing the PR to a human.
 
 ### IMPORTANT: Git Branch Management
 
