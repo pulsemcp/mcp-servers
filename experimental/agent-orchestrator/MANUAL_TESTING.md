@@ -65,15 +65,15 @@ The tests will:
 
 ## Latest Test Results
 
-**Test Date:** 2026-02-20
-**Branch:** tadasant/add-send-push-notification-tool
-**Commit:** 2207f0e
+**Test Date:** 2026-02-21
+**Branch:** tadasant/improve-start-session-title-description
+**Commit:** 167734a
 **Tested By:** Claude Code (automated)
 **Environment:** Production (ao.pulsemcp.com) + CI unit/integration tests
 
 ### Summary
 
-**Overall:** :white_check_mark: SUCCESS - All 21 manual tests pass against production, 61 functional tests pass, 14 integration tests pass
+**Overall:** :white_check_mark: SUCCESS - No functional changes in 0.2.4 (description-only change). All 21 manual tests from 0.2.3 remain valid, 61 functional tests pass, 14 integration tests pass.
 
 | Test Category                 | Status             | Tests |
 | ----------------------------- | ------------------ | ----- |
@@ -103,9 +103,9 @@ The tests will:
 - :white_check_mark: **configResourcesWork** - MCP resources for individual config types
 - :white_check_mark: **sendPushNotificationWorks** - Send push notifications about sessions needing attention
 
-### Key Change in 0.2.3
+### Key Change in 0.2.4
 
-- Added `send_push_notification` tool for alerting users about sessions that need human attention via `POST /api/v1/notifications/push`
+- Updated `start_session` tool's `title` parameter description to strongly encourage always setting a title (description-only, no functional change)
 
 ---
 

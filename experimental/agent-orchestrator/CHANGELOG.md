@@ -30,6 +30,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `action_session` `session_id` parameter is now optional (not required for `refresh_all` and `bulk_archive` actions)
 - Default behavior unchanged: all tools enabled when `TOOL_GROUPS` is not set
 
+## [0.2.4] - 2026-02-21
+
+### Changed
+
+- Updated `start_session` tool's `title` parameter description to strongly encourage always setting a title
+
 ## [0.2.3] - 2026-02-20
 
 ### Added
