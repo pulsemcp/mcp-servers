@@ -39,9 +39,10 @@ The `## Verification` section documents how you closed the loop — what you _ac
 
 Good examples:
 
-- `[x] Added tests in `experimental/my-server/src/**tests**/``
+- `[x] Added tests in experimental/my-server/src/__tests__/ — ran locally, 8/8 pass`
 - `[x] CI green (lint + tests pass)`
 - `[x] Self-reviewed PR diff — no unintended changes`
+- `[x] Deployed to staging and verified server responds to tool calls with Playwright — list_tools returns expected schema, search returns results`
 
 Bad examples (NEVER do this):
 
