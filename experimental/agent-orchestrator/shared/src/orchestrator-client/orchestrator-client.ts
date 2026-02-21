@@ -30,6 +30,7 @@ import type {
   AgentRootInfo,
   StopConditionInfo,
   ConfigsResponse,
+  SendPushNotificationResponse,
 } from '../types.js';
 
 /** Raw agent root shape as returned by the Rails API */
@@ -174,6 +175,12 @@ export interface IAgentOrchestratorClient {
 
   // Unified Configs
   getConfigs(): Promise<ConfigsResponse>;
+
+  // Notifications
+  sendPushNotification(
+    sessionId: string | number,
+    message: string
+  ): Promise<SendPushNotificationResponse>;
 }
 
 /** Default timeout for API requests in milliseconds */
@@ -461,5 +468,16 @@ export class AgentOrchestratorClient implements IAgentOrchestratorClient {
       agent_roots: raw.agent_roots.map(mapAgentRoot),
       stop_conditions: raw.stop_conditions,
     };
+  }
+
+  // Notifications
+  async sendPushNotification(
+    sessionId: string | number,
+    message: string
+  ): Promise<SendPushNotificationResponse> {
+    return this.request<SendPushNotificationResponse>('POST', '/notifications/push', {
+      session_id: sessionId,
+      message,
+    });
   }
 }

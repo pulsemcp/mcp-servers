@@ -25,6 +25,7 @@ import type {
   SubagentStatus,
   MCPServerInfo,
   ConfigsResponse,
+  SendPushNotificationResponse,
 } from '../types.js';
 
 interface MockData {
@@ -555,6 +556,23 @@ export function createIntegrationMockOrchestratorClient(
             description: 'Stop when CI checks pass',
           },
         ],
+      };
+    },
+
+    async sendPushNotification(
+      sessionId: string | number,
+      _message: string
+    ): Promise<SendPushNotificationResponse> {
+      const session = mockData.sessions?.find(
+        (s) => s.id === Number(sessionId) || s.slug === String(sessionId)
+      );
+      if (!session) {
+        throw new Error(`API Error (404): Session not found`);
+      }
+      return {
+        success: true,
+        message: 'Push notification queued',
+        session_id: session.id,
       };
     },
   };

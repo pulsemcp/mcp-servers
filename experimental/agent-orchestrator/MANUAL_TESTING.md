@@ -66,26 +66,30 @@ The tests will:
 ## Latest Test Results
 
 **Test Date:** 2026-02-20
-**Branch:** tadasant/fix-get-configs-agent-root-fields
-**Commit:** 11526d0
+**Branch:** tadasant/add-send-push-notification-tool
+**Commit:** 2207f0e
 **Tested By:** Claude Code (automated)
-**Environment:** CI, unit tests and integration tests
+**Environment:** Production (ao.pulsemcp.com) + CI unit/integration tests
 
 ### Summary
 
-**Overall:** :white_check_mark: SUCCESS - All 55 functional tests pass, 13 integration tests pass (100%)
+**Overall:** :white_check_mark: SUCCESS - All 21 manual tests pass against production, 61 functional tests pass, 14 integration tests pass
 
-| Test Category     | Status             | Tests |
-| ----------------- | ------------------ | ----- |
-| Health Check      | :white_check_mark: | 31/31 |
-| search_sessions   | :white_check_mark: | 4/4   |
-| get_session       | :white_check_mark: | 4/4   |
-| start_session     | :white_check_mark: | 1/1   |
-| action_session    | :white_check_mark: | 8/8   |
-| get_configs       | :white_check_mark: | 5/5   |
-| Tool Definitions  | :white_check_mark: | 1/1   |
-| Tool Registration | :white_check_mark: | 1/1   |
-| Integration Tests | :white_check_mark: | 13/13 |
+| Test Category                 | Status             | Tests |
+| ----------------------------- | ------------------ | ----- |
+| **Manual Tests (Production)** |                    |       |
+| Tool Registration             | :white_check_mark: | 1/1   |
+| search_sessions               | :white_check_mark: | 4/4   |
+| get_session                   | :white_check_mark: | 5/5   |
+| start_session                 | :white_check_mark: | 1/1   |
+| action_session                | :white_check_mark: | 5/5   |
+| get_configs                   | :white_check_mark: | 1/1   |
+| send_push_notification        | :white_check_mark: | 2/2   |
+| Resources                     | :white_check_mark: | 2/2   |
+| **Functional Tests (CI)**     |                    |       |
+| All functional tests          | :white_check_mark: | 61/61 |
+| **Integration Tests (CI)**    |                    |       |
+| All integration tests         | :white_check_mark: | 14/14 |
 
 ### Functionality Verified
 
@@ -97,10 +101,11 @@ The tests will:
 - :white_check_mark: **changeMcpServersWorks** - Update MCP servers for a session
 - :white_check_mark: **getConfigsWorks** - Fetch all static configs (MCP servers, agent roots, stop conditions)
 - :white_check_mark: **configResourcesWork** - MCP resources for individual config types
+- :white_check_mark: **sendPushNotificationWorks** - Send push notifications about sessions needing attention
 
-### Key Change in 0.2.2
+### Key Change in 0.2.3
 
-- Fixed `get_configs` API response field mapping: the Rails API returns `url`, `display_name`, and `subdirectory` but the MCP interface expected `git_root`, `title`, and `default_subdirectory`. Added mapping layer in `AgentOrchestratorClient.getConfigs()`
+- Added `send_push_notification` tool for alerting users about sessions that need human attention via `POST /api/v1/notifications/push`
 
 ---
 

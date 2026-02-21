@@ -51,6 +51,7 @@ export type {
   UpdateLogRequest,
   CreateSubagentTranscriptRequest,
   UpdateSubagentTranscriptRequest,
+  SendPushNotificationResponse,
 } from './types.js';
 
 // Logging exports (re-exported for convenience)

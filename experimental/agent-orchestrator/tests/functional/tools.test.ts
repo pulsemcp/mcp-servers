@@ -6,6 +6,7 @@ import { startSessionTool } from '../../shared/src/tools/start-session.js';
 import { getSessionTool } from '../../shared/src/tools/get-session.js';
 import { actionSessionTool } from '../../shared/src/tools/action-session.js';
 import { getConfigsTool } from '../../shared/src/tools/get-configs.js';
+import { sendPushNotificationTool } from '../../shared/src/tools/send-push-notification.js';
 import { clearConfigsCache } from '../../shared/src/cache/configs-cache.js';
 
 describe('Tools', () => {
@@ -386,6 +387,76 @@ describe('Tools', () => {
     });
   });
 
+  describe('send_push_notification', () => {
+    it('should send a push notification', async () => {
+      const tool = sendPushNotificationTool(mockServer, clientFactory);
+
+      const result = await tool.handler({
+        session_id: 1,
+        message: 'Needs API key to proceed',
+      });
+
+      expect(result).toMatchObject({
+        content: [{ type: 'text' }],
+      });
+      const text = (result as { content: Array<{ text: string }> }).content[0].text;
+      expect(text).toContain('Push Notification Sent');
+      expect(text).toContain('Session ID');
+      expect(text).toContain('**Notification:** Needs API key to proceed');
+      expect(text).toContain('**Status:** Push notification queued');
+      expect(mockClient.sendPushNotification).toHaveBeenCalledWith(1, 'Needs API key to proceed');
+    });
+
+    it('should handle API errors gracefully', async () => {
+      mockClient.sendPushNotification = vi
+        .fn()
+        .mockRejectedValue(new Error('API Error (404): Session not found'));
+
+      const tool = sendPushNotificationTool(mockServer, clientFactory);
+
+      const result = await tool.handler({
+        session_id: 999,
+        message: 'Test message',
+      });
+
+      expect(result.isError).toBe(true);
+      expect((result as { content: Array<{ text: string }> }).content[0].text).toContain(
+        'Session not found'
+      );
+    });
+
+    it('should handle success:false response', async () => {
+      mockClient.sendPushNotification = vi.fn().mockResolvedValue({
+        success: false,
+        message: 'Push notifications not enabled',
+        session_id: 1,
+      });
+
+      const tool = sendPushNotificationTool(mockServer, clientFactory);
+
+      const result = await tool.handler({
+        session_id: 1,
+        message: 'Test message',
+      });
+
+      expect(result.isError).toBe(true);
+      expect((result as { content: Array<{ text: string }> }).content[0].text).toContain(
+        'Push notifications not enabled'
+      );
+    });
+
+    it('should require both session_id and message', async () => {
+      const tool = sendPushNotificationTool(mockServer, clientFactory);
+
+      const result = await tool.handler({
+        session_id: 1,
+        // Missing message
+      });
+
+      expect(result.isError).toBe(true);
+    });
+  });
+
   describe('tool definitions', () => {
     it('should have correct tool definitions', () => {
       const tools = [
@@ -394,15 +465,17 @@ describe('Tools', () => {
         getSessionTool(mockServer, clientFactory),
         actionSessionTool(mockServer, clientFactory),
         getConfigsTool(mockServer, clientFactory),
+        sendPushNotificationTool(mockServer, clientFactory),
       ];
 
-      expect(tools).toHaveLength(5);
+      expect(tools).toHaveLength(6);
       const toolNames = tools.map((t) => t.name);
       expect(toolNames).toContain('search_sessions');
       expect(toolNames).toContain('start_session');
       expect(toolNames).toContain('get_session');
       expect(toolNames).toContain('action_session');
       expect(toolNames).toContain('get_configs');
+      expect(toolNames).toContain('send_push_notification');
     });
   });
 });
