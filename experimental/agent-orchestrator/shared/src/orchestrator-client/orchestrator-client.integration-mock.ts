@@ -26,6 +26,32 @@ import type {
   MCPServerInfo,
   ConfigsResponse,
   SendPushNotificationResponse,
+  EnqueuedMessage,
+  EnqueuedMessagesResponse,
+  EnqueuedMessageInterruptResponse,
+  EnqueuedMessageStatus,
+  Trigger,
+  TriggerType,
+  TriggerStatus,
+  TriggersResponse,
+  TriggerResponse,
+  TriggerChannelsResponse,
+  CreateTriggerRequest,
+  UpdateTriggerRequest,
+  Notification,
+  NotificationsResponse,
+  NotificationBadgeResponse,
+  NotificationMarkAllReadResponse,
+  NotificationDismissAllReadResponse,
+  HealthReport,
+  HealthActionResponse,
+  CliStatusResponse,
+  CliActionResponse,
+  ForkSessionResponse,
+  RefreshSessionResponse,
+  RefreshAllSessionsResponse,
+  BulkArchiveResponse,
+  TranscriptResponse,
 } from '../types.js';
 
 interface MockData {
@@ -574,6 +600,369 @@ export function createIntegrationMockOrchestratorClient(
         message: 'Push notification queued',
         session_id: session.id,
       };
+    },
+
+    // Session Extensions
+    async forkSession(id: string | number, _messageIndex: number): Promise<ForkSessionResponse> {
+      const session = mockData.sessions?.find((s) => s.id === Number(id) || s.slug === String(id));
+      if (!session) throw new Error(`API Error (404): Session not found`);
+      sessionIdCounter++;
+      const forked: Session = {
+        ...session,
+        id: sessionIdCounter,
+        title: `Forked: ${session.title}`,
+        status: 'waiting',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+      mockData.sessions?.push(forked);
+      return { session: forked, message: 'Session forked successfully' };
+    },
+
+    async refreshSession(id: string | number): Promise<RefreshSessionResponse> {
+      const session = mockData.sessions?.find((s) => s.id === Number(id) || s.slug === String(id));
+      if (!session) throw new Error(`API Error (404): Session not found`);
+      return { session, message: 'Session refreshed' };
+    },
+
+    async refreshAllSessions(): Promise<RefreshAllSessionsResponse> {
+      return {
+        message: 'All sessions refreshed',
+        refreshed: mockData.sessions?.length || 0,
+        restarted: 0,
+        continued: 0,
+        errors: 0,
+      };
+    },
+
+    async updateSessionNotes(id: string | number, _notes: string): Promise<Session> {
+      const session = mockData.sessions?.find((s) => s.id === Number(id) || s.slug === String(id));
+      if (!session) throw new Error(`API Error (404): Session not found`);
+      session.updated_at = new Date().toISOString();
+      return session;
+    },
+
+    async toggleFavorite(id: string | number): Promise<Session & { favorited: boolean }> {
+      const session = mockData.sessions?.find((s) => s.id === Number(id) || s.slug === String(id));
+      if (!session) throw new Error(`API Error (404): Session not found`);
+      return { ...session, favorited: true };
+    },
+
+    async bulkArchiveSessions(sessionIds: number[]): Promise<BulkArchiveResponse> {
+      let archived = 0;
+      for (const sid of sessionIds) {
+        const session = mockData.sessions?.find((s) => s.id === sid);
+        if (session) {
+          session.status = 'archived';
+          session.archived_at = new Date().toISOString();
+          archived++;
+        }
+      }
+      return { archived_count: archived, errors: [] };
+    },
+
+    async getTranscript(
+      _id: string | number,
+      _format?: 'text' | 'json'
+    ): Promise<TranscriptResponse> {
+      return { transcript_text: 'User: Hello\nAssistant: Hi there!' };
+    },
+
+    // Enqueued Messages
+    async listEnqueuedMessages(
+      _sessionId: string | number,
+      options?: { status?: EnqueuedMessageStatus; page?: number; per_page?: number }
+    ): Promise<EnqueuedMessagesResponse> {
+      const page = options?.page || 1;
+      const perPage = options?.per_page || 25;
+      return {
+        enqueued_messages: [],
+        pagination: { page, per_page: perPage, total_count: 0, total_pages: 0 },
+      };
+    },
+
+    async getEnqueuedMessage(
+      _sessionId: string | number,
+      messageId: number
+    ): Promise<EnqueuedMessage> {
+      return {
+        id: messageId,
+        session_id: 1,
+        content: 'Test message',
+        stop_condition: null,
+        position: 1,
+        status: 'pending',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+    },
+
+    async createEnqueuedMessage(
+      sessionId: string | number,
+      data: { content: string; stop_condition?: string }
+    ): Promise<EnqueuedMessage> {
+      return {
+        id: 1,
+        session_id: Number(sessionId),
+        content: data.content,
+        stop_condition: data.stop_condition || null,
+        position: 1,
+        status: 'pending',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+    },
+
+    async updateEnqueuedMessage(
+      _sessionId: string | number,
+      messageId: number,
+      data: { content?: string; stop_condition?: string }
+    ): Promise<EnqueuedMessage> {
+      return {
+        id: messageId,
+        session_id: 1,
+        content: data.content || 'Updated message',
+        stop_condition: data.stop_condition || null,
+        position: 1,
+        status: 'pending',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+    },
+
+    async deleteEnqueuedMessage(_sessionId: string | number, _messageId: number): Promise<void> {
+      // No-op
+    },
+
+    async reorderEnqueuedMessage(
+      _sessionId: string | number,
+      messageId: number,
+      position: number
+    ): Promise<EnqueuedMessage> {
+      return {
+        id: messageId,
+        session_id: 1,
+        content: 'Test message',
+        stop_condition: null,
+        position,
+        status: 'pending',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+    },
+
+    async interruptEnqueuedMessage(
+      sessionId: string | number,
+      _messageId: number
+    ): Promise<EnqueuedMessageInterruptResponse> {
+      const session = mockData.sessions?.find(
+        (s) => s.id === Number(sessionId) || s.slug === String(sessionId)
+      );
+      if (!session) throw new Error(`API Error (404): Session not found`);
+      return { session, message: 'Message sent as interrupt' };
+    },
+
+    // Triggers
+    async listTriggers(options?: {
+      trigger_type?: TriggerType;
+      status?: TriggerStatus;
+      page?: number;
+      per_page?: number;
+    }): Promise<TriggersResponse> {
+      const page = options?.page || 1;
+      const perPage = options?.per_page || 25;
+      return {
+        triggers: [],
+        pagination: { page, per_page: perPage, total_count: 0, total_pages: 0 },
+      };
+    },
+
+    async getTrigger(id: number): Promise<TriggerResponse> {
+      const trigger: Trigger = {
+        id,
+        name: 'Test Trigger',
+        trigger_type: 'schedule',
+        status: 'enabled',
+        agent_root_name: 'mcp-servers',
+        prompt_template: 'Test prompt',
+        stop_condition: null,
+        reuse_session: false,
+        mcp_servers: [],
+        configuration: {},
+        schedule_description: 'Every day',
+        last_session_id: null,
+        last_triggered_at: null,
+        last_polled_at: null,
+        sessions_created_count: 0,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+      return { trigger, recent_sessions: [] };
+    },
+
+    async createTrigger(data: CreateTriggerRequest): Promise<Trigger> {
+      return {
+        id: 1,
+        name: data.name,
+        trigger_type: data.trigger_type,
+        status: data.status || 'enabled',
+        agent_root_name: data.agent_root_name,
+        prompt_template: data.prompt_template,
+        stop_condition: data.stop_condition || null,
+        reuse_session: data.reuse_session || false,
+        mcp_servers: data.mcp_servers || [],
+        configuration: data.configuration || {},
+        schedule_description: null,
+        last_session_id: null,
+        last_triggered_at: null,
+        last_polled_at: null,
+        sessions_created_count: 0,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+    },
+
+    async updateTrigger(id: number, data: UpdateTriggerRequest): Promise<Trigger> {
+      return {
+        id,
+        name: data.name || 'Updated Trigger',
+        trigger_type: data.trigger_type || 'schedule',
+        status: data.status || 'enabled',
+        agent_root_name: data.agent_root_name || 'mcp-servers',
+        prompt_template: data.prompt_template || 'Test prompt',
+        stop_condition: data.stop_condition || null,
+        reuse_session: data.reuse_session || false,
+        mcp_servers: data.mcp_servers || [],
+        configuration: data.configuration || {},
+        schedule_description: null,
+        last_session_id: null,
+        last_triggered_at: null,
+        last_polled_at: null,
+        sessions_created_count: 0,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+    },
+
+    async deleteTrigger(_id: number): Promise<void> {
+      // No-op
+    },
+
+    async toggleTrigger(id: number): Promise<Trigger> {
+      return {
+        id,
+        name: 'Toggled Trigger',
+        trigger_type: 'schedule',
+        status: 'disabled',
+        agent_root_name: 'mcp-servers',
+        prompt_template: 'Test prompt',
+        stop_condition: null,
+        reuse_session: false,
+        mcp_servers: [],
+        configuration: {},
+        schedule_description: null,
+        last_session_id: null,
+        last_triggered_at: null,
+        last_polled_at: null,
+        sessions_created_count: 0,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+    },
+
+    async getTriggerChannels(): Promise<TriggerChannelsResponse> {
+      return {
+        channels: [{ id: 'C123', name: 'general', is_private: false, num_members: 50 }],
+      };
+    },
+
+    // Notification Management
+    async listNotifications(options?: {
+      status?: string;
+      page?: number;
+      per_page?: number;
+    }): Promise<NotificationsResponse> {
+      const page = options?.page || 1;
+      const perPage = options?.per_page || 25;
+      return {
+        notifications: [],
+        pagination: { page, per_page: perPage, total_count: 0, total_pages: 0 },
+      };
+    },
+
+    async getNotification(id: number): Promise<Notification> {
+      return {
+        id,
+        session_id: 1,
+        notification_type: 'session_needs_input',
+        read: false,
+        stale: false,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+    },
+
+    async getNotificationBadge(): Promise<NotificationBadgeResponse> {
+      return { pending_count: 0 };
+    },
+
+    async markNotificationRead(id: number): Promise<Notification> {
+      return {
+        id,
+        session_id: 1,
+        notification_type: 'session_needs_input',
+        read: true,
+        stale: false,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+    },
+
+    async markAllNotificationsRead(): Promise<NotificationMarkAllReadResponse> {
+      return { marked_count: 0, pending_count: 0 };
+    },
+
+    async dismissNotification(_id: number): Promise<void> {
+      // No-op
+    },
+
+    async dismissAllReadNotifications(): Promise<NotificationDismissAllReadResponse> {
+      return { dismissed_count: 0, pending_count: 0 };
+    },
+
+    // Health
+    async getHealth(): Promise<HealthReport> {
+      return {
+        health_report: { sessions: { running: 1 } },
+        timestamp: new Date().toISOString(),
+        rails_env: 'test',
+        ruby_version: '3.3.0',
+      };
+    },
+
+    async cleanupProcesses(): Promise<HealthActionResponse> {
+      return { cleaned: 0, message: 'No orphaned processes' };
+    },
+
+    async retrySessions(_sessionIds?: number[]): Promise<HealthActionResponse> {
+      return { retried: 0, message: 'No sessions to retry' };
+    },
+
+    async archiveOldSessions(_days?: number): Promise<HealthActionResponse> {
+      return { archived: 0, message: 'No old sessions' };
+    },
+
+    // CLIs
+    async getCliStatus(): Promise<CliStatusResponse> {
+      return { cli_status: {}, unauthenticated_count: 0 };
+    },
+
+    async refreshCli(): Promise<CliActionResponse> {
+      return { queued: true, message: 'CLI refresh queued' };
+    },
+
+    async clearCliCache(): Promise<CliActionResponse> {
+      return { queued: true, message: 'CLI cache clear queued' };
     },
   };
 }

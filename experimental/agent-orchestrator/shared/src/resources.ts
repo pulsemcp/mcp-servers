@@ -79,7 +79,7 @@ export function createRegisterResources(clientFactory: ClientFactory) {
             AGENT_ORCHESTRATOR_API_KEY: process.env.AGENT_ORCHESTRATOR_API_KEY
               ? '***configured***'
               : 'not set',
-            ENABLED_TOOLGROUPS: process.env.ENABLED_TOOLGROUPS || 'all (default)',
+            TOOL_GROUPS: process.env.TOOL_GROUPS || 'all (default)',
             SKIP_HEALTH_CHECKS: process.env.SKIP_HEALTH_CHECKS || 'false',
           },
           capabilities: {
@@ -87,10 +87,17 @@ export function createRegisterResources(clientFactory: ClientFactory) {
             resources: true,
           },
           toolGroups: {
-            readonly: 'Read-only operations (list, get, search)',
-            write:
-              'Write operations (create, update, follow_up, pause, restart, archive, unarchive)',
-            admin: 'Administrative operations (delete)',
+            sessions:
+              'All session tools (read + write): search, get, configs, start, action, enqueued messages',
+            sessions_readonly:
+              'Session tools (read only): search_sessions, get_session, get_configs',
+            notifications: 'All notification tools (read + write): get, send, mark read, dismiss',
+            notifications_readonly: 'Notification tools (read only): get_notifications',
+            triggers: 'All trigger tools (read + write): search, create, update, delete, toggle',
+            triggers_readonly: 'Trigger tools (read only): search_triggers',
+            health:
+              'All health tools (read + write): health report, CLI status, maintenance actions',
+            health_readonly: 'Health tools (read only): get_system_health',
           },
         };
 
