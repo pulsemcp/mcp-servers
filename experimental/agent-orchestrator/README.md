@@ -16,14 +16,14 @@ MCP server for PulseMCP's agent-orchestrator: a Claude Code + MCP-powered agent-
 
 ### Tools
 
-| Tool                     | Group    | Description                                                                        |
-| ------------------------ | -------- | ---------------------------------------------------------------------------------- |
-| `search_sessions`        | readonly | Search/list sessions with optional ID lookup, query, and status filter             |
-| `get_session`            | readonly | Get detailed session info with optional logs and transcripts                       |
-| `get_configs`            | readonly | Fetch all static configuration (MCP servers, agent roots, stop conditions)         |
-| `start_session`          | write    | Create and start a new agent session                                               |
-| `action_session`         | write    | Perform actions: follow_up, pause, restart, archive, unarchive, change_mcp_servers |
-| `send_push_notification` | write    | Send a push notification about a session needing human attention                   |
+| Tool                     | Tool Group    | Read/Write | Description                                                                        |
+| ------------------------ | ------------- | ---------- | ---------------------------------------------------------------------------------- |
+| `search_sessions`        | sessions      | read       | Search/list sessions with optional ID lookup, query, and status filter             |
+| `get_session`            | sessions      | read       | Get detailed session info with optional logs and transcripts                       |
+| `get_configs`            | sessions      | read       | Fetch all static configuration (MCP servers, agent roots, stop conditions)         |
+| `start_session`          | sessions      | write      | Create and start a new agent session                                               |
+| `action_session`         | sessions      | write      | Perform actions: follow_up, pause, restart, archive, unarchive, change_mcp_servers |
+| `send_push_notification` | notifications | write      | Send a push notification about a session needing human attention                   |
 
 ### Resources
 
@@ -36,19 +36,52 @@ MCP server for PulseMCP's agent-orchestrator: a Claude Code + MCP-powered agent-
 
 ### Tool Groups
 
-Control which tools are available via the `ENABLED_TOOLGROUPS` environment variable:
+This server organizes tools into groups that can be selectively enabled or disabled. Each group has two variants:
 
-| Group      | Description                                                                 |
-| ---------- | --------------------------------------------------------------------------- |
-| `readonly` | Read-only operations (list, get, search)                                    |
-| `write`    | Write operations (create, update, follow_up, pause, restart, archive, etc.) |
-| `admin`    | Administrative operations (delete)                                          |
+- **Base group** (e.g., `sessions`): Full read + write access
+- **Readonly group** (e.g., `sessions_readonly`): Read-only access
+
+Control which tools are available via the `TOOL_GROUPS` environment variable:
+
+| Group                    | Description                                                           |
+| ------------------------ | --------------------------------------------------------------------- |
+| `sessions`               | All session tools (read + write): search, get, configs, start, action |
+| `sessions_readonly`      | Session tools (read only): search_sessions, get_session, get_configs  |
+| `notifications`          | All notification tools (read + write): send_push_notification         |
+| `notifications_readonly` | Notification tools (read only)                                        |
 
 **Examples:**
 
-- `ENABLED_TOOLGROUPS="readonly"` - Only read operations
-- `ENABLED_TOOLGROUPS="readonly,write"` - Read and write, no admin
-- Not set - All tools enabled (default)
+Enable all tools with full access (default):
+
+```bash
+# No TOOL_GROUPS needed - all base groups enabled
+```
+
+Enable only session tools:
+
+```bash
+TOOL_GROUPS=sessions
+```
+
+Enable sessions with read-only access:
+
+```bash
+TOOL_GROUPS=sessions_readonly
+```
+
+Enable all groups with read-only access:
+
+```bash
+TOOL_GROUPS=sessions_readonly,notifications_readonly
+```
+
+Mix full and read-only access per group:
+
+```bash
+# Full session access, read-only notifications
+TOOL_GROUPS=sessions,notifications_readonly
+```
 
 ## Setup
 
@@ -59,13 +92,13 @@ Control which tools are available via the `ENABLED_TOOLGROUPS` environment varia
 
 ### Environment Variables
 
-| Variable                      | Required | Description                            | Default     |
-| ----------------------------- | -------- | -------------------------------------- | ----------- |
-| `AGENT_ORCHESTRATOR_BASE_URL` | Yes      | Base URL for the orchestrator API      | -           |
-| `AGENT_ORCHESTRATOR_API_KEY`  | Yes      | API key for authentication             | -           |
-| `ENABLED_TOOLGROUPS`          | No       | Comma-separated tool groups            | All enabled |
-| `SKIP_HEALTH_CHECKS`          | No       | Skip API connectivity check at startup | `false`     |
-| `HEALTH_CHECK_TIMEOUT`        | No       | Health check timeout in milliseconds   | `10000`     |
+| Variable                      | Required | Description                                 | Default                               |
+| ----------------------------- | -------- | ------------------------------------------- | ------------------------------------- |
+| `AGENT_ORCHESTRATOR_BASE_URL` | Yes      | Base URL for the orchestrator API           | -                                     |
+| `AGENT_ORCHESTRATOR_API_KEY`  | Yes      | API key for authentication                  | -                                     |
+| `TOOL_GROUPS`                 | No       | Comma-separated list of enabled tool groups | `sessions,notifications` (all groups) |
+| `SKIP_HEALTH_CHECKS`          | No       | Skip API connectivity check at startup      | `false`                               |
+| `HEALTH_CHECK_TIMEOUT`        | No       | Health check timeout in milliseconds        | `10000`                               |
 
 ### Claude Desktop
 
@@ -92,7 +125,7 @@ Modify your `claude_desktop_config.json` file to add the following:
       "env": {
         "AGENT_ORCHESTRATOR_BASE_URL": "http://localhost:3000",
         "AGENT_ORCHESTRATOR_API_KEY": "your-api-key-here",
-        "ENABLED_TOOLGROUPS": "readonly,write"
+        "TOOL_GROUPS": "sessions,notifications"
       }
     }
   }

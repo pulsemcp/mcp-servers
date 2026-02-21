@@ -39,8 +39,9 @@ function validateEnvironment(): void {
 
   const optional: { name: string; description: string; defaultValue?: string }[] = [
     {
-      name: 'ENABLED_TOOLGROUPS',
-      description: 'Comma-separated list of tool groups to enable (readonly,write,admin)',
+      name: 'TOOL_GROUPS',
+      description:
+        'Comma-separated list of tool groups to enable (sessions,sessions_readonly,notifications,notifications_readonly)',
       defaultValue: 'all groups enabled',
     },
     {
@@ -85,8 +86,8 @@ function validateEnvironment(): void {
   }
 
   // Log warnings for common configuration issues
-  if (process.env.ENABLED_TOOLGROUPS) {
-    logWarning('config', `Tool groups filter active: ${process.env.ENABLED_TOOLGROUPS}`);
+  if (process.env.TOOL_GROUPS) {
+    logWarning('config', `Tool groups filter active: ${process.env.TOOL_GROUPS}`);
   }
 }
 

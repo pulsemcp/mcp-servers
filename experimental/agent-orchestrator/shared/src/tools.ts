@@ -16,41 +16,72 @@ import { sendPushNotificationTool } from './tools/send-push-notification.js';
 // Tool groups allow enabling/disabling categories of tools via environment variables.
 // This is useful for permission-based access control or feature flags.
 //
-// Usage: Set ENABLED_TOOLGROUPS environment variable to a comma-separated list
-// Example: ENABLED_TOOLGROUPS="readonly,write" (excludes 'admin' tools)
+// Usage: Set TOOL_GROUPS environment variable to a comma-separated list
+// Example: TOOL_GROUPS="sessions_readonly,notifications" (read-only sessions + notifications)
 // Default: All groups enabled when not specified
+//
+// Each group has two variants:
+// - Base group (e.g., 'sessions'): Includes all tools (read + write operations)
+// - Readonly group (e.g., 'sessions_readonly'): Includes only read operations
+//
+// Groups:
+// - sessions / sessions_readonly: Session management tools (search, get, start, action, configs)
+// - notifications / notifications_readonly: Push notification tools
 // =============================================================================
 
 /**
- * Available tool groups for agent-orchestrator:
- * - 'readonly': Read-only operations (search_sessions, get_session)
- * - 'write': Write operations (start_session, action_session)
- * - 'admin': Administrative operations (reserved for future use)
+ * Available tool groups for agent-orchestrator.
+ * Each domain has a base group (full access) and a _readonly variant (read-only).
  */
-export type ToolGroup = 'readonly' | 'write' | 'admin';
+export type ToolGroup =
+  | 'sessions'
+  | 'sessions_readonly'
+  | 'notifications'
+  | 'notifications_readonly';
 
-const ALL_TOOL_GROUPS: ToolGroup[] = ['readonly', 'write', 'admin'];
+/** Base groups without _readonly suffix */
+type BaseToolGroup = 'sessions' | 'notifications';
 
 /**
- * Parse enabled tool groups from environment variable.
- * @param enabledGroupsParam - Comma-separated list of groups (e.g., "readonly,write")
+ * All valid tool groups (base groups and their _readonly variants)
+ */
+const VALID_TOOL_GROUPS: ToolGroup[] = [
+  'sessions',
+  'sessions_readonly',
+  'notifications',
+  'notifications_readonly',
+];
+
+/**
+ * Base groups (without _readonly suffix) - used for default "all groups" behavior
+ */
+const BASE_TOOL_GROUPS: BaseToolGroup[] = ['sessions', 'notifications'];
+
+/**
+ * Parse enabled tool groups from environment variable or parameter.
+ * @param enabledGroupsParam - Comma-separated list of groups (e.g., "sessions,notifications")
  * @returns Array of enabled tool groups
  */
 export function parseEnabledToolGroups(enabledGroupsParam?: string): ToolGroup[] {
-  if (!enabledGroupsParam) {
-    return ALL_TOOL_GROUPS; // All groups enabled by default
+  const groupsStr = enabledGroupsParam || process.env.TOOL_GROUPS || '';
+
+  if (!groupsStr) {
+    // Default: all base groups enabled (full read+write access)
+    return [...BASE_TOOL_GROUPS];
   }
 
-  const requestedGroups = enabledGroupsParam.split(',').map((g) => g.trim().toLowerCase());
-  const validGroups = requestedGroups.filter((g): g is ToolGroup =>
-    ALL_TOOL_GROUPS.includes(g as ToolGroup)
-  );
+  const groups = groupsStr.split(',').map((g) => g.trim());
+  const validGroups: ToolGroup[] = [];
 
-  if (validGroups.length === 0) {
-    console.error(
-      `Warning: No valid tool groups found in "${enabledGroupsParam}". Valid groups: ${ALL_TOOL_GROUPS.join(', ')}`
-    );
-    return ALL_TOOL_GROUPS;
+  for (const group of groups) {
+    if (
+      VALID_TOOL_GROUPS.includes(group as ToolGroup) &&
+      !validGroups.includes(group as ToolGroup)
+    ) {
+      validGroups.push(group as ToolGroup);
+    } else if (!VALID_TOOL_GROUPS.includes(group as ToolGroup)) {
+      console.warn(`Unknown tool group: ${group}`);
+    }
   }
 
   return validGroups;
@@ -81,32 +112,59 @@ type ToolFactory = (server: Server, clientFactory: ClientFactory) => Tool;
 
 interface ToolDefinition {
   factory: ToolFactory;
-  groups: ToolGroup[];
+  /** The base group this tool belongs to (without _readonly suffix) */
+  group: BaseToolGroup;
+  /** If true, this tool is excluded from _readonly groups */
+  isWriteOperation: boolean;
 }
 
 /**
  * All available tools with their group assignments.
- * Tools can belong to multiple groups.
  *
  * Simplified tool surface:
- * - search_sessions: Search/list/get sessions by ID
- * - start_session: Create a new session
- * - get_session: Get detailed session info with optional logs/transcripts
- * - action_session: Perform actions (follow_up, pause, restart, archive, unarchive)
- * - get_configs: Fetch all static configuration (MCP servers, agent roots, stop conditions)
- * - send_push_notification: Send a push notification about a session needing attention
+ * - search_sessions: Search/list/get sessions by ID (sessions, read)
+ * - get_session: Get detailed session info with optional logs/transcripts (sessions, read)
+ * - get_configs: Fetch all static configuration (sessions, read)
+ * - start_session: Create a new session (sessions, write)
+ * - action_session: Perform actions (follow_up, pause, restart, archive, unarchive) (sessions, write)
+ * - send_push_notification: Send a push notification about a session needing attention (notifications, write)
  */
 const ALL_TOOLS: ToolDefinition[] = [
-  // Read operations
-  { factory: searchSessionsTool, groups: ['readonly', 'write', 'admin'] },
-  { factory: getSessionTool, groups: ['readonly', 'write', 'admin'] },
-  { factory: getConfigsTool, groups: ['readonly', 'write', 'admin'] },
+  // Session tools - read operations
+  { factory: searchSessionsTool, group: 'sessions', isWriteOperation: false },
+  { factory: getSessionTool, group: 'sessions', isWriteOperation: false },
+  { factory: getConfigsTool, group: 'sessions', isWriteOperation: false },
 
-  // Write operations
-  { factory: startSessionTool, groups: ['write', 'admin'] },
-  { factory: actionSessionTool, groups: ['write', 'admin'] },
-  { factory: sendPushNotificationTool, groups: ['write', 'admin'] },
+  // Session tools - write operations
+  { factory: startSessionTool, group: 'sessions', isWriteOperation: true },
+  { factory: actionSessionTool, group: 'sessions', isWriteOperation: true },
+
+  // Notification tools
+  { factory: sendPushNotificationTool, group: 'notifications', isWriteOperation: true },
 ];
+
+/**
+ * Check if a tool should be included based on enabled groups.
+ * @param toolDef - The tool definition to check
+ * @param enabledGroups - Array of enabled tool groups
+ * @returns true if the tool should be included
+ */
+function shouldIncludeTool(toolDef: ToolDefinition, enabledGroups: ToolGroup[]): boolean {
+  const baseGroup = toolDef.group;
+  const readonlyGroup = `${baseGroup}_readonly` as ToolGroup;
+
+  // Check if the base group (full access) is enabled
+  if (enabledGroups.includes(baseGroup as ToolGroup)) {
+    return true;
+  }
+
+  // Check if the readonly group is enabled (only include read operations)
+  if (enabledGroups.includes(readonlyGroup) && !toolDef.isWriteOperation) {
+    return true;
+  }
+
+  return false;
+}
 
 /**
  * Creates a function to register all tools with the server.
@@ -116,17 +174,20 @@ const ALL_TOOLS: ToolDefinition[] = [
  * a factory pattern that accepts the server and clientFactory as parameters.
  *
  * @param clientFactory - Factory function that creates client instances
- * @param enabledGroups - Optional array of enabled tool groups (defaults to all)
+ * @param enabledGroups - Optional string of enabled tool groups (defaults to all)
  * @returns Function that registers all tools with a server
  */
-export function createRegisterTools(clientFactory: ClientFactory, enabledGroups?: ToolGroup[]) {
-  const groups = enabledGroups || parseEnabledToolGroups(process.env.ENABLED_TOOLGROUPS);
-
+export function createRegisterTools(clientFactory: ClientFactory, enabledGroups?: string) {
   return (server: Server) => {
-    // Filter tools by enabled groups and create instances
-    const tools = ALL_TOOLS.filter((def) => def.groups.some((g) => groups.includes(g))).map((def) =>
-      def.factory(server, clientFactory)
+    const enabledToolGroups = parseEnabledToolGroups(enabledGroups);
+
+    // Filter tools based on enabled groups
+    const enabledTools = ALL_TOOLS.filter((toolDef) =>
+      shouldIncludeTool(toolDef, enabledToolGroups)
     );
+
+    // Create tool instances
+    const tools = enabledTools.map((toolDef) => toolDef.factory(server, clientFactory));
 
     // List available tools
     server.setRequestHandler(ListToolsRequestSchema, async () => {

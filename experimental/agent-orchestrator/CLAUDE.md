@@ -51,7 +51,7 @@ Required:
 
 Optional:
 
-- `ENABLED_TOOLGROUPS` - Comma-separated list of tool groups (readonly, write, admin)
+- `TOOL_GROUPS` - Comma-separated list of tool groups (sessions, sessions_readonly, notifications, notifications_readonly)
 - `SKIP_HEALTH_CHECKS` - Skip API validation at startup
 
 ## Tools

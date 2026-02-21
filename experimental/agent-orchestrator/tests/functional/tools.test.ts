@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { createMockOrchestratorClient } from '../mocks/orchestrator-client.functional-mock.js';
 import { searchSessionsTool } from '../../shared/src/tools/search-sessions.js';
@@ -8,6 +8,7 @@ import { actionSessionTool } from '../../shared/src/tools/action-session.js';
 import { getConfigsTool } from '../../shared/src/tools/get-configs.js';
 import { sendPushNotificationTool } from '../../shared/src/tools/send-push-notification.js';
 import { clearConfigsCache } from '../../shared/src/cache/configs-cache.js';
+import { parseEnabledToolGroups, createRegisterTools } from '../../shared/src/tools.js';
 
 describe('Tools', () => {
   let mockServer: Server;
@@ -477,5 +478,206 @@ describe('Tools', () => {
       expect(toolNames).toContain('get_configs');
       expect(toolNames).toContain('send_push_notification');
     });
+  });
+});
+
+describe('parseEnabledToolGroups', () => {
+  const originalEnv = process.env;
+
+  afterEach(() => {
+    process.env = originalEnv;
+  });
+
+  it('should return all base groups when no parameter provided', () => {
+    const groups = parseEnabledToolGroups();
+    expect(groups).toEqual(['sessions', 'notifications']);
+  });
+
+  it('should return all base groups when empty string provided', () => {
+    const groups = parseEnabledToolGroups('');
+    expect(groups).toEqual(['sessions', 'notifications']);
+  });
+
+  it('should parse valid tool groups from parameter', () => {
+    const groups = parseEnabledToolGroups('sessions,notifications');
+    expect(groups).toEqual(['sessions', 'notifications']);
+  });
+
+  it('should parse single group', () => {
+    const groups = parseEnabledToolGroups('sessions');
+    expect(groups).toEqual(['sessions']);
+  });
+
+  it('should parse readonly variants', () => {
+    const groups = parseEnabledToolGroups('sessions_readonly');
+    expect(groups).toEqual(['sessions_readonly']);
+  });
+
+  it('should handle whitespace in group names', () => {
+    const groups = parseEnabledToolGroups(' sessions , notifications ');
+    expect(groups).toEqual(['sessions', 'notifications']);
+  });
+
+  it('should filter out invalid group names', () => {
+    const groups = parseEnabledToolGroups('sessions,invalid_group,notifications');
+    expect(groups).toEqual(['sessions', 'notifications']);
+  });
+
+  it('should deduplicate groups', () => {
+    const groups = parseEnabledToolGroups('sessions,sessions,notifications');
+    expect(groups).toEqual(['sessions', 'notifications']);
+  });
+
+  it('should allow mixing base and readonly groups', () => {
+    const groups = parseEnabledToolGroups('sessions_readonly,notifications');
+    expect(groups).toEqual(['sessions_readonly', 'notifications']);
+  });
+
+  it('should prioritize parameter over environment variable', () => {
+    process.env = { ...originalEnv, TOOL_GROUPS: 'notifications' };
+
+    const groups = parseEnabledToolGroups('sessions');
+    expect(groups).toEqual(['sessions']);
+  });
+
+  it('should read from TOOL_GROUPS env var when no parameter provided', () => {
+    process.env = { ...originalEnv, TOOL_GROUPS: 'sessions_readonly' };
+
+    const groups = parseEnabledToolGroups();
+    expect(groups).toEqual(['sessions_readonly']);
+  });
+});
+
+describe('createRegisterTools with toolgroups filtering', () => {
+  it('should register only read-only session tools when sessions_readonly group is enabled', async () => {
+    const mockClient2 = createMockOrchestratorClient();
+    const mockServer = new Server(
+      { name: 'test', version: '1.0.0' },
+      { capabilities: { tools: {} } }
+    );
+    const clientFactory2 = () => mockClient2;
+
+    const registerTools = createRegisterTools(clientFactory2, 'sessions_readonly');
+    registerTools(mockServer);
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const handlers = (mockServer as any)._requestHandlers;
+    const listToolsHandler = handlers.get('tools/list');
+    const result = await listToolsHandler({ method: 'tools/list', params: {} });
+
+    expect(result.tools).toHaveLength(3);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const toolNames = result.tools.map((t: any) => t.name);
+    expect(toolNames).toContain('search_sessions');
+    expect(toolNames).toContain('get_session');
+    expect(toolNames).toContain('get_configs');
+    expect(toolNames).not.toContain('start_session');
+    expect(toolNames).not.toContain('action_session');
+    expect(toolNames).not.toContain('send_push_notification');
+  });
+
+  it('should register all session tools when sessions group is enabled', async () => {
+    const mockClient2 = createMockOrchestratorClient();
+    const mockServer = new Server(
+      { name: 'test', version: '1.0.0' },
+      { capabilities: { tools: {} } }
+    );
+    const clientFactory2 = () => mockClient2;
+
+    const registerTools = createRegisterTools(clientFactory2, 'sessions');
+    registerTools(mockServer);
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const handlers = (mockServer as any)._requestHandlers;
+    const listToolsHandler = handlers.get('tools/list');
+    const result = await listToolsHandler({ method: 'tools/list', params: {} });
+
+    expect(result.tools).toHaveLength(5);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const toolNames = result.tools.map((t: any) => t.name);
+    expect(toolNames).toContain('search_sessions');
+    expect(toolNames).toContain('get_session');
+    expect(toolNames).toContain('get_configs');
+    expect(toolNames).toContain('start_session');
+    expect(toolNames).toContain('action_session');
+    expect(toolNames).not.toContain('send_push_notification');
+  });
+
+  it('should register only notification tools when notifications group is enabled', async () => {
+    const mockClient2 = createMockOrchestratorClient();
+    const mockServer = new Server(
+      { name: 'test', version: '1.0.0' },
+      { capabilities: { tools: {} } }
+    );
+    const clientFactory2 = () => mockClient2;
+
+    const registerTools = createRegisterTools(clientFactory2, 'notifications');
+    registerTools(mockServer);
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const handlers = (mockServer as any)._requestHandlers;
+    const listToolsHandler = handlers.get('tools/list');
+    const result = await listToolsHandler({ method: 'tools/list', params: {} });
+
+    expect(result.tools).toHaveLength(1);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const toolNames = result.tools.map((t: any) => t.name);
+    expect(toolNames).toContain('send_push_notification');
+    expect(toolNames).not.toContain('search_sessions');
+    expect(toolNames).not.toContain('start_session');
+  });
+
+  it('should register all tools when all base groups are enabled (default)', async () => {
+    const mockClient2 = createMockOrchestratorClient();
+    const mockServer = new Server(
+      { name: 'test', version: '1.0.0' },
+      { capabilities: { tools: {} } }
+    );
+    const clientFactory2 = () => mockClient2;
+
+    const registerTools = createRegisterTools(clientFactory2);
+    registerTools(mockServer);
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const handlers = (mockServer as any)._requestHandlers;
+    const listToolsHandler = handlers.get('tools/list');
+    const result = await listToolsHandler({ method: 'tools/list', params: {} });
+
+    expect(result.tools).toHaveLength(6);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const toolNames = result.tools.map((t: any) => t.name);
+    expect(toolNames).toContain('search_sessions');
+    expect(toolNames).toContain('get_session');
+    expect(toolNames).toContain('get_configs');
+    expect(toolNames).toContain('start_session');
+    expect(toolNames).toContain('action_session');
+    expect(toolNames).toContain('send_push_notification');
+  });
+
+  it('should register session readonly + notifications when both specified', async () => {
+    const mockClient2 = createMockOrchestratorClient();
+    const mockServer = new Server(
+      { name: 'test', version: '1.0.0' },
+      { capabilities: { tools: {} } }
+    );
+    const clientFactory2 = () => mockClient2;
+
+    const registerTools = createRegisterTools(clientFactory2, 'sessions_readonly,notifications');
+    registerTools(mockServer);
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const handlers = (mockServer as any)._requestHandlers;
+    const listToolsHandler = handlers.get('tools/list');
+    const result = await listToolsHandler({ method: 'tools/list', params: {} });
+
+    expect(result.tools).toHaveLength(4); // 3 readonly sessions + 1 notification
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const toolNames = result.tools.map((t: any) => t.name);
+    expect(toolNames).toContain('search_sessions');
+    expect(toolNames).toContain('get_session');
+    expect(toolNames).toContain('get_configs');
+    expect(toolNames).toContain('send_push_notification');
+    expect(toolNames).not.toContain('start_session');
+    expect(toolNames).not.toContain('action_session');
   });
 });

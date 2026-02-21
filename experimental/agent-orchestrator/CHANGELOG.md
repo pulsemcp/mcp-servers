@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Functional tests for tool group parsing and filtering logic
+
+### Changed
+
+- **BREAKING:** Replaced `ENABLED_TOOLGROUPS` environment variable with `TOOL_GROUPS` for consistency with other MCP servers in the repo
+- **BREAKING:** Replaced permission-based tool groups (`readonly`, `write`, `admin`) with domain-specific tool groups (`sessions`, `sessions_readonly`, `notifications`, `notifications_readonly`) following the base/readonly pattern used by other MCP servers
+- Default behavior unchanged: all tools enabled when `TOOL_GROUPS` is not set
+
 ## [0.2.3] - 2026-02-20
 
 ### Added
