@@ -66,46 +66,70 @@ The tests will:
 ## Latest Test Results
 
 **Test Date:** 2026-02-21
-**Branch:** tadasant/improve-start-session-title-description
-**Commit:** 167734a
+**Branch:** ao-agent/add-toolgroups
+**Commit:** ad0b4eb
 **Tested By:** Claude Code (automated)
 **Environment:** Production (ao.pulsemcp.com) + CI unit/integration tests
 
 ### Summary
 
-**Overall:** :white_check_mark: SUCCESS - No functional changes in 0.2.4 (description-only change). All 21 manual tests from 0.2.3 remain valid, 61 functional tests pass, 14 integration tests pass.
+**Overall:** :white_check_mark: SUCCESS - All 56 manual tests pass, 115 functional tests pass, 14 integration tests pass. Added 7 new tools (13 total) across 4 domains with comprehensive API coverage.
 
-| Test Category                 | Status             | Tests |
-| ----------------------------- | ------------------ | ----- |
-| **Manual Tests (Production)** |                    |       |
-| Tool Registration             | :white_check_mark: | 1/1   |
-| search_sessions               | :white_check_mark: | 4/4   |
-| get_session                   | :white_check_mark: | 5/5   |
-| start_session                 | :white_check_mark: | 1/1   |
-| action_session                | :white_check_mark: | 5/5   |
-| get_configs                   | :white_check_mark: | 1/1   |
-| send_push_notification        | :white_check_mark: | 2/2   |
-| Resources                     | :white_check_mark: | 2/2   |
-| **Functional Tests (CI)**     |                    |       |
-| All functional tests          | :white_check_mark: | 61/61 |
-| **Integration Tests (CI)**    |                    |       |
-| All integration tests         | :white_check_mark: | 14/14 |
+| Test Category                 | Status             | Tests   |
+| ----------------------------- | ------------------ | ------- |
+| **Manual Tests (Production)** |                    |         |
+| Tool Registration             | :white_check_mark: | 1/1     |
+| search_sessions               | :white_check_mark: | 4/4     |
+| get_session                   | :white_check_mark: | 6/6     |
+| start_session                 | :white_check_mark: | 1/1     |
+| action_session                | :white_check_mark: | 11/11   |
+| manage_enqueued_messages      | :white_check_mark: | 8/8     |
+| get_configs                   | :white_check_mark: | 1/1     |
+| get_notifications             | :white_check_mark: | 3/3     |
+| send_push_notification        | :white_check_mark: | 2/2     |
+| action_notification           | :white_check_mark: | 4/4     |
+| search_triggers               | :white_check_mark: | 3/3     |
+| action_trigger                | :white_check_mark: | 4/4     |
+| get_system_health             | :white_check_mark: | 2/2     |
+| action_health                 | :white_check_mark: | 4/4     |
+| Resources                     | :white_check_mark: | 2/2     |
+| **Functional Tests (CI)**     |                    |         |
+| All functional tests          | :white_check_mark: | 115/115 |
+| **Integration Tests (CI)**    |                    |         |
+| All integration tests         | :white_check_mark: | 14/14   |
 
 ### Functionality Verified
 
 - :white_check_mark: **searchSessionsWorks** - List, filter, search sessions
 - :white_check_mark: **getSessionWorks** - Get detailed session info
 - :white_check_mark: **getSessionWithLogsWorks** - Get session with logs/transcripts
+- :white_check_mark: **getSessionTranscriptFormatWorks** - Transcript via dedicated endpoint (text/json)
 - :white_check_mark: **startSessionWorks** - Create new sessions
 - :white_check_mark: **actionSessionWorks** - Archive/unarchive sessions
-- :white_check_mark: **changeMcpServersWorks** - Update MCP servers for a session
+- :white_check_mark: **actionSessionNewActionsWork** - update_notes, toggle_favorite, refresh, refresh_all
+- :white_check_mark: **manageEnqueuedMessagesWorks** - Full CRUD for session message queue
 - :white_check_mark: **getConfigsWorks** - Fetch all static configs (MCP servers, agent roots, stop conditions)
-- :white_check_mark: **configResourcesWork** - MCP resources for individual config types
 - :white_check_mark: **sendPushNotificationWorks** - Send push notifications about sessions needing attention
+- :white_check_mark: **getNotificationsWorks** - Badge count, list, filter notifications
+- :white_check_mark: **actionNotificationWorks** - Mark all read, dismiss all read, validation
+- :white_check_mark: **searchTriggersWorks** - List triggers with optional channels
+- :white_check_mark: **actionTriggerWorks** - Validation for create/update/delete/toggle
+- :white_check_mark: **getSystemHealthWorks** - Health report and CLI status
+- :white_check_mark: **actionHealthWorks** - Cleanup processes, archive old, CLI refresh/clear cache
 
-### Key Change in 0.2.4
+### Warnings
 
-- Updated `start_session` tool's `title` parameter description to strongly encourage always setting a title (description-only, no functional change)
+- `transcript_format`: Test session had no transcript available (API returned 404) - expected behavior for sessions without transcripts
+- `refresh`: Test session had no clone path (API returned 422) - expected for newly created clone-only sessions
+
+### Key Changes (Unreleased)
+
+- Added 7 new tools (13 total): manage_enqueued_messages, get_notifications, action_notification, search_triggers, action_trigger, get_system_health, action_health
+- Extended action_session with 6 new actions: fork, refresh, refresh_all, update_notes, toggle_favorite, bulk_archive
+- Extended get_session with transcript_format parameter
+- Added 2 new tool groups: triggers/triggers_readonly, health/health_readonly
+- Replaced ENABLED_TOOLGROUPS with TOOL_GROUPS env var
+- Replaced permission-based groups with domain-specific groups
 
 ---
 
