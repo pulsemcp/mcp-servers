@@ -11,7 +11,12 @@ const PARAM_DESCRIPTIONS = {
     'Repository URL or local path. Examples: "https://github.com/example/repo.git", "/path/to/repo"',
   branch: 'Git branch to work on. Default: "main"',
   subdirectory: 'Subdirectory within the repository to focus on.',
-  title: 'Display title for the session. Used for identification in the UI.',
+  title:
+    'STRONGLY RECOMMENDED: Always set a title — treat it as effectively required. ' +
+    'The title appears in the AO web UI and push notifications, making sessions identifiable at a glance. ' +
+    'Compose a short, descriptive title (under 70 characters) that captures what the session is doing ' +
+    '(e.g. "Fix login redirect loop on mobile Safari", "Add dark mode toggle to settings page"). ' +
+    'Only omit if you truly have zero context about the session purpose, which should be extremely rare.',
   slug: 'URL-friendly identifier for the session. Must be unique.',
   stop_condition:
     'Condition that determines when the agent should stop. Passed to the agent as context.',

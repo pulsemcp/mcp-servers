@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Updated `start_session` tool's `title` parameter description to strongly encourage always setting a title
+
 ## [0.2.3] - 2026-02-20
 
 ### Added
