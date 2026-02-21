@@ -315,6 +315,32 @@ npm run test:manual
 
 **Why this matters:** A merged PR with "passing" manual tests that actually skip broken functionality gives false confidence. It results in shipped code that doesn't work, discovered only when users try to use it.
 
+## Versioning and Release Workflow
+
+### Patch Version Bumps on Small Changes
+
+**Whenever you make a small change to any MCP server (bug fix, minor improvement, small feature), do a patch version bump in the same PR.** Do not just add the change to an "unreleased" section of a changelog and defer the version bump to a separate release step.
+
+Patch version bumps are cheap and low-risk — ship them as soon as you have confidence in the change. This means:
+
+- After making a bug fix or minor improvement, run `npm run stage-publish` from the server's `local/` directory to bump the patch version
+- Update the CHANGELOG.md to move the change from "Unreleased" into the new version entry
+- Commit the version bump alongside your code changes in the same PR
+- Do NOT leave changes sitting in an "Unreleased" changelog section waiting for a separate release PR
+
+### Manual Testing for Significant Features (Minor+ Version Changes)
+
+**Whenever adding a significant feature — anything that warrants at least a minor version bump — you MUST run the manual testing suite before considering the task complete.**
+
+Manual tests often require secrets/credentials (API keys, tokens, etc.) that the agent won't have access to. When this happens:
+
+1. **Prompt the user for any required secrets/credentials** needed to run the manual tests. Check the server's `.env.example` or test files to identify what's needed, then ask the user to provide them
+2. **Actually run through the manual testing steps** (`npm run test:manual`) — do not skip this step
+3. **Do not skip manual testing just because it requires user interaction** — ask for what you need and wait for the user to provide it
+4. Update `MANUAL_TESTING.md` with the results before staging the version bump
+
+This applies to minor and major version bumps. For patch-level changes (small bug fixes, minor tweaks), manual testing is encouraged but not strictly required — use your judgment based on the risk of the change.
+
 ## Creating New Servers
 
 1. Copy the `libs/mcp-server-template/` directory
