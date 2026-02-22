@@ -440,3 +440,13 @@ export interface BulkArchiveResponse {
 export interface TranscriptResponse {
   transcript_text: string;
 }
+
+// =============================================================================
+// Transcript Archive
+// =============================================================================
+
+export interface TranscriptArchiveStatusResponse {
+  generated_at: string;
+  session_count: number;
+  file_size_bytes: number;
+}
