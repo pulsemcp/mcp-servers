@@ -51,7 +51,7 @@ The tests will:
 
 **Test Date:** 2026-02-22
 **Branch:** tadasant/fix-pointsyeah-format-null-routes
-**Commit:** e308376
+**Commit:** 9882185
 **Tested By:** Claude
 **Environment:** Linux, Node.js
 
@@ -71,6 +71,6 @@ Bug was reproduced via MCP tool invocation against published v0.2.5:
 
 ### Functional Test Results
 
-**Status:** All functional tests passed, all integration tests passed
+**Status:** All functional tests passed (24/24), all integration tests passed (4/4)
 
 **Summary:** New functional tests added for null `routes`, null `payment`/`segments`/`transfer` fields. Formatting null guard fix verified via functional tests covering the exact null shapes returned by the live API.
