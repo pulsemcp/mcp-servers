@@ -65,38 +65,36 @@ The tests will:
 
 ## Latest Test Results
 
-**Test Date:** 2026-02-21
-**Branch:** ao-agent/add-toolgroups
-**Commit:** ad0b4eb
+**Test Date:** 2026-02-22
+**Branch:** agent-orchestrator-bot/add-transcript-archive-tool
+**Commit:** 9dfb529
 **Tested By:** Claude Code (automated)
-**Environment:** Production (ao.pulsemcp.com) + CI unit/integration tests
+**Environment:** CI unit/functional tests (no .env available for manual API tests)
 
 ### Summary
 
-**Overall:** :white_check_mark: SUCCESS - All 56 manual tests pass, 115 functional tests pass, 14 integration tests pass. Added 7 new tools (13 total) across 4 domains with comprehensive API coverage.
+**Overall:** :white_check_mark: SUCCESS - All 84 functional tests pass. Added `get_transcript_archive` tool (14 tools total). Manual API tests from prior version (ad0b4eb) cover all existing tools; the new `get_transcript_archive` tool depends on backend endpoints from agents PR #1259 which may not be deployed yet.
 
-| Test Category                 | Status             | Tests   |
-| ----------------------------- | ------------------ | ------- |
-| **Manual Tests (Production)** |                    |         |
-| Tool Registration             | :white_check_mark: | 1/1     |
-| search_sessions               | :white_check_mark: | 4/4     |
-| get_session                   | :white_check_mark: | 6/6     |
-| start_session                 | :white_check_mark: | 1/1     |
-| action_session                | :white_check_mark: | 11/11   |
-| manage_enqueued_messages      | :white_check_mark: | 8/8     |
-| get_configs                   | :white_check_mark: | 1/1     |
-| get_notifications             | :white_check_mark: | 3/3     |
-| send_push_notification        | :white_check_mark: | 2/2     |
-| action_notification           | :white_check_mark: | 4/4     |
-| search_triggers               | :white_check_mark: | 3/3     |
-| action_trigger                | :white_check_mark: | 4/4     |
-| get_system_health             | :white_check_mark: | 2/2     |
-| action_health                 | :white_check_mark: | 4/4     |
-| Resources                     | :white_check_mark: | 2/2     |
-| **Functional Tests (CI)**     |                    |         |
-| All functional tests          | :white_check_mark: | 115/115 |
-| **Integration Tests (CI)**    |                    |         |
-| All integration tests         | :white_check_mark: | 14/14   |
+| Test Category                    | Status             | Tests |
+| -------------------------------- | ------------------ | ----- |
+| **Functional Tests (CI)**        |                    |       |
+| All functional tests             | :white_check_mark: | 84/84 |
+| **Prior Manual Tests (ad0b4eb)** |                    |       |
+| Tool Registration                | :white_check_mark: | 1/1   |
+| search_sessions                  | :white_check_mark: | 4/4   |
+| get_session                      | :white_check_mark: | 6/6   |
+| start_session                    | :white_check_mark: | 1/1   |
+| action_session                   | :white_check_mark: | 11/11 |
+| manage_enqueued_messages         | :white_check_mark: | 8/8   |
+| get_configs                      | :white_check_mark: | 1/1   |
+| get_notifications                | :white_check_mark: | 3/3   |
+| send_push_notification           | :white_check_mark: | 2/2   |
+| action_notification              | :white_check_mark: | 4/4   |
+| search_triggers                  | :white_check_mark: | 3/3   |
+| action_trigger                   | :white_check_mark: | 4/4   |
+| get_system_health                | :white_check_mark: | 2/2   |
+| action_health                    | :white_check_mark: | 4/4   |
+| Resources                        | :white_check_mark: | 2/2   |
 
 ### Functionality Verified
 
@@ -116,15 +114,19 @@ The tests will:
 - :white_check_mark: **actionTriggerWorks** - Validation for create/update/delete/toggle
 - :white_check_mark: **getSystemHealthWorks** - Health report and CLI status
 - :white_check_mark: **actionHealthWorks** - Cleanup processes, archive old, CLI refresh/clear cache
+- :white_check_mark: **getTranscriptArchive** - Functional tests verify correct output format, curl command generation, file size formatting, and error handling (2 tests)
 
-### Warnings
+### Notes
 
+- `get_transcript_archive`: No manual API test available yet - backend endpoints (agents PR #1259) may not be deployed. Tool is fully covered by functional tests with mocked API responses
+- Prior manual test results (commit ad0b4eb) verify all existing tools work against production API
 - `transcript_format`: Test session had no transcript available (API returned 404) - expected behavior for sessions without transcripts
 - `refresh`: Test session had no clone path (API returned 422) - expected for newly created clone-only sessions
 
-### Key Changes (Unreleased)
+### Key Changes in 0.2.5
 
-- Added 7 new tools (13 total): manage_enqueued_messages, get_notifications, action_notification, search_triggers, action_trigger, get_system_health, action_health
+- Added `get_transcript_archive` tool (14 tools total)
+- Added 7 new tools covering ~30 new API endpoints across 4 domains
 - Extended action_session with 6 new actions: fork, refresh, refresh_all, update_notes, toggle_favorite, bulk_archive
 - Extended get_session with transcript_format parameter
 - Added 2 new tool groups: triggers/triggers_readonly, health/health_readonly
