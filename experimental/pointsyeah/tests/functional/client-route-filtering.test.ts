@@ -62,7 +62,7 @@ function makeTask(taskId: string = 'test-task-123'): FlightSearchTask {
 }
 
 function makeSearchResponse(
-  results: FlightSearchResponse['data']['result'],
+  results: NonNullable<FlightSearchResponse['data']>['result'],
   status: string = 'done'
 ): FlightSearchResponse {
   return {
@@ -122,7 +122,7 @@ const mockPlaywright: PlaywrightSearchDeps = {
 async function runSearchWithFakeTimers(
   client: PointsYeahClient,
   params: FlightSearchParams
-): Promise<{ total: number; results: FlightSearchResponse['data']['result'] }> {
+): Promise<{ total: number; results: NonNullable<FlightSearchResponse['data']>['result'] }> {
   const searchPromise = client.searchFlights(params);
 
   // Advance timers in a loop until the promise resolves or rejects
@@ -287,5 +287,68 @@ describe('PointsYeahClient live search', () => {
     await runSearchWithFakeTimers(client, makeSearchParams());
 
     expect(mockedFetchSearchResults).toHaveBeenCalledWith('my-task-456', 'mock-id-token');
+  });
+
+  it('should handle null data envelope in poll response without crashing', async () => {
+    mockedCreateSearchTask.mockResolvedValue(makeTask());
+
+    // First poll: null data envelope (regression test)
+    mockedFetchSearchResults.mockResolvedValueOnce({
+      code: 0,
+      success: true,
+      data: null,
+    } as FlightSearchResponse);
+    // Second poll: normal response with done status
+    mockedFetchSearchResults.mockResolvedValueOnce(
+      makeSearchResponse([makeFlightResult('United', 'SFO', 'NRT')])
+    );
+
+    const client = new PointsYeahClient(mockPlaywright);
+    const result = await runSearchWithFakeTimers(client, makeSearchParams());
+
+    expect(mockedFetchSearchResults).toHaveBeenCalledTimes(2);
+    expect(result.results).toHaveLength(1);
+    expect(result.total).toBe(1);
+  });
+
+  it('should handle null result array in poll response without crashing', async () => {
+    mockedCreateSearchTask.mockResolvedValue(makeTask());
+
+    // First poll: null result array
+    mockedFetchSearchResults.mockResolvedValueOnce(makeSearchResponse(null, 'processing'));
+    // Second poll: normal response
+    mockedFetchSearchResults.mockResolvedValueOnce(
+      makeSearchResponse([makeFlightResult('Delta', 'SFO', 'NRT')])
+    );
+
+    const client = new PointsYeahClient(mockPlaywright);
+    const result = await runSearchWithFakeTimers(client, makeSearchParams());
+
+    expect(mockedFetchSearchResults).toHaveBeenCalledTimes(2);
+    expect(result.results).toHaveLength(1);
+    expect(result.total).toBe(1);
+  });
+
+  it('should handle all-null poll responses and return empty results', async () => {
+    mockedCreateSearchTask.mockResolvedValue(makeTask());
+
+    // All polls return null data, then done with null result
+    mockedFetchSearchResults.mockResolvedValueOnce({
+      code: 0,
+      success: true,
+      data: null,
+    } as FlightSearchResponse);
+    mockedFetchSearchResults.mockResolvedValueOnce({
+      code: 0,
+      success: true,
+      data: null,
+    } as FlightSearchResponse);
+    mockedFetchSearchResults.mockResolvedValueOnce(makeSearchResponse(null, 'done'));
+
+    const client = new PointsYeahClient(mockPlaywright);
+    const result = await runSearchWithFakeTimers(client, makeSearchParams());
+
+    expect(result.results).toHaveLength(0);
+    expect(result.total).toBe(0);
   });
 });

@@ -129,8 +129,15 @@ export class PointsYeahClient implements IPointsYeahClient {
         throw new Error(`Search polling failed (code: ${pollResponse.code})`);
       }
 
+      // Guard against null/undefined data envelope from API
+      const pollData = pollResponse.data;
+      if (!pollData) {
+        logWarning('search', `Poll ${i + 1}: response.data is null/undefined, skipping`);
+        continue;
+      }
+
       // Accumulate results using program+date+departure+arrival as key
-      const pollResults = pollResponse.data.result ?? [];
+      const pollResults = pollData.result ?? [];
       for (const result of pollResults) {
         const key = `${result.code}-${result.date}-${result.departure}-${result.arrival}`;
         allResults.set(key, result);
@@ -138,10 +145,10 @@ export class PointsYeahClient implements IPointsYeahClient {
 
       logDebug(
         'search',
-        `Poll ${i + 1}: status=${pollResponse.data.status}, ${pollResults.length} results this poll, ${allResults.size} total`
+        `Poll ${i + 1}: status=${pollData.status}, ${pollResults.length} results this poll, ${allResults.size} total`
       );
 
-      if (pollResponse.data.status === 'done') {
+      if (pollData.status === 'done') {
         done = true;
         break;
       }
