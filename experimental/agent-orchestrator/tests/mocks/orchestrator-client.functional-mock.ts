@@ -440,5 +440,17 @@ export function createMockOrchestratorClient(): IAgentOrchestratorClient {
       queued: true,
       message: 'CLI cache clear queued',
     }),
+
+    // Transcript Archive
+    getTranscriptArchiveStatus: vi.fn().mockResolvedValue({
+      generated_at: '2025-01-15T15:00:00Z',
+      session_count: 42,
+      file_size_bytes: 1048576,
+    }),
+
+    getTranscriptArchiveDownloadUrl: vi.fn().mockReturnValue({
+      url: 'http://localhost:3000/api/v1/transcript_archive/download',
+      apiKey: 'test-api-key',
+    }),
   };
 }

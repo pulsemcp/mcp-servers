@@ -9,7 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- 7 new tools covering ~30 new API endpoints across 4 domains (13 tools total):
+- `get_transcript_archive` tool to get the download URL and metadata for the transcript archive zip file (sessions, read)
+- 7 new tools covering ~30 new API endpoints across 4 domains (14 tools total):
   - `manage_enqueued_messages` - Manage session message queue (list, get, create, update, delete, reorder, interrupt)
   - `get_notifications` - Get/list notifications and badge count
   - `action_notification` - Mark read, dismiss notifications (mark_read, mark_all_read, dismiss, dismiss_all_read)
