@@ -63,13 +63,14 @@ The formatting fix only affects `formatRoute` and `formatResult` helper function
 
 ### End-to-End Verification
 
-Tested via MCP tool invocation with published v0.2.5:
+Bug was reproduced via MCP tool invocation against published v0.2.5:
 
-- One-way search (SFO→NYC, tripType "1") crashed with `Cannot read properties of null (reading 'length')` at `formatRoute` — the API returned results with null `transfer` fields
-- After fix, null route properties are handled gracefully with defensive `??` and `&&` guards
+- One-way search (SFO→NYC, tripType "1") crashed with `Cannot read properties of null (reading 'length')` at `formatRoute` in `search-flights.js:47:18`
+- Stack trace confirmed the crash was in the formatting layer accessing `transfer.length` when `transfer` is null
+- Fix adds defensive null guards (`??`, `&&`, early return) in `formatRoute` and `formatResult` — the fix was verified via new functional tests (not re-tested end-to-end against the live API)
 
 ### Functional Test Results
 
-**Status:** All functional tests passed (22/22), all integration tests passed (4/4)
+**Status:** All functional tests passed, all integration tests passed
 
-**Summary:** All 22 functional tests pass. All 4 integration tests pass. Formatting null guard fix verified via stack trace analysis from live MCP tool invocation.
+**Summary:** New functional tests added for null `routes`, null `payment`/`segments`/`transfer` fields. Formatting null guard fix verified via functional tests covering the exact null shapes returned by the live API.
