@@ -48,24 +48,22 @@ Use this for personal `@gmail.com` accounts or any Google account without Worksp
 
 #### Getting a Refresh Token
 
-Run the one-time setup script from a clone of the repository:
+Run the built-in setup command:
 
 ```bash
-git clone https://github.com/pulsemcp/mcp-servers.git
-cd mcp-servers/experimental/gmail
-npx tsx scripts/oauth-setup.ts <client_id> <client_secret>
+npx gmail-workspace-mcp-server oauth-setup <client_id> <client_secret>
 ```
 
 You can also pass credentials via environment variables:
 
 ```bash
-GMAIL_OAUTH_CLIENT_ID=... GMAIL_OAUTH_CLIENT_SECRET=... npx tsx scripts/oauth-setup.ts
+GMAIL_OAUTH_CLIENT_ID=... GMAIL_OAUTH_CLIENT_SECRET=... npx gmail-workspace-mcp-server oauth-setup
 ```
 
 **Port conflict?** If port 3000 is already in use, specify a different port:
 
 ```bash
-PORT=3001 npx tsx scripts/oauth-setup.ts <client_id> <client_secret>
+PORT=3001 npx gmail-workspace-mcp-server oauth-setup <client_id> <client_secret>
 ```
 
 Desktop app credentials automatically allow `http://localhost` redirects on any port, so no additional Google Cloud Console configuration is needed.
