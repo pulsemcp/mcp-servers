@@ -51,20 +51,24 @@ function formatDuration(minutes: number): string {
 }
 
 function formatRoute(route: FlightRoute): string {
+  if (!route) return '  (no route data)';
+
   const lines: string[] = [];
   const { payment, segments, transfer } = route;
 
-  lines.push(
-    `  ${payment.miles.toLocaleString()} ${payment.unit} + $${payment.tax.toFixed(2)} tax | ${payment.cabin} | ${payment.seats} seat(s)`
-  );
+  if (payment) {
+    lines.push(
+      `  ${payment.miles.toLocaleString()} ${payment.unit} + $${payment.tax.toFixed(2)} tax | ${payment.cabin} | ${payment.seats} seat(s)`
+    );
+  }
 
-  for (const seg of segments) {
+  for (const seg of segments ?? []) {
     lines.push(
       `    ${seg.flight_number}: ${seg.da} ${seg.dt.split('T')[1]?.substring(0, 5) || ''} -> ${seg.aa} ${seg.at.split('T')[1]?.substring(0, 5) || ''} (${formatDuration(seg.duration)}) [${seg.cabin}]`
     );
   }
 
-  if (transfer.length > 0) {
+  if (transfer && transfer.length > 0) {
     const transferStrs = transfer.map((t) => `${t.bank}: ${t.points.toLocaleString()} pts`);
     lines.push(`    Transfer: ${transferStrs.join(' | ')}`);
   }
@@ -77,7 +81,7 @@ function formatResult(result: FlightResult): string {
   lines.push(`### ${result.program} (${result.code}) - ${result.date}`);
   lines.push(`${result.departure} -> ${result.arrival}`);
 
-  for (const route of result.routes) {
+  for (const route of result.routes ?? []) {
     lines.push(formatRoute(route));
   }
 

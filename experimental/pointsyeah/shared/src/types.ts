@@ -80,9 +80,9 @@ export interface FlightPayment {
 }
 
 export interface FlightRoute {
-  payment: FlightPayment;
-  segments: FlightSegment[];
-  transfer: TransferOption[];
+  payment: FlightPayment | null;
+  segments: FlightSegment[] | null;
+  transfer: TransferOption[] | null;
 }
 
 export interface FlightResult {
@@ -91,7 +91,7 @@ export interface FlightResult {
   date: string;
   departure: string;
   arrival: string;
-  routes: FlightRoute[];
+  routes: FlightRoute[] | null;
 }
 
 export interface FlightSearchResults {

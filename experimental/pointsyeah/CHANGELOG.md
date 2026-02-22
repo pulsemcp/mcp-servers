@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.6] - 2026-02-22
+
+### Fixed
+
+- Fixed crash in result formatting when API returns null `routes`, `payment`, `segments`, or `transfer` fields in flight search results
+- Updated `FlightRoute` and `FlightResult` TypeScript interfaces to reflect nullable fields (`| null`)
+
 ## [0.2.5] - 2026-02-22
 
 ### Fixed
