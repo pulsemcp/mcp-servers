@@ -14,6 +14,7 @@ import { searchTriggersTool } from '../../shared/src/tools/search-triggers.js';
 import { actionTriggerTool } from '../../shared/src/tools/action-trigger.js';
 import { getSystemHealthTool } from '../../shared/src/tools/get-system-health.js';
 import { actionHealthTool } from '../../shared/src/tools/action-health.js';
+import { getTranscriptArchiveTool } from '../../shared/src/tools/get-transcript-archive.js';
 import { clearConfigsCache } from '../../shared/src/cache/configs-cache.js';
 import { parseEnabledToolGroups, createRegisterTools } from '../../shared/src/tools.js';
 
@@ -886,14 +887,57 @@ describe('Tools', () => {
     });
   });
 
+  describe('get_transcript_archive', () => {
+    it('should return transcript archive info with download URL', async () => {
+      const tool = getTranscriptArchiveTool(mockServer, clientFactory);
+
+      const result = await tool.handler({});
+
+      expect(result).toMatchObject({
+        content: [{ type: 'text' }],
+      });
+      const text = (result as { content: Array<{ text: string }> }).content[0].text;
+      expect(text).toContain('Transcript Archive');
+      expect(text).toContain('Generated At');
+      expect(text).toContain('Session Count');
+      expect(text).toContain('42');
+      expect(text).toContain('File Size');
+      expect(text).toContain('1.0 MB');
+      expect(text).toContain('transcript_archive/download');
+      expect(text).toContain('curl');
+      expect(mockClient.getTranscriptArchiveStatus).toHaveBeenCalledTimes(1);
+      expect(mockClient.getTranscriptArchiveDownloadUrl).toHaveBeenCalledTimes(1);
+    });
+
+    it('should handle API errors gracefully', async () => {
+      mockClient.getTranscriptArchiveStatus = vi
+        .fn()
+        .mockRejectedValue(
+          new Error(
+            'API Error (404): No transcript archive exists yet. The archive is built every 10 minutes.'
+          )
+        );
+
+      const tool = getTranscriptArchiveTool(mockServer, clientFactory);
+
+      const result = await tool.handler({});
+
+      expect(result.isError).toBe(true);
+      expect((result as { content: Array<{ text: string }> }).content[0].text).toContain(
+        'No transcript archive exists yet'
+      );
+    });
+  });
+
   describe('tool definitions', () => {
-    it('should have correct tool definitions for all 13 tools', () => {
+    it('should have correct tool definitions for all 14 tools', () => {
       const tools = [
         searchSessionsTool(mockServer, clientFactory),
         startSessionTool(mockServer, clientFactory),
         getSessionTool(mockServer, clientFactory),
         actionSessionTool(mockServer, clientFactory),
         getConfigsTool(mockServer, clientFactory),
+        getTranscriptArchiveTool(mockServer, clientFactory),
         manageEnqueuedMessagesTool(mockServer, clientFactory),
         sendPushNotificationTool(mockServer, clientFactory),
         getNotificationsTool(mockServer, clientFactory),
@@ -904,13 +948,14 @@ describe('Tools', () => {
         actionHealthTool(mockServer, clientFactory),
       ];
 
-      expect(tools).toHaveLength(13);
+      expect(tools).toHaveLength(14);
       const toolNames = tools.map((t) => t.name);
       expect(toolNames).toContain('search_sessions');
       expect(toolNames).toContain('start_session');
       expect(toolNames).toContain('get_session');
       expect(toolNames).toContain('action_session');
       expect(toolNames).toContain('get_configs');
+      expect(toolNames).toContain('get_transcript_archive');
       expect(toolNames).toContain('manage_enqueued_messages');
       expect(toolNames).toContain('send_push_notification');
       expect(toolNames).toContain('get_notifications');
@@ -1017,12 +1062,13 @@ describe('createRegisterTools with toolgroups filtering', () => {
     const listToolsHandler = handlers.get('tools/list');
     const result = await listToolsHandler({ method: 'tools/list', params: {} });
 
-    expect(result.tools).toHaveLength(3);
+    expect(result.tools).toHaveLength(4);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const toolNames = result.tools.map((t: any) => t.name);
     expect(toolNames).toContain('search_sessions');
     expect(toolNames).toContain('get_session');
     expect(toolNames).toContain('get_configs');
+    expect(toolNames).toContain('get_transcript_archive');
     expect(toolNames).not.toContain('start_session');
     expect(toolNames).not.toContain('action_session');
     expect(toolNames).not.toContain('manage_enqueued_messages');
@@ -1044,12 +1090,13 @@ describe('createRegisterTools with toolgroups filtering', () => {
     const listToolsHandler = handlers.get('tools/list');
     const result = await listToolsHandler({ method: 'tools/list', params: {} });
 
-    expect(result.tools).toHaveLength(6);
+    expect(result.tools).toHaveLength(7);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const toolNames = result.tools.map((t: any) => t.name);
     expect(toolNames).toContain('search_sessions');
     expect(toolNames).toContain('get_session');
     expect(toolNames).toContain('get_configs');
+    expect(toolNames).toContain('get_transcript_archive');
     expect(toolNames).toContain('start_session');
     expect(toolNames).toContain('action_session');
     expect(toolNames).toContain('manage_enqueued_messages');
@@ -1149,7 +1196,7 @@ describe('createRegisterTools with toolgroups filtering', () => {
     expect(toolNames).toContain('action_health');
   });
 
-  it('should register all 13 tools when all base groups are enabled (default)', async () => {
+  it('should register all 14 tools when all base groups are enabled (default)', async () => {
     const mockClient2 = createMockOrchestratorClient();
     const mockServer = new Server(
       { name: 'test', version: '1.0.0' },
@@ -1165,12 +1212,13 @@ describe('createRegisterTools with toolgroups filtering', () => {
     const listToolsHandler = handlers.get('tools/list');
     const result = await listToolsHandler({ method: 'tools/list', params: {} });
 
-    expect(result.tools).toHaveLength(13);
+    expect(result.tools).toHaveLength(14);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const toolNames = result.tools.map((t: any) => t.name);
     expect(toolNames).toContain('search_sessions');
     expect(toolNames).toContain('get_session');
     expect(toolNames).toContain('get_configs');
+    expect(toolNames).toContain('get_transcript_archive');
     expect(toolNames).toContain('start_session');
     expect(toolNames).toContain('action_session');
     expect(toolNames).toContain('manage_enqueued_messages');
@@ -1199,12 +1247,13 @@ describe('createRegisterTools with toolgroups filtering', () => {
     const listToolsHandler = handlers.get('tools/list');
     const result = await listToolsHandler({ method: 'tools/list', params: {} });
 
-    expect(result.tools).toHaveLength(6); // 3 readonly sessions + 3 notification
+    expect(result.tools).toHaveLength(7); // 4 readonly sessions + 3 notification
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const toolNames = result.tools.map((t: any) => t.name);
     expect(toolNames).toContain('search_sessions');
     expect(toolNames).toContain('get_session');
     expect(toolNames).toContain('get_configs');
+    expect(toolNames).toContain('get_transcript_archive');
     expect(toolNames).toContain('get_notifications');
     expect(toolNames).toContain('send_push_notification');
     expect(toolNames).toContain('action_notification');

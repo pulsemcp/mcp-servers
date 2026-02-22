@@ -4,7 +4,7 @@ MCP server for PulseMCP's agent-orchestrator: a Claude Code + MCP-powered agent-
 
 ## Highlights
 
-- 13-tool interface across 4 domains for full agent orchestration
+- 14-tool interface across 4 domains for full agent orchestration
 - Session management with lifecycle actions, message queue, and transcript retrieval
 - Notification management with badge counts, mark read, and dismiss
 - Automation trigger management (create, update, delete, toggle)
@@ -23,6 +23,7 @@ MCP server for PulseMCP's agent-orchestrator: a Claude Code + MCP-powered agent-
 | `search_sessions`          | sessions      | read       | Search/list sessions with optional ID lookup, query, and status filter                                                                                      |
 | `get_session`              | sessions      | read       | Get detailed session info with optional logs, transcripts, and transcript format (text/json)                                                                |
 | `get_configs`              | sessions      | read       | Fetch all static configuration (MCP servers, agent roots, stop conditions)                                                                                  |
+| `get_transcript_archive`   | sessions      | read       | Get download URL and metadata for the transcript archive zip file                                                                                           |
 | `start_session`            | sessions      | write      | Create and start a new agent session                                                                                                                        |
 | `action_session`           | sessions      | write      | Perform actions: follow_up, pause, restart, archive, unarchive, change_mcp_servers, fork, refresh, refresh_all, update_notes, toggle_favorite, bulk_archive |
 | `manage_enqueued_messages` | sessions      | write      | Manage session message queue: list, get, create, update, delete, reorder, interrupt                                                                         |
@@ -52,16 +53,16 @@ This server organizes tools into groups that can be selectively enabled or disab
 
 Control which tools are available via the `TOOL_GROUPS` environment variable:
 
-| Group                    | Description                                                                          |
-| ------------------------ | ------------------------------------------------------------------------------------ |
-| `sessions`               | All session tools (read + write): search, get, configs, start, action, enqueued msgs |
-| `sessions_readonly`      | Session tools (read only): search_sessions, get_session, get_configs                 |
-| `notifications`          | All notification tools (read + write): get, send, mark read, dismiss                 |
-| `notifications_readonly` | Notification tools (read only): get_notifications                                    |
-| `triggers`               | All trigger tools (read + write): search, create, update, delete, toggle             |
-| `triggers_readonly`      | Trigger tools (read only): search_triggers                                           |
-| `health`                 | All health tools (read + write): health report, CLI status, maintenance              |
-| `health_readonly`        | Health tools (read only): get_system_health                                          |
+| Group                    | Description                                                                                              |
+| ------------------------ | -------------------------------------------------------------------------------------------------------- |
+| `sessions`               | All session tools (read + write): search, get, configs, transcript_archive, start, action, enqueued msgs |
+| `sessions_readonly`      | Session tools (read only): search_sessions, get_session, get_configs, get_transcript_archive             |
+| `notifications`          | All notification tools (read + write): get, send, mark read, dismiss                                     |
+| `notifications_readonly` | Notification tools (read only): get_notifications                                                        |
+| `triggers`               | All trigger tools (read + write): search, create, update, delete, toggle                                 |
+| `triggers_readonly`      | Trigger tools (read only): search_triggers                                                               |
+| `health`                 | All health tools (read + write): health report, CLI status, maintenance                                  |
+| `health_readonly`        | Health tools (read only): get_system_health                                                              |
 
 **Examples:**
 
@@ -207,6 +208,11 @@ This MCP server provides tools for the following Agent Orchestrator REST API end
 - `POST /api/v1/sessions/refresh_all` - Refresh all active sessions
 - `POST /api/v1/sessions/:id/toggle_favorite` - Toggle favorite
 - `POST /api/v1/sessions/bulk_archive` - Bulk archive sessions
+
+### Transcript Archive
+
+- `GET /api/v1/transcript_archive/status` - Get transcript archive metadata
+- `GET /api/v1/transcript_archive/download` - Download transcript archive zip file
 
 ### Enqueued Messages
 

@@ -59,6 +59,7 @@ import type {
   RefreshAllSessionsResponse,
   BulkArchiveResponse,
   TranscriptResponse,
+  TranscriptArchiveStatusResponse,
 } from '../types.js';
 
 /** Raw agent root shape as returned by the Rails API */
@@ -286,6 +287,10 @@ export interface IAgentOrchestratorClient {
   getCliStatus(): Promise<CliStatusResponse>;
   refreshCli(): Promise<CliActionResponse>;
   clearCliCache(): Promise<CliActionResponse>;
+
+  // Transcript Archive
+  getTranscriptArchiveStatus(): Promise<TranscriptArchiveStatusResponse>;
+  getTranscriptArchiveDownloadUrl(): { url: string; apiKey: string };
 }
 
 /** Default timeout for API requests in milliseconds */
@@ -824,5 +829,17 @@ export class AgentOrchestratorClient implements IAgentOrchestratorClient {
 
   async clearCliCache(): Promise<CliActionResponse> {
     return this.request<CliActionResponse>('POST', '/clis/clear_cache');
+  }
+
+  // Transcript Archive
+  async getTranscriptArchiveStatus(): Promise<TranscriptArchiveStatusResponse> {
+    return this.request<TranscriptArchiveStatusResponse>('GET', '/transcript_archive/status');
+  }
+
+  getTranscriptArchiveDownloadUrl(): { url: string; apiKey: string } {
+    return {
+      url: `${this.baseUrl}/api/v1/transcript_archive/download`,
+      apiKey: this.apiKey,
+    };
   }
 }

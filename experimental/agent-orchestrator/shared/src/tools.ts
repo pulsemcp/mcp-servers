@@ -16,6 +16,7 @@ import { searchTriggersTool } from './tools/search-triggers.js';
 import { actionTriggerTool } from './tools/action-trigger.js';
 import { getSystemHealthTool } from './tools/get-system-health.js';
 import { actionHealthTool } from './tools/action-health.js';
+import { getTranscriptArchiveTool } from './tools/get-transcript-archive.js';
 
 // =============================================================================
 // TOOL GROUPING SYSTEM
@@ -138,10 +139,11 @@ interface ToolDefinition {
 /**
  * All available tools with their group assignments.
  *
- * 13 tools across 4 domains:
+ * 14 tools across 4 domains:
  * - search_sessions: Search/list/get sessions by ID (sessions, read)
  * - get_session: Get detailed session info with optional logs/transcripts (sessions, read)
  * - get_configs: Fetch all static configuration (sessions, read)
+ * - get_transcript_archive: Get transcript archive download URL and metadata (sessions, read)
  * - start_session: Create a new session (sessions, write)
  * - action_session: Perform session actions (sessions, write)
  * - manage_enqueued_messages: Manage session message queue (sessions, write)
@@ -158,6 +160,7 @@ const ALL_TOOLS: ToolDefinition[] = [
   { factory: searchSessionsTool, group: 'sessions', isWriteOperation: false },
   { factory: getSessionTool, group: 'sessions', isWriteOperation: false },
   { factory: getConfigsTool, group: 'sessions', isWriteOperation: false },
+  { factory: getTranscriptArchiveTool, group: 'sessions', isWriteOperation: false },
 
   // Session tools - write operations
   { factory: startSessionTool, group: 'sessions', isWriteOperation: true },
