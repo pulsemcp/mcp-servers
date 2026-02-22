@@ -179,11 +179,15 @@ export function searchFlightsTool(_server: Server, clientFactory: () => IPointsY
           ],
         };
       } catch (error) {
+        const message = error instanceof Error ? error.message : 'Unknown error';
+        const stack = error instanceof Error ? error.stack : undefined;
         return {
           content: [
             {
               type: 'text',
-              text: `Error searching flights: ${error instanceof Error ? error.message : 'Unknown error'}`,
+              text: stack
+                ? `Error searching flights: ${message}\n\nStack trace:\n${stack}`
+                : `Error searching flights: ${message}`,
             },
           ],
           isError: true,

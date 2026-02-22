@@ -288,4 +288,67 @@ describe('PointsYeahClient live search', () => {
 
     expect(mockedFetchSearchResults).toHaveBeenCalledWith('my-task-456', 'mock-id-token');
   });
+
+  it('should handle null data envelope in poll response without crashing', async () => {
+    mockedCreateSearchTask.mockResolvedValue(makeTask());
+
+    // First poll: null data envelope (regression test)
+    mockedFetchSearchResults.mockResolvedValueOnce({
+      code: 0,
+      success: true,
+      data: null,
+    });
+    // Second poll: normal response with done status
+    mockedFetchSearchResults.mockResolvedValueOnce(
+      makeSearchResponse([makeFlightResult('United', 'SFO', 'NRT')])
+    );
+
+    const client = new PointsYeahClient(mockPlaywright);
+    const result = await runSearchWithFakeTimers(client, makeSearchParams());
+
+    expect(mockedFetchSearchResults).toHaveBeenCalledTimes(2);
+    expect(result.results).toHaveLength(1);
+    expect(result.total).toBe(1);
+  });
+
+  it('should handle null result array in poll response without crashing', async () => {
+    mockedCreateSearchTask.mockResolvedValue(makeTask());
+
+    // First poll: null result array
+    mockedFetchSearchResults.mockResolvedValueOnce(makeSearchResponse(null, 'processing'));
+    // Second poll: normal response
+    mockedFetchSearchResults.mockResolvedValueOnce(
+      makeSearchResponse([makeFlightResult('Delta', 'SFO', 'NRT')])
+    );
+
+    const client = new PointsYeahClient(mockPlaywright);
+    const result = await runSearchWithFakeTimers(client, makeSearchParams());
+
+    expect(mockedFetchSearchResults).toHaveBeenCalledTimes(2);
+    expect(result.results).toHaveLength(1);
+    expect(result.total).toBe(1);
+  });
+
+  it('should handle all-null poll responses and return empty results', async () => {
+    mockedCreateSearchTask.mockResolvedValue(makeTask());
+
+    // All polls return null data, then done with null result
+    mockedFetchSearchResults.mockResolvedValueOnce({
+      code: 0,
+      success: true,
+      data: null,
+    });
+    mockedFetchSearchResults.mockResolvedValueOnce({
+      code: 0,
+      success: true,
+      data: null,
+    });
+    mockedFetchSearchResults.mockResolvedValueOnce(makeSearchResponse(null, 'done'));
+
+    const client = new PointsYeahClient(mockPlaywright);
+    const result = await runSearchWithFakeTimers(client, makeSearchParams());
+
+    expect(result.results).toHaveLength(0);
+    expect(result.total).toBe(0);
+  });
 });
