@@ -49,9 +49,9 @@ The tests will:
 
 ## Latest Test Results
 
-**Test Date:** 2026-02-20
-**Branch:** tadasant/fix-pointsyeah-polling-api-change
-**Commit:** b5fb699
+**Test Date:** 2026-02-22
+**Branch:** tadasant/fix-pointsyeah-null-data-envelope
+**Commit:** 5212cf5
 **Tested By:** Claude
 **Environment:** Linux, Node.js
 
@@ -77,20 +77,18 @@ Refresh token was revoked at time of manual test run. All 6 unauthenticated test
 
 ### End-to-End Verification
 
-The core fix (polling logic) was verified against the real PointsYeah API during development:
+The null data envelope fix was verified via MCP tool invocation:
 
-- Authenticated via Cognito with a valid refresh token
-- Searched ORD→MIA on 2026-04-01 (Economy)
-- Playwright successfully created search task
-- Polling completed in 5 polls (~15s): 17 results on poll 1, 1 more on poll 4, `status: "done"` on poll 5
-- **18 total results** returned successfully (vs. previous 404 failure)
+- Set refresh token and ran one-way search (SFO→NYC, tripType "1") — previously crashed with `Cannot read properties of null (reading 'length')`
+- After fix, null data polls are skipped gracefully and search completes without error
+- Round-trip search (JFK→LAX) still works correctly — returned 36 results with no regressions
 
 ### Functional Test Results
 
-**Status:** All functional tests passed (19/19)
+**Status:** All functional tests passed (22/22), all integration tests passed (4/4)
 
 **Details:**
 
-All tools are always registered at startup. Auth-requiring tools (`search_flights`, `get_search_history`) check authentication state at call time and return a clear error when not authenticated. The live search flow (Playwright-based `create_task` + HTTP polling `fetch_result`) is tested with mocked dependencies and fake timers. Updated tests verify result accumulation across polls and `status`-based completion detection.
+All tools are always registered at startup. Auth-requiring tools (`search_flights`, `get_search_history`) check authentication state at call time and return a clear error when not authenticated. The live search flow (Playwright-based `create_task` + HTTP polling `fetch_result`) is tested with mocked dependencies and fake timers. Three new regression tests cover null data envelope scenarios: null `data` field, null `data.result` array, and all-null poll responses.
 
-**Summary:** 6 manual tests pass (4 skipped due to revoked token). All 19 functional tests pass. Null result array fix verified via TypeScript compilation and functional tests.
+**Summary:** 6 manual tests pass (4 skipped due to revoked token). All 22 functional tests pass. All 4 integration tests pass. Null data envelope fix verified via MCP tool invocation and regression tests.
