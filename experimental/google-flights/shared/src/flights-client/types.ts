@@ -16,12 +16,18 @@ export interface FlightSegment {
   legroom: string | null;
 }
 
+export interface FlightExtensions {
+  carry_on_included: boolean;
+  checked_bags_included: number;
+}
+
 export interface FlightOffer {
   price: number;
   currency: string;
   airline: string;
   airline_code: string;
   is_best: boolean;
+  fare_brand: string | null;
   departure: string;
   arrival: string;
   departure_date: string;
@@ -29,6 +35,7 @@ export interface FlightOffer {
   duration_minutes: number;
   stops: number;
   segments: FlightSegment[];
+  extensions: FlightExtensions;
   booking_token: string;
 }
 

@@ -2,6 +2,7 @@ import protobuf from 'protobufjs';
 import type {
   FlightOffer,
   FlightSegment,
+  FlightExtensions,
   DateGridEntry,
   DateGridResult,
   SearchFlightsOptions,
@@ -254,6 +255,49 @@ function parseSegment(leg: any[]): FlightSegment | null {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
+function parseExtensions(raw: any): FlightExtensions {
+  // offer[4][6] contains baggage amenity flags: [carry_on_flag, checked_bag_flag]
+  // carry_on_flag: 0 = included
+  // checked_bag_flag: 0 = not included, 1 = one bag included, 2 = two bags included
+  const amenityFlags = raw?.[4]?.[6];
+  const carryOnIncluded = Array.isArray(amenityFlags) ? amenityFlags[0] === 0 : true;
+  const checkedBagsIncluded = Array.isArray(amenityFlags) ? amenityFlags[1] || 0 : 0;
+
+  return {
+    carry_on_included: carryOnIncluded,
+    checked_bags_included: checkedBagsIncluded,
+  };
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function parseFareBrand(raw: any): string | null {
+  // Google Flights does not include fare brand names (e.g. "Basic Economy", "Main Cabin")
+  // in the initial search results HTML. However, details[22][2] contains a numeric fare tier
+  // indicator that correlates with fare restrictions and amenity levels.
+  //
+  // Observed mapping from cross-referencing with amenity data and pricing patterns:
+  //   1 = Economy (lowest tier for the airline — often "Basic Economy" for US carriers)
+  //   2 = Economy+ / Standard (mid-tier with some extras like seat selection)
+  //   3 = Economy Flex / Full (higher tier with more flexibility, carry-on, etc.)
+  //
+  // This is a best-effort interpretation of undocumented numeric codes.
+  // Use the `extensions` field for concrete amenity details (carry-on, checked bags).
+  const fareTier = raw?.[0]?.[22]?.[2];
+  if (fareTier === undefined || fareTier === null) return null;
+
+  switch (fareTier) {
+    case 1:
+      return 'Economy';
+    case 2:
+      return 'Economy+';
+    case 3:
+      return 'Economy Flex';
+    default:
+      return null;
+  }
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function parseFlightOffers(ds1: any, currency: string): FlightOffer[] {
   const offers: FlightOffer[] = [];
 
@@ -288,6 +332,7 @@ function parseFlightOffers(ds1: any, currency: string): FlightOffer[] {
         airline: details[1]?.[0] || '',
         airline_code: details[0] || '',
         is_best: rankData?.[0] === 1,
+        fare_brand: parseFareBrand(raw),
         departure: formatTime(details[5]),
         arrival: formatTime(details[8]),
         departure_date: formatDate(details[4]),
@@ -295,6 +340,7 @@ function parseFlightOffers(ds1: any, currency: string): FlightOffer[] {
         duration_minutes: details[9] || 0,
         stops: segments.length > 0 ? segments.length - 1 : 0,
         segments,
+        extensions: parseExtensions(raw),
         booking_token: priceData[1] || '',
       });
     } catch (e) {
