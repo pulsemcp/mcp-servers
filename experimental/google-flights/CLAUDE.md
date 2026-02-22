@@ -44,7 +44,9 @@ offer[0] = flight details:
   stops = segments.length - 1
 offer[1][0] = [null, price]
 offer[1][1] = booking token
+offer[4][6] = [carry_on_flag, checked_bag_flag] (0=included, 1+=not/fee)
 offer[5][0] = is_best (1/0)
+details[22][2] = fare tier (1=Economy, 2=Economy+, 3=Economy Flex)
 ```
 
 ### Rate limiting

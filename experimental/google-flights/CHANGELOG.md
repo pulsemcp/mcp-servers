@@ -4,6 +4,11 @@ All notable changes to the Google Flights MCP Server will be documented in this 
 
 ## [Unreleased]
 
+### Added
+
+- `fare_brand` field on each flight result indicating the fare tier ("Economy", "Economy+", "Economy Flex"), derived from Google's numeric fare tier data. May be `null` when unavailable.
+- `extensions` field on each flight result with `carry_on_included` (boolean) and `checked_bags_included` (number) to help distinguish basic economy from standard fares.
+
 ## [0.1.1] - 2026-02-16
 
 ### Changed

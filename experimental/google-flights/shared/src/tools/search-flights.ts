@@ -67,7 +67,9 @@ export function searchFlightsTool(_server: Server, clientFactory: FlightsClientF
     name: 'search_flights',
     description: `Search for flights on Google Flights with full filtering and pagination.
 
-Returns structured flight data including prices, airlines, times, durations, stops, and individual flight segments with aircraft type and legroom.
+Returns structured flight data including prices, airlines, times, durations, stops, individual flight segments with aircraft type and legroom, fare brand (e.g. "Economy", "Economy+", "Economy Flex"), and fare extensions (carry-on and checked bag inclusion).
+
+The fare_brand field indicates the fare tier: "Economy" (basic/lowest tier), "Economy+" (mid-tier with extras), or "Economy Flex" (higher tier with more flexibility). This is derived from Google's numeric fare tier data and may be null if unavailable. Use the extensions field (carry_on_included, checked_bags_included) for concrete amenity details.
 
 IMPORTANT — Handling large result sets: Popular routes often return 50-150+ flights. If total_results is high, recommend narrowing with filters (max_stops, sort_by, seat_class) rather than paginating through everything. For example, set max_stops to "nonstop" or sort_by to "price" to surface the most relevant options quickly.
 
