@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.5] - 2026-02-22
+
 ### Added
 
 - `get_transcript_archive` tool to get the download URL and metadata for the transcript archive zip file (sessions, read)
@@ -22,7 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Extended `action_session` with 6 new actions: fork, refresh, refresh_all, update_notes, toggle_favorite, bulk_archive
 - Extended `get_session` with `transcript_format` parameter (text/json) for dedicated transcript endpoint
 - ~25 new API client methods for enqueued messages, triggers, notifications, health, and CLI operations
-- Comprehensive functional tests for all 13 tools and tool group filtering
+- Comprehensive functional tests for all 14 tools and tool group filtering
 
 ### Changed
 
