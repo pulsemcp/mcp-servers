@@ -115,5 +115,5 @@ export interface FlightSearchResponse {
   data: {
     result: FlightResult[] | null;
     status: string; // "processing" | "done"
-  };
+  } | null;
 }

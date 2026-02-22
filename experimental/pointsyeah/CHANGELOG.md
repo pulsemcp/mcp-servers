@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.5] - 2026-02-22
+
+### Fixed
+
+- Fixed crash when API returns `null` for the entire `data` envelope during polling (not just `data.result`)
+  - v0.2.4 only guarded against `data.result` being null, but the `data` object itself can also be null in some environments
+  - Polling now skips and continues when `data` is null/undefined instead of crashing
+- Added error stack traces to search error output for easier debugging
+
+### Added
+
+- Regression tests for null `data` envelope, null `result` array, and all-null poll responses
+
 ## [0.2.4] - 2026-02-20
 
 ### Fixed
