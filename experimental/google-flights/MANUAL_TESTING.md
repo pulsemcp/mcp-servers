@@ -31,36 +31,36 @@ npm run test:manual
 
 ## Test Results
 
-### 2026-02-16 - v0.1.1 Manual Testing
+### 2026-02-22 - v0.1.2 Manual Testing
 
-**Commit:** c83288b
+**Commit:** 2494476
 **Result:** 15/15 tests passed (100%)
 
 ```
- ✓ tests/manual/google-flights.manual.test.ts (15 tests) 20982ms
-   ✓ Google Flights Manual Tests > search_flights > should search domestic one-way flights (SFO -> LAX)  2080ms
-   ✓ Google Flights Manual Tests > search_flights > should search international round-trip flights (JFK -> LHR)  1551ms
-   ✓ Google Flights Manual Tests > search_flights > should search business class flights (LAX -> JFK)  1401ms
-   ✓ Google Flights Manual Tests > search_flights > should filter nonstop flights only  1488ms
-   ✓ Google Flights Manual Tests > search_flights > should support pagination  2944ms
-   ✓ Google Flights Manual Tests > search_flights > should sort by price  1572ms
-   ✓ Google Flights Manual Tests > search_flights > should search transpacific flights (SFO -> NRT)  1291ms
-   ✓ Google Flights Manual Tests > get_date_grid > should get date grid for domestic route  1294ms
-   ✓ Google Flights Manual Tests > get_date_grid > should get date grid for international route  1790ms
-   ✓ Google Flights Manual Tests > find_airport_code > should find airports by city name  631ms
-   ✓ Google Flights Manual Tests > find_airport_code > should find airports by airport name  2173ms
-   ✓ Google Flights Manual Tests > find_airport_code > should find airports by IATA code  771ms
-   ✓ Google Flights Manual Tests > find_airport_code > should find airports for Tokyo  1585ms
+ ✓ tests/manual/google-flights.manual.test.ts (15 tests) 23456ms
+   ✓ Google Flights Manual Tests > search_flights > should search domestic one-way flights (SFO -> LAX)
+   ✓ Google Flights Manual Tests > search_flights > should search international round-trip flights (JFK -> LHR)
+   ✓ Google Flights Manual Tests > search_flights > should search business class flights (LAX -> JFK)
+   ✓ Google Flights Manual Tests > search_flights > should filter nonstop flights only
+   ✓ Google Flights Manual Tests > search_flights > should support pagination
+   ✓ Google Flights Manual Tests > search_flights > should sort by price
+   ✓ Google Flights Manual Tests > search_flights > should search transpacific flights (SFO -> NRT)
+   ✓ Google Flights Manual Tests > get_date_grid > should get date grid for domestic route
+   ✓ Google Flights Manual Tests > get_date_grid > should get date grid for international route
+   ✓ Google Flights Manual Tests > find_airport_code > should find airports by city name
+   ✓ Google Flights Manual Tests > find_airport_code > should find airports by airport name
+   ✓ Google Flights Manual Tests > find_airport_code > should find airports by IATA code
+   ✓ Google Flights Manual Tests > find_airport_code > should find airports for Tokyo
 
  Test Files  1 passed (1)
       Tests  15 passed (15)
-   Start at  22:55:54
-   Duration  21.73s (transform 97ms, setup 18ms, collect 301ms, tests 20.98s, environment 0ms, prepare 81ms)
 ```
 
 **Key functionality verified:**
 
-- **search_flights**: Domestic one-way (SFO→LAX, 88 flights, cheapest $49), international round-trip (JFK→LHR, 72 flights), business class (LAX→JFK, 136 flights), nonstop filtering (all 10 results nonstop), pagination (two pages of 5), price sorting ($124-$165 ascending), validation errors (missing return_date), transpacific (SFO→NRT, 51 flights with connections)
-- **get_date_grid**: Domestic route (61 dates, cheapest $28), international route (61 dates, cheapest $234)
-- **find_airport_code**: City name lookup ("San Francisco" → SFO), airport name ("Heathrow" → LHR), IATA code (LAX → Los Angeles International Airport), multi-airport city ("Tokyo" → HND, NRT)
+- **search_flights**: Domestic one-way (SFO→LAX), international round-trip (JFK→LHR), business class (LAX→JFK), nonstop filtering, pagination, price sorting, transpacific (SFO→NRT)
+- **fare_brand**: Validated on all search_flights results — fare_brand is string or null, values are one of "Economy", "Economy+", "Economy Flex"
+- **extensions**: Validated on all search_flights results — carry_on_included (boolean), checked_bags_included (number >= 0)
+- **get_date_grid**: Domestic route, international route
+- **find_airport_code**: City name lookup, airport name, IATA code, multi-airport city
 - **tool listing**: All 3 tools registered correctly
