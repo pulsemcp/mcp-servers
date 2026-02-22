@@ -62,7 +62,7 @@ function makeTask(taskId: string = 'test-task-123'): FlightSearchTask {
 }
 
 function makeSearchResponse(
-  results: FlightSearchResponse['data']['result'],
+  results: NonNullable<FlightSearchResponse['data']>['result'],
   status: string = 'done'
 ): FlightSearchResponse {
   return {
@@ -122,7 +122,7 @@ const mockPlaywright: PlaywrightSearchDeps = {
 async function runSearchWithFakeTimers(
   client: PointsYeahClient,
   params: FlightSearchParams
-): Promise<{ total: number; results: FlightSearchResponse['data']['result'] }> {
+): Promise<{ total: number; results: NonNullable<FlightSearchResponse['data']>['result'] }> {
   const searchPromise = client.searchFlights(params);
 
   // Advance timers in a loop until the promise resolves or rejects
@@ -297,7 +297,7 @@ describe('PointsYeahClient live search', () => {
       code: 0,
       success: true,
       data: null,
-    });
+    } as FlightSearchResponse);
     // Second poll: normal response with done status
     mockedFetchSearchResults.mockResolvedValueOnce(
       makeSearchResponse([makeFlightResult('United', 'SFO', 'NRT')])
@@ -337,12 +337,12 @@ describe('PointsYeahClient live search', () => {
       code: 0,
       success: true,
       data: null,
-    });
+    } as FlightSearchResponse);
     mockedFetchSearchResults.mockResolvedValueOnce({
       code: 0,
       success: true,
       data: null,
-    });
+    } as FlightSearchResponse);
     mockedFetchSearchResults.mockResolvedValueOnce(makeSearchResponse(null, 'done'));
 
     const client = new PointsYeahClient(mockPlaywright);

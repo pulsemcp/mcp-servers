@@ -186,7 +186,7 @@ export function searchFlightsTool(_server: Server, clientFactory: () => IPointsY
             {
               type: 'text',
               text: stack
-                ? `Error searching flights: ${message}\n\nStack trace:\n${stack}`
+                ? `Error searching flights:\n\n${stack}`
                 : `Error searching flights: ${message}`,
             },
           ],
