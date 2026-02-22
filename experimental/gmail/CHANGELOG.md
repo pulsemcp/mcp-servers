@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.1.2] - 2026-02-22
+
 ### Added
 
 - `oauth-setup` CLI subcommand so personal Gmail users can obtain a refresh token directly via `npx gmail-workspace-mcp-server oauth-setup <client_id> <client_secret>` without cloning the repository or installing extra dependencies
