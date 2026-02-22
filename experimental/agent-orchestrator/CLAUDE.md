@@ -21,10 +21,11 @@ agent-orchestrator/
 │   ├── src/
 │   │   ├── server.ts          # Server factory with DI
 │   │   ├── tools.ts           # Tool registration
-│   │   ├── tools/             # Individual tool implementations (13 tools)
+│   │   ├── tools/             # Individual tool implementations (14 tools)
 │   │   │   ├── search-sessions.ts        # List/search/filter sessions
 │   │   │   ├── get-session.ts            # Get session details with logs/transcripts
 │   │   │   ├── get-configs.ts            # Fetch all static configuration
+│   │   │   ├── get-transcript-archive.ts # Download URL for transcript archive
 │   │   │   ├── start-session.ts          # Create and start new sessions
 │   │   │   ├── action-session.ts         # Session actions (12 actions)
 │   │   │   ├── manage-enqueued-messages.ts # Session message queue management
@@ -63,11 +64,12 @@ Optional:
 
 ## Tools
 
-The server provides 13 tools across 4 domains:
+The server provides 14 tools across 4 domains:
 
 - **search_sessions** - List, filter, and search sessions (supports status filter, query search, pagination)
 - **get_session** - Get detailed session info with optional logs, transcripts, and transcript format
 - **get_configs** - Fetch all static configuration (MCP servers, agent roots, stop conditions)
+- **get_transcript_archive** - Get download URL and metadata for the transcript archive zip file
 - **start_session** - Create and optionally start a new agent session
 - **action_session** - Perform actions on sessions (follow_up, pause, restart, archive, unarchive, change_mcp_servers, fork, refresh, refresh_all, update_notes, toggle_favorite, bulk_archive)
 - **manage_enqueued_messages** - Manage session message queue (list, get, create, update, delete, reorder, interrupt)

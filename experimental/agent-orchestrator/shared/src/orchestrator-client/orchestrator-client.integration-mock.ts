@@ -52,6 +52,7 @@ import type {
   RefreshAllSessionsResponse,
   BulkArchiveResponse,
   TranscriptResponse,
+  TranscriptArchiveStatusResponse,
 } from '../types.js';
 
 interface MockData {
@@ -963,6 +964,22 @@ export function createIntegrationMockOrchestratorClient(
 
     async clearCliCache(): Promise<CliActionResponse> {
       return { queued: true, message: 'CLI cache clear queued' };
+    },
+
+    // Transcript Archive
+    async getTranscriptArchiveStatus(): Promise<TranscriptArchiveStatusResponse> {
+      return {
+        generated_at: '2025-01-15T15:00:00Z',
+        session_count: 10,
+        file_size_bytes: 524288,
+      };
+    },
+
+    getTranscriptArchiveDownloadUrl(): { url: string; apiKey: string } {
+      return {
+        url: 'http://localhost:3000/api/v1/transcript_archive/download',
+        apiKey: 'test-api-key',
+      };
     },
   };
 }
