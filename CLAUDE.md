@@ -328,6 +328,40 @@ npm run test:manual
 
 **Why this matters:** A merged PR with "passing" manual tests that actually skip broken functionality gives false confidence. It results in shipped code that doesn't work, discovered only when users try to use it.
 
+## PR Requirements: Version Bumps and Manual Testing
+
+Every PR that changes an MCP server's code must include a version bump and manual test results. These are not optional or afterthoughts — do them proactively as part of the change.
+
+### Version Bumping
+
+Bump the version in the server's `local/package.json` as part of every PR:
+
+- **Patch bump** (e.g., 1.2.3 → 1.2.4): Bug fixes, minor tweaks, small features, dependency updates
+- **Minor bump** (e.g., 1.2.3 → 1.3.0): New tools, significant feature additions, breaking changes
+
+Run from the server's `local/` directory:
+
+```bash
+cd <server-path>/local/
+npm run stage-publish patch   # or "minor" for larger changes
+```
+
+This updates `local/package.json`, creates a git tag, and may modify the parent `package-lock.json`. Commit all modified files together. Also update the server's `CHANGELOG.md` — move items from `[Unreleased]` to a new version section with the version number and date.
+
+Do not wait to be asked to bump the version. If you changed server code, bump the version.
+
+### Manual Testing
+
+Every PR must include running the server's manual test suite and recording the results:
+
+1. Ensure `.env` exists in the server's root with the required API keys
+2. Run manual tests: `npm run test:manual` from the server's root directory
+3. Update the server's `MANUAL_TESTING.md` with results (commit hash, date, pass/fail summary)
+
+If manual testing requires credentials or API keys that are not available, **ask the user for them** — do not skip manual testing. The CI `verify-publications` workflow will reject PRs with version bumps that lack updated manual test results.
+
+See [PUBLISHING_SERVERS.md](./docs/PUBLISHING_SERVERS.md) for the full publication process.
+
 ## Creating New Servers
 
 1. Copy the `libs/mcp-server-template/` directory
