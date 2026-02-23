@@ -8,6 +8,7 @@ A Model Context Protocol (MCP) server for browser automation using Playwright wi
 - **Stealth Mode**: Optional anti-detection measures using `playwright-extra` and `puppeteer-extra-plugin-stealth`
 - **Persistent Sessions**: Browser session persists across tool calls for multi-step automation
 - **Screenshot Support**: Capture page screenshots for visual verification
+- **Video Recording**: Record browser interactions as WebM videos with explicit start/stop controls
 - **Code Execution**: Run arbitrary Playwright code with access to the `page` object
 - **Full Permissions**: All browser permissions (notifications, geolocation, camera, etc.) granted by default for testing web apps
 
@@ -92,6 +93,7 @@ Add to your Claude Desktop config file:
 | `TIMEOUT`                 | Default timeout for Playwright actions (click, fill, etc.) in milliseconds        | `30000`                       |
 | `NAVIGATION_TIMEOUT`      | Default timeout for page navigation (goto, reload, etc.) in milliseconds          | `60000`                       |
 | `SCREENSHOT_STORAGE_PATH` | Directory for storing screenshots                                                 | `/tmp/playwright-screenshots` |
+| `VIDEO_STORAGE_PATH`      | Directory for storing video recordings                                            | `/tmp/playwright-videos`      |
 | `PROXY_URL`               | Proxy server URL (e.g., `http://proxy.example.com:8080`)                          | -                             |
 | `PROXY_USERNAME`          | Proxy authentication username                                                     | -                             |
 | `PROXY_PASSWORD`          | Proxy authentication password                                                     | -                             |
@@ -142,14 +144,30 @@ Get the current browser state including URL, title, and configuration.
 
 Close the browser session. A new browser will be launched on the next `browser_execute` call.
 
+### `browser_start_recording`
+
+Start recording the browser session as a WebM video.
+
+This tool recycles the browser context with video recording enabled. **Browser state (cookies, localStorage, sessionStorage) is lost** when recording starts. If you need to be logged in during the recording, authenticate again after starting.
+
+If called while already recording, the current recording is automatically stopped and saved before starting a new one.
+
+### `browser_stop_recording`
+
+Stop recording and save the video.
+
+Returns a `resource_link` with the `file://` URI to the saved video (WebM format). **Browser state is lost** when recording stops — the browser navigates back to the previous URL automatically.
+
+Returns an error if no recording is active.
+
 ## MCP Resources
 
-The server exposes saved screenshots as MCP resources. Clients can use:
+The server exposes saved screenshots and video recordings as MCP resources. Clients can use:
 
-- `resources/list`: List all saved screenshots with their URIs and metadata
-- `resources/read`: Read a screenshot by its `file://` URI
+- `resources/list`: List all saved screenshots and videos with their URIs and metadata
+- `resources/read`: Read a screenshot or video by its `file://` URI
 
-This allows clients to access previously captured screenshots without needing to take new ones.
+This allows clients to access previously captured screenshots and recordings without needing to take new ones.
 
 ## Usage Examples
 

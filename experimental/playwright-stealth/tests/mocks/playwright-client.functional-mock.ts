@@ -2,7 +2,11 @@
  * Functional mock for unit tests
  * Provides controllable behavior for testing tool implementations
  */
-import type { IPlaywrightClient, ScreenshotResult } from '../../shared/src/server.js';
+import type {
+  IPlaywrightClient,
+  ScreenshotResult,
+  StopRecordingResult,
+} from '../../shared/src/server.js';
 import type { ExecuteResult, BrowserState, PlaywrightConfig } from '../../shared/src/types.js';
 import { ALL_BROWSER_PERMISSIONS } from '../../shared/src/types.js';
 import { vi } from 'vitest';
@@ -10,7 +14,10 @@ import { vi } from 'vitest';
 export function createFunctionalMockClient(options?: {
   proxyEnabled?: boolean;
   ignoreHttpsErrors?: boolean;
+  recording?: boolean;
 }): IPlaywrightClient {
+  let recording = options?.recording ?? false;
+
   return {
     execute: vi.fn().mockResolvedValue({
       success: true,
@@ -46,5 +53,21 @@ export function createFunctionalMockClient(options?: {
         : undefined,
       ignoreHttpsErrors: options?.ignoreHttpsErrors,
     } as PlaywrightConfig),
+
+    isRecording: vi.fn().mockImplementation(() => recording),
+
+    startRecording: vi.fn().mockImplementation(async () => {
+      recording = true;
+      return { previousUrl: 'https://example.com' };
+    }),
+
+    stopRecording: vi.fn().mockImplementation(async () => {
+      recording = false;
+      return {
+        videoPath: '/tmp/playwright-videos/mock-video.webm',
+        pageUrl: 'https://example.com',
+        pageTitle: 'Example Domain',
+      } as StopRecordingResult;
+    }),
   };
 }

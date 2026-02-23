@@ -2,12 +2,13 @@
  * Mock Playwright client for integration tests
  * Simulates browser behavior without launching a real browser
  */
-import type { IPlaywrightClient, ScreenshotResult } from '../server.js';
+import type { IPlaywrightClient, ScreenshotResult, StopRecordingResult } from '../server.js';
 import type { ExecuteResult, BrowserState, PlaywrightConfig } from '../types.js';
 
 export class MockPlaywrightClient implements IPlaywrightClient {
   private state: BrowserState = { isOpen: false };
   private config: PlaywrightConfig;
+  private _recording = false;
 
   constructor(config: PlaywrightConfig) {
     this.config = config;
@@ -81,6 +82,28 @@ export class MockPlaywrightClient implements IPlaywrightClient {
 
   getConfig(): PlaywrightConfig {
     return this.config;
+  }
+
+  isRecording(): boolean {
+    return this._recording;
+  }
+
+  async startRecording(): Promise<{ previousUrl?: string }> {
+    const previousUrl = this.state.currentUrl;
+    this._recording = true;
+    return { previousUrl };
+  }
+
+  async stopRecording(): Promise<StopRecordingResult> {
+    if (!this._recording) {
+      throw new Error('Not currently recording');
+    }
+    this._recording = false;
+    return {
+      videoPath: '/tmp/mock-video.webm',
+      pageUrl: this.state.currentUrl,
+      pageTitle: this.state.title,
+    };
   }
 }
 
