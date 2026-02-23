@@ -330,35 +330,7 @@ npm run test:manual
 
 ## PR Requirements: Version Bumps and Manual Testing
 
-Every PR that changes an MCP server's code must include a version bump and manual test results. These are not optional or afterthoughts — do them proactively as part of the change.
-
-### Version Bumping
-
-Bump the version in the server's `local/package.json` as part of every PR:
-
-- **Patch bump** (e.g., 1.2.3 → 1.2.4): Bug fixes, minor tweaks, small features, dependency updates
-- **Minor bump** (e.g., 1.2.3 → 1.3.0): New tools, significant feature additions, breaking changes
-
-Run from the server's `local/` directory:
-
-```bash
-cd <server-path>/local/
-npm run stage-publish patch   # or "minor" for larger changes
-```
-
-This updates `local/package.json`, creates a git tag, and may modify the parent `package-lock.json`. Commit all modified files together. Also update the server's `CHANGELOG.md` — move items from `[Unreleased]` to a new version section with the version number and date.
-
-Do not wait to be asked to bump the version. If you changed server code, bump the version.
-
-### Manual Testing
-
-Every PR must include running the server's manual test suite and recording the results:
-
-1. Ensure `.env` exists in the server's root with the required API keys
-2. Run manual tests: `npm run test:manual` from the server's root directory
-3. Update the server's `MANUAL_TESTING.md` with results (commit hash, date, pass/fail summary)
-
-If manual testing requires credentials or API keys that are not available, **ask the user for them** — do not skip manual testing. The CI `verify-publications` workflow will reject PRs with version bumps that lack updated manual test results.
+**Any PR that modifies an MCP server's code MUST use the `/publish_and_pr` skill to handle version bumping, manual testing, and PR creation.** Do not do these steps manually — the skill ensures nothing is skipped. If you changed server code, invoke `/publish_and_pr` before opening the PR.
 
 See [PUBLISHING_SERVERS.md](./docs/PUBLISHING_SERVERS.md) for the full publication process.
 
@@ -437,7 +409,6 @@ Don't add: basic TypeScript fixes, standard npm troubleshooting, obvious file op
 
 ### Testing Strategy
 
-- Manual tests are critical when modifying code that interacts with external APIs, as they verify real API responses match our interfaces
 - Integration tests with TestMCPClient are valuable for testing MCP server functionality without hitting real APIs
 - Environment variable validation at startup prevents silent failures and provides immediate feedback to users
 - When removing parameters from tool APIs, check for: duplicate interface definitions (e.g., in types.ts), test mock expectations, and all test files using those parameters
@@ -461,24 +432,8 @@ Don't add: basic TypeScript fixes, standard npm troubleshooting, obvious file op
 - Breaking changes in tool parameters should be clearly marked in CHANGELOG.md with **BREAKING** prefix to alert users
 - When using `set -e` in shell scripts with npm commands, be aware that `npm view` returns exit code 1 when a package doesn't exist yet - use `|| true` to prevent premature script termination during npm registry propagation checks
 - **For `/publish_and_pr` command**: This means "stage for publishing and update PR" - it does NOT mean actually publish to npm. The workflow is: bump version → update changelog → commit → push → update PR. NPM publishing happens automatically via CI when PR is merged
-- **Manual Testing Before Publishing**: Always run manual tests (with real API credentials) before staging a version bump to ensure the server works correctly with external APIs
 - **Git Tag Format for Version Bumps**: When creating git tags for version bumps, use the format `package-name@version` (e.g., `appsignal-mcp-server@0.2.12`, `@pulsemcp/pulse-fetch@0.2.10`). The CI verify-publications workflow expects this exact format, not `server-name-vX.Y.Z`
-- **Manual Testing and CI**: The verify-publications CI check requires that MANUAL_TESTING.md references a commit that's in the PR's history. If you make any commits after running manual tests (even just test fixes), the CI will fail. For test-only fixes, this is a known limitation that doesn't require re-running manual tests. When updating MANUAL_TESTING.md for packaging-only changes, ensure the commit hash matches a commit in the current PR branch
 - **npm Package Files Field**: When specifying files to include in npm packages, use specific glob patterns (e.g., `"build/**/*.js"`) rather than entire directories (e.g., `"build/"`) to ensure proper file permissions and avoid including non-executable files. This prevents "Permission denied" errors when users run the package with npx
-
-### Manual Testing Infrastructure
-
-- All MCP servers should have a `MANUAL_TESTING.md` file to track manual test results
-- Manual test files typically live in `tests/manual/` and use `.manual.test.ts` extension
-- **First-time setup for new worktrees**: Always run `npm run test:manual:setup` before running manual tests in a fresh checkout or new worktree. This ensures all dependencies are installed, the project is built, and test-mcp-client is available
-- **Always use `npm run test:manual` to run manual tests** - this script handles building, vitest configuration, and proper ESM support automatically. Don't try to run vitest directly or manually build the project first
-- To run manual tests with proper ESM support, create a `scripts/run-vitest.js` wrapper that imports vitest's CLI directly
-- The CI workflow `verify-mcp-server-publication.yml` checks for manual test results when version bumps occur - it verifies tests were run on a commit in the PR's history and checks for passing results
-- When setting up manual tests for servers with workspace structures (local/shared), ensure dependencies are properly installed in all subdirectories before running tests
-- Manual tests should run against built code (not source) - create a `run-manual-built.js` script that builds the project first, then runs tests against the compiled JavaScript
-- CI should fail when MANUAL_TESTING.md isn't updated for the current PR, but NOT when tests fail (some failures might be expected due to API limitations)
-- **Manual test setup checklist**: Verify .env exists with real API keys, run `ci:install` to install all workspace dependencies, run `build:test` to build everything including test-mcp-client
-- **CRITICAL: Manual tests must actually pass against real APIs** - NEVER write tests that skip or gracefully handle missing backend endpoints. If an API endpoint doesn't exist, do not write client code for it. A "passing" test that silently skips on 404 is worse than no test at all because it provides false confidence
 
 ### Monorepo Dependency Management
 
@@ -509,13 +464,6 @@ Whenever you make any sort of code change to an MCP server, make sure to update 
 
 - **Memory Storage URI Collisions**: Memory storage implementations that generate URIs using timestamp-based schemes must account for rapid test execution. Using millisecond timestamps with stripped characters can cause collisions in fast CI environments - use 10ms+ delays between writes in tests
 - **External Service Timeouts**: When manual tests encounter external service timeouts (like Firecrawl API), prioritize testing core functionality (native strategies, content parsing) over external service reliability. Network timeouts don't indicate code problems
-- **Manual Test Result Documentation**: Always update MANUAL_TESTING.md with specific test results including: commit hash, test percentages, key functionality verified, and known external service issues. This provides CI verification and historical context
-
-### Version Bump and Publication Workflow
-
-- **File Staging for Version Bumps**: The `npm run stage-publish` command modifies multiple files that MUST be committed together: local/package.json, parent/package-lock.json, CHANGELOG.md, README.md, and MANUAL_TESTING.md. Never commit these files separately or CI will fail
-- **Changelog Language Precision**: Avoid language like "restored" or "fixed" in changelogs when describing functionality that was developed within the same PR. Use accurate language like "added" or "implemented" to reflect what actually happened
-- **Dependency Consistency in Monorepos**: When adding production dependencies, ensure they exist in both shared/package.json AND local/package.json for proper publishing. Dependencies only in the root package.json won't be available in published packages
 
 ### Build Script Robustness
 

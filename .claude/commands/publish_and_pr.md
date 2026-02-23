@@ -1,4 +1,4 @@
-Goal: get a version bump for any relevant MCP servers in place, and get the PR going that we can merge after human review.
+**MANDATORY for any PR that modifies MCP server code.** This skill handles version bumping, manual testing, and PR creation — do NOT do these steps manually or skip any of them. If you changed any code in an MCP server (experimental/ or productionized/), you MUST invoke this skill before opening or finalizing a PR. No exceptions.
 
 We are doing a version bump of type (major/minor/patch): $ARGUMENTS
 
