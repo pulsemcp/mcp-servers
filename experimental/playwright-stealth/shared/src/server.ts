@@ -30,6 +30,18 @@ export interface ScreenshotResult {
 }
 
 /**
+ * Result of stopping a video recording
+ */
+export interface StopRecordingResult {
+  /** Path to the saved video file on disk (Playwright temp location) */
+  videoPath: string;
+  /** URL the browser was on when recording stopped */
+  pageUrl?: string;
+  /** Page title when recording stopped */
+  pageTitle?: string;
+}
+
+/**
  * Playwright client interface
  * Defines all methods for browser automation
  */
@@ -60,6 +72,27 @@ export interface IPlaywrightClient {
    * Get the configuration
    */
   getConfig(): PlaywrightConfig;
+
+  /**
+   * Whether the browser is currently recording video
+   */
+  isRecording(): boolean;
+
+  /**
+   * Start video recording by recycling the browser context.
+   * Closes the current context and creates a new one with recordVideo enabled.
+   * Navigates back to the previous URL to maintain continuity.
+   * Note: Cookies, localStorage, and sessionStorage are lost when the context is recycled.
+   */
+  startRecording(videoDir: string): Promise<{ previousUrl?: string }>;
+
+  /**
+   * Stop video recording by recycling the browser context.
+   * Gets the video path before closing the recording context, then creates
+   * a new context without recording and navigates back to the previous URL.
+   * Note: Cookies, localStorage, and sessionStorage are lost when the context is recycled.
+   */
+  stopRecording(): Promise<StopRecordingResult>;
 }
 
 /**
@@ -71,14 +104,44 @@ export class PlaywrightClient implements IPlaywrightClient {
   private page: import('playwright').Page | null = null;
   private consoleMessages: string[] = [];
   private config: PlaywrightConfig;
+  private _recording = false;
 
   constructor(config: PlaywrightConfig) {
     this.config = config;
   }
 
-  private async ensureBrowser(): Promise<import('playwright').Page> {
+  private async ensureBrowser(options?: {
+    recordVideo?: { dir: string; size: { width: number; height: number } };
+  }): Promise<import('playwright').Page> {
     if (this.page) {
       return this.page;
+    }
+
+    await this.launchBrowserIfNeeded();
+
+    await this.createContext(options);
+
+    this.page = await this.context!.newPage();
+
+    // Apply timeout configuration to Playwright
+    this.page.setDefaultTimeout(this.config.timeout);
+    this.page.setDefaultNavigationTimeout(this.config.navigationTimeout);
+
+    // Capture console messages
+    this.page.on('console', (msg) => {
+      this.consoleMessages.push(`[${msg.type()}] ${msg.text()}`);
+      // Keep only last 100 messages
+      if (this.consoleMessages.length > 100) {
+        this.consoleMessages.shift();
+      }
+    });
+
+    return this.page;
+  }
+
+  private async launchBrowserIfNeeded(): Promise<void> {
+    if (this.browser) {
+      return;
     }
 
     // Build proxy options for Playwright if configured
@@ -133,6 +196,14 @@ export class PlaywrightClient implements IPlaywrightClient {
         proxy: proxyOptions,
       });
     }
+  }
+
+  private async createContext(options?: {
+    recordVideo?: { dir: string; size: { width: number; height: number } };
+  }): Promise<void> {
+    if (!this.browser) {
+      throw new Error('Browser not launched');
+    }
 
     this.context = await this.browser.newContext({
       viewport: { width: 1920, height: 1080 },
@@ -142,6 +213,8 @@ export class PlaywrightClient implements IPlaywrightClient {
       // Ignore HTTPS errors by default (convenient for Docker, staging environments, self-signed certs)
       // Set IGNORE_HTTPS_ERRORS=false for strict certificate validation in production
       ignoreHTTPSErrors: this.config.ignoreHttpsErrors ?? true,
+      // Video recording options (only set when recording)
+      ...(options?.recordVideo ? { recordVideo: options.recordVideo } : {}),
     });
 
     // Grant browser permissions (defaults to all permissions if not specified)
@@ -156,23 +229,6 @@ export class PlaywrightClient implements IPlaywrightClient {
         logWarning('permissions', `Failed to grant some permissions: ${message}`);
       }
     }
-
-    this.page = await this.context.newPage();
-
-    // Apply timeout configuration to Playwright
-    this.page.setDefaultTimeout(this.config.timeout);
-    this.page.setDefaultNavigationTimeout(this.config.navigationTimeout);
-
-    // Capture console messages
-    this.page.on('console', (msg) => {
-      this.consoleMessages.push(`[${msg.type()}] ${msg.text()}`);
-      // Keep only last 100 messages
-      if (this.consoleMessages.length > 100) {
-        this.consoleMessages.shift();
-      }
-    });
-
-    return this.page;
   }
 
   async execute(code: string, options?: { timeout?: number }): Promise<ExecuteResult> {
@@ -291,11 +347,120 @@ export class PlaywrightClient implements IPlaywrightClient {
       this.context = null;
       this.page = null;
       this.consoleMessages = [];
+      this._recording = false;
     }
   }
 
   getConfig(): PlaywrightConfig {
     return this.config;
+  }
+
+  isRecording(): boolean {
+    return this._recording;
+  }
+
+  async startRecording(videoDir: string): Promise<{ previousUrl?: string }> {
+    await this.launchBrowserIfNeeded();
+
+    // Capture the current URL before recycling the context
+    let previousUrl: string | undefined;
+    if (this.page) {
+      try {
+        previousUrl = this.page.url();
+        if (previousUrl === 'about:blank') {
+          previousUrl = undefined;
+        }
+      } catch {
+        // Page may be closed already
+      }
+    }
+
+    // If currently recording, stop the existing recording first (close context to finalize video)
+    if (this.context) {
+      // Close the page and context to finalize any existing recording
+      this.page = null;
+      await this.context.close();
+      this.context = null;
+    }
+
+    // Create a new context with video recording enabled
+    await this.createContext({
+      recordVideo: { dir: videoDir, size: { width: 1920, height: 1080 } },
+    });
+
+    this.page = await this.context!.newPage();
+    this.page.setDefaultTimeout(this.config.timeout);
+    this.page.setDefaultNavigationTimeout(this.config.navigationTimeout);
+
+    // Capture console messages on the new page
+    this.page.on('console', (msg) => {
+      this.consoleMessages.push(`[${msg.type()}] ${msg.text()}`);
+      if (this.consoleMessages.length > 100) {
+        this.consoleMessages.shift();
+      }
+    });
+
+    // Navigate back to the previous URL if there was one
+    if (previousUrl) {
+      await this.page.goto(previousUrl);
+    }
+
+    this._recording = true;
+    return { previousUrl };
+  }
+
+  async stopRecording(): Promise<StopRecordingResult> {
+    if (!this._recording || !this.page) {
+      throw new Error('Not currently recording');
+    }
+
+    // Capture current page state before closing the context
+    let pageUrl: string | undefined;
+    let pageTitle: string | undefined;
+    try {
+      pageUrl = this.page.url();
+      if (pageUrl === 'about:blank') {
+        pageUrl = undefined;
+      }
+      pageTitle = await this.page.title();
+    } catch {
+      // Page may have issues
+    }
+
+    // Get the video path BEFORE closing the context
+    const video = this.page.video();
+    if (!video) {
+      throw new Error('No video found on the current page');
+    }
+    const videoPath = await video.path();
+
+    // Close page and context to finalize the video file
+    this.page = null;
+    await this.context!.close();
+    this.context = null;
+    this._recording = false;
+
+    // Create a new context WITHOUT recording
+    await this.createContext();
+
+    this.page = await this.context!.newPage();
+    this.page.setDefaultTimeout(this.config.timeout);
+    this.page.setDefaultNavigationTimeout(this.config.navigationTimeout);
+
+    // Capture console messages on the new page
+    this.page.on('console', (msg) => {
+      this.consoleMessages.push(`[${msg.type()}] ${msg.text()}`);
+      if (this.consoleMessages.length > 100) {
+        this.consoleMessages.shift();
+      }
+    });
+
+    // Navigate back to the previous URL
+    if (pageUrl) {
+      await this.page.goto(pageUrl);
+    }
+
+    return { videoPath, pageUrl, pageTitle };
   }
 }
 

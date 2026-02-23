@@ -2,7 +2,7 @@ import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { ListToolsRequestSchema, CallToolRequestSchema } from '@modelcontextprotocol/sdk/types.js';
 import { ClientFactory } from './server.js';
 import { z } from 'zod';
-import { ScreenshotStorageFactory } from './storage/index.js';
+import { ScreenshotStorageFactory, VideoStorageFactory } from './storage/index.js';
 
 // =============================================================================
 // TOOL SCHEMAS
@@ -108,6 +108,42 @@ Returns information about the current browser session including the URL, page ti
 const CLOSE_DESCRIPTION = `Close the browser session.
 
 Shuts down the browser and clears all state. A new browser will be launched on the next execute call.`;
+
+const START_RECORDING_DESCRIPTION = `Start recording the browser session as a video.
+
+This tool begins capturing all browser interactions as a WebM video file. It works by recycling the browser context with video recording enabled.
+
+**Important: Browser state is lost when recording starts.** Starting a recording closes the current browser context and creates a new one. This means:
+- Cookies are lost
+- localStorage and sessionStorage are cleared
+- Any authenticated sessions will be invalidated
+
+If you need to be logged in during the recording, navigate to the login page and authenticate again after starting the recording.
+
+**Behavior when already recording:** If recording is already active, the current recording will be stopped (saving the video) and a new recording will begin.
+
+**The video is NOT available until you call \`browser_stop_recording\`.** Playwright only finalizes the video file when the recording context is closed.
+
+**Returns:**
+- Confirmation that recording has started
+- The URL the browser was previously on (if any) — the browser navigates back to it automatically`;
+
+const STOP_RECORDING_DESCRIPTION = `Stop recording the browser session and save the video.
+
+This tool stops the active video recording, saves the video file, and returns a resource URI for the recorded video.
+
+**Important: Browser state is lost when recording stops.** Stopping a recording closes the recording context and creates a new one. This means:
+- Cookies are lost
+- localStorage and sessionStorage are cleared
+- Any authenticated sessions will be invalidated
+
+The browser automatically navigates back to the URL it was on before the recording stopped.
+
+**Error:** Returns an error if no recording is currently active. Use \`browser_start_recording\` first.
+
+**Returns:**
+- A resource_link with the \`file://\` URI to the saved video file (WebM format)
+- The video can be accessed later via MCP resources`;
 
 // =============================================================================
 // TOOL REGISTRATION
@@ -374,6 +410,142 @@ export function createRegisterTools(clientFactory: ClientFactory) {
               {
                 type: 'text',
                 text: `Error closing browser: ${error instanceof Error ? error.message : String(error)}`,
+              },
+            ],
+            isError: true,
+          };
+        }
+      },
+    },
+    {
+      name: 'browser_start_recording',
+      description: START_RECORDING_DESCRIPTION,
+      inputSchema: {
+        type: 'object' as const,
+        properties: {},
+      },
+      handler: async () => {
+        try {
+          const currentClient = getClient();
+
+          // If already recording, stop the current recording first (save the video)
+          let previousVideoUri: string | undefined;
+          if (currentClient.isRecording()) {
+            try {
+              const stopResult = await currentClient.stopRecording();
+              // Save the previous recording
+              const videoStorage = await VideoStorageFactory.create();
+              previousVideoUri = await videoStorage.write(stopResult.videoPath, {
+                pageUrl: stopResult.pageUrl,
+                pageTitle: stopResult.pageTitle,
+              });
+            } catch {
+              // Best effort to save previous recording
+            }
+          }
+
+          // Get the video storage directory for Playwright to write to
+          const videoStoragePath = process.env.VIDEO_STORAGE_PATH || '/tmp/playwright-videos';
+
+          const result = await currentClient.startRecording(videoStoragePath);
+
+          const parts: string[] = ['Recording started.'];
+          if (result.previousUrl) {
+            parts.push(`Browser navigated back to: ${result.previousUrl}`);
+          }
+          parts.push(
+            'Note: Cookies and session storage have been cleared. Log in again if needed.'
+          );
+          if (previousVideoUri) {
+            parts.push(`Previous recording saved to: ${previousVideoUri}`);
+          }
+
+          return {
+            content: [
+              {
+                type: 'text',
+                text: parts.join('\n'),
+              },
+            ],
+          };
+        } catch (error) {
+          return {
+            content: [
+              {
+                type: 'text',
+                text: `Error starting recording: ${error instanceof Error ? error.message : String(error)}`,
+              },
+            ],
+            isError: true,
+          };
+        }
+      },
+    },
+    {
+      name: 'browser_stop_recording',
+      description: STOP_RECORDING_DESCRIPTION,
+      inputSchema: {
+        type: 'object' as const,
+        properties: {},
+      },
+      handler: async () => {
+        try {
+          const currentClient = getClient();
+
+          if (!currentClient.isRecording()) {
+            return {
+              content: [
+                {
+                  type: 'text',
+                  text: 'Error: Not currently recording. Use browser_start_recording to begin a recording first.',
+                },
+              ],
+              isError: true,
+            };
+          }
+
+          const result = await currentClient.stopRecording();
+
+          // Save the video to storage
+          const videoStorage = await VideoStorageFactory.create();
+          const uri = await videoStorage.write(result.videoPath, {
+            pageUrl: result.pageUrl,
+            pageTitle: result.pageTitle,
+          });
+
+          const fileName = uri.split('/').pop() || 'recording.webm';
+
+          const content: Array<{
+            type: string;
+            text?: string;
+            uri?: string;
+            name?: string;
+            description?: string;
+            mimeType?: string;
+          }> = [];
+
+          content.push({
+            type: 'text',
+            text: `Recording stopped and saved.\nNote: Cookies and session storage have been cleared. Log in again if needed.`,
+          });
+
+          content.push({
+            type: 'resource_link',
+            uri,
+            name: fileName,
+            description: result.pageUrl
+              ? `Video recording of ${result.pageUrl}`
+              : 'Video recording',
+            mimeType: 'video/webm',
+          });
+
+          return { content };
+        } catch (error) {
+          return {
+            content: [
+              {
+                type: 'text',
+                text: `Error stopping recording: ${error instanceof Error ? error.message : String(error)}`,
               },
             ],
             isError: true,
