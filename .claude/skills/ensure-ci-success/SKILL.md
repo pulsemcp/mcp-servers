@@ -1,6 +1,6 @@
 ---
 name: ensure-ci-success
-description: "Before handing back control to the user, ensure CI is successful: check status, fix failures, and push fixes until all checks pass."
+description: 'Before handing back control to the user, ensure CI is successful: check status, fix failures, and push fixes until all checks pass.'
 disable-model-invocation: true
 ---
 
