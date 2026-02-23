@@ -20,7 +20,7 @@ MCP server for PulseMCP's agent-orchestrator: a Claude Code + MCP-powered agent-
 
 | Tool                       | Tool Group    | Read/Write | Description                                                                                                                                                 |
 | -------------------------- | ------------- | ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `search_sessions`          | sessions      | read       | Search/list sessions with optional ID lookup, query, and status filter                                                                                      |
+| `quick_search_sessions`    | sessions      | read       | Quick title-based search/list sessions with optional ID lookup, title query, and status filter                                                              |
 | `get_session`              | sessions      | read       | Get detailed session info with optional logs, transcripts, and transcript format (text/json)                                                                |
 | `get_configs`              | sessions      | read       | Fetch all static configuration (MCP servers, agent roots, stop conditions)                                                                                  |
 | `get_transcript_archive`   | sessions      | read       | Get download URL and metadata for the transcript archive zip file                                                                                           |
@@ -56,7 +56,7 @@ Control which tools are available via the `TOOL_GROUPS` environment variable:
 | Group                    | Description                                                                                              |
 | ------------------------ | -------------------------------------------------------------------------------------------------------- |
 | `sessions`               | All session tools (read + write): search, get, configs, transcript_archive, start, action, enqueued msgs |
-| `sessions_readonly`      | Session tools (read only): search_sessions, get_session, get_configs, get_transcript_archive             |
+| `sessions_readonly`      | Session tools (read only): quick_search_sessions, get_session, get_configs, get_transcript_archive       |
 | `notifications`          | All notification tools (read + write): get, send, mark read, dismiss                                     |
 | `notifications_readonly` | Notification tools (read only): get_notifications                                                        |
 | `triggers`               | All trigger tools (read + write): search, create, update, delete, toggle                                 |

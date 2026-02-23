@@ -90,7 +90,7 @@ export function createRegisterResources(clientFactory: ClientFactory) {
             sessions:
               'All session tools (read + write): search, get, configs, start, action, enqueued messages',
             sessions_readonly:
-              'Session tools (read only): search_sessions, get_session, get_configs',
+              'Session tools (read only): quick_search_sessions, get_session, get_configs',
             notifications: 'All notification tools (read + write): get, send, mark read, dismiss',
             notifications_readonly: 'Notification tools (read only): get_notifications',
             triggers: 'All trigger tools (read + write): search, create, update, delete, toggle',

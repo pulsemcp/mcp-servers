@@ -3,7 +3,7 @@ import { ListToolsRequestSchema, CallToolRequestSchema } from '@modelcontextprot
 import { ClientFactory } from './server.js';
 
 // 13 tools across 4 domains
-import { searchSessionsTool } from './tools/search-sessions.js';
+import { quickSearchSessionsTool } from './tools/search-sessions.js';
 import { startSessionTool } from './tools/start-session.js';
 import { getSessionTool } from './tools/get-session.js';
 import { actionSessionTool } from './tools/action-session.js';
@@ -33,7 +33,7 @@ import { getTranscriptArchiveTool } from './tools/get-transcript-archive.js';
 // - Readonly group (e.g., 'sessions_readonly'): Includes only read operations
 //
 // Groups:
-// - sessions / sessions_readonly: Session management tools (search, get, start, action, configs, enqueued messages)
+// - sessions / sessions_readonly: Session management tools (quick search, get, start, action, configs, enqueued messages)
 // - notifications / notifications_readonly: Notification tools (get, send, mark read, dismiss)
 // - triggers / triggers_readonly: Automation trigger management (search, create, update, delete, toggle)
 // - health / health_readonly: System health monitoring, CLI status, maintenance operations
@@ -140,7 +140,7 @@ interface ToolDefinition {
  * All available tools with their group assignments.
  *
  * 14 tools across 4 domains:
- * - search_sessions: Search/list/get sessions by ID (sessions, read)
+ * - quick_search_sessions: Quick title-based search/list/get sessions by ID (sessions, read)
  * - get_session: Get detailed session info with optional logs/transcripts (sessions, read)
  * - get_configs: Fetch all static configuration (sessions, read)
  * - get_transcript_archive: Get transcript archive download URL and metadata (sessions, read)
@@ -157,7 +157,7 @@ interface ToolDefinition {
  */
 const ALL_TOOLS: ToolDefinition[] = [
   // Session tools - read operations
-  { factory: searchSessionsTool, group: 'sessions', isWriteOperation: false },
+  { factory: quickSearchSessionsTool, group: 'sessions', isWriteOperation: false },
   { factory: getSessionTool, group: 'sessions', isWriteOperation: false },
   { factory: getConfigsTool, group: 'sessions', isWriteOperation: false },
   { factory: getTranscriptArchiveTool, group: 'sessions', isWriteOperation: false },

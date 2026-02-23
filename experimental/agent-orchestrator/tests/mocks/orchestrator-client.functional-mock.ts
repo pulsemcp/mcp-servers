@@ -165,7 +165,6 @@ export function createMockOrchestratorClient(): IAgentOrchestratorClient {
 
     searchSessions: vi.fn().mockResolvedValue({
       query: 'test',
-      search_contents: false,
       sessions: [defaultSession],
       pagination: { page: 1, per_page: 25, total_count: 1, total_pages: 1 },
     }),

@@ -40,7 +40,7 @@ describe('Agent Orchestrator MCP Server Integration Tests', () => {
       expect(tools.length).toBe(6);
 
       const toolNames = tools.map((t: { name: string }) => t.name);
-      expect(toolNames).toContain('search_sessions');
+      expect(toolNames).toContain('quick_search_sessions');
       expect(toolNames).toContain('get_session');
       expect(toolNames).toContain('start_session');
       expect(toolNames).toContain('action_session');
@@ -48,7 +48,7 @@ describe('Agent Orchestrator MCP Server Integration Tests', () => {
       expect(toolNames).toContain('send_push_notification');
     });
 
-    it('should execute search_sessions tool', async () => {
+    it('should execute quick_search_sessions tool', async () => {
       const mockClient = createIntegrationMockOrchestratorClient({
         sessions: [
           {
@@ -78,7 +78,7 @@ describe('Agent Orchestrator MCP Server Integration Tests', () => {
       });
       client = await createTestMCPClientWithMock(mockClient);
 
-      const result = await client.callTool('search_sessions', {});
+      const result = await client.callTool('quick_search_sessions', {});
 
       expect(result.content).toBeDefined();
       expect(result.content[0].type).toBe('text');

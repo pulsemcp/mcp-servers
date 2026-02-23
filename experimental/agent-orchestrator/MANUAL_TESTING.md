@@ -61,43 +61,40 @@ The tests will:
 
 ## Latest Test Results
 
-**Test Date:** 2026-02-22
-**Branch:** agent-orchestrator-bot/add-transcript-archive-tool
-**Commit:** 7333215
+**Test Date:** 2026-02-23
+**Branch:** tadasant/quick-search-sessions
+**Commit:** d6fd530
 **Tested By:** Claude Code (automated)
-**Environment:** CI unit/functional tests (no .env available for manual API tests)
+**Environment:** Production API (ao.pulsemcp.com)
 
 ### Summary
 
-**Overall:** :white_check_mark: SUCCESS - All 84 functional tests pass. Added `get_transcript_archive` tool (14 tools total). Manual API tests from prior version (ad0b4eb) cover all existing tools; the new `get_transcript_archive` tool depends on backend endpoints from agents PR #1259 which may not be deployed yet.
+**Overall:** :white_check_mark: SUCCESS - 56/56 manual tests pass against production API.
 
-| Test Category                    | Status             | Tests |
-| -------------------------------- | ------------------ | ----- |
-| **Functional Tests (CI)**        |                    |       |
-| All functional tests             | :white_check_mark: | 84/84 |
-| **Prior Manual Tests (ad0b4eb)** |                    |       |
-| Tool Registration                | :white_check_mark: | 1/1   |
-| search_sessions                  | :white_check_mark: | 4/4   |
-| get_session                      | :white_check_mark: | 6/6   |
-| start_session                    | :white_check_mark: | 1/1   |
-| action_session                   | :white_check_mark: | 11/11 |
-| manage_enqueued_messages         | :white_check_mark: | 8/8   |
-| get_configs                      | :white_check_mark: | 1/1   |
-| get_notifications                | :white_check_mark: | 3/3   |
-| send_push_notification           | :white_check_mark: | 2/2   |
-| action_notification              | :white_check_mark: | 4/4   |
-| search_triggers                  | :white_check_mark: | 3/3   |
-| action_trigger                   | :white_check_mark: | 4/4   |
-| get_system_health                | :white_check_mark: | 2/2   |
-| action_health                    | :white_check_mark: | 4/4   |
-| Resources                        | :white_check_mark: | 2/2   |
+| Test Category            | Status             | Tests |
+| ------------------------ | ------------------ | ----- |
+| Tool Registration        | :white_check_mark: | 1/1   |
+| quick_search_sessions    | :white_check_mark: | 4/4   |
+| get_session              | :white_check_mark: | 6/6   |
+| start_session            | :white_check_mark: | 1/1   |
+| action_session           | :white_check_mark: | 11/11 |
+| manage_enqueued_messages | :white_check_mark: | 8/8   |
+| get_configs              | :white_check_mark: | 1/1   |
+| get_notifications        | :white_check_mark: | 3/3   |
+| send_push_notification   | :white_check_mark: | 2/2   |
+| action_notification      | :white_check_mark: | 4/4   |
+| search_triggers          | :white_check_mark: | 3/3   |
+| action_trigger           | :white_check_mark: | 4/4   |
+| get_system_health        | :white_check_mark: | 2/2   |
+| action_health            | :white_check_mark: | 4/4   |
+| Resources                | :white_check_mark: | 2/2   |
 
 ### Functionality Verified
 
-- :white_check_mark: **searchSessionsWorks** - List, filter, search sessions
+- :white_check_mark: **searchSessionsWorks** - List, filter, search sessions by title
 - :white_check_mark: **getSessionWorks** - Get detailed session info
 - :white_check_mark: **getSessionWithLogsWorks** - Get session with logs/transcripts
-- :white_check_mark: **getSessionTranscriptFormatWorks** - Transcript via dedicated endpoint (text/json)
+- :white_check_mark: **getSessionTranscriptFormatWorks** - Get session transcript with text format
 - :white_check_mark: **startSessionWorks** - Create new sessions
 - :white_check_mark: **actionSessionWorks** - Archive/unarchive sessions
 - :white_check_mark: **actionSessionNewActionsWork** - update_notes, toggle_favorite, refresh, refresh_all
@@ -110,24 +107,18 @@ The tests will:
 - :white_check_mark: **actionTriggerWorks** - Validation for create/update/delete/toggle
 - :white_check_mark: **getSystemHealthWorks** - Health report and CLI status
 - :white_check_mark: **actionHealthWorks** - Cleanup processes, archive old, CLI refresh/clear cache
-- :white_check_mark: **getTranscriptArchive** - Functional tests verify correct output format, curl command generation, file size formatting, and error handling (2 tests)
 
 ### Notes
 
-- `get_transcript_archive`: No manual API test available yet - backend endpoints (agents PR #1259) may not be deployed. Tool is fully covered by functional tests with mocked API responses
-- Prior manual test results (commit ad0b4eb) verify all existing tools work against the API
-- `transcript_format`: Test session had no transcript available (API returned 404) - expected behavior for sessions without transcripts
-- `refresh`: Test session had no clone path (API returned 422) - expected for newly created clone-only sessions
+- `refresh`: Test session had no clone path (API returned 422) — expected for newly created clone-only sessions.
+- Tool registration test expects 14 tools to account for `get_transcript_archive` added in v0.2.5.
 
-### Key Changes in 0.2.5
+### Key Changes in This Version
 
-- Added `get_transcript_archive` tool (14 tools total)
-- Added 7 new tools covering ~30 new API endpoints across 4 domains
-- Extended action_session with 6 new actions: fork, refresh, refresh_all, update_notes, toggle_favorite, bulk_archive
-- Extended get_session with transcript_format parameter
-- Added 2 new tool groups: triggers/triggers_readonly, health/health_readonly
-- Replaced ENABLED_TOOLGROUPS with TOOL_GROUPS env var
-- Replaced permission-based groups with domain-specific groups
+- **BREAKING:** Renamed `search_sessions` tool to `quick_search_sessions`
+- Removed `search_contents` parameter (consistently errored due to data volume)
+- Updated tool description to clearly communicate title-only search scope
+- Fixed `getTranscript` to handle raw text response when `format=text` (API returns plain text, not JSON)
 
 ---
 

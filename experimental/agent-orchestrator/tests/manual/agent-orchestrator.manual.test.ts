@@ -113,18 +113,19 @@ describe('Agent Orchestrator MCP Server - Manual Tests', () => {
   // =========================================================================
 
   describe('Tool Registration', () => {
-    it('should register exactly 13 tools', async () => {
+    it('should register exactly 14 tools', async () => {
       const result = await client.listTools();
       const tools = result.tools;
 
-      expect(tools.length).toBe(13);
+      expect(tools.length).toBe(14);
 
       const toolNames = tools.map((t: { name: string }) => t.name);
-      expect(toolNames).toContain('search_sessions');
+      expect(toolNames).toContain('quick_search_sessions');
       expect(toolNames).toContain('get_session');
       expect(toolNames).toContain('start_session');
       expect(toolNames).toContain('action_session');
       expect(toolNames).toContain('get_configs');
+      expect(toolNames).toContain('get_transcript_archive');
       expect(toolNames).toContain('manage_enqueued_messages');
       expect(toolNames).toContain('send_push_notification');
       expect(toolNames).toContain('get_notifications');
@@ -140,9 +141,9 @@ describe('Agent Orchestrator MCP Server - Manual Tests', () => {
   // SESSIONS DOMAIN - EXISTING TOOLS
   // =========================================================================
 
-  describe('search_sessions', () => {
+  describe('quick_search_sessions', () => {
     it('should list all sessions', async () => {
-      const result = await client.callTool('search_sessions', {});
+      const result = await client.callTool('quick_search_sessions', {});
 
       expect(result.isError).toBe(false);
       expect(result.content).toBeDefined();
@@ -156,7 +157,7 @@ describe('Agent Orchestrator MCP Server - Manual Tests', () => {
     });
 
     it('should filter sessions by status', async () => {
-      const result = await client.callTool('search_sessions', {
+      const result = await client.callTool('quick_search_sessions', {
         status: 'running',
       });
 
@@ -168,10 +169,9 @@ describe('Agent Orchestrator MCP Server - Manual Tests', () => {
       expect(text.length).toBeGreaterThan(0);
     });
 
-    it('should search sessions by query', async () => {
-      const result = await client.callTool('search_sessions', {
+    it('should search sessions by title query', async () => {
+      const result = await client.callTool('quick_search_sessions', {
         query: 'agent',
-        search_contents: true,
       });
 
       expect(result.isError).toBe(false);
@@ -180,7 +180,7 @@ describe('Agent Orchestrator MCP Server - Manual Tests', () => {
 
     it('should get a specific session by ID', async () => {
       // First get a list of sessions to find a valid ID
-      const listResult = await client.callTool('search_sessions', {});
+      const listResult = await client.callTool('quick_search_sessions', {});
       const listText = listResult.content[0].text as string;
 
       // Extract first session ID from the markdown output (format: "### Title (ID: 123)")
@@ -188,7 +188,7 @@ describe('Agent Orchestrator MCP Server - Manual Tests', () => {
       if (idMatch) {
         testSessionId = parseInt(idMatch[1], 10);
 
-        const result = await client.callTool('search_sessions', {
+        const result = await client.callTool('quick_search_sessions', {
           id: testSessionId,
         });
 
@@ -204,7 +204,7 @@ describe('Agent Orchestrator MCP Server - Manual Tests', () => {
     it('should get detailed session info', async () => {
       if (!testSessionId) {
         // Get a session ID first
-        const listResult = await client.callTool('search_sessions', {});
+        const listResult = await client.callTool('quick_search_sessions', {});
         const listText = listResult.content[0].text as string;
         const idMatch = listText.match(/\(ID: (\d+)\)/);
         if (idMatch) {
@@ -700,7 +700,7 @@ describe('Agent Orchestrator MCP Server - Manual Tests', () => {
     it('should send a push notification for a valid session', async () => {
       if (!testSessionId) {
         // Get a session ID first
-        const listResult = await client.callTool('search_sessions', {});
+        const listResult = await client.callTool('quick_search_sessions', {});
         const listText = listResult.content[0].text as string;
         const idMatch = listText.match(/\(ID: (\d+)\)/);
         if (idMatch) {
