@@ -25,11 +25,7 @@ This file tracks the **most recent** manual test results for the agent-orchestra
    # Edit .env with your credentials
    ```
 
-3. **Start Agent Orchestrator** - The agent-orchestrator API must be running locally:
-   ```bash
-   # In the agent-orchestrator directory
-   bin/rails server
-   ```
+3. **Ensure Agent Orchestrator API is accessible** - Tests default to staging (`https://ao.staging.pulsemcp.com`). Override `AGENT_ORCHESTRATOR_BASE_URL` in `.env` to target a different instance (e.g., local or production).
 
 ### First-Time Setup (or after clean checkout)
 
@@ -119,7 +115,7 @@ The tests will:
 ### Notes
 
 - `get_transcript_archive`: No manual API test available yet - backend endpoints (agents PR #1259) may not be deployed. Tool is fully covered by functional tests with mocked API responses
-- Prior manual test results (commit ad0b4eb) verify all existing tools work against production API
+- Prior manual test results (commit ad0b4eb) verify all existing tools work against the API
 - `transcript_format`: Test session had no transcript available (API returned 404) - expected behavior for sessions without transcripts
 - `refresh`: Test session had no clone path (API returned 422) - expected for newly created clone-only sessions
 

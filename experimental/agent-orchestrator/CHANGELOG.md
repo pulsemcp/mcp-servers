@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Default test target changed from production to staging (`https://ao.staging.pulsemcp.com`)
+- Manual tests now fall back to staging URL when `AGENT_ORCHESTRATOR_BASE_URL` is not set
+- Updated `.env.example`, test docs, and CONTRIBUTING.md to reference staging
+
 ## [0.2.5] - 2026-02-22
 
 ### Added
