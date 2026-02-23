@@ -1,7 +1,6 @@
 ---
 name: publish-and-pr
 description: "MANDATORY for any PR that modifies MCP server code. This skill handles version bumping, manual testing, and PR creation — do NOT do these steps manually or skip any of them. If you changed any code in an MCP server (experimental/ or productionized/), you MUST invoke this skill before opening or finalizing a PR. No exceptions."
-disable-model-invocation: true
 argument-hint: "[patch|minor|major]"
 ---
 
