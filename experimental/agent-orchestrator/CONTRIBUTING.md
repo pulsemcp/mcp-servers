@@ -23,7 +23,8 @@ npm run start
 Create a `.env` file with the following:
 
 ```bash
-AGENT_ORCHESTRATOR_BASE_URL=http://localhost:3000
+# Tests default to staging. For production, use https://ao.pulsemcp.com
+AGENT_ORCHESTRATOR_BASE_URL=https://ao.staging.pulsemcp.com
 AGENT_ORCHESTRATOR_API_KEY=your-api-key-here
 ```
 
@@ -38,7 +39,7 @@ cd experimental/agent-orchestrator
 npm run install-all
 npm run build
 npx @modelcontextprotocol/inspector node local/build/index.js \
-  -e AGENT_ORCHESTRATOR_BASE_URL=http://localhost:3000 \
+  -e AGENT_ORCHESTRATOR_BASE_URL=https://ao.staging.pulsemcp.com \
   -e AGENT_ORCHESTRATOR_API_KEY=your-api-key
 ```
 

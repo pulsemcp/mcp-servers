@@ -183,7 +183,8 @@ Manual tests are designed to test the MCP server against real external APIs. The
 1. Create a `.env` file in the server root:
 
    ```bash
-   AGENT_ORCHESTRATOR_BASE_URL=http://localhost:3000
+   # Tests default to staging. For production, use https://ao.pulsemcp.com
+   AGENT_ORCHESTRATOR_BASE_URL=https://ao.staging.pulsemcp.com
    AGENT_ORCHESTRATOR_API_KEY=your-actual-api-key
    ```
 
