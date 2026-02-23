@@ -113,11 +113,11 @@ describe('Agent Orchestrator MCP Server - Manual Tests', () => {
   // =========================================================================
 
   describe('Tool Registration', () => {
-    it('should register exactly 13 tools', async () => {
+    it('should register exactly 14 tools', async () => {
       const result = await client.listTools();
       const tools = result.tools;
 
-      expect(tools.length).toBe(13);
+      expect(tools.length).toBe(14);
 
       const toolNames = tools.map((t: { name: string }) => t.name);
       expect(toolNames).toContain('quick_search_sessions');
@@ -125,6 +125,7 @@ describe('Agent Orchestrator MCP Server - Manual Tests', () => {
       expect(toolNames).toContain('start_session');
       expect(toolNames).toContain('action_session');
       expect(toolNames).toContain('get_configs');
+      expect(toolNames).toContain('get_transcript_archive');
       expect(toolNames).toContain('manage_enqueued_messages');
       expect(toolNames).toContain('send_push_notification');
       expect(toolNames).toContain('get_notifications');
