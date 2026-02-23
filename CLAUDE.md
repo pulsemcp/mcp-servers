@@ -330,35 +330,7 @@ npm run test:manual
 
 ## PR Requirements: Version Bumps and Manual Testing
 
-Every PR that changes an MCP server's code must include a version bump and manual test results. These are not optional or afterthoughts — do them proactively as part of the change.
-
-### Version Bumping
-
-Bump the version in the server's `local/package.json` as part of every PR:
-
-- **Patch bump** (e.g., 1.2.3 → 1.2.4): Bug fixes, minor tweaks, small features, dependency updates
-- **Minor bump** (e.g., 1.2.3 → 1.3.0): New tools, significant feature additions, breaking changes
-
-Run from the server's `local/` directory:
-
-```bash
-cd <server-path>/local/
-npm run stage-publish patch   # or "minor" for larger changes
-```
-
-This updates `local/package.json`, creates a git tag, and may modify the parent `package-lock.json`. Commit all modified files together. Also update the server's `CHANGELOG.md` — move items from `[Unreleased]` to a new version section with the version number and date.
-
-Do not wait to be asked to bump the version. If you changed server code, bump the version.
-
-### Manual Testing
-
-Every PR must include running the server's manual test suite and recording the results:
-
-1. Ensure `.env` exists in the server's root with the required API keys
-2. Run manual tests: `npm run test:manual` from the server's root directory
-3. Update the server's `MANUAL_TESTING.md` with results (commit hash, date, pass/fail summary)
-
-If manual testing requires credentials or API keys that are not available, **ask the user for them** — do not skip manual testing. The CI `verify-publications` workflow will reject PRs with version bumps that lack updated manual test results.
+**Any PR that modifies an MCP server's code MUST use the `/publish-and-pr` skill to handle version bumping, manual testing, and PR creation.** Do not do these steps manually — the skill ensures nothing is skipped. If you changed server code, invoke `/publish-and-pr` before opening the PR.
 
 See [PUBLISHING_SERVERS.md](./docs/PUBLISHING_SERVERS.md) for the full publication process.
 
@@ -460,7 +432,7 @@ Don't add: basic TypeScript fixes, standard npm troubleshooting, obvious file op
 - When simplifying tool parameters, consider the MCP best practices guide in libs/mcp-server-template/shared/src/tools/TOOL_DESCRIPTIONS_GUIDE.md for writing clear descriptions
 - Breaking changes in tool parameters should be clearly marked in CHANGELOG.md with **BREAKING** prefix to alert users
 - When using `set -e` in shell scripts with npm commands, be aware that `npm view` returns exit code 1 when a package doesn't exist yet - use `|| true` to prevent premature script termination during npm registry propagation checks
-- **For `/publish_and_pr` command**: This means "stage for publishing and update PR" - it does NOT mean actually publish to npm. The workflow is: bump version → update changelog → commit → push → update PR. NPM publishing happens automatically via CI when PR is merged
+- **For `/publish-and-pr` skill**: This means "stage for publishing and update PR" - it does NOT mean actually publish to npm. The workflow is: bump version → update changelog → commit → push → update PR. NPM publishing happens automatically via CI when PR is merged
 - **Manual Testing Before Publishing**: Always run manual tests (with real API credentials) before staging a version bump to ensure the server works correctly with external APIs
 - **Git Tag Format for Version Bumps**: When creating git tags for version bumps, use the format `package-name@version` (e.g., `appsignal-mcp-server@0.2.12`, `@pulsemcp/pulse-fetch@0.2.10`). The CI verify-publications workflow expects this exact format, not `server-name-vX.Y.Z`
 - **Manual Testing and CI**: The verify-publications CI check requires that MANUAL_TESTING.md references a commit that's in the PR's history. If you make any commits after running manual tests (even just test fixes), the CI will fail. For test-only fixes, this is a known limitation that doesn't require re-running manual tests. When updating MANUAL_TESTING.md for packaging-only changes, ensure the commit hash matches a commit in the current PR branch
