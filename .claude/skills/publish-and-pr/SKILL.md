@@ -1,4 +1,9 @@
-**MANDATORY for any PR that modifies MCP server code.** This skill handles version bumping, manual testing, and PR creation — do NOT do these steps manually or skip any of them. If you changed any code in an MCP server (experimental/ or productionized/), you MUST invoke this skill before opening or finalizing a PR. No exceptions.
+---
+name: publish-and-pr
+description: "MANDATORY for any PR that modifies MCP server code. This skill handles version bumping, manual testing, and PR creation — do NOT do these steps manually or skip any of them. If you changed any code in an MCP server (experimental/ or productionized/), you MUST invoke this skill before opening or finalizing a PR. No exceptions."
+disable-model-invocation: true
+argument-hint: "[patch|minor|major]"
+---
 
 We are doing a version bump of type (major/minor/patch): $ARGUMENTS
 
@@ -6,10 +11,10 @@ I want you to:
 
 - [ ] Before you start, make sure you have recently run the `manual` test suites (`npm run test:manual`; with valid secrets in place - you can usually find them in a .env file within the MCP server source) and proven the happy path is working. We don't want to accidentally publish a version bump that fails manual tests. **Important**: Update the MANUAL_TESTING.md file with the test results if the server has one.
 - [ ] Before starting, run `git status` to see current state
-- [ ] Run the publication process for server updates ([PUBLISHING_SERVERS.md](../../docs/PUBLISHING_SERVERS.md))
+- [ ] Run the publication process for server updates ([PUBLISHING_SERVERS.md](../../../docs/PUBLISHING_SERVERS.md))
 - [ ] **IMMEDIATELY AFTER VERSION BUMP**: Run `git status` to see ALL files modified by npm version command
 - [ ] **BEFORE ANY COMMITS**: Ensure ALL files from the version bump are staged (package.json, package-lock.json, CHANGELOG.md, README.md, etc.)
-- [ ] Open a PR (or update current one for your branch) in accordance with [pr.md](./pr.md). You **must** follow the full process explained in `pr.md`.
+- [ ] Open a PR (or update current one for your branch) in accordance with the `/pr` skill. You **must** follow the full process explained in the `/pr` skill.
 
 ## Version Bump File Checklist
 

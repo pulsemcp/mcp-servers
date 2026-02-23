@@ -330,7 +330,7 @@ npm run test:manual
 
 ## PR Requirements: Version Bumps and Manual Testing
 
-**Any PR that modifies an MCP server's code MUST use the `/publish_and_pr` skill to handle version bumping, manual testing, and PR creation.** Do not do these steps manually — the skill ensures nothing is skipped. If you changed server code, invoke `/publish_and_pr` before opening the PR.
+**Any PR that modifies an MCP server's code MUST use the `/publish-and-pr` skill to handle version bumping, manual testing, and PR creation.** Do not do these steps manually — the skill ensures nothing is skipped. If you changed server code, invoke `/publish-and-pr` before opening the PR.
 
 See [PUBLISHING_SERVERS.md](./docs/PUBLISHING_SERVERS.md) for the full publication process.
 
@@ -431,7 +431,7 @@ Don't add: basic TypeScript fixes, standard npm troubleshooting, obvious file op
 - When simplifying tool parameters, consider the MCP best practices guide in libs/mcp-server-template/shared/src/tools/TOOL_DESCRIPTIONS_GUIDE.md for writing clear descriptions
 - Breaking changes in tool parameters should be clearly marked in CHANGELOG.md with **BREAKING** prefix to alert users
 - When using `set -e` in shell scripts with npm commands, be aware that `npm view` returns exit code 1 when a package doesn't exist yet - use `|| true` to prevent premature script termination during npm registry propagation checks
-- **For `/publish_and_pr` command**: This means "stage for publishing and update PR" - it does NOT mean actually publish to npm. The workflow is: bump version → update changelog → commit → push → update PR. NPM publishing happens automatically via CI when PR is merged
+- **For `/publish-and-pr` skill**: This means "stage for publishing and update PR" - it does NOT mean actually publish to npm. The workflow is: bump version → update changelog → commit → push → update PR. NPM publishing happens automatically via CI when PR is merged
 - **Git Tag Format for Version Bumps**: When creating git tags for version bumps, use the format `package-name@version` (e.g., `appsignal-mcp-server@0.2.12`, `@pulsemcp/pulse-fetch@0.2.10`). The CI verify-publications workflow expects this exact format, not `server-name-vX.Y.Z`
 - **npm Package Files Field**: When specifying files to include in npm packages, use specific glob patterns (e.g., `"build/**/*.js"`) rather than entire directories (e.g., `"build/"`) to ensure proper file permissions and avoid including non-executable files. This prevents "Permission denied" errors when users run the package with npx
 

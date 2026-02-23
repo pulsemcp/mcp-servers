@@ -1,3 +1,9 @@
+---
+name: merge-conflicts
+description: Resolve merge conflicts in CI by rebasing on main and resolving file-by-file.
+disable-model-invocation: true
+---
+
 There are merge conflicts in CI.
 
 - [ ] **BEFORE STARTING**: Run `git status` to see current state

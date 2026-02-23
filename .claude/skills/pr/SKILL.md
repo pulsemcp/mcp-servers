@@ -1,3 +1,9 @@
+---
+name: pr
+description: Push working state to a PR — commit all changes, push to branch, open PR, self-review, subagent review, and wait for CI.
+disable-model-invocation: true
+---
+
 # Push working state to a PR
 
 Our goal is to take the current state of our git diff (ALL The files), commit the files (with a reasonable commit message), push them (to a branch), open a PR, verify the PR passed CI checks (don't skip this!), and surface the link to the PR back to me so I can click it to review.
@@ -25,7 +31,7 @@ Follow this checklist when executing this:
 
 ## Workflow Details
 
-For detailed git workflow information including branch naming conventions and recovery procedures, see [docs/GIT_WORKFLOW.md](../../docs/GIT_WORKFLOW.md).
+For detailed git workflow information including branch naming conventions and recovery procedures, see [docs/GIT_WORKFLOW.md](../../../docs/GIT_WORKFLOW.md).
 
 ## Quick Reference
 
@@ -80,7 +86,7 @@ git diff --cached
 
 #### Merge conflicts
 
-Immediately check if there are any merge conflicts. Resolve them by following [merge_conflicts.md](./merge_conflicts.md).
+Immediately check if there are any merge conflicts. Resolve them by using the `/merge-conflicts` skill.
 
 #### Self-Code Review
 
@@ -117,4 +123,4 @@ Action all critical and warning issues from the subagent review. Use your judgme
 
 #### CI Monitoring
 
-After completing the subagent review (and actioning any issues), monitor CI status and fix any failures by following [ensure_ci_success.md](./ensure_ci_success.md).
+After completing the subagent review (and actioning any issues), monitor CI status and fix any failures by using the `/ensure-ci-success` skill.
