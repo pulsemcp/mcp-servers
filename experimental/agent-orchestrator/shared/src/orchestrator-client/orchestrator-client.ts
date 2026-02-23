@@ -386,6 +386,79 @@ export class AgentOrchestratorClient implements IAgentOrchestratorClient {
     return response.json() as T;
   }
 
+  /**
+   * Like request(), but reads the response as text and wraps it in a TranscriptResponse.
+   * Used for API endpoints that return raw text instead of JSON (e.g., transcript with format=text).
+   */
+  private async requestText(
+    method: string,
+    path: string,
+    body?: Record<string, unknown>,
+    queryParams?: Record<string, unknown>
+  ): Promise<TranscriptResponse> {
+    const url = new URL(`${this.baseUrl}${path}`);
+    if (queryParams) {
+      Object.entries(queryParams).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          url.searchParams.append(key, String(value));
+        }
+      });
+    }
+
+    const headers: Record<string, string> = {
+      Authorization: `Bearer ${this.apiKey}`,
+    };
+
+    if (body) {
+      headers['Content-Type'] = 'application/json';
+    }
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), this.timeoutMs);
+
+    const options: RequestInit = {
+      method,
+      headers,
+      signal: controller.signal,
+    };
+
+    if (body && (method === 'POST' || method === 'PATCH' || method === 'PUT')) {
+      options.body = JSON.stringify(body);
+    }
+
+    let response: Response;
+    try {
+      response = await fetch(url.toString(), options);
+    } catch (error) {
+      clearTimeout(timeoutId);
+      if (error instanceof Error && error.name === 'AbortError') {
+        throw new Error(`Request timeout after ${this.timeoutMs}ms`);
+      }
+      throw error;
+    } finally {
+      clearTimeout(timeoutId);
+    }
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      let errorMessage: string;
+      try {
+        const errorJson = JSON.parse(errorText);
+        errorMessage = errorJson.message || errorJson.error || errorText;
+      } catch {
+        errorMessage = errorText;
+      }
+      throw new Error(`API Error (${response.status}): ${errorMessage}`);
+    }
+
+    if (response.status === 204) {
+      return { transcript_text: '' };
+    }
+
+    const text = await response.text();
+    return { transcript_text: text };
+  }
+
   // Sessions
   async listSessions(options?: {
     status?: SessionStatus;
@@ -628,6 +701,11 @@ export class AgentOrchestratorClient implements IAgentOrchestratorClient {
     id: string | number,
     format: 'text' | 'json' = 'json'
   ): Promise<TranscriptResponse> {
+    if (format === 'text') {
+      // The API returns raw text (not JSON) when format=text,
+      // so we must use response.text() instead of response.json()
+      return this.requestText('GET', `/sessions/${id}/transcript`, undefined, { format });
+    }
     return this.request<TranscriptResponse>('GET', `/sessions/${id}/transcript`, undefined, {
       format,
     });
