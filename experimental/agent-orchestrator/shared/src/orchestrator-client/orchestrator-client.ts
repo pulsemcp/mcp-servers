@@ -122,7 +122,6 @@ export interface IAgentOrchestratorClient {
   searchSessions(
     query: string,
     options?: {
-      search_contents?: boolean;
       status?: SessionStatus;
       agent_type?: string;
       show_archived?: boolean;
@@ -401,7 +400,6 @@ export class AgentOrchestratorClient implements IAgentOrchestratorClient {
   async searchSessions(
     query: string,
     options?: {
-      search_contents?: boolean;
       status?: SessionStatus;
       agent_type?: string;
       show_archived?: boolean;

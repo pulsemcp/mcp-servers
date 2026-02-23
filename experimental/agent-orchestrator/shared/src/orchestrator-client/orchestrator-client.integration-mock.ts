@@ -171,7 +171,6 @@ export function createIntegrationMockOrchestratorClient(
     async searchSessions(
       query: string,
       options?: {
-        search_contents?: boolean;
         status?: SessionStatus;
         agent_type?: string;
         show_archived?: boolean;
@@ -198,7 +197,6 @@ export function createIntegrationMockOrchestratorClient(
 
       return {
         query,
-        search_contents: options?.search_contents || false,
         sessions: paginatedSessions,
         pagination: {
           page,

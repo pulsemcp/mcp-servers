@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { createMockOrchestratorClient } from '../mocks/orchestrator-client.functional-mock.js';
-import { searchSessionsTool } from '../../shared/src/tools/search-sessions.js';
+import { quickSearchSessionsTool } from '../../shared/src/tools/search-sessions.js';
 import { startSessionTool } from '../../shared/src/tools/start-session.js';
 import { getSessionTool } from '../../shared/src/tools/get-session.js';
 import { actionSessionTool } from '../../shared/src/tools/action-session.js';
@@ -30,9 +30,9 @@ describe('Tools', () => {
     clientFactory = () => mockClient;
   });
 
-  describe('search_sessions', () => {
+  describe('quick_search_sessions', () => {
     it('should list all sessions when no filters provided', async () => {
-      const tool = searchSessionsTool(mockServer, clientFactory);
+      const tool = quickSearchSessionsTool(mockServer, clientFactory);
 
       const result = await tool.handler({});
 
@@ -46,7 +46,7 @@ describe('Tools', () => {
     });
 
     it('should search sessions by query', async () => {
-      const tool = searchSessionsTool(mockServer, clientFactory);
+      const tool = quickSearchSessionsTool(mockServer, clientFactory);
 
       await tool.handler({ query: 'test' });
 
@@ -54,7 +54,7 @@ describe('Tools', () => {
     });
 
     it('should get session by ID', async () => {
-      const tool = searchSessionsTool(mockServer, clientFactory);
+      const tool = quickSearchSessionsTool(mockServer, clientFactory);
 
       const result = await tool.handler({ id: 1 });
 
@@ -68,7 +68,7 @@ describe('Tools', () => {
     });
 
     it('should filter by status', async () => {
-      const tool = searchSessionsTool(mockServer, clientFactory);
+      const tool = quickSearchSessionsTool(mockServer, clientFactory);
 
       await tool.handler({ status: 'running' });
 
@@ -932,7 +932,7 @@ describe('Tools', () => {
   describe('tool definitions', () => {
     it('should have correct tool definitions for all 14 tools', () => {
       const tools = [
-        searchSessionsTool(mockServer, clientFactory),
+        quickSearchSessionsTool(mockServer, clientFactory),
         startSessionTool(mockServer, clientFactory),
         getSessionTool(mockServer, clientFactory),
         actionSessionTool(mockServer, clientFactory),
@@ -950,7 +950,7 @@ describe('Tools', () => {
 
       expect(tools).toHaveLength(14);
       const toolNames = tools.map((t) => t.name);
-      expect(toolNames).toContain('search_sessions');
+      expect(toolNames).toContain('quick_search_sessions');
       expect(toolNames).toContain('start_session');
       expect(toolNames).toContain('get_session');
       expect(toolNames).toContain('action_session');
@@ -1065,7 +1065,7 @@ describe('createRegisterTools with toolgroups filtering', () => {
     expect(result.tools).toHaveLength(4);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const toolNames = result.tools.map((t: any) => t.name);
-    expect(toolNames).toContain('search_sessions');
+    expect(toolNames).toContain('quick_search_sessions');
     expect(toolNames).toContain('get_session');
     expect(toolNames).toContain('get_configs');
     expect(toolNames).toContain('get_transcript_archive');
@@ -1093,7 +1093,7 @@ describe('createRegisterTools with toolgroups filtering', () => {
     expect(result.tools).toHaveLength(7);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const toolNames = result.tools.map((t: any) => t.name);
-    expect(toolNames).toContain('search_sessions');
+    expect(toolNames).toContain('quick_search_sessions');
     expect(toolNames).toContain('get_session');
     expect(toolNames).toContain('get_configs');
     expect(toolNames).toContain('get_transcript_archive');
@@ -1215,7 +1215,7 @@ describe('createRegisterTools with toolgroups filtering', () => {
     expect(result.tools).toHaveLength(14);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const toolNames = result.tools.map((t: any) => t.name);
-    expect(toolNames).toContain('search_sessions');
+    expect(toolNames).toContain('quick_search_sessions');
     expect(toolNames).toContain('get_session');
     expect(toolNames).toContain('get_configs');
     expect(toolNames).toContain('get_transcript_archive');
@@ -1250,7 +1250,7 @@ describe('createRegisterTools with toolgroups filtering', () => {
     expect(result.tools).toHaveLength(7); // 4 readonly sessions + 3 notification
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const toolNames = result.tools.map((t: any) => t.name);
-    expect(toolNames).toContain('search_sessions');
+    expect(toolNames).toContain('quick_search_sessions');
     expect(toolNames).toContain('get_session');
     expect(toolNames).toContain('get_configs');
     expect(toolNames).toContain('get_transcript_archive');

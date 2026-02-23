@@ -81,7 +81,7 @@ The tests will:
 | All functional tests             | :white_check_mark: | 84/84 |
 | **Prior Manual Tests (ad0b4eb)** |                    |       |
 | Tool Registration                | :white_check_mark: | 1/1   |
-| search_sessions                  | :white_check_mark: | 4/4   |
+| quick_search_sessions            | :white_check_mark: | 4/4   |
 | get_session                      | :white_check_mark: | 6/6   |
 | start_session                    | :white_check_mark: | 1/1   |
 | action_session                   | :white_check_mark: | 11/11 |

@@ -66,7 +66,7 @@ Optional:
 
 The server provides 14 tools across 4 domains:
 
-- **search_sessions** - List, filter, and search sessions (supports status filter, query search, pagination)
+- **quick_search_sessions** - Quick title-based search/list sessions (title query only, not full-text; supports status filter, pagination)
 - **get_session** - Get detailed session info with optional logs, transcripts, and transcript format
 - **get_configs** - Fetch all static configuration (MCP servers, agent roots, stop conditions)
 - **get_transcript_archive** - Get download URL and metadata for the transcript archive zip file

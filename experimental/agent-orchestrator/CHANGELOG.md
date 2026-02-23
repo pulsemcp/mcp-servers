@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **BREAKING:** Renamed `search_sessions` tool to `quick_search_sessions` to clarify that it only searches session titles, not transcript contents
+- Removed `search_contents` parameter from `quick_search_sessions` tool — it consistently errored due to data volume and was not functional
+- Updated `quick_search_sessions` tool description to clearly communicate title-only search scope
+
 ## [0.2.5] - 2026-02-22
 
 ### Added

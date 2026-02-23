@@ -85,7 +85,6 @@ export interface SessionsResponse {
 
 export interface SearchSessionsResponse {
   query: string;
-  search_contents: boolean;
   sessions: Session[];
   pagination: Pagination;
 }

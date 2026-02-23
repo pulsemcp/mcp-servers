@@ -6,9 +6,7 @@ import type { Session } from '../types.js';
 const PARAM_DESCRIPTIONS = {
   id: 'Get a specific session by ID. When provided, other filters are ignored.',
   query:
-    'Search query to find sessions. Searches across title, metadata, and custom_metadata. Leave empty to list all sessions.',
-  search_contents:
-    'Also search within transcript contents. May be slow for sessions with large transcripts. Default: false',
+    'Search query to find sessions. Matches against session title only — this is a simple title search, not a full-text or semantic search. Leave empty to list all sessions.',
   status:
     'Filter results by status. Options: "waiting", "running", "needs_input", "failed", "archived"',
   agent_type: 'Filter results by agent type.',
@@ -17,10 +15,9 @@ const PARAM_DESCRIPTIONS = {
   per_page: 'Number of results per page (1-100). Default: 25',
 } as const;
 
-export const SearchSessionsSchema = z.object({
+export const QuickSearchSessionsSchema = z.object({
   id: z.number().optional().describe(PARAM_DESCRIPTIONS.id),
   query: z.string().max(1000).optional().describe(PARAM_DESCRIPTIONS.query),
-  search_contents: z.boolean().optional().describe(PARAM_DESCRIPTIONS.search_contents),
   status: z
     .enum(['waiting', 'running', 'needs_input', 'failed', 'archived'])
     .optional()
@@ -31,11 +28,13 @@ export const SearchSessionsSchema = z.object({
   per_page: z.number().min(1).max(100).optional().describe(PARAM_DESCRIPTIONS.per_page),
 });
 
-const TOOL_DESCRIPTION = `Search for agent sessions in the Agent Orchestrator.
+const TOOL_DESCRIPTION = `Quick title-based search for agent sessions in the Agent Orchestrator.
+
+**Important:** This tool only searches session titles. It is NOT a full-text or semantic search across session contents/transcripts. Use this when you roughly know the session title you're looking for.
 
 **Use cases:**
 - Find a specific session by ID (set id parameter)
-- Search sessions by keyword in title/prompt (set query parameter)
+- Search sessions by title keyword (set query parameter)
 - List all sessions with optional status filter
 - Monitor sessions requiring attention (status: "needs_input")
 
@@ -78,9 +77,12 @@ function formatSession(session: Session): string {
   return lines.join('\n');
 }
 
-export function searchSessionsTool(_server: Server, clientFactory: () => IAgentOrchestratorClient) {
+export function quickSearchSessionsTool(
+  _server: Server,
+  clientFactory: () => IAgentOrchestratorClient
+) {
   return {
-    name: 'search_sessions',
+    name: 'quick_search_sessions',
     description: TOOL_DESCRIPTION,
     inputSchema: {
       type: 'object' as const,
@@ -93,10 +95,6 @@ export function searchSessionsTool(_server: Server, clientFactory: () => IAgentO
           type: 'string',
           maxLength: 1000,
           description: PARAM_DESCRIPTIONS.query,
-        },
-        search_contents: {
-          type: 'boolean',
-          description: PARAM_DESCRIPTIONS.search_contents,
         },
         status: {
           type: 'string',
@@ -127,7 +125,7 @@ export function searchSessionsTool(_server: Server, clientFactory: () => IAgentO
     },
     handler: async (args: unknown) => {
       try {
-        const validatedArgs = SearchSessionsSchema.parse(args);
+        const validatedArgs = QuickSearchSessionsSchema.parse(args);
         const client = clientFactory();
 
         // If ID is provided, get that specific session
@@ -148,9 +146,8 @@ export function searchSessionsTool(_server: Server, clientFactory: () => IAgentO
         let pagination: { page: number; total_pages: number; total_count: number };
 
         if (validatedArgs.query) {
-          // Use search endpoint
+          // Use search endpoint (title-only search, no content search)
           const response = await client.searchSessions(validatedArgs.query, {
-            search_contents: validatedArgs.search_contents,
             status: validatedArgs.status,
             agent_type: validatedArgs.agent_type,
             show_archived: validatedArgs.show_archived,
