@@ -35,7 +35,8 @@ interface TestOutcome {
  * End-to-end system tests for Agent Orchestrator MCP Server.
  *
  * These tests require:
- * 1. Agent-orchestrator Rails server running at AGENT_ORCHESTRATOR_BASE_URL
+ * 1. Agent-orchestrator API accessible at AGENT_ORCHESTRATOR_BASE_URL
+ *    (defaults to staging: https://ao.staging.pulsemcp.com)
  * 2. Valid API key in AGENT_ORCHESTRATOR_API_KEY
  *
  * Test Outcomes:
@@ -74,16 +75,15 @@ describe('Agent Orchestrator MCP Server - Manual Tests', () => {
     if (!process.env.AGENT_ORCHESTRATOR_API_KEY) {
       throw new Error('Manual tests require AGENT_ORCHESTRATOR_API_KEY environment variable');
     }
-    if (!process.env.AGENT_ORCHESTRATOR_BASE_URL) {
-      throw new Error('Manual tests require AGENT_ORCHESTRATOR_BASE_URL environment variable');
-    }
+
+    const baseUrl = process.env.AGENT_ORCHESTRATOR_BASE_URL || 'https://ao.staging.pulsemcp.com';
 
     const serverPath = path.join(__dirname, '../../local/build/index.js');
     client = new TestMCPClient({
       serverPath,
       env: {
         AGENT_ORCHESTRATOR_API_KEY: process.env.AGENT_ORCHESTRATOR_API_KEY,
-        AGENT_ORCHESTRATOR_BASE_URL: process.env.AGENT_ORCHESTRATOR_BASE_URL,
+        AGENT_ORCHESTRATOR_BASE_URL: baseUrl,
       },
       debug: false,
     });

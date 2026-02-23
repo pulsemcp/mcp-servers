@@ -25,11 +25,7 @@ This file tracks the **most recent** manual test results for the agent-orchestra
    # Edit .env with your credentials
    ```
 
-3. **Start Agent Orchestrator** - The agent-orchestrator API must be running locally:
-   ```bash
-   # In the agent-orchestrator directory
-   bin/rails server
-   ```
+3. **Ensure Agent Orchestrator API is accessible** - Tests default to staging (`https://ao.staging.pulsemcp.com`). Override `AGENT_ORCHESTRATOR_BASE_URL` in `.env` to target a different instance (e.g., local or production).
 
 ### First-Time Setup (or after clean checkout)
 

@@ -14,6 +14,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **BREAKING:** Renamed `search_sessions` tool to `quick_search_sessions` to clarify that it only searches session titles, not transcript contents
 - **BREAKING:** Removed `search_contents` parameter from `quick_search_sessions` tool — it consistently errored due to data volume and was not functional
 - Updated `quick_search_sessions` tool description to clearly communicate title-only search scope
+- Default test target changed from production to staging (`https://ao.staging.pulsemcp.com`)
+- Manual tests now fall back to staging URL when `AGENT_ORCHESTRATOR_BASE_URL` is not set
+- Updated `.env.example`, test docs, and CONTRIBUTING.md to reference staging
 
 ### Fixed
 
