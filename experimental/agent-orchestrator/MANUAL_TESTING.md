@@ -67,19 +67,19 @@ The tests will:
 
 **Test Date:** 2026-02-23
 **Branch:** tadasant/quick-search-sessions
-**Commit:** 47d3bfb
+**Commit:** d6fd530
 **Tested By:** Claude Code (automated)
 **Environment:** Production API (ao.pulsemcp.com)
 
 ### Summary
 
-**Overall:** :white_check_mark: SUCCESS - 55/56 manual tests pass against production API. 1 pre-existing failure in `get_session` transcript_format test (JSON parsing error unrelated to this PR's changes).
+**Overall:** :white_check_mark: SUCCESS - 56/56 manual tests pass against production API.
 
 | Test Category            | Status             | Tests |
 | ------------------------ | ------------------ | ----- |
 | Tool Registration        | :white_check_mark: | 1/1   |
 | quick_search_sessions    | :white_check_mark: | 4/4   |
-| get_session              | :warning:          | 5/6   |
+| get_session              | :white_check_mark: | 6/6   |
 | start_session            | :white_check_mark: | 1/1   |
 | action_session           | :white_check_mark: | 11/11 |
 | manage_enqueued_messages | :white_check_mark: | 8/8   |
@@ -98,7 +98,7 @@ The tests will:
 - :white_check_mark: **searchSessionsWorks** - List, filter, search sessions by title
 - :white_check_mark: **getSessionWorks** - Get detailed session info
 - :white_check_mark: **getSessionWithLogsWorks** - Get session with logs/transcripts
-- :x: **getSessionTranscriptFormatWorks** - Pre-existing JSON parsing error ("No number after minus sign in JSON at position 1") - unrelated to this PR
+- :white_check_mark: **getSessionTranscriptFormatWorks** - Get session transcript with text format
 - :white_check_mark: **startSessionWorks** - Create new sessions
 - :white_check_mark: **actionSessionWorks** - Archive/unarchive sessions
 - :white_check_mark: **actionSessionNewActionsWork** - update_notes, toggle_favorite, refresh, refresh_all
@@ -114,15 +114,15 @@ The tests will:
 
 ### Notes
 
-- `transcript_format`: Pre-existing JSON parsing error in `get_session` when using `transcript_format: 'text'` — "No number after minus sign in JSON at position 1". This is unrelated to the `quick_search_sessions` rename.
 - `refresh`: Test session had no clone path (API returned 422) — expected for newly created clone-only sessions.
-- Tool registration test was updated from 13 to 14 tools to account for `get_transcript_archive` added in v0.2.5.
+- Tool registration test expects 14 tools to account for `get_transcript_archive` added in v0.2.5.
 
 ### Key Changes in This Version
 
 - **BREAKING:** Renamed `search_sessions` tool to `quick_search_sessions`
 - Removed `search_contents` parameter (consistently errored due to data volume)
 - Updated tool description to clearly communicate title-only search scope
+- Fixed `getTranscript` to handle raw text response when `format=text` (API returns plain text, not JSON)
 
 ---
 

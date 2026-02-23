@@ -15,6 +15,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **BREAKING:** Removed `search_contents` parameter from `quick_search_sessions` tool — it consistently errored due to data volume and was not functional
 - Updated `quick_search_sessions` tool description to clearly communicate title-only search scope
 
+### Fixed
+
+- Fixed `getTranscript` failing with "No number after minus sign in JSON" error when using `transcript_format: 'text'` — the API returns raw text, not JSON, which requires `response.text()` instead of `response.json()`
+
 ## [0.2.5] - 2026-02-22
 
 ### Added
