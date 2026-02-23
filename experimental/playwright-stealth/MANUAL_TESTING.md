@@ -32,23 +32,24 @@ npm run test:manual
 
 **Test Date:** 2026-02-23
 **Branch:** agent-orchestrator/video-recording-tools
-**Commit:** e0f2624 (v0.1.0 - add video recording tools)
+**Commit:** 0af19ca (v0.1.0 - manual tests with real browser)
 **Tested By:** Claude
 
 ### Summary
 
-**Overall:** 57 functional tests pass (100%)
+**Overall:** 29 manual tests passed, 4 skipped (proxy tests require credentials), 3 test files
 
-All functional tests pass, including new video recording and storage tests:
+All manual tests pass with real browser, including new video recording tests:
 
 - Core Playwright functionality (navigation, screenshots, state management)
-- Video recording tools (start/stop recording, context recycling)
-- Video storage system (write, read, list, delete, factory)
-- Video resources exposed via MCP resources handlers
-- Screenshot resource storage tests
-- Screenshot dimension limiting to prevent API errors
-- Browser permissions support
-- IGNORE_HTTPS_ERRORS environment variable support
+- Screenshot dimension limiting (clipping large full-page screenshots)
+- Stealth mode (webdriver detection bypass, bot protection tests)
+- Error handling (navigation errors, execution timeouts)
+- Screenshot resource storage (capture, save, list, read)
+- Video recording (start, perform actions while recording, stop, resource link)
+- Video resources (list, read back saved video)
+- Recording while already recording (auto-save previous)
+- Anti-bot protection (claude.ai login with/without stealth)
 
 ### Changes in v0.1.0
 
@@ -61,66 +62,71 @@ Added video recording support with context recycling:
 - Videos exposed as MCP resources alongside screenshots
 - Context recycling approach creates new browser context with/without `recordVideo` option
 - Tool descriptions document that cookies/localStorage/sessionStorage are lost on start/stop
+- Fixed `PLAYWRIGHT_BROWSERS_PATH` env var propagation to spawned MCP server processes in all manual tests
 
 ### Test Cases Status
 
-| Test Suite                | Tests | Status |
-| ------------------------- | ----- | ------ |
-| Functional: Tools         | 21    | Pass   |
-| Functional: Storage       | 14    | Pass   |
-| Functional: Video Storage | 15    | Pass   |
-| Functional: Resources     | 7     | Pass   |
+| Test Suite                          | Tests | Status           |
+| ----------------------------------- | ----- | ---------------- |
+| Manual: Playwright Client           | 14    | Pass (4 skipped) |
+| Manual: Screenshot Resource Storage | 7     | Pass             |
+| Manual: Video Recording             | 8     | Pass             |
 
 ### Detailed Results
 
-#### Tool Tests (21 tests)
+#### Playwright Client Manual Tests (14 tests, 4 skipped)
 
-| Tool                    | Functional Test | Status |
-| ----------------------- | --------------- | ------ |
-| browser_execute         | 4 tests         | Pass   |
-| browser_screenshot      | 6 tests         | Pass   |
-| browser_get_state       | 2 tests         | Pass   |
-| browser_close           | 1 test          | Pass   |
-| browser_start_recording | 3 tests         | Pass   |
-| browser_stop_recording  | 3 tests         | Pass   |
-| Tool Registration       | 1 test          | Pass   |
-| Unknown tool            | 1 test          | Pass   |
+| Test                                                      | Result  | Details                                           |
+| --------------------------------------------------------- | ------- | ------------------------------------------------- |
+| Standard Mode: navigate and get title                     | Pass    | example.com title returned correctly              |
+| Standard Mode: take a screenshot                          | Pass    | Base64 PNG data returned                          |
+| Standard Mode: get browser state                          | Pass    | URL, title, isOpen all correct                    |
+| Standard Mode: close browser                              | Pass    | Browser closed, state reflects isOpen=false       |
+| Screenshot Dimension Limiting: clip oversized screenshots | Pass    | Warning shown for 10000px page, clipped to 8000px |
+| Screenshot Dimension Limiting: no clip within limits      | Pass    | No warning for normal page                        |
+| Screenshot Dimension Limiting: no clip for viewport-only  | Pass    | Viewport screenshots never clipped                |
+| Stealth Mode: navigate with stealth enabled               | Pass    | example.com loaded correctly                      |
+| Stealth Mode: webdriver detection check                   | Pass    | Webdriver not detected on bot.sannysoft.com       |
+| Stealth Mode: config shows stealth info                   | Pass    | stealthMode=true, headless=true                   |
+| Anti-Bot: claude.ai WITHOUT stealth                       | Pass    | Blocked (isBlocked=true)                          |
+| Anti-Bot: claude.ai WITH stealth                          | Pass    | Got through (hasLoginForm=true)                   |
+| Error Handling: navigation errors                         | Pass    | Error returned for non-existent domain            |
+| Error Handling: execution timeout                         | Pass    | Timeout error after 1000ms                        |
+| Proxy: connect through proxy                              | Skipped | No proxy credentials configured                   |
+| Proxy: verify proxy IP differs                            | Skipped | No proxy credentials configured                   |
+| Proxy: proxy + stealth combined                           | Skipped | No proxy credentials configured                   |
+| Proxy: config shows proxy enabled                         | Skipped | No proxy credentials configured                   |
 
-#### Video Storage Tests (15 tests)
+#### Screenshot Resource Storage Manual Tests (7 tests)
 
-| Test Case                               | Result | Details                                             |
-| --------------------------------------- | ------ | --------------------------------------------------- |
-| Save video and return file URI          | Pass   | Video copied and URI returned with .webm extension  |
-| Create WebM and JSON metadata files     | Pass   | Both files created alongside each other             |
-| Save correct metadata                   | Pass   | pageUrl, pageTitle, durationMs, timestamp all saved |
-| Copy video file content correctly       | Pass   | Content matches source file                         |
-| Read a saved video                      | Pass   | Base64 content matches original                     |
-| Read non-existent resource              | Pass   | Throws 'Resource not found' error                   |
-| List empty directory                    | Pass   | Returns empty array                                 |
-| List saved videos                       | Pass   | Returns correct count with metadata                 |
-| Sort by timestamp descending            | Pass   | Most recent first                                   |
-| Exists for existing resource            | Pass   | Returns true                                        |
-| Exists for non-existent resource        | Pass   | Returns false                                       |
-| Delete video and metadata               | Pass   | Both files removed                                  |
-| Delete non-existent resource            | Pass   | Throws error                                        |
-| Factory uses VIDEO_STORAGE_PATH env var | Pass   | Custom path respected                               |
-| Factory reuses same instance            | Pass   | Singleton pattern works                             |
+| Test                                            | Result | Details                                    |
+| ----------------------------------------------- | ------ | ------------------------------------------ |
+| Take viewport screenshot and return image data  | Pass   | 27572 chars base64, saved to storage       |
+| Take full-page screenshot and return image data | Pass   | Screenshot saved successfully              |
+| Save screenshot with saveOnly mode              | Pass   | Only resource_link URI returned            |
+| Save screenshot with saveAndReturn mode         | Pass   | Both image data and resource_link returned |
+| List saved screenshots as resources             | Pass   | 5 screenshot resources listed              |
+| Read back a saved screenshot resource           | Pass   | Blob length matches original (27572)       |
+| Capture screenshot after navigation             | Pass   | Screenshot of httpbin.org captured         |
+| Verify browser state reflects current page      | Pass   | URL shows httpbin.org/html                 |
 
-#### Resource Tests (7 tests)
+#### Video Recording Manual Tests (8 tests)
 
-| Test Case                        | Result | Details                               |
-| -------------------------------- | ------ | ------------------------------------- |
-| Empty list when no resources     | Pass   | Returns empty array                   |
-| List saved screenshots           | Pass   | Returns PNG resources with metadata   |
-| List saved videos                | Pass   | Returns WebM resources with metadata  |
-| List both screenshots and videos | Pass   | Both types returned together          |
-| Read a saved screenshot          | Pass   | Returns correct mimeType and blob     |
-| Read a saved video               | Pass   | Returns correct mimeType (video/webm) |
-| Error for non-existent resource  | Pass   | Throws 'Resource not found'           |
+| Test                                                          | Result | Details                                            |
+| ------------------------------------------------------------- | ------ | -------------------------------------------------- |
+| Start recording successfully                                  | Pass   | "Recording started", navigated back to example.com |
+| Perform actions while recording                               | Pass   | page.title() returns "Example Domain"              |
+| Stop recording and return video resource link                 | Pass   | resource_link with file:// URI to .webm file       |
+| Error when stopping while not recording                       | Pass   | "Not currently recording" error returned           |
+| Execute after stopping recording                              | Pass   | Browser still works, returns "Example Domain"      |
+| List video recordings as resources                            | Pass   | 1 video resource found with .webm extension        |
+| Read back a saved video resource                              | Pass   | 35860 chars base64 blob returned                   |
+| Save previous recording when starting new one while recording | Pass   | Previous recording auto-saved, second started      |
 
 ### Notes
 
-- Functional tests verify tool handler behavior with mocked Playwright client
-- Video recording tests use mock file operations (no real Playwright browser needed)
-- Context recycling approach is validated via mock client that tracks recording state
-- Manual tests with real browser not run for this change (video recording requires real browser context lifecycle which cannot be tested without Playwright browsers installed)
+- All tests run with real Chromium browser in headless mode
+- Video recording tests verify real browser context recycling (context closed/recreated with recordVideo option)
+- Video files are real WebM recordings saved to filesystem
+- Proxy tests skipped due to no proxy credentials configured
+- `PLAYWRIGHT_BROWSERS_PATH` environment variable properly propagated to all spawned MCP server processes

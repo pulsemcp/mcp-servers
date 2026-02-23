@@ -34,6 +34,7 @@ describe('Playwright Client Manual Tests', () => {
           TIMEOUT: '30000',
           STEALTH_MODE: 'false',
           PATH: process.env.PATH || '',
+          PLAYWRIGHT_BROWSERS_PATH: process.env.PLAYWRIGHT_BROWSERS_PATH || '',
         },
       });
       await client.connect();
@@ -113,6 +114,7 @@ describe('Playwright Client Manual Tests', () => {
           TIMEOUT: '30000',
           STEALTH_MODE: 'false',
           PATH: process.env.PATH || '',
+          PLAYWRIGHT_BROWSERS_PATH: process.env.PLAYWRIGHT_BROWSERS_PATH || '',
         },
       });
       await client.connect();
@@ -230,6 +232,7 @@ describe('Playwright Client Manual Tests', () => {
           TIMEOUT: '30000',
           STEALTH_MODE: 'true',
           PATH: process.env.PATH || '',
+          PLAYWRIGHT_BROWSERS_PATH: process.env.PLAYWRIGHT_BROWSERS_PATH || '',
         },
       });
       await client.connect();
@@ -309,6 +312,7 @@ describe('Playwright Client Manual Tests', () => {
           TIMEOUT: '30000',
           STEALTH_MODE: 'false',
           PATH: process.env.PATH || '',
+          PLAYWRIGHT_BROWSERS_PATH: process.env.PLAYWRIGHT_BROWSERS_PATH || '',
         },
       });
       await client.connect();
@@ -352,6 +356,7 @@ describe('Playwright Client Manual Tests', () => {
           TIMEOUT: '30000',
           STEALTH_MODE: 'true',
           PATH: process.env.PATH || '',
+          PLAYWRIGHT_BROWSERS_PATH: process.env.PLAYWRIGHT_BROWSERS_PATH || '',
         },
       });
       await client.connect();
@@ -396,6 +401,7 @@ describe('Playwright Client Manual Tests', () => {
           TIMEOUT: '5000',
           STEALTH_MODE: 'false',
           PATH: process.env.PATH || '',
+          PLAYWRIGHT_BROWSERS_PATH: process.env.PLAYWRIGHT_BROWSERS_PATH || '',
         },
       });
       await client.connect();
@@ -458,6 +464,7 @@ describe('Playwright Client Manual Tests', () => {
         STEALTH_MODE: 'false',
         PROXY_URL: proxyUrl!,
         PATH: process.env.PATH || '',
+        PLAYWRIGHT_BROWSERS_PATH: process.env.PLAYWRIGHT_BROWSERS_PATH || '',
       };
       if (proxyUsername) env.PROXY_USERNAME = proxyUsername;
       if (proxyPassword) env.PROXY_PASSWORD = proxyPassword;
@@ -504,6 +511,7 @@ describe('Playwright Client Manual Tests', () => {
           TIMEOUT: '60000',
           STEALTH_MODE: 'false',
           PATH: process.env.PATH || '',
+          PLAYWRIGHT_BROWSERS_PATH: process.env.PLAYWRIGHT_BROWSERS_PATH || '',
         },
       });
       await directClient.connect();
@@ -536,6 +544,7 @@ describe('Playwright Client Manual Tests', () => {
         STEALTH_MODE: 'true',
         PROXY_URL: proxyUrl!,
         PATH: process.env.PATH || '',
+        PLAYWRIGHT_BROWSERS_PATH: process.env.PLAYWRIGHT_BROWSERS_PATH || '',
       };
       if (proxyUsername) env.PROXY_USERNAME = proxyUsername;
       if (proxyPassword) env.PROXY_PASSWORD = proxyPassword;

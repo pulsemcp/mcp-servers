@@ -33,6 +33,7 @@ describe('Screenshot Resource Storage Manual Tests', () => {
         STEALTH_MODE: 'false',
         SCREENSHOT_STORAGE_PATH: testStoragePath,
         PATH: process.env.PATH || '',
+        PLAYWRIGHT_BROWSERS_PATH: process.env.PLAYWRIGHT_BROWSERS_PATH || '',
       },
     });
     await client.connect();
