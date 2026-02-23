@@ -30,98 +30,97 @@ npm run test:manual
 
 ## Latest Test Results
 
-**Test Date:** 2026-01-18
-**Branch:** agent-orchestrator/fix-ignore-https-errors-default
-**Commit:** 924f4d8 (v0.0.9 - fix IGNORE_HTTPS_ERRORS default for library usage)
+**Test Date:** 2026-02-23
+**Branch:** agent-orchestrator/video-recording-tools
+**Commit:** e0f2624 (v0.1.0 - add video recording tools)
 **Tested By:** Claude
 
 ### Summary
 
-**Overall:** 33 tests pass (100%)
+**Overall:** 57 functional tests pass (100%)
 
-All functional and integration tests pass, including:
+All functional tests pass, including new video recording and storage tests:
 
 - Core Playwright functionality (navigation, screenshots, state management)
-- Stealth mode anti-bot protection tests
+- Video recording tools (start/stop recording, context recycling)
+- Video storage system (write, read, list, delete, factory)
+- Video resources exposed via MCP resources handlers
 - Screenshot resource storage tests
 - Screenshot dimension limiting to prevent API errors
 - Browser permissions support
 - IGNORE_HTTPS_ERRORS environment variable support
 
-### Changes in v0.0.9
+### Changes in v0.1.0
 
-Fixed the default behavior for `IGNORE_HTTPS_ERRORS` when using the server as a library:
+Added video recording support with context recycling:
 
-- Library usage now correctly defaults to `true` (ignore HTTPS errors)
-- Previously, library usage without explicitly passing `ignoreHttpsErrors: true` would only ignore HTTPS errors when a proxy was configured
-- CLI usage was already correct and remains unchanged
+- New `browser_start_recording` tool to begin capturing browser interactions as WebM video
+- New `browser_stop_recording` tool to stop recording and save the video as an MCP resource
+- Video storage system (`FileSystemVideoStorage`, `VideoStorageFactory`) following the screenshot pattern
+- `VIDEO_STORAGE_PATH` environment variable for configuring video storage location
+- Videos exposed as MCP resources alongside screenshots
+- Context recycling approach creates new browser context with/without `recordVideo` option
+- Tool descriptions document that cookies/localStorage/sessionStorage are lost on start/stop
 
 ### Test Cases Status
 
-| Test Suite          | Tests | Status  |
-| ------------------- | ----- | ------- |
-| Functional Tests    | 33    | ✅ Pass |
-| Integration Tests   | 6     | ✅ Pass |
-| Screenshot Clipping | 2     | ✅ Pass |
+| Test Suite                | Tests | Status |
+| ------------------------- | ----- | ------ |
+| Functional: Tools         | 21    | Pass   |
+| Functional: Storage       | 14    | Pass   |
+| Functional: Video Storage | 15    | Pass   |
+| Functional: Resources     | 7     | Pass   |
 
 ### Detailed Results
 
-#### Playwright Client Tests (13 tests)
+#### Tool Tests (21 tests)
 
-| Tool               | Functional Test | Integration Test | Manual Test |
-| ------------------ | --------------- | ---------------- | ----------- |
-| browser_execute    | ✅ Pass         | ✅ Pass          | ✅ Pass     |
-| browser_screenshot | ✅ Pass         | ✅ Pass          | ✅ Pass     |
-| browser_get_state  | ✅ Pass         | ✅ Pass          | ✅ Pass     |
-| browser_close      | ✅ Pass         | ✅ Pass          | ✅ Pass     |
+| Tool                    | Functional Test | Status |
+| ----------------------- | --------------- | ------ |
+| browser_execute         | 4 tests         | Pass   |
+| browser_screenshot      | 6 tests         | Pass   |
+| browser_get_state       | 2 tests         | Pass   |
+| browser_close           | 1 test          | Pass   |
+| browser_start_recording | 3 tests         | Pass   |
+| browser_stop_recording  | 3 tests         | Pass   |
+| Tool Registration       | 1 test          | Pass   |
+| Unknown tool            | 1 test          | Pass   |
 
-#### Screenshot Resource Storage Tests (7 tests)
+#### Video Storage Tests (15 tests)
 
-| Test Case                                    | Result  | Details                                         |
-| -------------------------------------------- | ------- | ----------------------------------------------- |
-| Save real screenshot to storage              | ✅ Pass | Screenshot saved as PNG file (~20KB)            |
-| Save full-page screenshot to storage         | ✅ Pass | Metadata correctly records fullPage: true       |
-| Read back saved screenshot                   | ✅ Pass | Base64 content matches original                 |
-| List saved screenshots                       | ✅ Pass | Returns resources sorted by timestamp (desc)    |
-| Delete screenshot                            | ✅ Pass | File and metadata removed from disk             |
-| Storage factory uses SCREENSHOT_STORAGE_PATH | ✅ Pass | Environment variable correctly configures path  |
-| Capture screenshot after navigation          | ✅ Pass | Metadata captures correct pageUrl and pageTitle |
+| Test Case                               | Result | Details                                             |
+| --------------------------------------- | ------ | --------------------------------------------------- |
+| Save video and return file URI          | Pass   | Video copied and URI returned with .webm extension  |
+| Create WebM and JSON metadata files     | Pass   | Both files created alongside each other             |
+| Save correct metadata                   | Pass   | pageUrl, pageTitle, durationMs, timestamp all saved |
+| Copy video file content correctly       | Pass   | Content matches source file                         |
+| Read a saved video                      | Pass   | Base64 content matches original                     |
+| Read non-existent resource              | Pass   | Throws 'Resource not found' error                   |
+| List empty directory                    | Pass   | Returns empty array                                 |
+| List saved videos                       | Pass   | Returns correct count with metadata                 |
+| Sort by timestamp descending            | Pass   | Most recent first                                   |
+| Exists for existing resource            | Pass   | Returns true                                        |
+| Exists for non-existent resource        | Pass   | Returns false                                       |
+| Delete video and metadata               | Pass   | Both files removed                                  |
+| Delete non-existent resource            | Pass   | Throws error                                        |
+| Factory uses VIDEO_STORAGE_PATH env var | Pass   | Custom path respected                               |
+| Factory reuses same instance            | Pass   | Singleton pattern works                             |
 
-#### Proxy Mode Tests (5 tests) - NEW
+#### Resource Tests (7 tests)
 
-| Test Case                          | Result | Details                                                   |
-| ---------------------------------- | ------ | --------------------------------------------------------- |
-| Connect through proxy              | Pass   | Successfully fetched external IP via BrightData proxy     |
-| Verify proxy IP differs from local | Pass   | Proxy IP: `97.181.22.160`, Direct IP: `143.105.119.238`   |
-| Proxy + Stealth mode combined      | Pass   | Webdriver "not found" when using proxy + stealth together |
-| Config shows proxy enabled         | Pass   | `proxyEnabled: true` in browser state                     |
-| Close proxy browser                | Pass   | Browser cleanup works correctly with proxy                |
-
-#### Anti-Bot Protection Test Results
-
-| Test Case                             | Result  | Details                                                       |
-| ------------------------------------- | ------- | ------------------------------------------------------------- |
-| claude.ai login WITHOUT stealth mode  | Blocked | `isBlocked: true`, `hasLoginForm: false` - protection active  |
-| claude.ai login WITH stealth mode     | Success | `isBlocked: true` (cf- markers), `hasLoginForm: true` - works |
-| bot.sannysoft.com webdriver detection | Pass    | Webdriver not detected with stealth mode                      |
-
-### Key Findings
-
-1. **Screenshot resource storage works correctly**: Screenshots are saved to filesystem with proper metadata (pageUrl, pageTitle, timestamp, fullPage)
-2. **File format verified**: Screenshots saved as valid PNG files (~20KB for example.com)
-3. **Metadata persistence verified**: JSON metadata files created alongside PNG files
-4. **SCREENSHOT_STORAGE_PATH env var works**: Factory correctly uses custom storage path
-5. **Stealth mode effectively bypasses anti-bot protection**: The claude.ai login page shows the login form with stealth mode
-6. **WebDriver detection avoided**: bot.sannysoft.com shows webdriver as "not found" when using stealth mode
-7. **Proxy support works with BrightData**: Residential proxy integration successfully masks real IP with rotating IPs
-8. **Proxy + Stealth combination works**: Both features can be used together for maximum anti-detection
-9. **HTTPS handling**: Proxy mode correctly ignores HTTPS errors for residential proxies that perform TLS inspection
+| Test Case                        | Result | Details                               |
+| -------------------------------- | ------ | ------------------------------------- |
+| Empty list when no resources     | Pass   | Returns empty array                   |
+| List saved screenshots           | Pass   | Returns PNG resources with metadata   |
+| List saved videos                | Pass   | Returns WebM resources with metadata  |
+| List both screenshots and videos | Pass   | Both types returned together          |
+| Read a saved screenshot          | Pass   | Returns correct mimeType and blob     |
+| Read a saved video               | Pass   | Returns correct mimeType (video/webm) |
+| Error for non-existent resource  | Pass   | Throws 'Resource not found'           |
 
 ### Notes
 
 - Functional tests verify tool handler behavior with mocked Playwright client
-- Integration tests verify MCP protocol compliance
-- Manual tests use real Chromium browser with actual network requests
-- Stealth mode adds ~100ms overhead for plugin initialization
-- Screenshot storage tests verified with real browser screenshots (~20KB PNG files)
-- Proxy mode requires `ignoreHTTPSErrors` for residential proxies that perform HTTPS inspection
+- Video recording tests use mock file operations (no real Playwright browser needed)
+- Context recycling approach is validated via mock client that tracks recording state
+- Manual tests with real browser not run for this change (video recording requires real browser context lifecycle which cannot be tested without Playwright browsers installed)
