@@ -9,6 +9,7 @@ import { postMessageTool } from './tools/post-message.js';
 import { replyToThreadTool } from './tools/reply-to-thread.js';
 import { updateMessageTool } from './tools/update-message.js';
 import { reactToMessageTool } from './tools/react-to-message.js';
+import { downloadFileTool } from './tools/download-file.js';
 
 /**
  * Tool groups for permission-based access control
@@ -73,6 +74,7 @@ const ALL_TOOLS: ToolDefinition[] = [
   { factory: getChannelsTool, groups: ['readonly', 'write'] },
   { factory: getChannelTool, groups: ['readonly', 'write'] },
   { factory: getThreadTool, groups: ['readonly', 'write'] },
+  { factory: downloadFileTool, groups: ['readonly', 'write'] },
   // Write tools
   { factory: postMessageTool, groups: ['write'] },
   { factory: replyToThreadTool, groups: ['write'] },

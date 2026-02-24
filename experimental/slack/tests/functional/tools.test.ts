@@ -8,6 +8,7 @@ import { postMessageTool } from '../../shared/src/tools/post-message.js';
 import { replyToThreadTool } from '../../shared/src/tools/reply-to-thread.js';
 import { updateMessageTool } from '../../shared/src/tools/update-message.js';
 import { reactToMessageTool } from '../../shared/src/tools/react-to-message.js';
+import { downloadFileTool } from '../../shared/src/tools/download-file.js';
 import type { ISlackClient } from '../../shared/src/server.js';
 
 describe('Slack MCP Server Tools', () => {
@@ -74,14 +75,16 @@ describe('Slack MCP Server Tools', () => {
       expect(result.content[0].text).toContain('Image: https://example.com/preview.png');
     });
 
-    it('should display file info for uploaded files', async () => {
+    it('should display file info with ID and download hint', async () => {
       const tool = getChannelTool(mockServer, () => mockClient);
       const result = await tool.handler({ channel_id: 'C123456789' });
 
       expect(result.content[0].text).toContain('File:');
       expect(result.content[0].text).toContain('screenshot.png');
       expect(result.content[0].text).toContain('image/png');
-      expect(result.content[0].text).toContain('Link: https://slack.com/files/screenshot.png');
+      expect(result.content[0].text).toContain('id: F123456789');
+      expect(result.content[0].text).toContain('use slack_download_file to download');
+      expect(result.content[0].text).not.toContain('Link: https://slack.com/files/screenshot.png');
     });
 
     it('should get channel info without messages when requested', async () => {
@@ -135,10 +138,11 @@ describe('Slack MCP Server Tools', () => {
       expect(result.content[0].text).toContain('[GitHub PR](https://github.com/org/repo/pull/1)');
       expect(result.content[0].text).toContain('Thumbnail: https://github.com/thumb.png');
 
-      // Reply with file
+      // Reply with file (shows ID and download hint, not URL)
       expect(result.content[0].text).toContain('report.pdf');
       expect(result.content[0].text).toContain('application/pdf');
-      expect(result.content[0].text).toContain('Link: https://slack.com/files/report.pdf');
+      expect(result.content[0].text).toContain('id: F987654321');
+      expect(result.content[0].text).toContain('use slack_download_file to download');
     });
 
     it('should require channel_id and thread_ts', async () => {
@@ -255,6 +259,40 @@ describe('Slack MCP Server Tools', () => {
         '1234567890.123456',
         'thumbsup'
       );
+    });
+  });
+
+  describe('slack_download_file', () => {
+    it('should download a file and return local path', async () => {
+      const tool = downloadFileTool(mockServer, () => mockClient);
+      const result = await tool.handler({ file_id: 'F123456789' });
+
+      expect(result.content[0].text).toContain('File downloaded successfully');
+      expect(result.content[0].text).toContain('screenshot.png');
+      expect(result.content[0].text).toContain('file://');
+      expect(result.content[0].text).toContain('F123456789');
+      expect(mockClient.getFileInfo).toHaveBeenCalledWith('F123456789');
+      expect(mockClient.downloadFile).toHaveBeenCalledWith(
+        'https://files.slack.com/files-pri/T123/download/screenshot.png'
+      );
+    });
+
+    it('should require file_id parameter', async () => {
+      const tool = downloadFileTool(mockServer, () => mockClient);
+      const result = await tool.handler({});
+
+      expect(result.isError).toBe(true);
+    });
+
+    it('should handle errors gracefully', async () => {
+      (mockClient.getFileInfo as ReturnType<typeof vi.fn>).mockRejectedValue(
+        new Error('file_not_found')
+      );
+      const tool = downloadFileTool(mockServer, () => mockClient);
+      const result = await tool.handler({ file_id: 'F000000000' });
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('Error downloading file');
     });
   });
 });
