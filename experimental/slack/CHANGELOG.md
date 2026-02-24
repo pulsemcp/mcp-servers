@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.0.3] - 2026-02-24
+
 ### Added
 
 - New `slack_download_file` tool — downloads Slack files to a local temp path using the bot token, returns a `file://` URI the agent can read
