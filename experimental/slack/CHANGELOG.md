@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.0.2] - 2026-02-24
+
+### Added
+
+- Support for displaying Slack message attachments (unfurled link previews with title, text, and image URLs)
+- Support for displaying file uploads (file name, type, size, and download link)
+- New `SlackFile` type for Slack file objects
+- Extended `Attachment` type with unfurled link fields (`from_url`, `original_url`, `service_name`, `service_icon`)
+
 ### Changed
 
 - Renamed package from `@pulsemcp/slack-mcp-server` to `slack-workspace-mcp-server`

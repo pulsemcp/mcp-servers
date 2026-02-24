@@ -1,6 +1,7 @@
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { z } from 'zod';
 import type { ClientFactory } from '../server.js';
+import { formatMessageExtras } from './format-message-extras.js';
 
 const PARAM_DESCRIPTIONS = {
   channel_id:
@@ -99,6 +100,7 @@ export function getThreadTool(server: Server, clientFactory: ClientFactory) {
         output += `## Parent Message\n`;
         output += `**${parentSender}** (${parentTime})\n`;
         output += `${parent.text}${parentReactions}\n`;
+        output += formatMessageExtras(parent);
         output += `ts: ${parent.ts}\n\n`;
 
         // Format replies
@@ -114,6 +116,7 @@ export function getThreadTool(server: Server, clientFactory: ClientFactory) {
 
             output += `**${sender}** (${time})\n`;
             output += `${reply.text}${reactions}\n`;
+            output += formatMessageExtras(reply);
             output += `ts: ${reply.ts}\n\n`;
           }
 

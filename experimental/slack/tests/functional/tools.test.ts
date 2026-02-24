@@ -64,6 +64,26 @@ describe('Slack MCP Server Tools', () => {
       expect(mockClient.getMessages).toHaveBeenCalled();
     });
 
+    it('should display attachment info for unfurled links', async () => {
+      const tool = getChannelTool(mockServer, () => mockClient);
+      const result = await tool.handler({ channel_id: 'C123456789' });
+
+      expect(result.content[0].text).toContain('Attachment:');
+      expect(result.content[0].text).toContain('[Example Article](https://example.com/article)');
+      expect(result.content[0].text).toContain('An interesting article about testing');
+      expect(result.content[0].text).toContain('Image: https://example.com/preview.png');
+    });
+
+    it('should display file info for uploaded files', async () => {
+      const tool = getChannelTool(mockServer, () => mockClient);
+      const result = await tool.handler({ channel_id: 'C123456789' });
+
+      expect(result.content[0].text).toContain('File:');
+      expect(result.content[0].text).toContain('screenshot.png');
+      expect(result.content[0].text).toContain('image/png');
+      expect(result.content[0].text).toContain('Link: https://slack.com/files/screenshot.png');
+    });
+
     it('should get channel info without messages when requested', async () => {
       const tool = getChannelTool(mockServer, () => mockClient);
       const result = await tool.handler({
@@ -102,6 +122,23 @@ describe('Slack MCP Server Tools', () => {
         '1234567890.123456',
         expect.any(Object)
       );
+    });
+
+    it('should display attachments in parent and reply messages', async () => {
+      const tool = getThreadTool(mockServer, () => mockClient);
+      const result = await tool.handler({
+        channel_id: 'C123456789',
+        thread_ts: '1234567890.123456',
+      });
+
+      // Parent message attachment (unfurled GitHub link)
+      expect(result.content[0].text).toContain('[GitHub PR](https://github.com/org/repo/pull/1)');
+      expect(result.content[0].text).toContain('Thumbnail: https://github.com/thumb.png');
+
+      // Reply with file
+      expect(result.content[0].text).toContain('report.pdf');
+      expect(result.content[0].text).toContain('application/pdf');
+      expect(result.content[0].text).toContain('Link: https://slack.com/files/report.pdf');
     });
 
     it('should require channel_id and thread_ts', async () => {
