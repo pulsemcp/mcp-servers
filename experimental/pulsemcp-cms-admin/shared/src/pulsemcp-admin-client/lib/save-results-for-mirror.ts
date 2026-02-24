@@ -1,25 +1,4 @@
-export interface ProctorResultInput {
-  exam_id: string;
-  status: string;
-  data?: Record<string, unknown>;
-}
-
-export interface ProctorSaveResultsParams {
-  mirror_id: number;
-  runtime_id: string;
-  results: ProctorResultInput[];
-}
-
-export interface ProctorSaveResultsResponse {
-  saved: Array<{
-    exam_id: string;
-    proctor_result_id: number;
-  }>;
-  errors: Array<{
-    exam_id: string;
-    error: string;
-  }>;
-}
+import type { ProctorSaveResultsParams, ProctorSaveResultsResponse } from '../../types.js';
 
 export async function saveResultsForMirror(
   apiKey: string,

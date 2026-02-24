@@ -1,19 +1,8 @@
-export interface ProctorExamStreamLine {
-  type: 'log' | 'exam_result' | 'summary' | 'error';
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  [key: string]: any;
-}
-
-export interface ProctorRunExamParams {
-  mirror_ids: number[];
-  runtime_id: string;
-  exam_type: 'auth-check' | 'init-tools-list' | 'both';
-  max_retries?: number;
-}
-
-export interface ProctorRunExamResponse {
-  lines: ProctorExamStreamLine[];
-}
+import type {
+  ProctorExamStreamLine,
+  ProctorRunExamParams,
+  ProctorRunExamResponse,
+} from '../../types.js';
 
 export async function runExamForMirror(
   apiKey: string,
@@ -66,7 +55,8 @@ export async function runExamForMirror(
       try {
         lines.push(JSON.parse(trimmed) as ProctorExamStreamLine);
       } catch {
-        // Skip malformed lines
+        // Include malformed lines as error entries so they're visible in output
+        lines.push({ type: 'error', message: `Malformed NDJSON line: ${trimmed}` });
       }
     }
   }

@@ -85,7 +85,7 @@ import { saveResultsForMirror } from './tools/save-results-for-mirror.js';
  * - mcp_servers / mcp_servers_readonly: Unified MCP server tools (abstracted interface)
  * - redirects / redirects_readonly: URL redirect management tools
  * - good_jobs / good_jobs_readonly: GoodJob background job management tools
- * - proctor / proctor_readonly: Proctor exam execution and result storage tools
+ * - proctor: Proctor exam execution and result storage tools (write-only, no readonly variant since both tools trigger side effects)
  */
 export type ToolGroup =
   | 'newsletter'
@@ -108,8 +108,7 @@ export type ToolGroup =
   | 'redirects_readonly'
   | 'good_jobs'
   | 'good_jobs_readonly'
-  | 'proctor'
-  | 'proctor_readonly';
+  | 'proctor';
 
 /** Base groups without _readonly suffix */
 type BaseToolGroup =
@@ -336,7 +335,6 @@ const VALID_TOOL_GROUPS: ToolGroup[] = [
   'good_jobs',
   'good_jobs_readonly',
   'proctor',
-  'proctor_readonly',
 ];
 
 /**
@@ -445,8 +443,7 @@ function shouldIncludeTool(toolDef: ToolDefinition, enabledGroups: ToolGroup[]):
  * - redirects_readonly: URL redirect tools (read only)
  * - good_jobs: GoodJob background job management tools (read + write)
  * - good_jobs_readonly: GoodJob tools (read only)
- * - proctor: Proctor exam execution and result storage tools (read + write)
- * - proctor_readonly: Proctor tools (read only)
+ * - proctor: Proctor exam execution and result storage tools (write-only, no readonly variant)
  *
  * @param clientFactory - Factory function that creates client instances
  * @param enabledGroups - Optional comma-separated list of enabled tool groups (overrides env var)

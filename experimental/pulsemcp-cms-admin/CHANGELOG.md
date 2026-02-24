@@ -10,7 +10,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
-- Added `proctor` and `proctor_readonly` tool groups for proctor exam execution and result storage
+- Added `proctor` tool group for proctor exam execution and result storage (no readonly variant — both tools trigger side effects)
   - `run_exam_for_mirror` - Run proctor exams (auth-check, init-tools-list, or both) against unofficial mirrors via Fly Machines
   - `save_results_for_mirror` - Save proctor exam results for an unofficial mirror with automatic sensitive data redaction
 - Expanded `server_directory` tool group to be a comprehensive superset that includes tools from `mcp_servers`, `unofficial_mirrors`, `official_mirrors`, `official_queue`, and `mcp_jsons` groups for unified server directory management

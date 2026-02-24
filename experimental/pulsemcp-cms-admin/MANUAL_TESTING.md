@@ -11,7 +11,7 @@
 
 **v0.6.10 Changes:**
 
-- Added `proctor` and `proctor_readonly` tool groups:
+- Added `proctor` tool group (no readonly variant — both tools trigger side effects):
   - `run_exam_for_mirror` - Run proctor exams against unofficial mirrors via Fly Machines
   - `save_results_for_mirror` - Save proctor exam results with automatic sensitive data redaction
 - Expanded `server_directory` to be a comprehensive superset group covering `mcp_servers`, `unofficial_mirrors`, `official_mirrors`, `official_queue`, and `mcp_jsons` tools
