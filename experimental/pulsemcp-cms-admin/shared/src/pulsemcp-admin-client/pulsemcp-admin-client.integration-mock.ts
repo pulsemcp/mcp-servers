@@ -1167,5 +1167,28 @@ export function createMockPulseMCPAdminClient(mockData: MockData): IPulseMCPAdmi
         deleted_count: 0,
       };
     },
+
+    // Proctor methods
+    async runExamForMirror() {
+      return {
+        lines: [
+          { type: 'log' as const, message: 'Starting exam run' },
+          {
+            type: 'summary' as const,
+            total: 0,
+            passed: 0,
+            failed: 0,
+            skipped: 0,
+          },
+        ],
+      };
+    },
+
+    async saveResultsForMirror() {
+      return {
+        saved: [],
+        errors: [],
+      };
+    },
   };
 }

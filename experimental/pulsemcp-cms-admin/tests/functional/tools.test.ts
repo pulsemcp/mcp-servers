@@ -102,6 +102,9 @@ function createMockClient(overrides?: Partial<IPulseMCPAdminClient>): IPulseMCPA
     rescheduleGoodJob: vi.fn(),
     forceTriggerGoodJobCron: vi.fn(),
     cleanupGoodJobs: vi.fn(),
+    // Proctor methods
+    runExamForMirror: vi.fn(),
+    saveResultsForMirror: vi.fn(),
     ...overrides,
   };
 }
@@ -762,6 +765,7 @@ describe('Newsletter Tools', () => {
         'mcp_servers',
         'redirects',
         'good_jobs',
+        'proctor',
       ]);
     });
 
@@ -778,6 +782,7 @@ describe('Newsletter Tools', () => {
         'mcp_servers',
         'redirects',
         'good_jobs',
+        'proctor',
       ]);
     });
 
@@ -808,21 +813,7 @@ describe('Newsletter Tools', () => {
   });
 
   describe('createRegisterTools with toolgroups filtering', () => {
-    const createMockClient2 = (): IPulseMCPAdminClient => ({
-      getPosts: vi.fn(),
-      getPost: vi.fn(),
-      createPost: vi.fn(),
-      updatePost: vi.fn(),
-      uploadImage: vi.fn(),
-      getAuthors: vi.fn(),
-      getAuthorBySlug: vi.fn(),
-      getAuthorById: vi.fn(),
-      getMCPServerBySlug: vi.fn(),
-      getMCPServerById: vi.fn(),
-      getMCPClientBySlug: vi.fn(),
-      getMCPClientById: vi.fn(),
-      searchMCPImplementations: vi.fn(),
-    });
+    const createMockClient2 = (): IPulseMCPAdminClient => createMockClient();
 
     it('should register only newsletter tools when newsletter group is enabled', async () => {
       const mockServer = new Server(
@@ -870,13 +861,20 @@ describe('Newsletter Tools', () => {
       const listToolsHandler = handlers.get('tools/list');
       const result = await listToolsHandler({ method: 'tools/list', params: {} });
 
-      expect(result.tools).toHaveLength(5);
+      // server_directory is a superset: 5 original + 7 official_queue + 5 unofficial_mirrors + 2 official_mirrors + 5 mcp_jsons + 3 mcp_servers = 27 tools
+      expect(result.tools).toHaveLength(27);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const toolNames = result.tools.map((t: any) => t.name);
       expect(toolNames).toContain('search_mcp_implementations');
       expect(toolNames).toContain('get_draft_mcp_implementations');
       expect(toolNames).toContain('save_mcp_implementation');
       expect(toolNames).toContain('find_providers');
+      // Also includes tools from overlapping groups
+      expect(toolNames).toContain('get_official_mirror_queue_items');
+      expect(toolNames).toContain('get_unofficial_mirrors');
+      expect(toolNames).toContain('get_official_mirrors');
+      expect(toolNames).toContain('get_mcp_jsons');
+      expect(toolNames).toContain('list_mcp_servers');
       expect(toolNames).not.toContain('get_newsletter_posts');
     });
 
@@ -898,7 +896,8 @@ describe('Newsletter Tools', () => {
       const listToolsHandler = handlers.get('tools/list');
       const result = await listToolsHandler({ method: 'tools/list', params: {} });
 
-      expect(result.tools).toHaveLength(18); // 6 newsletter + 5 server_directory + 7 official_queue
+      // 6 newsletter + 27 server_directory (superset, already includes official_queue tools) = 33
+      expect(result.tools).toHaveLength(33);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const toolNames = result.tools.map((t: any) => t.name);
       expect(toolNames).toContain('get_newsletter_posts');
@@ -924,8 +923,8 @@ describe('Newsletter Tools', () => {
       const listToolsHandler = handlers.get('tools/list');
       const result = await listToolsHandler({ method: 'tools/list', params: {} });
 
-      // 6 newsletter + 5 server_directory + 7 official_queue + 5 unofficial_mirrors + 2 official_mirrors + 2 tenants + 5 mcp_jsons + 3 mcp_servers + 5 redirects + 10 good_jobs = 50 tools
-      expect(result.tools).toHaveLength(50);
+      // 6 newsletter + 5 server_directory + 7 official_queue + 5 unofficial_mirrors + 2 official_mirrors + 2 tenants + 5 mcp_jsons + 3 mcp_servers + 5 redirects + 10 good_jobs + 2 proctor = 52 tools
+      expect(result.tools).toHaveLength(52);
     });
 
     it('should register only read-only newsletter tools when newsletter_readonly group is enabled', async () => {
@@ -973,14 +972,19 @@ describe('Newsletter Tools', () => {
       const listToolsHandler = handlers.get('tools/list');
       const result = await listToolsHandler({ method: 'tools/list', params: {} });
 
-      // 3 newsletter read + 3 server_directory read + 2 official_queue read = 8 tools
-      expect(result.tools).toHaveLength(8);
+      // 3 newsletter read + 13 server_directory read (superset, already includes official_queue read) = 16 tools
+      expect(result.tools).toHaveLength(16);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const toolNames = result.tools.map((t: any) => t.name);
       // Read-only tools should be present
       expect(toolNames).toContain('get_newsletter_posts');
       expect(toolNames).toContain('search_mcp_implementations');
       expect(toolNames).toContain('get_official_mirror_queue_items');
+      // Tools from overlapping groups also available via server_directory_readonly
+      expect(toolNames).toContain('get_unofficial_mirrors');
+      expect(toolNames).toContain('get_official_mirrors');
+      expect(toolNames).toContain('get_mcp_jsons');
+      expect(toolNames).toContain('list_mcp_servers');
       // Write tools should NOT be present
       expect(toolNames).not.toContain('draft_newsletter_post');
       expect(toolNames).not.toContain('save_mcp_implementation');
@@ -1006,8 +1010,8 @@ describe('Newsletter Tools', () => {
       const listToolsHandler = handlers.get('tools/list');
       const result = await listToolsHandler({ method: 'tools/list', params: {} });
 
-      // 6 newsletter (all) + 3 server_directory read = 9 tools
-      expect(result.tools).toHaveLength(9);
+      // 6 newsletter (all) + 13 server_directory read (superset) = 19 tools
+      expect(result.tools).toHaveLength(19);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const toolNames = result.tools.map((t: any) => t.name);
       // Newsletter write tools should be present
