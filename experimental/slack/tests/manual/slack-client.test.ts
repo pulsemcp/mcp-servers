@@ -194,4 +194,69 @@ describe('Slack MCP Server - Manual Tests', () => {
       }
     });
   });
+
+  describe('File Download Operations', () => {
+    let testChannelId: string;
+
+    beforeAll(async () => {
+      const channelsResult = await client.callTool('slack_get_channels', {});
+      expect(channelsResult.isError).toBeFalsy();
+
+      const channelsText = (channelsResult.content[0] as { text: string }).text;
+      const idMatch = channelsText.match(/ID: (\S+)/);
+      if (!idMatch) {
+        throw new Error('No channels available for testing');
+      }
+      testChannelId = idMatch[1];
+    });
+
+    it('should download a file from channel messages', async () => {
+      // Get channel messages and look for file IDs
+      const channelResult = await client.callTool('slack_get_channel', {
+        channel_id: testChannelId,
+        include_messages: true,
+      });
+      expect(channelResult.isError).toBeFalsy();
+
+      const channelText = (channelResult.content[0] as { text: string }).text;
+
+      // Look for file IDs in the message output (format: "id: F1234567890")
+      const fileIdMatch = channelText.match(/id: (F[A-Z0-9]+)/);
+      if (!fileIdMatch) {
+        console.log(
+          'No files found in channel messages — skipping download test. Upload a file to the channel to test this.'
+        );
+        return;
+      }
+
+      const fileId = fileIdMatch[1];
+      console.log(`Found file ${fileId} in channel messages, attempting download...`);
+
+      const result = await client.callTool('slack_download_file', {
+        file_id: fileId,
+      });
+      expect(result.isError).toBeFalsy();
+
+      const text = (result.content[0] as { text: string }).text;
+      expect(text).toContain('File downloaded successfully');
+      expect(text).toContain('file://');
+      expect(text).toContain('Path:');
+
+      // Extract and log the downloaded path
+      const pathMatch = text.match(/Path: (file:\/\/\S+)/);
+      console.log(`File downloaded to: ${pathMatch?.[1]}`);
+      console.log(`Full response:\n${text}`);
+    });
+
+    it('should handle invalid file ID gracefully', async () => {
+      const result = await client.callTool('slack_download_file', {
+        file_id: 'F0000000000',
+      });
+      expect(result.isError).toBeTruthy();
+
+      const text = (result.content[0] as { text: string }).text;
+      expect(text).toContain('Error');
+      console.log(`Error response for invalid file: ${text}`);
+    });
+  });
 });

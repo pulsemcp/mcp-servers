@@ -66,13 +66,9 @@ export function formatMessageExtras(msg: Message): string {
         parts.push(formatFileSize(file.size));
       }
 
-      if (file.permalink) {
-        parts.push(`Link: ${file.permalink}`);
-      } else if (file.url_private) {
-        parts.push(`Link: ${file.url_private}`);
-      }
+      parts.push(`id: ${file.id}`);
 
-      output += `  📄 File: ${parts.join(' | ')}\n`;
+      output += `  📄 File: ${parts.join(' | ')} — use slack_download_file to download\n`;
     }
   }
 

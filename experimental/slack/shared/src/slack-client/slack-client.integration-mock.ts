@@ -1,5 +1,5 @@
 import type { ISlackClient } from '../server.js';
-import type { Channel, Message } from '../types.js';
+import type { Channel, Message, SlackFile } from '../types.js';
 
 interface MockData {
   channels?: Channel[];
@@ -144,6 +144,21 @@ export function createIntegrationMockSlackClient(
 
     async addReaction(): Promise<void> {
       // No-op for mock
+    },
+
+    async getFileInfo(fileId: string): Promise<SlackFile> {
+      return {
+        id: fileId,
+        name: `mock-file-${fileId}.txt`,
+        mimetype: 'text/plain',
+        size: 1024,
+        url_private: `https://files.slack.com/files-pri/mock/${fileId}`,
+        url_private_download: `https://files.slack.com/files-pri/mock/${fileId}/download`,
+      };
+    },
+
+    async downloadFile(): Promise<Buffer> {
+      return Buffer.from('mock-file-content');
     },
   };
 

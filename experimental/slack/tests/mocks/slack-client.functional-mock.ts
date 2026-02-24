@@ -165,5 +165,18 @@ export function createMockSlackClient(): ISlackClient {
     }),
 
     addReaction: vi.fn().mockResolvedValue(undefined),
+
+    getFileInfo: vi.fn().mockResolvedValue({
+      id: 'F123456789',
+      name: 'screenshot.png',
+      title: 'screenshot',
+      mimetype: 'image/png',
+      size: 204800,
+      url_private: 'https://files.slack.com/files-pri/T123/screenshot.png',
+      url_private_download: 'https://files.slack.com/files-pri/T123/download/screenshot.png',
+      permalink: 'https://slack.com/files/screenshot.png',
+    }),
+
+    downloadFile: vi.fn().mockResolvedValue(Buffer.from('fake-file-content')),
   };
 }

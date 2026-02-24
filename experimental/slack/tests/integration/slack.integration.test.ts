@@ -138,12 +138,13 @@ describe('Slack MCP Server Integration Tests', () => {
       const result = await client.listTools();
       const tools = result.tools;
 
-      expect(tools).toHaveLength(7);
+      expect(tools).toHaveLength(8);
 
       const toolNames = tools.map((t) => t.name);
       expect(toolNames).toContain('slack_get_channels');
       expect(toolNames).toContain('slack_get_channel');
       expect(toolNames).toContain('slack_get_thread');
+      expect(toolNames).toContain('slack_download_file');
       expect(toolNames).toContain('slack_post_message');
       expect(toolNames).toContain('slack_reply_to_thread');
       expect(toolNames).toContain('slack_update_message');
@@ -220,10 +221,11 @@ describe('Slack MCP Server Integration Tests', () => {
       expect(text).toContain('A cool website');
       expect(text).toContain('Image: https://example.com/image.png');
 
-      // File upload
+      // File upload (shows ID and download hint, not URL)
       expect(text).toContain('document.pdf');
       expect(text).toContain('application/pdf');
-      expect(text).toContain('Link: https://slack.com/files/document.pdf');
+      expect(text).toContain('id: F111111111');
+      expect(text).toContain('use slack_download_file to download');
     });
   });
 
