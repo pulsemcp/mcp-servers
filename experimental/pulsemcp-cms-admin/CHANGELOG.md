@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [0.6.10] - 2026-02-24
+
 ### Added
 
 - Added `proctor` and `proctor_readonly` tool groups for proctor exam execution and result storage
