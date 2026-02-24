@@ -66,6 +66,37 @@ export function createMockSlackClient(): ISlackClient {
           ts: '1234567890.123457',
           reactions: [{ name: 'wave', count: 1, users: ['U123456789'] }],
         },
+        {
+          type: 'message',
+          user: 'U123456789',
+          text: 'Check out this link',
+          ts: '1234567890.123458',
+          attachments: [
+            {
+              title: 'Example Article',
+              title_link: 'https://example.com/article',
+              text: 'An interesting article about testing',
+              service_name: 'Example',
+              from_url: 'https://example.com/article',
+              image_url: 'https://example.com/preview.png',
+            },
+          ],
+        },
+        {
+          type: 'message',
+          user: 'U987654321',
+          text: 'Here is the screenshot',
+          ts: '1234567890.123459',
+          files: [
+            {
+              id: 'F123456789',
+              name: 'screenshot.png',
+              mimetype: 'image/png',
+              size: 204800,
+              permalink: 'https://slack.com/files/screenshot.png',
+            },
+          ],
+        },
       ],
       hasMore: false,
     }),
@@ -79,6 +110,16 @@ export function createMockSlackClient(): ISlackClient {
           ts: '1234567890.123456',
           thread_ts: '1234567890.123456',
           reply_count: 2,
+          attachments: [
+            {
+              title: 'GitHub PR',
+              title_link: 'https://github.com/org/repo/pull/1',
+              text: 'Fix: resolve attachment rendering',
+              service_name: 'GitHub',
+              from_url: 'https://github.com/org/repo/pull/1',
+              thumb_url: 'https://github.com/thumb.png',
+            },
+          ],
         },
         {
           type: 'message',
@@ -93,6 +134,15 @@ export function createMockSlackClient(): ISlackClient {
           text: 'Second reply',
           ts: '1234567890.123458',
           thread_ts: '1234567890.123456',
+          files: [
+            {
+              id: 'F987654321',
+              name: 'report.pdf',
+              mimetype: 'application/pdf',
+              size: 1048576,
+              permalink: 'https://slack.com/files/report.pdf',
+            },
+          ],
         },
       ],
       hasMore: false,

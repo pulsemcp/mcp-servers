@@ -1,6 +1,7 @@
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { z } from 'zod';
 import type { ClientFactory } from '../server.js';
+import { formatMessageExtras } from './format-message-extras.js';
 
 const PARAM_DESCRIPTIONS = {
   channel_id:
@@ -111,6 +112,7 @@ export function getChannelTool(server: Server, clientFactory: ClientFactory) {
 
               output += `**${sender}** (${time})${threadInfo}${reactions}\n`;
               output += `${msg.text}\n`;
+              output += formatMessageExtras(msg);
               if (msg.thread_ts && msg.thread_ts !== msg.ts) {
                 output += `↳ Reply to thread: ${msg.thread_ts}\n`;
               }

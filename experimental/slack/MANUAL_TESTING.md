@@ -40,41 +40,68 @@ npm run test:manual
 
 ## Latest Test Results
 
-**Test Date:** 2026-01-02
-**Branch:** claude/add-slack-mcp-server
-**Commit:** 898fbe3
+**Test Date:** 2026-02-24
+**Branch:** claude/slack-attachment-support
+**Commit:** d458082
 **Tested By:** Claude
 
 ### Summary
 
-**Overall:** 8 of 8 tests passed (100%)
+**Manual tests:** 7 of 7 tests passed (100%)
+**Functional tests:** 18 of 18 tests passed (100%)
+**Integration tests:** 12 of 12 tests passed (100%)
 
-All tests pass when the bot is properly invited to test channels (#general, #clawdbot-testing).
+### Manual Test Results (v0.0.2)
 
-### Detailed Results
+| Test                    | Status  | Notes                                          |
+| ----------------------- | ------- | ---------------------------------------------- |
+| List channels           | ✅ Pass | Found channels via real Slack API              |
+| Get channel info        | ✅ Pass | Retrieved #general (C08AX7WQ552) with metadata |
+| Post message            | ✅ Pass | Posted message to #general                     |
+| Add reaction            | ✅ Pass | Added white_check_mark reaction                |
+| Update message          | ✅ Pass | Updated posted message content                 |
+| Post thread reply       | ✅ Pass | Reply posted to thread                         |
+| Get thread with replies | ✅ Pass | Retrieved thread with 1 reply                  |
 
-| Test                 | Status  | Notes                                |
-| -------------------- | ------- | ------------------------------------ |
-| List channels        | ✅ Pass | Found 9 channels                     |
-| Get channel info     | ✅ Pass | Retrieved #general with 2 members    |
-| Get channel messages | ✅ Pass | Retrieved messages from #general     |
-| Post message         | ✅ Pass | Successfully posted to #general      |
-| Add reaction         | ✅ Pass | Successfully added thumbsup reaction |
-| Update message       | ✅ Pass | Successfully updated posted message  |
-| Post thread reply    | ✅ Pass | Successfully posted thread reply     |
-| Get thread replies   | ✅ Pass | Retrieved thread with all replies    |
+### Functional Test Results (v0.0.2)
 
-### Test Cases Status
+| Test                                             | Status  | Notes                                      |
+| ------------------------------------------------ | ------- | ------------------------------------------ |
+| List channels                                    | ✅ Pass | Lists channels correctly                   |
+| Get channel info with messages                   | ✅ Pass | Channel metadata and messages displayed    |
+| Display attachment info for unfurled links       | ✅ Pass | Title, text, image URL, service name shown |
+| Display file info for uploaded files             | ✅ Pass | File name, mimetype, size, permalink shown |
+| Get channel info without messages                | ✅ Pass | Metadata only when include_messages=false  |
+| Require channel_id parameter                     | ✅ Pass | Returns error without channel_id           |
+| Get thread with replies                          | ✅ Pass | Parent + replies displayed                 |
+| Display attachments in parent and reply messages | ✅ Pass | Attachments in parent, files in replies    |
+| Require channel_id and thread_ts                 | ✅ Pass | Returns error without thread_ts            |
+| Post a message                                   | ✅ Pass | Message posted successfully                |
+| Require channel_id and text                      | ✅ Pass | Returns error without text                 |
+| Reply to a thread                                | ✅ Pass | Reply posted to thread                     |
+| Support broadcast option                         | ✅ Pass | Broadcast flag passed correctly            |
+| Update a message                                 | ✅ Pass | Message updated successfully               |
+| Add a reaction                                   | ✅ Pass | Reaction added                             |
+| Strip colons from emoji name                     | ✅ Pass | Colons stripped before API call            |
+| Handle empty channel list                        | ✅ Pass | Shows "No channels found"                  |
+| Handle errors                                    | ✅ Pass | Returns isError with message               |
 
-| Tool                   | Functional Test | Integration Test | Manual Test |
-| ---------------------- | --------------- | ---------------- | ----------- |
-| slack_get_channels     | ✅ Pass         | ✅ Pass          | ✅ Pass     |
-| slack_get_channel      | ✅ Pass         | ✅ Pass          | ✅ Pass     |
-| slack_get_thread       | ✅ Pass         | ✅ Pass          | ✅ Pass     |
-| slack_post_message     | ✅ Pass         | ✅ Pass          | ✅ Pass     |
-| slack_reply_to_thread  | ✅ Pass         | ✅ Pass          | ✅ Pass     |
-| slack_update_message   | ✅ Pass         | ✅ Pass          | ✅ Pass     |
-| slack_react_to_message | ✅ Pass         | ✅ Pass          | ✅ Pass     |
+### Integration Test Results (v0.0.2)
+
+| Test                                      | Status  | Notes                                    |
+| ----------------------------------------- | ------- | ---------------------------------------- |
+| Initialize successfully                   | ✅ Pass | Server starts and connects               |
+| Register all expected tools               | ✅ Pass | 7 tools registered                       |
+| Proper tool descriptions and schemas      | ✅ Pass | Schemas validated                        |
+| List all channels                         | ✅ Pass | Found 2 channels                         |
+| Get specific channel details              | ✅ Pass | Channel metadata correct                 |
+| Include messages when requested           | ✅ Pass | Messages displayed                       |
+| Display attachments and files in messages | ✅ Pass | Attachments and files rendered in output |
+| Get thread with replies                   | ✅ Pass | Parent + reply shown                     |
+| Post a new message                        | ✅ Pass | Message posted                           |
+| Reply to a thread                         | ✅ Pass | Reply posted                             |
+| Update a message                          | ✅ Pass | Message updated                          |
+| Add a reaction                            | ✅ Pass | Reaction added                           |
 
 ## Getting the Bot Token
 

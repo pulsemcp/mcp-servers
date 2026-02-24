@@ -52,6 +52,36 @@ describe('Slack MCP Server Integration Tests', () => {
             text: 'Hello world',
             ts: '1234567890.123456',
           },
+          {
+            type: 'message',
+            user: 'U123456789',
+            text: 'Check this out',
+            ts: '1234567890.123460',
+            attachments: [
+              {
+                title: 'Link Preview',
+                title_link: 'https://example.com',
+                text: 'A cool website',
+                image_url: 'https://example.com/image.png',
+                from_url: 'https://example.com',
+              },
+            ],
+          },
+          {
+            type: 'message',
+            user: 'U123456789',
+            text: '',
+            ts: '1234567890.123461',
+            files: [
+              {
+                id: 'F111111111',
+                name: 'document.pdf',
+                mimetype: 'application/pdf',
+                size: 512000,
+                permalink: 'https://slack.com/files/document.pdf',
+              },
+            ],
+          },
         ],
       },
       threads: {
@@ -173,6 +203,27 @@ describe('Slack MCP Server Integration Tests', () => {
       expect(result.content[0].type).toBe('text');
       expect(result.content[0].text).toContain('## Recent Messages');
       expect(result.content[0].text).toContain('Hello world');
+    });
+
+    it('should display attachments and files in messages', async () => {
+      if (!client) throw new Error('Client not initialized');
+
+      const result = await client.callTool('slack_get_channel', {
+        channel_id: 'C111111111',
+        include_messages: true,
+      });
+
+      const text = result.content[0].text;
+
+      // Unfurled link attachment
+      expect(text).toContain('[Link Preview](https://example.com)');
+      expect(text).toContain('A cool website');
+      expect(text).toContain('Image: https://example.com/image.png');
+
+      // File upload
+      expect(text).toContain('document.pdf');
+      expect(text).toContain('application/pdf');
+      expect(text).toContain('Link: https://slack.com/files/document.pdf');
     });
   });
 
