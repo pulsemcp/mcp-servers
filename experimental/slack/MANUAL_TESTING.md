@@ -42,15 +42,26 @@ npm run test:manual
 
 **Test Date:** 2026-02-24
 **Branch:** claude/slack-attachment-support
-**Commit:** 0993879
+**Commit:** d458082
 **Tested By:** Claude
 
 ### Summary
 
-**Manual tests:** Not run — no SLACK_BOT_TOKEN available in this environment. This change only adds formatting for attachment/file data already returned by the Slack API; no API call behavior was modified.
-
+**Manual tests:** 7 of 7 tests passed (100%)
 **Functional tests:** 18 of 18 tests passed (100%)
 **Integration tests:** 12 of 12 tests passed (100%)
+
+### Manual Test Results (v0.0.2)
+
+| Test                    | Status  | Notes                                          |
+| ----------------------- | ------- | ---------------------------------------------- |
+| List channels           | ✅ Pass | Found channels via real Slack API              |
+| Get channel info        | ✅ Pass | Retrieved #general (C08AX7WQ552) with metadata |
+| Post message            | ✅ Pass | Posted message to #general                     |
+| Add reaction            | ✅ Pass | Added white_check_mark reaction                |
+| Update message          | ✅ Pass | Updated posted message content                 |
+| Post thread reply       | ✅ Pass | Reply posted to thread                         |
+| Get thread with replies | ✅ Pass | Retrieved thread with 1 reply                  |
 
 ### Functional Test Results (v0.0.2)
 
