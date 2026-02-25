@@ -468,8 +468,8 @@ describe('PulseMCP CMS Admin MCP Server Integration Tests', () => {
     it('should list all available tools', async () => {
       const tools = await client.listTools();
 
-      // 6 newsletter + 5 server_directory_all + 7 official_queue_all = 18 tools
-      expect(tools.tools).toHaveLength(18);
+      // 6 newsletter + 5 server_directory + 7 official_queue + 5 unofficial_mirrors + 2 official_mirrors + 2 tenants + 5 mcp_jsons + 3 mcp_servers + 5 redirects + 10 good_jobs + 2 proctor = 52 tools
+      expect(tools.tools).toHaveLength(52);
       const toolNames = tools.tools.map((t) => t.name);
       // Newsletter tools
       expect(toolNames).toContain('get_newsletter_posts');
@@ -492,6 +492,9 @@ describe('PulseMCP CMS Admin MCP Server Integration Tests', () => {
       expect(toolNames).toContain('reject_official_mirror_queue_item');
       expect(toolNames).toContain('add_official_mirror_to_regular_queue');
       expect(toolNames).toContain('unlink_official_mirror_queue_item');
+      // Proctor tools
+      expect(toolNames).toContain('run_exam_for_mirror');
+      expect(toolNames).toContain('save_results_for_mirror');
     });
   });
 });

@@ -52,6 +52,11 @@ import type {
   GoodJobStatistics,
   GoodJobActionResponse,
   GoodJobCleanupResponse,
+  // Proctor types
+  ProctorRunExamParams,
+  ProctorRunExamResponse,
+  ProctorSaveResultsParams,
+  ProctorSaveResultsResponse,
 } from './types.js';
 
 // PulseMCP Admin API client interface
@@ -281,6 +286,11 @@ export interface IPulseMCPAdminClient {
     older_than_days?: number;
     status?: GoodJobStatus;
   }): Promise<GoodJobCleanupResponse>;
+
+  // Proctor REST API methods
+  runExamForMirror(params: ProctorRunExamParams): Promise<ProctorRunExamResponse>;
+
+  saveResultsForMirror(params: ProctorSaveResultsParams): Promise<ProctorSaveResultsResponse>;
 }
 
 // PulseMCP Admin API client implementation
@@ -730,6 +740,20 @@ export class PulseMCPAdminClient implements IPulseMCPAdminClient {
   }): Promise<GoodJobCleanupResponse> {
     const { cleanupGoodJobs } = await import('./pulsemcp-admin-client/lib/cleanup-good-jobs.js');
     return cleanupGoodJobs(this.apiKey, this.baseUrl, params);
+  }
+
+  // Proctor REST API methods
+  async runExamForMirror(params: ProctorRunExamParams): Promise<ProctorRunExamResponse> {
+    const { runExamForMirror } = await import('./pulsemcp-admin-client/lib/run-exam-for-mirror.js');
+    return runExamForMirror(this.apiKey, this.baseUrl, params);
+  }
+
+  async saveResultsForMirror(
+    params: ProctorSaveResultsParams
+  ): Promise<ProctorSaveResultsResponse> {
+    const { saveResultsForMirror } =
+      await import('./pulsemcp-admin-client/lib/save-results-for-mirror.js');
+    return saveResultsForMirror(this.apiKey, this.baseUrl, params);
   }
 }
 

@@ -841,3 +841,48 @@ export interface GoodJobCleanupResponse {
   message: string;
   deleted_count?: number;
 }
+
+// ============================================================
+// Proctor Types
+// Proctor exam execution and result storage for unofficial mirrors
+// ============================================================
+
+export interface ProctorExamStreamLine {
+  type: 'log' | 'exam_result' | 'summary' | 'error';
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  [key: string]: any;
+}
+
+export interface ProctorRunExamParams {
+  mirror_ids: number[];
+  runtime_id: string;
+  exam_type: 'auth-check' | 'init-tools-list' | 'both';
+  max_retries?: number;
+}
+
+export interface ProctorRunExamResponse {
+  lines: ProctorExamStreamLine[];
+}
+
+export interface ProctorResultInput {
+  exam_id: string;
+  status: string;
+  data?: Record<string, unknown>;
+}
+
+export interface ProctorSaveResultsParams {
+  mirror_id: number;
+  runtime_id: string;
+  results: ProctorResultInput[];
+}
+
+export interface ProctorSaveResultsResponse {
+  saved: Array<{
+    exam_id: string;
+    proctor_result_id: number;
+  }>;
+  errors: Array<{
+    exam_id: string;
+    error: string;
+  }>;
+}

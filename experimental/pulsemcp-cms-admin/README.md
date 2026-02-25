@@ -79,6 +79,18 @@ This server is built and tested on macOS with Claude Desktop. It should work wit
 | `create_redirect`                      | redirects          | write      | Create a new URL redirect entry.                                              |
 | `update_redirect`                      | redirects          | write      | Update an existing URL redirect by ID.                                        |
 | `delete_redirect`                      | redirects          | write      | Delete a URL redirect by ID (irreversible).                                   |
+| `list_good_jobs`                       | good_jobs          | read       | List and filter background jobs by queue, status, job class, and date range.  |
+| `get_good_job`                         | good_jobs          | read       | Get detailed information about a specific background job.                     |
+| `list_good_job_cron_schedules`         | good_jobs          | read       | List all configured cron schedules.                                           |
+| `list_good_job_processes`              | good_jobs          | read       | List active worker processes.                                                 |
+| `get_good_job_queue_statistics`        | good_jobs          | read       | Get aggregate job statistics by status.                                       |
+| `retry_good_job`                       | good_jobs          | write      | Retry a failed or discarded background job.                                   |
+| `discard_good_job`                     | good_jobs          | write      | Discard a background job to prevent retries.                                  |
+| `reschedule_good_job`                  | good_jobs          | write      | Reschedule a background job to a new time.                                    |
+| `force_trigger_good_job_cron`          | good_jobs          | write      | Force trigger a cron schedule immediately.                                    |
+| `cleanup_good_jobs`                    | good_jobs          | write      | Clean up old background jobs by status and age.                               |
+| `run_exam_for_mirror`                  | proctor            | write      | Run proctor exams against unofficial mirrors via Fly Machines.                |
+| `save_results_for_mirror`              | proctor            | write      | Save proctor exam results (must use output from `run_exam_for_mirror`).       |
 
 # Tool Groups
 
@@ -89,35 +101,38 @@ This server organizes tools into groups that can be selectively enabled or disab
 
 ## Available Groups
 
-| Group                         | Tools | Description                                 |
-| ----------------------------- | ----- | ------------------------------------------- |
-| `newsletter`                  | 6     | Full newsletter management (read + write)   |
-| `newsletter_readonly`         | 3     | Newsletter read-only (get posts, authors)   |
-| `server_directory`            | 5     | Full MCP server directory (read + write)    |
-| `server_directory_readonly`   | 3     | MCP server directory read-only              |
-| `official_queue`              | 7     | Full official mirror queue (read + write)   |
-| `official_queue_readonly`     | 2     | Official mirror queue read-only             |
-| `unofficial_mirrors`          | 5     | Full unofficial mirrors CRUD (read + write) |
-| `unofficial_mirrors_readonly` | 2     | Unofficial mirrors read-only                |
-| `official_mirrors`            | 2     | Official mirrors REST API (read-only)       |
-| `official_mirrors_readonly`   | 2     | Official mirrors read-only (alias)          |
-| `tenants`                     | 2     | Tenants REST API (read-only)                |
-| `tenants_readonly`            | 2     | Tenants read-only (alias)                   |
-| `mcp_jsons`                   | 5     | Full MCP JSON configurations (read + write) |
-| `mcp_jsons_readonly`          | 2     | MCP JSON configurations read-only           |
-| `mcp_servers`                 | 3     | Full MCP servers management (read + write)  |
-| `mcp_servers_readonly`        | 2     | MCP servers read-only (list, get)           |
-| `redirects`                   | 5     | Full URL redirect management (read + write) |
-| `redirects_readonly`          | 2     | URL redirects read-only (list, get)         |
+| Group                         | Tools | Description                                                                                                                                                                 |
+| ----------------------------- | ----- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `newsletter`                  | 6     | Full newsletter management (read + write)                                                                                                                                   |
+| `newsletter_readonly`         | 3     | Newsletter read-only (get posts, authors)                                                                                                                                   |
+| `server_directory`            | 27    | Comprehensive superset: includes all tools from mcp_servers, unofficial_mirrors, official_mirrors, official_queue, mcp_jsons, plus implementations/providers (read + write) |
+| `server_directory_readonly`   | 13    | Server directory read-only subset                                                                                                                                           |
+| `official_queue`              | 7     | Full official mirror queue (read + write)                                                                                                                                   |
+| `official_queue_readonly`     | 2     | Official mirror queue read-only                                                                                                                                             |
+| `unofficial_mirrors`          | 5     | Full unofficial mirrors CRUD (read + write)                                                                                                                                 |
+| `unofficial_mirrors_readonly` | 2     | Unofficial mirrors read-only                                                                                                                                                |
+| `official_mirrors`            | 2     | Official mirrors REST API (read-only)                                                                                                                                       |
+| `official_mirrors_readonly`   | 2     | Official mirrors read-only (alias)                                                                                                                                          |
+| `tenants`                     | 2     | Tenants REST API (read-only)                                                                                                                                                |
+| `tenants_readonly`            | 2     | Tenants read-only (alias)                                                                                                                                                   |
+| `mcp_jsons`                   | 5     | Full MCP JSON configurations (read + write)                                                                                                                                 |
+| `mcp_jsons_readonly`          | 2     | MCP JSON configurations read-only                                                                                                                                           |
+| `mcp_servers`                 | 3     | Full MCP servers management (read + write)                                                                                                                                  |
+| `mcp_servers_readonly`        | 2     | MCP servers read-only (list, get)                                                                                                                                           |
+| `redirects`                   | 5     | Full URL redirect management (read + write)                                                                                                                                 |
+| `redirects_readonly`          | 2     | URL redirects read-only (list, get)                                                                                                                                         |
+| `good_jobs`                   | 10    | Full GoodJob background job management (read + write)                                                                                                                       |
+| `good_jobs_readonly`          | 5     | GoodJob read-only (list, get, stats, processes, cron)                                                                                                                       |
+| `proctor`                     | 2     | Proctor exam execution and result storage (write-only, no readonly variant)                                                                                                 |
 
 ### Tools by Group
 
 - **newsletter** / **newsletter_readonly**:
   - Read-only: `get_newsletter_posts`, `get_newsletter_post`, `get_authors`
   - Write: `draft_newsletter_post`, `update_newsletter_post`, `upload_image`
-- **server_directory** / **server_directory_readonly**:
-  - Read-only: `search_mcp_implementations`, `get_draft_mcp_implementations`, `find_providers`
-  - Write: `save_mcp_implementation`, `send_impl_posted_notif`
+- **server_directory** / **server_directory_readonly** (superset — includes tools from mcp_servers, unofficial_mirrors, official_mirrors, official_queue, and mcp_jsons):
+  - Read-only: `search_mcp_implementations`, `get_draft_mcp_implementations`, `find_providers`, `list_mcp_servers`, `get_mcp_server`, `get_unofficial_mirrors`, `get_unofficial_mirror`, `get_official_mirrors`, `get_official_mirror`, `get_official_mirror_queue_items`, `get_official_mirror_queue_item`, `get_mcp_jsons`, `get_mcp_json`
+  - Write: `save_mcp_implementation`, `send_impl_posted_notif`, `update_mcp_server`, `create_unofficial_mirror`, `update_unofficial_mirror`, `delete_unofficial_mirror`, `approve_official_mirror_queue_item`, `approve_mirror_no_modify`, `reject_official_mirror_queue_item`, `add_official_mirror_to_regular_queue`, `unlink_official_mirror_queue_item`, `create_mcp_json`, `update_mcp_json`, `delete_mcp_json`
 - **official_queue** / **official_queue_readonly**:
   - Read-only: `get_official_mirror_queue_items`, `get_official_mirror_queue_item`
   - Write: `approve_official_mirror_queue_item`, `approve_mirror_no_modify`, `reject_official_mirror_queue_item`, `add_official_mirror_to_regular_queue`, `unlink_official_mirror_queue_item`
@@ -137,12 +152,17 @@ This server organizes tools into groups that can be selectively enabled or disab
 - **redirects** / **redirects_readonly**:
   - Read-only: `get_redirects`, `get_redirect`
   - Write: `create_redirect`, `update_redirect`, `delete_redirect`
+- **good_jobs** / **good_jobs_readonly**:
+  - Read-only: `list_good_jobs`, `get_good_job`, `list_good_job_cron_schedules`, `list_good_job_processes`, `get_good_job_queue_statistics`
+  - Write: `retry_good_job`, `discard_good_job`, `reschedule_good_job`, `force_trigger_good_job_cron`, `cleanup_good_jobs`
+- **proctor** (no readonly variant — both tools trigger side effects):
+  - Write: `run_exam_for_mirror`, `save_results_for_mirror`
 
 ## Environment Variables
 
-| Variable      | Description                                 | Default                                                                                                                                    |
-| ------------- | ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
-| `TOOL_GROUPS` | Comma-separated list of enabled tool groups | `newsletter,server_directory,official_queue,unofficial_mirrors,official_mirrors,tenants,mcp_jsons,mcp_servers,redirects` (all base groups) |
+| Variable      | Description                                 | Default                                                                                                                                                      |
+| ------------- | ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `TOOL_GROUPS` | Comma-separated list of enabled tool groups | `newsletter,server_directory,official_queue,unofficial_mirrors,official_mirrors,tenants,mcp_jsons,mcp_servers,redirects,good_jobs,proctor` (all base groups) |
 
 ## Examples
 
@@ -167,8 +187,10 @@ TOOL_GROUPS=server_directory_readonly
 Enable all groups with read-only access:
 
 ```bash
-TOOL_GROUPS=newsletter_readonly,server_directory_readonly,official_queue_readonly,unofficial_mirrors_readonly,official_mirrors_readonly,tenants_readonly,mcp_jsons_readonly,mcp_servers_readonly,redirects_readonly
+TOOL_GROUPS=newsletter_readonly,server_directory_readonly,official_queue_readonly,unofficial_mirrors_readonly,official_mirrors_readonly,tenants_readonly,mcp_jsons_readonly,mcp_servers_readonly,redirects_readonly,good_jobs_readonly
 ```
+
+Note: `proctor` has no readonly variant since both tools trigger side effects.
 
 Mix full and read-only access per group:
 
@@ -303,7 +325,7 @@ Add to your Claude Desktop configuration:
       "args": ["/path/to/pulsemcp-cms-admin/local/build/index.js"],
       "env": {
         "PULSEMCP_ADMIN_API_KEY": "your-api-key-here",
-        "TOOL_GROUPS": "newsletter,server_directory,official_queue,unofficial_mirrors,official_mirrors,tenants,mcp_jsons,mcp_servers,redirects"
+        "TOOL_GROUPS": "newsletter,server_directory,official_queue,unofficial_mirrors,official_mirrors,tenants,mcp_jsons,mcp_servers,redirects,good_jobs,proctor"
       }
     }
   }
@@ -320,7 +342,7 @@ For read-only access:
       "args": ["/path/to/pulsemcp-cms-admin/local/build/index.js"],
       "env": {
         "PULSEMCP_ADMIN_API_KEY": "your-api-key-here",
-        "TOOL_GROUPS": "newsletter_readonly,server_directory_readonly,official_queue_readonly,unofficial_mirrors_readonly,official_mirrors_readonly,tenants_readonly,mcp_jsons_readonly,mcp_servers_readonly,redirects_readonly"
+        "TOOL_GROUPS": "newsletter_readonly,server_directory_readonly,official_queue_readonly,unofficial_mirrors_readonly,official_mirrors_readonly,tenants_readonly,mcp_jsons_readonly,mcp_servers_readonly,redirects_readonly,good_jobs_readonly"
       }
     }
   }

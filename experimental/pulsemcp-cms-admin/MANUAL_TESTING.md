@@ -2,6 +2,38 @@
 
 ## Latest Test Results
 
+**Date:** 2026-02-24
+**Commit:** 374f0ef
+**Version:** 0.6.10
+**API Environment:** N/A (no API credentials available for manual testing)
+
+### Overall: ✅ Functional Tests PASSING (136/136) + Integration Tests PASSING (11/11)
+
+**v0.6.10 Changes:**
+
+- Added `proctor` tool group (no readonly variant — both tools trigger side effects):
+  - `run_exam_for_mirror` - Run proctor exams against unofficial mirrors via Fly Machines
+  - `save_results_for_mirror` - Save proctor exam results with automatic sensitive data redaction
+- Expanded `server_directory` to be a comprehensive superset group covering `mcp_servers`, `unofficial_mirrors`, `official_mirrors`, `official_queue`, and `mcp_jsons` tools
+- Changed tool definitions to support multi-group membership (`group` → `groups` array)
+
+**Note on Manual Testing:**
+
+The proctor backend API endpoints (pulsemcp/pulsemcp#2116) were merged on 2026-02-24 and may not yet be deployed to staging. API credentials (`.env` file) were not available in this environment to run manual tests. The proctor tools follow the same client library patterns as all other tools in this server. Functional tests verify:
+
+1. Tool registration and schema validation (all 52 tools registered correctly)
+2. Multi-group membership (tools appear in both specific group and `server_directory` superset)
+3. Parameter parsing and Zod validation for proctor tool inputs
+4. NDJSON response parsing for `run_exam_for_mirror`
+5. Error handling for API failures (401, 403, 404, 422)
+6. Output formatting for saved results and stream events
+
+The `server_directory` expansion is a configuration/grouping change only — no API behavior changes. The same underlying tools are accessible, just via an additional group.
+
+---
+
+## Previous Test Results (v0.6.9)
+
 **Date:** 2026-02-20
 **Commit:** fc7edae
 **Version:** 0.6.9

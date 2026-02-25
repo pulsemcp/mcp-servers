@@ -58,6 +58,9 @@ import { discardGoodJob } from './tools/discard-good-job.js';
 import { rescheduleGoodJob } from './tools/reschedule-good-job.js';
 import { forceTriggerGoodJobCron } from './tools/force-trigger-good-job-cron.js';
 import { cleanupGoodJobs } from './tools/cleanup-good-jobs.js';
+// Proctor tools
+import { runExamForMirror } from './tools/run-exam-for-mirror.js';
+import { saveResultsForMirror } from './tools/save-results-for-mirror.js';
 
 /**
  * Tool group definitions - groups of related tools that can be enabled/disabled together
@@ -66,9 +69,14 @@ import { cleanupGoodJobs } from './tools/cleanup-good-jobs.js';
  * - Base group (e.g., 'newsletter'): Includes all tools (read + write operations)
  * - Readonly group (e.g., 'newsletter_readonly'): Includes only read operations
  *
+ * Tools can belong to multiple groups. A tool is included if ANY of its groups are enabled.
+ * The `server_directory` group is a superset that includes tools from mcp_servers,
+ * unofficial_mirrors, official_mirrors, official_queue, and mcp_jsons for comprehensive
+ * server directory management.
+ *
  * Groups:
  * - newsletter / newsletter_readonly: Newsletter-related tools (posts, authors, images)
- * - server_directory / server_directory_readonly: Server directory tools (search, drafts, providers, save, notifications)
+ * - server_directory / server_directory_readonly: Comprehensive server directory tools (includes mcp_servers, implementations, mirrors, queue, mcp_jsons, providers)
  * - official_queue / official_queue_readonly: Official mirror queue tools (list, get, approve, reject, unlink)
  * - unofficial_mirrors / unofficial_mirrors_readonly: Unofficial mirror CRUD tools
  * - official_mirrors_readonly: Official mirrors read-only tools (REST API)
@@ -77,6 +85,7 @@ import { cleanupGoodJobs } from './tools/cleanup-good-jobs.js';
  * - mcp_servers / mcp_servers_readonly: Unified MCP server tools (abstracted interface)
  * - redirects / redirects_readonly: URL redirect management tools
  * - good_jobs / good_jobs_readonly: GoodJob background job management tools
+ * - proctor: Proctor exam execution and result storage tools (write-only, no readonly variant since both tools trigger side effects)
  */
 export type ToolGroup =
   | 'newsletter'
@@ -98,7 +107,8 @@ export type ToolGroup =
   | 'redirects'
   | 'redirects_readonly'
   | 'good_jobs'
-  | 'good_jobs_readonly';
+  | 'good_jobs_readonly'
+  | 'proctor';
 
 /** Base groups without _readonly suffix */
 type BaseToolGroup =
@@ -111,7 +121,8 @@ type BaseToolGroup =
   | 'mcp_jsons'
   | 'mcp_servers'
   | 'redirects'
-  | 'good_jobs';
+  | 'good_jobs'
+  | 'proctor';
 
 interface Tool {
   name: string;
@@ -127,81 +138,176 @@ interface Tool {
 
 interface ToolDefinition {
   factory: (server: Server, clientFactory: ClientFactory) => Tool;
-  /** The base group this tool belongs to (without _readonly suffix) */
-  group: BaseToolGroup;
+  /** The base groups this tool belongs to (without _readonly suffix). A tool is included if ANY of its groups are enabled. */
+  groups: BaseToolGroup[];
   /** If true, this tool is excluded from _readonly groups */
   isWriteOperation: boolean;
 }
 
 const ALL_TOOLS: ToolDefinition[] = [
   // Newsletter tools (all are write operations except get_newsletter_posts/post and get_authors)
-  { factory: getNewsletterPosts, group: 'newsletter', isWriteOperation: false },
-  { factory: getNewsletterPost, group: 'newsletter', isWriteOperation: false },
-  { factory: draftNewsletterPost, group: 'newsletter', isWriteOperation: true },
-  { factory: updateNewsletterPost, group: 'newsletter', isWriteOperation: true },
-  { factory: uploadImage, group: 'newsletter', isWriteOperation: true },
-  { factory: getAuthors, group: 'newsletter', isWriteOperation: false },
-  // Server directory tools
-  { factory: searchMCPImplementations, group: 'server_directory', isWriteOperation: false },
-  { factory: getDraftMCPImplementations, group: 'server_directory', isWriteOperation: false },
-  { factory: saveMCPImplementation, group: 'server_directory', isWriteOperation: true },
+  { factory: getNewsletterPosts, groups: ['newsletter'], isWriteOperation: false },
+  { factory: getNewsletterPost, groups: ['newsletter'], isWriteOperation: false },
+  { factory: draftNewsletterPost, groups: ['newsletter'], isWriteOperation: true },
+  { factory: updateNewsletterPost, groups: ['newsletter'], isWriteOperation: true },
+  { factory: uploadImage, groups: ['newsletter'], isWriteOperation: true },
+  { factory: getAuthors, groups: ['newsletter'], isWriteOperation: false },
+  // Server directory tools (also included in the server_directory superset)
+  {
+    factory: searchMCPImplementations,
+    groups: ['server_directory'],
+    isWriteOperation: false,
+  },
+  {
+    factory: getDraftMCPImplementations,
+    groups: ['server_directory'],
+    isWriteOperation: false,
+  },
+  { factory: saveMCPImplementation, groups: ['server_directory'], isWriteOperation: true },
   {
     factory: sendMCPImplementationPostingNotification,
-    group: 'server_directory',
+    groups: ['server_directory'],
     isWriteOperation: true,
   },
-  { factory: findProviders, group: 'server_directory', isWriteOperation: false },
-  // Official mirror queue tools
-  { factory: getOfficialMirrorQueueItems, group: 'official_queue', isWriteOperation: false },
-  { factory: getOfficialMirrorQueueItem, group: 'official_queue', isWriteOperation: false },
-  { factory: approveOfficialMirrorQueueItem, group: 'official_queue', isWriteOperation: true },
+  { factory: findProviders, groups: ['server_directory'], isWriteOperation: false },
+  // Official mirror queue tools (also in server_directory)
+  {
+    factory: getOfficialMirrorQueueItems,
+    groups: ['official_queue', 'server_directory'],
+    isWriteOperation: false,
+  },
+  {
+    factory: getOfficialMirrorQueueItem,
+    groups: ['official_queue', 'server_directory'],
+    isWriteOperation: false,
+  },
+  {
+    factory: approveOfficialMirrorQueueItem,
+    groups: ['official_queue', 'server_directory'],
+    isWriteOperation: true,
+  },
   {
     factory: approveOfficialMirrorQueueItemWithoutModifying,
-    group: 'official_queue',
+    groups: ['official_queue', 'server_directory'],
     isWriteOperation: true,
   },
-  { factory: rejectOfficialMirrorQueueItem, group: 'official_queue', isWriteOperation: true },
-  { factory: addOfficialMirrorToRegularQueue, group: 'official_queue', isWriteOperation: true },
-  { factory: unlinkOfficialMirrorQueueItem, group: 'official_queue', isWriteOperation: true },
-  // Unofficial mirrors tools (CRUD)
-  { factory: getUnofficialMirrors, group: 'unofficial_mirrors', isWriteOperation: false },
-  { factory: getUnofficialMirror, group: 'unofficial_mirrors', isWriteOperation: false },
-  { factory: createUnofficialMirror, group: 'unofficial_mirrors', isWriteOperation: true },
-  { factory: updateUnofficialMirror, group: 'unofficial_mirrors', isWriteOperation: true },
-  { factory: deleteUnofficialMirror, group: 'unofficial_mirrors', isWriteOperation: true },
-  // Official mirrors REST tools (read-only)
-  { factory: getOfficialMirrors, group: 'official_mirrors', isWriteOperation: false },
-  { factory: getOfficialMirror, group: 'official_mirrors', isWriteOperation: false },
+  {
+    factory: rejectOfficialMirrorQueueItem,
+    groups: ['official_queue', 'server_directory'],
+    isWriteOperation: true,
+  },
+  {
+    factory: addOfficialMirrorToRegularQueue,
+    groups: ['official_queue', 'server_directory'],
+    isWriteOperation: true,
+  },
+  {
+    factory: unlinkOfficialMirrorQueueItem,
+    groups: ['official_queue', 'server_directory'],
+    isWriteOperation: true,
+  },
+  // Unofficial mirrors tools (CRUD) (also in server_directory)
+  {
+    factory: getUnofficialMirrors,
+    groups: ['unofficial_mirrors', 'server_directory'],
+    isWriteOperation: false,
+  },
+  {
+    factory: getUnofficialMirror,
+    groups: ['unofficial_mirrors', 'server_directory'],
+    isWriteOperation: false,
+  },
+  {
+    factory: createUnofficialMirror,
+    groups: ['unofficial_mirrors', 'server_directory'],
+    isWriteOperation: true,
+  },
+  {
+    factory: updateUnofficialMirror,
+    groups: ['unofficial_mirrors', 'server_directory'],
+    isWriteOperation: true,
+  },
+  {
+    factory: deleteUnofficialMirror,
+    groups: ['unofficial_mirrors', 'server_directory'],
+    isWriteOperation: true,
+  },
+  // Official mirrors REST tools (read-only) (also in server_directory)
+  {
+    factory: getOfficialMirrors,
+    groups: ['official_mirrors', 'server_directory'],
+    isWriteOperation: false,
+  },
+  {
+    factory: getOfficialMirror,
+    groups: ['official_mirrors', 'server_directory'],
+    isWriteOperation: false,
+  },
   // Tenant tools (read-only)
-  { factory: getTenants, group: 'tenants', isWriteOperation: false },
-  { factory: getTenant, group: 'tenants', isWriteOperation: false },
-  // MCP JSON tools (CRUD)
-  { factory: getMcpJsons, group: 'mcp_jsons', isWriteOperation: false },
-  { factory: getMcpJson, group: 'mcp_jsons', isWriteOperation: false },
-  { factory: createMcpJson, group: 'mcp_jsons', isWriteOperation: true },
-  { factory: updateMcpJson, group: 'mcp_jsons', isWriteOperation: true },
-  { factory: deleteMcpJson, group: 'mcp_jsons', isWriteOperation: true },
-  // Unified MCP Server tools (abstracted interface)
-  { factory: listMCPServers, group: 'mcp_servers', isWriteOperation: false },
-  { factory: getMCPServer, group: 'mcp_servers', isWriteOperation: false },
-  { factory: updateMCPServer, group: 'mcp_servers', isWriteOperation: true },
+  { factory: getTenants, groups: ['tenants'], isWriteOperation: false },
+  { factory: getTenant, groups: ['tenants'], isWriteOperation: false },
+  // MCP JSON tools (CRUD) (also in server_directory)
+  {
+    factory: getMcpJsons,
+    groups: ['mcp_jsons', 'server_directory'],
+    isWriteOperation: false,
+  },
+  {
+    factory: getMcpJson,
+    groups: ['mcp_jsons', 'server_directory'],
+    isWriteOperation: false,
+  },
+  {
+    factory: createMcpJson,
+    groups: ['mcp_jsons', 'server_directory'],
+    isWriteOperation: true,
+  },
+  {
+    factory: updateMcpJson,
+    groups: ['mcp_jsons', 'server_directory'],
+    isWriteOperation: true,
+  },
+  {
+    factory: deleteMcpJson,
+    groups: ['mcp_jsons', 'server_directory'],
+    isWriteOperation: true,
+  },
+  // Unified MCP Server tools (abstracted interface) (also in server_directory)
+  {
+    factory: listMCPServers,
+    groups: ['mcp_servers', 'server_directory'],
+    isWriteOperation: false,
+  },
+  {
+    factory: getMCPServer,
+    groups: ['mcp_servers', 'server_directory'],
+    isWriteOperation: false,
+  },
+  {
+    factory: updateMCPServer,
+    groups: ['mcp_servers', 'server_directory'],
+    isWriteOperation: true,
+  },
   // Redirect tools (CRUD)
-  { factory: getRedirects, group: 'redirects', isWriteOperation: false },
-  { factory: getRedirect, group: 'redirects', isWriteOperation: false },
-  { factory: createRedirect, group: 'redirects', isWriteOperation: true },
-  { factory: updateRedirect, group: 'redirects', isWriteOperation: true },
-  { factory: deleteRedirect, group: 'redirects', isWriteOperation: true },
+  { factory: getRedirects, groups: ['redirects'], isWriteOperation: false },
+  { factory: getRedirect, groups: ['redirects'], isWriteOperation: false },
+  { factory: createRedirect, groups: ['redirects'], isWriteOperation: true },
+  { factory: updateRedirect, groups: ['redirects'], isWriteOperation: true },
+  { factory: deleteRedirect, groups: ['redirects'], isWriteOperation: true },
   // GoodJob tools
-  { factory: listGoodJobs, group: 'good_jobs', isWriteOperation: false },
-  { factory: getGoodJob, group: 'good_jobs', isWriteOperation: false },
-  { factory: listGoodJobCronSchedules, group: 'good_jobs', isWriteOperation: false },
-  { factory: listGoodJobProcesses, group: 'good_jobs', isWriteOperation: false },
-  { factory: getGoodJobQueueStatistics, group: 'good_jobs', isWriteOperation: false },
-  { factory: retryGoodJob, group: 'good_jobs', isWriteOperation: true },
-  { factory: discardGoodJob, group: 'good_jobs', isWriteOperation: true },
-  { factory: rescheduleGoodJob, group: 'good_jobs', isWriteOperation: true },
-  { factory: forceTriggerGoodJobCron, group: 'good_jobs', isWriteOperation: true },
-  { factory: cleanupGoodJobs, group: 'good_jobs', isWriteOperation: true },
+  { factory: listGoodJobs, groups: ['good_jobs'], isWriteOperation: false },
+  { factory: getGoodJob, groups: ['good_jobs'], isWriteOperation: false },
+  { factory: listGoodJobCronSchedules, groups: ['good_jobs'], isWriteOperation: false },
+  { factory: listGoodJobProcesses, groups: ['good_jobs'], isWriteOperation: false },
+  { factory: getGoodJobQueueStatistics, groups: ['good_jobs'], isWriteOperation: false },
+  { factory: retryGoodJob, groups: ['good_jobs'], isWriteOperation: true },
+  { factory: discardGoodJob, groups: ['good_jobs'], isWriteOperation: true },
+  { factory: rescheduleGoodJob, groups: ['good_jobs'], isWriteOperation: true },
+  { factory: forceTriggerGoodJobCron, groups: ['good_jobs'], isWriteOperation: true },
+  { factory: cleanupGoodJobs, groups: ['good_jobs'], isWriteOperation: true },
+  // Proctor tools
+  { factory: runExamForMirror, groups: ['proctor'], isWriteOperation: true },
+  { factory: saveResultsForMirror, groups: ['proctor'], isWriteOperation: true },
 ];
 
 /**
@@ -228,6 +334,7 @@ const VALID_TOOL_GROUPS: ToolGroup[] = [
   'redirects_readonly',
   'good_jobs',
   'good_jobs_readonly',
+  'proctor',
 ];
 
 /**
@@ -244,6 +351,7 @@ const BASE_TOOL_GROUPS: BaseToolGroup[] = [
   'mcp_servers',
   'redirects',
   'good_jobs',
+  'proctor',
 ];
 
 /**
@@ -277,23 +385,25 @@ export function parseEnabledToolGroups(enabledGroupsParam?: string): ToolGroup[]
 }
 
 /**
- * Check if a tool should be included based on enabled groups
+ * Check if a tool should be included based on enabled groups.
+ * A tool is included if ANY of its groups match an enabled group.
  * @param toolDef - The tool definition to check
  * @param enabledGroups - Array of enabled tool groups
  * @returns true if the tool should be included
  */
 function shouldIncludeTool(toolDef: ToolDefinition, enabledGroups: ToolGroup[]): boolean {
-  const baseGroup = toolDef.group;
-  const readonlyGroup = `${baseGroup}_readonly` as ToolGroup;
+  for (const baseGroup of toolDef.groups) {
+    const readonlyGroup = `${baseGroup}_readonly` as ToolGroup;
 
-  // Check if the base group (full access) is enabled
-  if (enabledGroups.includes(baseGroup as ToolGroup)) {
-    return true;
-  }
+    // Check if the base group (full access) is enabled
+    if (enabledGroups.includes(baseGroup as ToolGroup)) {
+      return true;
+    }
 
-  // Check if the readonly group is enabled (only include read operations)
-  if (enabledGroups.includes(readonlyGroup) && !toolDef.isWriteOperation) {
-    return true;
+    // Check if the readonly group is enabled (only include read operations)
+    if (enabledGroups.includes(readonlyGroup) && !toolDef.isWriteOperation) {
+      return true;
+    }
   }
 
   return false;
@@ -310,11 +420,15 @@ function shouldIncludeTool(toolDef: ToolDefinition, enabledGroups: ToolGroup[]):
  * (comma-separated list, e.g., "newsletter,server_directory_readonly"). If not set, all
  * base tool groups are enabled by default (full read+write access).
  *
+ * Tools can belong to multiple groups. The `server_directory` group is a superset that
+ * includes tools from mcp_servers, unofficial_mirrors, official_mirrors, official_queue,
+ * and mcp_jsons for comprehensive server directory management.
+ *
  * Available tool groups:
  * - newsletter: All newsletter-related tools (read + write)
  * - newsletter_readonly: Newsletter tools (read only)
- * - server_directory: MCP server directory tools (read + write)
- * - server_directory_readonly: MCP server directory tools (read only)
+ * - server_directory: Comprehensive server directory tools including implementations, servers, mirrors, queue, and mcp_jsons (read + write)
+ * - server_directory_readonly: Server directory tools (read only)
  * - official_queue: Official mirror queue tools (read + write)
  * - official_queue_readonly: Official mirror queue tools (read only)
  * - unofficial_mirrors: Unofficial mirror CRUD tools (read + write)
@@ -329,6 +443,7 @@ function shouldIncludeTool(toolDef: ToolDefinition, enabledGroups: ToolGroup[]):
  * - redirects_readonly: URL redirect tools (read only)
  * - good_jobs: GoodJob background job management tools (read + write)
  * - good_jobs_readonly: GoodJob tools (read only)
+ * - proctor: Proctor exam execution and result storage tools (write-only, no readonly variant)
  *
  * @param clientFactory - Factory function that creates client instances
  * @param enabledGroups - Optional comma-separated list of enabled tool groups (overrides env var)
