@@ -752,6 +752,11 @@ describe('Newsletter Tools', () => {
       expect(groups).toEqual(['newsletter', 'server_directory']);
     });
 
+    it('should filter out proctor_readonly since proctor has no readonly variant', () => {
+      const groups = parseEnabledToolGroups('newsletter,proctor_readonly,proctor');
+      expect(groups).toEqual(['newsletter', 'proctor']);
+    });
+
     it('should return all base groups when empty string provided', () => {
       const groups = parseEnabledToolGroups('');
       expect(groups).toEqual([

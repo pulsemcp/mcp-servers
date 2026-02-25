@@ -17,6 +17,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Changed
 
+- **BREAKING**: Expanded `server_directory` tool group from 5 tools to 27 tools. Existing deployments using `TOOL_GROUPS=server_directory` will now expose additional tools including write operations from `mcp_servers`, `unofficial_mirrors`, `official_mirrors`, `official_queue`, and `mcp_jsons` groups. If you want the original 5-tool scope, switch to a more specific group like `mcp_jsons` or use readonly variants.
 - Tool definitions now support multiple group memberships, allowing tools to appear in both their specific group and the broader `server_directory` superset
 
 ## [0.6.9] - 2026-02-20

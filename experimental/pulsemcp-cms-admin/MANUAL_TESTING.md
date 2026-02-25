@@ -3,11 +3,11 @@
 ## Latest Test Results
 
 **Date:** 2026-02-24
-**Commit:** 1e3c1c8
+**Commit:** 374f0ef
 **Version:** 0.6.10
 **API Environment:** N/A (no API credentials available for manual testing)
 
-### Overall: ✅ Functional Tests PASSING (129/129) + Integration Tests PASSING (11/11)
+### Overall: ✅ Functional Tests PASSING (136/136) + Integration Tests PASSING (11/11)
 
 **v0.6.10 Changes:**
 
