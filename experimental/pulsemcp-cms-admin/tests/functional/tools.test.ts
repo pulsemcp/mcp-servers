@@ -2452,4 +2452,158 @@ describe('Newsletter Tools', () => {
       });
     });
   });
+
+  describe('Proctor Tools', () => {
+    describe('run_exam_for_mirror', () => {
+      it('should run exams and format NDJSON results', async () => {
+        const { runExamForMirror } = await import('../../shared/src/tools/run-exam-for-mirror.js');
+        const mockClient = createMockClient({
+          runExamForMirror: vi.fn().mockResolvedValue({
+            lines: [
+              { type: 'log', message: 'Starting exam for mirror 123' },
+              {
+                type: 'exam_result',
+                mirror_id: 123,
+                exam_id: 'auth-check',
+                status: 'pass',
+                data: { auth_type: 'none' },
+              },
+              { type: 'summary', total: 1, passed: 1, failed: 0, skipped: 0 },
+            ],
+          }),
+        });
+
+        const tool = runExamForMirror(mockServer, () => mockClient);
+        const result = await tool.handler({
+          mirror_ids: [123],
+          runtime_id: 'fly-machines-v1',
+          exam_type: 'auth-check',
+        });
+
+        expect(result.isError).toBeUndefined();
+        expect(result.content[0].text).toContain('Proctor Exam Results');
+        expect(result.content[0].text).toContain('123');
+        expect(result.content[0].text).toContain('[LOG] Starting exam for mirror 123');
+        expect(result.content[0].text).toContain('Exam Result');
+        expect(result.content[0].text).toContain('Status: pass');
+        expect(result.content[0].text).toContain('Summary');
+        expect(result.content[0].text).toContain('Passed: 1');
+      });
+
+      it('should format error lines from the stream', async () => {
+        const { runExamForMirror } = await import('../../shared/src/tools/run-exam-for-mirror.js');
+        const mockClient = createMockClient({
+          runExamForMirror: vi.fn().mockResolvedValue({
+            lines: [{ type: 'error', message: 'Mirror 456 has no mcp_json' }],
+          }),
+        });
+
+        const tool = runExamForMirror(mockServer, () => mockClient);
+        const result = await tool.handler({
+          mirror_ids: [456],
+          runtime_id: 'fly-machines-v1',
+          exam_type: 'both',
+        });
+
+        expect(result.content[0].text).toContain('**Error**: Mirror 456 has no mcp_json');
+      });
+
+      it('should handle API errors gracefully', async () => {
+        const { runExamForMirror } = await import('../../shared/src/tools/run-exam-for-mirror.js');
+        const mockClient = createMockClient({
+          runExamForMirror: vi.fn().mockRejectedValue(new Error('Invalid API key')),
+        });
+
+        const tool = runExamForMirror(mockServer, () => mockClient);
+        const result = await tool.handler({
+          mirror_ids: [123],
+          runtime_id: 'fly-machines-v1',
+          exam_type: 'auth-check',
+        });
+
+        expect(result.isError).toBe(true);
+        expect(result.content[0].text).toContain('Error running proctor exam: Invalid API key');
+      });
+    });
+
+    describe('save_results_for_mirror', () => {
+      it('should save results and format response', async () => {
+        const { saveResultsForMirror } =
+          await import('../../shared/src/tools/save-results-for-mirror.js');
+        const mockClient = createMockClient({
+          saveResultsForMirror: vi.fn().mockResolvedValue({
+            saved: [
+              { exam_id: 'auth-check', proctor_result_id: 101 },
+              { exam_id: 'init-tools-list', proctor_result_id: 102 },
+            ],
+            errors: [],
+          }),
+        });
+
+        const tool = saveResultsForMirror(mockServer, () => mockClient);
+        const result = await tool.handler({
+          mirror_id: 123,
+          runtime_id: 'fly-machines-v1',
+          results: [
+            { exam_id: 'auth-check', status: 'pass' },
+            { exam_id: 'init-tools-list', status: 'pass', data: { tools_count: 5 } },
+          ],
+        });
+
+        expect(result.isError).toBeUndefined();
+        expect(result.content[0].text).toContain('Proctor Results Saved');
+        expect(result.content[0].text).toContain('Mirror ID: 123');
+        expect(result.content[0].text).toContain('Successfully Saved (2)');
+        expect(result.content[0].text).toContain('auth-check (Result ID: 101)');
+        expect(result.content[0].text).toContain('init-tools-list (Result ID: 102)');
+      });
+
+      it('should report partial failures', async () => {
+        const { saveResultsForMirror } =
+          await import('../../shared/src/tools/save-results-for-mirror.js');
+        const mockClient = createMockClient({
+          saveResultsForMirror: vi.fn().mockResolvedValue({
+            saved: [{ exam_id: 'auth-check', proctor_result_id: 101 }],
+            errors: [{ exam_id: 'init-tools-list', error: 'Duplicate result' }],
+          }),
+        });
+
+        const tool = saveResultsForMirror(mockServer, () => mockClient);
+        const result = await tool.handler({
+          mirror_id: 123,
+          runtime_id: 'fly-machines-v1',
+          results: [
+            { exam_id: 'auth-check', status: 'pass' },
+            { exam_id: 'init-tools-list', status: 'pass' },
+          ],
+        });
+
+        expect(result.content[0].text).toContain('Successfully Saved (1)');
+        expect(result.content[0].text).toContain('Errors (1)');
+        expect(result.content[0].text).toContain('init-tools-list: Duplicate result');
+      });
+
+      it('should handle API errors gracefully', async () => {
+        const { saveResultsForMirror } =
+          await import('../../shared/src/tools/save-results-for-mirror.js');
+        const mockClient = createMockClient({
+          saveResultsForMirror: vi
+            .fn()
+            .mockRejectedValue(new Error('Mirror not found with ID: 999')),
+        });
+
+        const tool = saveResultsForMirror(mockServer, () => mockClient);
+        const result = await tool.handler({
+          mirror_id: 999,
+          runtime_id: 'fly-machines-v1',
+          results: [{ exam_id: 'auth-check', status: 'pass' }],
+        });
+
+        expect(result.isError).toBe(true);
+        expect(result.content[0].text).toContain(
+          'Error saving proctor results: Mirror not found with ID: 999'
+        );
+      });
+    });
+  });
 });
