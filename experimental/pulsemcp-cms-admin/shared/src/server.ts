@@ -57,6 +57,11 @@ import type {
   ProctorRunExamResponse,
   ProctorSaveResultsParams,
   ProctorSaveResultsResponse,
+  // Discovered URL types
+  DiscoveredUrlsResponse,
+  MarkDiscoveredUrlProcessedParams,
+  MarkDiscoveredUrlProcessedResponse,
+  DiscoveredUrlStats,
 } from './types.js';
 
 // PulseMCP Admin API client interface
@@ -291,6 +296,19 @@ export interface IPulseMCPAdminClient {
   runExamForMirror(params: ProctorRunExamParams): Promise<ProctorRunExamResponse>;
 
   saveResultsForMirror(params: ProctorSaveResultsParams): Promise<ProctorSaveResultsResponse>;
+
+  // Discovered URL REST API methods
+  getDiscoveredUrls(params?: {
+    status?: 'pending' | 'processed' | 'all';
+    page?: number;
+    per_page?: number;
+  }): Promise<DiscoveredUrlsResponse>;
+
+  markDiscoveredUrlProcessed(
+    params: MarkDiscoveredUrlProcessedParams
+  ): Promise<MarkDiscoveredUrlProcessedResponse>;
+
+  getDiscoveredUrlStats(): Promise<DiscoveredUrlStats>;
 }
 
 // PulseMCP Admin API client implementation
@@ -754,6 +772,31 @@ export class PulseMCPAdminClient implements IPulseMCPAdminClient {
     const { saveResultsForMirror } =
       await import('./pulsemcp-admin-client/lib/save-results-for-mirror.js');
     return saveResultsForMirror(this.apiKey, this.baseUrl, params);
+  }
+
+  // Discovered URL REST API methods
+  async getDiscoveredUrls(params?: {
+    status?: 'pending' | 'processed' | 'all';
+    page?: number;
+    per_page?: number;
+  }): Promise<DiscoveredUrlsResponse> {
+    const { getDiscoveredUrls } =
+      await import('./pulsemcp-admin-client/lib/get-discovered-urls.js');
+    return getDiscoveredUrls(this.apiKey, this.baseUrl, params);
+  }
+
+  async markDiscoveredUrlProcessed(
+    params: MarkDiscoveredUrlProcessedParams
+  ): Promise<MarkDiscoveredUrlProcessedResponse> {
+    const { markDiscoveredUrlProcessed } =
+      await import('./pulsemcp-admin-client/lib/mark-discovered-url-processed.js');
+    return markDiscoveredUrlProcessed(this.apiKey, this.baseUrl, params);
+  }
+
+  async getDiscoveredUrlStats(): Promise<DiscoveredUrlStats> {
+    const { getDiscoveredUrlStats } =
+      await import('./pulsemcp-admin-client/lib/get-discovered-url-stats.js');
+    return getDiscoveredUrlStats(this.apiKey, this.baseUrl);
   }
 }
 

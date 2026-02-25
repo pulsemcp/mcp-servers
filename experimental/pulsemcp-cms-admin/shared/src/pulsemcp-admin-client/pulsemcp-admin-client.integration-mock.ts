@@ -1190,5 +1190,35 @@ export function createMockPulseMCPAdminClient(mockData: MockData): IPulseMCPAdmi
         errors: [],
       };
     },
+
+    // Discovered URL methods
+    async getDiscoveredUrls() {
+      return {
+        urls: [],
+        has_more: false,
+        total_count: 0,
+        page: 1,
+        per_page: 50,
+      };
+    },
+
+    async markDiscoveredUrlProcessed(params) {
+      return {
+        success: true,
+        id: params.id,
+        processed_at: new Date().toISOString(),
+      };
+    },
+
+    async getDiscoveredUrlStats() {
+      return {
+        pending: 0,
+        processed_today: 0,
+        posted_today: 0,
+        skipped_today: 0,
+        rejected_today: 0,
+        errored_today: 0,
+      };
+    },
   };
 }

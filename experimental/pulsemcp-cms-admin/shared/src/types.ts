@@ -886,3 +886,48 @@ export interface ProctorSaveResultsResponse {
     error: string;
   }>;
 }
+
+// ============================================================
+// Discovered URL Types
+// For managing discovered URLs that need processing into MCP implementations
+// ============================================================
+
+export type DiscoveredUrlResult = 'posted' | 'skipped' | 'rejected' | 'error';
+
+export interface DiscoveredUrl {
+  id: number;
+  url: string;
+  source: string;
+  created_at: string;
+  metadata: Record<string, unknown>;
+}
+
+export interface DiscoveredUrlsResponse {
+  urls: DiscoveredUrl[];
+  has_more: boolean;
+  total_count: number;
+  page: number;
+  per_page: number;
+}
+
+export interface MarkDiscoveredUrlProcessedParams {
+  id: number;
+  result: DiscoveredUrlResult;
+  notes?: string;
+  mcp_implementation_id?: number;
+}
+
+export interface MarkDiscoveredUrlProcessedResponse {
+  success: boolean;
+  id: number;
+  processed_at: string;
+}
+
+export interface DiscoveredUrlStats {
+  pending: number;
+  processed_today: number;
+  posted_today: number;
+  skipped_today: number;
+  rejected_today: number;
+  errored_today: number;
+}

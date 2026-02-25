@@ -6,6 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Added
+
+- Added `discovered_urls` and `discovered_urls_readonly` tool groups for managing discovered URLs that need processing into MCP implementations
+  - `list_discovered_urls` - List discovered URLs filtered by processing status (pending/processed/all) with pagination, ordered by oldest first
+  - `mark_discovered_url_processed` - Mark a discovered URL as processed with a result (posted/skipped/rejected/error), optional notes, and optional MCP implementation ID
+  - `get_discovered_url_stats` - Get summary statistics including pending count and today's processing breakdown
+
 ## [0.6.10] - 2026-02-24
 
 ### Added

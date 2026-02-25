@@ -105,6 +105,10 @@ function createMockClient(overrides?: Partial<IPulseMCPAdminClient>): IPulseMCPA
     // Proctor methods
     runExamForMirror: vi.fn(),
     saveResultsForMirror: vi.fn(),
+    // Discovered URL methods
+    getDiscoveredUrls: vi.fn(),
+    markDiscoveredUrlProcessed: vi.fn(),
+    getDiscoveredUrlStats: vi.fn(),
     ...overrides,
   };
 }
@@ -771,6 +775,7 @@ describe('Newsletter Tools', () => {
         'redirects',
         'good_jobs',
         'proctor',
+        'discovered_urls',
       ]);
     });
 
@@ -788,6 +793,7 @@ describe('Newsletter Tools', () => {
         'redirects',
         'good_jobs',
         'proctor',
+        'discovered_urls',
       ]);
     });
 
@@ -928,8 +934,8 @@ describe('Newsletter Tools', () => {
       const listToolsHandler = handlers.get('tools/list');
       const result = await listToolsHandler({ method: 'tools/list', params: {} });
 
-      // 6 newsletter + 5 server_directory + 7 official_queue + 5 unofficial_mirrors + 2 official_mirrors + 2 tenants + 5 mcp_jsons + 3 mcp_servers + 5 redirects + 10 good_jobs + 2 proctor = 52 tools
-      expect(result.tools).toHaveLength(52);
+      // 6 newsletter + 5 server_directory + 7 official_queue + 5 unofficial_mirrors + 2 official_mirrors + 2 tenants + 5 mcp_jsons + 3 mcp_servers + 5 redirects + 10 good_jobs + 2 proctor + 3 discovered_urls = 55 tools
+      expect(result.tools).toHaveLength(55);
     });
 
     it('should register only read-only newsletter tools when newsletter_readonly group is enabled', async () => {
