@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [0.6.11] - 2026-02-25
+
 ### Added
 
 - Added `discovered_urls` and `discovered_urls_readonly` tool groups for managing discovered URLs that need processing into MCP implementations

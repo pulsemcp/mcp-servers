@@ -2,6 +2,35 @@
 
 ## Latest Test Results
 
+**Date:** 2026-02-25
+**Commit:** fa6b4ae
+**Version:** 0.6.11
+**API Environment:** N/A (no API credentials available for manual testing)
+
+### Overall: ✅ Functional Tests PASSING (152/152)
+
+**v0.6.11 Changes:**
+
+- Added `discovered_urls` and `discovered_urls_readonly` tool groups for managing discovered URLs that need processing into MCP implementations:
+  - `list_discovered_urls` - List URLs filtered by processing status (pending/processed/all) with pagination
+  - `mark_discovered_url_processed` - Mark a URL as processed with result, notes, and optional MCP implementation ID
+  - `get_discovered_url_stats` - Get summary statistics for monitoring and reporting
+
+**Note on Manual Testing:**
+
+The discovered URLs backend API endpoints (`/admin/api/discovered_urls`, `/admin/api/discovered_urls/:id/mark_processed`, `/admin/api/discovered_urls/stats`) need to be built on the Rails side first. API credentials (`.env` file) were not available in this environment. The discovered_urls tools follow the same client library patterns as all other tools in this server. Functional tests verify:
+
+1. Tool registration and schema validation (all 55 tools registered correctly)
+2. Tool group filtering: `discovered_urls` group includes all 3 tools; `discovered_urls_readonly` includes only 2 read tools
+3. Parameter parsing and Zod validation for all tool inputs
+4. Response formatting for list, mark processed, and stats tools
+5. Error handling for API failures (401, 403, 404, 422)
+6. Metadata passthrough for discovered URL extra fields
+
+---
+
+## Previous Test Results (v0.6.10)
+
 **Date:** 2026-02-24
 **Commit:** 374f0ef
 **Version:** 0.6.10
