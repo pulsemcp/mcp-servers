@@ -315,45 +315,47 @@ describe('Discovered URLs Tools', () => {
   });
 
   describe('tool group filtering for discovered_urls', () => {
-    it('should register all 3 discovered_urls tools when group is enabled', () => {
-      const mockClient = createMockClient();
-      const registerTools = createRegisterTools(() => mockClient, 'discovered_urls');
+    it('should register all 3 discovered_urls tools when group is enabled', async () => {
+      const mockServer = new Server(
+        { name: 'test', version: '1.0.0' },
+        { capabilities: { tools: {} } }
+      );
+      const registerTools = createRegisterTools(() => createMockClient(), 'discovered_urls');
+      registerTools(mockServer);
 
-      const mockSetHandler = vi.fn();
-      const server = { setRequestHandler: mockSetHandler } as unknown as Server;
-      registerTools(server);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const handlers = (mockServer as any)._requestHandlers;
+      const listToolsHandler = handlers.get('tools/list');
+      const result = await listToolsHandler({ method: 'tools/list', params: {} });
 
-      // Get the ListTools handler (first call)
-      const listToolsHandler = mockSetHandler.mock.calls[0][1];
-      const toolsResult = listToolsHandler({});
-
-      toolsResult.then((result: { tools: Array<{ name: string }> }) => {
-        expect(result.tools).toHaveLength(3);
-        const names = result.tools.map((t) => t.name);
-        expect(names).toContain('list_discovered_urls');
-        expect(names).toContain('mark_discovered_url_processed');
-        expect(names).toContain('get_discovered_url_stats');
-      });
+      expect(result.tools).toHaveLength(3);
+      const names = result.tools.map((t: { name: string }) => t.name);
+      expect(names).toContain('list_discovered_urls');
+      expect(names).toContain('mark_discovered_url_processed');
+      expect(names).toContain('get_discovered_url_stats');
     });
 
-    it('should register only read tools when discovered_urls_readonly is enabled', () => {
-      const mockClient = createMockClient();
-      const registerTools = createRegisterTools(() => mockClient, 'discovered_urls_readonly');
+    it('should register only read tools when discovered_urls_readonly is enabled', async () => {
+      const mockServer = new Server(
+        { name: 'test', version: '1.0.0' },
+        { capabilities: { tools: {} } }
+      );
+      const registerTools = createRegisterTools(
+        () => createMockClient(),
+        'discovered_urls_readonly'
+      );
+      registerTools(mockServer);
 
-      const mockSetHandler = vi.fn();
-      const server = { setRequestHandler: mockSetHandler } as unknown as Server;
-      registerTools(server);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const handlers = (mockServer as any)._requestHandlers;
+      const listToolsHandler = handlers.get('tools/list');
+      const result = await listToolsHandler({ method: 'tools/list', params: {} });
 
-      const listToolsHandler = mockSetHandler.mock.calls[0][1];
-      const toolsResult = listToolsHandler({});
-
-      toolsResult.then((result: { tools: Array<{ name: string }> }) => {
-        expect(result.tools).toHaveLength(2);
-        const names = result.tools.map((t) => t.name);
-        expect(names).toContain('list_discovered_urls');
-        expect(names).toContain('get_discovered_url_stats');
-        expect(names).not.toContain('mark_discovered_url_processed');
-      });
+      expect(result.tools).toHaveLength(2);
+      const names = result.tools.map((t: { name: string }) => t.name);
+      expect(names).toContain('list_discovered_urls');
+      expect(names).toContain('get_discovered_url_stats');
+      expect(names).not.toContain('mark_discovered_url_processed');
     });
   });
 });
