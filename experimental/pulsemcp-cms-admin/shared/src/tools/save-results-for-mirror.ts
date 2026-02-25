@@ -27,16 +27,16 @@ const SaveResultsForMirrorSchema = z.object({
 export function saveResultsForMirror(_server: Server, clientFactory: ClientFactory) {
   return {
     name: 'save_results_for_mirror',
-    description: `Save proctor exam results for an unofficial mirror. Results are sanitized to redact sensitive data (OAuth tokens, client secrets, passwords, etc.) before being persisted.
+    description: `Save proctor exam results for an unofficial mirror. The results passed here must come exactly from a prior run_exam_for_mirror call — do not construct or modify results manually.
 
-Use this after running proctor exams to persist the results for tracking and reporting.
+Results are sanitized server-side to redact sensitive data (OAuth tokens, client secrets, passwords, etc.) before being persisted.
 
 Supports partial success - if some results fail to save, successfully saved results are still returned along with error details for failures.
 
-Use cases:
-- Persist proctor exam results after running exams
-- Store test history for unofficial mirrors
-- Track authentication and initialization test outcomes over time`,
+Typical workflow:
+1. Call run_exam_for_mirror to execute exams against a mirror
+2. Extract the exam_result entries from the NDJSON response
+3. Pass those results directly to this tool without modification`,
     inputSchema: {
       type: 'object',
       properties: {
