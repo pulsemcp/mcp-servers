@@ -2,12 +2,12 @@
 
 ## Latest Test Results
 
-**Date:** 2026-02-25
-**Commit:** fa6b4ae
+**Date:** 2026-02-26
+**Commit:** 8baf070
 **Version:** 0.6.11
-**API Environment:** N/A (no API credentials available for manual testing)
+**API Environment:** staging (https://admin.staging.pulsemcp.com)
 
-### Overall: ✅ Functional Tests PASSING (152/152)
+### Overall: ✅ Functional Tests PASSING (152/152) | ❌ Manual Tests BLOCKED (API key returns 403 for all endpoints)
 
 **v0.6.11 Changes:**
 
@@ -16,9 +16,26 @@
   - `mark_discovered_url_processed` - Mark a URL as processed with result, notes, and optional MCP implementation ID
   - `get_discovered_url_stats` - Get summary statistics for monitoring and reporting
 
-**Note on Manual Testing:**
+**Manual Test Results (discovered-urls-tools.manual.test.ts): ❌ 3/10 PASSING — API key lacks admin privileges**
 
-The discovered URLs backend API endpoints (`/admin/api/discovered_urls`, `/admin/api/discovered_urls/:id/mark_processed`, `/admin/api/discovered_urls/stats`) need to be built on the Rails side first. API credentials (`.env` file) were not available in this environment. The discovered_urls tools follow the same client library patterns as all other tools in this server. Functional tests verify:
+Attempted to run manual tests against staging with the provided API key. The API key returns HTTP 403 (Forbidden) for **all** admin API endpoints, including known working endpoints like `/admin/api/posts`. This is an API key authorization issue, not a code issue.
+
+- ✅ Tool Availability (1 test): All 3 discovered_urls tools registered correctly with `TOOL_GROUPS=discovered_urls`
+- ❌ `list_discovered_urls` (6 tests): All fail — API returns 403 → tool returns "User lacks admin privileges"
+- ❌ `get_discovered_url_stats` (1 test): Fails — API returns 403 → tool returns "User lacks admin privileges"
+- ✅ `mark_discovered_url_processed` non-existent ID (1 test): Passes — returns proper error handling
+- ✅ `mark_discovered_url_processed` skip (1 test): Passes — gracefully skips when no pending URLs available
+
+**Verification that the issue is the API key (not the code):**
+
+- Tested `/admin/api/posts?per_page=1` (a known working endpoint) with the same key: HTTP 403
+- Tested a completely non-existent route `/admin/api/nonexistent_endpoint`: HTTP 403
+- All endpoints return 403 with empty body, confirming the key is rejected at the auth layer before routing
+- The client code correctly uses `X-API-Key` header (matching all other client lib files in the codebase)
+
+**Action needed:** Provide an API key with admin privileges on staging to complete manual testing.
+
+**Functional tests verify (152/152 passing):**
 
 1. Tool registration and schema validation (all 55 tools registered correctly)
 2. Tool group filtering: `discovered_urls` group includes all 3 tools; `discovered_urls_readonly` includes only 2 read tools
