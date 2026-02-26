@@ -2,9 +2,21 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { runHealthChecks } from '../../shared/src/healthcheck.js';
 
 // Mock the https module to avoid real network calls
+// Return a no-op request object that simulates a pending request
 vi.mock('https', () => ({
   default: {
-    request: vi.fn(),
+    request: vi.fn((_options, callback) => {
+      // Simulate a successful auth check (400 = auth passed, request invalid)
+      if (callback) {
+        setTimeout(() => callback({ statusCode: 400 }), 0);
+      }
+      return {
+        on: vi.fn(),
+        setTimeout: vi.fn(),
+        write: vi.fn(),
+        end: vi.fn(),
+      };
+    }),
   },
 }));
 
@@ -15,6 +27,7 @@ describe('Health Check Environment Variable Handling', () => {
   beforeEach(() => {
     delete process.env.FIRECRAWL_API_KEY;
     delete process.env.BRIGHTDATA_API_KEY;
+    vi.clearAllMocks();
   });
 
   afterEach(() => {
@@ -54,17 +67,43 @@ describe('Health Check Environment Variable Handling', () => {
 
   it('should skip Firecrawl health check when only FIRECRAWL_API_KEY is blank', async () => {
     process.env.FIRECRAWL_API_KEY = '';
-    // BRIGHTDATA_API_KEY is undefined (deleted in beforeEach)
 
     const results = await runHealthChecks();
     expect(results).toEqual([]);
   });
 
   it('should skip BrightData health check when only BRIGHTDATA_API_KEY is blank', async () => {
-    // FIRECRAWL_API_KEY is undefined (deleted in beforeEach)
     process.env.BRIGHTDATA_API_KEY = '';
 
     const results = await runHealthChecks();
     expect(results).toEqual([]);
+  });
+
+  it('should run Firecrawl health check when FIRECRAWL_API_KEY has a real value', async () => {
+    process.env.FIRECRAWL_API_KEY = 'fc-test-key-123';
+
+    const results = await runHealthChecks();
+    expect(results).toHaveLength(1);
+    expect(results[0].service).toBe('Firecrawl');
+    expect(results[0].success).toBe(true);
+  });
+
+  it('should run BrightData health check when BRIGHTDATA_API_KEY has a real value', async () => {
+    process.env.BRIGHTDATA_API_KEY = 'bd-test-key-456';
+
+    const results = await runHealthChecks();
+    expect(results).toHaveLength(1);
+    expect(results[0].service).toBe('BrightData');
+    expect(results[0].success).toBe(true);
+  });
+
+  it('should run both health checks when both keys are set', async () => {
+    process.env.FIRECRAWL_API_KEY = 'fc-test-key-123';
+    process.env.BRIGHTDATA_API_KEY = 'bd-test-key-456';
+
+    const results = await runHealthChecks();
+    expect(results).toHaveLength(2);
+    const services = results.map((r) => r.service).sort();
+    expect(services).toEqual(['BrightData', 'Firecrawl']);
   });
 });
