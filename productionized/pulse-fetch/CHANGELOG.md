@@ -10,6 +10,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Fixed flaky `strategy-config-env` functional test caused by race condition with `default-config` test over shared `/tmp/pulse-fetch` directory
+- Fixed health checks and client initialization triggering for blank or whitespace-only API keys
+  - Added `.trim()` guards to `FIRECRAWL_API_KEY` and `BRIGHTDATA_API_KEY` checks in health checks, client creation, and startup logging
+  - Empty strings and whitespace-only values are now properly treated as "not configured"
+  - Prevents spurious health check failures when env vars are set to empty/whitespace values (e.g., by parent process overrides)
 
 ## [0.3.0] - 2025-10-08
 

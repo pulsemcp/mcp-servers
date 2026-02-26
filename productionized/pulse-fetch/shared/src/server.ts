@@ -149,8 +149,8 @@ export function createMCPServer(options: CreateMCPServerOptions) {
     const factory =
       clientFactory ||
       (() => {
-        const firecrawlApiKey = process.env.FIRECRAWL_API_KEY;
-        const brightDataToken = process.env.BRIGHTDATA_API_KEY;
+        const firecrawlApiKey = process.env.FIRECRAWL_API_KEY?.trim();
+        const brightDataToken = process.env.BRIGHTDATA_API_KEY?.trim();
 
         const clients: IScrapingClients = {
           native: new NativeFetcher(),

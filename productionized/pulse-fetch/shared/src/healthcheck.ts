@@ -136,12 +136,14 @@ async function checkBrightDataAuth(apiKey: string): Promise<HealthCheckResult> {
 export async function runHealthChecks(): Promise<HealthCheckResult[]> {
   const checks: Promise<HealthCheckResult>[] = [];
 
-  if (process.env.FIRECRAWL_API_KEY) {
-    checks.push(checkFirecrawlAuth(process.env.FIRECRAWL_API_KEY));
+  const firecrawlKey = process.env.FIRECRAWL_API_KEY?.trim();
+  if (firecrawlKey) {
+    checks.push(checkFirecrawlAuth(firecrawlKey));
   }
 
-  if (process.env.BRIGHTDATA_API_KEY) {
-    checks.push(checkBrightDataAuth(process.env.BRIGHTDATA_API_KEY));
+  const brightDataKey = process.env.BRIGHTDATA_API_KEY?.trim();
+  if (brightDataKey) {
+    checks.push(checkBrightDataAuth(brightDataKey));
   }
 
   if (checks.length === 0) {
