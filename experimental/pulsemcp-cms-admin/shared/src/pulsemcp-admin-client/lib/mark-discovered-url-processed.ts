@@ -41,8 +41,14 @@ export async function markDiscoveredUrlProcessed(
       throw new Error(`Discovered URL with ID ${params.id} not found`);
     }
     if (response.status === 422) {
-      const errorData = (await response.json()) as { error?: string };
-      throw new Error(`Validation error: ${errorData.error || 'Unknown validation error'}`);
+      const errorData = (await response.json()) as { errors?: string[]; error?: string };
+      const errors =
+        errorData.errors && errorData.errors.length > 0
+          ? errorData.errors
+          : errorData.error
+            ? [errorData.error]
+            : ['Unknown validation error'];
+      throw new Error(`Validation error: ${errors.join(', ')}`);
     }
     throw new Error(
       `Failed to mark discovered URL as processed: ${response.status} ${response.statusText}`

@@ -15,6 +15,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   - `mark_discovered_url_processed` - Mark a discovered URL as processed with a result (posted/skipped/rejected/error), optional notes, and optional MCP implementation ID
   - `get_discovered_url_stats` - Get summary statistics including pending count and today's processing breakdown
 
+### Fixed
+
+- Improved 422 error handling in `mark_discovered_url_processed` to handle both `{ errors: [] }` and `{ error: string }` Rails response formats
+- Fixed trailing whitespace in `get_discovered_url_stats` output (added `.trim()` for consistency with other tools)
+
 ## [0.6.10] - 2026-02-24
 
 ### Added

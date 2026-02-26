@@ -38,7 +38,7 @@ Use cases:
         content += `**Rejected Today:** ${stats.rejected_today}\n`;
         content += `**Errored Today:** ${stats.errored_today}\n`;
 
-        return { content: [{ type: 'text', text: content }] };
+        return { content: [{ type: 'text', text: content.trim() }] };
       } catch (error) {
         return {
           content: [
