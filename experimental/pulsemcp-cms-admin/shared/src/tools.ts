@@ -61,6 +61,10 @@ import { cleanupGoodJobs } from './tools/cleanup-good-jobs.js';
 // Proctor tools
 import { runExamForMirror } from './tools/run-exam-for-mirror.js';
 import { saveResultsForMirror } from './tools/save-results-for-mirror.js';
+// Discovered URLs tools
+import { listDiscoveredUrls } from './tools/list-discovered-urls.js';
+import { markDiscoveredUrlProcessed } from './tools/mark-discovered-url-processed.js';
+import { getDiscoveredUrlStats } from './tools/get-discovered-url-stats.js';
 
 /**
  * Tool group definitions - groups of related tools that can be enabled/disabled together
@@ -86,6 +90,7 @@ import { saveResultsForMirror } from './tools/save-results-for-mirror.js';
  * - redirects / redirects_readonly: URL redirect management tools
  * - good_jobs / good_jobs_readonly: GoodJob background job management tools
  * - proctor: Proctor exam execution and result storage tools (write-only, no readonly variant since both tools trigger side effects)
+ * - discovered_urls / discovered_urls_readonly: Discovered URL management tools for processing URLs into MCP implementations
  */
 export type ToolGroup =
   | 'newsletter'
@@ -108,7 +113,9 @@ export type ToolGroup =
   | 'redirects_readonly'
   | 'good_jobs'
   | 'good_jobs_readonly'
-  | 'proctor';
+  | 'proctor'
+  | 'discovered_urls'
+  | 'discovered_urls_readonly';
 
 /** Base groups without _readonly suffix */
 type BaseToolGroup =
@@ -122,7 +129,8 @@ type BaseToolGroup =
   | 'mcp_servers'
   | 'redirects'
   | 'good_jobs'
-  | 'proctor';
+  | 'proctor'
+  | 'discovered_urls';
 
 interface Tool {
   name: string;
@@ -308,6 +316,14 @@ const ALL_TOOLS: ToolDefinition[] = [
   // Proctor tools
   { factory: runExamForMirror, groups: ['proctor'], isWriteOperation: true },
   { factory: saveResultsForMirror, groups: ['proctor'], isWriteOperation: true },
+  // Discovered URLs tools
+  { factory: listDiscoveredUrls, groups: ['discovered_urls'], isWriteOperation: false },
+  {
+    factory: markDiscoveredUrlProcessed,
+    groups: ['discovered_urls'],
+    isWriteOperation: true,
+  },
+  { factory: getDiscoveredUrlStats, groups: ['discovered_urls'], isWriteOperation: false },
 ];
 
 /**
@@ -335,6 +351,8 @@ const VALID_TOOL_GROUPS: ToolGroup[] = [
   'good_jobs',
   'good_jobs_readonly',
   'proctor',
+  'discovered_urls',
+  'discovered_urls_readonly',
 ];
 
 /**
@@ -352,6 +370,7 @@ const BASE_TOOL_GROUPS: BaseToolGroup[] = [
   'redirects',
   'good_jobs',
   'proctor',
+  'discovered_urls',
 ];
 
 /**
@@ -444,6 +463,8 @@ function shouldIncludeTool(toolDef: ToolDefinition, enabledGroups: ToolGroup[]):
  * - good_jobs: GoodJob background job management tools (read + write)
  * - good_jobs_readonly: GoodJob tools (read only)
  * - proctor: Proctor exam execution and result storage tools (write-only, no readonly variant)
+ * - discovered_urls: Discovered URL management tools for processing URLs into MCP implementations (read + write)
+ * - discovered_urls_readonly: Discovered URL tools (read only - list and stats)
  *
  * @param clientFactory - Factory function that creates client instances
  * @param enabledGroups - Optional comma-separated list of enabled tool groups (overrides env var)
