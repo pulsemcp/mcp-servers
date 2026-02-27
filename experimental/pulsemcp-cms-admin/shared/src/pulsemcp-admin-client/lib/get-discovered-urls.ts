@@ -38,7 +38,7 @@ export async function getDiscoveredUrls(
     per_page?: number;
   }
 ): Promise<DiscoveredUrlsResponse> {
-  const url = new URL('/admin/api/discovered_urls', baseUrl);
+  const url = new URL('/api/discovered_urls', baseUrl);
 
   if (params?.status) {
     url.searchParams.append('status', params.status);

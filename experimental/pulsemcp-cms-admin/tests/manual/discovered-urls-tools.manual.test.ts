@@ -23,8 +23,8 @@ dotenv.config({ path: path.join(__dirname, '../../.env') });
  *   3. mark_discovered_url_processed - Mark a URL as processed
  *
  * Required Environment:
- *   PULSEMCP_ADMIN_API_KEY: Admin API key for staging
- *   PULSEMCP_ADMIN_API_URL: https://admin.staging.pulsemcp.com
+ *   PULSEMCP_ADMIN_API_KEY: API key for staging
+ *   PULSEMCP_ADMIN_API_URL: https://admin.staging.pulsemcp.com (optional)
  */
 
 describe('Discovered URLs Tools - Manual Tests with Real API', () => {

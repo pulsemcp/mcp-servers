@@ -8,7 +8,7 @@ export async function markDiscoveredUrlProcessed(
   baseUrl: string,
   params: MarkDiscoveredUrlProcessedParams
 ): Promise<MarkDiscoveredUrlProcessedResponse> {
-  const url = new URL(`/admin/api/discovered_urls/${params.id}/mark_processed`, baseUrl);
+  const url = new URL(`/api/discovered_urls/${params.id}/mark_processed`, baseUrl);
 
   const body: Record<string, unknown> = {
     result: params.result,
