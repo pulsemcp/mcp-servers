@@ -17,6 +17,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Fixed
 
+- Fixed API endpoint paths from `/admin/api/discovered_urls` to `/api/discovered_urls` — the discovered_urls endpoints use a different path prefix than other admin endpoints
 - Improved 422 error handling in `mark_discovered_url_processed` to handle both `{ errors: [] }` and `{ error: string }` Rails response formats
 - Fixed trailing whitespace in `get_discovered_url_stats` output (added `.trim()` for consistency with other tools)
 

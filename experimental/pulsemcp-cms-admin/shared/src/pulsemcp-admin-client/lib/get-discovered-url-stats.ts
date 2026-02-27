@@ -4,7 +4,7 @@ export async function getDiscoveredUrlStats(
   apiKey: string,
   baseUrl: string
 ): Promise<DiscoveredUrlStats> {
-  const url = new URL('/admin/api/discovered_urls/stats', baseUrl);
+  const url = new URL('/api/discovered_urls/stats', baseUrl);
 
   const response = await fetch(url.toString(), {
     method: 'GET',
