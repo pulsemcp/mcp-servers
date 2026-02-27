@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [0.6.12] - 2026-02-27
+
+### Fixed
+
+- Fixed API endpoint paths for discovered_urls tools from `/admin/api/discovered_urls` to `/api/discovered_urls` — the discovered_urls endpoints use a different path prefix than other admin endpoints
+
 ## [0.6.11] - 2026-02-25
 
 ### Added
