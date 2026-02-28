@@ -1,7 +1,7 @@
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { z } from 'zod';
 import type { ClientFactory } from '../server.js';
-import { examResultStore } from '../exam-result-store.js';
+import { examResultStore, extractExamId, extractStatus } from '../exam-result-store.js';
 
 const PARAM_DESCRIPTIONS = {
   mirror_ids:
@@ -136,17 +136,10 @@ Use cases:
               break;
             case 'exam_result': {
               const data = line.data as Record<string, unknown> | undefined;
-              const examId =
-                (data?.exam_id as string) ||
-                (line.exam_id as string) ||
-                (data?.exam_type as string) ||
-                (line.exam_type as string) ||
-                'unknown';
               const mirrorId = line.mirror_id ?? data?.mirror_id ?? 'unknown';
-              const status = (data?.status as string) || (line.status as string) || 'unknown';
               content += `\n**Exam Result** (Mirror: ${mirrorId})\n`;
-              content += `  Exam: ${examId}\n`;
-              content += `  Status: ${status}\n`;
+              content += `  Exam: ${extractExamId(line)}\n`;
+              content += `  Status: ${extractStatus(line)}\n`;
               if (data) {
                 const truncatedData = truncateExamResultData(data);
                 content += `  Data: ${JSON.stringify(truncatedData, null, 2)}\n`;

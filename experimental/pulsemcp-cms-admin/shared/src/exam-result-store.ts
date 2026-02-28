@@ -14,6 +14,31 @@ export interface StoredExamResult {
 }
 
 /**
+ * Extract exam_id from a proctor exam stream line, checking both the
+ * data payload and top-level fields. The API may place exam_id in
+ * either location depending on the exam type.
+ */
+export function extractExamId(line: ProctorExamStreamLine): string {
+  const data = line.data as Record<string, unknown> | undefined;
+  return (
+    (data?.exam_id as string) ||
+    (line.exam_id as string) ||
+    (data?.exam_type as string) ||
+    (line.exam_type as string) ||
+    'unknown'
+  );
+}
+
+/**
+ * Extract status from a proctor exam stream line, checking both the
+ * data payload and top-level fields.
+ */
+export function extractStatus(line: ProctorExamStreamLine): string {
+  const data = line.data as Record<string, unknown> | undefined;
+  return (data?.status as string) || (line.status as string) || 'unknown';
+}
+
+/**
  * Maximum number of results to keep on disk. Oldest results are evicted
  * when this limit is reached (FIFO by insertion order).
  */
@@ -33,6 +58,8 @@ const FILE_SUFFIX = '.json';
  *
  * Files are named with a zero-padded sequence number prefix so that
  * lexicographic sorting preserves insertion order for FIFO eviction.
+ * The sequence counter is initialized from existing files on disk so
+ * that new entries sort after old ones even across process restarts.
  *
  * Eviction: When the store exceeds MAX_RESULTS files, the oldest result
  * is evicted (FIFO). Results are also deleted after successful save via
@@ -43,11 +70,32 @@ const FILE_SUFFIX = '.json';
  * - Pass `result_id` to `save_results_for_mirror` instead of the full payload
  */
 class ExamResultStore {
-  private seq = 0;
+  private seq: number;
+
+  constructor() {
+    this.seq = this.initSeqFromDisk();
+  }
+
+  /**
+   * Scan existing files to find the highest sequence number and start
+   * one past it. This ensures new files always sort after existing ones,
+   * even across process restarts.
+   */
+  private initSeqFromDisk(): number {
+    this.ensureDir();
+    const files = readdirSync(STORE_DIR)
+      .filter((f) => f.endsWith(FILE_SUFFIX) && f.length > FILE_SUFFIX.length)
+      .sort();
+    if (files.length === 0) return 0;
+    const lastFile = files[files.length - 1];
+    const seqStr = lastFile.slice(0, 10);
+    const parsed = parseInt(seqStr, 10);
+    return isNaN(parsed) ? 0 : parsed + 1;
+  }
 
   private ensureDir(): void {
     if (!existsSync(STORE_DIR)) {
-      mkdirSync(STORE_DIR, { recursive: true });
+      mkdirSync(STORE_DIR, { recursive: true, mode: 0o700 });
     }
   }
 
@@ -103,11 +151,10 @@ class ExamResultStore {
       stored_at: new Date().toISOString(),
     };
 
-    writeFileSync(
-      join(STORE_DIR, this.fileName(seqNum, resultId)),
-      JSON.stringify(stored),
-      'utf-8'
-    );
+    writeFileSync(join(STORE_DIR, this.fileName(seqNum, resultId)), JSON.stringify(stored), {
+      encoding: 'utf-8',
+      mode: 0o600,
+    });
     return resultId;
   }
 

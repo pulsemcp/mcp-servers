@@ -1,7 +1,7 @@
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { z } from 'zod';
 import type { ClientFactory } from '../server.js';
-import { examResultStore } from '../exam-result-store.js';
+import { examResultStore, extractExamId, extractStatus } from '../exam-result-store.js';
 
 const PARAM_DESCRIPTIONS = {
   mirror_id: 'The ID of the unofficial mirror to save results for',
@@ -114,16 +114,9 @@ Typical workflow:
             .filter((line) => line.type === 'exam_result')
             .map((line) => {
               const data = line.data as Record<string, unknown> | undefined;
-              const examId =
-                (data?.exam_id as string) ||
-                (line.exam_id as string) ||
-                (data?.exam_type as string) ||
-                (line.exam_type as string) ||
-                'unknown';
-              const status = (data?.status as string) || (line.status as string) || 'unknown';
               return {
-                exam_id: examId,
-                status,
+                exam_id: extractExamId(line),
+                status: extractStatus(line),
                 ...(data ? { data } : {}),
               };
             });
