@@ -173,6 +173,11 @@ Typical workflow:
           }
         }
 
+        // Clean up stored result after successful save (all results persisted)
+        if (validatedArgs.result_id && response.errors.length === 0) {
+          examResultStore.delete(validatedArgs.result_id);
+        }
+
         return { content: [{ type: 'text', text: content.trim() }] };
       } catch (error) {
         return {

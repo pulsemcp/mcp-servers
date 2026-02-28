@@ -11,11 +11,22 @@ export interface StoredExamResult {
 }
 
 /**
+ * Maximum number of results to keep in memory. Oldest results are evicted
+ * when this limit is reached (FIFO). Each result can be 60KB+ for servers
+ * with many tools, so 100 entries ≈ 6MB worst case.
+ */
+const MAX_RESULTS = 100;
+
+/**
  * In-memory store for proctor exam results.
  *
  * When `run_exam_for_mirror` completes, the full result is stored here
  * and a UUID `result_id` is returned. This avoids dumping large payloads
  * (~60KB+ for servers with many tools) into the LLM context.
+ *
+ * Eviction: When the store exceeds MAX_RESULTS entries, the oldest result
+ * is evicted (FIFO). Results are also deleted after successful save via
+ * `save_results_for_mirror`.
  *
  * Consumers can:
  * - Use `get_exam_result` to drill into the full result on demand
@@ -31,6 +42,15 @@ class ExamResultStore {
     lines: ProctorExamStreamLine[]
   ): string {
     const resultId = randomUUID();
+
+    // Evict oldest entries if at capacity (Map preserves insertion order)
+    while (this.results.size >= MAX_RESULTS) {
+      const oldestKey = this.results.keys().next().value;
+      if (oldestKey !== undefined) {
+        this.results.delete(oldestKey);
+      }
+    }
+
     this.results.set(resultId, {
       result_id: resultId,
       mirror_ids: mirrorIds,
@@ -48,6 +68,10 @@ class ExamResultStore {
 
   delete(resultId: string): boolean {
     return this.results.delete(resultId);
+  }
+
+  get size(): number {
+    return this.results.size;
   }
 
   /** For testing only */

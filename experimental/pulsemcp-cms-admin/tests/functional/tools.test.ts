@@ -969,6 +969,30 @@ describe('Newsletter Tools', () => {
       expect(toolNames).not.toContain('upload_image');
     });
 
+    it('should register only get_exam_result when proctor_readonly group is enabled', async () => {
+      const mockServer = new Server(
+        { name: 'test', version: '1.0.0' },
+        { capabilities: { tools: {} } }
+      );
+      const clientFactory = () => createMockClient2();
+
+      const registerTools = createRegisterTools(clientFactory, 'proctor_readonly');
+      registerTools(mockServer);
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const handlers = (mockServer as any)._requestHandlers;
+      const listToolsHandler = handlers.get('tools/list');
+      const result = await listToolsHandler({ method: 'tools/list', params: {} });
+
+      expect(result.tools).toHaveLength(1); // Only read-only proctor tool
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const toolNames = result.tools.map((t: any) => t.name);
+      expect(toolNames).toContain('get_exam_result');
+      // Write tools should NOT be present
+      expect(toolNames).not.toContain('run_exam_for_mirror');
+      expect(toolNames).not.toContain('save_results_for_mirror');
+    });
+
     it('should register only read-only tools when all _readonly groups are enabled', async () => {
       const mockServer = new Server(
         { name: 'test', version: '1.0.0' },
@@ -2812,6 +2836,40 @@ describe('Newsletter Tools', () => {
             { exam_id: 'init-tools-list', status: 'pass', data: { tools_count: 5 } },
           ],
         });
+
+        // Store should be cleaned up after successful save (no errors)
+        expect(examResultStore.get(resultId)).toBeUndefined();
+      });
+
+      it('should not clean up store when save has errors', async () => {
+        const { saveResultsForMirror } =
+          await import('../../shared/src/tools/save-results-for-mirror.js');
+
+        const lines = [
+          {
+            type: 'exam_result' as const,
+            mirror_id: 123,
+            exam_id: 'auth-check',
+            status: 'pass',
+            data: { auth_type: 'none' },
+          },
+        ];
+        const resultId = examResultStore.store([123], 'fly-machines-v1', 'both', lines);
+
+        const saveFn = vi.fn().mockResolvedValue({
+          saved: [],
+          errors: [{ exam_id: 'auth-check', error: 'Server error' }],
+        });
+        const mockClient = createMockClient({ saveResultsForMirror: saveFn });
+
+        const tool = saveResultsForMirror(mockServer, () => mockClient);
+        await tool.handler({
+          mirror_id: 123,
+          result_id: resultId,
+        });
+
+        // Store should NOT be cleaned up when there are errors (allow retry)
+        expect(examResultStore.get(resultId)).toBeDefined();
       });
 
       it('should return error for unknown result_id', async () => {
