@@ -16,7 +16,7 @@ npm run test:manual
 
 ### 2026-02-28 - v0.1.1 (tool group change only, no API code changes)
 
-**Commit:** c0e0e35
+**Commit:** 5457e46
 **Result:** Manual tests not re-run — this change only moves `delete_object` and `delete_bucket` from the `readwrite` tool group to a new `delete` tool group. No API-calling code was modified. All functional tests (24/24) and integration tests (16/16) pass, including 3 new tool group filtering tests.
 
 ### 2026-02-10 - v0.1.0 Manual Testing
