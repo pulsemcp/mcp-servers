@@ -2639,6 +2639,37 @@ describe('Newsletter Tools', () => {
         expect(stored!.exam_type).toBe('init-tools-list');
       });
 
+      it('should extract exam_id from data payload when not at top level of stream line', async () => {
+        const { runExamForMirror } = await import('../../shared/src/tools/run-exam-for-mirror.js');
+        const mockClient = createMockClient({
+          runExamForMirror: vi.fn().mockResolvedValue({
+            lines: [
+              {
+                type: 'exam_result',
+                mirror_id: 123,
+                // No exam_id at top level — only inside data
+                data: {
+                  mirror_id: 123,
+                  exam_id: 'proctor-mcp-client-auth-check',
+                  status: 'pass',
+                },
+              },
+            ],
+          }),
+        });
+
+        const tool = runExamForMirror(mockServer, () => mockClient);
+        const result = await tool.handler({
+          mirror_ids: [123],
+          runtime_id: 'fly-machines-v1',
+          exam_type: 'auth-check',
+        });
+
+        // Should show the exam_id from data, not 'unknown'
+        expect(result.content[0].text).toContain('Exam: proctor-mcp-client-auth-check');
+        expect(result.content[0].text).not.toContain('Exam: unknown');
+      });
+
       it('should format error lines from the stream', async () => {
         const { runExamForMirror } = await import('../../shared/src/tools/run-exam-for-mirror.js');
         const mockClient = createMockClient({
@@ -2861,6 +2892,66 @@ describe('Newsletter Tools', () => {
 
         // Store should be cleaned up after successful save (no errors)
         expect(examResultStore.get(resultId)).toBeUndefined();
+      });
+
+      it('should extract exam_id from data payload when not at top level of stream line', async () => {
+        const { saveResultsForMirror } =
+          await import('../../shared/src/tools/save-results-for-mirror.js');
+
+        // Simulate the real-world bug: exam_id is inside line.data, NOT at line.exam_id
+        const lines = [
+          {
+            type: 'exam_result' as const,
+            mirror_id: 123,
+            // No exam_id or exam_type at top level!
+            status: 'pass',
+            data: {
+              mirror_id: 123,
+              exam_id: 'proctor-mcp-client-auth-check',
+              result: { status: 'pass' },
+            },
+          },
+          {
+            type: 'exam_result' as const,
+            mirror_id: 123,
+            // No exam_id at top level!
+            data: {
+              mirror_id: 123,
+              exam_id: 'proctor-mcp-client-init-tools-list',
+              status: 'pass',
+              result: { status: 'pass', tools_count: 5 },
+            },
+          },
+        ];
+        const resultId = examResultStore.store([123], 'fly-machines-v1', 'both', lines);
+
+        const saveFn = vi.fn().mockResolvedValue({
+          saved: [
+            { exam_id: 'proctor-mcp-client-auth-check', proctor_result_id: 301 },
+            { exam_id: 'proctor-mcp-client-init-tools-list', proctor_result_id: 302 },
+          ],
+          errors: [],
+        });
+        const mockClient = createMockClient({ saveResultsForMirror: saveFn });
+
+        const tool = saveResultsForMirror(mockServer, () => mockClient);
+        const result = await tool.handler({
+          mirror_id: 123,
+          result_id: resultId,
+        });
+
+        expect(result.isError).toBeUndefined();
+        expect(result.content[0].text).toContain('Successfully Saved (2)');
+
+        // Verify exam_id was extracted from data payload, NOT 'unknown'
+        expect(saveFn).toHaveBeenCalledWith(
+          expect.objectContaining({
+            results: expect.arrayContaining([
+              expect.objectContaining({ exam_id: 'proctor-mcp-client-auth-check' }),
+              expect.objectContaining({ exam_id: 'proctor-mcp-client-init-tools-list' }),
+            ]),
+          })
+        );
       });
 
       it('should not clean up store when save has errors', async () => {

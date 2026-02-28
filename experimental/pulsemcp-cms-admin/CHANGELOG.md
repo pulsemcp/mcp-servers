@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [0.7.1] - 2026-02-28
+
+### Fixed
+
+- Replaced in-memory exam result store with file-based storage in `/tmp/` — results now persist across tool calls without relying on process memory
+- Fixed `exam_id` showing as "unknown" in display metadata and save operations — now extracts `exam_id` from the data payload (`line.data.exam_id`) when not present at the top level of the stream line
+- Fixed `save_results_for_mirror` to read `exam_id` and `status` from the actual data payload instead of potentially empty top-level display fields
+
 ## [0.7.0] - 2026-02-28
 
 ### Added
