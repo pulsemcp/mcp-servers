@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [0.6.13] - 2026-02-28
+
 ### Fixed
 
 - Fixed `save_results_for_mirror` client library to nest each result under a `result` key as expected by the PulseMCP Admin API (`{exam_id, result: {status, data}}` instead of flat `{exam_id, status, data}`)
