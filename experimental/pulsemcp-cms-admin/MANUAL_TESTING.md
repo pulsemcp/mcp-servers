@@ -3,7 +3,7 @@
 ## Latest Test Results
 
 **Date:** 2026-02-28
-**Commit:** 914f065
+**Commit:** 67a8fab
 **Version:** 0.7.0 (pre-release)
 **API Environment:** N/A (no API credentials available; changes are MCP server-side only)
 
