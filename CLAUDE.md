@@ -310,6 +310,8 @@ npm run test:manual
 
 **Note**: Always use `.env` files in the MCP server's source root to store API keys and credentials. Never commit these files to version control.
 
+**CRITICAL: Manual tests MUST run against staging, not production.** For servers that connect to PulseMCP APIs (like `pulsemcp-cms-admin`), always set `PULSEMCP_ADMIN_API_URL=https://admin.staging.pulsemcp.com` in the `.env` file. The default API URL is production — running manual tests without the staging URL will either fail with "Invalid API key" (if using a staging key) or mutate production data (if using a production key). Check each server's `.env.example` for the required variables.
+
 **CRITICAL: If the `.env` file is missing or doesn't contain the required API keys/credentials, STOP and ask the user to provide them.** Do NOT silently skip manual tests or proceed without credentials. Check for the `.env` file BEFORE attempting to run manual tests — if it's missing or looks incomplete, ask the user for the required credentials immediately.
 
 ### CRITICAL: Manual Test Integrity Policy

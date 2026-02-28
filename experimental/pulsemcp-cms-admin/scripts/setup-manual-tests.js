@@ -37,7 +37,20 @@ if (
   process.exit(1);
 }
 
-console.log('✅ .env file configured\n');
+// Check if staging URL is set (manual tests MUST run against staging, not production)
+if (!envContent.includes('PULSEMCP_ADMIN_API_URL=')) {
+  console.error('❌ PULSEMCP_ADMIN_API_URL not configured in .env!');
+  console.log('   Manual tests MUST run against staging, not production.');
+  console.log('   Add this to your .env file:');
+  console.log('   PULSEMCP_ADMIN_API_URL=https://admin.staging.pulsemcp.com');
+  process.exit(1);
+} else if (!envContent.includes('staging.pulsemcp.com')) {
+  console.warn('⚠️  PULSEMCP_ADMIN_API_URL does not point to staging!');
+  console.log('   Manual tests should run against: https://admin.staging.pulsemcp.com');
+  console.log('   Current value may be pointing to production.\n');
+}
+
+console.log('✅ .env file configured (staging)\n');
 
 // Install all dependencies
 console.log('📦 Installing all dependencies...');

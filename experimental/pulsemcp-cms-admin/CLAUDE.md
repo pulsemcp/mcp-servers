@@ -8,12 +8,24 @@ Internal MCP server for managing PulseMCP's newsletter content. Requires `PULSEM
 
 ## API Integration
 
-- Base URL: `https://admin.pulsemcp.com`
+- **Production** Base URL: `https://admin.pulsemcp.com`
+- **Staging** Base URL: `https://admin.staging.pulsemcp.com`
 - Authentication: `X-API-Key` header
 - See `shared/src/types.ts` for field definitions
 - See tool implementations in `shared/src/tools/` for API endpoints
 
 The Rails application supports JSON responses for all resources via the supervisor namespace. The MCP server uses real API calls for all operations including posts, authors, MCP servers, and MCP clients.
+
+## Manual Testing
+
+**Manual tests MUST run against staging, not production.** Set both variables in your `.env`:
+
+```
+PULSEMCP_ADMIN_API_KEY=your-staging-api-key
+PULSEMCP_ADMIN_API_URL=https://admin.staging.pulsemcp.com
+```
+
+The default API URL is production (`admin.pulsemcp.com`). Without `PULSEMCP_ADMIN_API_URL`, tests will hit production and fail with "Invalid API key" if you have a staging key (or worse, mutate production data if you have a production key).
 
 ## Key Implementation Details
 
