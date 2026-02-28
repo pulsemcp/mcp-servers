@@ -19,7 +19,8 @@ import { logWarning, logInfo } from './logging.js';
 //
 // Usage: Set GCS_ENABLED_TOOLGROUPS environment variable to a comma-separated list
 // Example: GCS_ENABLED_TOOLGROUPS="readonly" (only read operations)
-// Example: GCS_ENABLED_TOOLGROUPS="readonly,readwrite" (all operations)
+// Example: GCS_ENABLED_TOOLGROUPS="readonly,readwrite" (read and write, no deletes)
+// Example: GCS_ENABLED_TOOLGROUPS="readonly,readwrite,delete" (all operations)
 // Default: All groups enabled when not specified
 //
 // Individual tools can also be enabled/disabled using GCS_ENABLED_TOOLS or GCS_DISABLED_TOOLS:
@@ -34,11 +35,12 @@ import { logWarning, logInfo } from './logging.js';
 /**
  * Available tool groups for GCS operations.
  * - 'readonly': Read-only operations (list, get, head)
- * - 'readwrite': Write operations (put, copy, delete, create)
+ * - 'readwrite': Write operations (put, copy, create)
+ * - 'delete': Delete operations (delete_object, delete_bucket)
  */
-export type ToolGroup = 'readonly' | 'readwrite';
+export type ToolGroup = 'readonly' | 'readwrite' | 'delete';
 
-const ALL_TOOL_GROUPS: ToolGroup[] = ['readonly', 'readwrite'];
+const ALL_TOOL_GROUPS: ToolGroup[] = ['readonly', 'readwrite', 'delete'];
 
 /**
  * Parse enabled tool groups from environment variable.
@@ -128,12 +130,13 @@ const ALL_TOOLS: ToolDefinition[] = [
   { factory: listObjectsTool, groups: ['readonly'], bucketParams: ['bucket'] },
   { factory: getObjectTool, groups: ['readonly'], bucketParams: ['bucket'] },
   { factory: headBucketTool, groups: ['readonly'], bucketLevelOnly: true },
-  // Write operations
+  // Write operations (non-destructive)
   { factory: putObjectTool, groups: ['readwrite'], bucketParams: ['bucket'] },
-  { factory: deleteObjectTool, groups: ['readwrite'], bucketParams: ['bucket'] },
   { factory: copyObjectTool, groups: ['readwrite'], bucketParams: ['sourceBucket', 'destBucket'] },
   { factory: createBucketTool, groups: ['readwrite'], bucketLevelOnly: true },
-  { factory: deleteBucketTool, groups: ['readwrite'], bucketLevelOnly: true },
+  // Delete operations
+  { factory: deleteObjectTool, groups: ['delete'], bucketParams: ['bucket'] },
+  { factory: deleteBucketTool, groups: ['delete'], bucketLevelOnly: true },
 ];
 
 /**

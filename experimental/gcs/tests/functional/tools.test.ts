@@ -16,7 +16,7 @@ describe('Tool Filtering', () => {
   describe('parseEnabledToolGroups', () => {
     it('should return all groups when no parameter provided', () => {
       const groups = parseEnabledToolGroups();
-      expect(groups).toEqual(['readonly', 'readwrite']);
+      expect(groups).toEqual(['readonly', 'readwrite', 'delete']);
     });
 
     it('should parse valid groups from comma-separated list', () => {
@@ -27,6 +27,16 @@ describe('Tool Filtering', () => {
     it('should parse multiple valid groups', () => {
       const groups = parseEnabledToolGroups('readonly,readwrite');
       expect(groups).toEqual(['readonly', 'readwrite']);
+    });
+
+    it('should parse delete group', () => {
+      const groups = parseEnabledToolGroups('delete');
+      expect(groups).toEqual(['delete']);
+    });
+
+    it('should parse all three groups', () => {
+      const groups = parseEnabledToolGroups('readonly,readwrite,delete');
+      expect(groups).toEqual(['readonly', 'readwrite', 'delete']);
     });
 
     it('should handle whitespace in input', () => {
@@ -41,7 +51,7 @@ describe('Tool Filtering', () => {
 
     it('should return all groups if all provided groups are invalid', () => {
       const groups = parseEnabledToolGroups('invalid,alsoinvalid');
-      expect(groups).toEqual(['readonly', 'readwrite']);
+      expect(groups).toEqual(['readonly', 'readwrite', 'delete']);
     });
   });
 
