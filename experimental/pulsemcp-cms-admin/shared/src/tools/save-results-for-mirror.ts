@@ -7,7 +7,7 @@ const PARAM_DESCRIPTIONS = {
   mirror_id: 'The ID of the unofficial mirror to save results for',
   runtime_id: 'The runtime ID that was used to run the exams',
   result_id:
-    'The UUID returned by run_exam_for_mirror. When provided, the server retrieves the full result from the in-memory store — no need to pass the results array. This is the preferred approach.',
+    'The UUID returned by run_exam_for_mirror. When provided, the server retrieves the full result from the local file store — no need to pass the results array. This is the preferred approach.',
   results:
     'Array of exam results to save. Each result must include exam_id, status, and optional data. Only needed if result_id is not provided.',
   exam_id: 'The exam identifier (e.g., "auth-check", "init-tools-list")',
@@ -41,7 +41,7 @@ export function saveResultsForMirror(_server: Server, clientFactory: ClientFacto
     name: 'save_results_for_mirror',
     description: `Save proctor exam results for an unofficial mirror.
 
-**Preferred**: Pass the \`result_id\` returned by \`run_exam_for_mirror\`. The full result is retrieved from the in-memory store server-side — no need to pass the large results payload through the LLM context.
+**Preferred**: Pass the \`result_id\` returned by \`run_exam_for_mirror\`. The full result is retrieved from the local file store server-side — no need to pass the large results payload through the LLM context.
 
 **Fallback**: Pass results directly (as before) if result_id is not available.
 
@@ -99,21 +99,34 @@ Typical workflow:
               content: [
                 {
                   type: 'text',
-                  text: `No stored result found for result_id "${validatedArgs.result_id}". Results are stored in-memory and may have been lost if the server restarted. Pass the results array directly instead.`,
+                  text: `No stored result found for result_id "${validatedArgs.result_id}". The result file may have been cleaned up or the /tmp directory cleared. Pass the results array directly instead.`,
                 },
               ],
               isError: true,
             };
           }
 
-          // Extract exam_result lines from stored data
+          // Extract exam_result lines from stored data.
+          // The exam_id may live at the top level of the stream line OR inside
+          // line.data (the actual result payload). Prefer the data payload to
+          // avoid reading from potentially incomplete display metadata.
           results = stored.lines
             .filter((line) => line.type === 'exam_result')
-            .map((line) => ({
-              exam_id: (line.exam_id || line.exam_type || 'unknown') as string,
-              status: (line.status || 'unknown') as string,
-              ...(line.data ? { data: line.data as Record<string, unknown> } : {}),
-            }));
+            .map((line) => {
+              const data = line.data as Record<string, unknown> | undefined;
+              const examId =
+                (data?.exam_id as string) ||
+                (line.exam_id as string) ||
+                (data?.exam_type as string) ||
+                (line.exam_type as string) ||
+                'unknown';
+              const status = (data?.status as string) || (line.status as string) || 'unknown';
+              return {
+                exam_id: examId,
+                status,
+                ...(data ? { data } : {}),
+              };
+            });
 
           if (!runtimeId) {
             runtimeId = stored.runtime_id;

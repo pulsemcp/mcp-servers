@@ -57,7 +57,7 @@ Typical usage:
           content: [
             {
               type: 'text',
-              text: `No stored result found for result_id "${validatedArgs.result_id}". Results are stored in-memory and may have been lost if the server restarted.`,
+              text: `No stored result found for result_id "${validatedArgs.result_id}". The result file may have been cleaned up or the /tmp directory cleared.`,
             },
           ],
           isError: true,

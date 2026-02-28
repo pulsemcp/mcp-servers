@@ -72,7 +72,7 @@ Available exam types:
 
 Mirrors without saved mcp_json configurations are automatically skipped.
 
-Results are stored server-side and a \`result_id\` UUID is returned. The response includes a truncated summary (status, tool names/counts, errors) that fits within MCP size limits. Use \`get_exam_result\` to drill into full details, or pass the \`result_id\` directly to \`save_results_for_mirror\`.
+Results are stored server-side in a local file and a \`result_id\` UUID is returned. The response includes a truncated summary (status, tool names/counts, errors) that fits within MCP size limits. Use \`get_exam_result\` to drill into full details, or pass the \`result_id\` directly to \`save_results_for_mirror\`.
 
 Use cases:
 - Test if an unofficial mirror's MCP server is working correctly before linking it
@@ -134,15 +134,25 @@ Use cases:
             case 'log':
               content += `[LOG] ${line.message || JSON.stringify(line)}\n`;
               break;
-            case 'exam_result':
-              content += `\n**Exam Result** (Mirror: ${line.mirror_id || 'unknown'})\n`;
-              content += `  Exam: ${line.exam_id || line.exam_type || 'unknown'}\n`;
-              content += `  Status: ${line.status || 'unknown'}\n`;
-              if (line.data) {
-                const truncatedData = truncateExamResultData(line.data as Record<string, unknown>);
+            case 'exam_result': {
+              const data = line.data as Record<string, unknown> | undefined;
+              const examId =
+                (data?.exam_id as string) ||
+                (line.exam_id as string) ||
+                (data?.exam_type as string) ||
+                (line.exam_type as string) ||
+                'unknown';
+              const mirrorId = line.mirror_id ?? data?.mirror_id ?? 'unknown';
+              const status = (data?.status as string) || (line.status as string) || 'unknown';
+              content += `\n**Exam Result** (Mirror: ${mirrorId})\n`;
+              content += `  Exam: ${examId}\n`;
+              content += `  Status: ${status}\n`;
+              if (data) {
+                const truncatedData = truncateExamResultData(data);
                 content += `  Data: ${JSON.stringify(truncatedData, null, 2)}\n`;
               }
               break;
+            }
             case 'summary':
               content += `\n**Summary**\n`;
               content += `  Total: ${line.total || 0}\n`;
