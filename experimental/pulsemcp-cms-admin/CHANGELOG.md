@@ -6,6 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [0.6.14] - 2026-02-28
+
+### Changed
+
+- Moved `send_impl_posted_notif` from `server_directory` group to new dedicated `notifications` tool group for notification email isolation
+- Added `notifications` as a new base tool group (write-only, no readonly variant)
+
 ## [0.6.13] - 2026-02-28
 
 ### Fixed
