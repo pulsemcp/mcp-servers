@@ -198,10 +198,10 @@ TOOL_GROUPS=server_directory_readonly
 Enable all groups with read-only access:
 
 ```bash
-TOOL_GROUPS=newsletter_readonly,server_directory_readonly,official_queue_readonly,unofficial_mirrors_readonly,official_mirrors_readonly,tenants_readonly,mcp_jsons_readonly,mcp_servers_readonly,redirects_readonly,good_jobs_readonly
+TOOL_GROUPS=newsletter_readonly,server_directory_readonly,official_queue_readonly,unofficial_mirrors_readonly,official_mirrors_readonly,tenants_readonly,mcp_jsons_readonly,mcp_servers_readonly,redirects_readonly,good_jobs_readonly,discovered_urls_readonly
 ```
 
-Note: `proctor` has no readonly variant since both tools trigger side effects.
+Note: `proctor` and `email_notifications` have no readonly variants since their tools trigger side effects.
 
 Mix full and read-only access per group:
 
@@ -336,7 +336,7 @@ Add to your Claude Desktop configuration:
       "args": ["/path/to/pulsemcp-cms-admin/local/build/index.js"],
       "env": {
         "PULSEMCP_ADMIN_API_KEY": "your-api-key-here",
-        "TOOL_GROUPS": "newsletter,server_directory,official_queue,unofficial_mirrors,official_mirrors,tenants,mcp_jsons,mcp_servers,redirects,good_jobs,proctor"
+        "TOOL_GROUPS": "newsletter,server_directory,official_queue,unofficial_mirrors,official_mirrors,tenants,mcp_jsons,mcp_servers,redirects,good_jobs,proctor,discovered_urls,email_notifications"
       }
     }
   }
@@ -353,7 +353,7 @@ For read-only access:
       "args": ["/path/to/pulsemcp-cms-admin/local/build/index.js"],
       "env": {
         "PULSEMCP_ADMIN_API_KEY": "your-api-key-here",
-        "TOOL_GROUPS": "newsletter_readonly,server_directory_readonly,official_queue_readonly,unofficial_mirrors_readonly,official_mirrors_readonly,tenants_readonly,mcp_jsons_readonly,mcp_servers_readonly,redirects_readonly,good_jobs_readonly"
+        "TOOL_GROUPS": "newsletter_readonly,server_directory_readonly,official_queue_readonly,unofficial_mirrors_readonly,official_mirrors_readonly,tenants_readonly,mcp_jsons_readonly,mcp_servers_readonly,redirects_readonly,good_jobs_readonly,discovered_urls_readonly"
       }
     }
   }

@@ -310,7 +310,7 @@ describe('PulseMCP CMS Admin - Toolgroups Integration Tests', () => {
     it('should register all tools by default', async () => {
       const tools = await client.listTools();
 
-      // 6 newsletter + 4 server_directory + 7 official_queue + 5 unofficial_mirrors + 2 official_mirrors + 2 tenants + 5 mcp_jsons + 3 mcp_servers + 5 redirects + 10 good_jobs + 2 proctor + 3 discovered_urls + 1 notifications = 55 tools
+      // 6 newsletter + 4 server_directory + 7 official_queue + 5 unofficial_mirrors + 2 official_mirrors + 2 tenants + 5 mcp_jsons + 3 mcp_servers + 5 redirects + 10 good_jobs + 2 proctor + 3 discovered_urls + 1 email_notifications = 55 tools
       expect(tools.tools).toHaveLength(55);
       const toolNames = tools.tools.map((t) => t.name);
 
