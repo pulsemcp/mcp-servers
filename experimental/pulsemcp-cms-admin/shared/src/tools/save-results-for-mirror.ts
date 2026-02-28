@@ -30,6 +30,10 @@ const SaveResultsForMirrorSchema = z
   })
   .refine((data) => data.result_id || (data.results && data.results.length > 0), {
     message: 'Either result_id or a non-empty results array must be provided',
+  })
+  .refine((data) => !(data.result_id && data.results && data.results.length > 0), {
+    message:
+      'Provide either result_id or results, not both. Use result_id (preferred) to retrieve from the store, or results for direct submission.',
   });
 
 export function saveResultsForMirror(_server: Server, clientFactory: ClientFactory) {

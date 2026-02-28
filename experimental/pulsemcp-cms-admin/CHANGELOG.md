@@ -15,6 +15,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Added `get_exam_result` tool to retrieve full untruncated exam results on demand, with optional filtering by section (`exam_results`, `logs`, `summary`, `errors`) and `mirror_id`
 - `save_results_for_mirror` now accepts a `result_id` instead of requiring the full results payload — the server retrieves the stored result automatically, eliminating the LLM context round-trip for large payloads
 - Added `proctor_readonly` tool group variant containing `get_exam_result` for read-only access to stored results
+- Bounded in-memory store with MAX_RESULTS=100 FIFO eviction to prevent unbounded memory growth
+- Automatic store cleanup after successful save via `save_results_for_mirror`
+- `save_results_for_mirror` rejects providing both `result_id` and `results` to prevent ambiguity
 
 ## [0.6.14] - 2026-02-28
 

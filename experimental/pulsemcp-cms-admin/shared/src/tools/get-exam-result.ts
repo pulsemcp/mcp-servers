@@ -29,10 +29,12 @@ run_exam_for_mirror returns a truncated summary to keep the response within MCP 
 
 Supports filtering by section (exam_results, logs, summary, errors) and by mirror_id to drill into specific parts of the result without loading the entire payload.
 
+**Tip**: For servers with many tools, the full result can be very large. Use the section and/or mirror_id filters to retrieve only the data you need.
+
 Typical usage:
 1. Call run_exam_for_mirror — note the returned result_id
-2. Call get_exam_result with that result_id to see full details
-3. Optionally filter by section or mirror_id for targeted inspection`,
+2. Call get_exam_result with that result_id and a section filter (e.g., section="exam_results")
+3. Optionally add mirror_id to narrow further for multi-mirror exams`,
     inputSchema: {
       type: 'object',
       properties: {

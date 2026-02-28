@@ -2505,6 +2505,28 @@ describe('Newsletter Tools', () => {
       examResultStore.clear();
     });
 
+    describe('ExamResultStore', () => {
+      it('should evict oldest entries when MAX_RESULTS (100) is exceeded', () => {
+        const ids: string[] = [];
+        for (let i = 0; i < 101; i++) {
+          ids.push(
+            examResultStore.store([i], 'runtime', 'test', [
+              { type: 'exam_result', mirror_id: i, exam_id: `test-${i}`, status: 'pass' },
+            ])
+          );
+        }
+
+        // Store should be capped at 100
+        expect(examResultStore.size).toBe(100);
+        // First entry should have been evicted
+        expect(examResultStore.get(ids[0])).toBeUndefined();
+        // Last entry should still exist
+        expect(examResultStore.get(ids[100])).toBeDefined();
+        // Second entry should still exist (only the first was evicted)
+        expect(examResultStore.get(ids[1])).toBeDefined();
+      });
+    });
+
     describe('run_exam_for_mirror', () => {
       it('should run exams, store results, and return truncated output with result_id', async () => {
         const { runExamForMirror } = await import('../../shared/src/tools/run-exam-for-mirror.js');
@@ -2870,6 +2892,24 @@ describe('Newsletter Tools', () => {
 
         // Store should NOT be cleaned up when there are errors (allow retry)
         expect(examResultStore.get(resultId)).toBeDefined();
+      });
+
+      it('should reject providing both result_id and results', async () => {
+        const { saveResultsForMirror } =
+          await import('../../shared/src/tools/save-results-for-mirror.js');
+
+        const resultId = examResultStore.store([123], 'fly-machines-v1', 'both', [
+          { type: 'exam_result', mirror_id: 123, exam_id: 'auth-check', status: 'pass' },
+        ]);
+
+        const tool = saveResultsForMirror(mockServer, () => createMockClient());
+        await expect(
+          tool.handler({
+            mirror_id: 123,
+            result_id: resultId,
+            results: [{ exam_id: 'auth-check', status: 'pass' }],
+          })
+        ).rejects.toThrow('Provide either result_id or results, not both');
       });
 
       it('should return error for unknown result_id', async () => {
