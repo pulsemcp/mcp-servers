@@ -3,11 +3,11 @@
 ## Latest Test Results
 
 **Date:** 2026-02-28
-**Commit:** 67a8fab
+**Commit:** bb332c4
 **Version:** 0.7.0 (pre-release)
-**API Environment:** N/A (no API credentials available; changes are MCP server-side only)
+**API Environment:** staging (https://admin.staging.pulsemcp.com)
 
-### Overall: ✅ Functional Tests PASSING (95/95)
+### Overall: ✅ Functional Tests PASSING (97/97) | ✅ Manual Tests PASSING (152/152 across 10 test files)
 
 **v0.7.0 Changes:**
 
@@ -16,17 +16,32 @@
 - Added `get_exam_result` tool for on-demand drill-down into stored results
 - `save_results_for_mirror` now accepts `result_id` instead of requiring the full results payload
 - Added `proctor_readonly` tool group variant
+- Bounded in-memory store with MAX_RESULTS=100 FIFO eviction
+- Automatic store cleanup after successful save via `save_results_for_mirror`
 
-**Note on Manual Testing:**
+**Manual Test Results: ✅ 152/152 PASSING across 10 test files (73.78s)**
 
-No API credentials (`.env` file) are available in this environment. These changes are purely MCP server-side logic — in-memory result store, response truncation, and a new `get_exam_result` tool. No API client code was modified (`pulsemcp-admin-client/lib/run-exam-for-mirror.ts` and `pulsemcp-admin-client/lib/save-results-for-mirror.ts` are unchanged). Functional tests comprehensively verify:
+1. ✅ good-jobs-tools.manual.test.ts (21 tests)
+2. ✅ rest-api-tools.manual.test.ts (28 tests)
+3. ✅ discovered-urls-tools.manual.test.ts (10 tests)
+4. ✅ mcp-servers-tools.manual.test.ts (36 tests)
+5. ✅ server-directory-tools.manual.test.ts (17 tests)
+6. ✅ search-mcp-implementations.manual.test.ts (11 tests)
+7. ✅ redirect-tools.manual.test.ts (13 tests)
+8. ✅ find-providers.manual.test.ts (9 tests)
+9. ✅ send-email.manual.test.ts (1 test)
+10. ✅ pulsemcp-cms-admin.manual.test.ts (6 tests)
+
+**Note:** No proctor-specific manual tests exist yet (proctor API endpoints require a mirror with a running runtime). The proctor tools (`run_exam_for_mirror`, `get_exam_result`, `save_results_for_mirror`) are covered by 18 functional tests verifying:
 
 1. Result storage with UUID generation (3 tests)
 2. Truncation of large tool listings (omitting inputSchema, adding tools_count) (1 test)
 3. `get_exam_result` with section and mirror_id filtering (4 tests)
 4. `save_results_for_mirror` with result_id-based flow (2 tests)
-5. Backward compatibility with explicit results array (4 tests)
-6. Error handling for unknown result_ids (2 tests)
+5. Store cleanup after successful save / retention on errors (2 tests)
+6. `proctor_readonly` group filtering (1 test)
+7. Backward compatibility with explicit results array (3 tests)
+8. Error handling for unknown result_ids (2 tests)
 
 ---
 
