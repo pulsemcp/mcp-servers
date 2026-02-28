@@ -10,7 +10,13 @@ export async function saveResultsForMirror(
   const body = {
     mirror_id: params.mirror_id,
     runtime_id: params.runtime_id,
-    results: params.results,
+    results: params.results.map((r) => ({
+      exam_id: r.exam_id,
+      result: {
+        status: r.status,
+        ...(r.data && { data: r.data }),
+      },
+    })),
   };
 
   const response = await fetch(url.toString(), {

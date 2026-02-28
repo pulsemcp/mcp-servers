@@ -2615,6 +2615,27 @@ describe('Newsletter Tools', () => {
           'Error saving proctor results: Mirror not found with ID: 999'
         );
       });
+
+      it('should handle string error format from API', async () => {
+        const { saveResultsForMirror } =
+          await import('../../shared/src/tools/save-results-for-mirror.js');
+        const mockClient = createMockClient({
+          saveResultsForMirror: vi.fn().mockResolvedValue({
+            saved: [],
+            errors: ['Missing exam_id or result data for entry'],
+          }),
+        });
+
+        const tool = saveResultsForMirror(mockServer, () => mockClient);
+        const result = await tool.handler({
+          mirror_id: 123,
+          runtime_id: 'fly-machines-v1',
+          results: [{ exam_id: 'auth-check', status: 'pass' }],
+        });
+
+        expect(result.content[0].text).toContain('Errors (1)');
+        expect(result.content[0].text).toContain('Missing exam_id or result data for entry');
+      });
     });
   });
 });

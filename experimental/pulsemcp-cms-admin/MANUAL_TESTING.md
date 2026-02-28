@@ -2,6 +2,40 @@
 
 ## Latest Test Results
 
+**Date:** 2026-02-28
+**Commit:** 86be247
+**Version:** 0.6.13 (pre-release)
+**API Environment:** staging (https://admin.staging.pulsemcp.com)
+
+### Overall: ✅ Functional Tests PASSING (153/153) | ✅ Manual Tests PASSING (152/152 across 10 test files)
+
+**v0.6.13 Changes:**
+
+- Fixed `save_results_for_mirror` client library to nest each result under a `result` key as expected by the PulseMCP Admin API (`{exam_id, result: {status, data}}` instead of flat `{exam_id, status, data}`)
+- Fixed `save_results_for_mirror` error response parsing to handle both string errors (e.g., `["Missing exam_id or result data for entry"]`) and object errors (e.g., `[{exam_id, error}]`) from the API
+
+**Manual Test Results: ✅ 152/152 PASSING across 10 test files (40.63s)**
+
+1. ✅ good-jobs-tools.manual.test.ts (21 tests)
+2. ✅ rest-api-tools.manual.test.ts (28 tests)
+3. ✅ discovered-urls-tools.manual.test.ts (10 tests)
+4. ✅ mcp-servers-tools.manual.test.ts (36 tests)
+5. ✅ server-directory-tools.manual.test.ts (17 tests)
+6. ✅ search-mcp-implementations.manual.test.ts (11 tests)
+7. ✅ redirect-tools.manual.test.ts (13 tests)
+8. ✅ find-providers.manual.test.ts (9 tests)
+9. ✅ pulsemcp-cms-admin.manual.test.ts (6 tests)
+10. ✅ send-email.manual.test.ts (1 test)
+
+**E2E verification of the fix:**
+
+- Confirmed the nested result format (`{exam_id, result: {status, data}}`) passes API validation at `POST /api/proctor/save_results_for_mirror` — API progresses past "Missing exam_id or result data for entry" to runtime validation ("Invalid runtime" because no real runtime_id was available for testing)
+- New functional test added for string error format handling
+
+---
+
+## Previous Test Results (v0.6.12)
+
 **Date:** 2026-02-27
 **Commit:** 350ff2d
 **Version:** 0.6.12
