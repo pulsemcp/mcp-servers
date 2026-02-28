@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [0.7.1] - 2026-02-28
+
 ### Fixed
 
 - Replaced in-memory exam result store with file-based storage in `/tmp/` — results now persist across tool calls without relying on process memory
