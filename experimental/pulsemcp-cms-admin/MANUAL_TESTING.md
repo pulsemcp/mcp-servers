@@ -3,6 +3,36 @@
 ## Latest Test Results
 
 **Date:** 2026-02-28
+**Commit:** 914f065
+**Version:** 0.7.0 (pre-release)
+**API Environment:** N/A (no API credentials available; changes are MCP server-side only)
+
+### Overall: ✅ Functional Tests PASSING (95/95)
+
+**v0.7.0 Changes:**
+
+- Added server-side in-memory result store for proctor exam results with UUID-based `result_id` references
+- `run_exam_for_mirror` now stores full results server-side and returns a truncated summary with a `result_id`
+- Added `get_exam_result` tool for on-demand drill-down into stored results
+- `save_results_for_mirror` now accepts `result_id` instead of requiring the full results payload
+- Added `proctor_readonly` tool group variant
+
+**Note on Manual Testing:**
+
+No API credentials (`.env` file) are available in this environment. These changes are purely MCP server-side logic — in-memory result store, response truncation, and a new `get_exam_result` tool. No API client code was modified (`pulsemcp-admin-client/lib/run-exam-for-mirror.ts` and `pulsemcp-admin-client/lib/save-results-for-mirror.ts` are unchanged). Functional tests comprehensively verify:
+
+1. Result storage with UUID generation (3 tests)
+2. Truncation of large tool listings (omitting inputSchema, adding tools_count) (1 test)
+3. `get_exam_result` with section and mirror_id filtering (4 tests)
+4. `save_results_for_mirror` with result_id-based flow (2 tests)
+5. Backward compatibility with explicit results array (4 tests)
+6. Error handling for unknown result_ids (2 tests)
+
+---
+
+## Previous Test Results (v0.6.13)
+
+**Date:** 2026-02-28
 **Commit:** 86be247
 **Version:** 0.6.13 (pre-release)
 **API Environment:** staging (https://admin.staging.pulsemcp.com)

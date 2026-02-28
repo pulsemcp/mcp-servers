@@ -1,6 +1,7 @@
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { z } from 'zod';
 import type { ClientFactory } from '../server.js';
+import { examResultStore } from '../exam-result-store.js';
 
 const PARAM_DESCRIPTIONS = {
   mirror_ids:
@@ -21,6 +22,44 @@ const RunExamForMirrorSchema = z.object({
   max_retries: z.number().min(0).max(10).optional().describe(PARAM_DESCRIPTIONS.max_retries),
 });
 
+/**
+ * Build a truncated summary of exam results for the LLM response.
+ * Omits large keys like full input schemas from tool listings to keep
+ * the payload within MCP size limits. The full result is accessible
+ * via the `get_exam_result` tool using the returned `result_id`.
+ */
+function truncateExamResultData(data: Record<string, unknown>): Record<string, unknown> {
+  const truncated: Record<string, unknown> = {};
+
+  for (const [key, value] of Object.entries(data)) {
+    if (key === 'tools' && Array.isArray(value)) {
+      // For tool listings, include only name and description, omit inputSchema
+      truncated[key] = value.map((tool: Record<string, unknown>) => ({
+        name: tool.name,
+        ...(tool.description ? { description: String(tool.description).slice(0, 100) } : {}),
+      }));
+      truncated['tools_count'] = value.length;
+      truncated['tools_truncated'] = true;
+    } else if (key === 'inputSchema' || key === 'input_schema') {
+      // Omit full input schemas
+      truncated[key] = '(truncated — use get_exam_result to see full data)';
+    } else if (typeof value === 'string' && value.length > 500) {
+      truncated[key] = value.slice(0, 500) + '... (truncated)';
+    } else if (typeof value === 'object' && value !== null) {
+      const serialized = JSON.stringify(value);
+      if (serialized.length > 1000) {
+        truncated[key] = '(truncated — use get_exam_result to see full data)';
+      } else {
+        truncated[key] = value;
+      }
+    } else {
+      truncated[key] = value;
+    }
+  }
+
+  return truncated;
+}
+
 export function runExamForMirror(_server: Server, clientFactory: ClientFactory) {
   return {
     name: 'run_exam_for_mirror',
@@ -31,7 +70,9 @@ Available exam types:
 - **init-tools-list**: Connects to the mirror and retrieves its list of MCP tools, verifying the server initializes properly
 - **both**: Runs both exams sequentially
 
-Mirrors without saved mcp_json configurations are automatically skipped. Results are returned as a stream of events including logs, exam results, and a final summary.
+Mirrors without saved mcp_json configurations are automatically skipped.
+
+Results are stored server-side and a \`result_id\` UUID is returned. The response includes a truncated summary (status, tool names/counts, errors) that fits within MCP size limits. Use \`get_exam_result\` to drill into full details, or pass the \`result_id\` directly to \`save_results_for_mirror\`.
 
 Use cases:
 - Test if an unofficial mirror's MCP server is working correctly before linking it
@@ -74,7 +115,16 @@ Use cases:
           max_retries: validatedArgs.max_retries,
         });
 
+        // Store the full result server-side
+        const resultId = examResultStore.store(
+          validatedArgs.mirror_ids,
+          validatedArgs.runtime_id,
+          validatedArgs.exam_type,
+          response.lines
+        );
+
         let content = `**Proctor Exam Results**\n\n`;
+        content += `Result ID: ${resultId}\n`;
         content += `Mirrors: ${validatedArgs.mirror_ids.join(', ')}\n`;
         content += `Exam Type: ${validatedArgs.exam_type}\n`;
         content += `Runtime: ${validatedArgs.runtime_id}\n\n`;
@@ -89,7 +139,8 @@ Use cases:
               content += `  Exam: ${line.exam_id || line.exam_type || 'unknown'}\n`;
               content += `  Status: ${line.status || 'unknown'}\n`;
               if (line.data) {
-                content += `  Data: ${JSON.stringify(line.data, null, 2)}\n`;
+                const truncatedData = truncateExamResultData(line.data as Record<string, unknown>);
+                content += `  Data: ${JSON.stringify(truncatedData, null, 2)}\n`;
               }
               break;
             case 'summary':
@@ -106,6 +157,9 @@ Use cases:
               content += `${JSON.stringify(line)}\n`;
           }
         }
+
+        content += `\n\nUse \`get_exam_result\` with result_id "${resultId}" to see full untruncated data.`;
+        content += `\nUse \`save_results_for_mirror\` with result_id "${resultId}" to save these results.`;
 
         return { content: [{ type: 'text', text: content.trim() }] };
       } catch (error) {
