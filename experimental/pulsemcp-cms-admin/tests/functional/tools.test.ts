@@ -776,6 +776,7 @@ describe('Newsletter Tools', () => {
         'good_jobs',
         'proctor',
         'discovered_urls',
+        'notifications',
       ]);
     });
 
@@ -794,6 +795,7 @@ describe('Newsletter Tools', () => {
         'good_jobs',
         'proctor',
         'discovered_urls',
+        'notifications',
       ]);
     });
 
@@ -872,8 +874,9 @@ describe('Newsletter Tools', () => {
       const listToolsHandler = handlers.get('tools/list');
       const result = await listToolsHandler({ method: 'tools/list', params: {} });
 
-      // server_directory is a superset: 5 original + 7 official_queue + 5 unofficial_mirrors + 2 official_mirrors + 5 mcp_jsons + 3 mcp_servers = 27 tools
-      expect(result.tools).toHaveLength(27);
+      // server_directory is a superset: 4 original + 7 official_queue + 5 unofficial_mirrors + 2 official_mirrors + 5 mcp_jsons + 3 mcp_servers = 26 tools
+      // (send_impl_posted_notif moved to separate 'notifications' group)
+      expect(result.tools).toHaveLength(26);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const toolNames = result.tools.map((t: any) => t.name);
       expect(toolNames).toContain('search_mcp_implementations');
@@ -907,8 +910,9 @@ describe('Newsletter Tools', () => {
       const listToolsHandler = handlers.get('tools/list');
       const result = await listToolsHandler({ method: 'tools/list', params: {} });
 
-      // 6 newsletter + 27 server_directory (superset, already includes official_queue tools) = 33
-      expect(result.tools).toHaveLength(33);
+      // 6 newsletter + 26 server_directory (superset, already includes official_queue tools) = 32
+      // (send_impl_posted_notif moved to separate 'notifications' group)
+      expect(result.tools).toHaveLength(32);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const toolNames = result.tools.map((t: any) => t.name);
       expect(toolNames).toContain('get_newsletter_posts');
@@ -934,7 +938,7 @@ describe('Newsletter Tools', () => {
       const listToolsHandler = handlers.get('tools/list');
       const result = await listToolsHandler({ method: 'tools/list', params: {} });
 
-      // 6 newsletter + 5 server_directory + 7 official_queue + 5 unofficial_mirrors + 2 official_mirrors + 2 tenants + 5 mcp_jsons + 3 mcp_servers + 5 redirects + 10 good_jobs + 2 proctor + 3 discovered_urls = 55 tools
+      // 6 newsletter + 4 server_directory + 7 official_queue + 5 unofficial_mirrors + 2 official_mirrors + 2 tenants + 5 mcp_jsons + 3 mcp_servers + 5 redirects + 10 good_jobs + 2 proctor + 3 discovered_urls + 1 notifications = 55 tools
       expect(result.tools).toHaveLength(55);
     });
 
