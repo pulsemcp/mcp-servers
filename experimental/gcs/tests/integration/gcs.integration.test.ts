@@ -266,6 +266,31 @@ describe('GCS_BUCKET Constraint', () => {
     expect(toolNames).toContain('copy_object');
   });
 
+  it('should exclude delete_object when GCS_BUCKET is set and delete group is not enabled', async () => {
+    client = await createTestMCPClientWithMock(
+      { buckets: [{ name: 'test-bucket' }] },
+      { GCS_BUCKET: 'test-bucket', GCS_ENABLED_TOOLGROUPS: 'readonly,readwrite' }
+    );
+
+    const result = await client.listTools();
+    const toolNames = result.tools.map((t) => t.name);
+
+    // Bucket-level tools should be hidden (GCS_BUCKET constraint)
+    expect(toolNames).not.toContain('list_buckets');
+    expect(toolNames).not.toContain('create_bucket');
+    expect(toolNames).not.toContain('head_bucket');
+
+    // Readwrite object tools should be present
+    expect(toolNames).toContain('list_objects');
+    expect(toolNames).toContain('get_object');
+    expect(toolNames).toContain('put_object');
+    expect(toolNames).toContain('copy_object');
+
+    // Delete tools should NOT be present (delete group not enabled)
+    expect(toolNames).not.toContain('delete_object');
+    expect(toolNames).not.toContain('delete_bucket');
+  });
+
   it('should automatically inject bucket param when GCS_BUCKET is set', async () => {
     const mockData: MockGCSData = {
       buckets: [{ name: 'constrained-bucket' }],
