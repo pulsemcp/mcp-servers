@@ -91,7 +91,7 @@ describe('PulseMCP CMS Admin - Toolgroups Integration Tests', () => {
       const tools = await client.listTools();
 
       // server_directory is a superset: 4 original + 7 official_queue + 5 unofficial_mirrors + 2 official_mirrors + 5 mcp_jsons + 3 mcp_servers = 26
-      // (send_impl_posted_notif moved to separate 'notifications' group)
+      // (send_impl_posted_notif moved to separate 'email_notifications' group)
       expect(tools.tools).toHaveLength(26);
       const toolNames = tools.tools.map((t) => t.name);
 
@@ -101,7 +101,7 @@ describe('PulseMCP CMS Admin - Toolgroups Integration Tests', () => {
       expect(toolNames).toContain('find_providers');
       expect(toolNames).toContain('save_mcp_implementation');
 
-      // send_impl_posted_notif is now in the 'notifications' group, NOT server_directory
+      // send_impl_posted_notif is now in the 'email_notifications' group, NOT server_directory
       expect(toolNames).not.toContain('send_impl_posted_notif');
 
       // Tools from overlapping groups should also be present
@@ -185,7 +185,7 @@ describe('PulseMCP CMS Admin - Toolgroups Integration Tests', () => {
       expect(toolNames).toContain('get_unofficial_mirrors');
       expect(toolNames).toContain('list_mcp_servers');
 
-      // send_impl_posted_notif is NOT here (it's in the 'notifications' group)
+      // send_impl_posted_notif is NOT here (it's in the 'email_notifications' group)
       expect(toolNames).not.toContain('send_impl_posted_notif');
     });
   });
@@ -380,7 +380,7 @@ describe('PulseMCP CMS Admin - Toolgroups Integration Tests', () => {
     });
   });
 
-  describe('notifications group only', () => {
+  describe('email_notifications group only', () => {
     let client: TestMCPClient;
 
     beforeAll(async () => {
@@ -393,7 +393,7 @@ describe('PulseMCP CMS Admin - Toolgroups Integration Tests', () => {
         serverPath: serverPath,
         env: {
           ...process.env,
-          TOOL_GROUPS: 'notifications',
+          TOOL_GROUPS: 'email_notifications',
           PULSEMCP_MOCK_DATA: JSON.stringify({}),
         },
       });
@@ -404,7 +404,7 @@ describe('PulseMCP CMS Admin - Toolgroups Integration Tests', () => {
       await client.disconnect();
     });
 
-    it('should only register notification tools', async () => {
+    it('should only register email notification tools', async () => {
       const tools = await client.listTools();
 
       expect(tools.tools).toHaveLength(1);

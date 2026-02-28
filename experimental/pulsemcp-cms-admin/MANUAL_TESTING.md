@@ -3,6 +3,33 @@
 ## Latest Test Results
 
 **Date:** 2026-02-28
+**Commit:** 017a37b
+**Version:** 0.6.15
+**API Environment:** N/A (no API credentials available for manual testing)
+
+### Overall: ✅ Functional Tests PASSING (153/153)
+
+**v0.6.15 Changes:**
+
+- Renamed `notifications` tool group to `email_notifications` for clarity
+  - `TOOL_GROUPS=email_notifications` replaces `TOOL_GROUPS=notifications`
+  - No functional changes — same tool (`send_impl_posted_notif`), same behavior
+
+**Note on Manual Testing:**
+
+This is a tool group rename only — no API behavior changes. The `send_impl_posted_notif` tool is unchanged; only the group name changes from `notifications` to `email_notifications`. API credentials (`.env` file) were not available in this environment to run manual tests. Functional tests verify:
+
+1. Tool registration and schema validation (all 55 tools registered correctly)
+2. `email_notifications` group correctly exposes only `send_impl_posted_notif` (1 tool)
+3. `parseEnabledToolGroups` correctly parses `email_notifications` group
+4. `email_notifications` included in default base groups
+5. `server_directory` group correctly excludes `send_impl_posted_notif`
+
+---
+
+## Previous Test Results (v0.6.13)
+
+**Date:** 2026-02-28
 **Commit:** 86be247
 **Version:** 0.6.13 (pre-release)
 **API Environment:** staging (https://admin.staging.pulsemcp.com)

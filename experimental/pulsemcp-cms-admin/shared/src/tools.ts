@@ -91,7 +91,7 @@ import { getDiscoveredUrlStats } from './tools/get-discovered-url-stats.js';
  * - good_jobs / good_jobs_readonly: GoodJob background job management tools
  * - proctor: Proctor exam execution and result storage tools (write-only, no readonly variant since both tools trigger side effects)
  * - discovered_urls / discovered_urls_readonly: Discovered URL management tools for processing URLs into MCP implementations
- * - notifications: Notification email tools (send_impl_posted_notif). Separated from server_directory so notification capability can be granted independently.
+ * - email_notifications: Notification email tools (send_impl_posted_notif). Separated from server_directory so email notification capability can be granted independently.
  */
 export type ToolGroup =
   | 'newsletter'
@@ -117,7 +117,7 @@ export type ToolGroup =
   | 'proctor'
   | 'discovered_urls'
   | 'discovered_urls_readonly'
-  | 'notifications';
+  | 'email_notifications';
 
 /** Base groups without _readonly suffix */
 type BaseToolGroup =
@@ -133,7 +133,7 @@ type BaseToolGroup =
   | 'good_jobs'
   | 'proctor'
   | 'discovered_urls'
-  | 'notifications';
+  | 'email_notifications';
 
 interface Tool {
   name: string;
@@ -176,10 +176,10 @@ const ALL_TOOLS: ToolDefinition[] = [
   },
   { factory: saveMCPImplementation, groups: ['server_directory'], isWriteOperation: true },
   { factory: findProviders, groups: ['server_directory'], isWriteOperation: false },
-  // Notification tools (separated from server_directory for isolation)
+  // Email notification tools (separated from server_directory for isolation)
   {
     factory: sendMCPImplementationPostingNotification,
-    groups: ['notifications'],
+    groups: ['email_notifications'],
     isWriteOperation: true,
   },
   // Official mirror queue tools (also in server_directory)
@@ -357,7 +357,7 @@ const VALID_TOOL_GROUPS: ToolGroup[] = [
   'proctor',
   'discovered_urls',
   'discovered_urls_readonly',
-  'notifications',
+  'email_notifications',
 ];
 
 /**
@@ -376,7 +376,7 @@ const BASE_TOOL_GROUPS: BaseToolGroup[] = [
   'good_jobs',
   'proctor',
   'discovered_urls',
-  'notifications',
+  'email_notifications',
 ];
 
 /**
@@ -471,7 +471,7 @@ function shouldIncludeTool(toolDef: ToolDefinition, enabledGroups: ToolGroup[]):
  * - proctor: Proctor exam execution and result storage tools (write-only, no readonly variant)
  * - discovered_urls: Discovered URL management tools for processing URLs into MCP implementations (read + write)
  * - discovered_urls_readonly: Discovered URL tools (read only - list and stats)
- * - notifications: Notification email tools - send_impl_posted_notif (write-only, no readonly variant)
+ * - email_notifications: Email notification tools - send_impl_posted_notif (write-only, no readonly variant)
  *
  * @param clientFactory - Factory function that creates client instances
  * @param enabledGroups - Optional comma-separated list of enabled tool groups (overrides env var)

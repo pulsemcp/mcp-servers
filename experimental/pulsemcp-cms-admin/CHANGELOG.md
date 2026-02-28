@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [0.6.15] - 2026-02-28
+
+### Changed
+
+- Renamed `notifications` tool group to `email_notifications` for clarity — the group name now explicitly describes its purpose (email notification sending)
+  - `TOOL_GROUPS=email_notifications` replaces `TOOL_GROUPS=notifications`
+  - No functional changes — same tool (`send_impl_posted_notif`), same behavior
+
 ## [0.6.14] - 2026-02-28
 
 ### Changed
