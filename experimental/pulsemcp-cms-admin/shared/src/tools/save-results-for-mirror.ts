@@ -89,7 +89,11 @@ Typical workflow:
         if (response.errors.length > 0) {
           content += `**Errors (${response.errors.length}):**\n`;
           for (const error of response.errors) {
-            content += `- ${error.exam_id}: ${error.error}\n`;
+            if (typeof error === 'string') {
+              content += `- ${error}\n`;
+            } else {
+              content += `- ${error.exam_id}: ${error.error}\n`;
+            }
           }
         }
 

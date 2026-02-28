@@ -881,10 +881,13 @@ export interface ProctorSaveResultsResponse {
     exam_id: string;
     proctor_result_id: number;
   }>;
-  errors: Array<{
-    exam_id: string;
-    error: string;
-  }>;
+  errors: Array<
+    | string
+    | {
+        exam_id: string;
+        error: string;
+      }
+  >;
 }
 
 // ============================================================
