@@ -3,6 +3,32 @@
 ## Latest Test Results
 
 **Date:** 2026-03-01
+**Commit:** 1bb0a7b
+**Version:** 0.7.4 (pre-release)
+**API Environment:** N/A (result extraction fix only, no manual tests required)
+
+### Overall: ✅ Functional Tests PASSING (172/172)
+
+**v0.7.4 Changes:**
+
+- Fixed `save_results_for_mirror` not unwrapping double-nested `data.result.result` from real proctor API responses. The proctor API returns exam payloads at `data.result.result`, not `data.result`, so `{input, output, processedBy}` was still wrapped in an envelope containing `exam_id`, `machine_id`, `logs`, etc. Now recursively unwraps nested `result` objects to extract the actual payload. (Fixes #376)
+
+**Functional Test Results: ✅ 172/172 PASSING**
+
+- 1 new test added in `tools.test.ts` using the exact real proctor API structure from issue #376 comment:
+  - Verifies double-nested `data.result.result` is unwrapped to `{input, output, processedBy}`
+  - Asserts no envelope fields (`logs`, `machine_id`, `error`) leak into saved data
+  - Confirms `output` is at the top level of the extracted payload
+
+**Note on Manual Testing:**
+
+Manual tests were skipped for this release. The change is in the result extraction logic within `save-results-for-mirror.ts` tool handler. API credentials were not available in this environment. The v0.7.2 manual test results remain valid for all other functionality.
+
+---
+
+## Previous Test Results (v0.7.3)
+
+**Date:** 2026-03-01
 **Commit:** c76b7a6
 **Version:** 0.7.3 (pre-release)
 **API Environment:** N/A (API client change only, no manual tests required)
@@ -11,18 +37,7 @@
 
 **v0.7.3 Changes:**
 
-- Fixed `save_results_for_mirror` API client to spread result data fields directly into the `result` object instead of nesting under an extra `data` key. This produces the flat `{status, input, output, processedBy}` format the PulseMCP dashboard expects when reading `proctor_results.results`. (Fixes #376)
-
-**Functional Test Results: ✅ 171/171 PASSING**
-
-- 3 new tests added in `save-results-for-mirror-client.test.ts` verifying the API request body format:
-  1. Result data fields spread directly (no `data` key wrapping)
-  2. Graceful handling of results without data
-  3. mirror_id and runtime_id passthrough
-
-**Note on Manual Testing:**
-
-Manual tests were skipped for this release. The change is exclusively in the HTTP request body format sent by the API client (`save-results-for-mirror.ts`). No new tool parameters, tool behavior, or stream parsing logic changed. The v0.7.2 manual test results remain valid for all other functionality. API credentials were not available in this environment.
+- Fixed `save_results_for_mirror` API client to spread result data fields directly into the `result` object instead of nesting under an extra `data` key.
 
 ---
 

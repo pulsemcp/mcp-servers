@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [0.7.4] - 2026-03-01
+
+### Fixed
+
+- Fixed `save_results_for_mirror` not unwrapping double-nested `data.result.result` from real proctor API responses — the proctor API returns exam payloads at `data.result.result` (not `data.result`), so `{input, output, processedBy}` was still wrapped in an envelope containing `exam_id`, `machine_id`, `logs`, etc. Now recursively unwraps nested `result` objects to extract the actual payload.
+
 ## [0.7.3] - 2026-03-01
 
 ### Fixed
