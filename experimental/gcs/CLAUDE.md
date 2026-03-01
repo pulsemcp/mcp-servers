@@ -14,7 +14,8 @@ The server uses a two-tier access control system:
 
 1. **Tool Groups** (`GCS_ENABLED_TOOLGROUPS`):
    - `readonly`: List, get, and head operations
-   - `readwrite`: Put, delete, copy, and create operations
+   - `readwrite`: Non-destructive write operations (put, copy, create)
+   - `delete`: Delete operations (delete_object, delete_bucket)
 
 2. **Individual Tool Control**:
    - `GCS_ENABLED_TOOLS`: Whitelist specific tools
@@ -36,10 +37,10 @@ The GCS client (`shared/src/gcs-client/`) wraps the Google Cloud Storage SDK:
 | `get_object`    | readonly  | Get object content           |
 | `head_bucket`   | readonly  | Check bucket existence       |
 | `put_object`    | readwrite | Upload/update objects        |
-| `delete_object` | readwrite | Delete objects               |
 | `copy_object`   | readwrite | Copy objects                 |
 | `create_bucket` | readwrite | Create buckets               |
-| `delete_bucket` | readwrite | Delete buckets               |
+| `delete_object` | delete    | Delete objects               |
+| `delete_bucket` | delete    | Delete buckets               |
 
 Note: When `GCS_BUCKET` is set, bucket-level tools (`list_buckets`, `create_bucket`, `delete_bucket`, `head_bucket`) are hidden and object-level tools automatically use the constrained bucket.
 

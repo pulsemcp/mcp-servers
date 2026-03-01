@@ -5,7 +5,7 @@ MCP server for Google Cloud Storage operations with fine-grained tool access con
 ## Highlights
 
 - Full GCS bucket and object management (list, get, put, copy, delete)
-- Fine-grained access control with tool groups (readonly, readwrite)
+- Fine-grained access control with tool groups (readonly, readwrite, delete)
 - Individual tool enable/disable via environment variables
 - Multiple authentication methods (service account key file, inline JSON, ADC)
 - GCS credential validation with health checks
@@ -24,10 +24,10 @@ MCP server for Google Cloud Storage operations with fine-grained tool access con
 | `get_object`    | readonly  | Get object contents as text                         |
 | `head_bucket`   | readonly  | Check if a bucket exists and is accessible          |
 | `put_object`    | readwrite | Upload or update an object                          |
-| `delete_object` | readwrite | Delete an object from a bucket                      |
 | `copy_object`   | readwrite | Copy an object within or across buckets             |
 | `create_bucket` | readwrite | Create a new GCS bucket                             |
-| `delete_bucket` | readwrite | Delete an empty GCS bucket                          |
+| `delete_object` | delete    | Delete an object from a bucket                      |
+| `delete_bucket` | delete    | Delete an empty GCS bucket                          |
 
 ### Resources
 
@@ -39,15 +39,17 @@ MCP server for Google Cloud Storage operations with fine-grained tool access con
 
 Control which tools are available via the `GCS_ENABLED_TOOLGROUPS` environment variable:
 
-| Group       | Description                                  |
-| ----------- | -------------------------------------------- |
-| `readonly`  | Read-only operations (list, get, head)       |
-| `readwrite` | Write operations (put, delete, copy, create) |
+| Group       | Description                                          |
+| ----------- | ---------------------------------------------------- |
+| `readonly`  | Read-only operations (list, get, head)               |
+| `readwrite` | Non-destructive write operations (put, copy, create) |
+| `delete`    | Delete operations (delete_object, delete_bucket)     |
 
 **Examples:**
 
 - `GCS_ENABLED_TOOLGROUPS="readonly"` - Only read operations
-- `GCS_ENABLED_TOOLGROUPS="readonly,readwrite"` - All operations
+- `GCS_ENABLED_TOOLGROUPS="readonly,readwrite"` - Read and write, no deletes
+- `GCS_ENABLED_TOOLGROUPS="readonly,readwrite,delete"` - All operations
 - Not set - All tools enabled (default)
 
 ### Individual Tool Control

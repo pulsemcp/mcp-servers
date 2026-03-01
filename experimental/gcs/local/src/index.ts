@@ -36,7 +36,7 @@ function validateEnvironment(): void {
     },
     {
       name: 'GCS_ENABLED_TOOLGROUPS',
-      description: 'Comma-separated list of tool groups to enable (readonly, readwrite)',
+      description: 'Comma-separated list of tool groups to enable (readonly, readwrite, delete)',
       defaultValue: 'all groups enabled',
     },
     {

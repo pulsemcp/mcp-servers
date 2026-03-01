@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-02-28
+
+### Changed
+
+- **BREAKING**: Separated `delete` operations into their own tool group. `delete_object` and `delete_bucket` are no longer part of the `readwrite` group. To enable delete operations, include `delete` in `GCS_ENABLED_TOOLGROUPS` (e.g., `GCS_ENABLED_TOOLGROUPS="readonly,readwrite,delete"`). All groups are still enabled by default when `GCS_ENABLED_TOOLGROUPS` is not set.
+
 ### Fixed
 
 - Fixed prepare-publish.js to exit with non-zero code on uncaught errors
