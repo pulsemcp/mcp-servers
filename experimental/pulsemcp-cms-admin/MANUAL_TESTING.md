@@ -3,6 +3,32 @@
 ## Latest Test Results
 
 **Date:** 2026-03-01
+**Commit:** c76b7a6
+**Version:** 0.7.3 (pre-release)
+**API Environment:** N/A (API client change only, no manual tests required)
+
+### Overall: ✅ Functional Tests PASSING (171/171)
+
+**v0.7.3 Changes:**
+
+- Fixed `save_results_for_mirror` API client to spread result data fields directly into the `result` object instead of nesting under an extra `data` key. This produces the flat `{status, input, output, processedBy}` format the PulseMCP dashboard expects when reading `proctor_results.results`. (Fixes #376)
+
+**Functional Test Results: ✅ 171/171 PASSING**
+
+- 3 new tests added in `save-results-for-mirror-client.test.ts` verifying the API request body format:
+  1. Result data fields spread directly (no `data` key wrapping)
+  2. Graceful handling of results without data
+  3. mirror_id and runtime_id passthrough
+
+**Note on Manual Testing:**
+
+Manual tests were skipped for this release. The change is exclusively in the HTTP request body format sent by the API client (`save-results-for-mirror.ts`). No new tool parameters, tool behavior, or stream parsing logic changed. The v0.7.2 manual test results remain valid for all other functionality. API credentials were not available in this environment.
+
+---
+
+## Previous Test Results (v0.7.2)
+
+**Date:** 2026-03-01
 **Commit:** d3560b7
 **Version:** 0.7.2 (pre-release)
 **API Environment:** staging (https://admin.staging.pulsemcp.com)
