@@ -3038,6 +3038,92 @@ describe('Newsletter Tools', () => {
         });
       });
 
+      it('should unwrap double-nested data.result.result from real proctor API structure (issue #376)', async () => {
+        const { saveResultsForMirror } =
+          await import('../../shared/src/tools/save-results-for-mirror.js');
+
+        // This is the EXACT structure from the real proctor API (per issue #376 comment).
+        // The payload is at data.result.result, not data.result.
+        const lines = [
+          {
+            type: 'exam_result' as const,
+            data: {
+              mirror_id: 152,
+              server_slug: 'canva',
+              exam_id: 'proctor-mcp-client-auth-check',
+              runtime_image: 'registry.fly.io/proctor-mcp-client:latest',
+              entry_key: 'remotes[0]',
+              mcp_json_id: 12,
+              result: {
+                exam_id: '5ce3bfea-1234-5678-9abc-def012345678',
+                machine_id: '9080409db04e48',
+                status: 'completed',
+                result: {
+                  input: {
+                    'mcp.json': {
+                      'remotes[0]': { url: 'https://example.com', type: 'streamable-http' },
+                    },
+                    'server.json': { name: 'canva', title: 'Canva' },
+                  },
+                  output: {
+                    'remotes[0]': { authType: 'oauth', detail: { scopes: ['read'] } },
+                  },
+                  processedBy: {
+                    exam: 'proctor-mcp-client-auth-check',
+                    runtime: 'proctor-mcp-client-0.0.21',
+                    datetime: '2026-03-01T12:00:00.000Z',
+                  },
+                },
+                error: null,
+                logs: [{ ts: '2026-03-01T12:00:00.000Z', msg: 'Starting exam' }],
+              },
+            },
+          },
+        ];
+        const resultId = examResultStore.store([152], 'fly-machines-v1', 'both', lines);
+
+        const saveFn = vi.fn().mockResolvedValue({
+          saved: [{ exam_id: 'proctor-mcp-client-auth-check', proctor_result_id: 520 }],
+          errors: [],
+        });
+        const mockClient = createMockClient({ saveResultsForMirror: saveFn });
+
+        const tool = saveResultsForMirror(mockServer, () => mockClient);
+        const result = await tool.handler({
+          mirror_id: 152,
+          result_id: resultId,
+        });
+
+        expect(result.isError).toBeUndefined();
+        expect(result.content[0].text).toContain('Successfully Saved (1)');
+
+        // The data sent to the API should be the innermost payload
+        // { input, output, processedBy } — NOT the envelope with
+        // exam_id, machine_id, logs, etc.
+        const calledResults = saveFn.mock.calls[0][0].results;
+        expect(calledResults[0].data).toEqual({
+          input: {
+            'mcp.json': { 'remotes[0]': { url: 'https://example.com', type: 'streamable-http' } },
+            'server.json': { name: 'canva', title: 'Canva' },
+          },
+          output: {
+            'remotes[0]': { authType: 'oauth', detail: { scopes: ['read'] } },
+          },
+          processedBy: {
+            exam: 'proctor-mcp-client-auth-check',
+            runtime: 'proctor-mcp-client-0.0.21',
+            datetime: '2026-03-01T12:00:00.000Z',
+          },
+        });
+
+        // Critically: no envelope fields like logs, machine_id, error
+        expect(calledResults[0].data).not.toHaveProperty('logs');
+        expect(calledResults[0].data).not.toHaveProperty('machine_id');
+        expect(calledResults[0].data).not.toHaveProperty('error');
+        // And output must be at the top level, not nested under result
+        expect(calledResults[0].data).toHaveProperty('output');
+      });
+
       it('should not clean up store when save has errors', async () => {
         const { saveResultsForMirror } =
           await import('../../shared/src/tools/save-results-for-mirror.js');
