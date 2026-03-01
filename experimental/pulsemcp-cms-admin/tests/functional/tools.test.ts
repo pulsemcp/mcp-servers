@@ -2952,6 +2952,90 @@ describe('Newsletter Tools', () => {
             ]),
           })
         );
+
+        // Verify data uses the nested result object, not the full data wrapper
+        const calledResults = saveFn.mock.calls[0][0].results;
+        expect(calledResults[0].data).toEqual({ status: 'pass' });
+        expect(calledResults[1].data).toEqual({ status: 'pass', tools_count: 5 });
+      });
+
+      it('should preserve output data from nested result when saving via result_id', async () => {
+        const { saveResultsForMirror } =
+          await import('../../shared/src/tools/save-results-for-mirror.js');
+
+        // Simulate real proctor API response where output is inside line.data.result
+        // This is the exact structure that caused empty output in production (issue #374)
+        const lines = [
+          {
+            type: 'exam_result' as const,
+            mirror_id: 152,
+            data: {
+              mirror_id: 152,
+              exam_id: 'proctor-mcp-client-auth-check',
+              status: 'pass',
+              result: {
+                status: 'pass',
+                output: { remotes: [{ authTypes: ['none'] }] },
+                input: { mirror_id: 152 },
+                processedBy: 'fly-machines-v1',
+              },
+            },
+          },
+          {
+            type: 'exam_result' as const,
+            mirror_id: 152,
+            data: {
+              mirror_id: 152,
+              exam_id: 'proctor-mcp-client-init-tools-list',
+              status: 'pass',
+              result: {
+                status: 'pass',
+                output: { remotes: [{ tools: ['tool_a', 'tool_b'] }] },
+                input: { mirror_id: 152 },
+                processedBy: 'fly-machines-v1',
+              },
+            },
+          },
+        ];
+        const resultId = examResultStore.store([152], 'fly-machines-v1', 'both', lines);
+
+        const saveFn = vi.fn().mockResolvedValue({
+          saved: [
+            { exam_id: 'proctor-mcp-client-auth-check', proctor_result_id: 512 },
+            { exam_id: 'proctor-mcp-client-init-tools-list', proctor_result_id: 513 },
+          ],
+          errors: [],
+        });
+        const mockClient = createMockClient({ saveResultsForMirror: saveFn });
+
+        const tool = saveResultsForMirror(mockServer, () => mockClient);
+        const result = await tool.handler({
+          mirror_id: 152,
+          result_id: resultId,
+        });
+
+        expect(result.isError).toBeUndefined();
+        expect(result.content[0].text).toContain('Successfully Saved (2)');
+
+        // Verify data contains the nested result object (with output), NOT the
+        // full data wrapper (which would nest output too deeply)
+        const calledResults = saveFn.mock.calls[0][0].results;
+
+        // Auth-check result should have output with remotes/authTypes
+        expect(calledResults[0].data).toEqual({
+          status: 'pass',
+          output: { remotes: [{ authTypes: ['none'] }] },
+          input: { mirror_id: 152 },
+          processedBy: 'fly-machines-v1',
+        });
+
+        // Init-tools-list result should have output with remotes/tools
+        expect(calledResults[1].data).toEqual({
+          status: 'pass',
+          output: { remotes: [{ tools: ['tool_a', 'tool_b'] }] },
+          input: { mirror_id: 152 },
+          processedBy: 'fly-machines-v1',
+        });
       });
 
       it('should not clean up store when save has errors', async () => {

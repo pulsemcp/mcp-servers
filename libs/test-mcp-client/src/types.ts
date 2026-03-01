@@ -10,6 +10,10 @@ export interface ToolCallResult<T = unknown> {
   isError?: boolean;
 }
 
+export interface ToolCallOptions {
+  timeout?: number;
+}
+
 export interface ResourceReadResult<T = unknown> {
   contents: T[];
 }

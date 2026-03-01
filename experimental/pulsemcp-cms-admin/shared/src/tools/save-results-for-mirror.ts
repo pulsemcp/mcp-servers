@@ -110,14 +110,28 @@ Typical workflow:
           // The exam_id may live at the top level of the stream line OR inside
           // line.data (the actual result payload). Prefer the data payload to
           // avoid reading from potentially incomplete display metadata.
+          //
+          // The real proctor API returns line.data as a metadata wrapper:
+          //   { mirror_id, exam_id, status, result: { status, output: {...} } }
+          // The actual output lives inside line.data.result. When we pass the
+          // entire line.data as `data`, the output ends up nested too deeply
+          // (result.data.result.output) and the backend saves empty output.
+          // Use line.data.result when present so that `output` is at the
+          // expected depth (result.data.output).
           results = stored.lines
             .filter((line) => line.type === 'exam_result')
             .map((line) => {
               const data = line.data as Record<string, unknown> | undefined;
+              // Prefer the nested result object (contains output, input, etc.)
+              // over the full data wrapper (contains metadata like mirror_id)
+              const resultData =
+                data?.result && typeof data.result === 'object' && !Array.isArray(data.result)
+                  ? (data.result as Record<string, unknown>)
+                  : data;
               return {
                 exam_id: extractExamId(line),
                 status: extractStatus(line),
-                ...(data ? { data } : {}),
+                ...(resultData ? { data: resultData } : {}),
               };
             });
 

@@ -6,7 +6,12 @@ import {
   ToolListChangedNotificationSchema,
 } from '@modelcontextprotocol/sdk/types.js';
 import { z } from 'zod';
-import { TestMCPClientOptions, ToolCallResult, ResourceReadResult } from './types.js';
+import {
+  TestMCPClientOptions,
+  ToolCallOptions,
+  ToolCallResult,
+  ResourceReadResult,
+} from './types.js';
 
 export class TestMCPClient {
   private client: Client;
@@ -77,14 +82,19 @@ export class TestMCPClient {
 
   async callTool<T = unknown>(
     name: string,
-    args: Record<string, unknown> = {}
+    args: Record<string, unknown> = {},
+    options?: ToolCallOptions
   ): Promise<ToolCallResult<T>> {
     this.ensureConnected();
 
-    const result = await this.client.callTool({
-      name,
-      arguments: args,
-    });
+    const result = await this.client.callTool(
+      {
+        name,
+        arguments: args,
+      },
+      undefined,
+      options?.timeout ? { timeout: options.timeout } : undefined
+    );
 
     return {
       content: result.content as T[],
