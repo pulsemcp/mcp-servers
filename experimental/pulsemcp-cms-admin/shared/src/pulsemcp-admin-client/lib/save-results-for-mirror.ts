@@ -14,7 +14,7 @@ export async function saveResultsForMirror(
       exam_id: r.exam_id,
       result: {
         status: r.status,
-        ...(r.data && { data: r.data }),
+        ...(r.data || {}),
       },
     })),
   };

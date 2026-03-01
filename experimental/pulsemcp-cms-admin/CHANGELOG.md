@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [0.7.3] - 2026-03-01
+
+### Fixed
+
+- Fixed `save_results_for_mirror` saving wrong JSON structure via `result_id` — the API client was nesting exam result fields (input, output, processedBy) under an extra `data` key, producing `{status, data: {input, output, processedBy}}` instead of the flat `{status, input, output, processedBy}` format the PulseMCP dashboard expects. Now spreads result data fields directly into the result object.
+
 ## [0.7.2] - 2026-03-01
 
 ### Fixed
