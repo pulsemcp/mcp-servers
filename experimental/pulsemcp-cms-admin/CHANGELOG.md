@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [0.7.2] - 2026-03-01
+
+### Fixed
+
+- Fixed `save_results_for_mirror` saving empty `output` when using `result_id` — the proctor API returns output data nested inside `line.data.result`, but the tool was passing the entire `line.data` wrapper (containing metadata like `mirror_id`, `exam_id`) as the result data, causing `output` to be nested too deeply for the backend to find. Now extracts `line.data.result` when present so that `output` is at the expected depth.
+
 ## [0.7.1] - 2026-02-28
 
 ### Fixed

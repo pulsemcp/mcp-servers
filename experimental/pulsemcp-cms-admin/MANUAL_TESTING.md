@@ -2,29 +2,51 @@
 
 ## Latest Test Results
 
-**Date:** 2026-02-28
-**Commit:** 4031e98
-**Version:** 0.7.1 (pre-release)
-**API Environment:** N/A (internal storage/extraction fix — no API changes)
+**Date:** 2026-03-01
+**Commit:** d3560b7
+**Version:** 0.7.2 (pre-release)
+**API Environment:** staging (https://admin.staging.pulsemcp.com)
 
-### Overall: ✅ Functional Tests PASSING (101/101)
+### Overall: ✅ Functional Tests PASSING (168/168) | ✅ Manual Tests PASSING (164/164 across 11 test files)
 
-**v0.7.1 Changes:**
+**v0.7.2 Changes:**
 
-- Replaced in-memory exam result store with file-based storage in `/tmp/`
-- Fixed `exam_id` showing as "unknown" by extracting from data payload (`line.data.exam_id`)
-- Fixed `save_results_for_mirror` to read `exam_id` and `status` from actual data payload
+- Fixed `save_results_for_mirror` saving empty `output` when using `result_id` — the proctor API returns output data nested inside `line.data.result`, but the tool was passing the entire `line.data` wrapper (containing metadata like `mirror_id`, `exam_id`) as the result data, causing `output` to be nested too deeply for the backend to find. Now extracts `line.data.result` when present so that `output` is at the expected depth. (Fixes #374)
 
-**Note on Manual Testing:** These changes are entirely internal to the storage mechanism and data extraction logic. No API calls or external service interactions were modified. The manual tests (which test API integration with staging) are unaffected by these changes — the v0.7.0 manual test results (152/152 passing) remain valid for the API layer. The `.env` file with staging API credentials was not available in this environment.
+**Manual Test Results: ✅ 164/164 PASSING across 11 test files (240.51s)**
 
-**Functional Test Results: ✅ 101/101 PASSING**
+1. ✅ good-jobs-tools.manual.test.ts (21 tests)
+2. ✅ rest-api-tools.manual.test.ts (28 tests)
+3. ✅ discovered-urls-tools.manual.test.ts (10 tests)
+4. ✅ mcp-servers-tools.manual.test.ts (36 tests)
+5. ✅ server-directory-tools.manual.test.ts (17 tests)
+6. ✅ search-mcp-implementations.manual.test.ts (11 tests)
+7. ✅ redirect-tools.manual.test.ts (13 tests)
+8. ✅ find-providers.manual.test.ts (9 tests)
+9. ✅ send-email.manual.test.ts (1 test)
+10. ✅ pulsemcp-cms-admin.manual.test.ts (6 tests)
+11. ✅ proctor-tools.manual.test.ts (12 tests) — **NEW**
 
-The proctor tools are covered by 20 functional tests (2 new tests added for data-payload extraction):
+**New proctor manual test file (proctor-tools.manual.test.ts) — 12 tests:**
+
+- Tool Registration (3 tests): All proctor tools registered with correct schemas
+- **E2E flow (5 tests)**: Full run → store → get → save pipeline against real staging API
+  - Finds a mirror with mcp_json configs
+  - Runs `run_exam_for_mirror` with dynamically-fetched runtime_id from `/api/proctor/metadata`
+  - Verifies `result_id` UUID returned
+  - Retrieves full result via `get_exam_result` and section-filtered result
+  - Saves results via `save_results_for_mirror` using `result_id` — **verifies fix for #374** (output data preserved)
+- Direct array save (1 test): Saves results passed directly without `result_id`
+- Error handling (3 tests): Invalid result_id, unknown result_id, invalid runtime
+
+**Functional Test Results: ✅ 168/168 PASSING**
+
+The proctor tools are covered by 22 functional tests (2 new tests added for the output data fix):
 
 1. ExamResultStore FIFO eviction with file-based storage (1 test)
 2. `run_exam_for_mirror` — store results, truncation, data-payload extraction (5 tests)
 3. `get_exam_result` with section and mirror_id filtering (4 tests)
-4. `save_results_for_mirror` with result_id-based flow, data-payload extraction (4 tests)
+4. `save_results_for_mirror` with result_id-based flow, nested result extraction (6 tests)
 5. Store cleanup after successful save / retention on errors (2 tests)
 6. `proctor_readonly` group filtering (1 test)
 7. Backward compatibility with explicit results array (1 test)
@@ -32,8 +54,8 @@ The proctor tools are covered by 20 functional tests (2 new tests added for data
 
 **New tests specifically verifying the fix:**
 
-- `run_exam_for_mirror` extracts exam_id from `line.data.exam_id` when not at top level (previously showed "unknown")
-- `save_results_for_mirror` extracts exam_id from `line.data.exam_id` when not at top level (previously sent "unknown" to API)
+- `save_results_for_mirror` preserves `output` data from nested `line.data.result` when saving via `result_id` (previously the entire `line.data` wrapper was passed, causing `output` to be nested too deeply)
+- `save_results_for_mirror` uses nested result object for data field instead of full data wrapper
 
 ---
 
