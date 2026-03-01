@@ -3,7 +3,7 @@
 ## Latest Test Results
 
 **Date:** 2026-03-01
-**Commit:** PENDING
+**Commit:** 1bb0a7b
 **Version:** 0.7.4 (pre-release)
 **API Environment:** N/A (result extraction fix only, no manual tests required)
 
