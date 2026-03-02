@@ -151,8 +151,8 @@ export async function diffImages(
   let width = w1;
   let height = h1;
   let alignmentInfo: ImageDiffResult['alignment'];
-  // Track which path to use for the composite overlay (may change if we crop)
-  let compositeSourcePath = sourcePath;
+  // Track composite overlay source (file path or raw buffer for cropped alignment)
+  let compositeSource: string | { data: Uint8Array; width: number; height: number } = sourcePath;
 
   // Step 2: Handle dimension mismatch
   if (w1 !== w2 || h1 !== h2) {
@@ -211,17 +211,8 @@ export async function diffImages(
       targetBuffer = template.data;
     }
 
-    // Save the cropped scene region for composite overlay
-    const croppedPngPath = join(outputDir, 'image-diff-output', `cropped-scene-${Date.now()}.png`);
-    await mkdir(join(outputDir, 'image-diff-output'), { recursive: true });
-    const croppedPng = await sharp(Buffer.from(croppedScene.buffer), {
-      raw: { width, height, channels: 4 },
-    })
-      .png()
-      .toBuffer();
-    await writeFile(croppedPngPath, croppedPng);
-    // Use the scene-side image for the composite overlay
-    compositeSourcePath = croppedPngPath;
+    // Use the cropped scene region for composite overlay (pass raw data, no temp file)
+    compositeSource = { data: croppedScene, width, height };
 
     alignmentInfo = {
       x: alignment.x,
@@ -277,7 +268,7 @@ export async function diffImages(
   if (generateComposite) {
     compositePath = join(outputSubDir, `composite-${timestamp}.png`);
     const compositeBuffer = await generateCompositeHeatmap(
-      compositeSourcePath,
+      compositeSource,
       diffResult.intensityMap,
       width,
       height
@@ -322,6 +313,11 @@ function cropRawImage(
   cropWidth: number,
   cropHeight: number
 ): Uint8Array {
+  if (x + cropWidth > image.width || y + cropHeight > image.height) {
+    throw new Error(
+      `Crop region (${x},${y},${cropWidth},${cropHeight}) exceeds image bounds (${image.width}x${image.height})`
+    );
+  }
   const result = new Uint8Array(cropWidth * cropHeight * 4);
   for (let row = 0; row < cropHeight; row++) {
     const srcOffset = ((y + row) * image.width + x) * 4;

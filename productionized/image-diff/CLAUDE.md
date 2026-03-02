@@ -14,6 +14,7 @@ The server uses a two-layer architecture:
    - `diff-engine/pixel-diff.ts`: Pixel comparison engine forked from pixelmatch (YIQ NTSC color space)
    - `diff-engine/clustering.ts`: Connected Component Labeling (CCL) with Union-Find for spatial clustering
    - `diff-engine/heatmap.ts`: Heatmap generation (yellow-to-red gradient) and composite overlay via sharp
+   - `diff-engine/alignment.ts`: Auto-alignment for different-sized images (OpenCV ZNCC hybrid + multi-scale fallback)
    - `diff-engine/index.ts`: Pipeline orchestrator that wires the stages together
    - `tools/get-diff-of-images.ts`: MCP tool definition with Zod validation
    - `server.ts`: MCP server factory
@@ -31,7 +32,7 @@ The server uses a two-layer architecture:
 npm run build          # Builds shared, then local
 
 # Test
-npm test               # Functional tests (12 tests)
+npm test               # Functional tests (40 tests across 2 files)
 
 # Development
 cd local
@@ -46,7 +47,8 @@ npm run dev            # Development with auto-reload
 - CCL uses a two-pass algorithm with 8-connectivity and path-halving Union-Find compression
 - Heatmap output uses `os.tmpdir()/image-diff-output/` with timestamp-based filenames
 - Maximum supported image size: 100 million pixels (~10K x 10K)
-- Images must have identical dimensions (no auto-resize)
+- Images must have identical dimensions, or use `auto_align=true` for different-sized images
+- Auto-alignment uses OpenCV ZNCC (via opencv-wasm) at downsampled resolution + pixel-level refinement
 - Supported formats: PNG, JPEG, WebP, TIFF (via sharp)
 
 ## Key Algorithms
@@ -63,6 +65,7 @@ npm run dev            # Development with auto-reload
 - Union-Find with path-halving for efficient merging
 - Per-cluster severity classification based on area + intensity score
 - `minClusterSize` parameter filters noise (default 4 pixels)
+- `clusterGap` parameter merges nearby clusters within N pixels of each other
 
 ### Heatmap (heatmap.ts)
 
@@ -72,7 +75,8 @@ npm run dev            # Development with auto-reload
 
 ## Testing Strategy
 
-- **Functional tests**: Unit tests for pixel-diff and clustering algorithms (`tests/functional/`)
+- **Functional tests**: Unit tests for pixel-diff, clustering, and alignment algorithms (`tests/functional/`)
+- Two test files: `diff-engine.test.ts` (26 tests) and `alignment.test.ts` (14 tests)
 - No external API dependencies, so no manual tests with credentials needed
 
 ## Claude Learnings

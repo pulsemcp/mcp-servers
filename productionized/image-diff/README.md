@@ -25,6 +25,8 @@ Compare two images and get structured diff results.
 | `threshold` | number | No | 0.1 | Color matching sensitivity (0-1, lower = more sensitive) |
 | `include_aa` | boolean | No | false | Count anti-aliased pixels as differences |
 | `min_cluster_size` | number | No | 4 | Minimum connected pixels to form a cluster |
+| `cluster_gap` | number | No | 0 | Max pixel gap to merge nearby clusters (0 = no merging) |
+| `auto_align` | boolean | No | false | Auto-align images of different sizes before comparing |
 
 **Returns:**
 
@@ -36,9 +38,9 @@ Compare two images and get structured diff results.
 
 **Requirements:**
 
-- Both images must have identical width and height
 - Images must be accessible as local file paths
 - Supports PNG, JPEG, WebP, TIFF input formats
+- Images must have identical dimensions, or use `auto_align=true` for different-sized images
 
 ## Cluster Severity Ratings
 

@@ -56,7 +56,7 @@ export async function generateHeatmap(
     }
   }
 
-  const pngBuffer = await sharp(Buffer.from(output.buffer), {
+  const pngBuffer = await sharp(Buffer.from(output.buffer, output.byteOffset, output.byteLength), {
     raw: { width, height, channels: 4 },
   })
     .png()
@@ -69,23 +69,35 @@ export async function generateHeatmap(
 /**
  * Generate a composite image: original source image with heatmap overlaid.
  *
- * @param sourceImagePath Path to the source image to use as background
+ * @param source Either a file path (string) or raw RGBA data ({ data, width, height })
  * @param intensityMap Per-pixel intensity values
  * @param width Image width
  * @param height Image height
  * @returns PNG buffer of the composite image
  */
 export async function generateCompositeHeatmap(
-  sourceImagePath: string,
+  source: string | { data: Uint8Array; width: number; height: number },
   intensityMap: Float32Array,
   width: number,
   height: number
 ): Promise<Buffer> {
-  console.error(`[heatmap] Generating composite heatmap over ${sourceImagePath}`);
+  console.error(`[heatmap] Generating composite heatmap`);
 
   const heatmapPng = await generateHeatmap(intensityMap, width, height);
 
-  const composite = await sharp(sourceImagePath)
+  let baseImage: sharp.Sharp;
+  if (typeof source === 'string') {
+    baseImage = sharp(source);
+  } else {
+    baseImage = sharp(
+      Buffer.from(source.data.buffer, source.data.byteOffset, source.data.byteLength),
+      {
+        raw: { width: source.width, height: source.height, channels: 4 },
+      }
+    );
+  }
+
+  const composite = await baseImage
     .resize(width, height, { fit: 'fill' })
     .composite([{ input: heatmapPng, blend: 'over' }])
     .png()
