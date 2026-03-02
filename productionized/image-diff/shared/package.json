@@ -1,5 +1,5 @@
 {
-  "name": "@pulsemcp/image-diff-shared",
+  "name": "@pulsemcp/image-diff-mcp-server-shared",
   "version": "0.0.1",
   "description": "Shared code for image-diff MCP server",
   "main": "build/index.js",

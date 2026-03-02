@@ -1,5 +1,5 @@
 {
-  "name": "@pulsemcp/image-diff",
+  "name": "@pulsemcp/image-diff-mcp-server",
   "version": "0.0.1",
   "description": "MCP server for programmatic image comparison and visual diff generation",
   "author": "PulseMCP",

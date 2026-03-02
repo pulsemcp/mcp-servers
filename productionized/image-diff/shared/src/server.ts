@@ -8,7 +8,7 @@ export interface CreateMCPServerOptions {
 export function createMCPServer(options: CreateMCPServerOptions) {
   const server = new Server(
     {
-      name: '@pulsemcp/image-diff',
+      name: '@pulsemcp/image-diff-mcp-server',
       version: options.version,
     },
     {
