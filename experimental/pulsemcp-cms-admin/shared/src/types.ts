@@ -890,6 +890,54 @@ export interface ProctorSaveResultsResponse {
   >;
 }
 
+export interface ProctorRun {
+  id: number;
+  slug: string;
+  name: string | null;
+  recommended: boolean;
+  mirrors_count: number;
+  tenant_count: number;
+  latest_version: string | null;
+  latest_mirror_id: number | null;
+  latest_mirror_name: string | null;
+  latest_tested: boolean;
+  last_auth_check_days: number | null;
+  last_tools_list_days: number | null;
+  auth_types: string[];
+  num_tools: number | null;
+  packages: string[];
+  remotes: string[];
+}
+
+export interface ProctorRunsResponse {
+  runs: ProctorRun[];
+  pagination?: {
+    current_page: number;
+    total_pages: number;
+    total_count: number;
+    has_next?: boolean;
+    limit?: number;
+  };
+}
+
+export interface GetProctorRunsParams {
+  q?: string;
+  recommended?: boolean;
+  tenant_ids?: string;
+  sort?:
+    | 'slug'
+    | 'name'
+    | 'mirrors'
+    | 'recommended'
+    | 'tenants'
+    | 'latest_tested'
+    | 'last_auth_check'
+    | 'last_tools_list';
+  direction?: 'asc' | 'desc';
+  limit?: number;
+  offset?: number;
+}
+
 // ============================================================
 // Discovered URL Types
 // For managing discovered URLs that need processing into MCP implementations
