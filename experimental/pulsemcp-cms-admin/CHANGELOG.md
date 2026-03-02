@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-03-02
+
+### Changed
+
+- **BREAKING**: Removed `results` array parameter from `save_results_for_mirror` tool — `result_id` (from `run_exam_for_mirror`) is now the only way to provide exam results. This simplifies the tool interface and ensures results always flow through the server-side store, avoiding large payloads in LLM context.
+
 ## [0.7.4] - 2026-03-01
 
 ### Fixed

@@ -2,6 +2,32 @@
 
 ## Latest Test Results
 
+**Date:** 2026-03-02
+**Commit:** 4a3e77d
+**Version:** 0.8.0 (pre-release)
+**API Environment:** N/A (parameter removal only, no API interaction changes)
+
+### Overall: ✅ Functional Tests PASSING (171/171)
+
+**v0.8.0 Changes:**
+
+- **BREAKING**: Removed `results` array parameter from `save_results_for_mirror` tool — `result_id` (from `run_exam_for_mirror`) is now the only way to provide exam results. This simplifies the tool interface and ensures results always flow through the server-side store, avoiding large payloads in LLM context.
+
+**Functional Test Results: ✅ 171/171 PASSING**
+
+- Updated existing tests: removed tests for direct `results` array path, converted remaining tests to use `result_id`
+- Added new test: `should require result_id parameter` — verifies Zod validation rejects missing `result_id`
+- Updated manual test file: removed "save_results_for_mirror with direct results array" test section, updated schema assertions
+- All existing `result_id`-based tests continue to pass (unwrapping, extraction, partial failures, error handling)
+
+**Note on Manual Testing:**
+
+Manual tests were not run for this release — API credentials (`.env` file) were not available in this environment. This change removes a user-facing parameter (`results` array) from the tool schema; it does not modify any API interaction logic, request format, or response handling. The underlying API client (`save-results-for-mirror.ts` in `pulsemcp-admin-client/lib/`) is completely unchanged. The v0.7.2 manual test results remain valid for all API-facing functionality.
+
+---
+
+## Previous Test Results (v0.7.4)
+
 **Date:** 2026-03-01
 **Commit:** 1bb0a7b
 **Version:** 0.7.4 (pre-release)
