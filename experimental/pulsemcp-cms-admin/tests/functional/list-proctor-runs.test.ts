@@ -246,6 +246,16 @@ describe('list_proctor_runs', () => {
     expect(tool.inputSchema.properties).toHaveProperty('recommended');
     expect(tool.inputSchema.properties).toHaveProperty('tenant_ids');
     expect(tool.inputSchema.properties).toHaveProperty('sort');
+    expect(tool.inputSchema.properties.sort.enum).toEqual([
+      'slug',
+      'name',
+      'mirrors',
+      'recommended',
+      'tenants',
+      'latest_tested',
+      'last_auth_check',
+      'last_tools_list',
+    ]);
     expect(tool.inputSchema.properties).toHaveProperty('direction');
     expect(tool.inputSchema.properties).toHaveProperty('limit');
     expect(tool.inputSchema.properties).toHaveProperty('offset');

@@ -91,7 +91,7 @@ import { getDiscoveredUrlStats } from './tools/get-discovered-url-stats.js';
  * - mcp_servers / mcp_servers_readonly: Unified MCP server tools (abstracted interface)
  * - redirects / redirects_readonly: URL redirect management tools
  * - good_jobs / good_jobs_readonly: GoodJob background job management tools
- * - proctor / proctor_readonly: Proctor exam execution and result storage tools. The readonly variant includes get_exam_result for retrieving stored results without running exams or saving
+ * - proctor / proctor_readonly: Proctor exam execution and result storage tools. The readonly variant includes get_exam_result and list_proctor_runs for retrieving stored results without running exams or saving
  * - discovered_urls / discovered_urls_readonly: Discovered URL management tools for processing URLs into MCP implementations
  * - notifications: Notification email tools (send_impl_posted_notif). Separated from server_directory so notification capability can be granted independently.
  */
@@ -475,7 +475,7 @@ function shouldIncludeTool(toolDef: ToolDefinition, enabledGroups: ToolGroup[]):
  * - good_jobs: GoodJob background job management tools (read + write)
  * - good_jobs_readonly: GoodJob tools (read only)
  * - proctor: Proctor exam execution and result storage tools (read + write)
- * - proctor_readonly: Proctor tools (read only - get_exam_result for retrieving stored results)
+ * - proctor_readonly: Proctor tools (read only - get_exam_result and list_proctor_runs)
  * - discovered_urls: Discovered URL management tools for processing URLs into MCP implementations (read + write)
  * - discovered_urls_readonly: Discovered URL tools (read only - list and stats)
  * - notifications: Notification email tools - send_impl_posted_notif (write-only, no readonly variant)

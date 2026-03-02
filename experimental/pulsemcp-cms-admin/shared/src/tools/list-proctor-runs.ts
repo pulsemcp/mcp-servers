@@ -4,7 +4,8 @@ import type { ClientFactory } from '../server.js';
 
 const PARAM_DESCRIPTIONS = {
   q: 'Search by server slug, implementation name, or mirror name',
-  recommended: 'Filter to recommended servers only',
+  recommended:
+    'When true, filter to recommended servers only. When false or omitted, shows all servers',
   tenant_ids: 'Comma-separated tenant IDs to filter by (OR logic)',
   sort: 'Column to sort by: slug, name, mirrors, recommended, tenants, latest_tested, last_auth_check, last_tools_list',
   direction: 'Sort direction: asc or desc. Default: asc',
@@ -16,7 +17,19 @@ const ListProctorRunsSchema = z.object({
   q: z.string().optional().describe(PARAM_DESCRIPTIONS.q),
   recommended: z.boolean().optional().describe(PARAM_DESCRIPTIONS.recommended),
   tenant_ids: z.string().optional().describe(PARAM_DESCRIPTIONS.tenant_ids),
-  sort: z.string().optional().describe(PARAM_DESCRIPTIONS.sort),
+  sort: z
+    .enum([
+      'slug',
+      'name',
+      'mirrors',
+      'recommended',
+      'tenants',
+      'latest_tested',
+      'last_auth_check',
+      'last_tools_list',
+    ])
+    .optional()
+    .describe(PARAM_DESCRIPTIONS.sort),
   direction: z.enum(['asc', 'desc']).optional().describe(PARAM_DESCRIPTIONS.direction),
   limit: z.number().min(1).max(100).optional().describe(PARAM_DESCRIPTIONS.limit),
   offset: z.number().min(0).optional().describe(PARAM_DESCRIPTIONS.offset),
@@ -61,7 +74,20 @@ Use cases:
         q: { type: 'string', description: PARAM_DESCRIPTIONS.q },
         recommended: { type: 'boolean', description: PARAM_DESCRIPTIONS.recommended },
         tenant_ids: { type: 'string', description: PARAM_DESCRIPTIONS.tenant_ids },
-        sort: { type: 'string', description: PARAM_DESCRIPTIONS.sort },
+        sort: {
+          type: 'string',
+          enum: [
+            'slug',
+            'name',
+            'mirrors',
+            'recommended',
+            'tenants',
+            'latest_tested',
+            'last_auth_check',
+            'last_tools_list',
+          ],
+          description: PARAM_DESCRIPTIONS.sort,
+        },
         direction: {
           type: 'string',
           enum: ['asc', 'desc'],

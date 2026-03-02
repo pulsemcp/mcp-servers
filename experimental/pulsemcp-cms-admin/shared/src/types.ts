@@ -924,7 +924,15 @@ export interface GetProctorRunsParams {
   q?: string;
   recommended?: boolean;
   tenant_ids?: string;
-  sort?: string;
+  sort?:
+    | 'slug'
+    | 'name'
+    | 'mirrors'
+    | 'recommended'
+    | 'tenants'
+    | 'latest_tested'
+    | 'last_auth_check'
+    | 'last_tools_list';
   direction?: 'asc' | 'desc';
   limit?: number;
   offset?: number;
