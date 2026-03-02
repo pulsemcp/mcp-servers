@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-03-02
+
+### Added
+
+- Added `list_proctor_runs` tool to the proctor toolset — lists proctor run summaries for MCP servers showing testing status, auth-check/tools-list results, and server metadata. Supports search, filtering by recommended status and tenant IDs, sorting, and pagination. Read-only (included in `proctor_readonly` group).
+
 ## [0.8.0] - 2026-03-02
 
 ### Changed

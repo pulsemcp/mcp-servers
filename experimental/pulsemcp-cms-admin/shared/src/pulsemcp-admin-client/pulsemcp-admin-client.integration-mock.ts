@@ -1191,6 +1191,13 @@ export function createMockPulseMCPAdminClient(mockData: MockData): IPulseMCPAdmi
       };
     },
 
+    async getProctorRuns() {
+      return {
+        runs: [],
+        pagination: { current_page: 1, total_pages: 1, total_count: 0, has_next: false, limit: 30 },
+      };
+    },
+
     // Discovered URL methods
     async getDiscoveredUrls() {
       return {

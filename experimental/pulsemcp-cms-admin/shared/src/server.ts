@@ -57,6 +57,8 @@ import type {
   ProctorRunExamResponse,
   ProctorSaveResultsParams,
   ProctorSaveResultsResponse,
+  ProctorRunsResponse,
+  GetProctorRunsParams,
   // Discovered URL types
   DiscoveredUrlsResponse,
   MarkDiscoveredUrlProcessedParams,
@@ -296,6 +298,8 @@ export interface IPulseMCPAdminClient {
   runExamForMirror(params: ProctorRunExamParams): Promise<ProctorRunExamResponse>;
 
   saveResultsForMirror(params: ProctorSaveResultsParams): Promise<ProctorSaveResultsResponse>;
+
+  getProctorRuns(params?: GetProctorRunsParams): Promise<ProctorRunsResponse>;
 
   // Discovered URL REST API methods
   getDiscoveredUrls(params?: {
@@ -772,6 +776,11 @@ export class PulseMCPAdminClient implements IPulseMCPAdminClient {
     const { saveResultsForMirror } =
       await import('./pulsemcp-admin-client/lib/save-results-for-mirror.js');
     return saveResultsForMirror(this.apiKey, this.baseUrl, params);
+  }
+
+  async getProctorRuns(params?: GetProctorRunsParams): Promise<ProctorRunsResponse> {
+    const { getProctorRuns } = await import('./pulsemcp-admin-client/lib/get-proctor-runs.js');
+    return getProctorRuns(this.apiKey, this.baseUrl, params);
   }
 
   // Discovered URL REST API methods

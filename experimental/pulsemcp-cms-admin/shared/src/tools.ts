@@ -62,6 +62,7 @@ import { cleanupGoodJobs } from './tools/cleanup-good-jobs.js';
 import { runExamForMirror } from './tools/run-exam-for-mirror.js';
 import { getExamResult } from './tools/get-exam-result.js';
 import { saveResultsForMirror } from './tools/save-results-for-mirror.js';
+import { listProctorRuns } from './tools/list-proctor-runs.js';
 // Discovered URLs tools
 import { listDiscoveredUrls } from './tools/list-discovered-urls.js';
 import { markDiscoveredUrlProcessed } from './tools/mark-discovered-url-processed.js';
@@ -323,6 +324,7 @@ const ALL_TOOLS: ToolDefinition[] = [
   { factory: runExamForMirror, groups: ['proctor'], isWriteOperation: true },
   { factory: getExamResult, groups: ['proctor'], isWriteOperation: false },
   { factory: saveResultsForMirror, groups: ['proctor'], isWriteOperation: true },
+  { factory: listProctorRuns, groups: ['proctor'], isWriteOperation: false },
   // Discovered URLs tools
   { factory: listDiscoveredUrls, groups: ['discovered_urls'], isWriteOperation: false },
   {

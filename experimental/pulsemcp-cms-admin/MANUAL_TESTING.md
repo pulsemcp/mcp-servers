@@ -3,6 +3,44 @@
 ## Latest Test Results
 
 **Date:** 2026-03-02
+**Commit:** 2866c01
+**Version:** 0.9.0 (pre-release)
+**API Environment:** N/A (new read-only tool calling not-yet-deployed backend endpoint)
+
+### Overall: ✅ Functional Tests PASSING (179/179)
+
+**v0.9.0 Changes:**
+
+- Added `list_proctor_runs` tool to the proctor toolset — lists proctor run summaries for MCP servers showing testing status, auth-check/tools-list results, and server metadata. Supports search, filtering by recommended status and tenant IDs, sorting, and pagination. Read-only (included in `proctor_readonly` group).
+
+**Functional Test Results: ✅ 179/179 PASSING (8 test files)**
+
+New test file: `list-proctor-runs.test.ts` — 8 tests:
+
+- Fetches and formats proctor runs with full pagination
+- Handles fully populated and sparse/untested server entries
+- Passes all filter parameters (q, recommended, tenant_ids, sort, direction, limit, offset) to client
+- Handles API errors gracefully
+- Handles empty results
+- Correct tool metadata (name, description, all parameters)
+- Tool group filtering: 4 tools in `proctor` group, 2 read-only tools in `proctor_readonly` group
+- `proctor` included in default groups
+
+Updated existing tests:
+
+- `tools.test.ts`: Updated total tool count from 56 to 57, updated `proctor_readonly` count from 1 to 2 (now includes `list_proctor_runs`)
+- `discovered-urls-tools.test.ts`: Added `getProctorRuns` to mock client
+- All 3 mock client definitions updated with `getProctorRuns: vi.fn()`
+
+**Note on Manual Testing:**
+
+Manual tests were not run for this release — the backend endpoint (`GET /api/proctor_runs`) is being added in pulsemcp/pulsemcp#2136 which has not yet been merged or deployed to staging. Additionally, API credentials (`.env` file) were not available in this environment. This is a new read-only tool that follows the exact same API client patterns as all other list/get tools (e.g., `get_unofficial_mirrors`, `list_good_jobs`). The v0.7.2 manual test results remain valid for all existing API-facing functionality.
+
+---
+
+## Previous Test Results (v0.8.0)
+
+**Date:** 2026-03-02
 **Commit:** 4a3e77d
 **Version:** 0.8.0 (pre-release)
 **API Environment:** N/A (parameter removal only, no API interaction changes)
