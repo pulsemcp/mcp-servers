@@ -3133,7 +3133,7 @@ describe('Newsletter Tools', () => {
           tool.handler({
             mirror_id: 123,
           })
-        ).rejects.toThrow();
+        ).rejects.toThrow(/Required/);
       });
 
       it('should return error for unknown result_id', async () => {
