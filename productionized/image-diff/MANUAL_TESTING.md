@@ -8,7 +8,7 @@ This file tracks the **most recent** manual test results for the image-diff MCP 
 
 **Test Date:** 2026-03-02
 **Branch:** agent-orchestrator/add-image-diff-server
-**Commit:** 748f8e8
+**Commit:** 926a634
 **Tested By:** Claude
 **Environment:** Linux, Node.js, Local image processing (no external APIs)
 
@@ -65,9 +65,9 @@ This file tracks the **most recent** manual test results for the image-diff MCP 
 - alignMultiScale: throws when template is larger than scene
 - alignMultiScale: returns low confidence for solid-color template
 
-**End-to-End auto_align Scenarios (6/6 verified):**
+**End-to-End Auto-Alignment Scenarios (6/6 verified):**
 
-All scenarios tested with full pipeline (diffImages with autoAlign=true) using Playwright-generated dashboard screenshots (1024x1138 full page vs individual component mocks):
+All scenarios tested with full pipeline (diffImages with different-sized inputs) using Playwright-generated dashboard screenshots (1024x1138 full page vs individual component mocks):
 
 | Scenario         | Template Size | Position Found | Confidence | Time | Diff % | Clusters |
 | ---------------- | ------------- | -------------- | ---------- | ---- | ------ | -------- |
