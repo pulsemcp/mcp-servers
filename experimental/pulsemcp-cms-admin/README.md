@@ -91,7 +91,7 @@ This server is built and tested on macOS with Claude Desktop. It should work wit
 | `cleanup_good_jobs`                    | good_jobs          | write      | Clean up old background jobs by status and age.                                                            |
 | `run_exam_for_mirror`                  | proctor            | write      | Run proctor exams against unofficial mirrors via Fly Machines. Returns truncated summary with `result_id`. |
 | `get_exam_result`                      | proctor            | read       | Retrieve full untruncated exam results by `result_id`, with optional section/mirror filtering.             |
-| `save_results_for_mirror`              | proctor            | write      | Save proctor exam results. Accepts `result_id` or explicit results array.                                  |
+| `save_results_for_mirror`              | proctor            | write      | Save proctor exam results via `result_id` from `run_exam_for_mirror`.                                      |
 
 # Tool Groups
 

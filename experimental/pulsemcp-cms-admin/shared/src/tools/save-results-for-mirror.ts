@@ -7,43 +7,21 @@ const PARAM_DESCRIPTIONS = {
   mirror_id: 'The ID of the unofficial mirror to save results for',
   runtime_id: 'The runtime ID that was used to run the exams',
   result_id:
-    'The UUID returned by run_exam_for_mirror. When provided, the server retrieves the full result from the local file store — no need to pass the results array. This is the preferred approach.',
-  results:
-    'Array of exam results to save. Each result must include exam_id, status, and optional data. Only needed if result_id is not provided.',
-  exam_id: 'The exam identifier (e.g., "auth-check", "init-tools-list")',
-  status: 'The result status (e.g., "pass", "fail", "error", "skip")',
-  data: 'Optional detailed result data. Sensitive fields (tokens, secrets, passwords) will be automatically redacted before storage.',
+    'The UUID returned by run_exam_for_mirror. The server retrieves the full result from the local file store automatically.',
 } as const;
 
-const ResultSchema = z.object({
-  exam_id: z.string().describe(PARAM_DESCRIPTIONS.exam_id),
-  status: z.string().describe(PARAM_DESCRIPTIONS.status),
-  data: z.record(z.unknown()).optional().describe(PARAM_DESCRIPTIONS.data),
+const SaveResultsForMirrorSchema = z.object({
+  mirror_id: z.number().describe(PARAM_DESCRIPTIONS.mirror_id),
+  runtime_id: z.string().optional().describe(PARAM_DESCRIPTIONS.runtime_id),
+  result_id: z.string().uuid().describe(PARAM_DESCRIPTIONS.result_id),
 });
-
-const SaveResultsForMirrorSchema = z
-  .object({
-    mirror_id: z.number().describe(PARAM_DESCRIPTIONS.mirror_id),
-    runtime_id: z.string().optional().describe(PARAM_DESCRIPTIONS.runtime_id),
-    result_id: z.string().uuid().optional().describe(PARAM_DESCRIPTIONS.result_id),
-    results: z.array(ResultSchema).optional().describe(PARAM_DESCRIPTIONS.results),
-  })
-  .refine((data) => data.result_id || (data.results && data.results.length > 0), {
-    message: 'Either result_id or a non-empty results array must be provided',
-  })
-  .refine((data) => !(data.result_id && data.results && data.results.length > 0), {
-    message:
-      'Provide either result_id or results, not both. Use result_id (preferred) to retrieve from the store, or results for direct submission.',
-  });
 
 export function saveResultsForMirror(_server: Server, clientFactory: ClientFactory) {
   return {
     name: 'save_results_for_mirror',
     description: `Save proctor exam results for an unofficial mirror.
 
-**Preferred**: Pass the \`result_id\` returned by \`run_exam_for_mirror\`. The full result is retrieved from the local file store server-side — no need to pass the large results payload through the LLM context.
-
-**Fallback**: Pass results directly (as before) if result_id is not available.
+Pass the \`result_id\` returned by \`run_exam_for_mirror\`. The full result is retrieved from the local file store server-side — no need to pass the large results payload through the LLM context.
 
 Results are sanitized server-side to redact sensitive data (OAuth tokens, client secrets, passwords, etc.) before being persisted.
 
@@ -63,119 +41,93 @@ Typical workflow:
           format: 'uuid',
           description: PARAM_DESCRIPTIONS.result_id,
         },
-        results: {
-          type: 'array',
-          items: {
-            type: 'object',
-            properties: {
-              exam_id: { type: 'string', description: PARAM_DESCRIPTIONS.exam_id },
-              status: { type: 'string', description: PARAM_DESCRIPTIONS.status },
-              data: {
-                type: 'object',
-                additionalProperties: true,
-                description: PARAM_DESCRIPTIONS.data,
-              },
-            },
-            required: ['exam_id', 'status'],
-          },
-          description: PARAM_DESCRIPTIONS.results,
-        },
       },
-      required: ['mirror_id'],
+      required: ['mirror_id', 'result_id'],
     },
     handler: async (args: unknown) => {
       const validatedArgs = SaveResultsForMirrorSchema.parse(args);
       const client = clientFactory();
 
       try {
-        let results = validatedArgs.results;
-        let runtimeId = validatedArgs.runtime_id;
-
-        // If result_id is provided, retrieve from the store
-        if (validatedArgs.result_id) {
-          const stored = examResultStore.get(validatedArgs.result_id);
-          if (!stored) {
-            return {
-              content: [
-                {
-                  type: 'text',
-                  text: `No stored result found for result_id "${validatedArgs.result_id}". The result file may have been cleaned up or the /tmp directory cleared. Pass the results array directly instead.`,
-                },
-              ],
-              isError: true,
-            };
-          }
-
-          // Extract exam_result lines from stored data.
-          //
-          // The real proctor API returns a deeply nested structure:
-          //   line.data = {
-          //     mirror_id, server_slug, exam_id, ...,
-          //     result: {                          ← envelope
-          //       exam_id, machine_id, status,
-          //       result: {                        ← actual payload
-          //         input: {...}, output: {...}, processedBy: {...}
-          //       },
-          //       error, logs
-          //     }
-          //   }
-          //
-          // The PulseMCP API expects the actual payload { input, output,
-          // processedBy } at the top level of the saved results column.
-          // We must unwrap through data.result.result to reach it.
-          results = stored.lines
-            .filter((line) => line.type === 'exam_result')
-            .map((line) => {
-              const data = line.data as Record<string, unknown> | undefined;
-              // Unwrap nested result objects to find the exam payload
-              // containing { input, output, processedBy }.
-              let resultData: Record<string, unknown> | undefined = data;
-              // Level 1: data.result (envelope with exam_id, machine_id, logs, etc.)
-              if (
-                resultData?.result &&
-                typeof resultData.result === 'object' &&
-                !Array.isArray(resultData.result)
-              ) {
-                resultData = resultData.result as Record<string, unknown>;
-                // Level 2: data.result.result (actual payload with input, output, processedBy)
-                if (
-                  resultData.result &&
-                  typeof resultData.result === 'object' &&
-                  !Array.isArray(resultData.result)
-                ) {
-                  resultData = resultData.result as Record<string, unknown>;
-                }
-              }
-              return {
-                exam_id: extractExamId(line),
-                status: extractStatus(line),
-                ...(resultData ? { data: resultData } : {}),
-              };
-            });
-
-          if (!runtimeId) {
-            runtimeId = stored.runtime_id;
-          }
-        }
-
-        if (!results || results.length === 0) {
+        const stored = examResultStore.get(validatedArgs.result_id);
+        if (!stored) {
           return {
             content: [
               {
                 type: 'text',
-                text: 'No exam results to save. Either provide a result_id from run_exam_for_mirror or pass results directly.',
+                text: `No stored result found for result_id "${validatedArgs.result_id}". The result file may have been cleaned up or the /tmp directory cleared. Re-run run_exam_for_mirror to generate a new result.`,
               },
             ],
             isError: true,
           };
         }
 
+        // Extract exam_result lines from stored data.
+        //
+        // The real proctor API returns a deeply nested structure:
+        //   line.data = {
+        //     mirror_id, server_slug, exam_id, ...,
+        //     result: {                          ← envelope
+        //       exam_id, machine_id, status,
+        //       result: {                        ← actual payload
+        //         input: {...}, output: {...}, processedBy: {...}
+        //       },
+        //       error, logs
+        //     }
+        //   }
+        //
+        // The PulseMCP API expects the actual payload { input, output,
+        // processedBy } at the top level of the saved results column.
+        // We must unwrap through data.result.result to reach it.
+        const results = stored.lines
+          .filter((line) => line.type === 'exam_result')
+          .map((line) => {
+            const data = line.data as Record<string, unknown> | undefined;
+            // Unwrap nested result objects to find the exam payload
+            // containing { input, output, processedBy }.
+            let resultData: Record<string, unknown> | undefined = data;
+            // Level 1: data.result (envelope with exam_id, machine_id, logs, etc.)
+            if (
+              resultData?.result &&
+              typeof resultData.result === 'object' &&
+              !Array.isArray(resultData.result)
+            ) {
+              resultData = resultData.result as Record<string, unknown>;
+              // Level 2: data.result.result (actual payload with input, output, processedBy)
+              if (
+                resultData.result &&
+                typeof resultData.result === 'object' &&
+                !Array.isArray(resultData.result)
+              ) {
+                resultData = resultData.result as Record<string, unknown>;
+              }
+            }
+            return {
+              exam_id: extractExamId(line),
+              status: extractStatus(line),
+              ...(resultData ? { data: resultData } : {}),
+            };
+          });
+
+        if (results.length === 0) {
+          return {
+            content: [
+              {
+                type: 'text',
+                text: 'No exam results found in the stored result. The stored data may not contain any exam_result lines.',
+              },
+            ],
+            isError: true,
+          };
+        }
+
+        const runtimeId = validatedArgs.runtime_id || stored.runtime_id;
         if (!runtimeId) {
           return {
             content: [
               {
                 type: 'text',
-                text: 'runtime_id is required. Provide it directly or use a result_id which includes the runtime_id.',
+                text: 'runtime_id is required. Provide it directly or ensure the stored result includes it.',
               },
             ],
             isError: true,
@@ -191,9 +143,7 @@ Typical workflow:
         let content = `**Proctor Results Saved**\n\n`;
         content += `Mirror ID: ${validatedArgs.mirror_id}\n`;
         content += `Runtime: ${runtimeId}\n`;
-        if (validatedArgs.result_id) {
-          content += `Result ID: ${validatedArgs.result_id}\n`;
-        }
+        content += `Result ID: ${validatedArgs.result_id}\n`;
         content += '\n';
 
         if (response.saved.length > 0) {
@@ -216,7 +166,7 @@ Typical workflow:
         }
 
         // Clean up stored result after successful save (all results persisted)
-        if (validatedArgs.result_id && response.errors.length === 0) {
+        if (response.errors.length === 0) {
           examResultStore.delete(validatedArgs.result_id);
         }
 

@@ -2806,37 +2806,6 @@ describe('Newsletter Tools', () => {
     });
 
     describe('save_results_for_mirror', () => {
-      it('should save results with explicit results array', async () => {
-        const { saveResultsForMirror } =
-          await import('../../shared/src/tools/save-results-for-mirror.js');
-        const mockClient = createMockClient({
-          saveResultsForMirror: vi.fn().mockResolvedValue({
-            saved: [
-              { exam_id: 'auth-check', proctor_result_id: 101 },
-              { exam_id: 'init-tools-list', proctor_result_id: 102 },
-            ],
-            errors: [],
-          }),
-        });
-
-        const tool = saveResultsForMirror(mockServer, () => mockClient);
-        const result = await tool.handler({
-          mirror_id: 123,
-          runtime_id: 'fly-machines-v1',
-          results: [
-            { exam_id: 'auth-check', status: 'pass' },
-            { exam_id: 'init-tools-list', status: 'pass', data: { tools_count: 5 } },
-          ],
-        });
-
-        expect(result.isError).toBeUndefined();
-        expect(result.content[0].text).toContain('Proctor Results Saved');
-        expect(result.content[0].text).toContain('Mirror ID: 123');
-        expect(result.content[0].text).toContain('Successfully Saved (2)');
-        expect(result.content[0].text).toContain('auth-check (Result ID: 101)');
-        expect(result.content[0].text).toContain('init-tools-list (Result ID: 102)');
-      });
-
       it('should save results using result_id from the store', async () => {
         const { saveResultsForMirror } =
           await import('../../shared/src/tools/save-results-for-mirror.js');
@@ -3155,22 +3124,16 @@ describe('Newsletter Tools', () => {
         expect(examResultStore.get(resultId)).toBeDefined();
       });
 
-      it('should reject providing both result_id and results', async () => {
+      it('should require result_id parameter', async () => {
         const { saveResultsForMirror } =
           await import('../../shared/src/tools/save-results-for-mirror.js');
-
-        const resultId = examResultStore.store([123], 'fly-machines-v1', 'both', [
-          { type: 'exam_result', mirror_id: 123, exam_id: 'auth-check', status: 'pass' },
-        ]);
 
         const tool = saveResultsForMirror(mockServer, () => createMockClient());
         await expect(
           tool.handler({
             mirror_id: 123,
-            result_id: resultId,
-            results: [{ exam_id: 'auth-check', status: 'pass' }],
           })
-        ).rejects.toThrow('Provide either result_id or results, not both');
+        ).rejects.toThrow(/Required/);
       });
 
       it('should return error for unknown result_id', async () => {
@@ -3190,6 +3153,23 @@ describe('Newsletter Tools', () => {
       it('should report partial failures', async () => {
         const { saveResultsForMirror } =
           await import('../../shared/src/tools/save-results-for-mirror.js');
+
+        const lines = [
+          {
+            type: 'exam_result' as const,
+            mirror_id: 123,
+            exam_id: 'auth-check',
+            status: 'pass',
+          },
+          {
+            type: 'exam_result' as const,
+            mirror_id: 123,
+            exam_id: 'init-tools-list',
+            status: 'pass',
+          },
+        ];
+        const resultId = examResultStore.store([123], 'fly-machines-v1', 'both', lines);
+
         const mockClient = createMockClient({
           saveResultsForMirror: vi.fn().mockResolvedValue({
             saved: [{ exam_id: 'auth-check', proctor_result_id: 101 }],
@@ -3200,21 +3180,31 @@ describe('Newsletter Tools', () => {
         const tool = saveResultsForMirror(mockServer, () => mockClient);
         const result = await tool.handler({
           mirror_id: 123,
-          runtime_id: 'fly-machines-v1',
-          results: [
-            { exam_id: 'auth-check', status: 'pass' },
-            { exam_id: 'init-tools-list', status: 'pass' },
-          ],
+          result_id: resultId,
         });
 
         expect(result.content[0].text).toContain('Successfully Saved (1)');
         expect(result.content[0].text).toContain('Errors (1)');
         expect(result.content[0].text).toContain('init-tools-list: Duplicate result');
+
+        // Store should NOT be cleaned up when there are errors
+        expect(examResultStore.get(resultId)).toBeDefined();
       });
 
       it('should handle API errors gracefully', async () => {
         const { saveResultsForMirror } =
           await import('../../shared/src/tools/save-results-for-mirror.js');
+
+        const lines = [
+          {
+            type: 'exam_result' as const,
+            mirror_id: 999,
+            exam_id: 'auth-check',
+            status: 'pass',
+          },
+        ];
+        const resultId = examResultStore.store([999], 'fly-machines-v1', 'both', lines);
+
         const mockClient = createMockClient({
           saveResultsForMirror: vi
             .fn()
@@ -3224,8 +3214,7 @@ describe('Newsletter Tools', () => {
         const tool = saveResultsForMirror(mockServer, () => mockClient);
         const result = await tool.handler({
           mirror_id: 999,
-          runtime_id: 'fly-machines-v1',
-          results: [{ exam_id: 'auth-check', status: 'pass' }],
+          result_id: resultId,
         });
 
         expect(result.isError).toBe(true);
@@ -3237,6 +3226,17 @@ describe('Newsletter Tools', () => {
       it('should handle string error format from API', async () => {
         const { saveResultsForMirror } =
           await import('../../shared/src/tools/save-results-for-mirror.js');
+
+        const lines = [
+          {
+            type: 'exam_result' as const,
+            mirror_id: 123,
+            exam_id: 'auth-check',
+            status: 'pass',
+          },
+        ];
+        const resultId = examResultStore.store([123], 'fly-machines-v1', 'both', lines);
+
         const mockClient = createMockClient({
           saveResultsForMirror: vi.fn().mockResolvedValue({
             saved: [],
@@ -3247,8 +3247,7 @@ describe('Newsletter Tools', () => {
         const tool = saveResultsForMirror(mockServer, () => mockClient);
         const result = await tool.handler({
           mirror_id: 123,
-          runtime_id: 'fly-machines-v1',
-          results: [{ exam_id: 'auth-check', status: 'pass' }],
+          result_id: resultId,
         });
 
         expect(result.content[0].text).toContain('Errors (1)');

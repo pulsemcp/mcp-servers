@@ -20,7 +20,7 @@ dotenv.config({ path: path.join(__dirname, '../../.env') });
  * Tools tested:
  *   - run_exam_for_mirror: Run proctor exams against an unofficial mirror
  *   - get_exam_result: Retrieve full stored exam result by result_id
- *   - save_results_for_mirror: Save exam results using result_id (preferred) or direct array
+ *   - save_results_for_mirror: Save exam results using result_id from run_exam_for_mirror
  *
  * Required Environment:
  *   PULSEMCP_ADMIN_API_KEY: Admin API key for staging.pulsemcp.com
@@ -109,9 +109,9 @@ describe('Proctor Tools - Manual Tests with Real API', () => {
       const tool = tools.tools.find((t) => t.name === 'save_results_for_mirror');
       expect(tool).toBeDefined();
       expect(tool!.inputSchema.required).toContain('mirror_id');
-      // result_id and results are optional (one or the other)
+      expect(tool!.inputSchema.required).toContain('result_id');
       expect(tool!.inputSchema.properties).toHaveProperty('result_id');
-      expect(tool!.inputSchema.properties).toHaveProperty('results');
+      expect(tool!.inputSchema.properties).not.toHaveProperty('results');
     });
   });
 
@@ -224,39 +224,6 @@ describe('Proctor Tools - Manual Tests with Real API', () => {
       expect(text).toContain('Proctor Results Saved');
       expect(text).toContain(`Mirror ID: ${testMirrorId}`);
       expect(text).toContain(`Result ID: ${resultId}`);
-      expect(text).toMatch(/Successfully Saved \(\d+\)/);
-    }, 30_000);
-  });
-
-  describe('save_results_for_mirror with direct results array', () => {
-    it('should save results passed directly without result_id', async () => {
-      // Find any mirror to save results for
-      const mirrorsResult = await client.callTool('get_unofficial_mirrors', {
-        limit: 1,
-      });
-      expect(mirrorsResult.isError).toBeFalsy();
-      const mirrorMatch = mirrorsResult.content[0].text.match(/\(ID:\s*(\d+)\)/);
-      expect(mirrorMatch).toBeTruthy();
-      const mirrorId = parseInt(mirrorMatch![1], 10);
-
-      const result = await client.callTool('save_results_for_mirror', {
-        mirror_id: mirrorId,
-        runtime_id: runtimeId,
-        results: [
-          {
-            exam_id: 'proctor-mcp-client-auth-check',
-            status: 'pass',
-            data: {
-              output: { remotes: [{ authTypes: ['none'] }] },
-            },
-          },
-        ],
-      });
-
-      expect(result.isError).toBeFalsy();
-      const text = result.content[0].text;
-      expect(text).toContain('Proctor Results Saved');
-      expect(text).toContain(`Mirror ID: ${mirrorId}`);
       expect(text).toMatch(/Successfully Saved \(\d+\)/);
     }, 30_000);
   });
