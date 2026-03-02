@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- Fixed `identical` field contradicting `description` when minClusterSize filters all clusters
+- Added Uint32Array byte alignment guard to prevent crashes with non-4-aligned buffers
+- Added maximum image dimension check (100M pixels) to prevent OOM on extremely large images
+
 ## [0.1.0]
 
 ### Added

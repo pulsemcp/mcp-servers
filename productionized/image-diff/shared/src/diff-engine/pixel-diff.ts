@@ -74,8 +74,15 @@ export function pixelDiff(
   const intensityMap = new Float32Array(len);
 
   // Fast path: check if images are identical using 32-bit comparison
-  const a32 = new Uint32Array(img1.buffer, img1.byteOffset, len);
-  const b32 = new Uint32Array(img2.buffer, img2.byteOffset, len);
+  // Uint32Array requires 4-byte aligned offsets; copy to fresh buffer if misaligned
+  const a32 =
+    img1.byteOffset % 4 === 0
+      ? new Uint32Array(img1.buffer, img1.byteOffset, len)
+      : new Uint32Array(img1.slice().buffer);
+  const b32 =
+    img2.byteOffset % 4 === 0
+      ? new Uint32Array(img2.buffer, img2.byteOffset, len)
+      : new Uint32Array(img2.slice().buffer);
   let identical = true;
   for (let i = 0; i < len; i++) {
     if (a32[i] !== b32[i]) {

@@ -37,7 +37,7 @@ export interface ImageDiffOptions {
 }
 
 export interface ImageDiffResult {
-  /** Whether the images are identical (no diff clusters found) */
+  /** Whether the images are identical (zero diff pixels and zero clusters) */
   identical: boolean;
   /** Overall diff summary */
   summary: {
@@ -121,6 +121,16 @@ export async function diffImages(
   const width = w1;
   const height = h1;
 
+  // Step 2b: Guard against extremely large images that could OOM
+  const MAX_PIXELS = 100_000_000; // ~10K x 10K
+  const totalPixels = width * height;
+  if (totalPixels > MAX_PIXELS) {
+    throw new Error(
+      `Image too large: ${width}x${height} = ${totalPixels.toLocaleString()} pixels. ` +
+        `Maximum supported: ${MAX_PIXELS.toLocaleString()} pixels.`
+    );
+  }
+
   // Step 3: Run pixel-level comparison
   console.error('[diff-engine] Running pixel comparison...');
   const pixelDiffOptions: PixelDiffOptions = { threshold, includeAA };
@@ -161,10 +171,10 @@ export async function diffImages(
   }
 
   // Build summary description
-  const description = buildDescription(diffResult.diffPercentage, clusters);
+  const description = buildDescription(diffResult.diffPercentage, diffResult.diffCount, clusters);
 
   const result: ImageDiffResult = {
-    identical: diffResult.diffCount === 0,
+    identical: diffResult.diffCount === 0 && clusters.length === 0,
     summary: {
       totalPixels: diffResult.totalPixels,
       diffPixels: diffResult.diffCount,
@@ -185,9 +195,16 @@ export async function diffImages(
   return result;
 }
 
-function buildDescription(diffPercentage: number, clusters: DiffCluster[]): string {
+function buildDescription(
+  diffPercentage: number,
+  diffPixels: number,
+  clusters: DiffCluster[]
+): string {
+  if (clusters.length === 0 && diffPixels === 0) {
+    return 'Images are identical (no differences detected).';
+  }
   if (clusters.length === 0) {
-    return 'Images are identical (no meaningful differences detected).';
+    return `${diffPixels} isolated diff pixel(s) found but all filtered by minClusterSize. No significant clusters.`;
   }
 
   const majorClusters = clusters.filter((c) => c.severity === 'major');
