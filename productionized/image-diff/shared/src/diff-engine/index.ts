@@ -3,7 +3,7 @@
  *
  * Orchestrates the full pipeline:
  * 1. Load and normalize images with sharp (decode, ensure RGBA)
- * 2. Validate dimensions match
+ * 2. Validate dimensions (or auto-align if enabled)
  * 3. Run pixel-level comparison (forked pixelmatch algorithm)
  * 4. Cluster diff regions using Connected Component Labeling
  * 5. Generate heatmap visualization
@@ -19,9 +19,11 @@ import type { PixelDiffOptions } from './pixel-diff.js';
 import { findDiffClusters } from './clustering.js';
 import type { DiffCluster } from './clustering.js';
 import { generateHeatmap, generateCompositeHeatmap } from './heatmap.js';
+import { alignImages, orderBySize } from './alignment.js';
 
 export type { DiffCluster } from './clustering.js';
 export type { PixelDiffOptions, PixelDiffResult } from './pixel-diff.js';
+export type { AlignmentResult } from './alignment.js';
 
 export interface ImageDiffOptions {
   /** Pixel matching threshold (0 to 1); smaller is more sensitive. Default: 0.1 */
@@ -36,6 +38,8 @@ export interface ImageDiffOptions {
   outputDir?: string;
   /** Whether to generate the composite heatmap (overlaid on source). Default: true */
   generateComposite?: boolean;
+  /** When true and images have different dimensions, automatically find the best alignment. Default: false */
+  autoAlign?: boolean;
 }
 
 export interface ImageDiffResult {
@@ -58,10 +62,30 @@ export interface ImageDiffResult {
   heatmapPath: string;
   /** Path to the composite heatmap (overlaid on source image), if generated */
   compositePath?: string;
-  /** Dimensions of the compared images */
+  /** Dimensions of the compared region */
   dimensions: {
     width: number;
     height: number;
+  };
+  /** Alignment info, present only when auto_align was used */
+  alignment?: {
+    /** X offset of the aligned region within the larger image */
+    x: number;
+    /** Y offset of the aligned region within the larger image */
+    y: number;
+    /** Confidence score (0-1) */
+    confidence: number;
+    /** Strategy used for alignment */
+    strategy: string;
+    /** Time taken for alignment in milliseconds */
+    alignmentTimeMs: number;
+    /** Which image was the template (smaller one) */
+    templateImage: 'source' | 'target';
+    /** Original dimensions of source and target before alignment */
+    originalDimensions: {
+      source: { width: number; height: number };
+      target: { width: number; height: number };
+    };
   };
 }
 
@@ -84,13 +108,14 @@ export async function diffImages(
     clusterGap = 0,
     outputDir = tmpdir(),
     generateComposite = true,
+    autoAlign = false,
   } = options;
 
   console.error(`[diff-engine] Starting image diff`);
   console.error(`[diff-engine]   source: ${sourcePath}`);
   console.error(`[diff-engine]   target: ${targetPath}`);
   console.error(
-    `[diff-engine]   options: threshold=${threshold}, includeAA=${includeAA}, minClusterSize=${minClusterSize}, clusterGap=${clusterGap}`
+    `[diff-engine]   options: threshold=${threshold}, includeAA=${includeAA}, minClusterSize=${minClusterSize}, clusterGap=${clusterGap}, autoAlign=${autoAlign}`
   );
 
   // Validate inputs
@@ -113,16 +138,104 @@ export async function diffImages(
 
   console.error(`[diff-engine] Source: ${w1}x${h1}, Target: ${w2}x${h2}`);
 
-  // Step 2: Validate dimensions match
-  if (w1 !== w2 || h1 !== h2) {
-    throw new Error(
-      `Image dimensions do not match. Source: ${w1}x${h1}, Target: ${w2}x${h2}. ` +
-        `Both images must have identical dimensions.`
-    );
-  }
+  let sourceBuffer = new Uint8Array(
+    sourceData.data.buffer,
+    sourceData.data.byteOffset,
+    sourceData.data.length
+  );
+  let targetBuffer = new Uint8Array(
+    targetData.data.buffer,
+    targetData.data.byteOffset,
+    targetData.data.length
+  );
+  let width = w1;
+  let height = h1;
+  let alignmentInfo: ImageDiffResult['alignment'];
+  // Track which path to use for the composite overlay (may change if we crop)
+  let compositeSourcePath = sourcePath;
 
-  const width = w1;
-  const height = h1;
+  // Step 2: Handle dimension mismatch
+  if (w1 !== w2 || h1 !== h2) {
+    if (!autoAlign) {
+      throw new Error(
+        `Image dimensions do not match. Source: ${w1}x${h1}, Target: ${w2}x${h2}. ` +
+          `Both images must have identical dimensions. Use auto_align=true to automatically align images of different sizes.`
+      );
+    }
+
+    console.error('[diff-engine] Dimensions differ, running auto-alignment...');
+
+    // Load as RawImageData for alignment
+    const sourceRaw = {
+      data: sourceBuffer,
+      width: w1,
+      height: h1,
+    };
+    const targetRaw = {
+      data: targetBuffer,
+      width: w2,
+      height: h2,
+    };
+
+    // Determine which is the scene (larger) and template (smaller)
+    const { scene, template, swapped } = orderBySize(sourceRaw, targetRaw);
+    const templateImage = swapped ? 'source' : 'target';
+
+    console.error(
+      `[diff-engine] Template (${templateImage}): ${template.width}x${template.height}, ` +
+        `Scene: ${scene.width}x${scene.height}`
+    );
+
+    // Run hybrid alignment: OpenCV ZNCC coarse search + pixel-level refinement
+    const alignment = await alignImages(scene, template);
+
+    console.error(
+      `[diff-engine] Alignment found: (${alignment.x}, ${alignment.y}), ` +
+        `confidence=${alignment.confidence.toFixed(3)}, ` +
+        `strategy=${alignment.strategy}, time=${alignment.timeMs}ms`
+    );
+
+    // Crop the scene to the aligned region
+    width = template.width;
+    height = template.height;
+    const croppedScene = cropRawImage(scene, alignment.x, alignment.y, width, height);
+
+    // Set up buffers so source=scene-crop, target=template for the diff
+    if (swapped) {
+      // Source was smaller (template), target was larger (scene)
+      sourceBuffer = template.data;
+      targetBuffer = croppedScene;
+    } else {
+      // Source was larger (scene), target was smaller (template)
+      sourceBuffer = croppedScene;
+      targetBuffer = template.data;
+    }
+
+    // Save the cropped scene region for composite overlay
+    const croppedPngPath = join(outputDir, 'image-diff-output', `cropped-scene-${Date.now()}.png`);
+    await mkdir(join(outputDir, 'image-diff-output'), { recursive: true });
+    const croppedPng = await sharp(Buffer.from(croppedScene.buffer), {
+      raw: { width, height, channels: 4 },
+    })
+      .png()
+      .toBuffer();
+    await writeFile(croppedPngPath, croppedPng);
+    // Use the scene-side image for the composite overlay
+    compositeSourcePath = croppedPngPath;
+
+    alignmentInfo = {
+      x: alignment.x,
+      y: alignment.y,
+      confidence: alignment.confidence,
+      strategy: alignment.strategy,
+      alignmentTimeMs: alignment.timeMs,
+      templateImage: templateImage as 'source' | 'target',
+      originalDimensions: {
+        source: { width: w1, height: h1 },
+        target: { width: w2, height: h2 },
+      },
+    };
+  }
 
   // Step 2b: Guard against extremely large images that could OOM
   const MAX_PIXELS = 100_000_000; // ~10K x 10K
@@ -137,13 +250,7 @@ export async function diffImages(
   // Step 3: Run pixel-level comparison
   console.error('[diff-engine] Running pixel comparison...');
   const pixelDiffOptions: PixelDiffOptions = { threshold, includeAA };
-  const diffResult = pixelDiff(
-    new Uint8Array(sourceData.data.buffer, sourceData.data.byteOffset, sourceData.data.length),
-    new Uint8Array(targetData.data.buffer, targetData.data.byteOffset, targetData.data.length),
-    width,
-    height,
-    pixelDiffOptions
-  );
+  const diffResult = pixelDiff(sourceBuffer, targetBuffer, width, height, pixelDiffOptions);
 
   // Step 4: Cluster diff regions
   console.error('[diff-engine] Clustering diff regions...');
@@ -170,7 +277,7 @@ export async function diffImages(
   if (generateComposite) {
     compositePath = join(outputSubDir, `composite-${timestamp}.png`);
     const compositeBuffer = await generateCompositeHeatmap(
-      sourcePath,
+      compositeSourcePath,
       diffResult.intensityMap,
       width,
       height
@@ -197,10 +304,30 @@ export async function diffImages(
     heatmapPath,
     compositePath,
     dimensions: { width, height },
+    alignment: alignmentInfo,
   };
 
   console.error(`[diff-engine] Done. ${clusters.length} clusters found. ${description}`);
 
+  return result;
+}
+
+/**
+ * Crop raw RGBA pixel data to a sub-region.
+ */
+function cropRawImage(
+  image: { data: Uint8Array; width: number; height: number },
+  x: number,
+  y: number,
+  cropWidth: number,
+  cropHeight: number
+): Uint8Array {
+  const result = new Uint8Array(cropWidth * cropHeight * 4);
+  for (let row = 0; row < cropHeight; row++) {
+    const srcOffset = ((y + row) * image.width + x) * 4;
+    const dstOffset = row * cropWidth * 4;
+    result.set(image.data.subarray(srcOffset, srcOffset + cropWidth * 4), dstOffset);
+  }
   return result;
 }
 

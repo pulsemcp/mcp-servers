@@ -4,6 +4,7 @@
 
 ### Added
 
+- `auto_align` optional parameter: automatically finds the best alignment of a smaller image within a larger one when dimensions differ. Uses OpenCV ZNCC template matching (via opencv-wasm) for fast, accurate alignment (~50-90ms). Enables comparing Figma mocks of individual components against full-page screenshots
 - `cluster_gap` optional parameter: merges nearby clusters whose bounding boxes are within N pixels of each other. Useful for grouping scattered glyph fragments (e.g. font changes) into logical regions instead of hundreds of tiny clusters
 
 ### Fixed

@@ -1,6 +1,15 @@
 import { describe, it, expect } from 'vitest';
 import { pixelDiff } from '../../shared/src/diff-engine/pixel-diff.js';
 import { findDiffClusters } from '../../shared/src/diff-engine/clustering.js';
+import {
+  toGrayscale,
+  sobelEdges,
+  downsample,
+  orderBySize,
+  alignMultiScale,
+  alignImages,
+} from '../../shared/src/diff-engine/alignment.js';
+import type { RawImageData } from '../../shared/src/diff-engine/alignment.js';
 
 describe('pixelDiff', () => {
   it('should detect identical images', () => {
@@ -286,5 +295,252 @@ describe('findDiffClusters', () => {
     // Mean should be (0.2 + 0.2 + 0.9) / 3 ≈ 0.433
     expect(clusters[0].meanIntensity).toBeCloseTo(0.433, 2);
     expect(clusters[0].maxIntensity).toBeCloseTo(0.9, 2);
+  });
+});
+
+// ============================================================================
+// Alignment Tests
+// ============================================================================
+
+/**
+ * Create a synthetic RGBA image with a distinctive pattern at a specific location.
+ * Background is gray (128,128,128), pattern is a colored block.
+ */
+function createTestImage(
+  width: number,
+  height: number,
+  patternX: number,
+  patternY: number,
+  patternW: number,
+  patternH: number,
+  patternColor: [number, number, number] = [255, 0, 0]
+): RawImageData {
+  const data = new Uint8Array(width * height * 4);
+  // Fill with gray background
+  for (let i = 0; i < width * height; i++) {
+    data[i * 4] = 128;
+    data[i * 4 + 1] = 128;
+    data[i * 4 + 2] = 128;
+    data[i * 4 + 3] = 255;
+  }
+  // Draw pattern block
+  for (let y = patternY; y < patternY + patternH && y < height; y++) {
+    for (let x = patternX; x < patternX + patternW && x < width; x++) {
+      const idx = (y * width + x) * 4;
+      data[idx] = patternColor[0];
+      data[idx + 1] = patternColor[1];
+      data[idx + 2] = patternColor[2];
+      data[idx + 3] = 255;
+    }
+  }
+  return { data, width, height };
+}
+
+/**
+ * Create a template that is the exact crop of the scene at a given position.
+ */
+function cropImage(scene: RawImageData, x: number, y: number, w: number, h: number): RawImageData {
+  const data = new Uint8Array(w * h * 4);
+  for (let row = 0; row < h; row++) {
+    const srcOffset = ((y + row) * scene.width + x) * 4;
+    const dstOffset = row * w * 4;
+    data.set(scene.data.subarray(srcOffset, srcOffset + w * 4), dstOffset);
+  }
+  return { data, width: w, height: h };
+}
+
+describe('alignment helpers', () => {
+  it('toGrayscale should convert RGBA to luminance', () => {
+    const data = new Uint8Array([
+      255, 0, 0, 255, 0, 255, 0, 255, 0, 0, 255, 255, 255, 255, 255, 255,
+    ]);
+    const gray = toGrayscale(data, 2, 2);
+
+    expect(gray).toHaveLength(4);
+    // Red pixel: 255*0.299 ≈ 76.2
+    expect(gray[0]).toBeCloseTo(76.245, 0);
+    // Green pixel: 255*0.587 ≈ 149.7
+    expect(gray[1]).toBeCloseTo(149.685, 0);
+    // Blue pixel: 255*0.114 ≈ 29.1
+    expect(gray[2]).toBeCloseTo(29.07, 0);
+    // White pixel: 255
+    expect(gray[3]).toBeCloseTo(255, 0);
+  });
+
+  it('sobelEdges should detect edges', () => {
+    // 4x4 image: left half black, right half white
+    const gray = new Float32Array([0, 0, 255, 255, 0, 0, 255, 255, 0, 0, 255, 255, 0, 0, 255, 255]);
+    const edges = sobelEdges(gray, 4, 4);
+
+    // Edge should be detected at x=1 (boundary between black and white)
+    // The edge at (1,1) and (1,2) should be high
+    expect(edges[1 * 4 + 1]).toBeGreaterThan(0);
+    expect(edges[2 * 4 + 1]).toBeGreaterThan(0);
+    // Interior pixels should have zero or low edge response
+    expect(edges[1 * 4 + 0]).toBe(0); // border pixel (y=1,x=0) — sobel skips border
+    expect(edges[1 * 4 + 3]).toBe(0); // border pixel
+  });
+
+  it('downsample should reduce resolution correctly', () => {
+    const data = new Float32Array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]);
+    const result = downsample(data, 4, 4, 2);
+
+    expect(result.width).toBe(2);
+    expect(result.height).toBe(2);
+    // Top-left 2x2 block average: (1+2+5+6)/4 = 3.5
+    expect(result.data[0]).toBeCloseTo(3.5);
+    // Top-right 2x2 block average: (3+4+7+8)/4 = 5.5
+    expect(result.data[1]).toBeCloseTo(5.5);
+    // Bottom-left: (9+10+13+14)/4 = 11.5
+    expect(result.data[2]).toBeCloseTo(11.5);
+    // Bottom-right: (11+12+15+16)/4 = 13.5
+    expect(result.data[3]).toBeCloseTo(13.5);
+  });
+
+  it('orderBySize should identify scene and template correctly', () => {
+    const large: RawImageData = { data: new Uint8Array(400 * 300 * 4), width: 400, height: 300 };
+    const small: RawImageData = { data: new Uint8Array(100 * 50 * 4), width: 100, height: 50 };
+
+    const result1 = orderBySize(large, small);
+    expect(result1.scene.width).toBe(400);
+    expect(result1.template.width).toBe(100);
+    expect(result1.swapped).toBe(false);
+
+    const result2 = orderBySize(small, large);
+    expect(result2.scene.width).toBe(400);
+    expect(result2.template.width).toBe(100);
+    expect(result2.swapped).toBe(true);
+  });
+});
+
+describe('alignMultiScale', () => {
+  it('should find exact template position in a synthetic scene', () => {
+    // Create a 100x100 scene with a distinctive pattern at (30, 40)
+    const scene = createTestImage(100, 100, 30, 40, 20, 15, [255, 0, 0]);
+    // Create a 40x30 template that is the exact crop from (20, 30) to (60, 60)
+    const template = cropImage(scene, 20, 30, 40, 30);
+
+    const result = alignMultiScale(scene, template);
+
+    expect(result.x).toBe(20);
+    expect(result.y).toBe(30);
+    expect(result.confidence).toBeGreaterThan(0.9);
+    expect(result.strategy).toBe('multi-scale');
+  });
+
+  it('should find a pattern not at the origin', () => {
+    // 80x60 scene with a blue+green pattern at (50, 30)
+    const scene = createTestImage(80, 60, 50, 30, 15, 10, [0, 0, 255]);
+    // Add a second distinctive region
+    for (let y = 30; y < 40; y++) {
+      for (let x = 50; x < 65; x++) {
+        const idx = (y * 80 + x) * 4;
+        scene.data[idx] = 0;
+        scene.data[idx + 1] = 255;
+        scene.data[idx + 2] = 0;
+      }
+    }
+    // Crop from (45, 25) a 25x20 region
+    const template = cropImage(scene, 45, 25, 25, 20);
+
+    const result = alignMultiScale(scene, template);
+
+    expect(result.x).toBe(45);
+    expect(result.y).toBe(25);
+    expect(result.confidence).toBeGreaterThan(0.9);
+  });
+
+  it('should throw when template is larger than scene', () => {
+    const scene: RawImageData = { data: new Uint8Array(40 * 30 * 4), width: 40, height: 30 };
+    const template: RawImageData = { data: new Uint8Array(50 * 50 * 4), width: 50, height: 50 };
+
+    expect(() => alignMultiScale(scene, template)).toThrow('larger than scene');
+  });
+});
+
+describe('alignImages (OpenCV ZNCC hybrid)', () => {
+  it('should find exact template position in a synthetic scene', async () => {
+    const scene = createTestImage(100, 100, 30, 40, 20, 15, [255, 0, 0]);
+    const template = cropImage(scene, 20, 30, 40, 30);
+
+    const result = await alignImages(scene, template);
+
+    expect(result.x).toBe(20);
+    expect(result.y).toBe(30);
+    expect(result.confidence).toBeGreaterThan(0.9);
+    expect(result.strategy).toBe('opencv-zncc-hybrid');
+  });
+
+  it('should find a pattern not at the origin', async () => {
+    const scene = createTestImage(80, 60, 50, 30, 15, 10, [0, 0, 255]);
+    // Add second pattern
+    for (let y = 30; y < 40; y++) {
+      for (let x = 50; x < 65; x++) {
+        const idx = (y * 80 + x) * 4;
+        scene.data[idx] = 0;
+        scene.data[idx + 1] = 255;
+        scene.data[idx + 2] = 0;
+      }
+    }
+    const template = cropImage(scene, 45, 25, 25, 20);
+
+    const result = await alignImages(scene, template);
+
+    expect(result.x).toBe(45);
+    expect(result.y).toBe(25);
+    expect(result.confidence).toBeGreaterThan(0.9);
+  });
+
+  it('should agree with multi-scale on the same input', async () => {
+    const scene = createTestImage(120, 80, 60, 20, 30, 25, [200, 50, 100]);
+    const template = cropImage(scene, 50, 10, 50, 40);
+
+    const msResult = alignMultiScale(scene, template);
+    const cvResult = await alignImages(scene, template);
+
+    expect(msResult.x).toBe(cvResult.x);
+    expect(msResult.y).toBe(cvResult.y);
+  });
+
+  it('should throw when template is larger than scene', async () => {
+    const scene: RawImageData = { data: new Uint8Array(40 * 30 * 4), width: 40, height: 30 };
+    const template: RawImageData = { data: new Uint8Array(50 * 50 * 4), width: 50, height: 50 };
+
+    await expect(alignImages(scene, template)).rejects.toThrow('larger than scene');
+  });
+
+  it('should not false-match on uniform white regions', async () => {
+    // Scene: mostly white with a small colored pattern
+    const scene: RawImageData = {
+      data: new Uint8Array(100 * 100 * 4),
+      width: 100,
+      height: 100,
+    };
+    // Fill with white
+    for (let i = 0; i < 100 * 100; i++) {
+      scene.data[i * 4] = 255;
+      scene.data[i * 4 + 1] = 255;
+      scene.data[i * 4 + 2] = 255;
+      scene.data[i * 4 + 3] = 255;
+    }
+    // Add a small colored pattern at (70, 50)
+    for (let y = 50; y < 60; y++) {
+      for (let x = 70; x < 85; x++) {
+        const idx = (y * 100 + x) * 4;
+        scene.data[idx] = 50;
+        scene.data[idx + 1] = 100;
+        scene.data[idx + 2] = 200;
+      }
+    }
+
+    // Template: the colored region + surrounding white
+    const template = cropImage(scene, 65, 45, 25, 20);
+
+    const result = await alignImages(scene, template);
+
+    // Should find the correct position, not get confused by white areas
+    expect(result.x).toBe(65);
+    expect(result.y).toBe(45);
+    expect(result.confidence).toBeGreaterThan(0.7);
   });
 });
