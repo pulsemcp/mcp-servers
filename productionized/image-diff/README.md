@@ -44,7 +44,7 @@ Compare two images and get structured diff results.
 - Supports PNG, JPEG, WebP, TIFF input formats
 - Images can have different dimensions — the smaller image is automatically aligned within the larger one
 
-### Tool Call Shape
+#### Tool Call Shape
 
 **MCP tool call input** (minimal — just the two required paths):
 
@@ -212,7 +212,7 @@ The `text` field contains the full JSON result as a string. When parsed, the ful
 }
 ```
 
-Note: The `alignment` field only appears when images have different dimensions. The `dimensions` field reflects the size of the compared region (the template size after alignment, not the full scene).
+Note: The `alignment` field only appears when images have different dimensions. The `dimensions` field reflects the size of the compared region (the template size after alignment, not the full scene). The `compositePath` field is optional in the interface but always present when called via the MCP tool.
 
 </details>
 
