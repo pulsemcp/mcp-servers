@@ -47,7 +47,7 @@ npm run dev            # Development with auto-reload
 - CCL uses a two-pass algorithm with 8-connectivity and path-halving Union-Find compression
 - Heatmap output uses `os.tmpdir()/image-diff-output/` with timestamp-based filenames
 - Maximum supported image size: 100 million pixels (~10K x 10K)
-- Images must have identical dimensions, or use `auto_align=true` for different-sized images
+- Images can have different dimensions — auto-alignment finds the smaller image within the larger one
 - Auto-alignment uses OpenCV ZNCC (via opencv-wasm) at downsampled resolution + pixel-level refinement
 - Supported formats: PNG, JPEG, WebP, TIFF (via sharp)
 

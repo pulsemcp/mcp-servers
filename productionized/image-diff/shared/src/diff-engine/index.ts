@@ -3,7 +3,7 @@
  *
  * Orchestrates the full pipeline:
  * 1. Load and normalize images with sharp (decode, ensure RGBA)
- * 2. Validate dimensions (or auto-align if enabled)
+ * 2. Auto-align if dimensions differ (OpenCV ZNCC template matching)
  * 3. Run pixel-level comparison (forked pixelmatch algorithm)
  * 4. Cluster diff regions using Connected Component Labeling
  * 5. Generate heatmap visualization
@@ -38,8 +38,6 @@ export interface ImageDiffOptions {
   outputDir?: string;
   /** Whether to generate the composite heatmap (overlaid on source). Default: true */
   generateComposite?: boolean;
-  /** When true and images have different dimensions, automatically find the best alignment. Default: false */
-  autoAlign?: boolean;
 }
 
 export interface ImageDiffResult {
@@ -67,7 +65,7 @@ export interface ImageDiffResult {
     width: number;
     height: number;
   };
-  /** Alignment info, present only when auto_align was used */
+  /** Alignment info, present when images had different dimensions */
   alignment?: {
     /** X offset of the aligned region within the larger image */
     x: number;
@@ -108,14 +106,13 @@ export async function diffImages(
     clusterGap = 0,
     outputDir = tmpdir(),
     generateComposite = true,
-    autoAlign = false,
   } = options;
 
   console.error(`[diff-engine] Starting image diff`);
   console.error(`[diff-engine]   source: ${sourcePath}`);
   console.error(`[diff-engine]   target: ${targetPath}`);
   console.error(
-    `[diff-engine]   options: threshold=${threshold}, includeAA=${includeAA}, minClusterSize=${minClusterSize}, clusterGap=${clusterGap}, autoAlign=${autoAlign}`
+    `[diff-engine]   options: threshold=${threshold}, includeAA=${includeAA}, minClusterSize=${minClusterSize}, clusterGap=${clusterGap}`
   );
 
   // Validate inputs
@@ -154,15 +151,8 @@ export async function diffImages(
   // Track composite overlay source (file path or raw buffer for cropped alignment)
   let compositeSource: string | { data: Uint8Array; width: number; height: number } = sourcePath;
 
-  // Step 2: Handle dimension mismatch
+  // Step 2: Handle dimension mismatch — automatically align different-sized images
   if (w1 !== w2 || h1 !== h2) {
-    if (!autoAlign) {
-      throw new Error(
-        `Image dimensions do not match. Source: ${w1}x${h1}, Target: ${w2}x${h2}. ` +
-          `Both images must have identical dimensions. Use auto_align=true to automatically align images of different sizes.`
-      );
-    }
-
     console.error('[diff-engine] Dimensions differ, running auto-alignment...');
 
     // Load as RawImageData for alignment

@@ -15,8 +15,6 @@ const PARAM_DESCRIPTIONS = {
     'Minimum number of connected diff pixels to report as a cluster. Filters out isolated pixel noise. Default 4.',
   cluster_gap:
     'Maximum pixel distance between cluster bounding boxes to merge them into a single cluster. Use 0 (default) for pixel-precise clusters, or 5-20 to group nearby diff regions together (e.g. glyph fragments within a word, or scattered changes in a UI section).',
-  auto_align:
-    'When true and images have different dimensions, automatically find the best alignment of the smaller image within the larger one using OpenCV ZNCC template matching. Returns alignment offset and confidence in the result. Default false (dimension mismatch throws an error).',
 } as const;
 
 export const GetDiffOfImagesSchema = z.object({
@@ -31,7 +29,6 @@ export const GetDiffOfImagesSchema = z.object({
     .optional()
     .describe(PARAM_DESCRIPTIONS.min_cluster_size),
   cluster_gap: z.number().int().min(0).optional().describe(PARAM_DESCRIPTIONS.cluster_gap),
-  auto_align: z.boolean().optional().describe(PARAM_DESCRIPTIONS.auto_align),
 });
 
 export function getDiffOfImagesTool(_server: Server) {
@@ -49,12 +46,13 @@ Returns structured diff data including:
 
 **Use cases:**
 - Compare a design mock screenshot against actual UI implementation
+- Compare a Figma mock of a single component against a full-page screenshot (auto-aligned)
 - Detect visual regressions between two versions of a page
 - Verify CSS/layout changes only affect intended areas
 
 **Requirements:**
 - Images must be accessible as local file paths
-- By default, both images must have identical dimensions. Set auto_align=true to compare images of different sizes (e.g. a Figma mock of a component vs a full page screenshot)
+- Images can have different dimensions — the smaller image is automatically aligned within the larger one using template matching
 
 **Note:** Anti-aliased pixels (font smoothing, rounded corners) are excluded by default to reduce false positives. Set include_aa=true to include them.`,
     inputSchema: {
@@ -72,10 +70,6 @@ Returns structured diff data including:
           type: 'integer',
           description: PARAM_DESCRIPTIONS.cluster_gap,
         },
-        auto_align: {
-          type: 'boolean',
-          description: PARAM_DESCRIPTIONS.auto_align,
-        },
       },
       required: ['source_image', 'target_image'],
     },
@@ -88,7 +82,6 @@ Returns structured diff data including:
           includeAA: validated.include_aa,
           minClusterSize: validated.min_cluster_size,
           clusterGap: validated.cluster_gap,
-          autoAlign: validated.auto_align,
         });
 
         return {
