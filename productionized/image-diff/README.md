@@ -44,6 +44,178 @@ Compare two images and get structured diff results.
 - Supports PNG, JPEG, WebP, TIFF input formats
 - Images can have different dimensions — the smaller image is automatically aligned within the larger one
 
+### Tool Call Shape
+
+**MCP tool call input** (minimal — just the two required paths):
+
+```json
+{
+  "name": "get_diff_of_images",
+  "arguments": {
+    "source_image": "/path/to/design-mock.png",
+    "target_image": "/path/to/screenshot.png"
+  }
+}
+```
+
+**MCP tool call input** (with all optional parameters):
+
+```json
+{
+  "name": "get_diff_of_images",
+  "arguments": {
+    "source_image": "/path/to/design-mock.png",
+    "target_image": "/path/to/screenshot.png",
+    "threshold": 0.05,
+    "include_aa": true,
+    "min_cluster_size": 10,
+    "cluster_gap": 15
+  }
+}
+```
+
+**MCP response** (same-size images with differences):
+
+```json
+{
+  "content": [
+    {
+      "type": "text",
+      "text": "{\n  \"identical\": false,\n  \"summary\": {\n    \"totalPixels\": 480000,\n    \"diffPixels\": 737,\n    \"diffPercentage\": 0.154,\n    \"antiAliasedPixels\": 1034,\n    \"matchingPixels\": 478229,\n    \"clusterCount\": 43,\n    \"description\": \"0.15% of pixels differ across 43 cluster(s). Severity breakdown: 22 major, 4 moderate, 14 minor, 3 trivial.\"\n  },\n  \"clusters\": [ ... ],\n  \"heatmapPath\": \"/tmp/image-diff-output/heatmap-1234567890.png\",\n  \"compositePath\": \"/tmp/image-diff-output/composite-1234567890.png\",\n  \"dimensions\": { \"width\": 800, \"height\": 600 }\n}"
+    }
+  ]
+}
+```
+
+The `text` field contains the full JSON result as a string. When parsed, the full response shape looks like this:
+
+<details>
+<summary>Full parsed response shape (same-size images, with differences)</summary>
+
+```json
+{
+  "identical": false,
+  "summary": {
+    "totalPixels": 480000,
+    "diffPixels": 737,
+    "diffPercentage": 0.154,
+    "antiAliasedPixels": 1034,
+    "matchingPixels": 478229,
+    "clusterCount": 43,
+    "description": "0.15% of pixels differ across 43 cluster(s). Severity breakdown: 22 major, 4 moderate, 14 minor, 3 trivial."
+  },
+  "clusters": [
+    {
+      "id": 1,
+      "left": 452,
+      "top": 157,
+      "right": 478,
+      "bottom": 165,
+      "width": 27,
+      "height": 9,
+      "pixelCount": 94,
+      "totalImagePixels": 480000,
+      "areaPercentage": 0.02,
+      "meanIntensity": 0.109,
+      "maxIntensity": 0.343,
+      "severity": "minor"
+    }
+  ],
+  "heatmapPath": "/tmp/image-diff-output/heatmap-1234567890.png",
+  "compositePath": "/tmp/image-diff-output/composite-1234567890.png",
+  "dimensions": {
+    "width": 800,
+    "height": 600
+  }
+}
+```
+
+</details>
+
+<details>
+<summary>Full parsed response shape (identical images)</summary>
+
+```json
+{
+  "identical": true,
+  "summary": {
+    "totalPixels": 480000,
+    "diffPixels": 0,
+    "diffPercentage": 0,
+    "antiAliasedPixels": 0,
+    "matchingPixels": 480000,
+    "clusterCount": 0,
+    "description": "Images are identical (no differences detected)."
+  },
+  "clusters": [],
+  "heatmapPath": "/tmp/image-diff-output/heatmap-1234567890.png",
+  "compositePath": "/tmp/image-diff-output/composite-1234567890.png",
+  "dimensions": {
+    "width": 800,
+    "height": 600
+  }
+}
+```
+
+</details>
+
+<details>
+<summary>Full parsed response shape (different-size images — auto-alignment)</summary>
+
+```json
+{
+  "identical": false,
+  "summary": {
+    "totalPixels": 108800,
+    "diffPixels": 9031,
+    "diffPercentage": 8.301,
+    "antiAliasedPixels": 329,
+    "matchingPixels": 99440,
+    "clusterCount": 12,
+    "description": "8.30% of pixels differ across 12 cluster(s). Severity breakdown: 1 major, 5 moderate, 6 minor."
+  },
+  "clusters": [
+    {
+      "id": 1,
+      "left": 20,
+      "top": 185,
+      "right": 299,
+      "bottom": 215,
+      "width": 280,
+      "height": 31,
+      "pixelCount": 8349,
+      "totalImagePixels": 108800,
+      "areaPercentage": 7.674,
+      "meanIntensity": 0.242,
+      "maxIntensity": 0.244,
+      "severity": "major"
+    }
+  ],
+  "alignment": {
+    "x": 680,
+    "y": 212,
+    "confidence": 0.993,
+    "strategy": "opencv-zncc-hybrid",
+    "alignmentTimeMs": 76,
+    "templateImage": "target",
+    "originalDimensions": {
+      "source": { "width": 1024, "height": 768 },
+      "target": { "width": 320, "height": 340 }
+    }
+  },
+  "heatmapPath": "/tmp/image-diff-output/heatmap-1234567890.png",
+  "compositePath": "/tmp/image-diff-output/composite-1234567890.png",
+  "dimensions": {
+    "width": 320,
+    "height": 340
+  }
+}
+```
+
+Note: The `alignment` field only appears when images have different dimensions. The `dimensions` field reflects the size of the compared region (the template size after alignment, not the full scene).
+
+</details>
+
 ---
 
 ## Examples
