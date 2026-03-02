@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 /**
  * Generate heatmaps and structured output for README examples.
+ * Prerequisite: npm run build
  * Run from: productionized/image-diff/
  * Usage: node scripts/generate-readme-examples.mjs
  */

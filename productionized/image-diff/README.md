@@ -33,6 +33,8 @@ Compare two images and get structured diff results.
 - `identical`: boolean indicating if images match
 - `summary`: overall diff statistics (pixel counts, percentages, cluster count)
 - `clusters`: array of diff regions with bounding boxes, severity ratings, and intensity metrics
+- `alignment` (when images differ in size): position coordinates, confidence score, strategy used, and timing
+- `dimensions`: width and height of the compared region
 - `heatmapPath`: file path to the generated heatmap image
 - `compositePath`: file path to the heatmap overlaid on the source image
 
@@ -86,7 +88,7 @@ The composite overlay shows the source image with no heatmap highlights — beca
 
 ### Example 2: Color & Value Changes
 
-The target has updated stat values ("12,847" → "14,205", "$48,290" → "$52,180") and different percentage text. The engine finds **43 clusters** across the changed text and numbers.
+The target has updated stat values ("12,847" → "13,205", "$48,290" → "$52,180") and different percentage text. The engine finds **43 clusters** across the changed text and numbers.
 
 | Source                                        | Target                                              |
 | --------------------------------------------- | --------------------------------------------------- |
@@ -96,7 +98,7 @@ The target has updated stat values ("12,847" → "14,205", "$48,290" → "$52,18
 | -------------------------------------------------- | ------------------------------------------------------ |
 | ![heatmap](docs/examples/color-change-heatmap.png) | ![composite](docs/examples/color-change-composite.png) |
 
-The **standalone heatmap** shows only the diff pixels on a black background — yellow means lower intensity, red means higher intensity. The **composite overlay** blends the heatmap onto the source image so you can see exactly where differences occur in context.
+The **standalone heatmap** shows only the diff pixels on a transparent background — yellow means lower intensity, red means higher intensity. The **composite overlay** blends the heatmap onto the source image so you can see exactly where differences occur in context.
 
 <details>
 <summary>Structured output (43 clusters, top 3 shown)</summary>
@@ -620,8 +622,7 @@ The major cluster at the bottom is the button color change (blue → red). The m
       "height": 31,
       "pixelCount": 8349,
       "areaPercentage": 7.674,
-      "severity": "major",
-      "description": "Button color change (blue → red)"
+      "severity": "major"
     },
     {
       "id": 2,
@@ -632,8 +633,7 @@ The major cluster at the bottom is the button color change (blue → red). The m
       "width": 47,
       "height": 8,
       "pixelCount": 370,
-      "severity": "moderate",
-      "description": "Testing progress bar (45% → 62%)"
+      "severity": "moderate"
     },
     {
       "id": 3,
@@ -644,8 +644,7 @@ The major cluster at the bottom is the button color change (blue → red). The m
       "width": 19,
       "height": 8,
       "pixelCount": 146,
-      "severity": "moderate",
-      "description": "Frontend progress label (78% → 85%)"
+      "severity": "moderate"
     }
   ]
 }
