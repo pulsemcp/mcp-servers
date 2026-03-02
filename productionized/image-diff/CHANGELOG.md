@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Added
+
+- `cluster_gap` optional parameter: merges nearby clusters whose bounding boxes are within N pixels of each other. Useful for grouping scattered glyph fragments (e.g. font changes) into logical regions instead of hundreds of tiny clusters
+
 ### Fixed
 
 - Fixed `identical` field contradicting `description` when minClusterSize filters all clusters

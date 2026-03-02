@@ -234,4 +234,57 @@ describe('findDiffClusters', () => {
     expect(clusters[0].meanIntensity).toBeCloseTo(0.3, 2);
     expect(clusters[0].maxIntensity).toBeCloseTo(0.4, 2);
   });
+
+  it('should merge nearby clusters when clusterGap is set', () => {
+    const width = 16;
+    const height = 4;
+    const intensityMap = new Float32Array(width * height);
+    // Cluster A at x=0-1
+    intensityMap[0 * width + 0] = 0.5;
+    intensityMap[0 * width + 1] = 0.5;
+    // Cluster B at x=5-6 (gap of 3 pixels from A)
+    intensityMap[0 * width + 5] = 0.8;
+    intensityMap[0 * width + 6] = 0.8;
+    // Cluster C at x=14-15 (gap of 8 pixels from B)
+    intensityMap[0 * width + 14] = 0.3;
+    intensityMap[0 * width + 15] = 0.3;
+
+    // Without gap merging: 3 separate clusters
+    const noGap = findDiffClusters(intensityMap, width, height, 1, 0);
+    expect(noGap).toHaveLength(3);
+
+    // With gap=3: A and B merge (gap exactly 3), C stays separate
+    const gap3 = findDiffClusters(intensityMap, width, height, 1, 3);
+    expect(gap3).toHaveLength(2);
+    // Merged cluster should span from x=0 to x=6
+    const merged = gap3.find((c) => c.pixelCount === 4);
+    expect(merged).toBeDefined();
+    expect(merged!.left).toBe(0);
+    expect(merged!.right).toBe(6);
+
+    // With gap=10: all three merge into one
+    const gap10 = findDiffClusters(intensityMap, width, height, 1, 10);
+    expect(gap10).toHaveLength(1);
+    expect(gap10[0].pixelCount).toBe(6);
+    expect(gap10[0].left).toBe(0);
+    expect(gap10[0].right).toBe(15);
+  });
+
+  it('should combine statistics correctly when merging clusters', () => {
+    const width = 10;
+    const height = 4;
+    const intensityMap = new Float32Array(width * height);
+    // Cluster A: 2 pixels with intensity 0.2
+    intensityMap[0 * width + 0] = 0.2;
+    intensityMap[0 * width + 1] = 0.2;
+    // Cluster B: 1 pixel with intensity 0.9, gap of 3 from A
+    intensityMap[0 * width + 5] = 0.9;
+
+    const clusters = findDiffClusters(intensityMap, width, height, 1, 5);
+    expect(clusters).toHaveLength(1);
+    expect(clusters[0].pixelCount).toBe(3);
+    // Mean should be (0.2 + 0.2 + 0.9) / 3 ≈ 0.433
+    expect(clusters[0].meanIntensity).toBeCloseTo(0.433, 2);
+    expect(clusters[0].maxIntensity).toBeCloseTo(0.9, 2);
+  });
 });

@@ -13,6 +13,8 @@ const PARAM_DESCRIPTIONS = {
     'Whether to count anti-aliased pixels (font smoothing, rounded corners) as differences. Default false excludes them to reduce noise.',
   min_cluster_size:
     'Minimum number of connected diff pixels to report as a cluster. Filters out isolated pixel noise. Default 4.',
+  cluster_gap:
+    'Maximum pixel distance between cluster bounding boxes to merge them into a single cluster. Use 0 (default) for pixel-precise clusters, or 5-20 to group nearby diff regions together (e.g. glyph fragments within a word, or scattered changes in a UI section).',
 } as const;
 
 export const GetDiffOfImagesSchema = z.object({
@@ -26,6 +28,7 @@ export const GetDiffOfImagesSchema = z.object({
     .min(1)
     .optional()
     .describe(PARAM_DESCRIPTIONS.min_cluster_size),
+  cluster_gap: z.number().int().min(0).optional().describe(PARAM_DESCRIPTIONS.cluster_gap),
 });
 
 export function getDiffOfImagesTool(_server: Server) {
@@ -62,6 +65,10 @@ Returns structured diff data including:
           type: 'integer',
           description: PARAM_DESCRIPTIONS.min_cluster_size,
         },
+        cluster_gap: {
+          type: 'integer',
+          description: PARAM_DESCRIPTIONS.cluster_gap,
+        },
       },
       required: ['source_image', 'target_image'],
     },
@@ -73,6 +80,7 @@ Returns structured diff data including:
           threshold: validated.threshold,
           includeAA: validated.include_aa,
           minClusterSize: validated.min_cluster_size,
+          clusterGap: validated.cluster_gap,
         });
 
         return {

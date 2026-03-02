@@ -42,12 +42,14 @@ export interface DiffCluster {
  * @param width Image width
  * @param height Image height
  * @param minClusterSize Minimum pixel count to include a cluster (filters noise). Default: 1
+ * @param clusterGap Maximum pixel distance between bounding boxes to merge nearby clusters. Default: 0 (no merging). Use 5-20 to group nearby diff regions (e.g. glyph fragments in a word).
  */
 export function findDiffClusters(
   intensityMap: Float32Array,
   width: number,
   height: number,
-  minClusterSize: number = 1
+  minClusterSize: number = 1,
+  clusterGap: number = 0
 ): DiffCluster[] {
   const len = width * height;
   const labels = new Int32Array(len);
@@ -163,13 +165,64 @@ export function findDiffClusters(
     }
   }
 
-  // ---- Build output clusters, filtering by minimum size ----
+  // ---- Build intermediate cluster stats, filtering by minimum size ----
+  type ClusterStats = {
+    left: number;
+    top: number;
+    right: number;
+    bottom: number;
+    pixelCount: number;
+    totalIntensity: number;
+    maxIntensity: number;
+  };
+
+  const filteredStats: ClusterStats[] = [];
+  for (const stats of clusterMap.values()) {
+    if (stats.pixelCount < minClusterSize) continue;
+    filteredStats.push({ ...stats });
+  }
+
+  const rawCount = clusterMap.size;
+
+  // ---- Gap-based merging: merge clusters whose bounding boxes are within clusterGap pixels ----
+  if (clusterGap > 0 && filteredStats.length > 1) {
+    let merged = true;
+    while (merged) {
+      merged = false;
+      for (let i = 0; i < filteredStats.length; i++) {
+        for (let j = i + 1; j < filteredStats.length; j++) {
+          const a = filteredStats[i];
+          const b = filteredStats[j];
+
+          // Calculate edge-to-edge gap between bounding boxes (0 if overlapping)
+          const horizDist = Math.max(0, Math.max(a.left, b.left) - Math.min(a.right, b.right) - 1);
+          const vertDist = Math.max(0, Math.max(a.top, b.top) - Math.min(a.bottom, b.bottom) - 1);
+
+          if (horizDist <= clusterGap && vertDist <= clusterGap) {
+            // Merge b into a
+            a.left = Math.min(a.left, b.left);
+            a.top = Math.min(a.top, b.top);
+            a.right = Math.max(a.right, b.right);
+            a.bottom = Math.max(a.bottom, b.bottom);
+            a.pixelCount += b.pixelCount;
+            a.totalIntensity += b.totalIntensity;
+            a.maxIntensity = Math.max(a.maxIntensity, b.maxIntensity);
+
+            filteredStats.splice(j, 1);
+            merged = true;
+            break;
+          }
+        }
+        if (merged) break;
+      }
+    }
+  }
+
+  // ---- Build output clusters ----
   const clusters: DiffCluster[] = [];
   let id = 1;
 
-  for (const stats of clusterMap.values()) {
-    if (stats.pixelCount < minClusterSize) continue;
-
+  for (const stats of filteredStats) {
     const clusterWidth = stats.right - stats.left + 1;
     const clusterHeight = stats.bottom - stats.top + 1;
     const meanIntensity = stats.totalIntensity / stats.pixelCount;
@@ -201,9 +254,10 @@ export function findDiffClusters(
   // Re-assign IDs after sorting
   clusters.forEach((c, i) => (c.id = i + 1));
 
+  const gapNote = clusterGap > 0 ? `, clusterGap=${clusterGap}` : '';
   console.error(
-    `[clustering] Found ${clusterMap.size} raw clusters, ` +
-      `${clusters.length} after filtering (minClusterSize=${minClusterSize})`
+    `[clustering] Found ${rawCount} raw clusters, ` +
+      `${clusters.length} after filtering (minClusterSize=${minClusterSize}${gapNote})`
   );
 
   return clusters;

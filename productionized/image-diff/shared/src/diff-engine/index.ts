@@ -30,6 +30,8 @@ export interface ImageDiffOptions {
   includeAA?: boolean;
   /** Minimum cluster size in pixels to include in results. Default: 4 */
   minClusterSize?: number;
+  /** Maximum pixel gap between cluster bounding boxes to merge nearby clusters. Default: 0 (no merging). Use 5-20 to group nearby diff regions (e.g. glyph fragments in a word). */
+  clusterGap?: number;
   /** Directory to save heatmap output. Default: os.tmpdir() */
   outputDir?: string;
   /** Whether to generate the composite heatmap (overlaid on source). Default: true */
@@ -79,6 +81,7 @@ export async function diffImages(
     threshold = 0.1,
     includeAA = false,
     minClusterSize = 4,
+    clusterGap = 0,
     outputDir = tmpdir(),
     generateComposite = true,
   } = options;
@@ -87,7 +90,7 @@ export async function diffImages(
   console.error(`[diff-engine]   source: ${sourcePath}`);
   console.error(`[diff-engine]   target: ${targetPath}`);
   console.error(
-    `[diff-engine]   options: threshold=${threshold}, includeAA=${includeAA}, minClusterSize=${minClusterSize}`
+    `[diff-engine]   options: threshold=${threshold}, includeAA=${includeAA}, minClusterSize=${minClusterSize}, clusterGap=${clusterGap}`
   );
 
   // Validate inputs
@@ -144,7 +147,13 @@ export async function diffImages(
 
   // Step 4: Cluster diff regions
   console.error('[diff-engine] Clustering diff regions...');
-  const clusters = findDiffClusters(diffResult.intensityMap, width, height, minClusterSize);
+  const clusters = findDiffClusters(
+    diffResult.intensityMap,
+    width,
+    height,
+    minClusterSize,
+    clusterGap
+  );
 
   // Step 5: Generate heatmap output
   console.error('[diff-engine] Generating heatmap...');
