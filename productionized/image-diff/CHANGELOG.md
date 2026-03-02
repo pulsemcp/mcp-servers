@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-03-02
+
 ### Added
 
 - `auto_align` optional parameter: automatically finds the best alignment of a smaller image within a larger one when dimensions differ. Uses OpenCV ZNCC template matching (via opencv-wasm) for fast, accurate alignment (~50-90ms). Enables comparing Figma mocks of individual components against full-page screenshots
