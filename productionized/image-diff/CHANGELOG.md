@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Added
+
+- Comprehensive README with visual examples covering all scenarios: identical images, color/value changes, font changes, missing elements, layout shifts, auto-alignment with different-sized images, and `cluster_gap` usage
+
 ## [0.2.0] - 2026-03-02
 
 ### Added
