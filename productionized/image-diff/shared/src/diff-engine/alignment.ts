@@ -227,6 +227,9 @@ interface CvModule {
 }
 
 // Top-level eager import to avoid dynamic-import deadlock when called from pipeline.
+// The WASM binary loads once at module initialization. This adds ~50ms to startup
+// but is necessary because dynamic import('opencv-wasm') from within async functions
+// deadlocks in certain module resolution scenarios.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 let _opencvWasmModule: any;
 try {
@@ -261,8 +264,8 @@ async function downsampleRGBA(
   height: number,
   factor: number
 ): Promise<RawImageData> {
-  const newWidth = Math.round(width / factor);
-  const newHeight = Math.round(height / factor);
+  const newWidth = Math.max(1, Math.round(width / factor));
+  const newHeight = Math.max(1, Math.round(height / factor));
   const result = await sharp(Buffer.from(data.buffer, data.byteOffset, data.byteLength), {
     raw: { width, height, channels: 4 },
   })
@@ -298,14 +301,15 @@ function opencvMatchTemplate(
     cv.CV_32FC1
   );
 
-  cv.matchTemplate(sceneMat, templateMat, resultMat, cv.TM_CCOEFF_NORMED);
-  const minMax = cv.minMaxLoc(resultMat);
-
-  sceneMat.delete();
-  templateMat.delete();
-  resultMat.delete();
-
-  return { x: minMax.maxLoc.x, y: minMax.maxLoc.y, score: minMax.maxVal };
+  try {
+    cv.matchTemplate(sceneMat, templateMat, resultMat, cv.TM_CCOEFF_NORMED);
+    const minMax = cv.minMaxLoc(resultMat);
+    return { x: minMax.maxLoc.x, y: minMax.maxLoc.y, score: minMax.maxVal };
+  } finally {
+    sceneMat.delete();
+    templateMat.delete();
+    resultMat.delete();
+  }
 }
 
 /**
