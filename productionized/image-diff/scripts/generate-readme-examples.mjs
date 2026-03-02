@@ -90,10 +90,7 @@ async function run() {
         cpSync(result.heatmapPath, resolve(EXAMPLES_DIR, `${scenario.name}-heatmap.png`));
       }
       if (result.compositePath) {
-        cpSync(
-          result.compositePath,
-          resolve(EXAMPLES_DIR, `${scenario.name}-composite.png`)
-        );
+        cpSync(result.compositePath, resolve(EXAMPLES_DIR, `${scenario.name}-composite.png`));
       }
 
       // Store structured output (truncate clusters for readability)
@@ -113,9 +110,13 @@ async function run() {
 
       results[scenario.name] = output;
 
-      console.log(`  Result: ${result.identical ? 'IDENTICAL' : `${result.summary.diffPercentage}% diff, ${result.summary.clusterCount} clusters`}`);
+      console.log(
+        `  Result: ${result.identical ? 'IDENTICAL' : `${result.summary.diffPercentage}% diff, ${result.summary.clusterCount} clusters`}`
+      );
       if (result.alignment) {
-        console.log(`  Alignment: (${result.alignment.x}, ${result.alignment.y}) confidence=${result.alignment.confidence} time=${result.alignment.alignmentTimeMs}ms`);
+        console.log(
+          `  Alignment: (${result.alignment.x}, ${result.alignment.y}) confidence=${result.alignment.confidence} time=${result.alignment.alignmentTimeMs}ms`
+        );
       }
     } catch (err) {
       console.error(`  ERROR: ${err.message}`);
