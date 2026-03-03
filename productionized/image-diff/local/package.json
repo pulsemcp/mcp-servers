@@ -1,6 +1,6 @@
 {
   "name": "@pulsemcp/image-diff-mcp-server",
-  "version": "0.2.0",
+  "version": "0.1.0",
   "description": "MCP server for programmatic image comparison and visual diff generation",
   "mcpName": "com.pulsemcp.servers/image-diff",
   "main": "build/index.js",
