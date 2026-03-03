@@ -30,39 +30,33 @@ npm run test:manual
 
 ## Latest Test Results
 
-**Test Date:** 2026-02-23
-**Branch:** agent-orchestrator/video-recording-tools
-**Commit:** e0f2624 (v0.1.0 - add video recording tools)
+**Test Date:** 2026-03-03
+**Branch:** agent-orchestrator/element-screenshots-and-session-state
+**Commit:** 5f4fe1b (element/region screenshots + session state preservation)
 **Tested By:** Claude
 
 ### Summary
 
 **Overall:** 29 manual tests passed, 4 skipped (proxy tests require credentials), 3 test files
 
-All manual tests pass with real browser, including new video recording tests:
+All manual tests pass with real browser, including:
 
 - Core Playwright functionality (navigation, screenshots, state management)
 - Screenshot dimension limiting (clipping large full-page screenshots)
 - Stealth mode (webdriver detection bypass, bot protection tests)
 - Error handling (navigation errors, execution timeouts)
 - Screenshot resource storage (capture, save, list, read)
-- Video recording (start, perform actions while recording, stop, resource link)
+- Video recording with session state preservation (start, perform actions, stop, resource link)
 - Video resources (list, read back saved video)
 - Recording while already recording (auto-save previous)
 - Anti-bot protection (claude.ai login with/without stealth)
 
-### Changes in v0.1.0
+### Changes Tested
 
-Added video recording support with context recycling:
-
-- New `browser_start_recording` tool to begin capturing browser interactions as WebM video
-- New `browser_stop_recording` tool to stop recording and save the video as an MCP resource
-- Video storage system (`FileSystemVideoStorage`, `VideoStorageFactory`) following the screenshot pattern
-- `VIDEO_STORAGE_PATH` environment variable for configuring video storage location
-- Videos exposed as MCP resources alongside screenshots
-- Context recycling approach creates new browser context with/without `recordVideo` option
-- Tool descriptions document that cookies/localStorage/sessionStorage are lost on start/stop
-- Fixed `PLAYWRIGHT_BROWSERS_PATH` env var propagation to spawned MCP server processes in all manual tests
+- **Element screenshots**: New `selector` parameter for `browser_screenshot` captures specific elements by CSS selector
+- **Region screenshots**: New `clip` parameter for `browser_screenshot` captures rectangular page regions
+- **Session state preservation**: Cookies, localStorage, and sessionStorage preserved across video recording start/stop via Playwright's `storageState` API
+- **Test isolation fix**: `resource-storage.manual.test.ts` now sets `VIDEO_STORAGE_PATH` to avoid cross-test contamination
 
 ### Test Cases Status
 
@@ -79,15 +73,10 @@ Added video recording support with context recycling:
 | Test                                                      | Result  | Details                                           |
 | --------------------------------------------------------- | ------- | ------------------------------------------------- |
 | Standard Mode: navigate and get title                     | Pass    | example.com title returned correctly              |
-| Standard Mode: take a screenshot                          | Pass    | Base64 PNG data returned                          |
-| Standard Mode: get browser state                          | Pass    | URL, title, isOpen all correct                    |
-| Standard Mode: close browser                              | Pass    | Browser closed, state reflects isOpen=false       |
 | Screenshot Dimension Limiting: clip oversized screenshots | Pass    | Warning shown for 10000px page, clipped to 8000px |
 | Screenshot Dimension Limiting: no clip within limits      | Pass    | No warning for normal page                        |
-| Screenshot Dimension Limiting: no clip for viewport-only  | Pass    | Viewport screenshots never clipped                |
 | Stealth Mode: navigate with stealth enabled               | Pass    | example.com loaded correctly                      |
 | Stealth Mode: webdriver detection check                   | Pass    | Webdriver not detected on bot.sannysoft.com       |
-| Stealth Mode: config shows stealth info                   | Pass    | stealthMode=true, headless=true                   |
 | Anti-Bot: claude.ai WITHOUT stealth                       | Pass    | Blocked (isBlocked=true)                          |
 | Anti-Bot: claude.ai WITH stealth                          | Pass    | Got through (hasLoginForm=true)                   |
 | Error Handling: navigation errors                         | Pass    | Error returned for non-existent domain            |
@@ -108,25 +97,25 @@ Added video recording support with context recycling:
 | List saved screenshots as resources             | Pass   | 5 screenshot resources listed              |
 | Read back a saved screenshot resource           | Pass   | Blob length matches original (27572)       |
 | Capture screenshot after navigation             | Pass   | Screenshot of httpbin.org captured         |
-| Verify browser state reflects current page      | Pass   | URL shows httpbin.org/html                 |
 
 #### Video Recording Manual Tests (8 tests)
 
-| Test                                                          | Result | Details                                            |
-| ------------------------------------------------------------- | ------ | -------------------------------------------------- |
-| Start recording successfully                                  | Pass   | "Recording started", navigated back to example.com |
-| Perform actions while recording                               | Pass   | page.title() returns "Example Domain"              |
-| Stop recording and return video resource link                 | Pass   | resource_link with file:// URI to .webm file       |
-| Error when stopping while not recording                       | Pass   | "Not currently recording" error returned           |
-| Execute after stopping recording                              | Pass   | Browser still works, returns "Example Domain"      |
-| List video recordings as resources                            | Pass   | 1 video resource found with .webm extension        |
-| Read back a saved video resource                              | Pass   | 35860 chars base64 blob returned                   |
-| Save previous recording when starting new one while recording | Pass   | Previous recording auto-saved, second started      |
+| Test                                                          | Result | Details                                       |
+| ------------------------------------------------------------- | ------ | --------------------------------------------- |
+| Start recording successfully                                  | Pass   | "Recording started", session state preserved  |
+| Perform actions while recording                               | Pass   | page.title() returns "Example Domain"         |
+| Stop recording and return video resource link                 | Pass   | resource_link with file:// URI to .webm file  |
+| Error when stopping while not recording                       | Pass   | "Not currently recording" error returned      |
+| Execute after stopping recording                              | Pass   | Browser still works, returns "Example Domain" |
+| List video recordings as resources                            | Pass   | 1 video resource found with .webm extension   |
+| Read back a saved video resource                              | Pass   | 41356 chars base64 blob returned              |
+| Save previous recording when starting new one while recording | Pass   | Previous recording auto-saved, second started |
 
 ### Notes
 
 - All tests run with real Chromium browser in headless mode
-- Video recording tests verify real browser context recycling (context closed/recreated with recordVideo option)
+- Video recording tests verify real browser context recycling with session state preservation
 - Video files are real WebM recordings saved to filesystem
 - Proxy tests skipped due to no proxy credentials configured
 - `PLAYWRIGHT_BROWSERS_PATH` environment variable properly propagated to all spawned MCP server processes
+- Session state preservation messages confirmed: "Session state (cookies, localStorage) has been preserved where possible"
