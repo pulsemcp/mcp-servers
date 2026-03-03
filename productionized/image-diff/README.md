@@ -984,6 +984,20 @@ Each diff cluster is classified by severity based on pixel count and intensity:
 
 ---
 
+## Example Agent Skills
+
+The `example-skills/` directory contains ready-to-use [Agent Skills](https://agentskills.io) that demonstrate how to build workflows on top of the image-diff MCP server.
+
+### `implement-figma-design`
+
+An iterative design implementation skill that coordinates three MCP servers — Figma, Playwright, and image-diff — to build a UI component that matches a Figma design. The agent writes code, screenshots the running dev server, diffs against the Figma reference, diagnoses each diff cluster's root cause (color mismatch, typography, spacing, missing elements, etc.), applies fixes, and loops until the diff converges to <= 0.01%.
+
+**Pre-requisites:** Figma MCP server, Playwright MCP server, image-diff MCP server, a working dev server.
+
+**To use:** Copy `example-skills/implement-figma-design/` into your project's `.claude/skills/` directory (or equivalent skill location for your agent platform).
+
+---
+
 ## Credits
 
 - Pixel comparison algorithm forked from [pixelmatch](https://github.com/mapbox/pixelmatch) by Mapbox (ISC License)

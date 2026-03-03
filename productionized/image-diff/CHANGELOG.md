@@ -20,3 +20,4 @@
 - Uint32Array byte alignment guard to prevent crashes with non-4-aligned buffers
 - Maximum image dimension check (100M pixels) to prevent OOM on extremely large images
 - Comprehensive README with visual examples covering all scenarios
+- `example-skills/implement-figma-design/` — agent skill that coordinates Figma MCP, Playwright MCP, and image-diff MCP to iteratively implement a UI design from Figma with visual diff feedback
