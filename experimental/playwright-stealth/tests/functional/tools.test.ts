@@ -301,6 +301,34 @@ describe('Playwright Stealth Tools', () => {
       expect(result.content[0].text).toContain('Only one of');
     });
 
+    it('should reject clip with zero width', async () => {
+      const handler = getCallToolHandler();
+      const result = await handler({
+        method: 'tools/call',
+        params: {
+          name: 'browser_screenshot',
+          arguments: { clip: { x: 0, y: 0, width: 0, height: 100 } },
+        },
+      });
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toBeDefined();
+    });
+
+    it('should reject clip with negative coordinates', async () => {
+      const handler = getCallToolHandler();
+      const result = await handler({
+        method: 'tools/call',
+        params: {
+          name: 'browser_screenshot',
+          arguments: { clip: { x: -10, y: 0, width: 100, height: 100 } },
+        },
+      });
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toBeDefined();
+    });
+
     it('should handle element not found error', async () => {
       const handler = getCallToolHandler();
       const result = await handler({

@@ -37,7 +37,7 @@ npm run test:manual
 
 ### Summary
 
-**Overall:** 29 manual tests passed, 4 skipped (proxy tests require credentials), 3 test files
+**Overall:** 31 manual tests passed, 4 skipped (proxy tests require credentials), 3 test files
 
 All manual tests pass with real browser, including:
 
@@ -54,15 +54,16 @@ All manual tests pass with real browser, including:
 ### Changes Tested
 
 - **Element screenshots**: New `selector` parameter for `browser_screenshot` captures specific elements by CSS selector
-- **Region screenshots**: New `clip` parameter for `browser_screenshot` captures rectangular page regions
+- **Region screenshots**: New `clip` parameter for `browser_screenshot` captures rectangular page regions, with nonnegative/positive coordinate validation
 - **Session state preservation**: Cookies, localStorage, and sessionStorage preserved across video recording start/stop via Playwright's `storageState` API
 - **Test isolation fix**: `resource-storage.manual.test.ts` now sets `VIDEO_STORAGE_PATH` to avoid cross-test contamination
+- **Manual tests for selector/clip**: New manual tests verify element and region screenshot capture with real browser
 
 ### Test Cases Status
 
 | Test Suite                          | Tests | Status           |
 | ----------------------------------- | ----- | ---------------- |
-| Manual: Playwright Client           | 14    | Pass (4 skipped) |
+| Manual: Playwright Client           | 16    | Pass (4 skipped) |
 | Manual: Screenshot Resource Storage | 7     | Pass             |
 | Manual: Video Recording             | 8     | Pass             |
 
@@ -73,6 +74,8 @@ All manual tests pass with real browser, including:
 | Test                                                      | Result  | Details                                           |
 | --------------------------------------------------------- | ------- | ------------------------------------------------- |
 | Standard Mode: navigate and get title                     | Pass    | example.com title returned correctly              |
+| Standard Mode: screenshot element by CSS selector         | Pass    | h1 element screenshot, 4536 chars base64          |
+| Standard Mode: screenshot page region by clip coordinates | Pass    | 400x300 clip screenshot, 2164 chars base64        |
 | Screenshot Dimension Limiting: clip oversized screenshots | Pass    | Warning shown for 10000px page, clipped to 8000px |
 | Screenshot Dimension Limiting: no clip within limits      | Pass    | No warning for normal page                        |
 | Stealth Mode: navigate with stealth enabled               | Pass    | example.com loaded correctly                      |
@@ -88,15 +91,15 @@ All manual tests pass with real browser, including:
 
 #### Screenshot Resource Storage Manual Tests (7 tests)
 
-| Test                                            | Result | Details                                    |
-| ----------------------------------------------- | ------ | ------------------------------------------ |
-| Take viewport screenshot and return image data  | Pass   | 27572 chars base64, saved to storage       |
-| Take full-page screenshot and return image data | Pass   | Screenshot saved successfully              |
-| Save screenshot with saveOnly mode              | Pass   | Only resource_link URI returned            |
-| Save screenshot with saveAndReturn mode         | Pass   | Both image data and resource_link returned |
-| List saved screenshots as resources             | Pass   | 5 screenshot resources listed              |
-| Read back a saved screenshot resource           | Pass   | Blob length matches original (27572)       |
-| Capture screenshot after navigation             | Pass   | Screenshot of httpbin.org captured         |
+| Test                                            | Result | Details                               |
+| ----------------------------------------------- | ------ | ------------------------------------- |
+| Take viewport screenshot and return image data  | Pass   | 27572 chars base64, saved to storage  |
+| Take full-page screenshot and return image data | Pass   | Screenshot saved successfully         |
+| Save screenshot with saveOnly mode              | Pass   | Only resource_link URI returned       |
+| List saved screenshots as resources             | Pass   | 5 screenshot resources listed         |
+| Read back a saved screenshot resource           | Pass   | Blob length matches original (27572)  |
+| Capture screenshot after navigation             | Pass   | Screenshot of httpbin.org captured    |
+| Verify browser state reflects current page      | Pass   | URL contains httpbin.org, isOpen=true |
 
 #### Video Recording Manual Tests (8 tests)
 

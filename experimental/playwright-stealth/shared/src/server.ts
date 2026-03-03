@@ -154,19 +154,7 @@ export class PlaywrightClient implements IPlaywrightClient {
     await this.createContext(options);
 
     this.page = await this.context!.newPage();
-
-    // Apply timeout configuration to Playwright
-    this.page.setDefaultTimeout(this.config.timeout);
-    this.page.setDefaultNavigationTimeout(this.config.navigationTimeout);
-
-    // Capture console messages
-    this.page.on('console', (msg) => {
-      this.consoleMessages.push(`[${msg.type()}] ${msg.text()}`);
-      // Keep only last 100 messages
-      if (this.consoleMessages.length > 100) {
-        this.consoleMessages.shift();
-      }
-    });
+    this.setupPageHandlers(this.page);
 
     return this.page;
   }
@@ -454,6 +442,7 @@ export class PlaywrightClient implements IPlaywrightClient {
 
       return { storageState, sessionStorage, currentOrigin };
     } catch {
+      logWarning('session', 'Failed to capture session state before context recycling');
       return null;
     }
   }

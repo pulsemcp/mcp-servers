@@ -24,10 +24,10 @@ const ScreenshotSchema = z
       ),
     clip: z
       .object({
-        x: z.number().describe('X coordinate of the top-left corner'),
-        y: z.number().describe('Y coordinate of the top-left corner'),
-        width: z.number().describe('Width of the clip region in pixels'),
-        height: z.number().describe('Height of the clip region in pixels'),
+        x: z.number().nonnegative().describe('X coordinate of the top-left corner'),
+        y: z.number().nonnegative().describe('Y coordinate of the top-left corner'),
+        width: z.number().positive().describe('Width of the clip region in pixels'),
+        height: z.number().positive().describe('Height of the clip region in pixels'),
       })
       .optional()
       .describe(
