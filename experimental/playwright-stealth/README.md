@@ -122,14 +122,18 @@ return title;
 
 ### `browser_screenshot`
 
-Take a screenshot of the current page. Screenshots are saved to filesystem storage and can be accessed later via MCP resources.
+Take a screenshot of the current page, a specific element, or a page region. Screenshots are saved to filesystem storage and can be accessed later via MCP resources.
 
 **Parameters:**
 
 - `fullPage` (optional): Capture full scrollable page. Default: `false`
+- `selector` (optional): CSS selector of a specific element to screenshot (e.g., `#main-content`, `.hero-banner`, `table.results`)
+- `clip` (optional): Region of the page to screenshot as `{x, y, width, height}` in pixels
 - `resultHandling` (optional): How to handle the result:
   - `saveAndReturn` (default): Saves to storage AND returns inline base64 image
   - `saveOnly`: Saves to storage and returns only the resource URI (more efficient for large screenshots)
+
+**Note:** `fullPage`, `selector`, and `clip` are mutually exclusive. Only one can be specified per call.
 
 **Returns:**
 
@@ -148,7 +152,7 @@ Close the browser session. A new browser will be launched on the next `browser_e
 
 Start recording the browser session as a WebM video.
 
-This tool recycles the browser context with video recording enabled. **Browser state (cookies, localStorage, sessionStorage) is lost** when recording starts. If you need to be logged in during the recording, authenticate again after starting.
+This tool recycles the browser context with video recording enabled. Session state (cookies, localStorage, sessionStorage) is automatically preserved across the context recycling.
 
 If called while already recording, the current recording is automatically stopped and saved before starting a new one.
 
@@ -156,7 +160,7 @@ If called while already recording, the current recording is automatically stoppe
 
 Stop recording and save the video.
 
-Returns a `resource_link` with the `file://` URI to the saved video (WebM format). **Browser state is lost** when recording stops — the browser navigates back to the previous URL automatically.
+Returns a `resource_link` with the `file://` URI to the saved video (WebM format). Session state is preserved — the browser navigates back to the previous URL automatically.
 
 Returns an error if no recording is active.
 

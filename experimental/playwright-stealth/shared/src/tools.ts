@@ -13,15 +13,40 @@ const ExecuteSchema = z.object({
   timeout: z.number().optional().describe('Execution timeout in milliseconds. Default: 30000'),
 });
 
-const ScreenshotSchema = z.object({
-  fullPage: z.boolean().optional().describe('Capture the full scrollable page. Default: false'),
-  resultHandling: z
-    .enum(['saveAndReturn', 'saveOnly'])
-    .optional()
-    .describe(
-      "How to handle the screenshot result. 'saveAndReturn' (default) saves to storage and returns inline base64, 'saveOnly' saves to storage and returns only the resource URI"
-    ),
-});
+const ScreenshotSchema = z
+  .object({
+    fullPage: z.boolean().optional().describe('Capture the full scrollable page. Default: false'),
+    selector: z
+      .string()
+      .optional()
+      .describe(
+        'CSS selector of a specific element to screenshot. Mutually exclusive with fullPage and clip.'
+      ),
+    clip: z
+      .object({
+        x: z.number().describe('X coordinate of the top-left corner'),
+        y: z.number().describe('Y coordinate of the top-left corner'),
+        width: z.number().describe('Width of the clip region in pixels'),
+        height: z.number().describe('Height of the clip region in pixels'),
+      })
+      .optional()
+      .describe(
+        'Region of the page to screenshot as {x, y, width, height}. Mutually exclusive with fullPage and selector.'
+      ),
+    resultHandling: z
+      .enum(['saveAndReturn', 'saveOnly'])
+      .optional()
+      .describe(
+        "How to handle the screenshot result. 'saveAndReturn' (default) saves to storage and returns inline base64, 'saveOnly' saves to storage and returns only the resource URI"
+      ),
+  })
+  .refine(
+    (data) => {
+      const modes = [data.fullPage, !!data.selector, !!data.clip].filter(Boolean);
+      return modes.length <= 1;
+    },
+    { message: 'Only one of fullPage, selector, or clip can be specified' }
+  );
 
 // =============================================================================
 // TOOL DESCRIPTIONS
@@ -69,27 +94,32 @@ await page.click('button[type="submit"]');
 
 **Note:** When STEALTH_MODE=true, the browser includes anti-detection measures to help bypass bot protection.`;
 
-const SCREENSHOT_DESCRIPTION = `Take a screenshot of the current page.
+const SCREENSHOT_DESCRIPTION = `Take a screenshot of the current page, a specific element, or a page region.
 
-Captures the visible viewport or full page as a PNG image. Screenshots are saved to filesystem storage and can be accessed later via MCP resources.
+Captures the visible viewport, full page, a specific element, or a rectangular region as a PNG image. Screenshots are saved to filesystem storage and can be accessed later via MCP resources.
 
 **Parameters:**
 - \`fullPage\`: Whether to capture the full scrollable page (default: false)
+- \`selector\`: CSS selector of a specific element to screenshot (e.g., '#main-content', '.hero-banner', 'table.results')
+- \`clip\`: Region of the page to screenshot as {x, y, width, height} in pixels
 - \`resultHandling\`: How to handle the result:
   - \`saveAndReturn\` (default): Saves to storage AND returns inline base64 image
   - \`saveOnly\`: Saves to storage and returns only the resource URI (more efficient for large screenshots)
+
+**Note:** \`fullPage\`, \`selector\`, and \`clip\` are mutually exclusive. Only one can be specified per call.
 
 **Returns:**
 - With \`saveAndReturn\`: Inline base64 PNG image data plus a resource_link to the saved file
 - With \`saveOnly\`: A resource_link with the \`file://\` URI to the saved screenshot
 
 **Dimension Limits:**
-Screenshots are limited to 8000 pixels in any dimension. If a full-page screenshot would exceed this limit, it is automatically clipped from the top-left corner and a warning is included in the response.
+Full-page screenshots are limited to 8000 pixels in any dimension. If a full-page screenshot would exceed this limit, it is automatically clipped from the top-left corner and a warning is included in the response. Element and clip screenshots are not subject to this limit.
 
 **Use cases:**
 - Verify page state after navigation
+- Screenshot a specific element like a chart, table, or form
+- Capture a region of the page by coordinates
 - Debug automation issues
-- Capture visual content for analysis
 - Store screenshots for later reference via MCP resources`;
 
 const GET_STATE_DESCRIPTION = `Get the current browser state.
@@ -113,12 +143,7 @@ const START_RECORDING_DESCRIPTION = `Start recording the browser session as a vi
 
 This tool begins capturing all browser interactions as a WebM video file. It works by recycling the browser context with video recording enabled.
 
-**Important: Browser state is lost when recording starts.** Starting a recording closes the current browser context and creates a new one. This means:
-- Cookies are lost
-- localStorage and sessionStorage are cleared
-- Any authenticated sessions will be invalidated
-
-If you need to be logged in during the recording, navigate to the login page and authenticate again after starting the recording.
+**Session state preservation:** Cookies and localStorage are automatically saved and restored when the context is recycled. sessionStorage for the current origin is also preserved on a best-effort basis. In rare cases involving multiple origins, some state may not be restored — if you experience authentication issues, log in again.
 
 **Behavior when already recording:** If recording is already active, the current recording will be stopped (saving the video) and a new recording will begin.
 
@@ -132,10 +157,7 @@ const STOP_RECORDING_DESCRIPTION = `Stop recording the browser session and save 
 
 This tool stops the active video recording, saves the video file, and returns a resource URI for the recorded video.
 
-**Important: Browser state is lost when recording stops.** Stopping a recording closes the recording context and creates a new one. This means:
-- Cookies are lost
-- localStorage and sessionStorage are cleared
-- Any authenticated sessions will be invalidated
+**Session state preservation:** Cookies and localStorage are automatically saved and restored when the context is recycled. sessionStorage for the current origin is also preserved on a best-effort basis.
 
 The browser automatically navigates back to the URL it was on before the recording stopped.
 
@@ -249,6 +271,23 @@ export function createRegisterTools(clientFactory: ClientFactory) {
             type: 'boolean',
             description: 'Capture the full scrollable page. Default: false',
           },
+          selector: {
+            type: 'string',
+            description:
+              'CSS selector of a specific element to screenshot. Mutually exclusive with fullPage and clip.',
+          },
+          clip: {
+            type: 'object',
+            description:
+              'Region of the page to screenshot. Mutually exclusive with fullPage and selector.',
+            properties: {
+              x: { type: 'number', description: 'X coordinate of the top-left corner' },
+              y: { type: 'number', description: 'Y coordinate of the top-left corner' },
+              width: { type: 'number', description: 'Width in pixels' },
+              height: { type: 'number', description: 'Height in pixels' },
+            },
+            required: ['x', 'y', 'width', 'height'],
+          },
           resultHandling: {
             type: 'string',
             enum: ['saveAndReturn', 'saveOnly'],
@@ -263,6 +302,8 @@ export function createRegisterTools(clientFactory: ClientFactory) {
           const client = getClient();
           const screenshotResult = await client.screenshot({
             fullPage: validated.fullPage,
+            selector: validated.selector,
+            clip: validated.clip,
           });
 
           // Get page metadata for the screenshot
@@ -274,6 +315,8 @@ export function createRegisterTools(clientFactory: ClientFactory) {
             pageUrl: state.currentUrl,
             pageTitle: state.title,
             fullPage: validated.fullPage ?? false,
+            selector: validated.selector,
+            clip: validated.clip,
           });
 
           const resultHandling = validated.resultHandling ?? 'saveAndReturn';
@@ -454,7 +497,7 @@ export function createRegisterTools(clientFactory: ClientFactory) {
             parts.push(`Browser navigated back to: ${result.previousUrl}`);
           }
           parts.push(
-            'Note: Cookies and session storage have been cleared. Log in again if needed.'
+            'Note: Session state (cookies, localStorage) has been preserved where possible.'
           );
           if (previousVideoUri) {
             parts.push(`Previous recording saved to: ${previousVideoUri}`);
@@ -526,7 +569,7 @@ export function createRegisterTools(clientFactory: ClientFactory) {
 
           content.push({
             type: 'text',
-            text: `Recording stopped and saved.\nNote: Cookies and session storage have been cleared. Log in again if needed.`,
+            text: `Recording stopped and saved.\nNote: Session state (cookies, localStorage) has been preserved where possible.`,
           });
 
           content.push({

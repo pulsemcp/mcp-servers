@@ -188,7 +188,11 @@ describe('Playwright Stealth Tools', () => {
       });
 
       expect(result.isError).toBeFalsy();
-      expect(mockClient.screenshot).toHaveBeenCalledWith({ fullPage: undefined });
+      expect(mockClient.screenshot).toHaveBeenCalledWith({
+        fullPage: undefined,
+        selector: undefined,
+        clip: undefined,
+      });
 
       // Should return both image and resource_link with saveAndReturn (default)
       expect(result.content).toHaveLength(2);
@@ -207,7 +211,108 @@ describe('Playwright Stealth Tools', () => {
         },
       });
 
-      expect(mockClient.screenshot).toHaveBeenCalledWith({ fullPage: true });
+      expect(mockClient.screenshot).toHaveBeenCalledWith({
+        fullPage: true,
+        selector: undefined,
+        clip: undefined,
+      });
+    });
+
+    it('should support selector parameter', async () => {
+      const handler = getCallToolHandler();
+      const result = await handler({
+        method: 'tools/call',
+        params: {
+          name: 'browser_screenshot',
+          arguments: { selector: '#main-content' },
+        },
+      });
+
+      expect(result.isError).toBeFalsy();
+      expect(mockClient.screenshot).toHaveBeenCalledWith({
+        fullPage: undefined,
+        selector: '#main-content',
+        clip: undefined,
+      });
+      // Should return image and resource_link (default saveAndReturn)
+      expect(result.content).toHaveLength(2);
+      expect(result.content[0].type).toBe('image');
+      expect(result.content[1].type).toBe('resource_link');
+    });
+
+    it('should support clip parameter', async () => {
+      const handler = getCallToolHandler();
+      const clip = { x: 10, y: 20, width: 300, height: 200 };
+      const result = await handler({
+        method: 'tools/call',
+        params: {
+          name: 'browser_screenshot',
+          arguments: { clip },
+        },
+      });
+
+      expect(result.isError).toBeFalsy();
+      expect(mockClient.screenshot).toHaveBeenCalledWith({
+        fullPage: undefined,
+        selector: undefined,
+        clip,
+      });
+    });
+
+    it('should reject mutually exclusive fullPage and selector', async () => {
+      const handler = getCallToolHandler();
+      const result = await handler({
+        method: 'tools/call',
+        params: {
+          name: 'browser_screenshot',
+          arguments: { fullPage: true, selector: '#main' },
+        },
+      });
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('Only one of');
+    });
+
+    it('should reject mutually exclusive fullPage and clip', async () => {
+      const handler = getCallToolHandler();
+      const result = await handler({
+        method: 'tools/call',
+        params: {
+          name: 'browser_screenshot',
+          arguments: { fullPage: true, clip: { x: 0, y: 0, width: 100, height: 100 } },
+        },
+      });
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('Only one of');
+    });
+
+    it('should reject mutually exclusive selector and clip', async () => {
+      const handler = getCallToolHandler();
+      const result = await handler({
+        method: 'tools/call',
+        params: {
+          name: 'browser_screenshot',
+          arguments: { selector: '#main', clip: { x: 0, y: 0, width: 100, height: 100 } },
+        },
+      });
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('Only one of');
+    });
+
+    it('should handle element not found error', async () => {
+      const handler = getCallToolHandler();
+      const result = await handler({
+        method: 'tools/call',
+        params: {
+          name: 'browser_screenshot',
+          arguments: { selector: '.nonexistent' },
+        },
+      });
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('.nonexistent');
     });
 
     it('should support saveOnly resultHandling', async () => {
@@ -375,7 +480,9 @@ describe('Playwright Stealth Tools', () => {
       expect(mockClient.startRecording).toHaveBeenCalled();
       expect(result.content[0].text).toContain('Recording started');
       expect(result.content[0].text).toContain('https://example.com');
-      expect(result.content[0].text).toContain('Cookies and session storage have been cleared');
+      expect(result.content[0].text).toContain(
+        'Session state (cookies, localStorage) has been preserved'
+      );
     });
 
     it('should stop previous recording when already recording', async () => {
@@ -478,6 +585,9 @@ describe('Playwright Stealth Tools', () => {
       expect(result.content).toHaveLength(2);
       expect(result.content[0].type).toBe('text');
       expect(result.content[0].text).toContain('Recording stopped and saved');
+      expect(result.content[0].text).toContain(
+        'Session state (cookies, localStorage) has been preserved'
+      );
       expect(result.content[1].type).toBe('resource_link');
       expect(result.content[1].uri).toMatch(/^file:\/\//);
       expect(result.content[1].mimeType).toBe('video/webm');

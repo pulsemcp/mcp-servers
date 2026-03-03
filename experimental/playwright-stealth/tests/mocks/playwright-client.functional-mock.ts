@@ -25,10 +25,24 @@ export function createFunctionalMockClient(options?: {
       consoleOutput: [],
     } as ExecuteResult),
 
-    screenshot: vi.fn().mockResolvedValue({
-      data: 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
-      wasClipped: false,
-    } as ScreenshotResult),
+    screenshot: vi
+      .fn()
+      .mockImplementation(
+        async (options?: {
+          fullPage?: boolean;
+          selector?: string;
+          clip?: { x: number; y: number; width: number; height: number };
+        }) => {
+          // Simulate element not found for a specific test selector
+          if (options?.selector === '.nonexistent') {
+            throw new Error("locator.screenshot: Timeout waiting for locator('.nonexistent')");
+          }
+          return {
+            data: 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
+            wasClipped: false,
+          } as ScreenshotResult;
+        }
+      ),
 
     getState: vi.fn().mockResolvedValue({
       currentUrl: 'https://example.com',

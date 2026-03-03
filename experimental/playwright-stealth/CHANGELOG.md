@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Element screenshots: New `selector` parameter for `browser_screenshot` to capture a specific element by CSS selector (e.g., `#main-content`, `.hero-banner`, `table.results`)
+- Region screenshots: New `clip` parameter for `browser_screenshot` to capture a rectangular region of the page by coordinates (`{x, y, width, height}`)
+- `selector`, `clip`, and `fullPage` are mutually exclusive — only one can be specified per call
+- Session state preservation during video recording: Cookies and localStorage are now automatically saved and restored when the browser context is recycled for `browser_start_recording` and `browser_stop_recording`, using Playwright's `storageState` API
+- sessionStorage for the current origin is also preserved on a best-effort basis during recording start/stop
+
+### Changed
+
+- **BREAKING**: `browser_start_recording` and `browser_stop_recording` no longer warn about session state being lost, since state is now preserved
+
 ## [0.1.0] - 2026-02-23
 
 ### Added
