@@ -64,7 +64,11 @@ export class MockPlaywrightClient implements IPlaywrightClient {
     };
   }
 
-  async screenshot(): Promise<ScreenshotResult> {
+  async screenshot(_options?: {
+    fullPage?: boolean;
+    selector?: string;
+    clip?: { x: number; y: number; width: number; height: number };
+  }): Promise<ScreenshotResult> {
     // Return a minimal valid PNG as base64 (1x1 transparent pixel)
     return {
       data: 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',

@@ -22,8 +22,12 @@ describe('Screenshot Resource Storage Manual Tests', () => {
   const serverPath = path.join(__dirname, '../../local/build/index.js');
 
   beforeAll(async () => {
-    // Create a unique test storage directory path
+    // Create unique test storage directory paths to isolate from other test suites
     testStoragePath = path.join(os.tmpdir(), `playwright-storage-manual-${Date.now()}`);
+    const testVideoStoragePath = path.join(
+      os.tmpdir(),
+      `playwright-video-storage-manual-${Date.now()}`
+    );
 
     client = new TestMCPClient({
       serverPath,
@@ -32,6 +36,7 @@ describe('Screenshot Resource Storage Manual Tests', () => {
         TIMEOUT: '30000',
         STEALTH_MODE: 'false',
         SCREENSHOT_STORAGE_PATH: testStoragePath,
+        VIDEO_STORAGE_PATH: testVideoStoragePath,
         PATH: process.env.PATH || '',
         PLAYWRIGHT_BROWSERS_PATH: process.env.PLAYWRIGHT_BROWSERS_PATH || '',
       },

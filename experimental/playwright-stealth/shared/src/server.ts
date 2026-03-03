@@ -52,11 +52,15 @@ export interface IPlaywrightClient {
   execute(code: string, options?: { timeout?: number }): Promise<ExecuteResult>;
 
   /**
-   * Take a screenshot of the current page.
+   * Take a screenshot of the current page, a specific element, or a page region.
    * Screenshots are automatically limited to MAX_SCREENSHOT_DIMENSION pixels.
    * If fullPage is requested but would exceed the limit, the screenshot is clipped.
    */
-  screenshot(options?: { fullPage?: boolean }): Promise<ScreenshotResult>;
+  screenshot(options?: {
+    fullPage?: boolean;
+    selector?: string;
+    clip?: { x: number; y: number; width: number; height: number };
+  }): Promise<ScreenshotResult>;
 
   /**
    * Get the current browser state
@@ -82,7 +86,7 @@ export interface IPlaywrightClient {
    * Start video recording by recycling the browser context.
    * Closes the current context and creates a new one with recordVideo enabled.
    * Navigates back to the previous URL to maintain continuity.
-   * Note: Cookies, localStorage, and sessionStorage are lost when the context is recycled.
+   * Session state (cookies, localStorage, sessionStorage) is preserved on a best-effort basis.
    */
   startRecording(videoDir: string): Promise<{ previousUrl?: string }>;
 
@@ -90,9 +94,37 @@ export interface IPlaywrightClient {
    * Stop video recording by recycling the browser context.
    * Gets the video path before closing the recording context, then creates
    * a new context without recording and navigates back to the previous URL.
-   * Note: Cookies, localStorage, and sessionStorage are lost when the context is recycled.
+   * Session state (cookies, localStorage, sessionStorage) is preserved on a best-effort basis.
    */
   stopRecording(): Promise<StopRecordingResult>;
+}
+
+/**
+ * Saved session state for preserving cookies, localStorage, and sessionStorage
+ * across browser context recycling (used during video recording start/stop).
+ */
+interface SavedSessionState {
+  /** Playwright's storageState output (cookies + localStorage per origin) */
+  storageState: {
+    cookies: Array<{
+      name: string;
+      value: string;
+      domain: string;
+      path: string;
+      expires: number;
+      httpOnly: boolean;
+      secure: boolean;
+      sameSite: 'Strict' | 'Lax' | 'None';
+    }>;
+    origins: Array<{
+      origin: string;
+      localStorage: Array<{ name: string; value: string }>;
+    }>;
+  };
+  /** sessionStorage entries for the current origin (not covered by storageState) */
+  sessionStorage?: Array<{ name: string; value: string }>;
+  /** The origin of the page when state was captured (for sessionStorage restoration) */
+  currentOrigin?: string;
 }
 
 /**
@@ -122,19 +154,7 @@ export class PlaywrightClient implements IPlaywrightClient {
     await this.createContext(options);
 
     this.page = await this.context!.newPage();
-
-    // Apply timeout configuration to Playwright
-    this.page.setDefaultTimeout(this.config.timeout);
-    this.page.setDefaultNavigationTimeout(this.config.navigationTimeout);
-
-    // Capture console messages
-    this.page.on('console', (msg) => {
-      this.consoleMessages.push(`[${msg.type()}] ${msg.text()}`);
-      // Keep only last 100 messages
-      if (this.consoleMessages.length > 100) {
-        this.consoleMessages.shift();
-      }
-    });
+    this.setupPageHandlers(this.page);
 
     return this.page;
   }
@@ -200,6 +220,7 @@ export class PlaywrightClient implements IPlaywrightClient {
 
   private async createContext(options?: {
     recordVideo?: { dir: string; size: { width: number; height: number } };
+    storageState?: SavedSessionState['storageState'];
   }): Promise<void> {
     if (!this.browser) {
       throw new Error('Browser not launched');
@@ -215,6 +236,8 @@ export class PlaywrightClient implements IPlaywrightClient {
       ignoreHTTPSErrors: this.config.ignoreHttpsErrors ?? true,
       // Video recording options (only set when recording)
       ...(options?.recordVideo ? { recordVideo: options.recordVideo } : {}),
+      // Restore session state (cookies + localStorage) if provided
+      ...(options?.storageState ? { storageState: options.storageState } : {}),
     });
 
     // Grant browser permissions (defaults to all permissions if not specified)
@@ -270,9 +293,31 @@ export class PlaywrightClient implements IPlaywrightClient {
     }
   }
 
-  async screenshot(options?: { fullPage?: boolean }): Promise<ScreenshotResult> {
+  async screenshot(options?: {
+    fullPage?: boolean;
+    selector?: string;
+    clip?: { x: number; y: number; width: number; height: number };
+  }): Promise<ScreenshotResult> {
     const page = await this.ensureBrowser();
     const fullPage = options?.fullPage ?? false;
+    const selector = options?.selector;
+    const clip = options?.clip;
+
+    // Element screenshot mode
+    if (selector) {
+      const locator = page.locator(selector);
+      const buffer = await locator.screenshot({ type: 'png' });
+      return { data: buffer.toString('base64'), wasClipped: false };
+    }
+
+    // Clip region screenshot mode
+    if (clip) {
+      if (clip.width <= 0 || clip.height <= 0) {
+        throw new Error('Clip width and height must be positive numbers');
+      }
+      const buffer = await page.screenshot({ type: 'png', clip });
+      return { data: buffer.toString('base64'), wasClipped: false };
+    }
 
     // Check page dimensions before taking a full-page screenshot
     if (fullPage) {
@@ -359,8 +404,89 @@ export class PlaywrightClient implements IPlaywrightClient {
     return this._recording;
   }
 
+  /**
+   * Capture session state (cookies, localStorage, sessionStorage) from the current context.
+   * Uses Playwright's context.storageState() for cookies + localStorage,
+   * and page.evaluate() for sessionStorage (not covered by storageState).
+   */
+  private async captureSessionState(): Promise<SavedSessionState | null> {
+    if (!this.context || !this.page) return null;
+
+    try {
+      const storageState = await this.context.storageState();
+
+      // Capture sessionStorage via page.evaluate (only for current origin)
+      let sessionStorage: SavedSessionState['sessionStorage'];
+      let currentOrigin: string | undefined;
+      try {
+        const currentUrl = this.page.url();
+        if (currentUrl && currentUrl !== 'about:blank') {
+          currentOrigin = new URL(currentUrl).origin;
+          const entries = await this.page.evaluate(() => {
+            const items: Array<{ name: string; value: string }> = [];
+            for (let i = 0; i < window.sessionStorage.length; i++) {
+              const key = window.sessionStorage.key(i);
+              if (key !== null) {
+                items.push({ name: key, value: window.sessionStorage.getItem(key) || '' });
+              }
+            }
+            return items;
+          });
+          if (entries.length > 0) {
+            sessionStorage = entries;
+          }
+        }
+      } catch {
+        // sessionStorage capture is best-effort
+      }
+
+      return { storageState, sessionStorage, currentOrigin };
+    } catch {
+      logWarning('session', 'Failed to capture session state before context recycling');
+      return null;
+    }
+  }
+
+  /**
+   * Restore sessionStorage after navigation.
+   * Cookies and localStorage are handled by passing storageState to createContext().
+   */
+  private async restoreSessionStorage(state: SavedSessionState): Promise<void> {
+    if (!this.page || !state.sessionStorage || !state.currentOrigin) return;
+
+    try {
+      const currentUrl = this.page.url();
+      if (currentUrl && currentUrl !== 'about:blank') {
+        const pageOrigin = new URL(currentUrl).origin;
+        if (pageOrigin === state.currentOrigin) {
+          await this.page.evaluate((items) => {
+            for (const item of items) {
+              window.sessionStorage.setItem(item.name, item.value);
+            }
+          }, state.sessionStorage);
+        }
+      }
+    } catch {
+      logWarning('session', 'Failed to restore sessionStorage after context recycling');
+    }
+  }
+
+  private setupPageHandlers(page: import('playwright').Page): void {
+    page.setDefaultTimeout(this.config.timeout);
+    page.setDefaultNavigationTimeout(this.config.navigationTimeout);
+    page.on('console', (msg) => {
+      this.consoleMessages.push(`[${msg.type()}] ${msg.text()}`);
+      if (this.consoleMessages.length > 100) {
+        this.consoleMessages.shift();
+      }
+    });
+  }
+
   async startRecording(videoDir: string): Promise<{ previousUrl?: string }> {
     await this.launchBrowserIfNeeded();
+
+    // Capture session state BEFORE recycling the context
+    const savedState = await this.captureSessionState();
 
     // Capture the current URL before recycling the context
     let previousUrl: string | undefined;
@@ -383,26 +509,23 @@ export class PlaywrightClient implements IPlaywrightClient {
       this.context = null;
     }
 
-    // Create a new context with video recording enabled
+    // Create a new context with video recording enabled, restoring session state
     await this.createContext({
       recordVideo: { dir: videoDir, size: { width: 1920, height: 1080 } },
+      storageState: savedState?.storageState,
     });
 
     this.page = await this.context!.newPage();
-    this.page.setDefaultTimeout(this.config.timeout);
-    this.page.setDefaultNavigationTimeout(this.config.navigationTimeout);
-
-    // Capture console messages on the new page
-    this.page.on('console', (msg) => {
-      this.consoleMessages.push(`[${msg.type()}] ${msg.text()}`);
-      if (this.consoleMessages.length > 100) {
-        this.consoleMessages.shift();
-      }
-    });
+    this.setupPageHandlers(this.page);
 
     // Navigate back to the previous URL if there was one
     if (previousUrl) {
       await this.page.goto(previousUrl);
+    }
+
+    // Restore sessionStorage after navigation (cookies + localStorage handled by storageState)
+    if (savedState) {
+      await this.restoreSessionStorage(savedState);
     }
 
     this._recording = true;
@@ -413,6 +536,9 @@ export class PlaywrightClient implements IPlaywrightClient {
     if (!this._recording || !this.page) {
       throw new Error('Not currently recording');
     }
+
+    // Capture session state BEFORE closing the recording context
+    const savedState = await this.captureSessionState();
 
     // Capture current page state before closing the context
     let pageUrl: string | undefined;
@@ -440,24 +566,22 @@ export class PlaywrightClient implements IPlaywrightClient {
     this.context = null;
     this._recording = false;
 
-    // Create a new context WITHOUT recording
-    await this.createContext();
+    // Create a new context WITHOUT recording, restoring session state
+    await this.createContext({
+      storageState: savedState?.storageState,
+    });
 
     this.page = await this.context!.newPage();
-    this.page.setDefaultTimeout(this.config.timeout);
-    this.page.setDefaultNavigationTimeout(this.config.navigationTimeout);
-
-    // Capture console messages on the new page
-    this.page.on('console', (msg) => {
-      this.consoleMessages.push(`[${msg.type()}] ${msg.text()}`);
-      if (this.consoleMessages.length > 100) {
-        this.consoleMessages.shift();
-      }
-    });
+    this.setupPageHandlers(this.page);
 
     // Navigate back to the previous URL
     if (pageUrl) {
       await this.page.goto(pageUrl);
+    }
+
+    // Restore sessionStorage after navigation
+    if (savedState) {
+      await this.restoreSessionStorage(savedState);
     }
 
     return { videoPath, pageUrl, pageTitle };
