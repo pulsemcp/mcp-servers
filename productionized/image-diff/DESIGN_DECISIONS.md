@@ -111,7 +111,7 @@ Auto-gap mode already computes pairwise distances as part of the natural breaks 
 
 ---
 
-## Why OpenCV ZNCC Hybrid (Not Pure Multi-Scale or Pure OpenCV)
+## Why OpenCV ZNCC Hybrid (Not Pure OpenCV at Full Resolution)
 
 **Decision**: Use OpenCV ZNCC at downsampled resolution for coarse search, then pixel-level ZNCC at full resolution for refinement.
 
@@ -119,12 +119,11 @@ Auto-gap mode already computes pairwise distances as part of the natural breaks 
 
 | Method                          | Speed                   | Pixel Accuracy          |
 | ------------------------------- | ----------------------- | ----------------------- |
-| Pure multi-scale (JS)           | 700-2000ms              | Exact (±0px)            |
 | Pure OpenCV ZNCC (full res)     | Minutes (WASM overhead) | Exact                   |
 | OpenCV ZNCC (0.25x) only        | 20-90ms                 | ±4px (limited by scale) |
 | **Hybrid (0.25x + refinement)** | **70-150ms**            | **±1px**                |
 
-The hybrid combines OpenCV's speed advantage at low resolution with pixel-precise refinement. Multi-scale is kept as a fallback for environments where opencv-wasm is unavailable.
+Pure OpenCV ZNCC at full resolution is too slow in WASM. Downsampled-only loses precision. The hybrid gets both: OpenCV's speed at low resolution, then pixel-level ZNCC refinement in a small neighborhood for ±1px accuracy.
 
 ---
 

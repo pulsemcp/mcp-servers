@@ -13,6 +13,10 @@
 - **BREAKING**: `cluster_gap` default behavior changed from `0` (no merging) to auto-computed optimal gap. Pass `cluster_gap: 0` explicitly to get the previous no-merging behavior
 - `findDiffClusters` now returns `ClusteringResult` (containing `clusters` and `clusteringMeta`) instead of `DiffCluster[]` directly
 
+### Removed
+
+- `alignMultiScale` pure-JS fallback alignment strategy and related helpers (`sobelEdges`, `downsample`, `exhaustiveSearch`, `topKSearch`, `refineCoarseCandidates`). opencv-wasm is now a hard requirement for alignment
+
 ## [0.2.0] - 2026-03-02
 
 ### Added

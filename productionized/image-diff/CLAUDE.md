@@ -21,7 +21,7 @@ The server uses a two-layer architecture:
    - `diff-engine/pixel-diff.ts`: Pixel comparison engine forked from pixelmatch (YIQ NTSC color space)
    - `diff-engine/clustering.ts`: CCL with Union-Find + auto-clustering via nearest-neighbor natural breaks
    - `diff-engine/heatmap.ts`: Heatmap generation (yellow-to-red gradient) and composite overlay via sharp
-   - `diff-engine/alignment.ts`: Auto-alignment for different-sized images (OpenCV ZNCC hybrid + multi-scale fallback)
+   - `diff-engine/alignment.ts`: Auto-alignment for different-sized images (OpenCV ZNCC hybrid)
    - `diff-engine/index.ts`: Pipeline orchestrator that wires the stages together
    - `tools/get-diff-of-images.ts`: MCP tool definition with Zod validation
    - `server.ts`: MCP server factory
@@ -39,7 +39,7 @@ The server uses a two-layer architecture:
 npm run build          # Builds shared, then local
 
 # Test
-npm test               # Functional tests (42 tests across 2 files)
+npm test               # Functional tests (26 tests across 2 files)
 
 # Regenerate README examples (requires prior build)
 node scripts/generate-readme-examples.mjs
@@ -88,7 +88,7 @@ npm run dev            # Development with auto-reload
 ## Testing Strategy
 
 - **Functional tests**: Unit tests for pixel-diff, clustering, and alignment algorithms (`tests/functional/`)
-- Two test files: `diff-engine.test.ts` (28 tests) and `alignment.test.ts` (14 tests)
+- Two test files: `diff-engine.test.ts` (22 tests) and `alignment.test.ts` (4 tests)
 - No external API dependencies, so no manual tests with credentials needed
 - **Example generation**: `scripts/generate-readme-examples.mjs` produces 9 scenarios with heatmaps, composites, and JSON output — useful for visual verification after algorithm changes
 

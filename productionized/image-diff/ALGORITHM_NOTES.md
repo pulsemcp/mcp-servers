@@ -202,25 +202,12 @@ Maps ZNCC range [-1, +1] to [0, 1]:
 
 In practice, real UI matches score 0.7-1.0. Below 0.5 indicates likely misalignment.
 
-### Multi-Scale Fallback (alignMultiScale)
-
-Used when opencv-wasm is unavailable. Edge-weighted search:
-
-```
-edgeScore = sobelEdgeCorrelation(template, candidate)   // 70% weight
-pixelScore = normalizedPixelCorrelation(template, candidate)  // 30% weight
-combinedScore = 0.7 * edgeScore + 0.3 * pixelScore
-```
-
-Edges (detected via Sobel operator) are more reliable for matching structural elements than raw pixel values, because they're invariant to minor color/brightness shifts.
-
 ### Performance Characteristics
 
-| Method                    | Speed      | Accuracy        | Notes              |
-| ------------------------- | ---------- | --------------- | ------------------ |
-| OpenCV ZNCC (downsampled) | 20-90ms    | ±scaleFactor px | Fast but imprecise |
-| OpenCV ZNCC hybrid        | 70-150ms   | ±1px            | Best balance       |
-| Multi-scale (pure JS)     | 700-2000ms | Exact           | Fallback only      |
+| Method                    | Speed    | Accuracy        | Notes              |
+| ------------------------- | -------- | --------------- | ------------------ |
+| OpenCV ZNCC (downsampled) | 20-90ms  | ±scaleFactor px | Fast but imprecise |
+| OpenCV ZNCC hybrid        | 70-150ms | ±1px            | Best balance       |
 
 ### OpenCV WASM Import
 
