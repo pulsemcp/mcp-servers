@@ -34,10 +34,10 @@ const scenarios = [
     options: {},
   },
   {
-    name: 'font-change-clustered',
+    name: 'font-change-no-merge',
     source: 'dashboard-source.png',
     target: 'dashboard-font-change.png',
-    options: { clusterGap: 10 },
+    options: { clusterGap: 0 },
   },
   {
     name: 'missing-badges',
@@ -98,6 +98,7 @@ async function run() {
       const output = {
         identical: result.identical,
         summary: result.summary,
+        clustering: result.clustering,
       };
       if (result.alignment) {
         output.alignment = result.alignment;
@@ -114,6 +115,12 @@ async function run() {
       console.log(
         `  Result: ${result.identical ? 'IDENTICAL' : `${result.summary.diffPercentage}% diff, ${result.summary.clusterCount} clusters`}`
       );
+      if (result.clustering) {
+        const c = result.clustering;
+        console.log(
+          `  Clustering: gap=${c.gapUsed}${c.autoGap ? ' (auto)' : ''}, suggest smaller=${c.suggestedSmallerGap}, larger=${c.suggestedLargerGap}`
+        );
+      }
       if (result.alignment) {
         console.log(
           `  Alignment: (${result.alignment.x}, ${result.alignment.y}) confidence=${result.alignment.confidence} time=${result.alignment.alignmentTimeMs}ms`

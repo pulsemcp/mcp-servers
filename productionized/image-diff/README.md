@@ -9,8 +9,9 @@ Designed for comparing design mock screenshots against actual UI implementations
 1. **Pixel comparison** using YIQ NTSC perceptual color distance (accounts for how humans perceive color differences)
 2. **Anti-aliasing detection** to filter out false positives from font smoothing and rounded corners
 3. **Connected Component Labeling** to group adjacent diff pixels into spatial clusters
-4. **Heatmap generation** with yellow-to-red intensity gradient showing severity of differences
-5. **Automatic alignment** for different-sized images using OpenCV ZNCC template matching
+4. **Natural-breaks clustering** to auto-compute an optimal `cluster_gap` using nearest-neighbor distance analysis, merging nearby clusters into meaningful groups
+5. **Heatmap generation** with yellow-to-red intensity gradient showing severity of differences
+6. **Automatic alignment** for different-sized images using OpenCV ZNCC template matching
 
 ## Tools
 
@@ -26,13 +27,14 @@ Compare two images and get structured diff results.
 | `threshold` | number | No | 0.1 | Color matching sensitivity (0-1, lower = more sensitive) |
 | `include_aa` | boolean | No | false | Count anti-aliased pixels as differences |
 | `min_cluster_size` | number | No | 4 | Minimum connected pixels to form a cluster |
-| `cluster_gap` | number | No | 0 | Max pixel gap to merge nearby clusters (0 = no merging) |
+| `cluster_gap` | number | No | auto | Max pixel gap to merge nearby clusters. When omitted, an optimal gap is auto-computed using nearest-neighbor distance analysis with natural breaks. Set to 0 for no merging, or any positive integer for manual control. |
 
 **Returns:**
 
 - `identical`: boolean indicating if images match
 - `summary`: overall diff statistics (pixel counts, percentages, cluster count)
 - `clusters`: array of diff regions with bounding boxes, severity ratings, and intensity metrics
+- `clustering`: gap used, whether it was auto-computed, and suggested alternative gap values
 - `alignment` (when images differ in size): position coordinates, confidence score, strategy used, and timing
 - `dimensions`: width and height of the compared region
 - `heatmapPath`: file path to the generated heatmap image
@@ -81,7 +83,7 @@ Compare two images and get structured diff results.
   "content": [
     {
       "type": "text",
-      "text": "{\n  \"identical\": false,\n  \"summary\": {\n    \"totalPixels\": 480000,\n    \"diffPixels\": 737,\n    \"diffPercentage\": 0.154,\n    \"antiAliasedPixels\": 1034,\n    \"matchingPixels\": 478229,\n    \"clusterCount\": 43,\n    \"description\": \"0.15% of pixels differ across 43 cluster(s). Severity breakdown: 22 major, 4 moderate, 14 minor, 3 trivial.\"\n  },\n  \"clusters\": [ ... ],\n  \"heatmapPath\": \"/tmp/image-diff-output/heatmap-1234567890.png\",\n  \"compositePath\": \"/tmp/image-diff-output/composite-1234567890.png\",\n  \"dimensions\": { \"width\": 800, \"height\": 600 }\n}"
+      "text": "{\n  \"identical\": false,\n  \"summary\": {\n    \"totalPixels\": 480000,\n    \"diffPixels\": 737,\n    \"diffPercentage\": 0.154,\n    \"antiAliasedPixels\": 1034,\n    \"matchingPixels\": 478229,\n    \"clusterCount\": 11,\n    \"description\": \"0.15% of pixels differ across 11 cluster(s). Severity breakdown: 5 major, 5 minor, 1 trivial.\"\n  },\n  \"clustering\": {\n    \"gapUsed\": 4,\n    \"autoGap\": true,\n    \"suggestedSmallerGap\": 3,\n    \"suggestedLargerGap\": 5\n  },\n  \"clusters\": [ ... ],\n  \"heatmapPath\": \"/tmp/image-diff-output/heatmap-1234567890.png\",\n  \"compositePath\": \"/tmp/image-diff-output/composite-1234567890.png\",\n  \"dimensions\": { \"width\": 800, \"height\": 600 }\n}"
     }
   ]
 }
@@ -101,22 +103,28 @@ The `text` field contains the full JSON result as a string. When parsed, the ful
     "diffPercentage": 0.154,
     "antiAliasedPixels": 1034,
     "matchingPixels": 478229,
-    "clusterCount": 43,
-    "description": "0.15% of pixels differ across 43 cluster(s). Severity breakdown: 22 major, 4 moderate, 14 minor, 3 trivial."
+    "clusterCount": 11,
+    "description": "0.15% of pixels differ across 11 cluster(s). Severity breakdown: 5 major, 5 minor, 1 trivial."
+  },
+  "clustering": {
+    "gapUsed": 4,
+    "autoGap": true,
+    "suggestedSmallerGap": 3,
+    "suggestedLargerGap": 5
   },
   "clusters": [
     {
       "id": 1,
-      "left": 452,
+      "left": 444,
       "top": 157,
-      "right": 478,
+      "right": 504,
       "bottom": 165,
-      "width": 27,
+      "width": 61,
       "height": 9,
-      "pixelCount": 94,
+      "pixelCount": 170,
       "totalImagePixels": 480000,
-      "areaPercentage": 0.02,
-      "meanIntensity": 0.109,
+      "areaPercentage": 0.035,
+      "meanIntensity": 0.111,
       "maxIntensity": 0.343,
       "severity": "minor"
     }
@@ -147,6 +155,12 @@ The `text` field contains the full JSON result as a string. When parsed, the ful
     "clusterCount": 0,
     "description": "Images are identical (no differences detected)."
   },
+  "clustering": {
+    "gapUsed": 0,
+    "autoGap": true,
+    "suggestedSmallerGap": null,
+    "suggestedLargerGap": null
+  },
   "clusters": [],
   "heatmapPath": "/tmp/image-diff-output/heatmap-1234567890.png",
   "compositePath": "/tmp/image-diff-output/composite-1234567890.png",
@@ -171,8 +185,14 @@ The `text` field contains the full JSON result as a string. When parsed, the ful
     "diffPercentage": 8.301,
     "antiAliasedPixels": 329,
     "matchingPixels": 99440,
-    "clusterCount": 12,
-    "description": "8.30% of pixels differ across 12 cluster(s). Severity breakdown: 1 major, 5 moderate, 6 minor."
+    "clusterCount": 7,
+    "description": "8.30% of pixels differ across 7 cluster(s). Severity breakdown: 1 major, 3 moderate, 3 minor."
+  },
+  "clustering": {
+    "gapUsed": 4,
+    "autoGap": true,
+    "suggestedSmallerGap": 1,
+    "suggestedLargerGap": 6
   },
   "clusters": [
     {
@@ -183,9 +203,9 @@ The `text` field contains the full JSON result as a string. When parsed, the ful
       "bottom": 215,
       "width": 280,
       "height": 31,
-      "pixelCount": 8349,
+      "pixelCount": 8372,
       "totalImagePixels": 108800,
-      "areaPercentage": 7.674,
+      "areaPercentage": 7.695,
       "meanIntensity": 0.242,
       "maxIntensity": 0.244,
       "severity": "major"
@@ -196,7 +216,7 @@ The `text` field contains the full JSON result as a string. When parsed, the ful
     "y": 212,
     "confidence": 0.993,
     "strategy": "opencv-zncc-hybrid",
-    "alignmentTimeMs": 76,
+    "alignmentTimeMs": 89,
     "templateImage": "target",
     "originalDimensions": {
       "source": { "width": 1024, "height": 768 },
@@ -220,7 +240,7 @@ Note: The `alignment` field only appears when images have different dimensions. 
 
 ## Examples
 
-All examples below use this dashboard as the **source image** (800×600):
+All examples below use this dashboard as the **source image** (800x600):
 
 ![Source dashboard](docs/examples/dashboard-source.png)
 
@@ -250,6 +270,12 @@ The composite overlay shows the source image with no heatmap highlights — beca
     "matchingPixels": 480000,
     "clusterCount": 0,
     "description": "Images are identical (no differences detected)."
+  },
+  "clustering": {
+    "gapUsed": 0,
+    "autoGap": true,
+    "suggestedSmallerGap": null,
+    "suggestedLargerGap": null
   }
 }
 ```
@@ -260,7 +286,7 @@ The composite overlay shows the source image with no heatmap highlights — beca
 
 ### Example 2: Color & Value Changes
 
-The target has updated stat values ("12,847" → "13,205", "$48,290" → "$52,180") and different percentage text. The engine finds **43 clusters** across the changed text and numbers.
+The target has updated stat values ("12,847" -> "13,205", "$48,290" -> "$52,180") and different percentage text. The engine finds **11 clusters** (auto gap=4) across the changed text and numbers.
 
 | Source                                        | Target                                              |
 | --------------------------------------------- | --------------------------------------------------- |
@@ -273,7 +299,7 @@ The target has updated stat values ("12,847" → "13,205", "$48,290" → "$52,18
 The **standalone heatmap** shows only the diff pixels on a transparent background — yellow means lower intensity, red means higher intensity. The **composite overlay** blends the heatmap onto the source image so you can see exactly where differences occur in context.
 
 <details>
-<summary>Structured output (43 clusters, top 3 shown)</summary>
+<summary>Structured output (11 clusters, top 3 shown)</summary>
 
 ```json
 {
@@ -284,65 +310,71 @@ The **standalone heatmap** shows only the diff pixels on a transparent backgroun
     "diffPercentage": 0.154,
     "antiAliasedPixels": 1034,
     "matchingPixels": 478229,
-    "clusterCount": 43,
-    "description": "0.15% of pixels differ across 43 cluster(s). Severity breakdown: 22 major, 4 moderate, 14 minor, 3 trivial."
+    "clusterCount": 11,
+    "description": "0.15% of pixels differ across 11 cluster(s). Severity breakdown: 5 major, 5 minor, 1 trivial."
+  },
+  "clustering": {
+    "gapUsed": 4,
+    "autoGap": true,
+    "suggestedSmallerGap": 3,
+    "suggestedLargerGap": 5
   },
   "clusters": [
     {
       "id": 1,
-      "left": 452,
+      "left": 444,
       "top": 157,
-      "right": 478,
+      "right": 504,
       "bottom": 165,
-      "width": 27,
+      "width": 61,
       "height": 9,
-      "pixelCount": 94,
-      "areaPercentage": 0.02,
-      "meanIntensity": 0.109,
+      "pixelCount": 170,
+      "areaPercentage": 0.035,
+      "meanIntensity": 0.111,
       "maxIntensity": 0.343,
       "severity": "minor"
     },
     {
       "id": 2,
-      "left": 319,
-      "top": 132,
-      "right": 327,
+      "left": 450,
+      "top": 125,
+      "right": 478,
       "bottom": 142,
-      "width": 9,
-      "height": 11,
-      "pixelCount": 47,
-      "areaPercentage": 0.01,
-      "meanIntensity": 0.686,
+      "width": 29,
+      "height": 18,
+      "pixelCount": 112,
+      "areaPercentage": 0.023,
+      "meanIntensity": 0.677,
       "maxIntensity": 0.738,
       "severity": "major"
     },
     {
       "id": 3,
-      "left": 553,
-      "top": 157,
-      "right": 561,
-      "bottom": 165,
-      "width": 9,
-      "height": 9,
-      "pixelCount": 33,
-      "areaPercentage": 0.007,
-      "meanIntensity": 0.118,
-      "maxIntensity": 0.329,
-      "severity": "minor"
+      "left": 284,
+      "top": 126,
+      "right": 308,
+      "bottom": 142,
+      "width": 25,
+      "height": 17,
+      "pixelCount": 91,
+      "areaPercentage": 0.019,
+      "meanIntensity": 0.682,
+      "maxIntensity": 0.738,
+      "severity": "major"
     }
   ]
 }
 ```
 
-_40 more clusters omitted._
+_8 more clusters omitted._
 
 </details>
 
 ---
 
-### Example 3: Font Change (sans-serif → serif)
+### Example 3: Font Change (sans-serif -> serif)
 
-The entire page is re-rendered with a serif font (Georgia). Every text element shifts slightly, producing **331 clusters** of small glyph-level differences.
+The entire page is re-rendered with a serif font (Georgia). Every text element shifts slightly, producing many glyph-level differences. With the default auto-gap, the engine computes an optimal `cluster_gap=10` and merges these into **40 clusters** representing distinct text blocks and UI regions.
 
 | Source                                        | Target                                             |
 | --------------------------------------------- | -------------------------------------------------- |
@@ -352,78 +384,10 @@ The entire page is re-rendered with a serif font (Georgia). Every text element s
 | ------------------------------------------------- | ----------------------------------------------------- |
 | ![heatmap](docs/examples/font-change-heatmap.png) | ![composite](docs/examples/font-change-composite.png) |
 
-The heatmap lights up across every text region — headers, stat values, table content, sidebar labels. Each glyph-level change is its own cluster.
+The heatmap lights up across every text region — headers, stat values, table content, sidebar labels. Auto-gap merges nearby glyph fragments into meaningful groups.
 
 <details>
-<summary>Structured output (331 clusters, top 3 shown)</summary>
-
-```json
-{
-  "identical": false,
-  "summary": {
-    "totalPixels": 480000,
-    "diffPixels": 11671,
-    "diffPercentage": 2.431,
-    "antiAliasedPixels": 8326,
-    "matchingPixels": 460003,
-    "clusterCount": 331,
-    "description": "2.43% of pixels differ across 331 cluster(s). Severity breakdown: 61 major, 161 moderate, 105 minor, 4 trivial."
-  },
-  "clusters": [
-    {
-      "id": 1,
-      "left": 65,
-      "top": 88,
-      "right": 110,
-      "bottom": 98,
-      "width": 46,
-      "height": 11,
-      "pixelCount": 221,
-      "severity": "moderate"
-    },
-    {
-      "id": 2,
-      "left": 555,
-      "top": 317,
-      "right": 597,
-      "bottom": 329,
-      "width": 43,
-      "height": 13,
-      "pixelCount": 213,
-      "severity": "moderate"
-    },
-    {
-      "id": 3,
-      "left": 555,
-      "top": 391,
-      "right": 597,
-      "bottom": 403,
-      "width": 43,
-      "height": 13,
-      "pixelCount": 213,
-      "severity": "moderate"
-    }
-  ]
-}
-```
-
-_328 more clusters omitted._
-
-</details>
-
-#### Using `cluster_gap` to Group Related Differences
-
-331 individual glyph-level clusters is noisy. The `cluster_gap` parameter merges clusters whose bounding boxes are within N pixels of each other:
-
-| `cluster_gap` | Clusters | What Happens                                      |
-| ------------- | -------- | ------------------------------------------------- |
-| 0 (default)   | 331      | Every glyph fragment is a separate cluster        |
-| 10            | **40**   | Nearby fragments within text lines merge together |
-
-With `cluster_gap=10`, the 331 clusters collapse into **40 meaningful groups** — each representing a distinct text block or UI region, not individual character differences.
-
-<details>
-<summary>Structured output with cluster_gap=10 (40 clusters, top 3 shown)</summary>
+<summary>Structured output — default auto-gap (40 clusters, top 3 shown)</summary>
 
 ```json
 {
@@ -436,6 +400,12 @@ With `cluster_gap=10`, the 331 clusters collapse into **40 meaningful groups** �
     "matchingPixels": 460003,
     "clusterCount": 40,
     "description": "2.43% of pixels differ across 40 cluster(s). Severity breakdown: 26 moderate, 14 minor."
+  },
+  "clustering": {
+    "gapUsed": 10,
+    "autoGap": true,
+    "suggestedSmallerGap": 9,
+    "suggestedLargerGap": 11
   },
   "clusters": [
     {
@@ -479,11 +449,85 @@ _37 more clusters omitted. Note: same diff pixels, same percentage — only the 
 
 </details>
 
+#### What Auto-Gap Saves You From: `cluster_gap=0`
+
+Without auto-gap, each glyph fragment becomes its own cluster. Setting `cluster_gap=0` explicitly disables merging:
+
+| `cluster_gap`  | Clusters | What Happens                                           |
+| -------------- | -------- | ------------------------------------------------------ |
+| auto (default) | **40**   | Auto-computed gap=10 merges fragments into text blocks |
+| 0 (no merging) | 331      | Every glyph fragment is a separate cluster             |
+
+With `cluster_gap=0`, the 40 meaningful groups explode into **331 raw clusters** — one for every individual character difference. This is what auto-gap saves you from.
+
+<details>
+<summary>Structured output with cluster_gap=0 (331 clusters, top 3 shown)</summary>
+
+```json
+{
+  "identical": false,
+  "summary": {
+    "totalPixels": 480000,
+    "diffPixels": 11671,
+    "diffPercentage": 2.431,
+    "antiAliasedPixels": 8326,
+    "matchingPixels": 460003,
+    "clusterCount": 331,
+    "description": "2.43% of pixels differ across 331 cluster(s). Severity breakdown: 61 major, 161 moderate, 105 minor, 4 trivial."
+  },
+  "clustering": {
+    "gapUsed": 0,
+    "autoGap": false,
+    "suggestedSmallerGap": null,
+    "suggestedLargerGap": 1
+  },
+  "clusters": [
+    {
+      "id": 1,
+      "left": 65,
+      "top": 88,
+      "right": 110,
+      "bottom": 98,
+      "width": 46,
+      "height": 11,
+      "pixelCount": 221,
+      "severity": "moderate"
+    },
+    {
+      "id": 2,
+      "left": 555,
+      "top": 317,
+      "right": 597,
+      "bottom": 329,
+      "width": 43,
+      "height": 13,
+      "pixelCount": 213,
+      "severity": "moderate"
+    },
+    {
+      "id": 3,
+      "left": 555,
+      "top": 391,
+      "right": 597,
+      "bottom": 403,
+      "width": 43,
+      "height": 13,
+      "pixelCount": 213,
+      "severity": "moderate"
+    }
+  ]
+}
+```
+
+_328 more clusters omitted. Note: same diff pixels, same percentage — only the grouping changes._
+
+</details>
+
 ---
 
 ### Example 4: Missing Elements (Badges Removed)
 
-The target has status badges ("Complete", "Active") removed from the table — replaced with plain text. The engine detects **83 clusters** precisely locating each removed badge.
+The target has status badges ("Complete", "Active") removed from the table — replaced with plain text. The engine detects **19 clusters** (auto gap=4) precisely locating each removed badge.
 
 | Source                                        | Target                                                |
 | --------------------------------------------- | ----------------------------------------------------- |
@@ -496,7 +540,7 @@ The target has status badges ("Complete", "Active") removed from the table — r
 The heatmap highlights each badge position where the colored pill was replaced with plain text.
 
 <details>
-<summary>Structured output (83 clusters, top 3 shown)</summary>
+<summary>Structured output (19 clusters, top 3 shown)</summary>
 
 ```json
 {
@@ -507,48 +551,57 @@ The heatmap highlights each badge position where the colored pill was replaced w
     "diffPercentage": 0.939,
     "antiAliasedPixels": 2283,
     "matchingPixels": 473211,
-    "clusterCount": 83,
-    "description": "0.94% of pixels differ across 83 cluster(s). Severity breakdown: 77 moderate, 6 minor."
+    "clusterCount": 19,
+    "description": "0.94% of pixels differ across 19 cluster(s). Severity breakdown: 18 moderate, 1 minor."
+  },
+  "clustering": {
+    "gapUsed": 4,
+    "autoGap": true,
+    "suggestedSmallerGap": 3,
+    "suggestedLargerGap": 5
   },
   "clusters": [
     {
       "id": 1,
-      "left": 570,
-      "top": 315,
-      "right": 609,
-      "bottom": 328,
-      "width": 40,
+      "left": 369,
+      "top": 426,
+      "right": 487,
+      "bottom": 439,
+      "width": 119,
       "height": 14,
-      "pixelCount": 220,
+      "pixelCount": 516,
+      "areaPercentage": 0.108,
       "severity": "moderate"
     },
     {
       "id": 2,
-      "left": 570,
-      "top": 389,
-      "right": 609,
-      "bottom": 402,
-      "width": 40,
+      "left": 369,
+      "top": 352,
+      "right": 462,
+      "bottom": 365,
+      "width": 94,
       "height": 14,
-      "pixelCount": 220,
+      "pixelCount": 442,
+      "areaPercentage": 0.092,
       "severity": "moderate"
     },
     {
       "id": 3,
-      "left": 391,
-      "top": 389,
-      "right": 425,
-      "bottom": 399,
-      "width": 35,
-      "height": 11,
-      "pixelCount": 198,
+      "left": 657,
+      "top": 427,
+      "right": 723,
+      "bottom": 439,
+      "width": 67,
+      "height": 13,
+      "pixelCount": 311,
+      "areaPercentage": 0.065,
       "severity": "moderate"
     }
   ]
 }
 ```
 
-_80 more clusters omitted._
+_16 more clusters omitted._
 
 </details>
 
@@ -556,7 +609,7 @@ _80 more clusters omitted._
 
 ### Example 5: Layout Shift (Padding Change)
 
-The target has increased padding and gaps on the stat cards — everything shifts down slightly. This produces **612 clusters** because content at edges of every card, table row, and text block has shifted.
+The target has increased padding and gaps on the stat cards — everything shifts down slightly. This produces **18 clusters** (auto gap=18) because the auto-gap merges the many edge-level fragments caused by content repositioning.
 
 | Source                                        | Target                                              |
 | --------------------------------------------- | --------------------------------------------------- |
@@ -566,10 +619,10 @@ The target has increased padding and gaps on the stat cards — everything shift
 | -------------------------------------------------- | ------------------------------------------------------ |
 | ![heatmap](docs/examples/layout-shift-heatmap.png) | ![composite](docs/examples/layout-shift-composite.png) |
 
-Layout shifts light up the heatmap everywhere content has repositioned. The high cluster count reflects the ripple effect — every element below the shifted cards moves.
+Layout shifts light up the heatmap everywhere content has repositioned. The auto-gap merges the ripple effect into cohesive regions representing each shifted element.
 
 <details>
-<summary>Structured output (612 clusters, top 3 shown)</summary>
+<summary>Structured output (18 clusters, top 3 shown)</summary>
 
 ```json
 {
@@ -580,48 +633,57 @@ Layout shifts light up the heatmap everywhere content has repositioned. The high
     "diffPercentage": 2.32,
     "antiAliasedPixels": 10938,
     "matchingPixels": 457926,
-    "clusterCount": 612,
-    "description": "2.32% of pixels differ across 612 cluster(s). Severity breakdown: 51 major, 468 moderate, 92 minor, 1 trivial."
+    "clusterCount": 18,
+    "description": "2.32% of pixels differ across 18 cluster(s). Severity breakdown: 18 moderate."
+  },
+  "clustering": {
+    "gapUsed": 18,
+    "autoGap": true,
+    "suggestedSmallerGap": 17,
+    "suggestedLargerGap": 19
   },
   "clusters": [
     {
       "id": 1,
-      "left": 570,
-      "top": 317,
-      "right": 597,
-      "bottom": 333,
-      "width": 28,
-      "height": 17,
-      "pixelCount": 151,
+      "left": 434,
+      "top": 105,
+      "right": 550,
+      "bottom": 195,
+      "width": 117,
+      "height": 91,
+      "pixelCount": 1531,
+      "areaPercentage": 0.319,
       "severity": "moderate"
     },
     {
       "id": 2,
-      "left": 667,
-      "top": 318,
-      "right": 684,
-      "bottom": 333,
-      "width": 18,
-      "height": 16,
-      "pixelCount": 129,
+      "left": 369,
+      "top": 315,
+      "right": 490,
+      "bottom": 448,
+      "width": 122,
+      "height": 134,
+      "pixelCount": 1490,
+      "areaPercentage": 0.31,
       "severity": "moderate"
     },
     {
       "id": 3,
-      "left": 402,
-      "top": 318,
-      "right": 425,
-      "bottom": 333,
-      "width": 24,
-      "height": 16,
-      "pixelCount": 107,
+      "left": 245,
+      "top": 103,
+      "right": 372,
+      "bottom": 195,
+      "width": 128,
+      "height": 93,
+      "pixelCount": 1473,
+      "areaPercentage": 0.307,
       "severity": "moderate"
     }
   ]
 }
 ```
 
-_609 more clusters omitted._
+_15 more clusters omitted._
 
 </details>
 
@@ -639,7 +701,7 @@ When the source and target have **different dimensions**, the engine automatical
 
 This enables comparing a **Figma component mock** against a **full-page screenshot** directly — no manual cropping needed.
 
-All alignment examples below use this dashboard as the **source (scene)** image (1024×768):
+All alignment examples below use this dashboard as the **source (scene)** image (1024x768):
 
 ![Full page dashboard](docs/examples/fullpage-source.png)
 
@@ -647,13 +709,13 @@ All alignment examples below use this dashboard as the **source (scene)** image 
 
 ### Auto-Align Example 1: Stats Card Mock vs Full Page
 
-A Figma mock of the stats row (780×100) compared against the full page (1024×768). The mock has updated numbers ("12,847" → "14,205", "$48,290" → "$52,180", "3,847" → "4,102") and different percentages.
+A Figma mock of the stats row (780x100) compared against the full page (1024x768). The mock has updated numbers ("12,847" -> "14,205", "$48,290" -> "$52,180", "3,847" -> "4,102") and different percentages.
 
-| Full Page (1024×768)                       | Stats Card Mock (780×100)                  |
+| Full Page (1024x768)                       | Stats Card Mock (780x100)                  |
 | ------------------------------------------ | ------------------------------------------ |
 | ![full](docs/examples/fullpage-source.png) | ![mock](docs/examples/mock-stats-card.png) |
 
-The engine automatically locates the stats row at position **(238, 80)**, crops that 780×100 region from the full page, and compares it against the mock.
+The engine automatically locates the stats row at position **(238, 80)**, crops that 780x100 region from the full page, and compares it against the mock.
 
 | Composite Overlay (on cropped region)                      |
 | ---------------------------------------------------------- |
@@ -662,7 +724,7 @@ The engine automatically locates the stats row at position **(238, 80)**, crops 
 The heatmap highlights exactly the changed stat values and percentages within the aligned region.
 
 <details>
-<summary>Structured output (114 clusters, top 3 shown)</summary>
+<summary>Structured output (15 clusters, top 3 shown)</summary>
 
 ```json
 {
@@ -673,15 +735,21 @@ The heatmap highlights exactly the changed stat values and percentages within th
     "diffPercentage": 3.295,
     "antiAliasedPixels": 2503,
     "matchingPixels": 72927,
-    "clusterCount": 114,
-    "description": "3.29% of pixels differ across 114 cluster(s). Severity breakdown: 66 major, 18 moderate, 30 minor."
+    "clusterCount": 15,
+    "description": "3.29% of pixels differ across 15 cluster(s). Severity breakdown: 5 major, 4 moderate, 6 minor."
+  },
+  "clustering": {
+    "gapUsed": 5,
+    "autoGap": true,
+    "suggestedSmallerGap": 4,
+    "suggestedLargerGap": 6
   },
   "alignment": {
     "x": 238,
     "y": 80,
     "confidence": 0.743,
     "strategy": "opencv-zncc-hybrid",
-    "alignmentTimeMs": 145,
+    "alignmentTimeMs": 146,
     "templateImage": "target",
     "originalDimensions": {
       "source": { "width": 1024, "height": 768 },
@@ -691,42 +759,45 @@ The heatmap highlights exactly the changed stat values and percentages within th
   "clusters": [
     {
       "id": 1,
-      "left": 619,
-      "top": 23,
-      "right": 650,
-      "bottom": 31,
-      "width": 32,
-      "height": 9,
-      "pixelCount": 126,
-      "severity": "minor"
+      "left": 607,
+      "top": 45,
+      "right": 679,
+      "bottom": 66,
+      "width": 73,
+      "height": 22,
+      "pixelCount": 421,
+      "areaPercentage": 0.54,
+      "severity": "major"
     },
     {
       "id": 2,
-      "left": 423,
-      "top": 23,
-      "right": 450,
-      "bottom": 31,
-      "width": 28,
-      "height": 9,
-      "pixelCount": 110,
-      "severity": "moderate"
+      "left": 413,
+      "top": 45,
+      "right": 480,
+      "bottom": 66,
+      "width": 68,
+      "height": 22,
+      "pixelCount": 412,
+      "areaPercentage": 0.528,
+      "severity": "major"
     },
     {
       "id": 3,
-      "left": 30,
+      "left": 22,
       "top": 45,
-      "right": 45,
-      "bottom": 62,
-      "width": 16,
-      "height": 18,
-      "pixelCount": 83,
+      "right": 103,
+      "bottom": 66,
+      "width": 82,
+      "height": 22,
+      "pixelCount": 369,
+      "areaPercentage": 0.473,
       "severity": "major"
     }
   ]
 }
 ```
 
-_111 more clusters omitted._
+_12 more clusters omitted._
 
 **Key fields in the `alignment` object:**
 
@@ -742,22 +813,22 @@ _111 more clusters omitted._
 
 ### Auto-Align Example 2: Sidebar Panel Mock vs Full Page
 
-A Figma mock of the right sidebar (320×340) with modified progress values (78→85%, 92→95%, 45→62%) and a different button color (blue → red). Compared against the full page.
+A Figma mock of the right sidebar (320x340) with modified progress values (78->85%, 92->95%, 45->62%) and a different button color (blue -> red). Compared against the full page.
 
-| Full Page (1024×768)                       | Sidebar Mock (320×340)                  |
+| Full Page (1024x768)                       | Sidebar Mock (320x340)                  |
 | ------------------------------------------ | --------------------------------------- |
 | ![full](docs/examples/fullpage-source.png) | ![mock](docs/examples/mock-sidebar.png) |
 
-The engine finds the sidebar at position **(680, 212)** with **99.3% confidence** in **76ms**, then identifies the changed progress bars and button.
+The engine finds the sidebar at position **(680, 212)** with **99.3% confidence** in **89ms**, then identifies the changed progress bars and button.
 
 | Composite Overlay (on cropped region)                   | Standalone Heatmap                                  |
 | ------------------------------------------------------- | --------------------------------------------------- |
 | ![composite](docs/examples/align-sidebar-composite.png) | ![heatmap](docs/examples/align-sidebar-heatmap.png) |
 
-The major cluster at the bottom is the button color change (blue → red). The moderate clusters are the progress bar fill changes.
+The major cluster at the bottom is the button color change (blue -> red). The moderate clusters are the progress bar fill changes.
 
 <details>
-<summary>Structured output (12 clusters, top 3 shown)</summary>
+<summary>Structured output (7 clusters, top 3 shown)</summary>
 
 ```json
 {
@@ -768,15 +839,21 @@ The major cluster at the bottom is the button color change (blue → red). The m
     "diffPercentage": 8.301,
     "antiAliasedPixels": 329,
     "matchingPixels": 99440,
-    "clusterCount": 12,
-    "description": "8.30% of pixels differ across 12 cluster(s). Severity breakdown: 1 major, 5 moderate, 6 minor."
+    "clusterCount": 7,
+    "description": "8.30% of pixels differ across 7 cluster(s). Severity breakdown: 1 major, 3 moderate, 3 minor."
+  },
+  "clustering": {
+    "gapUsed": 4,
+    "autoGap": true,
+    "suggestedSmallerGap": 1,
+    "suggestedLargerGap": 6
   },
   "alignment": {
     "x": 680,
     "y": 212,
     "confidence": 0.993,
     "strategy": "opencv-zncc-hybrid",
-    "alignmentTimeMs": 76,
+    "alignmentTimeMs": 89,
     "templateImage": "target",
     "originalDimensions": {
       "source": { "width": 1024, "height": 768 },
@@ -792,8 +869,8 @@ The major cluster at the bottom is the button color change (blue → red). The m
       "bottom": 215,
       "width": 280,
       "height": 31,
-      "pixelCount": 8349,
-      "areaPercentage": 7.674,
+      "pixelCount": 8372,
+      "areaPercentage": 7.695,
       "severity": "major"
     },
     {
@@ -805,6 +882,7 @@ The major cluster at the bottom is the button color change (blue → red). The m
       "width": 47,
       "height": 8,
       "pixelCount": 370,
+      "areaPercentage": 0.34,
       "severity": "moderate"
     },
     {
@@ -816,13 +894,14 @@ The major cluster at the bottom is the button color change (blue → red). The m
       "width": 19,
       "height": 8,
       "pixelCount": 146,
+      "areaPercentage": 0.134,
       "severity": "moderate"
     }
   ]
 }
 ```
 
-_9 more clusters omitted._
+_4 more clusters omitted._
 
 </details>
 
@@ -830,9 +909,9 @@ _9 more clusters omitted._
 
 ### Auto-Align Example 3: Identical Crop — 0% Diff
 
-An exact crop of the activity table (420×496) from the same full page screenshot. The engine finds the table at the exact position and confirms **0% diff** — proving alignment precision.
+An exact crop of the activity table (420x496) from the same full page screenshot. The engine finds the table at the exact position and confirms **0% diff** — proving alignment precision.
 
-| Full Page (1024×768)                       | Table Crop (420×496)                            |
+| Full Page (1024x768)                       | Table Crop (420x496)                            |
 | ------------------------------------------ | ----------------------------------------------- |
 | ![full](docs/examples/fullpage-source.png) | ![mock](docs/examples/mock-table-identical.png) |
 
@@ -855,12 +934,18 @@ An exact crop of the activity table (420×496) from the same full page screensho
     "clusterCount": 0,
     "description": "Images are identical (no differences detected)."
   },
+  "clustering": {
+    "gapUsed": 0,
+    "autoGap": true,
+    "suggestedSmallerGap": null,
+    "suggestedLargerGap": null
+  },
   "alignment": {
     "x": 244,
     "y": 212,
     "confidence": 1,
     "strategy": "opencv-zncc-hybrid",
-    "alignmentTimeMs": 97,
+    "alignmentTimeMs": 99,
     "templateImage": "target",
     "originalDimensions": {
       "source": { "width": 1024, "height": 768 },
@@ -880,9 +965,9 @@ An exact crop of the activity table (420×496) from the same full page screensho
 
 | Scenario          | Template | Scene    | Position Found | Confidence | Time  |
 | ----------------- | -------- | -------- | -------------- | ---------- | ----- |
-| Stats card        | 780×100  | 1024×768 | (238, 80)      | 74.3%      | 145ms |
-| Sidebar panel     | 320×340  | 1024×768 | (680, 212)     | 99.3%      | 76ms  |
-| Table (identical) | 420×496  | 1024×768 | (244, 212)     | 100%       | 97ms  |
+| Stats card        | 780x100  | 1024x768 | (238, 80)      | 74.3%      | 146ms |
+| Sidebar panel     | 320x340  | 1024x768 | (680, 212)     | 99.3%      | 89ms  |
+| Table (identical) | 420x496  | 1024x768 | (244, 212)     | 100%       | 99ms  |
 
 ---
 

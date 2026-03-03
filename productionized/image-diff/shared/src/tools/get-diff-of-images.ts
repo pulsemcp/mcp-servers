@@ -14,7 +14,7 @@ const PARAM_DESCRIPTIONS = {
   min_cluster_size:
     'Minimum number of connected diff pixels to report as a cluster. Filters out isolated pixel noise. Default 4.',
   cluster_gap:
-    'Maximum pixel distance between cluster bounding boxes to merge them into a single cluster. Use 0 (default) for pixel-precise clusters, or 5-20 to group nearby diff regions together (e.g. glyph fragments within a word, or scattered changes in a UI section).',
+    'Maximum pixel distance between cluster bounding boxes to merge them into a single cluster. When omitted, an optimal gap is auto-computed using natural breaks in cluster distances. Set to 0 to disable merging entirely, or 5-20 for manual control.',
 } as const;
 
 export const GetDiffOfImagesSchema = z.object({
@@ -40,7 +40,10 @@ Returns structured diff data including:
 - Overall diff percentage and pixel counts
 - Clusters of different regions with bounding box coordinates (x, y, width, height)
 - Severity rating per cluster (trivial/minor/moderate/major)
+- Clustering metadata with the gap used and suggestions for tuning
 - File paths to generated heatmap images showing diff intensity
+
+**Clustering**: By default, nearby diff regions are automatically grouped using a natural-breaks algorithm that finds the optimal merge distance. This produces a manageable number of clusters where each represents a distinct problem area. To override, set cluster_gap explicitly (0 = no merging, or a specific pixel distance).
 
 **Heatmap output**: A PNG image where diff regions are colored from yellow (subtle difference) to red (major difference). A composite version overlays this on the source image for easy comparison.
 

@@ -133,7 +133,7 @@ describe('findDiffClusters', () => {
     const height = 4;
     const intensityMap = new Float32Array(width * height); // all zeros
 
-    const clusters = findDiffClusters(intensityMap, width, height);
+    const { clusters } = findDiffClusters(intensityMap, width, height);
 
     expect(clusters).toHaveLength(0);
   });
@@ -145,7 +145,7 @@ describe('findDiffClusters', () => {
     // One diff pixel at (1, 1)
     intensityMap[1 * width + 1] = 0.5;
 
-    const clusters = findDiffClusters(intensityMap, width, height, 1);
+    const { clusters } = findDiffClusters(intensityMap, width, height, 1);
 
     expect(clusters).toHaveLength(1);
     expect(clusters[0].left).toBe(1);
@@ -165,7 +165,7 @@ describe('findDiffClusters', () => {
     intensityMap[2 * width + 1] = 0.5;
     intensityMap[2 * width + 2] = 0.5;
 
-    const clusters = findDiffClusters(intensityMap, width, height, 1);
+    const { clusters } = findDiffClusters(intensityMap, width, height, 1);
 
     expect(clusters).toHaveLength(1);
     expect(clusters[0].left).toBe(1);
@@ -175,7 +175,7 @@ describe('findDiffClusters', () => {
     expect(clusters[0].pixelCount).toBe(4);
   });
 
-  it('should find two separate clusters', () => {
+  it('should find two separate clusters when gap is 0', () => {
     const width = 8;
     const height = 8;
     const intensityMap = new Float32Array(width * height);
@@ -191,7 +191,8 @@ describe('findDiffClusters', () => {
     intensityMap[7 * width + 6] = 0.3;
     intensityMap[7 * width + 7] = 0.3;
 
-    const clusters = findDiffClusters(intensityMap, width, height, 1);
+    // Use explicit gap=0 to prevent auto-merging
+    const { clusters } = findDiffClusters(intensityMap, width, height, 1, 0);
 
     expect(clusters).toHaveLength(2);
     // Sorted by size descending, both have 4 pixels so order may vary
@@ -211,7 +212,7 @@ describe('findDiffClusters', () => {
     intensityMap[3 * width + 2] = 0.5;
     intensityMap[3 * width + 3] = 0.5;
 
-    const clusters = findDiffClusters(intensityMap, width, height, 4);
+    const { clusters } = findDiffClusters(intensityMap, width, height, 4);
 
     expect(clusters).toHaveLength(1);
     expect(clusters[0].pixelCount).toBe(4);
@@ -224,7 +225,7 @@ describe('findDiffClusters', () => {
     intensityMap[0] = -1.0; // AA pixel
     intensityMap[1] = 0.5; // Real diff
 
-    const clusters = findDiffClusters(intensityMap, width, height, 1);
+    const { clusters } = findDiffClusters(intensityMap, width, height, 1);
 
     expect(clusters).toHaveLength(1);
     expect(clusters[0].pixelCount).toBe(1);
@@ -237,7 +238,7 @@ describe('findDiffClusters', () => {
     intensityMap[0] = 0.2;
     intensityMap[1] = 0.4;
 
-    const clusters = findDiffClusters(intensityMap, width, height, 1);
+    const { clusters } = findDiffClusters(intensityMap, width, height, 1);
 
     expect(clusters).toHaveLength(1);
     expect(clusters[0].meanIntensity).toBeCloseTo(0.3, 2);
@@ -260,23 +261,23 @@ describe('findDiffClusters', () => {
 
     // Without gap merging: 3 separate clusters
     const noGap = findDiffClusters(intensityMap, width, height, 1, 0);
-    expect(noGap).toHaveLength(3);
+    expect(noGap.clusters).toHaveLength(3);
 
     // With gap=3: A and B merge (gap exactly 3), C stays separate
     const gap3 = findDiffClusters(intensityMap, width, height, 1, 3);
-    expect(gap3).toHaveLength(2);
+    expect(gap3.clusters).toHaveLength(2);
     // Merged cluster should span from x=0 to x=6
-    const merged = gap3.find((c) => c.pixelCount === 4);
+    const merged = gap3.clusters.find((c) => c.pixelCount === 4);
     expect(merged).toBeDefined();
     expect(merged!.left).toBe(0);
     expect(merged!.right).toBe(6);
 
     // With gap=10: all three merge into one
     const gap10 = findDiffClusters(intensityMap, width, height, 1, 10);
-    expect(gap10).toHaveLength(1);
-    expect(gap10[0].pixelCount).toBe(6);
-    expect(gap10[0].left).toBe(0);
-    expect(gap10[0].right).toBe(15);
+    expect(gap10.clusters).toHaveLength(1);
+    expect(gap10.clusters[0].pixelCount).toBe(6);
+    expect(gap10.clusters[0].left).toBe(0);
+    expect(gap10.clusters[0].right).toBe(15);
   });
 
   it('should combine statistics correctly when merging clusters', () => {
@@ -289,12 +290,64 @@ describe('findDiffClusters', () => {
     // Cluster B: 1 pixel with intensity 0.9, gap of 3 from A
     intensityMap[0 * width + 5] = 0.9;
 
-    const clusters = findDiffClusters(intensityMap, width, height, 1, 5);
+    const { clusters } = findDiffClusters(intensityMap, width, height, 1, 5);
     expect(clusters).toHaveLength(1);
     expect(clusters[0].pixelCount).toBe(3);
     // Mean should be (0.2 + 0.2 + 0.9) / 3 ≈ 0.433
     expect(clusters[0].meanIntensity).toBeCloseTo(0.433, 2);
     expect(clusters[0].maxIntensity).toBeCloseTo(0.9, 2);
+  });
+
+  it('should auto-compute gap when clusterGap is undefined', () => {
+    // Create 6 clusters in two spatial groups on a large enough image:
+    // Group 1 (top): 3 clusters at y=10, x=10/15/20 (nn-dist=3 between each)
+    // Group 2 (bottom): 3 clusters at y=180, x=10/15/20 (nn-dist=3 between each)
+    // Between groups: nn-dist ~168px → clear natural break in nn-distances
+    // NN distances sorted: [3, 3, 3, 3, 5, 168] → jump at 5→168
+    const width = 200;
+    const height = 200;
+    const intensityMap = new Float32Array(width * height);
+    // Group 1: three clusters near top
+    intensityMap[10 * width + 10] = 0.5;
+    intensityMap[10 * width + 11] = 0.5;
+    intensityMap[10 * width + 15] = 0.8;
+    intensityMap[10 * width + 16] = 0.8;
+    intensityMap[10 * width + 21] = 0.4;
+    intensityMap[10 * width + 22] = 0.4;
+    // Group 2: three clusters near bottom
+    intensityMap[180 * width + 10] = 0.3;
+    intensityMap[180 * width + 11] = 0.3;
+    intensityMap[180 * width + 15] = 0.6;
+    intensityMap[180 * width + 16] = 0.6;
+    intensityMap[180 * width + 21] = 0.7;
+    intensityMap[180 * width + 22] = 0.7;
+
+    // NN distances: each cluster's nearest neighbor is 3px away (within group).
+    // But the two groups are 170px apart vertically.
+    // Sorted NN: [3,3,3,3,3,3] — all identical, no jump.
+    // Falls back to dimension heuristic: min(200,200)*0.03 = 6, clamped to max(5,6) = 6.
+    // Gap=6 merges within-group clusters (gap=3 ≤ 6) but not between groups (gap=168 > 6).
+    const result = findDiffClusters(intensityMap, width, height, 1);
+    expect(result.clusteringMeta.autoGap).toBe(true);
+    // Dimension fallback: 200 * 0.03 = 6
+    expect(result.clusteringMeta.gapUsed).toBe(6);
+    // Within each group, clusters merge (gap=3 < 6). Two groups remain separate.
+    expect(result.clusters).toHaveLength(2);
+  });
+
+  it('should return clustering metadata with suggestions', () => {
+    const width = 16;
+    const height = 4;
+    const intensityMap = new Float32Array(width * height);
+    intensityMap[0 * width + 0] = 0.5;
+    intensityMap[0 * width + 5] = 0.8;
+    intensityMap[0 * width + 14] = 0.3;
+
+    const result = findDiffClusters(intensityMap, width, height, 1, 0);
+    expect(result.clusteringMeta.autoGap).toBe(false);
+    expect(result.clusteringMeta.gapUsed).toBe(0);
+    // Should suggest a larger gap since there are pairwise distances > 0
+    expect(result.clusteringMeta.suggestedLargerGap).toBeGreaterThan(0);
   });
 });
 

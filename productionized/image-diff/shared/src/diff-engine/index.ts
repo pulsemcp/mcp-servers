@@ -17,11 +17,11 @@ import { tmpdir } from 'os';
 import { pixelDiff } from './pixel-diff.js';
 import type { PixelDiffOptions } from './pixel-diff.js';
 import { findDiffClusters } from './clustering.js';
-import type { DiffCluster } from './clustering.js';
+import type { DiffCluster, ClusteringMeta } from './clustering.js';
 import { generateHeatmap, generateCompositeHeatmap } from './heatmap.js';
 import { alignImages, orderBySize } from './alignment.js';
 
-export type { DiffCluster } from './clustering.js';
+export type { DiffCluster, ClusteringMeta, ClusteringResult } from './clustering.js';
 export type { PixelDiffOptions, PixelDiffResult } from './pixel-diff.js';
 export type { AlignmentResult } from './alignment.js';
 
@@ -32,7 +32,11 @@ export interface ImageDiffOptions {
   includeAA?: boolean;
   /** Minimum cluster size in pixels to include in results. Default: 4 */
   minClusterSize?: number;
-  /** Maximum pixel gap between cluster bounding boxes to merge nearby clusters. Default: 0 (no merging). Use 5-20 to group nearby diff regions (e.g. glyph fragments in a word). */
+  /** Maximum pixel gap between cluster bounding boxes to merge nearby clusters.
+   * - undefined (default): auto-compute optimal gap using natural breaks in cluster distances
+   * - 0: no merging (pixel-precise clusters)
+   * - >0: explicit gap value
+   */
   clusterGap?: number;
   /** Directory to save heatmap output. Default: os.tmpdir() */
   outputDir?: string;
@@ -65,6 +69,8 @@ export interface ImageDiffResult {
     width: number;
     height: number;
   };
+  /** Clustering metadata: what gap was used and suggestions for tuning */
+  clustering: ClusteringMeta;
   /** Alignment info, present when images had different dimensions */
   alignment?: {
     /** X offset of the aligned region within the larger image */
@@ -103,16 +109,17 @@ export async function diffImages(
     threshold = 0.1,
     includeAA = false,
     minClusterSize = 4,
-    clusterGap = 0,
+    clusterGap,
     outputDir = tmpdir(),
     generateComposite = true,
   } = options;
 
+  const gapDesc = clusterGap === undefined ? 'auto' : String(clusterGap);
   console.error(`[diff-engine] Starting image diff`);
   console.error(`[diff-engine]   source: ${sourcePath}`);
   console.error(`[diff-engine]   target: ${targetPath}`);
   console.error(
-    `[diff-engine]   options: threshold=${threshold}, includeAA=${includeAA}, minClusterSize=${minClusterSize}, clusterGap=${clusterGap}`
+    `[diff-engine]   options: threshold=${threshold}, includeAA=${includeAA}, minClusterSize=${minClusterSize}, clusterGap=${gapDesc}`
   );
 
   // Validate inputs
@@ -235,7 +242,7 @@ export async function diffImages(
 
   // Step 4: Cluster diff regions
   console.error('[diff-engine] Clustering diff regions...');
-  const clusters = findDiffClusters(
+  const { clusters, clusteringMeta } = findDiffClusters(
     diffResult.intensityMap,
     width,
     height,
@@ -282,6 +289,7 @@ export async function diffImages(
       description,
     },
     clusters,
+    clustering: clusteringMeta,
     heatmapPath,
     compositePath,
     dimensions: { width, height },

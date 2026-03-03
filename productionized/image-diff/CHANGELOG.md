@@ -4,7 +4,14 @@
 
 ### Added
 
-- Comprehensive README with visual examples covering all scenarios: identical images, color/value changes, font changes, missing elements, layout shifts, auto-alignment with different-sized images, and `cluster_gap` usage
+- **Auto-clustering**: When `cluster_gap` is omitted, the engine now automatically computes the optimal merge distance using nearest-neighbor distance analysis with natural breaks. This produces a manageable number of clusters (typically 5-40) where each represents a distinct problem area, instead of hundreds of raw glyph-level fragments. The `clustering` metadata in the response shows what gap was used and suggests alternatives for tuning
+- `clustering` field in `ImageDiffResult`: includes `gapUsed`, `autoGap`, `suggestedSmallerGap`, and `suggestedLargerGap` for transparent gap reporting and tuning guidance
+- Comprehensive README with visual examples covering all scenarios: identical images, color/value changes, font changes, missing elements, layout shifts, auto-alignment with different-sized images, and auto-clustering behavior
+
+### Changed
+
+- **BREAKING**: `cluster_gap` default behavior changed from `0` (no merging) to auto-computed optimal gap. Pass `cluster_gap: 0` explicitly to get the previous no-merging behavior
+- `findDiffClusters` now returns `ClusteringResult` (containing `clusters` and `clusteringMeta`) instead of `DiffCluster[]` directly
 
 ## [0.2.0] - 2026-03-02
 
