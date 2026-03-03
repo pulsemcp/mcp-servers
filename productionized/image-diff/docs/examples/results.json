@@ -164,7 +164,7 @@
       "gapUsed": 0,
       "autoGap": false,
       "suggestedSmallerGap": null,
-      "suggestedLargerGap": 1
+      "suggestedLargerGap": null
     },
     "clusters": [
       {
@@ -369,7 +369,7 @@
       "y": 80,
       "confidence": 0.743,
       "strategy": "opencv-zncc-hybrid",
-      "alignmentTimeMs": 145.81,
+      "alignmentTimeMs": 156.4,
       "templateImage": "target",
       "originalDimensions": {
         "source": {
@@ -453,7 +453,7 @@
       "y": 212,
       "confidence": 0.993,
       "strategy": "opencv-zncc-hybrid",
-      "alignmentTimeMs": 88.65,
+      "alignmentTimeMs": 76.23,
       "templateImage": "target",
       "originalDimensions": {
         "source": {
@@ -537,7 +537,7 @@
       "y": 212,
       "confidence": 1,
       "strategy": "opencv-zncc-hybrid",
-      "alignmentTimeMs": 98.64,
+      "alignmentTimeMs": 107.25,
       "templateImage": "target",
       "originalDimensions": {
         "source": {

@@ -21,7 +21,7 @@ import type { DiffCluster, ClusteringMeta } from './clustering.js';
 import { generateHeatmap, generateCompositeHeatmap } from './heatmap.js';
 import { alignImages, orderBySize } from './alignment.js';
 
-export type { DiffCluster, ClusteringMeta, ClusteringResult } from './clustering.js';
+export type { DiffCluster, ClusteringMeta } from './clustering.js';
 export type { PixelDiffOptions, PixelDiffResult } from './pixel-diff.js';
 export type { AlignmentResult } from './alignment.js';
 

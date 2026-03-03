@@ -302,8 +302,8 @@ describe('findDiffClusters', () => {
     // Create 6 clusters in two spatial groups on a large enough image:
     // Group 1 (top): 3 clusters at y=10, x=10/15/20 (nn-dist=3 between each)
     // Group 2 (bottom): 3 clusters at y=180, x=10/15/20 (nn-dist=3 between each)
-    // Between groups: nn-dist ~168px → clear natural break in nn-distances
-    // NN distances sorted: [3, 3, 3, 3, 5, 168] → jump at 5→168
+    // Each cluster's nearest neighbor is within the same group at distance 3.
+    // NN distances sorted: [3, 3, 3, 3, 3, 3] — all identical, no jump.
     const width = 200;
     const height = 200;
     const intensityMap = new Float32Array(width * height);
@@ -346,8 +346,9 @@ describe('findDiffClusters', () => {
     const result = findDiffClusters(intensityMap, width, height, 1, 0);
     expect(result.clusteringMeta.autoGap).toBe(false);
     expect(result.clusteringMeta.gapUsed).toBe(0);
-    // Should suggest a larger gap since there are pairwise distances > 0
-    expect(result.clusteringMeta.suggestedLargerGap).toBeGreaterThan(0);
+    // Explicit gap skips distance computation — no suggestions available
+    expect(result.clusteringMeta.suggestedLargerGap).toBeNull();
+    expect(result.clusteringMeta.suggestedSmallerGap).toBeNull();
   });
 });
 

@@ -41,9 +41,11 @@ export interface ClusteringMeta {
   gapUsed: number;
   /** Whether the gap was auto-computed (true) or explicitly provided by the caller (false). */
   autoGap: boolean;
-  /** Suggestion: a smaller gap that would produce more (finer-grained) clusters, or null if already at 0. */
+  /** Suggestion: a smaller gap that would produce more (finer-grained) clusters, or null if already at 0.
+   * Based on pre-merge pairwise distances — approximate, as merging changes cluster geometry. */
   suggestedSmallerGap: number | null;
-  /** Suggestion: a larger gap that would merge more clusters together, or null if already at maximum. */
+  /** Suggestion: a larger gap that would merge more clusters together, or null if already at maximum.
+   * Based on pre-merge pairwise distances — approximate, as merging changes cluster geometry. */
   suggestedLargerGap: number | null;
 }
 
@@ -142,18 +144,7 @@ export function findDiffClusters(
   }
 
   // ---- Collect cluster statistics ----
-  const clusterMap = new Map<
-    number,
-    {
-      left: number;
-      top: number;
-      right: number;
-      bottom: number;
-      pixelCount: number;
-      totalIntensity: number;
-      maxIntensity: number;
-    }
-  >();
+  const clusterMap = new Map<number, ClusterStats>();
 
   for (let y = 0; y < height; y++) {
     for (let x = 0; x < width; x++) {
@@ -209,9 +200,6 @@ export function findDiffClusters(
     console.error(`[clustering] Auto-computed natural gap: ${effectiveGap}`);
   } else {
     effectiveGap = clusterGap ?? 0;
-    if (filteredStats.length > 1) {
-      allDistances = computePairwiseDistances(filteredStats);
-    }
   }
 
   // ---- Gap-based merging: merge clusters whose bounding boxes are within effectiveGap pixels ----
@@ -250,12 +238,7 @@ export function findDiffClusters(
   }
 
   // ---- Compute gap suggestions ----
-  const clusteringMeta = buildClusteringMeta(
-    effectiveGap,
-    autoGap,
-    allDistances,
-    filteredStats.length
-  );
+  const clusteringMeta = buildClusteringMeta(effectiveGap, autoGap, allDistances);
 
   // ---- Build output clusters ----
   const clusters: DiffCluster[] = [];
@@ -315,7 +298,8 @@ type ClusterStats = {
 };
 
 /**
- * Compute the bounding-box distance between two cluster stats.
+ * Compute the Chebyshev (L-infinity) edge-to-edge distance between two cluster
+ * bounding boxes. Returns 0 when boxes overlap or are adjacent.
  */
 function clusterDistance(a: ClusterStats, b: ClusterStats): number {
   const horizDist = Math.max(0, Math.max(a.left, b.left) - Math.min(a.right, b.right) - 1);
@@ -375,8 +359,8 @@ function computeNearestNeighborDistances(stats: ClusterStats[]): number[] {
  */
 function computeNaturalGap(
   stats: ClusterStats[],
-  imageWidth?: number,
-  imageHeight?: number
+  imageWidth: number,
+  imageHeight: number
 ): {
   naturalGap: number;
   distances: number[];
@@ -385,8 +369,11 @@ function computeNaturalGap(
   const nnDistances = computeNearestNeighborDistances(stats);
 
   if (nnDistances.length <= 1) {
-    // 0 or 1 cluster — no merging possible or only one pair
-    return { naturalGap: nnDistances.length === 1 ? nnDistances[0] : 0, distances };
+    // 0 or 1 pair — cap at dimension-based heuristic to avoid merging
+    // distant clusters when there are only 2 in the image
+    const dimCap = Math.max(5, Math.min(50, Math.round(Math.min(imageWidth, imageHeight) * 0.03)));
+    const gap = nnDistances.length === 1 ? Math.min(nnDistances[0], dimCap) : 0;
+    return { naturalGap: gap, distances };
   }
 
   // If all nn-distances are 0 (overlapping clusters), no merging needed
@@ -417,20 +404,13 @@ function computeNaturalGap(
 
   // No clear natural break — fall back to dimension-aware heuristic.
   // Use 3% of the smaller image dimension, clamped to [5, 50].
-  if (imageWidth !== undefined && imageHeight !== undefined) {
-    const smallerDim = Math.min(imageWidth, imageHeight);
-    const dimensionGap = Math.round(smallerDim * 0.03);
-    const naturalGap = Math.max(5, Math.min(50, dimensionGap));
-    console.error(
-      `[clustering] No clear natural break in NN distances (max jump=${bestJumpSize}), ` +
-        `using dimension-based fallback: ${naturalGap}px (3% of ${smallerDim}px)`
-    );
-    return { naturalGap, distances };
-  }
-
-  // No dimensions available — use the 90th percentile of nn-distances
-  const p90Idx = Math.floor(nnDistances.length * 0.9);
-  const naturalGap = nnDistances[p90Idx];
+  const smallerDim = Math.min(imageWidth, imageHeight);
+  const dimensionGap = Math.round(smallerDim * 0.03);
+  const naturalGap = Math.max(5, Math.min(50, dimensionGap));
+  console.error(
+    `[clustering] No clear natural break in NN distances (max jump=${bestJumpSize}), ` +
+      `using dimension-based fallback: ${naturalGap}px (3% of ${smallerDim}px)`
+  );
   return { naturalGap, distances };
 }
 
@@ -444,8 +424,7 @@ function computeNaturalGap(
 function buildClusteringMeta(
   gapUsed: number,
   autoGap: boolean,
-  distances: number[],
-  _currentClusterCount: number
+  distances: number[]
 ): ClusteringMeta {
   let suggestedSmallerGap: number | null = null;
   let suggestedLargerGap: number | null = null;
