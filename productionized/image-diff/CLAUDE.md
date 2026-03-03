@@ -6,13 +6,20 @@ This file provides guidance to Claude Code (claude.ai/code) when working with th
 
 image-diff is an MCP server for programmatic image comparison. It compares two images pixel-by-pixel, identifies clusters of visual differences using Connected Component Labeling, and generates heatmap visualizations. No external APIs or LLMs — all processing is local.
 
+## Deep-Dive Documentation
+
+- **[DESIGN_DECISIONS.md](./DESIGN_DECISIONS.md)**: Why things are the way they are — alternatives considered, trade-offs made
+- **[ALGORITHM_NOTES.md](./ALGORITHM_NOTES.md)**: How the algorithms work in detail — formulas, constants, tuning, troubleshooting
+
+Read these before making non-trivial changes to the diff engine or clustering logic.
+
 ## Architecture
 
 The server uses a two-layer architecture:
 
 1. **`shared/`**: Core business logic
    - `diff-engine/pixel-diff.ts`: Pixel comparison engine forked from pixelmatch (YIQ NTSC color space)
-   - `diff-engine/clustering.ts`: Connected Component Labeling (CCL) with Union-Find for spatial clustering
+   - `diff-engine/clustering.ts`: CCL with Union-Find + auto-clustering via nearest-neighbor natural breaks
    - `diff-engine/heatmap.ts`: Heatmap generation (yellow-to-red gradient) and composite overlay via sharp
    - `diff-engine/alignment.ts`: Auto-alignment for different-sized images (OpenCV ZNCC hybrid + multi-scale fallback)
    - `diff-engine/index.ts`: Pipeline orchestrator that wires the stages together
@@ -32,7 +39,10 @@ The server uses a two-layer architecture:
 npm run build          # Builds shared, then local
 
 # Test
-npm test               # Functional tests (40 tests across 2 files)
+npm test               # Functional tests (42 tests across 2 files)
+
+# Regenerate README examples (requires prior build)
+node scripts/generate-readme-examples.mjs
 
 # Development
 cd local
@@ -63,9 +73,11 @@ npm run dev            # Development with auto-reload
 
 - Connected Component Labeling with 8-connectivity
 - Union-Find with path-halving for efficient merging
+- Auto-clustering: when `clusterGap` is omitted, computes optimal gap via nearest-neighbor distance analysis with natural breaks detection + dimension-aware fallback (see [ALGORITHM_NOTES.md](./ALGORITHM_NOTES.md))
+- Three-way `clusterGap` semantics: `undefined` = auto, `0` = no merging, `>0` = explicit gap
 - Per-cluster severity classification based on area + intensity score
 - `minClusterSize` parameter filters noise (default 4 pixels)
-- `clusterGap` parameter merges nearby clusters within N pixels of each other
+- Response includes `clustering` metadata with `gapUsed`, `autoGap`, and gap suggestions
 
 ### Heatmap (heatmap.ts)
 
@@ -76,8 +88,23 @@ npm run dev            # Development with auto-reload
 ## Testing Strategy
 
 - **Functional tests**: Unit tests for pixel-diff, clustering, and alignment algorithms (`tests/functional/`)
-- Two test files: `diff-engine.test.ts` (26 tests) and `alignment.test.ts` (14 tests)
+- Two test files: `diff-engine.test.ts` (28 tests) and `alignment.test.ts` (14 tests)
 - No external API dependencies, so no manual tests with credentials needed
+- **Example generation**: `scripts/generate-readme-examples.mjs` produces 9 scenarios with heatmaps, composites, and JSON output — useful for visual verification after algorithm changes
+
+## Critical Gotchas
+
+### opencv-wasm Import Deadlock
+
+`import('opencv-wasm')` as a dynamic import inside async functions deadlocks when called from built JS. The only reliable approach is top-level `await import('opencv-wasm')` at module scope. See [DESIGN_DECISIONS.md](./DESIGN_DECISIONS.md#why-top-level-await-importopencv-wasm) for details.
+
+### Uint32Array Byte Alignment
+
+Creating a `Uint32Array` view over a buffer requires 4-byte alignment. The pixel-diff fast path handles misaligned buffers by copying, but be careful if adding new `Uint32Array` usage.
+
+### `clusterGap: undefined` vs `0`
+
+These are semantically different. `undefined` triggers auto-gap computation; `0` means "no merging." Use `clusterGap?: number` (optional) and check `=== undefined`, not truthiness.
 
 ## Claude Learnings
 
@@ -86,3 +113,13 @@ npm run dev            # Development with auto-reload
 - Using Float32Array with -1.0 for AA pixels cleanly separates anti-aliasing from real diffs
 - The intensity normalization (`delta / MAX_YIQ_DELTA`) produces values that map well to visual heat
 - `identical` field should check both `diffCount === 0` AND `clusters.length === 0` to avoid contradictions with the description
+
+### Auto-Clustering Algorithm Evolution
+
+Three approaches were tried before landing on the current one:
+
+1. **All-pairwise distances + largest jump**: Too aggressive (font-change: 1 cluster)
+2. **Nearest-neighbor distances + largest jump**: Good for structured diffs, but layout-shift had no natural break (190 clusters)
+3. **NN distances + dimension-aware fallback**: Current approach — handles both cases well (5-40 clusters typically)
+
+See [ALGORITHM_NOTES.md](./ALGORITHM_NOTES.md#troubleshooting--tuning-guide) for troubleshooting unexpected cluster counts.
