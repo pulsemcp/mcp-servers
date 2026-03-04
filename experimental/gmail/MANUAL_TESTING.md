@@ -69,13 +69,30 @@ The tests will:
 
 **Test Date:** 2026-03-04
 **Branch:** claude/gmail-html-body-support
-**Commit:** 75eee5a
+**Commit:** 4d1634a
 **Tested By:** Claude Code
-**Environment:** Functional + integration tests (no .env credentials available for manual tests)
+**Environment:** Service account authentication, impersonating tadas@tadasant.com
 
 ### Test Results
 
-**Manual Tests (real Gmail API):** Not re-run — no API credentials available in this environment. This change modifies tool parameter names and MIME message building. Previous manual test results (v0.1.1, commit 2e45bf6) validated the Gmail API integration; core API interaction patterns remain unchanged.
+**Manual Tests (real Gmail API): 12 passed (12)**
+
+```
+gmail-client.test.ts: 8 passed (8)
+  - list_email_conversations: list conversations from inbox (2404ms)
+  - list_email_conversations: filter by query (663ms)
+  - search_email_conversations: search for conversations (440ms)
+  - get_email_conversation: get conversation with full details (639ms)
+  - change_email_conversation: modify labels (star/unstar) (990ms)
+  - draft_email: create a draft with plaintext_body (346ms)
+  - send_email: send a test email with plaintext_body (376ms)
+  - download_email_attachments: download attachments (819ms)
+download-attachments.test.ts: 4 passed (4)
+  - save attachment to /tmp/ and return file path (1413ms)
+  - produce uncorrupted file matching direct API download byte-for-byte (762ms)
+  - return inline content when inline=true (378ms)
+  - download all attachments when no filename specified (467ms)
+```
 
 **Automated Tests (mocked):**
 
@@ -89,23 +106,23 @@ Integration Tests: 17 passed (17)
   - 2 send_email tests (plaintext_body + html_body)
   - 4 download_email_attachments integration tests
   - 9 other integration tests (list, get, search, change, setup)
-Total: 104 tests passing (87 functional + 17 integration)
+Total: 116 tests passing (12 manual + 87 functional + 17 integration)
 ```
 
-**Overall:** All automated tests passed
+**Overall:** All tests passed
 
 ### Notes
 
 - **BREAKING**: `body` parameter replaced with `plaintext_body` and `html_body` in `draft_email` and `send_email` tools
+- Manual tests confirmed draft creation and email sending work end-to-end with the new `plaintext_body` parameter against the real Gmail API
 - MIME message builder now supports text/html content type and multipart/alternative when both are provided
-- New tests verify HTML body is passed through to client correctly and response includes format indicator
 - All mock clients (functional and integration) updated to handle new parameter names
 
 ## Historical Test Runs
 
 | Date       | Commit  | Status | Notes                                                                                     |
 | ---------- | ------- | ------ | ----------------------------------------------------------------------------------------- |
-| 2026-03-04 | 75eee5a | PASS   | v0.2.0 - HTML body support, 87 functional + 17 integration (no API credentials available) |
+| 2026-03-04 | 4d1634a | PASS   | v0.2.0 - HTML body support, 12 manual + 87 functional + 17 integration                    |
 | 2026-02-22 | 04bed3a | PASS   | v0.1.2 - oauth-setup CLI subcommand, 83 functional + 15 integration (no API code changes) |
 | 2026-02-09 | 2e45bf6 | PASS   | v0.1.1 - download_email_attachments, 17 manual + 66 functional + 15 integration           |
 | 2026-01-25 | 9604fdc | PASS   | v0.1.0 - OAuth2 support, 12 manual + 64 functional + 11 integration                       |
