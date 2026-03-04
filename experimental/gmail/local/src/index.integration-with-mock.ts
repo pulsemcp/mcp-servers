@@ -202,17 +202,18 @@ function createMockClient(): IGmailClient {
     },
 
     async createDraft(options) {
+      const bodyContent = options.plaintextBody || options.htmlBody || '';
       const draft: Draft = {
         id: `draft_${draftIdCounter++}`,
         message: {
           id: `msg_${messageIdCounter++}`,
           threadId: options.threadId || `thread_${messageIdCounter}`,
           labelIds: ['DRAFT'],
-          snippet: options.body.substring(0, 100),
+          snippet: bodyContent.substring(0, 100),
           historyId: '12347',
           internalDate: String(Date.now()),
           payload: {
-            mimeType: 'text/plain',
+            mimeType: options.htmlBody ? 'text/html' : 'text/plain',
             headers: [
               { name: 'Subject', value: options.subject },
               { name: 'From', value: 'me@example.com' },
@@ -220,8 +221,8 @@ function createMockClient(): IGmailClient {
               { name: 'Date', value: new Date().toISOString() },
             ],
             body: {
-              size: options.body.length,
-              data: Buffer.from(options.body).toString('base64url'),
+              size: bodyContent.length,
+              data: Buffer.from(bodyContent).toString('base64url'),
             },
           },
         },
@@ -264,15 +265,16 @@ function createMockClient(): IGmailClient {
     },
 
     async sendMessage(options) {
+      const bodyContent = options.plaintextBody || options.htmlBody || '';
       const sentMessage: Email = {
         id: `msg_${messageIdCounter++}`,
         threadId: options.threadId || `thread_${messageIdCounter}`,
         labelIds: ['SENT'],
-        snippet: options.body.substring(0, 100),
+        snippet: bodyContent.substring(0, 100),
         historyId: '12348',
         internalDate: String(Date.now()),
         payload: {
-          mimeType: 'text/plain',
+          mimeType: options.htmlBody ? 'text/html' : 'text/plain',
           headers: [
             { name: 'Subject', value: options.subject },
             { name: 'From', value: 'me@example.com' },
@@ -280,8 +282,8 @@ function createMockClient(): IGmailClient {
             { name: 'Date', value: new Date().toISOString() },
           ],
           body: {
-            size: options.body.length,
-            data: Buffer.from(options.body).toString('base64url'),
+            size: bodyContent.length,
+            data: Buffer.from(bodyContent).toString('base64url'),
           },
         },
       };

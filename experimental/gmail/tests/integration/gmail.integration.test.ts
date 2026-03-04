@@ -168,31 +168,58 @@ describe('Gmail MCP Server Integration Tests', () => {
   });
 
   describe('draft_email', () => {
-    it('should create a draft', async () => {
+    it('should create a draft with plaintext_body', async () => {
       const result = await client!.callTool('draft_email', {
         to: 'recipient@example.com',
         subject: 'Test Subject',
-        body: 'Test body content',
+        plaintext_body: 'Test body content',
       });
 
       expect(result.content).toHaveLength(1);
       expect(result.content[0].type).toBe('text');
       expect(result.content[0].text).toContain('Draft created successfully');
       expect(result.content[0].text).toContain('Draft ID:');
+      expect(result.content[0].text).toContain('**Format:** Plain text');
+    });
+
+    it('should create a draft with html_body', async () => {
+      const result = await client!.callTool('draft_email', {
+        to: 'recipient@example.com',
+        subject: 'Test Subject',
+        html_body: '<p>Hello <b>World</b></p>',
+      });
+
+      expect(result.content).toHaveLength(1);
+      expect(result.content[0].type).toBe('text');
+      expect(result.content[0].text).toContain('Draft created successfully');
+      expect(result.content[0].text).toContain('**Format:** HTML');
     });
   });
 
   describe('send_email', () => {
-    it('should send a new email', async () => {
+    it('should send a new email with plaintext_body', async () => {
       const result = await client!.callTool('send_email', {
         to: 'recipient@example.com',
         subject: 'Test Subject',
-        body: 'Test body content',
+        plaintext_body: 'Test body content',
       });
 
       expect(result.content).toHaveLength(1);
       expect(result.content[0].type).toBe('text');
       expect(result.content[0].text).toContain('Email sent successfully');
+    });
+
+    it('should send a new email with html_body', async () => {
+      const result = await client!.callTool('send_email', {
+        to: 'recipient@example.com',
+        subject: 'Test Subject',
+        html_body: '<p>Hello <a href="https://example.com">World</a></p>',
+      });
+
+      expect(result.content).toHaveLength(1);
+      expect(result.content[0].type).toBe('text');
+      expect(result.content[0].text).toContain('Email sent successfully');
+      expect(result.content[0].text).toContain('**Format:** HTML');
     });
   });
 });

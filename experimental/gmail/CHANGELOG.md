@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-03-04
+
+### Changed
+
+- **BREAKING**: `draft_email` and `send_email` tools now use `plaintext_body` and `html_body` parameters instead of `body`
+  - At least one of `plaintext_body` or `html_body` must be provided
+  - If both are provided, a multipart/alternative email is sent with both versions
+  - Use `html_body` for rich text formatting (hyperlinks, bold, lists, etc.)
+  - Use `plaintext_body` for plain text emails
+  - When `html_body` is provided, the email is sent with `text/html` content type
+  - Addresses [issue #385](https://github.com/pulsemcp/mcp-servers/issues/385)
+
 ## [0.1.2] - 2026-02-22
 
 ### Added
