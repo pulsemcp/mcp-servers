@@ -202,7 +202,8 @@ describe('Gmail Client - Manual Tests', () => {
       const result = await client.callTool('draft_email', {
         to: recipient,
         subject: `[TEST] Draft created by manual test - ${new Date().toISOString()}`,
-        body: 'This is a test draft created by the Gmail MCP server manual tests.\n\nPlease delete this draft.',
+        plaintext_body:
+          'This is a test draft created by the Gmail MCP server manual tests.\n\nPlease delete this draft.',
       });
       expect(result.isError).toBeFalsy();
 
@@ -224,7 +225,8 @@ describe('Gmail Client - Manual Tests', () => {
       const result = await client.callTool('send_email', {
         to: recipientEmail,
         subject: `[TEST] Email sent by manual test - ${new Date().toISOString()}`,
-        body: 'This is a test email sent by the Gmail MCP server manual tests.\n\nPlease delete this email.',
+        plaintext_body:
+          'This is a test email sent by the Gmail MCP server manual tests.\n\nPlease delete this email.',
       });
       expect(result.isError).toBeFalsy();
 

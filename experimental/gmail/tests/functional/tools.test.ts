@@ -547,19 +547,37 @@ describe('Gmail MCP Server Tools', () => {
   });
 
   describe('draft_email', () => {
-    it('should create a draft', async () => {
+    it('should create a draft with plaintext_body', async () => {
       const tool = draftEmailTool(mockServer, () => mockClient);
       const result = await tool.handler({
         to: 'recipient@example.com',
         subject: 'Test Subject',
-        body: 'Test body content',
+        plaintext_body: 'Test body content',
       });
 
       expect(result.content[0].text).toContain('Draft created successfully');
       expect(result.content[0].text).toContain('Draft ID:');
       expect(result.content[0].text).toContain('recipient@example.com');
       expect(result.content[0].text).toContain('Test Subject');
+      expect(result.content[0].text).toContain('**Format:** Plain text');
       expect(mockClient.createDraft).toHaveBeenCalled();
+    });
+
+    it('should create a draft with html_body', async () => {
+      const tool = draftEmailTool(mockServer, () => mockClient);
+      const result = await tool.handler({
+        to: 'recipient@example.com',
+        subject: 'Test Subject',
+        html_body: '<p>Hello <b>World</b></p>',
+      });
+
+      expect(result.content[0].text).toContain('Draft created successfully');
+      expect(result.content[0].text).toContain('**Format:** HTML');
+      expect(mockClient.createDraft).toHaveBeenCalledWith(
+        expect.objectContaining({
+          htmlBody: '<p>Hello <b>World</b></p>',
+        })
+      );
     });
 
     it('should create a draft with CC and BCC', async () => {
@@ -567,7 +585,7 @@ describe('Gmail MCP Server Tools', () => {
       const result = await tool.handler({
         to: 'recipient@example.com',
         subject: 'Test Subject',
-        body: 'Test body content',
+        plaintext_body: 'Test body content',
         cc: 'cc@example.com',
         bcc: 'bcc@example.com',
       });
@@ -582,7 +600,7 @@ describe('Gmail MCP Server Tools', () => {
       const result = await tool.handler({
         to: 'recipient@example.com',
         subject: 'Re: Test Subject',
-        body: 'Test reply content',
+        plaintext_body: 'Test reply content',
         thread_id: 'thread_001',
         reply_to_email_id: 'msg_001',
       });
@@ -592,7 +610,17 @@ describe('Gmail MCP Server Tools', () => {
       expect(result.content[0].text).toContain('reply in an existing conversation');
     });
 
-    it('should require to, subject, and body parameters', async () => {
+    it('should require at least one of plaintext_body or html_body', async () => {
+      const tool = draftEmailTool(mockServer, () => mockClient);
+      const result = await tool.handler({
+        to: 'test@example.com',
+        subject: 'Test Subject',
+      });
+
+      expect(result.isError).toBe(true);
+    });
+
+    it('should require to and subject parameters', async () => {
       const tool = draftEmailTool(mockServer, () => mockClient);
       const result = await tool.handler({ to: 'test@example.com' });
 
@@ -601,18 +629,36 @@ describe('Gmail MCP Server Tools', () => {
   });
 
   describe('send_email', () => {
-    it('should send a new email', async () => {
+    it('should send a new email with plaintext_body', async () => {
       const tool = sendEmailTool(mockServer, () => mockClient);
       const result = await tool.handler({
         to: 'recipient@example.com',
         subject: 'Test Subject',
-        body: 'Test body content',
+        plaintext_body: 'Test body content',
       });
 
       expect(result.content[0].text).toContain('Email sent successfully');
       expect(result.content[0].text).toContain('Message ID:');
       expect(result.content[0].text).toContain('Thread ID:');
+      expect(result.content[0].text).toContain('**Format:** Plain text');
       expect(mockClient.sendMessage).toHaveBeenCalled();
+    });
+
+    it('should send a new email with html_body', async () => {
+      const tool = sendEmailTool(mockServer, () => mockClient);
+      const result = await tool.handler({
+        to: 'recipient@example.com',
+        subject: 'Test Subject',
+        html_body: '<p>Hello <a href="https://example.com">World</a></p>',
+      });
+
+      expect(result.content[0].text).toContain('Email sent successfully');
+      expect(result.content[0].text).toContain('**Format:** HTML');
+      expect(mockClient.sendMessage).toHaveBeenCalledWith(
+        expect.objectContaining({
+          htmlBody: '<p>Hello <a href="https://example.com">World</a></p>',
+        })
+      );
     });
 
     it('should send a draft', async () => {
@@ -620,7 +666,7 @@ describe('Gmail MCP Server Tools', () => {
       await (mockClient.createDraft as ReturnType<typeof vi.fn>)({
         to: 'test@example.com',
         subject: 'Test',
-        body: 'Test',
+        plaintextBody: 'Test',
       });
 
       const tool = sendEmailTool(mockServer, () => mockClient);
@@ -637,7 +683,7 @@ describe('Gmail MCP Server Tools', () => {
       const result = await tool.handler({
         to: 'recipient@example.com',
         subject: 'Re: Test Subject',
-        body: 'Test reply content',
+        plaintext_body: 'Test reply content',
         thread_id: 'thread_001',
         reply_to_email_id: 'msg_001',
       });
@@ -653,6 +699,16 @@ describe('Gmail MCP Server Tools', () => {
       expect(result.isError).toBe(true);
     });
 
+    it('should reject when to and subject provided but no body', async () => {
+      const tool = sendEmailTool(mockServer, () => mockClient);
+      const result = await tool.handler({
+        to: 'test@example.com',
+        subject: 'Test',
+      });
+
+      expect(result.isError).toBe(true);
+    });
+
     it('should handle send error', async () => {
       (mockClient.sendMessage as ReturnType<typeof vi.fn>).mockRejectedValue(
         new Error('Failed to send')
@@ -661,7 +717,7 @@ describe('Gmail MCP Server Tools', () => {
       const result = await tool.handler({
         to: 'test@example.com',
         subject: 'Test',
-        body: 'Test',
+        plaintext_body: 'Test',
       });
 
       expect(result.isError).toBe(true);

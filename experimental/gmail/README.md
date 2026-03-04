@@ -262,17 +262,32 @@ Create a draft email, optionally as a reply to an existing conversation.
 
 - `to` (string, required): Recipient email address
 - `subject` (string, required): Email subject
-- `body` (string, required): Email body (plain text)
+- `plaintext_body` (string): Plain text body content (provide this OR html_body)
+- `html_body` (string): HTML body content for rich text formatting (provide this OR plaintext_body)
+- `cc` (string, optional): CC recipients
+- `bcc` (string, optional): BCC recipients
 - `thread_id` (string, optional): Thread ID for replies
 - `reply_to_email_id` (string, optional): Email ID to reply to (sets References/In-Reply-To headers)
 
-**Example:**
+Exactly one of `plaintext_body` or `html_body` must be provided.
+
+**Example (plain text):**
 
 ```json
 {
   "to": "recipient@example.com",
   "subject": "Meeting Follow-up",
-  "body": "Thanks for the meeting today!"
+  "plaintext_body": "Thanks for the meeting today!"
+}
+```
+
+**Example (HTML):**
+
+```json
+{
+  "to": "recipient@example.com",
+  "subject": "Meeting Follow-up",
+  "html_body": "<p>Thanks for the meeting today! Check out <a href=\"https://example.com/notes\">the notes</a>.</p>"
 }
 ```
 
@@ -284,18 +299,31 @@ Send an email directly or from an existing draft.
 
 - `to` (string, conditional): Recipient email (required unless sending from draft)
 - `subject` (string, conditional): Email subject (required unless sending from draft)
-- `body` (string, conditional): Email body (required unless sending from draft)
+- `plaintext_body` (string): Plain text body content (provide this OR html_body, unless sending a draft)
+- `html_body` (string): HTML body content for rich text formatting (provide this OR plaintext_body, unless sending a draft)
+- `cc` (string, optional): CC recipients
+- `bcc` (string, optional): BCC recipients
 - `from_draft_id` (string, optional): Send an existing draft by ID
 - `thread_id` (string, optional): Thread ID for replies
 - `reply_to_email_id` (string, optional): Email ID to reply to
 
-**Example (new email):**
+**Example (plain text email):**
 
 ```json
 {
   "to": "recipient@example.com",
   "subject": "Hello",
-  "body": "This is a test email."
+  "plaintext_body": "This is a test email."
+}
+```
+
+**Example (HTML email):**
+
+```json
+{
+  "to": "recipient@example.com",
+  "subject": "Hello",
+  "html_body": "<p>Check out <a href=\"https://example.com\">our website</a> for more details.</p>"
 }
 ```
 

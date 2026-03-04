@@ -69,7 +69,8 @@ export interface IGmailClient {
   createDraft(options: {
     to: string;
     subject: string;
-    body: string;
+    plaintextBody?: string;
+    htmlBody?: string;
     cc?: string;
     bcc?: string;
     threadId?: string;
@@ -102,7 +103,8 @@ export interface IGmailClient {
   sendMessage(options: {
     to: string;
     subject: string;
-    body: string;
+    plaintextBody?: string;
+    htmlBody?: string;
     cc?: string;
     bcc?: string;
     threadId?: string;
@@ -239,7 +241,8 @@ abstract class BaseGmailClient implements IGmailClient {
   async createDraft(options: {
     to: string;
     subject: string;
-    body: string;
+    plaintextBody?: string;
+    htmlBody?: string;
     cc?: string;
     bcc?: string;
     threadId?: string;
@@ -277,7 +280,8 @@ abstract class BaseGmailClient implements IGmailClient {
   async sendMessage(options: {
     to: string;
     subject: string;
-    body: string;
+    plaintextBody?: string;
+    htmlBody?: string;
     cc?: string;
     bcc?: string;
     threadId?: string;

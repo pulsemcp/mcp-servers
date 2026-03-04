@@ -12,7 +12,8 @@ export async function sendMessage(
   options: {
     to: string;
     subject: string;
-    body: string;
+    plaintextBody?: string;
+    htmlBody?: string;
     cc?: string;
     bcc?: string;
     threadId?: string;
