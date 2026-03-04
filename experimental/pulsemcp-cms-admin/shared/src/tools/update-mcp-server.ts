@@ -33,8 +33,8 @@ const PARAM_DESCRIPTIONS = {
 const CanonicalUrlSchema = z.object({
   url: z.string().describe('The canonical URL'),
   scope: z
-    .enum(['domain', 'subdomain', 'subfolder', 'url'])
-    .describe('Scope of the canonical: domain, subdomain, subfolder, or url (exact match)'),
+    .enum(['domain', 'subdomain', 'url'])
+    .describe('Scope of the canonical: domain, subdomain, or url (exact match)'),
   note: z.string().optional().describe('Optional note about this canonical URL'),
 });
 
@@ -138,7 +138,7 @@ Providing canonical_urls replaces ALL existing canonical URLs:
 {
   "implementation_id": 456,
   "canonical_urls": [
-    { "url": "https://github.com/org/repo", "scope": "subfolder" },
+    { "url": "https://github.com/org/repo", "scope": "domain" },
     { "url": "https://npmjs.com/package/name", "scope": "url" }
   ]
 }
@@ -249,7 +249,7 @@ Create new provider:
               url: { type: 'string', description: 'The canonical URL' },
               scope: {
                 type: 'string',
-                enum: ['domain', 'subdomain', 'subfolder', 'url'],
+                enum: ['domain', 'subdomain', 'url'],
                 description: 'Scope of the canonical',
               },
               note: { type: 'string', description: 'Optional note' },

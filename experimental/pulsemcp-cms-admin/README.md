@@ -215,7 +215,7 @@ TOOL_GROUPS=newsletter,server_directory_readonly
 - Enable or disable specific tool groups by setting `TOOL_GROUPS` environment variable
 - Use `_readonly` suffixes to restrict groups to read-only operations (e.g., `server_directory_readonly`)
 - Use the `remote` array parameter in `save_mcp_implementation` to configure remote endpoints for MCP servers (transport, host_platform, authentication_method, etc.)
-- Use the `canonical` array parameter in `save_mcp_implementation` to set canonical URLs with scope (domain, subdomain, subfolder, or url)
+- Use the `canonical` array parameter in `save_mcp_implementation` to set canonical URLs with scope (domain, subdomain, or url)
 - Remote endpoints allow specifying how MCP servers can be accessed (direct URL, setup URL, authentication method, cost, etc.)
 - When updating existing remotes, include the remote `id` (number from `get_draft_mcp_implementations`) in the remote object
 - Use `list_mcp_servers` to browse MCP servers with filtering by status (draft/live/archived) and classification (official/community)

@@ -116,7 +116,7 @@ export interface RemoteEndpointParams {
 
 export interface CanonicalUrlParams {
   url: string;
-  scope: 'domain' | 'subdomain' | 'subfolder' | 'url';
+  scope: 'domain' | 'subdomain' | 'url';
   note?: string;
 }
 

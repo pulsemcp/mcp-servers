@@ -879,7 +879,7 @@ Added canonical URL management with scoped definitions:
 
 - `canonical`: Array of canonical URL configurations
   - `url`: The canonical URL
-  - `scope`: Scope level (domain, subdomain, subfolder, url)
+  - `scope`: Scope level (domain, subdomain, url)
   - `note`: Optional explanatory note
 
 **Important**: The API uses replacement semantics - sending canonical data replaces all existing canonicals.
