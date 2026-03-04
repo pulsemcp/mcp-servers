@@ -620,6 +620,25 @@ describe('Gmail MCP Server Tools', () => {
       expect(result.isError).toBe(true);
     });
 
+    it('should create a multipart draft when both plaintext_body and html_body are provided', async () => {
+      const tool = draftEmailTool(mockServer, () => mockClient);
+      const result = await tool.handler({
+        to: 'recipient@example.com',
+        subject: 'Test Subject',
+        plaintext_body: 'Plain text version',
+        html_body: '<p>HTML version</p>',
+      });
+
+      expect(result.content[0].text).toContain('Draft created successfully');
+      expect(result.content[0].text).toContain('**Format:** Multipart (plain text + HTML)');
+      expect(mockClient.createDraft).toHaveBeenCalledWith(
+        expect.objectContaining({
+          plaintextBody: 'Plain text version',
+          htmlBody: '<p>HTML version</p>',
+        })
+      );
+    });
+
     it('should require to and subject parameters', async () => {
       const tool = draftEmailTool(mockServer, () => mockClient);
       const result = await tool.handler({ to: 'test@example.com' });
@@ -661,6 +680,25 @@ describe('Gmail MCP Server Tools', () => {
       );
     });
 
+    it('should send a multipart email when both plaintext_body and html_body are provided', async () => {
+      const tool = sendEmailTool(mockServer, () => mockClient);
+      const result = await tool.handler({
+        to: 'recipient@example.com',
+        subject: 'Test Subject',
+        plaintext_body: 'Plain text version',
+        html_body: '<p>HTML version</p>',
+      });
+
+      expect(result.content[0].text).toContain('Email sent successfully');
+      expect(result.content[0].text).toContain('**Format:** Multipart (plain text + HTML)');
+      expect(mockClient.sendMessage).toHaveBeenCalledWith(
+        expect.objectContaining({
+          plaintextBody: 'Plain text version',
+          htmlBody: '<p>HTML version</p>',
+        })
+      );
+    });
+
     it('should send a draft', async () => {
       // First create a draft
       await (mockClient.createDraft as ReturnType<typeof vi.fn>)({
@@ -692,7 +730,7 @@ describe('Gmail MCP Server Tools', () => {
       expect(result.content[0].text).toContain('reply in an existing conversation');
     });
 
-    it('should require either from_draft_id OR to/subject/body', async () => {
+    it('should require either from_draft_id OR to/subject/plaintext_body|html_body', async () => {
       const tool = sendEmailTool(mockServer, () => mockClient);
       const result = await tool.handler({});
 

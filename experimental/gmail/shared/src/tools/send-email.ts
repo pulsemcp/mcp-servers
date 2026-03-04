@@ -7,9 +7,9 @@ const PARAM_DESCRIPTIONS = {
   to: 'Recipient email address(es). For multiple recipients, separate with commas.',
   subject: 'Subject line of the email.',
   plaintext_body:
-    'Plain text body content of the email. Exactly one of plaintext_body or html_body must be provided (unless sending a draft).',
+    'Plain text body content of the email. At least one of plaintext_body or html_body must be provided (unless sending a draft). If both are provided, a multipart email is sent with both versions.',
   html_body:
-    'HTML body content of the email for rich text formatting (links, bold, lists, etc.). Exactly one of plaintext_body or html_body must be provided (unless sending a draft).',
+    'HTML body content of the email for rich text formatting (links, bold, lists, etc.). At least one of plaintext_body or html_body must be provided (unless sending a draft). If both are provided, a multipart email is sent with both versions.',
   cc: 'CC recipient email address(es). For multiple, separate with commas.',
   bcc: 'BCC recipient email address(es). For multiple, separate with commas.',
   thread_id:
@@ -27,8 +27,8 @@ export const SendEmailSchema = z
   .object({
     to: z.string().optional().describe(PARAM_DESCRIPTIONS.to),
     subject: z.string().optional().describe(PARAM_DESCRIPTIONS.subject),
-    plaintext_body: z.string().optional().describe(PARAM_DESCRIPTIONS.plaintext_body),
-    html_body: z.string().optional().describe(PARAM_DESCRIPTIONS.html_body),
+    plaintext_body: z.string().min(1).optional().describe(PARAM_DESCRIPTIONS.plaintext_body),
+    html_body: z.string().min(1).optional().describe(PARAM_DESCRIPTIONS.html_body),
     cc: z.string().optional().describe(PARAM_DESCRIPTIONS.cc),
     bcc: z.string().optional().describe(PARAM_DESCRIPTIONS.bcc),
     thread_id: z.string().optional().describe(PARAM_DESCRIPTIONS.thread_id),
@@ -45,7 +45,7 @@ export const SendEmailSchema = z
     },
     {
       message:
-        'Either provide from_draft_id to send a draft, or provide to, subject, and one of plaintext_body or html_body to send a new email.',
+        'Either provide from_draft_id to send a draft, or provide to, subject, and at least one of plaintext_body or html_body to send a new email.',
     }
   );
 
@@ -54,8 +54,8 @@ const TOOL_DESCRIPTION = `Send an email immediately or send a previously created
 **Option 1: Send a new email**
 - to: Recipient email address(es) (required)
 - subject: Email subject line (required)
-- plaintext_body: Plain text body content (provide this OR html_body)
-- html_body: HTML body content for rich text formatting (provide this OR plaintext_body)
+- plaintext_body: Plain text body content (at least one of plaintext_body or html_body required)
+- html_body: HTML body content for rich text formatting (at least one of plaintext_body or html_body required)
 - cc: CC recipients (optional)
 - bcc: BCC recipients (optional)
 - thread_id: Thread ID to reply to an existing conversation (optional)
@@ -65,7 +65,7 @@ const TOOL_DESCRIPTION = `Send an email immediately or send a previously created
 - from_draft_id: ID of the draft to send (all other parameters are ignored)
 
 **Body content:**
-Provide exactly one of plaintext_body or html_body. Use html_body for rich formatting like hyperlinks, bold text, or lists.
+At least one of plaintext_body or html_body must be provided. If both are provided, a multipart email is sent with both plain text and HTML versions. Use html_body for rich formatting like hyperlinks, bold text, or lists.
 
 **Sending a reply:**
 To send a reply to an existing email:
@@ -189,7 +189,13 @@ export function sendEmailTool(server: Server, clientFactory: ClientFactory) {
 
         responseText += `\n\n**To:** ${to}`;
         responseText += `\n**Subject:** ${subject}`;
-        responseText += `\n**Format:** ${parsed.html_body ? 'HTML' : 'Plain text'}`;
+        const format =
+          parsed.plaintext_body && parsed.html_body
+            ? 'Multipart (plain text + HTML)'
+            : parsed.html_body
+              ? 'HTML'
+              : 'Plain text';
+        responseText += `\n**Format:** ${format}`;
         if (parsed.cc) {
           responseText += `\n**CC:** ${parsed.cc}`;
         }

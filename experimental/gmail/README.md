@@ -262,14 +262,14 @@ Create a draft email, optionally as a reply to an existing conversation.
 
 - `to` (string, required): Recipient email address
 - `subject` (string, required): Email subject
-- `plaintext_body` (string): Plain text body content (provide this OR html_body)
-- `html_body` (string): HTML body content for rich text formatting (provide this OR plaintext_body)
+- `plaintext_body` (string): Plain text body content (at least one of plaintext_body or html_body required)
+- `html_body` (string): HTML body content for rich text formatting (at least one of plaintext_body or html_body required)
 - `cc` (string, optional): CC recipients
 - `bcc` (string, optional): BCC recipients
 - `thread_id` (string, optional): Thread ID for replies
 - `reply_to_email_id` (string, optional): Email ID to reply to (sets References/In-Reply-To headers)
 
-Exactly one of `plaintext_body` or `html_body` must be provided.
+At least one of `plaintext_body` or `html_body` must be provided. If both are provided, a multipart email is sent with both versions.
 
 **Example (plain text):**
 
@@ -299,8 +299,8 @@ Send an email directly or from an existing draft.
 
 - `to` (string, conditional): Recipient email (required unless sending from draft)
 - `subject` (string, conditional): Email subject (required unless sending from draft)
-- `plaintext_body` (string): Plain text body content (provide this OR html_body, unless sending a draft)
-- `html_body` (string): HTML body content for rich text formatting (provide this OR plaintext_body, unless sending a draft)
+- `plaintext_body` (string): Plain text body content (at least one of plaintext_body or html_body required, unless sending a draft)
+- `html_body` (string): HTML body content for rich text formatting (at least one of plaintext_body or html_body required, unless sending a draft)
 - `cc` (string, optional): CC recipients
 - `bcc` (string, optional): BCC recipients
 - `from_draft_id` (string, optional): Send an existing draft by ID
