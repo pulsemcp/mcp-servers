@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-03-04
+
 ### Changed
 
 - **BREAKING**: `draft_email` and `send_email` tools now use `plaintext_body` and `html_body` parameters instead of `body`
