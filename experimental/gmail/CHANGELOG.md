@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-03-05
+
+### Fixed
+
+- UTF-8 characters in email subject lines (e.g., em dashes, accented characters, emoji) are now properly encoded using RFC 2047 encoded-words, preventing character corruption in Gmail
+  - Addresses [issue #388](https://github.com/pulsemcp/mcp-servers/issues/388) (Bug 1)
+- Leading newlines in email body content are now stripped to prevent extra blank lines at the top of draft and sent emails
+  - Addresses [issue #388](https://github.com/pulsemcp/mcp-servers/issues/388) (Bug 2)
+
 ## [0.2.0] - 2026-03-04
 
 ### Changed

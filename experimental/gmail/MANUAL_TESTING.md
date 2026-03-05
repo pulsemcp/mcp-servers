@@ -67,61 +67,42 @@ The tests will:
 
 ## Latest Test Results
 
-**Test Date:** 2026-03-04
-**Branch:** claude/gmail-html-body-support
-**Commit:** 4d1634a
+**Test Date:** 2026-03-05
+**Branch:** claude/fix-gmail-encoding-issues
+**Commit:** 9be3fff
 **Tested By:** Claude Code
-**Environment:** Service account authentication, impersonating tadas@tadasant.com
+**Environment:** Functional tests only (MIME-only fix, no API interaction changes)
 
 ### Test Results
 
-**Manual Tests (real Gmail API): 12 passed (12)**
+**Manual Tests (real Gmail API): Not re-run**
 
-```
-gmail-client.test.ts: 8 passed (8)
-  - list_email_conversations: list conversations from inbox (2404ms)
-  - list_email_conversations: filter by query (663ms)
-  - search_email_conversations: search for conversations (440ms)
-  - get_email_conversation: get conversation with full details (639ms)
-  - change_email_conversation: modify labels (star/unstar) (990ms)
-  - draft_email: create a draft with plaintext_body (346ms)
-  - send_email: send a test email with plaintext_body (376ms)
-  - download_email_attachments: download attachments (819ms)
-download-attachments.test.ts: 4 passed (4)
-  - save attachment to /tmp/ and return file path (1413ms)
-  - produce uncorrupted file matching direct API download byte-for-byte (762ms)
-  - return inline content when inline=true (378ms)
-  - download all attachments when no filename specified (467ms)
-```
+> Manual tests were not re-run for v0.2.1 because the changes are purely to MIME message construction logic (`mime-utils.ts`): RFC 2047 subject encoding and leading newline stripping. No API interaction code was modified. The previous manual test results from v0.2.0 (commit 4d1634a) remain valid for API integration correctness.
 
 **Automated Tests (mocked):**
 
 ```
-Functional Tests: 87 passed (87)
-  - auth.test.ts: 12 tests (OAuth2 + service account client creation, preference, error cases, partial credential warnings)
-  - tools.test.ts: 70 tests (all tool tests including new plaintext_body/html_body tests for draft_email and send_email)
+Functional Tests: 108 passed (108)
+  - mime-utils.test.ts: 19 tests (plain text, HTML, multipart, CC/BCC, reply headers, empty body,
+    RFC 2047 encoding for non-ASCII subjects, leading newline stripping, encodeSubject unit tests)
+  - auth.test.ts: 12 tests (OAuth2 + service account client creation, preference, error cases)
+  - tools.test.ts: 72 tests (all tool tests including draft_email and send_email)
   - oauth-setup.test.ts: 5 tests (CLI argument validation, env var fallback, OAuth flow initiation)
-Integration Tests: 17 passed (17)
-  - 2 draft_email tests (plaintext_body + html_body)
-  - 2 send_email tests (plaintext_body + html_body)
-  - 4 download_email_attachments integration tests
-  - 9 other integration tests (list, get, search, change, setup)
-Total: 116 tests passing (12 manual + 87 functional + 17 integration)
 ```
 
-**Overall:** All tests passed
+**Overall:** All 108 functional tests passed
 
 ### Notes
 
-- **BREAKING**: `body` parameter replaced with `plaintext_body` and `html_body` in `draft_email` and `send_email` tools
-- Manual tests confirmed draft creation and email sending work end-to-end with the new `plaintext_body` parameter against the real Gmail API
-- MIME message builder now supports text/html content type and multipart/alternative when both are provided
-- All mock clients (functional and integration) updated to handle new parameter names
+- RFC 2047 `=?UTF-8?B?...?=` encoding added for non-ASCII email subjects (em dashes, accented chars, emoji, CJK)
+- Leading `\r\n` and `\n` characters stripped from body content to prevent extra blank lines
+- 12 new test cases added: 7 for buildMimeMessage (encoding + newline stripping) and 5 for encodeSubject
 
 ## Historical Test Runs
 
 | Date       | Commit  | Status | Notes                                                                                     |
 | ---------- | ------- | ------ | ----------------------------------------------------------------------------------------- |
+| 2026-03-05 | 9be3fff | PASS   | v0.2.1 - MIME encoding fixes, 108 functional (no API changes, manual tests not re-run)    |
 | 2026-03-04 | 4d1634a | PASS   | v0.2.0 - HTML body support, 12 manual + 87 functional + 17 integration                    |
 | 2026-02-22 | 04bed3a | PASS   | v0.1.2 - oauth-setup CLI subcommand, 83 functional + 15 integration (no API code changes) |
 | 2026-02-09 | 2e45bf6 | PASS   | v0.1.1 - download_email_attachments, 17 manual + 66 functional + 15 integration           |
