@@ -1,5 +1,9 @@
 import { describe, it, expect } from 'vitest';
-import { buildMimeMessage, toBase64Url } from '../../shared/src/gmail-client/lib/mime-utils.js';
+import {
+  buildMimeMessage,
+  toBase64Url,
+  encodeSubject,
+} from '../../shared/src/gmail-client/lib/mime-utils.js';
 
 describe('MIME Utilities', () => {
   describe('buildMimeMessage', () => {
@@ -103,6 +107,116 @@ describe('MIME Utilities', () => {
       expect(result).toContain('Content-Type: text/plain; charset=utf-8');
       // Should end with headers + empty body
       expect(result).toMatch(/charset=utf-8\r\n\r\n$/);
+    });
+
+    it('should encode non-ASCII subject with RFC 2047', () => {
+      const result = buildMimeMessage('sender@example.com', {
+        to: 'recipient@example.com',
+        subject: 'PulseMCP x Fieldguide — Engagement Proposal',
+        plaintextBody: 'Hello',
+      });
+
+      // Should contain RFC 2047 encoded subject, not raw UTF-8
+      expect(result).toContain('Subject: =?UTF-8?B?');
+      expect(result).not.toContain('Subject: PulseMCP x Fieldguide —');
+    });
+
+    it('should not encode ASCII-only subject', () => {
+      const result = buildMimeMessage('sender@example.com', {
+        to: 'recipient@example.com',
+        subject: 'Plain ASCII Subject',
+        plaintextBody: 'Hello',
+      });
+
+      expect(result).toContain('Subject: Plain ASCII Subject');
+      expect(result).not.toContain('=?UTF-8?B?');
+    });
+
+    it('should strip leading newlines from plaintext body', () => {
+      const result = buildMimeMessage('sender@example.com', {
+        to: 'recipient@example.com',
+        subject: 'Test',
+        plaintextBody: '\n\nHello, World!',
+      });
+
+      // Body should start immediately after header separator, no leading newlines
+      expect(result).toMatch(/charset=utf-8\r\n\r\nHello, World!$/);
+    });
+
+    it('should strip leading CRLF from plaintext body', () => {
+      const result = buildMimeMessage('sender@example.com', {
+        to: 'recipient@example.com',
+        subject: 'Test',
+        plaintextBody: '\r\n\r\nHello, World!',
+      });
+
+      expect(result).toMatch(/charset=utf-8\r\n\r\nHello, World!$/);
+    });
+
+    it('should strip leading newlines from HTML body', () => {
+      const result = buildMimeMessage('sender@example.com', {
+        to: 'recipient@example.com',
+        subject: 'Test',
+        htmlBody: '\n<p>Hello</p>',
+      });
+
+      expect(result).toMatch(/charset=utf-8\r\n\r\n<p>Hello<\/p>$/);
+    });
+
+    it('should strip leading newlines from both bodies in multipart message', () => {
+      const result = buildMimeMessage('sender@example.com', {
+        to: 'recipient@example.com',
+        subject: 'Test',
+        plaintextBody: '\nPlain text',
+        htmlBody: '\n<p>HTML</p>',
+      });
+
+      // Neither body part should have leading newlines
+      expect(result).toContain('charset=utf-8\r\n\r\nPlain text');
+      expect(result).toContain('charset=utf-8\r\n\r\n<p>HTML</p>');
+    });
+  });
+
+  describe('encodeSubject', () => {
+    it('should return ASCII subjects unchanged', () => {
+      expect(encodeSubject('Hello World')).toBe('Hello World');
+    });
+
+    it('should encode subjects with em dash', () => {
+      const result = encodeSubject('PulseMCP x Fieldguide — Engagement Proposal');
+      expect(result).toMatch(/^=\?UTF-8\?B\?.+\?=$/);
+
+      // Verify the encoding decodes back correctly
+      const base64Part = result.replace('=?UTF-8?B?', '').replace('?=', '');
+      const decoded = Buffer.from(base64Part, 'base64').toString('utf-8');
+      expect(decoded).toBe('PulseMCP x Fieldguide — Engagement Proposal');
+    });
+
+    it('should encode subjects with emoji', () => {
+      const result = encodeSubject('Hello 🌍 World');
+      expect(result).toMatch(/^=\?UTF-8\?B\?.+\?=$/);
+
+      const base64Part = result.replace('=?UTF-8?B?', '').replace('?=', '');
+      const decoded = Buffer.from(base64Part, 'base64').toString('utf-8');
+      expect(decoded).toBe('Hello 🌍 World');
+    });
+
+    it('should encode subjects with accented characters', () => {
+      const result = encodeSubject('Réunion à Paris');
+      expect(result).toMatch(/^=\?UTF-8\?B\?.+\?=$/);
+
+      const base64Part = result.replace('=?UTF-8?B?', '').replace('?=', '');
+      const decoded = Buffer.from(base64Part, 'base64').toString('utf-8');
+      expect(decoded).toBe('Réunion à Paris');
+    });
+
+    it('should encode subjects with CJK characters', () => {
+      const result = encodeSubject('会議の議題');
+      expect(result).toMatch(/^=\?UTF-8\?B\?.+\?=$/);
+
+      const base64Part = result.replace('=?UTF-8?B?', '').replace('?=', '');
+      const decoded = Buffer.from(base64Part, 'base64').toString('utf-8');
+      expect(decoded).toBe('会議の議題');
     });
   });
 
