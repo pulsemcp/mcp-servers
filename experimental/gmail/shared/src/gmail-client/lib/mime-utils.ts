@@ -16,11 +16,15 @@ export interface MimeMessageOptions {
 /**
  * Encodes a string as an RFC 2047 encoded-word using UTF-8 and Base64.
  * Only encodes if the string contains non-ASCII characters.
+ *
+ * Note: RFC 2047 limits encoded-words to 75 characters. Very long non-ASCII
+ * subjects should technically be split into multiple encoded-words separated
+ * by folding whitespace. In practice, Gmail handles oversized encoded-words
+ * correctly, so we encode as a single word for simplicity.
  */
 export function encodeSubject(subject: string): string {
-  // Check if subject contains non-ASCII characters
-  const hasNonAscii = subject.split('').some((char) => char.charCodeAt(0) > 127);
-  if (!hasNonAscii) {
+  // eslint-disable-next-line no-control-regex
+  if (!/[^\x00-\x7F]/.test(subject)) {
     return subject;
   }
   const encoded = Buffer.from(subject, 'utf-8').toString('base64');
@@ -28,11 +32,11 @@ export function encodeSubject(subject: string): string {
 }
 
 /**
- * Strips leading newline characters (\r\n and \n) from email body content.
+ * Strips leading newline characters (\r\n, \n, and bare \r) from email body content.
  * Prevents extra blank lines at the top of the email when displayed in Gmail.
  */
 function stripLeadingNewlines(body: string): string {
-  return body.replace(/^(\r\n|\n)+/, '');
+  return body.replace(/^[\r\n]+/, '');
 }
 
 /**
