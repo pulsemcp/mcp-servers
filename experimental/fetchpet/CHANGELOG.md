@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.3] - 2026-03-05
+
+### Fixed
+
+- Fix `submit_claim` failing with 30-second timeout because the MuiDialog scroll container intercepts pointer events on the submit button. The claim form dialog content overflows the viewport (submit button at Y≈1308 vs viewport height 1080), and Playwright's `click()` cannot click through the `MuiDialog-container MuiDialog-scrollPaper` overlay. Now uses JavaScript `scrollIntoView()` + `click()` via `page.evaluate()` to bypass Playwright's actionability checks (#391)
+
 ## [0.1.2] - 2026-02-20
 
 ### Fixed

@@ -104,6 +104,33 @@ export class FetchPetClient implements IFetchPetClient {
   }
 
   /**
+   * Click a button inside the MuiDialog claim form using JavaScript.
+   *
+   * The claim form is rendered as a MuiDialog (`MuiDialog-root generic-dialog`)
+   * whose content is taller than the viewport. The `MuiDialog-container
+   * MuiDialog-scrollPaper` div intercepts pointer events on buttons that are
+   * below the visible scroll area (e.g., Submit at Y=1308 vs viewport height
+   * 1080). Playwright's built-in click() respects actionability checks and
+   * will time out because it cannot click through the scroll container.
+   *
+   * Using page.evaluate() to scrollIntoView + click() in JavaScript bypasses
+   * this Playwright limitation and reliably clicks buttons anywhere in the
+   * dialog, regardless of scroll position.
+   */
+  private async clickButtonInDialog(
+    page: import('playwright').Page,
+    buttonSelector: string
+  ): Promise<boolean> {
+    return page.evaluate((selector) => {
+      const btn = document.querySelector(selector);
+      if (!btn || !(btn instanceof HTMLElement)) return false;
+      btn.scrollIntoView({ block: 'center' });
+      btn.click();
+      return true;
+    }, buttonSelector);
+  }
+
+  /**
    * Extract claim data from active claim cards on the current page.
    * The history tab uses extractHistoricalClaimsFromPage instead,
    * due to a completely different DOM structure.
@@ -631,19 +658,20 @@ The user MUST explicitly confirm they want to submit this claim before calling s
       };
     }
 
-    // Find and click the submit button on the claim form
-    const submitButton = await page.$(
-      'button.filled-btn:has-text("Submit"), button[type="submit"]:has-text("Submit"), button:has-text("File Claim"), button:has-text("Submit Claim")'
-    );
+    // Click the submit button using JavaScript to bypass Playwright's actionability
+    // checks. The claim form is a MuiDialog whose content overflows the viewport —
+    // the Submit button sits below the visible scroll area (e.g. at Y=1308 vs
+    // viewport height 1080). Playwright's click() times out because the
+    // MuiDialog-container MuiDialog-scrollPaper div intercepts pointer events.
+    // Using page.evaluate() to scrollIntoView + click bypasses this limitation.
+    const clicked = await this.clickButtonInDialog(page, 'button.filled-btn');
 
-    if (!submitButton) {
+    if (!clicked) {
       return {
         success: false,
         message: 'Could not find submit button on the page',
       };
     }
-
-    await submitButton.click();
 
     // After clicking Submit, a confirmation dialog may appear (e.g., "Medical records
     // required to process your claim") with "Go Back" and "Submit anyway" buttons.
