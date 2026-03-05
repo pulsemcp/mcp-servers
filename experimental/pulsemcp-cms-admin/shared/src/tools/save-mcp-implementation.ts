@@ -42,7 +42,7 @@ const PARAM_DESCRIPTIONS = {
     'Array of remote endpoint configurations for MCP servers. Each remote can have: id (existing remote ID or blank for new), url_direct, url_setup, transport (e.g., "sse"), host_platform (e.g., "smithery"), host_infrastructure (e.g., "cloudflare"), authentication_method (e.g., "open"), cost (e.g., "free"), status (defaults to "live"), display_name, and internal_notes.',
   // Canonical URLs
   canonical:
-    'Array of canonical URL configurations. Each entry must have: url (the canonical URL), scope (one of "domain", "subdomain", "subfolder", or "url"), and optional note for additional context.',
+    'Array of canonical URL configurations. Each entry must have: url (the canonical URL), scope (one of "domain", "subdomain", or "url"), and optional note for additional context.',
   // Other fields
   internal_notes:
     'Admin-only notes. Not displayed publicly. Used for tracking submission sources, reviewer comments, etc.',
@@ -104,7 +104,7 @@ const SaveMCPImplementationSchema = z.object({
     .array(
       z.object({
         url: z.string(),
-        scope: z.enum(['domain', 'subdomain', 'subfolder', 'url']),
+        scope: z.enum(['domain', 'subdomain', 'url']),
         note: z.string().optional(),
       })
     )
@@ -317,7 +317,7 @@ Use cases:
             type: 'object',
             properties: {
               url: { type: 'string' },
-              scope: { type: 'string', enum: ['domain', 'subdomain', 'subfolder', 'url'] },
+              scope: { type: 'string', enum: ['domain', 'subdomain', 'url'] },
               note: { type: 'string' },
             },
             required: ['url', 'scope'],

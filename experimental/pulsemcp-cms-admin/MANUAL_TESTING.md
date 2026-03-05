@@ -2,6 +2,32 @@
 
 ## Latest Test Results
 
+**Date:** 2026-03-05
+**Commit:** eb0b27b
+**Version:** 0.9.1 (pre-release)
+**API Environment:** Staging (admin.staging.pulsemcp.com)
+
+### Overall: ✅ ALL TESTS PASSING — 179 functional, 163 manual (11 test files)
+
+**v0.9.1 Changes:**
+
+- **BREAKING**: Removed `subfolder` from canonical URL scope enum — valid scopes are now `domain`, `subdomain`, and `url` only
+
+**Functional Test Results: ✅ 179/179 PASSING (8 test files)**
+
+**Manual Test Results: ✅ 163/163 PASSING (11 test files)**
+
+All manual tests run against staging API and passing, including:
+
+- MCP server tools (list, get, update with canonical URLs using valid scopes)
+- Server directory tools (save_mcp_implementation with canonical URLs)
+- REST API tools, redirect tools, newsletter tools, discovered URLs tools
+- Good jobs tools, proctor tools
+
+---
+
+## Previous Test Results (v0.9.0)
+
 **Date:** 2026-03-02
 **Commit:** 2866c01
 **Version:** 0.9.0 (pre-release)
@@ -879,7 +905,7 @@ Added canonical URL management with scoped definitions:
 
 - `canonical`: Array of canonical URL configurations
   - `url`: The canonical URL
-  - `scope`: Scope level (domain, subdomain, subfolder, url)
+  - `scope`: Scope level (domain, subdomain, url)
   - `note`: Optional explanatory note
 
 **Important**: The API uses replacement semantics - sending canonical data replaces all existing canonicals.

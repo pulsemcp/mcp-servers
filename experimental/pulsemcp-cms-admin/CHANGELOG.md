@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [0.9.1] - 2026-03-05
+
+### Changed
+
+- **BREAKING**: Removed `subfolder` from canonical URL scope enum — valid scopes are now `domain`, `subdomain`, and `url` only. The `subfolder` scope has been removed from the REST API.
+
 ## [0.9.0] - 2026-03-02
 
 ### Added
