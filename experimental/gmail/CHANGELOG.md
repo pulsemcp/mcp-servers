@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-03-05
+
 ### Fixed
 
 - UTF-8 characters in email subject lines (e.g., em dashes, accented characters, emoji) are now properly encoded using RFC 2047 encoded-words, preventing character corruption in Gmail
