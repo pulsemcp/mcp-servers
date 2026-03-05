@@ -4,11 +4,42 @@ This file tracks manual testing results for the Fetch Pet MCP Server.
 
 ## Latest Test Run
 
+**Date:** 2026-03-05
+**Commit:** f0982b2
+**Tester:** Automated via Agent Orchestrator
+
+### Test Results (0.1.3)
+
+#### Bug Reproduction
+
+Reproduced the exact bug using the real Fetch Pet portal via MCP tools:
+
+- `prepare_claim_to_submit` succeeded (Nova, Twin Cities Vet Hospital, $53.52, Nexgard Plus)
+- `submit_claim` failed with: `elementHandle.click: Timeout 30000ms exceeded` — `MuiDialog-container MuiDialog-scrollPaper` from `MuiDialog-root generic-dialog false` subtree intercepts pointer events
+
+#### Root Cause Investigation
+
+Used Playwright debug scripts against the real portal to investigate:
+
+- Only 1 MuiDialog exists on the page — the claim form itself (NOT a separate overlay)
+- Submit button position: `top: 1308, bottom: 1360` but viewport height is `1080`
+- The `MuiDialog-container MuiDialog-scrollPaper` div has `overflow: visible` and covers the button
+- Playwright's `scrollIntoViewIfNeeded()` + `click()` still fails (same interception)
+- `page.evaluate()` with `scrollIntoView({ block: 'center' })` + `click()` succeeds
+
+#### Fix Verification
+
+- `clickButtonInDialog` method uses `page.evaluate()` to bypass Playwright actionability checks
+- Debug script confirmed: Strategy 2 (JS scrollIntoView + click) returns `true`
+- Screenshots confirmed form scrolls to Submit button and click registers
+
+**Functional tests:** 7/7 PASS (all existing tests pass, build succeeds, no lint errors)
+
+### Previous Test Run (0.1.2)
+
 **Date:** 2026-02-20
 **Commit:** 7920291
 **Tester:** Automated via Agent Orchestrator
-
-### Test Results
 
 | Test                    | Result         | Notes                                                                |
 | ----------------------- | -------------- | -------------------------------------------------------------------- |
@@ -39,6 +70,7 @@ Manually verified via Playwright browser automation:
 - **Form submission**: WORKING - Opens claim submission modal and validates form fields (details field supports both textarea and input)
 - **Invoice upload dialog**: WORKING - Handles post-upload dialog with date picker and amount input
 - **Confirmation dialog**: WORKING - Handles "Medical records required" dialog by clicking "Submit anyway"
+- **MuiDialog submit button click**: FIXED (0.1.3) - Uses JS scrollIntoView + click via page.evaluate() to bypass Playwright actionability checks on buttons below the viewport in the scrollable MuiDialog claim form
 - **Error detection**: WORKING - Narrowed error selectors avoid false positives from layout CSS classes
 
 ### Known Limitations
