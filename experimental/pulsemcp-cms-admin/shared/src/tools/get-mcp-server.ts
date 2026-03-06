@@ -109,6 +109,9 @@ Example response:
         if (server.recommended !== undefined) {
           content += `**Recommended:** ${server.recommended ? 'Yes' : 'No'}\n`;
         }
+        if (server.verified_no_canonicals !== undefined) {
+          content += `**Verified No Canonicals:** ${server.verified_no_canonicals ? 'Yes' : 'No'}\n`;
+        }
 
         if (server.short_description) {
           content += `\n**Short Description:**\n${server.short_description}\n`;

@@ -52,6 +52,8 @@ export async function updateUnifiedMCPServer(
 
   // Flags
   if (params.recommended !== undefined) implParams.recommended = params.recommended;
+  if (params.verified_no_canonicals !== undefined)
+    implParams.verified_no_canonicals = params.verified_no_canonicals;
 
   // Date overrides
   if (params.created_on_override !== undefined)
