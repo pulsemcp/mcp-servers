@@ -42,8 +42,18 @@ export const TraceBitmapToSvgSchema = z.object({
   threshold: z.number().min(0).max(255).optional().describe(PARAM_DESCRIPTIONS.threshold),
   turd_size: z.number().min(0).optional().describe(PARAM_DESCRIPTIONS.turd_size),
   opt_tolerance: z.number().min(0).max(1).optional().describe(PARAM_DESCRIPTIONS.opt_tolerance),
-  color: z.string().optional().describe(PARAM_DESCRIPTIONS.color),
-  background: z.string().optional().describe(PARAM_DESCRIPTIONS.background),
+  color: z
+    .string()
+    .regex(/^#[0-9A-Fa-f]{3,8}$/, 'Must be a valid hex color (e.g., "#FF5733", "#000")')
+    .optional()
+    .describe(PARAM_DESCRIPTIONS.color),
+  background: z
+    .union([
+      z.literal('transparent'),
+      z.string().regex(/^#[0-9A-Fa-f]{3,8}$/, 'Must be "transparent" or a valid hex color'),
+    ])
+    .optional()
+    .describe(PARAM_DESCRIPTIONS.background),
   target_width: z.number().positive().optional().describe(PARAM_DESCRIPTIONS.target_width),
   target_height: z.number().positive().optional().describe(PARAM_DESCRIPTIONS.target_height),
 });
@@ -128,7 +138,10 @@ export function traceBitmapToSvgTool(_server: Server) {
 
         // Derive output path if not specified
         const outputPath =
-          validated.output_path ?? validated.input_path.replace(/\.[^.]+$/, '.svg');
+          validated.output_path ??
+          (/\.[^.]+$/.test(validated.input_path)
+            ? validated.input_path.replace(/\.[^.]+$/, '.svg')
+            : validated.input_path + '.svg');
 
         const result = await traceToSvg(validated.input_path, outputPath, {
           threshold: validated.threshold,

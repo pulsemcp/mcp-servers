@@ -2,6 +2,7 @@
   "name": "@pulsemcp/svg-tracer-mcp-server",
   "version": "0.1.0",
   "description": "MCP server for converting bitmap images to SVG vector graphics using potrace tracing",
+  "mcpName": "com.pulsemcp.servers/svg-tracer",
   "main": "build/index.js",
   "type": "module",
   "bin": {
@@ -31,7 +32,7 @@
     "zod": "^3.24.1"
   },
   "devDependencies": {
-    "@types/node": "^22.10.6",
+    "@types/node": "^24.0.0",
     "tsx": "^4.19.4",
     "typescript": "^5.7.3"
   },

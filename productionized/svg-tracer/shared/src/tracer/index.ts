@@ -19,7 +19,7 @@ const traceAsync = promisify(potrace.trace) as (
 ) => Promise<string>;
 
 export interface TraceOptions {
-  /** Threshold for black/white cutoff (0-255). Default: auto-detected. */
+  /** Threshold for black/white cutoff (0-255). Default: 128. */
   threshold?: number;
   /** Suppress speckles of this many pixels. Default: 2. */
   turdSize?: number;
@@ -125,21 +125,26 @@ function adaptSvgToTargetSize(
   const offsetX = (targetWidth - scaledWidth) / 2;
   const offsetY = (targetHeight - scaledHeight) / 2;
 
-  // Extract path data from the SVG
-  const pathMatch = svg.match(/<path[^>]*\/>/g);
-  if (!pathMatch) {
+  // Extract inner elements from the SVG (paths and rect backgrounds)
+  const innerElements = svg.match(/<(path|rect)[^>]*\/>/g);
+  if (!innerElements) {
     return svg;
   }
 
-  // Extract fill color from existing paths
-  const fillMatch = svg.match(/fill="([^"]*)"/);
-  const fill = fillMatch ? fillMatch[1] : '#000000';
+  // Separate background rect from path elements
+  const rects = innerElements.filter((el) => el.startsWith('<rect'));
+  const paths = innerElements.filter((el) => el.startsWith('<path'));
+
+  // Extract fill color from path elements specifically
+  const pathFillMatch = paths.length > 0 ? paths[0].match(/fill="([^"]*)"/) : null;
+  const fill = pathFillMatch ? pathFillMatch[1] : '#000000';
 
   // Build new SVG with transform
-  const paths = pathMatch.join('\n    ');
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${targetWidth}" height="${targetHeight}" viewBox="0 0 ${targetWidth} ${targetHeight}">
+  const rectElements = rects.length > 0 ? '\n  ' + rects.join('\n  ') : '';
+  const pathElements = paths.join('\n    ');
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${targetWidth}" height="${targetHeight}" viewBox="0 0 ${targetWidth} ${targetHeight}">${rectElements}
   <g transform="translate(${offsetX.toFixed(2)}, ${offsetY.toFixed(2)}) scale(${scale.toFixed(6)})" fill="${fill}">
-    ${paths}
+    ${pathElements}
   </g>
 </svg>`;
 }

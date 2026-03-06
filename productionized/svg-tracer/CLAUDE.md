@@ -26,7 +26,7 @@ This server operates entirely on the local filesystem. No API keys or external s
 
 ### potrace Import Pattern
 
-The `potrace` npm package is a CommonJS module without TypeScript types. It's imported using `createRequire(import.meta.url)` with a local type declaration file (`tracer/potrace.d.ts`).
+The `potrace` npm package is a CommonJS module without TypeScript types. It's imported using `createRequire(import.meta.url)` with an inline type cast in `tracer/index.ts`.
 
 ## Testing
 

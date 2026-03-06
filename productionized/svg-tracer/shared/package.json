@@ -1,5 +1,5 @@
 {
-  "name": "svg-tracer-mcp-server-shared",
+  "name": "@pulsemcp/svg-tracer-mcp-server-shared",
   "version": "0.1.0",
   "description": "Shared code for SVG Tracer MCP server implementations",
   "main": "build/index.js",
@@ -14,7 +14,7 @@
     "zod": "^3.24.1"
   },
   "devDependencies": {
-    "@types/node": "^22.10.6",
+    "@types/node": "^24.0.0",
     "typescript": "^5.7.3"
   },
   "keywords": [],
