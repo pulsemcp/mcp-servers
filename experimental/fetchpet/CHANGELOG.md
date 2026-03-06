@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.4] - 2026-03-06
+
 ### Fixed
 
 - Fix `submit_claim` reporting false success without actually creating a claim. The `button.filled-btn` selector matched the "Submit a claim" button behind the dialog (first in DOM order) instead of the "Submit" button inside the MuiDialog. Now scopes the selector to `.MuiDialog-root button.filled-btn` to target the correct button (#394)
