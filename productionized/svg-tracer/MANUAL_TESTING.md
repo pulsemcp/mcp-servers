@@ -1,12 +1,23 @@
 # Manual Testing Results
 
-## Latest Results
+This file tracks the **most recent** manual test results for the SVG Tracer MCP server.
 
-- **Date**: 2026-03-06
-- **Commit**: 6d260ba
-- **Result**: PASS (38/38 tests)
+**Note:** Each new test run should overwrite the previous results. We only maintain the latest test results here.
 
-### Test Summary
+## Latest Test Results
+
+**Test Date:** 2026-03-06
+**Branch:** tadasant/add-svg-tracer-server
+**Commit:** 6d260ba
+**Tested By:** Claude
+**Environment:** Linux, Node.js, Local image processing (no external APIs)
+
+### Overall: ✅ All 38 tests passed (32 functional + 6 integration)
+
+### Test Results
+
+**Type:** Functional unit tests + integration tests via TestMCPClient
+**Status:** ✅ All tests passed
 
 This server has no external API dependencies - it operates entirely on the local filesystem using sharp (image processing) and potrace (bitmap-to-SVG tracing).
 
