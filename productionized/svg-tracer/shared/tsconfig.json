@@ -10,8 +10,7 @@
     "declarationMap": true,
     "outDir": "./build",
     "rootDir": "./src",
-    "lib": ["es2022"],
-    "types": ["node"]
+    "lib": ["es2022"]
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "build"]
