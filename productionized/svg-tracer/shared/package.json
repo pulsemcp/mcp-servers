@@ -1,0 +1,23 @@
+{
+  "name": "svg-tracer-mcp-server-shared",
+  "version": "0.1.0",
+  "description": "Shared code for SVG Tracer MCP server implementations",
+  "main": "build/index.js",
+  "type": "module",
+  "scripts": {
+    "build": "tsc"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.19.1",
+    "potrace": "^2.1.8",
+    "sharp": "^0.33.5",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.6",
+    "typescript": "^5.7.3"
+  },
+  "keywords": [],
+  "author": "PulseMCP",
+  "license": "MIT"
+}
