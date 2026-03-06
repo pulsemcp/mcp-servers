@@ -43,6 +43,9 @@ const PARAM_DESCRIPTIONS = {
   // Canonical URLs
   canonical:
     'Array of canonical URL configurations. Each entry must have: url (the canonical URL), scope (one of "domain", "subdomain", or "url"), and optional note for additional context.',
+  // Flags
+  verified_no_canonicals:
+    'Mark that this server has been verified to have no canonical URLs (true = verified no canonicals exist, false = reset/canonicals found)',
   // Other fields
   internal_notes:
     'Admin-only notes. Not displayed publicly. Used for tracking submission sources, reviewer comments, etc.',
@@ -110,6 +113,11 @@ const SaveMCPImplementationSchema = z.object({
     )
     .optional()
     .describe(PARAM_DESCRIPTIONS.canonical),
+  // Flags
+  verified_no_canonicals: z
+    .boolean()
+    .optional()
+    .describe(PARAM_DESCRIPTIONS.verified_no_canonicals),
   // Other fields
   internal_notes: z.string().optional().describe(PARAM_DESCRIPTIONS.internal_notes),
 });
@@ -323,6 +331,11 @@ Use cases:
             required: ['url', 'scope'],
           },
           description: PARAM_DESCRIPTIONS.canonical,
+        },
+        // Flags
+        verified_no_canonicals: {
+          type: 'boolean',
+          description: PARAM_DESCRIPTIONS.verified_no_canonicals,
         },
         // Other fields
         internal_notes: {

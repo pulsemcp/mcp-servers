@@ -39,6 +39,7 @@ export interface RailsImplementation {
   package_registry?: string;
   package_name?: string;
   recommended?: boolean;
+  verified_no_canonicals?: boolean;
   canonical?: CanonicalUrlParams[];
   mcp_server?: {
     id: number;
@@ -130,6 +131,7 @@ export function mapToUnifiedServer(impl: RailsImplementation): UnifiedMCPServer 
 
     // Flags
     recommended: impl.recommended,
+    verified_no_canonicals: impl.verified_no_canonicals,
 
     // Canonical URLs
     canonical_urls: impl.canonical,

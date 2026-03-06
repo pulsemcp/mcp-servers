@@ -2,6 +2,27 @@
 
 ## Latest Test Results
 
+**Date:** 2026-03-06
+**Commit:** 3a43d0d
+**Version:** 0.9.2 (pre-release)
+**API Environment:** N/A (schema-only change, no API behavior changes)
+
+### Overall: ✅ Functional Tests PASSING (179/179, 8 test files)
+
+**v0.9.2 Changes:**
+
+- Added `verified_no_canonicals` boolean field to MCP server tools (`get_mcp_server`, `update_mcp_server`, `save_mcp_implementation`)
+
+**Functional Test Results: ✅ 179/179 PASSING (8 test files)**
+
+**Note on Manual Testing:**
+
+Manual tests were not run for this release — API credentials (`.env` file) were not available in this environment. This change adds a new optional boolean field (`verified_no_canonicals`) to existing tool schemas and passes it through to the API using the same pattern as the existing `recommended` field. No existing API interaction logic is modified. The backend database migration for this field will be handled separately in the `pulsemcp/pulsemcp` Rails repo. The v0.9.1 manual test results remain valid for all existing API-facing functionality.
+
+---
+
+## Previous Test Results (v0.9.1)
+
 **Date:** 2026-03-05
 **Commit:** eb0b27b
 **Version:** 0.9.1 (pre-release)
