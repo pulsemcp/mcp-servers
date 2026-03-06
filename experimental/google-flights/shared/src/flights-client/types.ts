@@ -73,6 +73,7 @@ export interface SearchFlightsOptions {
   max_results: number;
   offset: number;
   currency: string;
+  exclude_basic_economy: boolean;
 }
 
 export interface SearchFlightsResult {

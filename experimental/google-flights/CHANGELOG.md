@@ -4,6 +4,10 @@ All notable changes to the Google Flights MCP Server will be documented in this 
 
 ## [Unreleased]
 
+### Added
+
+- `exclude_basic_economy` parameter on `search_flights` (default: `true`). Basic economy fares are now excluded by default since they typically have significant restrictions (no carry-on, no seat selection, non-refundable). Set to `false` to include all fare tiers.
+
 ## [0.1.2] - 2026-02-22
 
 ### Added

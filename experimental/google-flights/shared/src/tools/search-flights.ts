@@ -60,6 +60,12 @@ export const SearchFlightsSchema = z.object({
     .max(3)
     .default('USD')
     .describe('Currency code for prices (e.g., "USD", "EUR", "GBP")'),
+  exclude_basic_economy: z
+    .boolean()
+    .default(true)
+    .describe(
+      'Exclude basic economy fares from results (default: true). Basic economy fares typically have restrictions like no carry-on, no seat selection, and no changes. Set to false to include all fare tiers.'
+    ),
 });
 
 export function searchFlightsTool(_server: Server, clientFactory: FlightsClientFactory) {
@@ -70,6 +76,8 @@ export function searchFlightsTool(_server: Server, clientFactory: FlightsClientF
 Returns structured flight data including prices, airlines, times, durations, stops, individual flight segments with aircraft type and legroom, fare brand (e.g. "Economy", "Economy+", "Economy Flex"), and fare extensions (carry-on and checked bag inclusion).
 
 The fare_brand field indicates the fare tier: "Economy" (basic/lowest tier), "Economy+" (mid-tier with extras), or "Economy Flex" (higher tier with more flexibility). This is derived from Google's numeric fare tier data and may be null if unavailable. Use the extensions field (carry_on_included, checked_bags_included) for concrete amenity details.
+
+By default, basic economy fares (fare_brand "Economy") are excluded from results since they typically have significant restrictions (no carry-on, no seat selection, non-refundable). Set exclude_basic_economy to false to include all fare tiers.
 
 IMPORTANT — Handling large result sets: Popular routes often return 50-150+ flights. If total_results is high, recommend narrowing with filters (max_stops, sort_by, seat_class) rather than paginating through everything. For example, set max_stops to "nonstop" or sort_by to "price" to surface the most relevant options quickly.
 
@@ -140,6 +148,11 @@ Use get_date_grid to find the cheapest dates before searching.`,
         currency: {
           type: 'string',
           description: 'Currency code for prices (default: USD)',
+        },
+        exclude_basic_economy: {
+          type: 'boolean',
+          description:
+            'Exclude basic economy fares (default: true). Set to false to include all fare tiers.',
         },
       },
       required: ['origin', 'destination', 'departure_date'],
