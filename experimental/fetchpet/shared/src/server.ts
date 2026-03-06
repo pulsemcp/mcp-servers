@@ -695,13 +695,15 @@ The user MUST explicitly confirm they want to submit this claim before calling s
       // After clicking Submit, a confirmation dialog may appear (e.g., "Medical records
       // required to process your claim") with "Go Back" and "Submit anyway" buttons.
       // This is a second MuiDialog that overlays the claim form and intercepts pointer events.
-      // Use waitForSelector to reliably detect it rather than a fixed timeout.
+      // Use waitForSelector to detect presence only — we don't use the returned
+      // element handle to click because this confirmation dialog may also have
+      // overlay interception issues. Instead, click via page.evaluate.
       const submitAnywayButton = await page
         .waitForSelector('button:has-text("Submit anyway")', { timeout: 5000 })
         .catch(() => null);
       if (submitAnywayButton) {
-        // Use page.evaluate with text matching since :has-text() is a Playwright
-        // selector not supported by document.querySelector.
+        // Click via page.evaluate with text matching since :has-text() is a
+        // Playwright selector not supported by document.querySelector.
         await page.evaluate(() => {
           const buttons = Array.from(document.querySelectorAll('button'));
           for (const btn of buttons) {
