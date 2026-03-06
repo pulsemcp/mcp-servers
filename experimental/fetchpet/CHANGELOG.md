@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Fix `submit_claim` reporting false success without actually creating a claim. The `button.filled-btn` selector matched the "Submit a claim" button behind the dialog (first in DOM order) instead of the "Submit" button inside the MuiDialog. Now scopes the selector to `.MuiDialog-root button.filled-btn` to target the correct button (#394)
+- Fix false-positive success detection in `submit_claim` fallback logic. The URL-based check (`currentUrl.includes('claims')`) always matched because the page was already on `/claims/active` before submission. Now requires both a claim POST network request and a genuine URL change to report success (#394)
+- Add network request monitoring to `submit_claim` to verify the claim submission POST actually fires, preventing silent failures when the form closes without submitting (#394)
+
 ## [0.1.3] - 2026-03-05
 
 ### Fixed
