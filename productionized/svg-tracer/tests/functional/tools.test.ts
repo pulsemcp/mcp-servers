@@ -52,19 +52,24 @@ describe('trace_bitmap_to_svg tool', () => {
   });
 
   it('should default output path to .svg extension of input', async () => {
-    const outputPath = join(fixturesDir, 'black-square.svg');
-    if (existsSync(outputPath)) unlinkSync(outputPath);
+    // Copy fixture to tmp dir to avoid writing SVG back into fixtures directory
+    const { copyFileSync } = await import('fs');
+    const tmpInputPath = join(tmpDir, 'black-square-default.png');
+    copyFileSync(join(fixturesDir, 'black-square.png'), tmpInputPath);
+    const expectedOutputPath = join(tmpDir, 'black-square-default.svg');
+    if (existsSync(expectedOutputPath)) unlinkSync(expectedOutputPath);
 
     const response = await tool.handler({
-      input_path: join(fixturesDir, 'black-square.png'),
+      input_path: tmpInputPath,
     });
 
     expect(response.isError).toBeUndefined();
     const result = JSON.parse(response.content[0].text);
-    expect(result.outputPath).toContain('black-square.svg');
-    expect(existsSync(outputPath)).toBe(true);
+    expect(result.outputPath).toContain('black-square-default.svg');
+    expect(existsSync(expectedOutputPath)).toBe(true);
 
-    unlinkSync(outputPath);
+    unlinkSync(expectedOutputPath);
+    unlinkSync(tmpInputPath);
   });
 
   it('should apply custom color option', async () => {

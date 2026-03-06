@@ -44,13 +44,21 @@ export const TraceBitmapToSvgSchema = z.object({
   opt_tolerance: z.number().min(0).max(1).optional().describe(PARAM_DESCRIPTIONS.opt_tolerance),
   color: z
     .string()
-    .regex(/^#[0-9A-Fa-f]{3,8}$/, 'Must be a valid hex color (e.g., "#FF5733", "#000")')
+    .regex(
+      /^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{4}|[0-9A-Fa-f]{6}|[0-9A-Fa-f]{8})$/,
+      'Must be a valid hex color (e.g., "#FF5733", "#000")'
+    )
     .optional()
     .describe(PARAM_DESCRIPTIONS.color),
   background: z
     .union([
       z.literal('transparent'),
-      z.string().regex(/^#[0-9A-Fa-f]{3,8}$/, 'Must be "transparent" or a valid hex color'),
+      z
+        .string()
+        .regex(
+          /^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{4}|[0-9A-Fa-f]{6}|[0-9A-Fa-f]{8})$/,
+          'Must be "transparent" or a valid hex color'
+        ),
     ])
     .optional()
     .describe(PARAM_DESCRIPTIONS.background),

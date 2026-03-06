@@ -8,7 +8,7 @@ export interface CreateMCPServerOptions {
 export function createMCPServer(options: CreateMCPServerOptions) {
   const server = new Server(
     {
-      name: 'svg-tracer-mcp-server',
+      name: '@pulsemcp/svg-tracer-mcp-server',
       version: options.version,
     },
     {

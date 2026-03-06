@@ -125,7 +125,10 @@ function adaptSvgToTargetSize(
   const offsetX = (targetWidth - scaledWidth) / 2;
   const offsetY = (targetHeight - scaledHeight) / 2;
 
-  // Extract inner elements from the SVG (paths and rect backgrounds)
+  // Extract inner elements from the SVG (paths and rect backgrounds).
+  // Note: This regex assumes potrace output format where all <path> and <rect>
+  // elements are self-closing and single-line. This is a safe assumption for
+  // potrace's SVG output but would need updating for arbitrary SVG sources.
   const innerElements = svg.match(/<(path|rect)[^>]*\/>/g);
   if (!innerElements) {
     return svg;
@@ -197,8 +200,9 @@ export async function traceToSvg(
 
   // Adapt to target size if specified
   if (options.targetWidth || options.targetHeight) {
-    const tw = options.targetWidth ?? width;
-    const th = options.targetHeight ?? height;
+    // When only one dimension is specified, derive the other from aspect ratio
+    const tw = options.targetWidth ?? Math.round(options.targetHeight! * (width / height));
+    const th = options.targetHeight ?? Math.round(options.targetWidth! * (height / width));
     svg = adaptSvgToTargetSize(svg, width, height, tw, th);
   }
 

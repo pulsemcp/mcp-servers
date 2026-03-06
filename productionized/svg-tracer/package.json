@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "description": "MCP server for converting bitmap images (PNG, JPG, BMP, etc.) to SVG vector graphics using potrace tracing",
   "author": "PulseMCP",
-  "license": "MIT",
+  "license": "GPL-2.0",
   "workspaces": [
     "local",
     "shared"
