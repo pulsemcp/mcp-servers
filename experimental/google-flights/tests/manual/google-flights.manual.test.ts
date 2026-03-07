@@ -366,6 +366,41 @@ describe('Google Flights Manual Tests', () => {
       );
     }, 60000);
 
+    it('should include best flights (featured by Google) in results', async () => {
+      const testName = 'search_flights - best flights inclusion';
+
+      // Google Flights returns featured/best flights in a separate data section (ds1[2][0])
+      // from the main results list (ds1[3][0]). This test verifies both are merged.
+      const result = await client.callTool('search_flights', {
+        origin: 'SFO',
+        destination: 'ATL',
+        departure_date: '2026-05-10',
+        trip_type: 'one_way',
+        seat_class: 'economy',
+        max_results: 50,
+        exclude_basic_economy: false,
+      });
+
+      expect(result.isError).toBeFalsy();
+
+      const data = JSON.parse((result.content[0] as { text: string }).text);
+      expect(data.total_results).toBeGreaterThan(0);
+
+      // Should have some flights marked as best (Google typically features ~3)
+      const bestFlights = data.flights.filter((f: { is_best: boolean }) => f.is_best);
+      expect(bestFlights.length).toBeGreaterThan(0);
+
+      // Verify the total includes more flights than just one section would provide
+      // Best flights are a small subset; total should be significantly more
+      expect(data.total_results).toBeGreaterThan(3);
+
+      reportOutcome(
+        testName,
+        'SUCCESS',
+        `Found ${data.total_results} total flights, ${bestFlights.length} marked as best. Best: ${bestFlights.map((f: { segments: { flight_number: string }[] }) => f.segments[0]?.flight_number).join(', ') || 'none in page'}`
+      );
+    }, 60000);
+
     it('should return error for round_trip without return_date', async () => {
       const testName = 'search_flights - validation error';
 

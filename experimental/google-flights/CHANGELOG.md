@@ -4,6 +4,13 @@ All notable changes to the Google Flights MCP Server will be documented in this 
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-03-07
+
+### Fixed
+
+- Include "best flights" (Google's featured/highlighted flights) in search results. Previously, only the "other flights" section was parsed from Google's response, causing ~3 flights per search to be silently dropped — including flights that Google considers the best options for the route. This affected both one-way and round-trip searches.
+- Add defensive deduplication by `booking_token` when merging best and other flight sections to guard against potential duplicates from Google's undocumented API.
+
 ## [0.2.0] - 2026-03-06
 
 ### Added
