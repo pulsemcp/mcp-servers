@@ -340,12 +340,18 @@ function parseRawOffer(raw: any, currency: string): FlightOffer | null {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function parseFlightOffers(ds1: any, currency: string): FlightOffer[] {
   const offers: FlightOffer[] = [];
+  const seenTokens = new Set<string>();
 
   // Google Flights returns results in two sections:
   // - ds1[2][0]: "Best flights" (featured/highlighted flights, typically 3)
   // - ds1[3][0]: "Other flights" (the main results list)
-  // Both sections use the same offer structure but flights are NOT duplicated
-  // between them, so we must parse both to get complete results.
+  // Both sections use the same offer structure. In practice flights are not
+  // duplicated between them, but we deduplicate by booking_token defensively
+  // since this is an undocumented scraped API that could change.
+  //
+  // The is_best flag comes from raw[5][0] (per-offer rankData), not from which
+  // section the offer appears in. Google sets this flag on all ds1[2][0] offers
+  // and sometimes on ds1[3][0] offers too.
 
   // Parse "best flights" from ds1[2][0]
   const bestFlights = ds1?.[2]?.[0];
@@ -353,7 +359,10 @@ function parseFlightOffers(ds1: any, currency: string): FlightOffer[] {
     for (const raw of bestFlights) {
       try {
         const offer = parseRawOffer(raw, currency);
-        if (offer) offers.push(offer);
+        if (offer && !seenTokens.has(offer.booking_token)) {
+          seenTokens.add(offer.booking_token);
+          offers.push(offer);
+        }
       } catch (e) {
         logDebug('parseFlightOffers', `Skipping malformed best offer: ${(e as Error).message}`);
       }
@@ -366,7 +375,10 @@ function parseFlightOffers(ds1: any, currency: string): FlightOffer[] {
     for (const raw of otherFlights) {
       try {
         const offer = parseRawOffer(raw, currency);
-        if (offer) offers.push(offer);
+        if (offer && !seenTokens.has(offer.booking_token)) {
+          seenTokens.add(offer.booking_token);
+          offers.push(offer);
+        }
       } catch (e) {
         logDebug('parseFlightOffers', `Skipping malformed offer: ${(e as Error).message}`);
       }

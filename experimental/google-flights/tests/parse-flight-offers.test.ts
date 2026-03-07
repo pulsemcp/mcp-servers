@@ -138,6 +138,7 @@ describe('parseFlightOffers', () => {
           price: 94,
           isBest: true,
           fareTier: 1,
+          bookingToken: 'token-f9-1448',
         }),
         makeRawOffer({
           airlineCode: 'UA',
@@ -153,6 +154,7 @@ describe('parseFlightOffers', () => {
           price: 199,
           isBest: true,
           fareTier: 1,
+          bookingToken: 'token-ua-702',
         }),
       ],
     ];
@@ -173,6 +175,7 @@ describe('parseFlightOffers', () => {
           durationMinutes: 283,
           price: 409,
           fareTier: 1,
+          bookingToken: 'token-dl-640',
         }),
         makeRawOffer({
           airlineCode: 'DL',
@@ -187,6 +190,7 @@ describe('parseFlightOffers', () => {
           durationMinutes: 282,
           price: 199,
           fareTier: 1,
+          bookingToken: 'token-dl-635',
         }),
       ],
     ];
@@ -262,6 +266,56 @@ describe('parseFlightOffers', () => {
     const ds1 = new Array(10).fill(null);
     const offers = parseFlightOffers(ds1, 'USD');
     expect(offers).toHaveLength(0);
+  });
+
+  it('should deduplicate flights appearing in both sections by booking_token', () => {
+    const ds1 = new Array(10).fill(null);
+    const sharedToken = 'shared-booking-token-xyz';
+
+    // Same flight in both best and other sections (hypothetical Google behavior)
+    ds1[2] = [
+      [
+        makeRawOffer({
+          airlineCode: 'UA',
+          airlineName: 'United',
+          flightNumber: 'UA702',
+          origin: 'SFO',
+          destination: 'ATL',
+          departureTime: [10, 15],
+          arrivalTime: [18, 9],
+          departureDate: [2026, 5, 10],
+          arrivalDate: [2026, 5, 10],
+          durationMinutes: 294,
+          price: 199,
+          isBest: true,
+          bookingToken: sharedToken,
+        }),
+      ],
+    ];
+
+    ds1[3] = [
+      [
+        makeRawOffer({
+          airlineCode: 'UA',
+          airlineName: 'United',
+          flightNumber: 'UA702',
+          origin: 'SFO',
+          destination: 'ATL',
+          departureTime: [10, 15],
+          arrivalTime: [18, 9],
+          departureDate: [2026, 5, 10],
+          arrivalDate: [2026, 5, 10],
+          durationMinutes: 294,
+          price: 199,
+          bookingToken: sharedToken,
+        }),
+      ],
+    ];
+
+    const offers = parseFlightOffers(ds1, 'USD');
+    expect(offers).toHaveLength(1);
+    // The first occurrence (from best flights) should win
+    expect(offers[0].is_best).toBe(true);
   });
 
   it('should skip offers without price data', () => {
