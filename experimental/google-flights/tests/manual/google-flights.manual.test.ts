@@ -388,6 +388,7 @@ describe('Google Flights Manual Tests', () => {
 
       // Should have some flights marked as best (Google typically features ~3)
       const bestFlights = data.flights.filter((f: { is_best: boolean }) => f.is_best);
+      expect(bestFlights.length).toBeGreaterThan(0);
 
       // Verify the total includes more flights than just one section would provide
       // Best flights are a small subset; total should be significantly more

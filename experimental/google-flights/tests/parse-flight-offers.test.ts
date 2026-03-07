@@ -194,7 +194,7 @@ describe('parseFlightOffers', () => {
     const offers = parseFlightOffers(ds1, 'USD');
     expect(offers).toHaveLength(4);
 
-    // Best flights should appear first (they're parsed first)
+    // All flights from both sections should be present
     const flightNumbers = offers.map((o) => o.segments[0].flight_number);
     expect(flightNumbers).toContain('F91448');
     expect(flightNumbers).toContain('UA702');

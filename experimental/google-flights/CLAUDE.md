@@ -11,7 +11,7 @@ MCP server that provides flight search, date-price grids, and airport code looku
 1. Search parameters (airports, dates, passengers, seat class) are encoded using Protocol Buffers into a base64 `tfs` URL parameter
 2. A plain HTTP GET request is made to `google.com/travel/flights` with browser-like headers
 3. The response HTML (2-10MB) contains embedded JSON in `AF_initDataCallback` blocks
-4. Flight data is extracted from the `ds:1` callback at `ds1[3][0]` (offers) and `ds1[5][10][0]` (date grid)
+4. Flight data is extracted from the `ds:1` callback at `ds1[2][0]` (best/featured flights) and `ds1[3][0]` (other flights), and `ds1[5][10][0]` (date grid). Flights are NOT duplicated between `ds1[2][0]` and `ds1[3][0]` — both must be parsed for complete results
 
 ### Key files
 
@@ -20,7 +20,7 @@ MCP server that provides flight search, date-price grids, and airport code looku
 - `shared/src/flights.proto` — Protobuf schema for search parameters
 - `shared/src/tools/` — Individual MCP tool implementations
 
-### Data structure (per flight offer in ds1[3][0])
+### Data structure (per flight offer in ds1[2][0] and ds1[3][0])
 
 ```
 offer[0] = flight details:
