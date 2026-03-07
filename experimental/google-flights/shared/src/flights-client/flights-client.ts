@@ -438,6 +438,11 @@ export async function searchFlights(options: SearchFlightsOptions): Promise<Sear
   // Apply client-side stop filter (supplements the protobuf filter)
   allOffers = filterByStops(allOffers, options.max_stops);
 
+  // Filter out basic economy fares (fare_brand "Economy" = tier 1, the lowest/basic tier)
+  if (options.exclude_basic_economy) {
+    allOffers = allOffers.filter((o) => o.fare_brand !== 'Economy');
+  }
+
   // Sort
   allOffers = sortOffers(allOffers, options.sort_by);
 
