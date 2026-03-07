@@ -658,96 +658,142 @@ The user MUST explicitly confirm they want to submit this claim before calling s
       };
     }
 
-    // Click the submit button using JavaScript to bypass Playwright's actionability
-    // checks. The claim form is a MuiDialog whose content overflows the viewport —
-    // the Submit button sits below the visible scroll area (e.g. at Y=1308 vs
-    // viewport height 1080). Playwright's click() times out because the
-    // MuiDialog-container MuiDialog-scrollPaper div intercepts pointer events.
-    // Using page.evaluate() to scrollIntoView + click bypasses this limitation.
-    const clicked = await this.clickButtonInDialog(page, 'button.filled-btn');
+    // Record the URL before submission so we can detect a genuine navigation later.
+    const urlBeforeSubmit = page.url();
 
-    if (!clicked) {
-      return {
-        success: false,
-        message: 'Could not find submit button on the page',
-      };
-    }
-
-    // After clicking Submit, a confirmation dialog may appear (e.g., "Medical records
-    // required to process your claim") with "Go Back" and "Submit anyway" buttons.
-    // This is a second MuiDialog that overlays the claim form and intercepts pointer events.
-    // Use waitForSelector to reliably detect it rather than a fixed timeout.
-    const submitAnywayButton = await page
-      .waitForSelector('button:has-text("Submit anyway")', { timeout: 5000 })
-      .catch(() => null);
-    if (submitAnywayButton) {
-      await submitAnywayButton.click();
-    }
-
-    await page.waitForTimeout(3000);
-
-    // Check for success confirmation
-    const successMessage = await page.$(
-      '.success, [class*="success"], [class*="confirmation"], [role="alert"]:has-text("success")'
-    );
-
-    if (successMessage) {
-      const successText = await successMessage.textContent();
-
-      // Try to extract claim ID or confirmation number
-      let claimId: string | undefined;
-      const claimIdMatch = successText?.match(/claim[:\s#]*([A-Z0-9-]+)/i);
-      if (claimIdMatch) {
-        claimId = claimIdMatch[1];
+    // Monitor network requests to verify the claim submission POST actually fires.
+    // Without this, we can't distinguish between a successful submit and the dialog
+    // simply closing (which navigates back to the claims page without a POST).
+    let claimPostDetected = false;
+    const requestHandler = (request: import('playwright').Request) => {
+      if (request.method() === 'POST' && request.url().includes('claim')) {
+        claimPostDetected = true;
       }
+    };
+    page.on('request', requestHandler);
 
-      // Clear pending data
-      this.pendingClaimData = null;
-      this.pendingConfirmationToken = null;
-      this.pendingTokenCreatedAt = null;
+    try {
+      // Click the submit button using JavaScript to bypass Playwright's actionability
+      // checks. The claim form is a MuiDialog whose content overflows the viewport —
+      // the Submit button sits below the visible scroll area (e.g. at Y=1308 vs
+      // viewport height 1080). Playwright's click() times out because the
+      // MuiDialog-container MuiDialog-scrollPaper div intercepts pointer events.
+      //
+      // IMPORTANT: Scope the selector to .MuiDialog-root so we click the "Submit"
+      // button inside the dialog, NOT the "Submit a claim" button behind it.
+      // Both have class "filled-btn" but document.querySelector('button.filled-btn')
+      // returns the first match in DOM order, which is the wrong button.
+      const clicked = await this.clickButtonInDialog(page, '.MuiDialog-root button.filled-btn');
 
-      return {
-        success: true,
-        message: successText || 'Claim submitted successfully',
-        claimId,
-        confirmationNumber: claimId,
-      };
-    }
-
-    // Check for error (use specific selectors to avoid false positives from layout classes)
-    const errorMessage = await page.$('.error-text, [role="alert"]:not(:has-text("success"))');
-    if (errorMessage) {
-      const errorText = (await errorMessage.textContent())?.trim();
-      if (errorText) {
+      if (!clicked) {
         return {
           success: false,
-          message: `Submission failed: ${errorText}`,
+          message: 'Could not find submit button in the claim dialog',
         };
       }
-    }
 
-    // Check URL for indication of success (redirected to claims list, etc.)
-    const currentUrl = page.url();
-    if (
-      currentUrl.includes('claims') &&
-      !currentUrl.includes('new') &&
-      !currentUrl.includes('submit')
-    ) {
-      // Clear pending data
-      this.pendingClaimData = null;
-      this.pendingConfirmationToken = null;
-      this.pendingTokenCreatedAt = null;
+      // After clicking Submit, a confirmation dialog may appear (e.g., "Medical records
+      // required to process your claim") with "Go Back" and "Submit anyway" buttons.
+      // This is a second MuiDialog that overlays the claim form and intercepts pointer events.
+      // Use waitForSelector to detect presence only — we don't use the returned
+      // element handle to click because this confirmation dialog may also have
+      // overlay interception issues. Instead, click via page.evaluate.
+      const submitAnywayButton = await page
+        .waitForSelector('button:has-text("Submit anyway")', { timeout: 5000 })
+        .catch(() => null);
+      if (submitAnywayButton) {
+        // Click via page.evaluate with text matching since :has-text() is a
+        // Playwright selector not supported by document.querySelector.
+        await page.evaluate(() => {
+          const buttons = Array.from(document.querySelectorAll('button'));
+          for (const btn of buttons) {
+            if (btn.textContent?.includes('Submit anyway')) {
+              btn.scrollIntoView({ block: 'center' });
+              btn.click();
+              break;
+            }
+          }
+        });
+      }
+
+      await page.waitForTimeout(3000);
+
+      // Check for success confirmation
+      const successMessage = await page.$(
+        '.success, [class*="success"], [class*="confirmation"], [role="alert"]:has-text("success")'
+      );
+
+      if (successMessage) {
+        const successText = await successMessage.textContent();
+
+        // Try to extract claim ID or confirmation number
+        let claimId: string | undefined;
+        const claimIdMatch = successText?.match(/claim[:\s#]*([A-Z0-9-]+)/i);
+        if (claimIdMatch) {
+          claimId = claimIdMatch[1];
+        }
+
+        // Clear pending data
+        this.pendingClaimData = null;
+        this.pendingConfirmationToken = null;
+        this.pendingTokenCreatedAt = null;
+
+        return {
+          success: true,
+          message: successText || 'Claim submitted successfully',
+          claimId,
+          confirmationNumber: claimId,
+        };
+      }
+
+      // Check for error (use specific selectors to avoid false positives from layout classes)
+      const errorMessage = await page.$('.error-text, [role="alert"]:not(:has-text("success"))');
+      if (errorMessage) {
+        const errorText = (await errorMessage.textContent())?.trim();
+        if (errorText) {
+          return {
+            success: false,
+            message: `Submission failed: ${errorText}`,
+          };
+        }
+      }
+
+      // Fallback: check if a claim POST was detected AND the URL changed.
+      // Previously this only checked that the URL contained "claims" without "new"
+      // or "submit", but the URL is already /claims/active before submission, so
+      // that was always a false positive. Now we require both a network POST and
+      // a genuine URL change from the pre-submit URL.
+      const currentUrl = page.url();
+      if (claimPostDetected && currentUrl !== urlBeforeSubmit) {
+        // Clear pending data
+        this.pendingClaimData = null;
+        this.pendingConfirmationToken = null;
+        this.pendingTokenCreatedAt = null;
+
+        return {
+          success: true,
+          message: 'Claim appears to have been submitted successfully (redirected to claims page)',
+        };
+      }
+
+      // If we got here, the submit didn't produce a visible success/error and no
+      // claim POST was detected — the click likely hit the wrong element or the
+      // form was dismissed without submitting.
+      if (!claimPostDetected) {
+        return {
+          success: false,
+          message:
+            'No claim submission request was detected. The form may have closed without submitting. Please call prepare_claim_to_submit to try again.',
+        };
+      }
 
       return {
-        success: true,
-        message: 'Claim appears to have been submitted successfully (redirected to claims page)',
+        success: false,
+        message: 'Could not confirm claim submission. Please check your claims list.',
       };
+    } finally {
+      page.off('request', requestHandler);
     }
-
-    return {
-      success: false,
-      message: 'Could not confirm claim submission. Please check your claims list.',
-    };
   }
 
   async getClaims(): Promise<Claim[]> {
