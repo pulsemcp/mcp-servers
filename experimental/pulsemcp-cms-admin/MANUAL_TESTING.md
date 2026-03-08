@@ -2,6 +2,45 @@
 
 ## Latest Test Results
 
+**Date:** 2026-03-08
+**Commit:** 6856ae1
+**Version:** 0.9.2 (pre-release)
+**API Environment:** Staging (admin.staging.pulsemcp.com)
+
+### Overall: ✅ Functional Tests PASSING (182/182, 8 test files) | ✅ Manual Tests PASSING (163/163, 11 test files)
+
+**v0.9.2 Changes:**
+
+- Added `verified_no_remote_canonicals` boolean field to MCP server tools (`get_mcp_server`, `update_mcp_server`, `save_mcp_implementation`)
+- Field reads from `mcp_server` nested object in API responses (not the implementation level)
+- Backend PR pulsemcp/pulsemcp#2161 merged — exposes `verified_no_remote_canonicals` and `recommended` in GET API responses
+
+**Functional Test Results: ✅ 182/182 PASSING (8 test files)**
+
+**Manual Test Results: ✅ 163/163 PASSING (11 test files, 41.67s)**
+
+All manual tests run against staging API and passing:
+
+1. mcp-servers-tools.manual.test.ts (36 tests) — list, get, update, e2e workflow
+2. server-directory-tools.manual.test.ts (17 tests)
+3. rest-api-tools.manual.test.ts (28 tests)
+4. good-jobs-tools.manual.test.ts (21 tests)
+5. discovered-urls-tools.manual.test.ts (10 tests)
+6. search-mcp-implementations.manual.test.ts (11 tests)
+7. redirect-tools.manual.test.ts (13 tests)
+8. find-providers.manual.test.ts (9 tests)
+9. send-email.manual.test.ts (1 test)
+10. pulsemcp-cms-admin.manual.test.ts (6 tests)
+11. proctor-tools.manual.test.ts (12 tests)
+
+**Note on `verified_no_remote_canonicals` field testing:**
+
+The backend PR (pulsemcp/pulsemcp#2161) has been merged but may not yet be deployed to staging. The API currently returns `null`/absent for the new field in the `mcp_server` nested object. The client-side code correctly reads the field from `mcpServer.verified_no_remote_canonicals` and will display it once the backend deployment includes the new serializer fields. No regressions observed — all existing manual tests pass.
+
+---
+
+## Previous Test Results (v0.9.1)
+
 **Date:** 2026-03-05
 **Commit:** eb0b27b
 **Version:** 0.9.1 (pre-release)

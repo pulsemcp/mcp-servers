@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [0.9.2] - 2026-03-06
+
+### Added
+
+- Added `verified_no_remote_canonicals` boolean field to MCP server tools — distinguishes "hasn't been checked for remote canonical URLs" from "checked and confirmed none exist". Available in `get_mcp_server` / `update_mcp_server` / `save_mcp_implementation` tools. The field lives on the MCPServer record (not the implementation) and is read from the `mcp_server` nested object in API responses.
+
 ## [0.9.1] - 2026-03-05
 
 ### Changed
