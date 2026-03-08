@@ -131,6 +131,99 @@ export class FetchPetClient implements IFetchPetClient {
   }
 
   /**
+   * Dismiss any overlay dialogs that appear on top of the claim form.
+   *
+   * After certain actions (e.g., clicking Continue on the invoice upload dialog),
+   * the Fetch Pet site may show an informational overlay dialog (class
+   * `MuiDialog-root generic-dialog`) on top of the claim form. This dialog
+   * blocks the submit button and must be dismissed before submission.
+   *
+   * We detect multiple stacked MuiDialog-root elements and dismiss the topmost
+   * overlay by clicking its primary action button (e.g., "Continue", "OK",
+   * "Got it", "Close") or its close/X button. We avoid pressing Escape because
+   * that can close ALL dialogs including the claim form, navigating away from
+   * the page entirely.
+   */
+  private async dismissOverlayDialogs(page: import('playwright').Page): Promise<void> {
+    // Check how many MuiDialog-root elements exist
+    const dialogCount = await page.evaluate(
+      () => document.querySelectorAll('.MuiDialog-root').length
+    );
+
+    if (dialogCount <= 1) {
+      // Only the claim form dialog (or no dialog at all) — nothing to dismiss
+      return;
+    }
+
+    // Multiple dialogs stacked. The last one in DOM order is the topmost overlay.
+    // Try to dismiss it by clicking a known action/dismiss button.
+    const dismissed = await page.evaluate(() => {
+      const dialogs = document.querySelectorAll('.MuiDialog-root');
+      const topDialog = dialogs[dialogs.length - 1] as HTMLElement;
+      if (!topDialog) return false;
+
+      // Look for common dismiss/action button texts
+      const dismissTexts = [
+        'Continue',
+        'OK',
+        'Got it',
+        'I understand',
+        'Dismiss',
+        'Done',
+        'Confirm',
+        'Accept',
+      ];
+
+      const buttons = Array.from(topDialog.querySelectorAll('button')) as HTMLButtonElement[];
+
+      // First try to find and click a dismiss button by text
+      for (const btn of buttons) {
+        const text = btn.textContent?.trim() || '';
+        for (const dismissText of dismissTexts) {
+          if (text.includes(dismissText)) {
+            btn.scrollIntoView({ block: 'center' });
+            btn.click();
+            return true;
+          }
+        }
+      }
+
+      // If no dismiss button found, try the close/X button (usually an icon button
+      // with aria-label="close" or a small button at the top-right of the dialog)
+      const closeBtn = topDialog.querySelector(
+        'button[aria-label="close"], button[aria-label="Close"], .MuiDialog-paper button:first-child'
+      ) as HTMLButtonElement | null;
+      if (closeBtn) {
+        // Only click if it looks like a close button (small, icon-only)
+        const text = closeBtn.textContent?.trim() || '';
+        if (text.length <= 2 || closeBtn.getAttribute('aria-label')?.toLowerCase() === 'close') {
+          closeBtn.click();
+          return true;
+        }
+      }
+
+      // Last resort: click the backdrop (the overlay behind the dialog)
+      // This is risky because it might close the claim form too, but it's
+      // better than leaving the overlay blocking the submit button.
+      const backdrop = topDialog.querySelector('.MuiBackdrop-root') as HTMLElement | null;
+      if (backdrop) {
+        backdrop.click();
+        return true;
+      }
+
+      return false;
+    });
+
+    if (dismissed) {
+      // Wait for the dialog to close and animations to complete
+      await page.waitForTimeout(1500);
+
+      // Recursively check for more overlay dialogs
+      await this.dismissOverlayDialogs(page);
+    }
+  }
+
+  /**
    * Extract claim data from active claim cards on the current page.
    * The history tab uses extractHistoricalClaimsFromPage instead,
    * due to a completely different DOM structure.
@@ -372,20 +465,78 @@ export class FetchPetClient implements IFetchPetClient {
     }
 
     // 2. Select diagnosis/reason for visit - uses MuiAutocomplete with "Search diagnoses" placeholder
+    //
+    // The autocomplete expects diagnosis/condition names (e.g. "Routine treatment",
+    // "Heartworm"), NOT medication names (e.g. "Nexgard Plus"). The claim description
+    // may contain medication names, so we try multiple search strategies:
+    // 1. Individual words from the description (skipping short/common words)
+    // 2. Common fallback terms like "routine", "treatment"
     const diagnosisInput = await page.$(
       '.MuiAutocomplete-input, input[placeholder="Search diagnoses"]'
     );
-    if (diagnosisInput) {
-      await diagnosisInput.click();
-      await diagnosisInput.fill(claimDescription);
-      await page.waitForTimeout(1000);
 
-      const diagOption = await page.$(
-        '.MuiAutocomplete-listbox [role="option"], [role="listbox"] [role="option"]'
-      );
-      if (diagOption) {
-        await diagOption.click();
-        await page.waitForTimeout(500);
+    if (diagnosisInput) {
+      // Extract candidate search terms from the claim description
+      const stopWords = new Set([
+        'a',
+        'an',
+        'the',
+        'for',
+        'and',
+        'or',
+        'of',
+        'to',
+        'in',
+        'on',
+        'at',
+        'is',
+        'it',
+        'by',
+        'with',
+        'from',
+        'as',
+        'lbs',
+        'mg',
+        'kg',
+        'plus',
+        'max',
+        'per',
+      ]);
+      const words = claimDescription
+        .replace(/[^a-zA-Z\s]/g, ' ')
+        .split(/\s+/)
+        .filter((w) => w.length > 2 && !stopWords.has(w.toLowerCase()))
+        .map((w) => w.toLowerCase());
+
+      // Prioritize medical/condition terms, then fall back to generic terms
+      const searchTerms = [...new Set([...words, 'routine', 'treatment'])];
+
+      let diagnosisSelected = false;
+      for (const term of searchTerms) {
+        if (diagnosisSelected) break;
+
+        await diagnosisInput.click();
+        await diagnosisInput.fill(term);
+        await page.waitForTimeout(1500);
+
+        const diagOption = await page.$(
+          '.MuiAutocomplete-listbox [role="option"], [role="listbox"] [role="option"]'
+        );
+        if (diagOption) {
+          await diagOption.click();
+          await page.waitForTimeout(500);
+          diagnosisSelected = true;
+        } else {
+          // Clear the input for next attempt
+          await diagnosisInput.fill('');
+          await page.waitForTimeout(300);
+        }
+      }
+
+      if (!diagnosisSelected) {
+        validationErrors.push(
+          'Could not find a matching diagnosis. Try a simpler description like "routine treatment" or "flea prevention".'
+        );
       }
     }
 
@@ -545,6 +696,12 @@ export class FetchPetClient implements IFetchPetClient {
       }
     }
 
+    // After uploading the invoice and clicking Continue, an overlay dialog may appear
+    // (e.g., a "generic-dialog" with informational content about the claim process).
+    // This dialog sits on top of the claim form and will block the submit button if
+    // not dismissed. Detect and dismiss it now, before we return to the caller.
+    await this.dismissOverlayDialogs(page);
+
     // Check for form validation errors (scope to form elements only)
     await page.waitForTimeout(1000);
     const formErrors = await page.$$('.invalid-feedback, .form-error, [class*="field-error"]');
@@ -673,17 +830,37 @@ The user MUST explicitly confirm they want to submit this claim before calling s
     page.on('request', requestHandler);
 
     try {
-      // Click the submit button using JavaScript to bypass Playwright's actionability
-      // checks. The claim form is a MuiDialog whose content overflows the viewport —
+      // Dismiss any overlay dialogs that may have appeared after prepareClaimToSubmit
+      // (e.g., a generic informational MuiDialog). These block the submit button.
+      // We handle this in both prepareClaimToSubmit and here as a safety net.
+      await this.dismissOverlayDialogs(page);
+
+      // Click the submit button using Playwright's click() with force:true.
+      // The claim form is a MuiDialog whose content overflows the viewport —
       // the Submit button sits below the visible scroll area (e.g. at Y=1308 vs
-      // viewport height 1080). Playwright's click() times out because the
+      // viewport height 1080). Playwright's normal click() times out because the
       // MuiDialog-container MuiDialog-scrollPaper div intercepts pointer events.
+      // Using force:true bypasses actionability checks while dispatching proper
+      // mouse events that React's synthetic event system can detect.
       //
-      // IMPORTANT: Scope the selector to .MuiDialog-root so we click the "Submit"
-      // button inside the dialog, NOT the "Submit a claim" button behind it.
-      // Both have class "filled-btn" but document.querySelector('button.filled-btn')
-      // returns the first match in DOM order, which is the wrong button.
-      const clicked = await this.clickButtonInDialog(page, '.MuiDialog-root button.filled-btn');
+      // IMPORTANT: Match "Submit" but not "Submit a claim" (the background button).
+      let clicked = false;
+      try {
+        const submitBtn = page.locator(
+          '.MuiDialog-root button.filled-btn:has-text("Submit"):not(:has-text("Submit a claim"))'
+        );
+        if ((await submitBtn.count()) > 0) {
+          await submitBtn.first().click({ force: true, timeout: 5000 });
+          clicked = true;
+        }
+      } catch {
+        // Fall through to the fallback below
+      }
+
+      // Fallback: use page.evaluate with JS click if Playwright's click fails
+      if (!clicked) {
+        clicked = await this.clickButtonInDialog(page, '.MuiDialog-root button.filled-btn');
+      }
 
       if (!clicked) {
         return {

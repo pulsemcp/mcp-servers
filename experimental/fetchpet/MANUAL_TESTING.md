@@ -4,38 +4,52 @@ This file tracks manual testing results for the Fetch Pet MCP Server.
 
 ## Latest Test Run
 
-**Date:** 2026-03-06
-**Commit:** 2b00f6f
+**Date:** 2026-03-08
+**Commit:** f82c960
 **Tester:** Automated via Agent Orchestrator
 
-### Test Results (0.1.4)
+### Test Results (0.1.5)
 
 #### Manual Test Suite (`npm run test:manual`)
 
 | Test                    | Result         | Notes                                                                |
 | ----------------------- | -------------- | -------------------------------------------------------------------- |
-| get_claims              | PASS           | Returns 11 claims (1 active + 10 historical for Nova)                |
+| get_claims              | PASS           | Returns 12 claims (2 active + 10 historical for Nova)                |
 | get_claim_details       | PASS (WARNING) | Active claim ID format mismatch — expected behavior                  |
 | prepare_claim_to_submit | PASS (WARNING) | Correctly reports "Invoice file is required" — expected without file |
 | submit_claim            | SKIPPED        | Intentionally skipped to avoid real claim submission                 |
 
 **Functional tests:** 7/7 PASS (all existing tests pass, build succeeds, no lint errors)
 
-#### Bug Investigation and Fix (#394)
+#### End-to-End Verification (#391, #394)
 
-**Root Cause:** `submit_claim` was clicking the wrong button. `document.querySelector('button.filled-btn')` matched the "Submit a claim" button behind the modal (first in DOM order) instead of the "Submit" button inside the MuiDialog. Confirmed via Playwright inspection:
+Successfully submitted a real claim end-to-end using the modified code:
 
-- "Submit a claim" button: `class="filled-btn btn"`, Y=50 (behind modal)
-- "Submit" button: `class="filled-btn fw-700 ml-2 btn"`, Y=1226 (inside modal)
-- `document.querySelector('button.filled-btn')` returns the first one
+1. `prepare_claim_to_submit`: Pet=Nova, Provider=Twin Cities Veterinary Hospital, Amount=$53.52, Date=2026-03-04, Description="Nexgard Plus 33.1-66 lbs - flea/tick/heartworm prevention medication" with invoice PDF
+2. `submit_claim`: Returned success — "Claim submitted successfully!", POST request detected
+3. `get_claims`: Confirmed new claim appears in list (12 claims, up from 11), status "received"
 
-**False Positive:** The fallback success detection checked `url.includes('claims') && !url.includes('new') && !url.includes('submit')`, but the URL was already `/claims/active` before submission — always true.
+#### Root Cause Analysis (#391, #394)
+
+The `submit_claim` button click was executing but no POST request was firing. Through DOM inspection during the submit flow, identified two issues:
+
+1. **Empty diagnosis field**: The diagnosis autocomplete expects condition names (e.g. "Routine treatment", "Heartworm"), NOT medication names (e.g. "Nexgard Plus"). The code was filling the autocomplete with the full claim description, which produced zero autocomplete results. Without a selected diagnosis, the form's client-side validation prevents the POST.
+
+2. **React event handling**: The `page.evaluate(() => btn.click())` approach fires a native DOM click, which may not fully trigger React's synthetic event system in all cases. Using Playwright's `click({ force: true })` dispatches proper mouse events that React can reliably detect.
 
 **Fix:**
 
-- Scoped selector to `.MuiDialog-root button.filled-btn` to target the correct button
-- Added network request monitoring to verify claim POST actually fires
-- Require both a POST request AND URL change for fallback success detection
+- Extract individual keywords from claim description and try each as a diagnosis search term, falling back to "routine" and "treatment"
+- Use Playwright's `click({ force: true })` for submit button instead of JS `.click()`
+- Add `dismissOverlayDialogs()` to handle informational dialog overlays that may appear on top of the claim form
+
+### Previous Test Run (0.1.4)
+
+**Date:** 2026-03-06
+**Commit:** 2b00f6f
+**Tester:** Automated via Agent Orchestrator
+
+- `submit_claim` still failed — button click didn't trigger POST because diagnosis field was empty (see root cause above)
 
 ### Previous Test Run (0.1.3)
 
@@ -84,6 +98,9 @@ Manually verified via Playwright browser automation:
 - **MuiDialog submit button click**: FIXED (0.1.3) - Uses JS scrollIntoView + click via page.evaluate() to bypass Playwright actionability checks on buttons below the viewport in the scrollable MuiDialog claim form
 - **Submit button selector**: FIXED (0.1.4) - Scoped to `.MuiDialog-root button.filled-btn` to click "Submit" inside dialog instead of "Submit a claim" behind it
 - **Submit success detection**: FIXED (0.1.4) - Added network request monitoring and require POST + URL change for fallback success detection
+- **Diagnosis autocomplete**: FIXED (0.1.5) - Extracts keywords from claim description and tries each as a search term, falling back to "routine" and "treatment"
+- **Submit button click**: FIXED (0.1.5) - Uses Playwright `click({ force: true })` instead of JS `.click()` for proper React event handling
+- **Overlay dialog handling**: ADDED (0.1.5) - `dismissOverlayDialogs()` handles informational MuiDialog overlays that may block the claim form
 - **Error detection**: WORKING - Narrowed error selectors avoid false positives from layout CSS classes
 
 ### Known Limitations
