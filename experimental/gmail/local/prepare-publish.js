@@ -42,6 +42,30 @@ async function preparePublish() {
   console.log('Copying shared build files...');
   await cp(join(__dirname, '../shared/build'), sharedPath, { recursive: true });
 
+  // Build and copy elicitation library
+  console.log('Building elicitation library...');
+  execSync('npm run build', {
+    cwd: join(__dirname, '../../../libs/elicitation'),
+    stdio: 'inherit',
+  });
+
+  const elicitationNodeModulesPath = join(__dirname, 'node_modules/@pulsemcp/elicitation');
+  if (existsSync(elicitationNodeModulesPath)) {
+    await rm(elicitationNodeModulesPath, { recursive: true, force: true });
+  }
+  await mkdir(elicitationNodeModulesPath, { recursive: true });
+
+  console.log('Copying elicitation build files...');
+  await cp(
+    join(__dirname, '../../../libs/elicitation/build'),
+    join(elicitationNodeModulesPath, 'build'),
+    { recursive: true }
+  );
+  await cp(
+    join(__dirname, '../../../libs/elicitation/package.json'),
+    join(elicitationNodeModulesPath, 'package.json')
+  );
+
   console.log('Ready for npm publish!');
 }
 

@@ -22,6 +22,8 @@ describe('Gmail MCP Server Tools', () => {
   beforeEach(() => {
     mockClient = createMockGmailClient();
     mockServer = {} as Server;
+    // Disable elicitation in functional tests (no real server for elicitation)
+    process.env.ELICITATION_ENABLED = 'false';
   });
 
   describe('list_email_conversations', () => {

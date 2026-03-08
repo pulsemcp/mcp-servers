@@ -1,0 +1,26 @@
+{
+  "name": "@pulsemcp/elicitation",
+  "version": "1.0.0",
+  "description": "Elicitation support library for PulseMCP MCP servers - provides native elicitation with HTTP fallback",
+  "type": "module",
+  "main": "build/index.js",
+  "types": "build/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "lint": "eslint . --ext .ts,.tsx",
+    "lint:fix": "eslint . --ext .ts,.tsx --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "keywords": [
+    "mcp",
+    "elicitation",
+    "pulsemcp"
+  ],
+  "author": "PulseMCP",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^24.10.12",
+    "typescript": "^5.7.3"
+  }
+}

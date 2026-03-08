@@ -4,6 +4,7 @@ import {
   ListResourcesResultSchema,
   ListToolsResultSchema,
   ToolListChangedNotificationSchema,
+  ElicitRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js';
 import { z } from 'zod';
 import {
@@ -22,13 +23,19 @@ export class TestMCPClient {
 
   constructor(options: TestMCPClientOptions) {
     this.options = options;
+
+    const capabilities: Record<string, object> = {};
+    if (options.elicitationHandler) {
+      capabilities.elicitation = { form: {} };
+    }
+
     this.client = new Client(
       {
         name: 'test-mcp-client',
         version: '1.0.0',
       },
       {
-        capabilities: {},
+        capabilities,
       }
     );
   }
@@ -48,6 +55,23 @@ export class TestMCPClient {
       this.transport.onerror = (error: Error) => {
         console.error('[TestMCPClient] Transport error:', error);
       };
+    }
+
+    // Register the elicitation handler before connecting, if provided
+    if (this.options.elicitationHandler) {
+      const handler = this.options.elicitationHandler;
+      this.client.setRequestHandler(ElicitRequestSchema, async (request) => {
+        const { message, requestedSchema } = request.params as {
+          message: string;
+          requestedSchema: {
+            type: 'object';
+            properties: Record<string, unknown>;
+            required?: string[];
+          };
+        };
+
+        return handler({ message, requestedSchema });
+      });
     }
 
     await this.client.connect(this.transport);
