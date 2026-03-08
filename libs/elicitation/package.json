@@ -19,7 +19,7 @@
   ],
   "author": "PulseMCP",
   "license": "MIT",
-  "dependencies": {
+  "peerDependencies": {
     "@modelcontextprotocol/sdk": "^1.19.1"
   },
   "devDependencies": {
