@@ -69,7 +69,7 @@ The tests will:
 
 **Test Date:** 2026-03-08
 **Branch:** claude/elicitation-fallback-pattern
-**Commit:** 032b200
+**Commit:** edf3465
 **Tested By:** Claude Code
 **Environment:** Real Gmail API (service account) + local HTTP mock server for fallback
 
@@ -129,7 +129,7 @@ Integration Tests: 24 passed (24)
 
 | Date       | Commit  | Status | Notes                                                                                     |
 | ---------- | ------- | ------ | ----------------------------------------------------------------------------------------- |
-| 2026-03-08 | 032b200 | PASS   | v0.3.0 - Elicitation support, 13 manual + 108 functional + 24 integration                 |
+| 2026-03-08 | edf3465 | PASS   | v0.3.0 - Elicitation support, 13 manual + 108 functional + 24 integration                 |
 | 2026-03-05 | 9be3fff | PASS   | v0.2.1 - MIME encoding fixes, 108 functional (no API changes, manual tests not re-run)    |
 | 2026-03-04 | 4d1634a | PASS   | v0.2.0 - HTML body support, 12 manual + 87 functional + 17 integration                    |
 | 2026-02-22 | 04bed3a | PASS   | v0.1.2 - oauth-setup CLI subcommand, 83 functional + 15 integration (no API code changes) |
