@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { TestMCPClient } from '../../../../libs/test-mcp-client/build/index.js';
+import type { ElicitationHandler } from '../../../../libs/test-mcp-client/build/index.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import 'dotenv/config';
@@ -71,6 +72,9 @@ describe('Gmail Client - Manual Tests', () => {
         `Using service account authentication, impersonating: ${process.env.GMAIL_IMPERSONATE_EMAIL}`
       );
     }
+
+    // Disable elicitation for standard tests (tested separately below)
+    env.ELICITATION_ENABLED = 'false';
 
     client = new TestMCPClient({
       serverPath,
@@ -263,6 +267,218 @@ describe('Gmail Client - Manual Tests', () => {
       const text = (result.content[0] as { text: string }).text;
       expect(text).toBeDefined();
       console.log(`download_email_attachments response length: ${text.length} chars`);
+    });
+  });
+});
+
+/**
+ * Elicitation tests - verifies that the elicitation flow works with real Gmail API.
+ *
+ * These tests use a separate TestMCPClient instance with elicitation enabled
+ * and a client-side handler that auto-accepts or auto-declines.
+ */
+describe('Gmail Client - Elicitation Manual Tests', () => {
+  const serverPath = path.join(__dirname, '../../local/build/index.js');
+
+  function getGmailEnv(): Record<string, string> {
+    const env: Record<string, string> = {};
+    const hasOAuth2 =
+      process.env.GMAIL_OAUTH_CLIENT_ID &&
+      process.env.GMAIL_OAUTH_CLIENT_SECRET &&
+      process.env.GMAIL_OAUTH_REFRESH_TOKEN;
+
+    if (hasOAuth2) {
+      env.GMAIL_OAUTH_CLIENT_ID = process.env.GMAIL_OAUTH_CLIENT_ID!;
+      env.GMAIL_OAUTH_CLIENT_SECRET = process.env.GMAIL_OAUTH_CLIENT_SECRET!;
+      env.GMAIL_OAUTH_REFRESH_TOKEN = process.env.GMAIL_OAUTH_REFRESH_TOKEN!;
+    } else {
+      env.GMAIL_SERVICE_ACCOUNT_CLIENT_EMAIL = process.env.GMAIL_SERVICE_ACCOUNT_CLIENT_EMAIL!;
+      env.GMAIL_SERVICE_ACCOUNT_PRIVATE_KEY = process.env.GMAIL_SERVICE_ACCOUNT_PRIVATE_KEY!;
+      env.GMAIL_IMPERSONATE_EMAIL = process.env.GMAIL_IMPERSONATE_EMAIL!;
+    }
+    return env;
+  }
+
+  describe('send_email with elicitation enabled (user accepts)', () => {
+    let elicitClient: TestMCPClient;
+
+    beforeAll(async () => {
+      const hasOAuth2 =
+        process.env.GMAIL_OAUTH_CLIENT_ID &&
+        process.env.GMAIL_OAUTH_CLIENT_SECRET &&
+        process.env.GMAIL_OAUTH_REFRESH_TOKEN;
+
+      const hasServiceAccount =
+        process.env.GMAIL_SERVICE_ACCOUNT_CLIENT_EMAIL &&
+        process.env.GMAIL_SERVICE_ACCOUNT_PRIVATE_KEY &&
+        process.env.GMAIL_IMPERSONATE_EMAIL;
+
+      if (!hasOAuth2 && !hasServiceAccount) {
+        throw new Error('Gmail authentication not configured for elicitation tests.');
+      }
+
+      const env = getGmailEnv();
+      env.ELICITATION_ENABLED = 'true';
+
+      const elicitationHandler: ElicitationHandler = async ({ message }) => {
+        console.log(`[Elicitation] Received confirmation request: ${message.substring(0, 100)}...`);
+        return { action: 'accept', content: { confirm: true } };
+      };
+
+      elicitClient = new TestMCPClient({
+        serverPath,
+        env,
+        elicitationHandler,
+      });
+
+      await elicitClient.connect();
+    });
+
+    afterAll(async () => {
+      if (elicitClient) {
+        await elicitClient.disconnect();
+      }
+    });
+
+    it('should send email after user accepts elicitation', async () => {
+      const recipientEmail =
+        process.env.GMAIL_TEST_RECIPIENT_EMAIL || process.env.GMAIL_IMPERSONATE_EMAIL;
+      if (!recipientEmail) {
+        console.log('Skipping - no recipient email available');
+        return;
+      }
+
+      const result = await elicitClient.callTool('send_email', {
+        to: recipientEmail,
+        subject: `[TEST-ELICIT] Accepted send - ${new Date().toISOString()}`,
+        plaintext_body:
+          'This email was sent after accepting an elicitation prompt.\n\nPlease delete this email.',
+      });
+
+      expect(result.isError).toBeFalsy();
+      const text = (result.content[0] as { text: string }).text;
+      expect(text).toContain('Email sent successfully');
+      console.log(`Elicitation accept test passed. Email sent successfully.`);
+    });
+  });
+
+  describe('send_email with elicitation enabled (user declines)', () => {
+    let elicitClient: TestMCPClient;
+
+    beforeAll(async () => {
+      const hasOAuth2 =
+        process.env.GMAIL_OAUTH_CLIENT_ID &&
+        process.env.GMAIL_OAUTH_CLIENT_SECRET &&
+        process.env.GMAIL_OAUTH_REFRESH_TOKEN;
+
+      const hasServiceAccount =
+        process.env.GMAIL_SERVICE_ACCOUNT_CLIENT_EMAIL &&
+        process.env.GMAIL_SERVICE_ACCOUNT_PRIVATE_KEY &&
+        process.env.GMAIL_IMPERSONATE_EMAIL;
+
+      if (!hasOAuth2 && !hasServiceAccount) {
+        throw new Error('Gmail authentication not configured for elicitation tests.');
+      }
+
+      const env = getGmailEnv();
+      env.ELICITATION_ENABLED = 'true';
+
+      const elicitationHandler: ElicitationHandler = async ({ message }) => {
+        console.log(`[Elicitation] Declining: ${message.substring(0, 100)}...`);
+        return { action: 'decline' };
+      };
+
+      elicitClient = new TestMCPClient({
+        serverPath,
+        env,
+        elicitationHandler,
+      });
+
+      await elicitClient.connect();
+    });
+
+    afterAll(async () => {
+      if (elicitClient) {
+        await elicitClient.disconnect();
+      }
+    });
+
+    it('should not send email when user declines elicitation', async () => {
+      const recipientEmail =
+        process.env.GMAIL_TEST_RECIPIENT_EMAIL || process.env.GMAIL_IMPERSONATE_EMAIL;
+      if (!recipientEmail) {
+        console.log('Skipping - no recipient email available');
+        return;
+      }
+
+      const result = await elicitClient.callTool('send_email', {
+        to: recipientEmail,
+        subject: `[TEST-ELICIT] Should NOT be sent - ${new Date().toISOString()}`,
+        plaintext_body: 'This email should NOT have been sent - the user declined.',
+      });
+
+      expect(result.isError).toBeFalsy();
+      const text = (result.content[0] as { text: string }).text;
+      expect(text).toContain('cancelled by the user');
+      console.log(`Elicitation decline test passed. Email was NOT sent.`);
+    });
+  });
+
+  describe('send_email with elicitation disabled', () => {
+    let elicitClient: TestMCPClient;
+
+    beforeAll(async () => {
+      const hasOAuth2 =
+        process.env.GMAIL_OAUTH_CLIENT_ID &&
+        process.env.GMAIL_OAUTH_CLIENT_SECRET &&
+        process.env.GMAIL_OAUTH_REFRESH_TOKEN;
+
+      const hasServiceAccount =
+        process.env.GMAIL_SERVICE_ACCOUNT_CLIENT_EMAIL &&
+        process.env.GMAIL_SERVICE_ACCOUNT_PRIVATE_KEY &&
+        process.env.GMAIL_IMPERSONATE_EMAIL;
+
+      if (!hasOAuth2 && !hasServiceAccount) {
+        throw new Error('Gmail authentication not configured for elicitation tests.');
+      }
+
+      const env = getGmailEnv();
+      env.ELICITATION_ENABLED = 'false';
+
+      // No elicitation handler - shouldn't be needed when disabled
+      elicitClient = new TestMCPClient({
+        serverPath,
+        env,
+      });
+
+      await elicitClient.connect();
+    });
+
+    afterAll(async () => {
+      if (elicitClient) {
+        await elicitClient.disconnect();
+      }
+    });
+
+    it('should send email without elicitation prompt when disabled', async () => {
+      const recipientEmail =
+        process.env.GMAIL_TEST_RECIPIENT_EMAIL || process.env.GMAIL_IMPERSONATE_EMAIL;
+      if (!recipientEmail) {
+        console.log('Skipping - no recipient email available');
+        return;
+      }
+
+      const result = await elicitClient.callTool('send_email', {
+        to: recipientEmail,
+        subject: `[TEST-ELICIT-OFF] No prompt - ${new Date().toISOString()}`,
+        plaintext_body:
+          'This email was sent without any elicitation prompt.\n\nPlease delete this email.',
+      });
+
+      expect(result.isError).toBeFalsy();
+      const text = (result.content[0] as { text: string }).text;
+      expect(text).toContain('Email sent successfully');
+      console.log(`Elicitation disabled test passed. Email sent without prompt.`);
     });
   });
 });

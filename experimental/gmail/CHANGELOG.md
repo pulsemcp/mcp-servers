@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- Elicitation support for `send_email` tool — prompts for user confirmation before sending emails
+  - Uses the new `@pulsemcp/elicitation` library for MCP-native elicitation with HTTP fallback
+  - Configurable via `ELICITATION_ENABLED` environment variable (defaults to `true`)
+  - When enabled, displays email details (recipients, subject, CC/BCC) or draft ID for confirmation
+  - Supports native MCP elicitation protocol and HTTP-based fallback for clients without native support
+  - Gracefully handles decline, cancel, expiration, and explicit non-confirmation responses
+  - Addresses [issue #384](https://github.com/pulsemcp/mcp-servers/issues/384)
+
 ## [0.2.1] - 2026-03-05
 
 ### Fixed
