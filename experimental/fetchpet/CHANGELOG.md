@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.5] - 2026-03-08
+
+### Fixed
+
+- Fix `submit_claim` silently failing because the diagnosis field was empty. The autocomplete expects diagnosis/condition names (e.g. "Routine treatment", "Heartworm"), not medication names (e.g. "Nexgard Plus"). Now extracts individual keywords from the claim description and tries each as a search term, falling back to generic terms like "routine" and "treatment" (#391, #394)
+- Fix `submit_claim` button click not triggering React form submission. Replace `page.evaluate()` JS click with Playwright's `click({ force: true })` which dispatches proper mouse events that React's synthetic event system can detect (#391, #394)
+- Add `dismissOverlayDialogs()` to handle informational MuiDialog overlays that may appear on top of the claim form after invoice upload, preventing submit button from being blocked (#391, #394)
+
 ## [0.1.4] - 2026-03-06
 
 ### Fixed
