@@ -69,16 +69,16 @@ The tests will:
 
 **Test Date:** 2026-03-08
 **Branch:** claude/elicitation-fallback-pattern
-**Commit:** 4fadce4
+**Commit:** 032b200
 **Tested By:** Claude Code
-**Environment:** Real Gmail API (service account) + mocked integration tests
+**Environment:** Real Gmail API (service account) + local HTTP mock server for fallback
 
 ### Test Results
 
-**Manual Tests (real Gmail API): 11 passed, 4 skipped**
+**Manual Tests (real Gmail API): 13 passed**
 
 ```
-gmail-client.test.ts: 11 passed
+gmail-client.test.ts: 13 passed
   - list_email_conversations: 2 passed (inbox listing, query filtering)
   - search_email_conversations: 1 passed
   - get_email_conversation: 1 passed
@@ -86,11 +86,11 @@ gmail-client.test.ts: 11 passed
   - draft_email: 1 passed
   - send_email: 1 passed
   - download_email_attachments: 1 passed
-  - Elicitation (accept): 1 passed — sent email after user accepted confirmation
-  - Elicitation (decline): 1 passed — correctly blocked email when user declined
+  - Native elicitation (accept): 1 passed — sent email after user accepted via MCP protocol
+  - Native elicitation (decline): 1 passed — correctly blocked email when user declined via MCP protocol
   - Elicitation (disabled): 1 passed — sent email without prompt when disabled
-
-download-attachments.test.ts: 4 skipped (pre-existing MCP connection issue, unrelated to this change)
+  - HTTP fallback (accept): 1 passed — sent email via local mock HTTP server after acceptance
+  - HTTP fallback (decline): 1 passed — blocked email via local mock HTTP server after decline
 ```
 
 **Automated Tests (mocked):**
@@ -114,12 +114,14 @@ Integration Tests: 24 passed (24)
     - return error when no mechanism available
 ```
 
-**Overall:** 143 tests passed (108 functional + 24 integration + 11 manual)
+**Overall:** 145 tests passed (108 functional + 24 integration + 13 manual)
 
 ### Notes
 
 - New `@pulsemcp/elicitation` library in libs/elicitation/ for reusable MCP elicitation
 - Gmail send_email tool now prompts for confirmation via MCP elicitation protocol
+- Both native MCP elicitation (Tier 2) and HTTP fallback (Tier 3) paths are manually tested
+- HTTP fallback tests use a local mock HTTP server to simulate the approval endpoint
 - Configurable via `ELICITATION_ENABLED` env var (defaults to true)
 - TestMCPClient updated with elicitationHandler support
 
@@ -127,7 +129,7 @@ Integration Tests: 24 passed (24)
 
 | Date       | Commit  | Status | Notes                                                                                     |
 | ---------- | ------- | ------ | ----------------------------------------------------------------------------------------- |
-| 2026-03-08 | 4fadce4 | PASS   | v0.3.0 - Elicitation support, 11 manual + 108 functional + 24 integration                 |
+| 2026-03-08 | 032b200 | PASS   | v0.3.0 - Elicitation support, 13 manual + 108 functional + 24 integration                 |
 | 2026-03-05 | 9be3fff | PASS   | v0.2.1 - MIME encoding fixes, 108 functional (no API changes, manual tests not re-run)    |
 | 2026-03-04 | 4d1634a | PASS   | v0.2.0 - HTML body support, 12 manual + 87 functional + 17 integration                    |
 | 2026-02-22 | 04bed3a | PASS   | v0.1.2 - oauth-setup CLI subcommand, 83 functional + 15 integration (no API code changes) |
