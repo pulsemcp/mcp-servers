@@ -237,7 +237,7 @@ export interface SaveMCPImplementationParams {
 
   // Flags
   recommended?: boolean; // Mark this server as recommended by PulseMCP
-  verified_no_remote_canonicals?: boolean; // Mark that this server has been verified to have no canonical URLs
+  verified_no_remote_canonicals?: boolean; // Mark that this server has been verified to have no remote canonical URLs
 
   // Date overrides
   created_on_override?: string; // ISO date string to override the automatically derived created date
@@ -297,7 +297,7 @@ export interface CreateMCPImplementationParams {
 
   // Flags
   recommended?: boolean; // Mark this server as recommended by PulseMCP
-  verified_no_remote_canonicals?: boolean; // Mark that this server has been verified to have no canonical URLs
+  verified_no_remote_canonicals?: boolean; // Mark that this server has been verified to have no remote canonical URLs
 
   // Date overrides
   created_on_override?: string; // ISO date string to override the automatically derived created date
@@ -640,7 +640,7 @@ export interface UnifiedMCPServer {
 
   // Flags
   recommended?: boolean; // Whether this server is recommended by PulseMCP
-  verified_no_remote_canonicals?: boolean; // Whether this server has been verified to have no canonical URLs
+  verified_no_remote_canonicals?: boolean; // Whether this server has been verified to have no remote canonical URLs
 
   // Canonical URLs
   canonical_urls?: CanonicalUrl[];
@@ -713,7 +713,7 @@ export interface UpdateUnifiedMCPServerParams {
 
   // Flags
   recommended?: boolean; // Mark this server as recommended by PulseMCP
-  verified_no_remote_canonicals?: boolean; // Mark that this server has been verified to have no canonical URLs
+  verified_no_remote_canonicals?: boolean; // Mark that this server has been verified to have no remote canonical URLs
 
   // Date overrides
   created_on_override?: string; // ISO date string to override the automatically derived created date
