@@ -67,41 +67,69 @@ The tests will:
 
 ## Latest Test Results
 
-**Test Date:** 2026-03-05
-**Branch:** claude/fix-gmail-encoding-issues
-**Commit:** 9be3fff
+**Test Date:** 2026-03-08
+**Branch:** claude/elicitation-fallback-pattern
+**Commit:** edf3465
 **Tested By:** Claude Code
-**Environment:** Functional tests only (MIME-only fix, no API interaction changes)
+**Environment:** Real Gmail API (service account) + local HTTP mock server for fallback
 
 ### Test Results
 
-**Manual Tests (real Gmail API): Not re-run**
+**Manual Tests (real Gmail API): 13 passed**
 
-> Manual tests were not re-run for v0.2.1 because the changes are purely to MIME message construction logic (`mime-utils.ts`): RFC 2047 subject encoding and leading newline stripping. No API interaction code was modified. The previous manual test results from v0.2.0 (commit 4d1634a) remain valid for API integration correctness.
+```
+gmail-client.test.ts: 13 passed
+  - list_email_conversations: 2 passed (inbox listing, query filtering)
+  - search_email_conversations: 1 passed
+  - get_email_conversation: 1 passed
+  - change_email_conversation: 1 passed (star/unstar)
+  - draft_email: 1 passed
+  - send_email: 1 passed
+  - download_email_attachments: 1 passed
+  - Native elicitation (accept): 1 passed — sent email after user accepted via MCP protocol
+  - Native elicitation (decline): 1 passed — correctly blocked email when user declined via MCP protocol
+  - Elicitation (disabled): 1 passed — sent email without prompt when disabled
+  - HTTP fallback (accept): 1 passed — sent email via local mock HTTP server after acceptance
+  - HTTP fallback (decline): 1 passed — blocked email via local mock HTTP server after decline
+```
 
 **Automated Tests (mocked):**
 
 ```
 Functional Tests: 108 passed (108)
-  - mime-utils.test.ts: 19 tests (plain text, HTML, multipart, CC/BCC, reply headers, empty body,
-    RFC 2047 encoding for non-ASCII subjects, leading newline stripping, encodeSubject unit tests)
-  - auth.test.ts: 12 tests (OAuth2 + service account client creation, preference, error cases)
-  - tools.test.ts: 72 tests (all tool tests including draft_email and send_email)
-  - oauth-setup.test.ts: 5 tests (CLI argument validation, env var fallback, OAuth flow initiation)
+  - mime-utils.test.ts: 19 tests
+  - auth.test.ts: 12 tests
+  - tools.test.ts: 72 tests
+  - oauth-setup.test.ts: 5 tests
+
+Integration Tests: 24 passed (24)
+  - Existing tests: 17 passed (with elicitation disabled)
+  - Elicitation tests: 7 passed
+    - send email when user confirms via elicitation
+    - cancel send when user declines via elicitation
+    - cancel send when user cancels via elicitation
+    - not send when confirm=false
+    - include draft ID in elicitation message
+    - send without confirmation when disabled
+    - return error when no mechanism available
 ```
 
-**Overall:** All 108 functional tests passed
+**Overall:** 145 tests passed (108 functional + 24 integration + 13 manual)
 
 ### Notes
 
-- RFC 2047 `=?UTF-8?B?...?=` encoding added for non-ASCII email subjects (em dashes, accented chars, emoji, CJK)
-- Leading `\r\n` and `\n` characters stripped from body content to prevent extra blank lines
-- 12 new test cases added: 7 for buildMimeMessage (encoding + newline stripping) and 5 for encodeSubject
+- New `@pulsemcp/mcp-elicitation` library in libs/elicitation/ for reusable MCP elicitation
+- Gmail send_email tool now prompts for confirmation via MCP elicitation protocol
+- Both native MCP elicitation (Tier 2) and HTTP fallback (Tier 3) paths are manually tested
+- HTTP fallback tests use a local mock HTTP server to simulate the approval endpoint
+- Configurable via `ELICITATION_ENABLED` env var (defaults to true)
+- TestMCPClient updated with elicitationHandler support
 
 ## Historical Test Runs
 
 | Date       | Commit  | Status | Notes                                                                                     |
 | ---------- | ------- | ------ | ----------------------------------------------------------------------------------------- |
+| 2026-03-08 | edf3465 | PASS   | v0.3.0 - Elicitation support, 13 manual + 108 functional + 24 integration                 |
 | 2026-03-05 | 9be3fff | PASS   | v0.2.1 - MIME encoding fixes, 108 functional (no API changes, manual tests not re-run)    |
 | 2026-03-04 | 4d1634a | PASS   | v0.2.0 - HTML body support, 12 manual + 87 functional + 17 integration                    |
 | 2026-02-22 | 04bed3a | PASS   | v0.1.2 - oauth-setup CLI subcommand, 83 functional + 15 integration (no API code changes) |

@@ -2,6 +2,11 @@ import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { z } from 'zod';
 import type { ClientFactory } from '../server.js';
 import { getHeader } from '../utils/email-helpers.js';
+import {
+  requestConfirmation,
+  createConfirmationSchema,
+  readElicitationConfig,
+} from '@pulsemcp/mcp-elicitation';
 
 const PARAM_DESCRIPTIONS = {
   to: 'Recipient email address(es). For multiple recipients, separate with commas.',
@@ -129,6 +134,78 @@ export function sendEmailTool(server: Server, clientFactory: ClientFactory) {
       try {
         const parsed = SendEmailSchema.parse(args ?? {});
         const client = clientFactory();
+
+        // Build a human-readable summary for the elicitation prompt
+        const elicitationConfig = readElicitationConfig();
+        if (elicitationConfig.enabled) {
+          let confirmMessage: string;
+          if (parsed.from_draft_id) {
+            confirmMessage = `About to send draft (ID: ${parsed.from_draft_id}). This action cannot be undone.`;
+          } else {
+            confirmMessage =
+              `About to send an email:\n` +
+              `  To: ${parsed.to}\n` +
+              `  Subject: ${parsed.subject}\n` +
+              (parsed.cc ? `  CC: ${parsed.cc}\n` : '') +
+              (parsed.bcc ? `  BCC: ${parsed.bcc}\n` : '') +
+              `\nThis action cannot be undone.`;
+          }
+
+          const confirmation = await requestConfirmation(
+            {
+              server,
+              message: confirmMessage,
+              requestedSchema: createConfirmationSchema(
+                'Send this email?',
+                'Confirm that you want to send this email immediately.'
+              ),
+              meta: {
+                'com.pulsemcp/tool-name': 'send_email',
+              },
+            },
+            elicitationConfig
+          );
+
+          if (confirmation.action === 'decline' || confirmation.action === 'cancel') {
+            return {
+              content: [
+                {
+                  type: 'text',
+                  text: 'Email sending was cancelled by the user.',
+                },
+              ],
+            };
+          }
+
+          if (confirmation.action === 'expired') {
+            return {
+              content: [
+                {
+                  type: 'text',
+                  text: 'Email sending confirmation expired. Please try again.',
+                },
+              ],
+              isError: true,
+            };
+          }
+
+          // action === 'accept' with content.confirm === true, or
+          // action === 'accept' from disabled mode (no content)
+          if (
+            confirmation.content &&
+            'confirm' in confirmation.content &&
+            confirmation.content.confirm === false
+          ) {
+            return {
+              content: [
+                {
+                  type: 'text',
+                  text: 'Email sending was not confirmed. The email was not sent.',
+                },
+              ],
+            };
+          }
+        }
 
         // Option 2: Send a draft
         if (parsed.from_draft_id) {
