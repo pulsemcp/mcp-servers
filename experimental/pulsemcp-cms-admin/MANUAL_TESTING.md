@@ -7,7 +7,7 @@
 **Version:** 0.9.2 (pre-release)
 **API Environment:** Staging (admin.staging.pulsemcp.com)
 
-### Overall: ✅ Functional Tests PASSING (179/179, 8 test files) | ✅ Manual Tests PASSING (163/163, 11 test files)
+### Overall: ✅ Functional Tests PASSING (182/182, 8 test files) | ✅ Manual Tests PASSING (163/163, 11 test files)
 
 **v0.9.2 Changes:**
 
@@ -15,7 +15,7 @@
 - Field reads from `mcp_server` nested object in API responses (not the implementation level)
 - Backend PR pulsemcp/pulsemcp#2161 merged — exposes `verified_no_remote_canonicals` and `recommended` in GET API responses
 
-**Functional Test Results: ✅ 179/179 PASSING (8 test files)**
+**Functional Test Results: ✅ 182/182 PASSING (8 test files)**
 
 **Manual Test Results: ✅ 163/163 PASSING (11 test files, 41.67s)**
 
