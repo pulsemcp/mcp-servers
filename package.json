@@ -10,6 +10,7 @@
     "productionized/*/local",
     "productionized/*/shared",
     "libs/test-mcp-client",
+    "libs/elicitation",
     "libs/mcp-server-template/local",
     "libs/mcp-server-template/shared"
   ],
