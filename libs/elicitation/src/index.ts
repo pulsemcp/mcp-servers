@@ -8,5 +8,6 @@ export type {
   ElicitationPostResponse,
   ElicitationRequestedSchema,
   ElicitationResult,
+  MCPServerLike,
   RequestConfirmationOptions,
 } from './types.js';

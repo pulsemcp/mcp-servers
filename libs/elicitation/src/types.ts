@@ -56,7 +56,7 @@ export interface ElicitationRequestedSchema {
  * Read from environment variables at initialization.
  */
 export interface ElicitationConfig {
-  /** Whether elicitation is enabled at all. Default: true. */
+  /** Whether elicitation is enabled at all. Default: true (reads from ELICITATION_ENABLED env var). */
   enabled: boolean;
   /** POST endpoint for creating approval requests (HTTP fallback). */
   requestUrl?: string;

@@ -148,16 +148,23 @@ export async function requestConfirmation(
 
   // Tier 3: HTTP fallback
   if (cfg.requestUrl && cfg.pollUrl) {
-    const requestId = randomUUID();
+    const clientRequestId = randomUUID();
     const expiresAt = Date.now() + cfg.ttlMs;
 
     const meta: ElicitationMeta = {
-      'com.pulsemcp/request-id': requestId,
+      'com.pulsemcp/request-id': clientRequestId,
       'com.pulsemcp/expires-at': new Date(expiresAt).toISOString(),
       ...options.meta,
     };
 
-    await postElicitationRequest(cfg, options.message, options.requestedSchema, meta);
+    const postResponse = await postElicitationRequest(
+      cfg,
+      options.message,
+      options.requestedSchema,
+      meta
+    );
+    // Use the server-provided requestId if available, otherwise fall back to the client-generated one
+    const requestId = postResponse.requestId || clientRequestId;
     return pollElicitationStatus(cfg, requestId, expiresAt);
   }
 
