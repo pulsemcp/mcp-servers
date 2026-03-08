@@ -1,5 +1,5 @@
 {
-  "name": "@pulsemcp/elicitation",
+  "name": "@pulsemcp/mcp-elicitation",
   "version": "1.0.0",
   "description": "Elicitation support library for PulseMCP MCP servers - provides native elicitation with HTTP fallback",
   "type": "module",

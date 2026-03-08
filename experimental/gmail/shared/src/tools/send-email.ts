@@ -6,7 +6,7 @@ import {
   requestConfirmation,
   createConfirmationSchema,
   readElicitationConfig,
-} from '@pulsemcp/elicitation';
+} from '@pulsemcp/mcp-elicitation';
 
 const PARAM_DESCRIPTIONS = {
   to: 'Recipient email address(es). For multiple recipients, separate with commas.',

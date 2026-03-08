@@ -49,7 +49,7 @@ async function preparePublish() {
     stdio: 'inherit',
   });
 
-  const elicitationNodeModulesPath = join(__dirname, 'node_modules/@pulsemcp/elicitation');
+  const elicitationNodeModulesPath = join(__dirname, 'node_modules/@pulsemcp/mcp-elicitation');
   if (existsSync(elicitationNodeModulesPath)) {
     await rm(elicitationNodeModulesPath, { recursive: true, force: true });
   }

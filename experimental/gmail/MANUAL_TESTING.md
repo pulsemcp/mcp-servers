@@ -118,7 +118,7 @@ Integration Tests: 24 passed (24)
 
 ### Notes
 
-- New `@pulsemcp/elicitation` library in libs/elicitation/ for reusable MCP elicitation
+- New `@pulsemcp/mcp-elicitation` library in libs/elicitation/ for reusable MCP elicitation
 - Gmail send_email tool now prompts for confirmation via MCP elicitation protocol
 - Both native MCP elicitation (Tier 2) and HTTP fallback (Tier 3) paths are manually tested
 - HTTP fallback tests use a local mock HTTP server to simulate the approval endpoint
