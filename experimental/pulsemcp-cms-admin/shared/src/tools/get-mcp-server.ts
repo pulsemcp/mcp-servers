@@ -109,8 +109,8 @@ Example response:
         if (server.recommended !== undefined) {
           content += `**Recommended:** ${server.recommended ? 'Yes' : 'No'}\n`;
         }
-        if (server.verified_no_canonicals !== undefined) {
-          content += `**Verified No Canonicals:** ${server.verified_no_canonicals ? 'Yes' : 'No'}\n`;
+        if (server.verified_no_remote_canonicals !== undefined) {
+          content += `**Verified No Remote Canonicals:** ${server.verified_no_remote_canonicals ? 'Yes' : 'No'}\n`;
         }
 
         if (server.short_description) {

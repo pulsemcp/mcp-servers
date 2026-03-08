@@ -21,8 +21,8 @@ const PARAM_DESCRIPTIONS = {
   package_registry: 'Package registry: npm, pypi, cargo, etc.',
   package_name: 'Package name on the registry (e.g., "@modelcontextprotocol/server-filesystem")',
   recommended: 'Mark this server as recommended by PulseMCP',
-  verified_no_canonicals:
-    'Mark that this server has been verified to have no canonical URLs (true = verified no canonicals exist, false = reset/canonicals found)',
+  verified_no_remote_canonicals:
+    'Mark that this server has been verified to have no remote canonical URLs (true = verified no remote canonicals exist, false = reset/canonicals found)',
   created_on_override:
     'Override the automatically derived created date (ISO date string, e.g., "2025-01-15")',
   tags: 'Tags for the server. Replaces all existing tags when provided. Use tag slugs.',
@@ -95,10 +95,10 @@ const UpdateMCPServerSchema = z.object({
   package_registry: z.string().optional().describe(PARAM_DESCRIPTIONS.package_registry),
   package_name: z.string().optional().describe(PARAM_DESCRIPTIONS.package_name),
   recommended: z.boolean().optional().describe(PARAM_DESCRIPTIONS.recommended),
-  verified_no_canonicals: z
+  verified_no_remote_canonicals: z
     .boolean()
     .optional()
-    .describe(PARAM_DESCRIPTIONS.verified_no_canonicals),
+    .describe(PARAM_DESCRIPTIONS.verified_no_remote_canonicals),
   created_on_override: z.string().optional().describe(PARAM_DESCRIPTIONS.created_on_override),
   tags: z.array(z.string()).optional().describe(PARAM_DESCRIPTIONS.tags),
   canonical_urls: z
@@ -238,9 +238,9 @@ Create new provider:
         package_registry: { type: 'string', description: PARAM_DESCRIPTIONS.package_registry },
         package_name: { type: 'string', description: PARAM_DESCRIPTIONS.package_name },
         recommended: { type: 'boolean', description: PARAM_DESCRIPTIONS.recommended },
-        verified_no_canonicals: {
+        verified_no_remote_canonicals: {
           type: 'boolean',
-          description: PARAM_DESCRIPTIONS.verified_no_canonicals,
+          description: PARAM_DESCRIPTIONS.verified_no_remote_canonicals,
         },
         created_on_override: {
           type: 'string',
@@ -351,8 +351,8 @@ Create new provider:
           content += `**Recommended:** ${server.recommended ? 'Yes' : 'No'}\n`;
         }
 
-        if (server.verified_no_canonicals !== undefined) {
-          content += `**Verified No Canonicals:** ${server.verified_no_canonicals ? 'Yes' : 'No'}\n`;
+        if (server.verified_no_remote_canonicals !== undefined) {
+          content += `**Verified No Remote Canonicals:** ${server.verified_no_remote_canonicals ? 'Yes' : 'No'}\n`;
         }
 
         if (server.updated_at) {

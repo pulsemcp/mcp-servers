@@ -44,8 +44,8 @@ const PARAM_DESCRIPTIONS = {
   canonical:
     'Array of canonical URL configurations. Each entry must have: url (the canonical URL), scope (one of "domain", "subdomain", or "url"), and optional note for additional context.',
   // Flags
-  verified_no_canonicals:
-    'Mark that this server has been verified to have no canonical URLs (true = verified no canonicals exist, false = reset/canonicals found)',
+  verified_no_remote_canonicals:
+    'Mark that this server has been verified to have no remote canonical URLs (true = verified no remote canonicals exist, false = reset/canonicals found)',
   // Other fields
   internal_notes:
     'Admin-only notes. Not displayed publicly. Used for tracking submission sources, reviewer comments, etc.',
@@ -114,10 +114,10 @@ const SaveMCPImplementationSchema = z.object({
     .optional()
     .describe(PARAM_DESCRIPTIONS.canonical),
   // Flags
-  verified_no_canonicals: z
+  verified_no_remote_canonicals: z
     .boolean()
     .optional()
-    .describe(PARAM_DESCRIPTIONS.verified_no_canonicals),
+    .describe(PARAM_DESCRIPTIONS.verified_no_remote_canonicals),
   // Other fields
   internal_notes: z.string().optional().describe(PARAM_DESCRIPTIONS.internal_notes),
 });
@@ -333,9 +333,9 @@ Use cases:
           description: PARAM_DESCRIPTIONS.canonical,
         },
         // Flags
-        verified_no_canonicals: {
+        verified_no_remote_canonicals: {
           type: 'boolean',
-          description: PARAM_DESCRIPTIONS.verified_no_canonicals,
+          description: PARAM_DESCRIPTIONS.verified_no_remote_canonicals,
         },
         // Other fields
         internal_notes: {
