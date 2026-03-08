@@ -1,4 +1,15 @@
-import type { Server } from '@modelcontextprotocol/sdk/server/index.js';
+/**
+ * Minimal interface for the MCP server, avoiding direct dependency on
+ * @modelcontextprotocol/sdk Server type to prevent cross-package type
+ * mismatches in monorepo setups with multiple SDK installations.
+ */
+export interface MCPServerLike {
+  getClientCapabilities(): { elicitation?: unknown } | undefined;
+  elicitInput(params: unknown): Promise<{
+    action: 'accept' | 'decline' | 'cancel';
+    content?: Record<string, string | number | boolean | string[]>;
+  }>;
+}
 
 /**
  * Vendor metadata for PulseMCP elicitation requests.
@@ -89,7 +100,7 @@ export interface ElicitationPostResponse {
  */
 export interface RequestConfirmationOptions {
   /** The MCP server instance (needed for native elicitation). */
-  server: Server;
+  server: MCPServerLike;
   /** Human-readable message explaining what needs confirmation. */
   message: string;
   /** Schema for the form fields to present. */

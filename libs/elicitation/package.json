@@ -19,9 +19,6 @@
   ],
   "author": "PulseMCP",
   "license": "MIT",
-  "peerDependencies": {
-    "@modelcontextprotocol/sdk": "^1.19.1"
-  },
   "devDependencies": {
     "@types/node": "^24.10.12",
     "typescript": "^5.7.3"

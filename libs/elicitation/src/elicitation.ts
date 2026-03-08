@@ -1,6 +1,4 @@
 import { randomUUID } from 'node:crypto';
-import type { Server } from '@modelcontextprotocol/sdk/server/index.js';
-import type { ElicitRequestFormParams } from '@modelcontextprotocol/sdk/types.js';
 import type {
   ElicitationConfig,
   ElicitationMeta,
@@ -8,6 +6,7 @@ import type {
   ElicitationPostResponse,
   ElicitationRequestedSchema,
   ElicitationResult,
+  MCPServerLike,
   RequestConfirmationOptions,
 } from './types.js';
 import { readElicitationConfig } from './config.js';
@@ -15,7 +14,7 @@ import { readElicitationConfig } from './config.js';
 /**
  * Checks whether the connected client supports native form elicitation.
  */
-function clientSupportsElicitation(server: Server): boolean {
+function clientSupportsElicitation(server: MCPServerLike): boolean {
   const caps = server.getClientCapabilities();
   if (!caps?.elicitation) {
     return false;
@@ -29,18 +28,16 @@ function clientSupportsElicitation(server: Server): boolean {
  * Attempts native elicitation via the MCP SDK's `server.elicitInput()`.
  */
 async function nativeElicit(
-  server: Server,
+  server: MCPServerLike,
   message: string,
   requestedSchema: ElicitationRequestedSchema
 ): Promise<ElicitationResult> {
-  // Use type assertion to bridge our simplified schema type to the SDK's type.
-  // Our ElicitationRequestedSchema is a subset of what the SDK accepts.
   const params = {
     mode: 'form' as const,
     message,
     requestedSchema,
   };
-  const result = await server.elicitInput(params as unknown as ElicitRequestFormParams);
+  const result = await server.elicitInput(params);
 
   return {
     action: result.action,
