@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-03-09
+
 ### Added
 
 - `list_draft_emails` tool for listing existing email drafts with optional thread filtering
