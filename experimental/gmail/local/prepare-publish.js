@@ -16,7 +16,14 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 async function preparePublish() {
   console.log('Preparing for npm publish...');
 
-  // Build shared first
+  // Build elicitation library first (shared depends on it)
+  console.log('Building elicitation library...');
+  execSync('npm install && npm run build', {
+    cwd: join(__dirname, '../../../libs/elicitation'),
+    stdio: 'inherit',
+  });
+
+  // Build shared (depends on elicitation)
   console.log('Building shared module...');
   execSync('npm install && npm run build', {
     cwd: join(__dirname, '../shared'),
@@ -41,13 +48,6 @@ async function preparePublish() {
 
   console.log('Copying shared build files...');
   await cp(join(__dirname, '../shared/build'), sharedPath, { recursive: true });
-
-  // Build and copy elicitation library
-  console.log('Building elicitation library...');
-  execSync('npm run build', {
-    cwd: join(__dirname, '../../../libs/elicitation'),
-    stdio: 'inherit',
-  });
 
   const elicitationNodeModulesPath = join(__dirname, 'node_modules/@pulsemcp/mcp-elicitation');
   if (existsSync(elicitationNodeModulesPath)) {

@@ -68,25 +68,14 @@ The tests will:
 ## Latest Test Results
 
 **Test Date:** 2026-03-09
-**Branch:** tadasant/elicitation-session-id
-**Commit:** e9ee1e5
+**Branch:** fix/elicitation-build-order
+**Commit:** e19668e
 **Tested By:** Claude Code
 **Environment:** Real Gmail API (service account) + local HTTP mock server for fallback
 
 ### Test Results
 
-**Note:** This is a packaging-only bump (updated bundled `@pulsemcp/mcp-elicitation` library). No Gmail server code was changed. Manual test results carried forward from v0.4.0 (commit cf71c2f) which tested all Gmail API functionality.
-
-**Elicitation library unit tests: 5 passed**
-
-```
-session-id.test.ts: 5 passed
-  - readElicitationConfig reads ELICITATION_SESSION_ID from env
-  - readElicitationConfig returns undefined when not set
-  - requestConfirmation includes session-id in _meta when configured
-  - requestConfirmation omits session-id when not configured
-  - requestConfirmation allows options.meta to override env-based session-id
-```
+**Note:** This is a build-fix-only change (reordered steps in `prepare-publish.js`). No Gmail server code or tests were changed. Manual test results carried forward from v0.4.0 (commit cf71c2f) which tested all Gmail API functionality.
 
 **Automated Tests (mocked):**
 
@@ -98,19 +87,19 @@ Functional Tests: 115 passed (115)
   - oauth-setup.test.ts: 5 tests
 ```
 
-**Overall:** 120 tests passed (115 functional + 5 elicitation library unit tests)
+**Overall:** 115 functional tests passed
 
 ### Notes
 
-- Packaging-only change: updated bundled `@pulsemcp/mcp-elicitation` from v1.0.0 to v1.0.1
-- New library feature: auto-includes `com.pulsemcp/session-id` in HTTP fallback `_meta` when `ELICITATION_SESSION_ID` env var is set
+- Build-fix-only change: reordered `prepare-publish.js` to build `@pulsemcp/mcp-elicitation` before the shared module that depends on it
 - No Gmail server code was modified — all prior manual test results remain valid
-- Gmail build verified clean with updated library
+- Fixes failed npm publishes for versions 0.3.0, 0.4.0, and 0.4.1
 
 ## Historical Test Runs
 
 | Date       | Commit  | Status | Notes                                                                                        |
 | ---------- | ------- | ------ | -------------------------------------------------------------------------------------------- |
+| 2026-03-09 | e19668e | PASS   | v0.4.2 - build-fix-only (reordered prepare-publish.js), 115 functional                       |
 | 2026-03-09 | e9ee1e5 | PASS   | v0.4.1 - packaging-only bump (updated bundled elicitation lib), 115 functional + 5 lib unit  |
 | 2026-03-09 | cf71c2f | PASS   | v0.4.0 - upsert_draft_email + list_draft_emails, 19 manual + 115 functional + 27 integration |
 | 2026-03-08 | edf3465 | PASS   | v0.3.0 - Elicitation support, 13 manual + 108 functional + 24 integration                    |

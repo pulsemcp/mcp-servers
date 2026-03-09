@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.4.2] - 2026-03-09
+
+### Fixed
+
+- Fixed publish build order: elicitation library is now built before the shared module that depends on it (fixes failed publishes of 0.3.0, 0.4.0, 0.4.1)
+
 ## [0.4.1] - 2026-03-09
 
 ### Changed
