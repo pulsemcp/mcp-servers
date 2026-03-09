@@ -1,6 +1,7 @@
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { z } from 'zod';
 import type { IAgentOrchestratorClient } from '../orchestrator-client/orchestrator-client.js';
+import { parseAllowedAgentRoots } from '../allowed-agent-roots.js';
 
 const PARAM_DESCRIPTIONS = {
   session_id:
@@ -163,6 +164,19 @@ export function actionSessionTool(_server: Server, clientFactory: () => IAgentOr
               {
                 type: 'text',
                 text: 'Error: The "mcp_servers" parameter is required for the "change_mcp_servers" action.',
+              },
+            ],
+            isError: true,
+          };
+        }
+
+        // Block change_mcp_servers when ALLOWED_AGENT_ROOTS is active
+        if (action === 'change_mcp_servers' && parseAllowedAgentRoots() !== null) {
+          return {
+            content: [
+              {
+                type: 'text',
+                text: 'Error: The "change_mcp_servers" action is not allowed when ALLOWED_AGENT_ROOTS is set. MCP servers are locked to the defaults configured for each allowed agent root.',
               },
             ],
             isError: true,

@@ -1,6 +1,7 @@
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { z } from 'zod';
 import type { IAgentOrchestratorClient } from '../orchestrator-client/orchestrator-client.js';
+import { parseAllowedAgentRoots } from '../allowed-agent-roots.js';
 
 const ACTION_ENUM = ['create', 'update', 'delete', 'toggle'] as const;
 
@@ -69,6 +70,19 @@ export function actionTriggerTool(_server: Server, clientFactory: () => IAgentOr
         const validated = ActionTriggerSchema.parse(args);
         const client = clientFactory();
         const { action, id } = validated;
+
+        // Block create/update when ALLOWED_AGENT_ROOTS is active
+        if ((action === 'create' || action === 'update') && parseAllowedAgentRoots() !== null) {
+          return {
+            content: [
+              {
+                type: 'text',
+                text: `Error: The "${action}" action is not allowed when ALLOWED_AGENT_ROOTS is set. Triggers cannot be created or modified because sessions are restricted to specific preconfigured agent roots and their default MCP servers.`,
+              },
+            ],
+            isError: true,
+          };
+        }
 
         let result: string;
 

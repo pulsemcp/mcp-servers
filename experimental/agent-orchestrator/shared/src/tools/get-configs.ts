@@ -3,6 +3,7 @@ import { z } from 'zod';
 import type { IAgentOrchestratorClient } from '../orchestrator-client/orchestrator-client.js';
 import type { ConfigsResponse, AgentRootInfo, StopConditionInfo, MCPServerInfo } from '../types.js';
 import { getConfigsCache, setConfigsCache } from '../cache/configs-cache.js';
+import { parseAllowedAgentRoots, filterAgentRoots } from '../allowed-agent-roots.js';
 
 export const GetConfigsSchema = z.object({
   force_refresh: z
@@ -44,17 +45,17 @@ export function getConfigsTool(_server: Server, clientFactory: () => IAgentOrche
         // Use cached data if available and not forcing refresh
         const cachedConfigs = getConfigsCache();
         if (cachedConfigs !== null && !forceRefresh) {
-          return formatResponse(cachedConfigs, true);
+          return formatResponse(applyAgentRootFilter(cachedConfigs), true);
         }
 
         // Fetch fresh data using unified configs endpoint
         const client = clientFactory();
         const configs = await client.getConfigs();
 
-        // Update shared cache
+        // Update shared cache (store unfiltered data so filtering is always applied fresh)
         setConfigsCache(configs);
 
-        return formatResponse(configs, false);
+        return formatResponse(applyAgentRootFilter(configs), false);
       } catch (error) {
         return {
           content: [
@@ -67,6 +68,17 @@ export function getConfigsTool(_server: Server, clientFactory: () => IAgentOrche
         };
       }
     },
+  };
+}
+
+function applyAgentRootFilter(configs: ConfigsResponse): ConfigsResponse {
+  const allowedRoots = parseAllowedAgentRoots();
+  if (allowedRoots === null) {
+    return configs;
+  }
+  return {
+    ...configs,
+    agent_roots: filterAgentRoots(configs.agent_roots, allowedRoots),
   };
 }
 

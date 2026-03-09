@@ -1,6 +1,8 @@
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { z } from 'zod';
 import type { IAgentOrchestratorClient } from '../orchestrator-client/orchestrator-client.js';
+import { parseAllowedAgentRoots, validateAgentRootConstraints } from '../allowed-agent-roots.js';
+import { getConfigsCache, setConfigsCache } from '../cache/configs-cache.js';
 
 const PARAM_DESCRIPTIONS = {
   agent_type:
@@ -127,6 +129,31 @@ export function startSessionTool(_server: Server, clientFactory: () => IAgentOrc
       try {
         const validatedArgs = StartSessionSchema.parse(args);
         const client = clientFactory();
+
+        // Enforce ALLOWED_AGENT_ROOTS constraints if set
+        const allowedRoots = parseAllowedAgentRoots();
+        if (allowedRoots !== null) {
+          // Ensure we have configs (fetch if not cached)
+          let configs = getConfigsCache();
+          if (!configs) {
+            configs = await client.getConfigs();
+            setConfigsCache(configs);
+          }
+
+          const validation = validateAgentRootConstraints(
+            allowedRoots,
+            configs.agent_roots,
+            validatedArgs.git_root,
+            validatedArgs.mcp_servers
+          );
+
+          if (!validation.valid) {
+            return {
+              content: [{ type: 'text', text: `Error starting session: ${validation.error}` }],
+              isError: true,
+            };
+          }
+        }
 
         const session = await client.createSession(validatedArgs);
 
