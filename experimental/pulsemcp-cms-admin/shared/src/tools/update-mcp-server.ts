@@ -25,7 +25,7 @@ const PARAM_DESCRIPTIONS = {
     'Mark that this server has been verified to have no remote canonical URLs (true = verified no remote canonicals exist, false = reset/canonicals found)',
   created_on_override:
     'Override the automatically derived created date (ISO date string, e.g., "2025-01-15")',
-  tags: 'Tags for the server. Replaces all existing tags when provided. Use tag slugs.',
+  tags: 'Tags for the server. Providing this replaces ALL existing tags. Omitting leaves them unchanged. Pass an empty array to delete all. Use tag slugs.',
   canonical_urls:
     'Authoritative URLs for the server. Providing this replaces ALL existing canonical URLs. Omitting leaves them unchanged. Pass an empty array to delete all.',
   remotes:

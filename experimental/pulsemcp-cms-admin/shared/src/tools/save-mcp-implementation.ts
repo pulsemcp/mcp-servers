@@ -194,7 +194,7 @@ Important notes:
 - Omit \`id\` to CREATE, provide \`id\` to UPDATE
 - When creating: \`name\` and \`type\` are required
 - When updating: only provided fields will be changed
-- **Omission semantics:** omitting \`remote\`, \`canonical\`, or \`tags\` leaves them unchanged. To clear them, pass an empty array.
+- **Omission semantics:** omitting \`remote\` or \`canonical\` leaves them unchanged. To clear them, pass an empty array.
 - Providing \`remote\` or \`canonical\` replaces ALL existing entries (not a merge)
 - CREATE-ONLY restrictions:
   - \`github_stars\` is read-only (derived from GitHub repository)
@@ -426,7 +426,9 @@ Important notes:
             content += `**Created:** ${new Date(implementation.created_at).toLocaleDateString()}\n`;
           }
 
-          content += `\n**Tip:** Use \`get_mcp_server\` with slug \`${implementation.slug}\` to verify the full state including remotes and canonical URLs.\n`;
+          if (implementation.type === 'server') {
+            content += `\n**Tip:** Use \`get_mcp_server\` with slug \`${implementation.slug}\` to verify the full state including remotes and canonical URLs.\n`;
+          }
 
           return {
             content: [
