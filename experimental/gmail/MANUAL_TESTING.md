@@ -68,36 +68,24 @@ The tests will:
 ## Latest Test Results
 
 **Test Date:** 2026-03-09
-**Branch:** claude/gmail-upsert-draft-list-drafts
-**Commit:** cf71c2f
+**Branch:** tadasant/elicitation-session-id
+**Commit:** e9ee1e5
 **Tested By:** Claude Code
 **Environment:** Real Gmail API (service account) + local HTTP mock server for fallback
 
 ### Test Results
 
-**Manual Tests (real Gmail API): 19 passed**
+**Note:** This is a packaging-only bump (updated bundled `@pulsemcp/mcp-elicitation` library). No Gmail server code was changed. Manual test results carried forward from v0.4.0 (commit cf71c2f) which tested all Gmail API functionality.
+
+**Elicitation library unit tests: 5 passed**
 
 ```
-gmail-client.test.ts: 15 passed
-  - list_email_conversations: 2 passed (inbox listing, query filtering)
-  - search_email_conversations: 1 passed
-  - get_email_conversation: 1 passed
-  - change_email_conversation: 1 passed (star/unstar)
-  - upsert_draft_email: 2 passed (create draft, update existing draft)
-  - list_draft_emails: 1 passed (list drafts with metadata)
-  - send_email: 1 passed
-  - download_email_attachments: 1 passed
-  - Native elicitation (accept): 1 passed — sent email after user accepted via MCP protocol
-  - Native elicitation (decline): 1 passed — correctly blocked email when user declined via MCP protocol
-  - Elicitation (disabled): 1 passed — sent email without prompt when disabled
-  - HTTP fallback (accept): 1 passed — sent email via local mock HTTP server after acceptance
-  - HTTP fallback (decline): 1 passed — blocked email via local mock HTTP server after decline
-
-download-attachments.test.ts: 4 passed
-  - should save attachment to /tmp/ and return file path
-  - should produce an uncorrupted file matching direct API download
-  - should return inline content when inline=true
-  - should download all attachments when no filename specified
+session-id.test.ts: 5 passed
+  - readElicitationConfig reads ELICITATION_SESSION_ID from env
+  - readElicitationConfig returns undefined when not set
+  - requestConfirmation includes session-id in _meta when configured
+  - requestConfirmation omits session-id when not configured
+  - requestConfirmation allows options.meta to override env-based session-id
 ```
 
 **Automated Tests (mocked):**
@@ -106,28 +94,24 @@ download-attachments.test.ts: 4 passed
 Functional Tests: 115 passed (115)
   - mime-utils.test.ts: 19 tests
   - auth.test.ts: 12 tests
-  - tools.test.ts: 79 tests (7 new: upsert_draft_email update, list_draft_emails)
+  - tools.test.ts: 79 tests
   - oauth-setup.test.ts: 5 tests
-
-Integration Tests: 27 passed (27)
-  - Existing tests: 20 passed (with elicitation disabled, includes new draft tests)
-  - Elicitation tests: 7 passed
 ```
 
-**Overall:** 161 tests passed (115 functional + 27 integration + 19 manual)
+**Overall:** 120 tests passed (115 functional + 5 elicitation library unit tests)
 
 ### Notes
 
-- Renamed `draft_email` to `upsert_draft_email` with optional `draft_id` for in-place updates
-- Added `list_draft_emails` tool with optional `thread_id` filtering
-- Both new tools (update draft, list drafts) manually tested against real Gmail API
-- All existing elicitation tests continue to pass
-- New updateDraft method added to IGmailClient interface and Gmail API client layer
+- Packaging-only change: updated bundled `@pulsemcp/mcp-elicitation` from v1.0.0 to v1.0.1
+- New library feature: auto-includes `com.pulsemcp/session-id` in HTTP fallback `_meta` when `ELICITATION_SESSION_ID` env var is set
+- No Gmail server code was modified — all prior manual test results remain valid
+- Gmail build verified clean with updated library
 
 ## Historical Test Runs
 
 | Date       | Commit  | Status | Notes                                                                                        |
 | ---------- | ------- | ------ | -------------------------------------------------------------------------------------------- |
+| 2026-03-09 | e9ee1e5 | PASS   | v0.4.1 - packaging-only bump (updated bundled elicitation lib), 115 functional + 5 lib unit  |
 | 2026-03-09 | cf71c2f | PASS   | v0.4.0 - upsert_draft_email + list_draft_emails, 19 manual + 115 functional + 27 integration |
 | 2026-03-08 | edf3465 | PASS   | v0.3.0 - Elicitation support, 13 manual + 108 functional + 24 integration                    |
 | 2026-03-05 | 9be3fff | PASS   | v0.2.1 - MIME encoding fixes, 108 functional (no API changes, manual tests not re-run)       |

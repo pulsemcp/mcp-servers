@@ -66,6 +66,8 @@ export interface ElicitationConfig {
   ttlMs: number;
   /** Poll interval in milliseconds. Default: 5 seconds. */
   pollIntervalMs: number;
+  /** Session identifier included as `com.pulsemcp/session-id` in `_meta` of HTTP fallback requests. */
+  sessionId?: string;
 }
 
 /**

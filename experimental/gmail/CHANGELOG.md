@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.4.1] - 2026-03-09
+
+### Changed
+
+- Updated bundled `@pulsemcp/mcp-elicitation` library to v1.0.1: HTTP fallback requests now automatically include `com.pulsemcp/session-id` in `_meta` when `ELICITATION_SESSION_ID` environment variable is set
+
 ## [0.4.0] - 2026-03-09
 
 ### Added
