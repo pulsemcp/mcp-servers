@@ -17,6 +17,12 @@ import { actionHealthTool } from '../../shared/src/tools/action-health.js';
 import { getTranscriptArchiveTool } from '../../shared/src/tools/get-transcript-archive.js';
 import { clearConfigsCache } from '../../shared/src/cache/configs-cache.js';
 import { parseEnabledToolGroups, createRegisterTools } from '../../shared/src/tools.js';
+import {
+  parseAllowedAgentRoots,
+  filterAgentRoots,
+  validateAgentRootConstraints,
+} from '../../shared/src/allowed-agent-roots.js';
+import type { AgentRootInfo } from '../../shared/src/types.js';
 
 describe('Tools', () => {
   let mockServer: Server;
@@ -1259,5 +1265,400 @@ describe('createRegisterTools with toolgroups filtering', () => {
     expect(toolNames).toContain('action_notification');
     expect(toolNames).not.toContain('start_session');
     expect(toolNames).not.toContain('action_session');
+  });
+});
+
+// =============================================================================
+// ALLOWED_AGENT_ROOTS Tests
+// =============================================================================
+
+describe('parseAllowedAgentRoots', () => {
+  const originalEnv = process.env;
+
+  afterEach(() => {
+    process.env = originalEnv;
+  });
+
+  it('should return null when no env var is set and no param provided', () => {
+    delete process.env.ALLOWED_AGENT_ROOTS;
+    expect(parseAllowedAgentRoots()).toBeNull();
+  });
+
+  it('should return null for empty string', () => {
+    expect(parseAllowedAgentRoots('')).toBeNull();
+  });
+
+  it('should return null for whitespace-only string', () => {
+    expect(parseAllowedAgentRoots('   ')).toBeNull();
+  });
+
+  it('should parse single agent root', () => {
+    expect(parseAllowedAgentRoots('mcp-servers')).toEqual(['mcp-servers']);
+  });
+
+  it('should parse comma-separated list', () => {
+    expect(parseAllowedAgentRoots('mcp-servers,my-app')).toEqual(['mcp-servers', 'my-app']);
+  });
+
+  it('should trim whitespace around names', () => {
+    expect(parseAllowedAgentRoots(' mcp-servers , my-app ')).toEqual(['mcp-servers', 'my-app']);
+  });
+
+  it('should filter out empty entries from extra commas', () => {
+    expect(parseAllowedAgentRoots('mcp-servers,,my-app,')).toEqual(['mcp-servers', 'my-app']);
+  });
+
+  it('should read from ALLOWED_AGENT_ROOTS env var when no param provided', () => {
+    process.env = { ...originalEnv, ALLOWED_AGENT_ROOTS: 'mcp-servers' };
+    expect(parseAllowedAgentRoots()).toEqual(['mcp-servers']);
+  });
+
+  it('should prioritize explicit param over env var', () => {
+    process.env = { ...originalEnv, ALLOWED_AGENT_ROOTS: 'env-root' };
+    expect(parseAllowedAgentRoots('param-root')).toEqual(['param-root']);
+  });
+});
+
+describe('filterAgentRoots', () => {
+  const agentRoots: AgentRootInfo[] = [
+    {
+      name: 'mcp-servers',
+      title: 'MCP Servers',
+      description: 'MCP servers monorepo',
+      git_root: 'https://github.com/pulsemcp/mcp-servers.git',
+      default_mcp_servers: ['github-development'],
+    },
+    {
+      name: 'my-app',
+      title: 'My App',
+      description: 'My application',
+      git_root: 'https://github.com/example/my-app.git',
+      default_mcp_servers: ['slack'],
+    },
+    {
+      name: 'other-repo',
+      title: 'Other Repo',
+      description: 'Another repository',
+      git_root: 'https://github.com/example/other.git',
+    },
+  ];
+
+  it('should return all roots when allowedRoots is null', () => {
+    expect(filterAgentRoots(agentRoots, null)).toEqual(agentRoots);
+  });
+
+  it('should filter to only allowed roots', () => {
+    const result = filterAgentRoots(agentRoots, ['mcp-servers']);
+    expect(result).toHaveLength(1);
+    expect(result[0].name).toBe('mcp-servers');
+  });
+
+  it('should handle multiple allowed roots', () => {
+    const result = filterAgentRoots(agentRoots, ['mcp-servers', 'my-app']);
+    expect(result).toHaveLength(2);
+    expect(result.map((r) => r.name)).toEqual(['mcp-servers', 'my-app']);
+  });
+
+  it('should return empty array when no roots match', () => {
+    const result = filterAgentRoots(agentRoots, ['nonexistent']);
+    expect(result).toHaveLength(0);
+  });
+});
+
+describe('validateAgentRootConstraints', () => {
+  const agentRoots: AgentRootInfo[] = [
+    {
+      name: 'mcp-servers',
+      title: 'MCP Servers',
+      description: 'MCP servers monorepo',
+      git_root: 'https://github.com/pulsemcp/mcp-servers.git',
+      default_mcp_servers: ['github-development'],
+    },
+    {
+      name: 'my-app',
+      title: 'My App',
+      description: 'My application',
+      git_root: 'https://github.com/example/my-app.git',
+      default_mcp_servers: ['slack', 'github-development'],
+    },
+    {
+      name: 'no-servers',
+      title: 'No Servers',
+      description: 'Repo with no default servers',
+      git_root: 'https://github.com/example/no-servers.git',
+    },
+  ];
+
+  it('should allow any request when allowedRoots is null', () => {
+    const result = validateAgentRootConstraints(null, agentRoots, 'any-git-root', ['any-server']);
+    expect(result.valid).toBe(true);
+  });
+
+  it('should allow matching git_root with correct default servers', () => {
+    const result = validateAgentRootConstraints(
+      ['mcp-servers'],
+      agentRoots,
+      'https://github.com/pulsemcp/mcp-servers.git',
+      ['github-development']
+    );
+    expect(result.valid).toBe(true);
+  });
+
+  it('should allow matching with multiple default servers in any order', () => {
+    const result = validateAgentRootConstraints(
+      ['my-app'],
+      agentRoots,
+      'https://github.com/example/my-app.git',
+      ['github-development', 'slack']
+    );
+    expect(result.valid).toBe(true);
+  });
+
+  it('should reject non-allowed git_root', () => {
+    const result = validateAgentRootConstraints(
+      ['mcp-servers'],
+      agentRoots,
+      'https://github.com/example/my-app.git',
+      ['slack']
+    );
+    expect(result.valid).toBe(false);
+    expect(result.error).toContain('ALLOWED_AGENT_ROOTS');
+    expect(result.error).toContain('does not match');
+  });
+
+  it('should reject when mcp_servers has extra servers', () => {
+    const result = validateAgentRootConstraints(
+      ['mcp-servers'],
+      agentRoots,
+      'https://github.com/pulsemcp/mcp-servers.git',
+      ['github-development', 'slack']
+    );
+    expect(result.valid).toBe(false);
+    expect(result.error).toContain('exact default MCP servers');
+  });
+
+  it('should reject when mcp_servers is missing servers', () => {
+    const result = validateAgentRootConstraints(
+      ['my-app'],
+      agentRoots,
+      'https://github.com/example/my-app.git',
+      ['slack']
+    );
+    expect(result.valid).toBe(false);
+    expect(result.error).toContain('exact default MCP servers');
+  });
+
+  it('should reject when mcp_servers is empty but defaults exist', () => {
+    const result = validateAgentRootConstraints(
+      ['mcp-servers'],
+      agentRoots,
+      'https://github.com/pulsemcp/mcp-servers.git',
+      []
+    );
+    expect(result.valid).toBe(false);
+    expect(result.error).toContain('exact default MCP servers');
+  });
+
+  it('should allow empty mcp_servers when agent root has no defaults', () => {
+    const result = validateAgentRootConstraints(
+      ['no-servers'],
+      agentRoots,
+      'https://github.com/example/no-servers.git',
+      []
+    );
+    expect(result.valid).toBe(true);
+  });
+
+  it('should reject when git_root is not provided', () => {
+    const result = validateAgentRootConstraints(['mcp-servers'], agentRoots, undefined, [
+      'github-development',
+    ]);
+    expect(result.valid).toBe(false);
+    expect(result.error).toContain('(not provided)');
+  });
+
+  it('should reject servers for agent root with no default servers', () => {
+    const result = validateAgentRootConstraints(
+      ['no-servers'],
+      agentRoots,
+      'https://github.com/example/no-servers.git',
+      ['some-server']
+    );
+    expect(result.valid).toBe(false);
+    expect(result.error).toContain('exact default MCP servers');
+  });
+
+  it('should allow undefined mcp_servers when agent root has no defaults', () => {
+    const result = validateAgentRootConstraints(
+      ['no-servers'],
+      agentRoots,
+      'https://github.com/example/no-servers.git',
+      undefined
+    );
+    expect(result.valid).toBe(true);
+  });
+});
+
+describe('ALLOWED_AGENT_ROOTS integration with get_configs', () => {
+  let mockServer: Server;
+  let mockClient: ReturnType<typeof createMockOrchestratorClient>;
+  let clientFactory: () => ReturnType<typeof createMockOrchestratorClient>;
+  const originalEnv = process.env;
+
+  beforeEach(() => {
+    mockServer = {} as Server;
+    mockClient = createMockOrchestratorClient();
+    clientFactory = () => mockClient;
+    clearConfigsCache();
+  });
+
+  afterEach(() => {
+    process.env = originalEnv;
+    clearConfigsCache();
+  });
+
+  it('should filter agent roots when ALLOWED_AGENT_ROOTS is set', async () => {
+    process.env = { ...originalEnv, ALLOWED_AGENT_ROOTS: 'mcp-servers' };
+
+    const tool = getConfigsTool(mockServer, clientFactory);
+    const result = await tool.handler({});
+    const text = (result as { content: Array<{ text: string }> }).content[0].text;
+
+    expect(text).toContain('mcp-servers');
+    // The mock only has 'mcp-servers' agent root, so it should appear
+    expect(text).toContain('## Agent Roots');
+  });
+
+  it('should show no agent roots when ALLOWED_AGENT_ROOTS excludes all', async () => {
+    process.env = { ...originalEnv, ALLOWED_AGENT_ROOTS: 'nonexistent-root' };
+
+    const tool = getConfigsTool(mockServer, clientFactory);
+    const result = await tool.handler({});
+    const text = (result as { content: Array<{ text: string }> }).content[0].text;
+
+    expect(text).toContain('No agent roots configured');
+  });
+
+  it('should show all agent roots when ALLOWED_AGENT_ROOTS is not set', async () => {
+    delete process.env.ALLOWED_AGENT_ROOTS;
+
+    const tool = getConfigsTool(mockServer, clientFactory);
+    const result = await tool.handler({});
+    const text = (result as { content: Array<{ text: string }> }).content[0].text;
+
+    expect(text).toContain('mcp-servers');
+    expect(text).toContain('MCP Servers');
+  });
+});
+
+describe('ALLOWED_AGENT_ROOTS integration with start_session', () => {
+  let mockServer: Server;
+  let mockClient: ReturnType<typeof createMockOrchestratorClient>;
+  let clientFactory: () => ReturnType<typeof createMockOrchestratorClient>;
+  const originalEnv = process.env;
+
+  beforeEach(() => {
+    mockServer = {} as Server;
+    mockClient = createMockOrchestratorClient();
+    clientFactory = () => mockClient;
+    clearConfigsCache();
+  });
+
+  afterEach(() => {
+    process.env = originalEnv;
+    clearConfigsCache();
+  });
+
+  it('should allow session with correct agent root and default servers', async () => {
+    process.env = { ...originalEnv, ALLOWED_AGENT_ROOTS: 'mcp-servers' };
+
+    const tool = startSessionTool(mockServer, clientFactory);
+    const result = await tool.handler({
+      git_root: 'https://github.com/pulsemcp/mcp-servers.git',
+      mcp_servers: ['github-development'],
+      title: 'Test Session',
+    });
+
+    const text = (result as { content: Array<{ text: string }> }).content[0].text;
+    expect(text).toContain('Session Started Successfully');
+    expect(mockClient.createSession).toHaveBeenCalled();
+  });
+
+  it('should reject session with non-allowed git_root', async () => {
+    process.env = { ...originalEnv, ALLOWED_AGENT_ROOTS: 'mcp-servers' };
+
+    const tool = startSessionTool(mockServer, clientFactory);
+    const result = await tool.handler({
+      git_root: 'https://github.com/unauthorized/repo.git',
+      mcp_servers: ['github-development'],
+      title: 'Test Session',
+    });
+
+    expect(result.isError).toBe(true);
+    const text = (result as { content: Array<{ text: string }> }).content[0].text;
+    expect(text).toContain('ALLOWED_AGENT_ROOTS');
+    expect(text).toContain('does not match');
+    expect(mockClient.createSession).not.toHaveBeenCalled();
+  });
+
+  it('should reject session with extra MCP servers', async () => {
+    process.env = { ...originalEnv, ALLOWED_AGENT_ROOTS: 'mcp-servers' };
+
+    const tool = startSessionTool(mockServer, clientFactory);
+    const result = await tool.handler({
+      git_root: 'https://github.com/pulsemcp/mcp-servers.git',
+      mcp_servers: ['github-development', 'slack'],
+      title: 'Test Session',
+    });
+
+    expect(result.isError).toBe(true);
+    const text = (result as { content: Array<{ text: string }> }).content[0].text;
+    expect(text).toContain('exact default MCP servers');
+    expect(mockClient.createSession).not.toHaveBeenCalled();
+  });
+
+  it('should reject session with fewer MCP servers than default', async () => {
+    process.env = { ...originalEnv, ALLOWED_AGENT_ROOTS: 'mcp-servers' };
+
+    const tool = startSessionTool(mockServer, clientFactory);
+    const result = await tool.handler({
+      git_root: 'https://github.com/pulsemcp/mcp-servers.git',
+      mcp_servers: [],
+      title: 'Test Session',
+    });
+
+    expect(result.isError).toBe(true);
+    const text = (result as { content: Array<{ text: string }> }).content[0].text;
+    expect(text).toContain('exact default MCP servers');
+    expect(mockClient.createSession).not.toHaveBeenCalled();
+  });
+
+  it('should allow session with no restrictions when env var not set', async () => {
+    delete process.env.ALLOWED_AGENT_ROOTS;
+
+    const tool = startSessionTool(mockServer, clientFactory);
+    const result = await tool.handler({
+      git_root: 'https://github.com/any/repo.git',
+      mcp_servers: ['any-server'],
+      title: 'Test Session',
+    });
+
+    const text = (result as { content: Array<{ text: string }> }).content[0].text;
+    expect(text).toContain('Session Started Successfully');
+    expect(mockClient.createSession).toHaveBeenCalled();
+  });
+
+  it('should fetch configs from API when cache is empty', async () => {
+    process.env = { ...originalEnv, ALLOWED_AGENT_ROOTS: 'mcp-servers' };
+
+    const tool = startSessionTool(mockServer, clientFactory);
+    await tool.handler({
+      git_root: 'https://github.com/pulsemcp/mcp-servers.git',
+      mcp_servers: ['github-development'],
+      title: 'Test Session',
+    });
+
+    // Should have fetched configs since cache was empty
+    expect(mockClient.getConfigs).toHaveBeenCalledTimes(1);
   });
 });

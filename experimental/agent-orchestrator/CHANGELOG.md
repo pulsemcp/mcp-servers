@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `ALLOWED_AGENT_ROOTS` environment variable: comma-separated list of agent root names that constrains the server to only allow those specific preconfigured agent root invocations
+  - `get_configs` filters out agent roots not in the allowed list
+  - `start_session` rejects requests with non-allowed agent roots or non-default MCP server configurations
+  - When set, sessions can only be started with the exact default MCP servers defined for each allowed agent root (no more, no less)
+
 ## [0.3.0] - 2026-02-23
 
 ### Changed
