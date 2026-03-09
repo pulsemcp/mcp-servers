@@ -4,17 +4,17 @@ This file tracks manual testing results for the pulse-subregistry MCP server.
 
 ## Latest Test Results
 
-**Test Date:** 2026-01-25
-**Branch:** tadasant/add-switch-tenant-id-tool
-**Commit:** 872cd0b
+**Test Date:** 2026-03-09
+**Branch:** agent/update-subregistry-tool-descriptions-for-lifecycle
+**Commit:** 01e27bc
 **Tested By:** Claude
-**Environment:** Real API with pulsemcp-admin tenant
+**Environment:** Description-only changes (tool description string updates) — no API behavior affected
 
 ### Test Results
 
-**Type:** Full manual testing with real PulseMCP API
-**Status:** All tests passing (7/7)
-**Pass Rate:** 100%
+**Type:** Description-only changes — manual tests not re-run (no functional changes, no API key available)
+**Status:** All manual tests passed in previous version (7/7 on commit 872cd0b). Changes only modify tool description strings — no parameters, logic, or API calls affected. 42/42 functional tests pass.
+**Pass Rate:** 100% (functional tests); manual tests deferred (description-only change)
 
 ### list_servers tool
 

@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.0.3] - 2026-03-09
+
+### Changed
+
+- Updated `list_servers` tool description to clarify that only active and deprecated servers are returned by default (deleted servers are excluded)
+- Updated `updated_since` parameter description to note that results may include servers with any lifecycle status (including deleted) when this parameter is used, to support ETL sync workflows
+- Updated `get_server` tool description to clarify it returns information for active and deprecated servers
+
 ### Fixed
 
 - Documented default value for `SHOW_ADMIN_TOOLS` environment variable as `false` in README
