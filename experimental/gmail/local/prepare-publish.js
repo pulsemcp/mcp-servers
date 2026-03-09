@@ -17,8 +17,9 @@ async function preparePublish() {
   console.log('Preparing for npm publish...');
 
   // Build elicitation library first (shared depends on it)
+  // --ignore-scripts avoids triggering the monorepo root's husky prepare hook
   console.log('Building elicitation library...');
-  execSync('npm install && npm run build', {
+  execSync('npm install --ignore-scripts && npm run build', {
     cwd: join(__dirname, '../../../libs/elicitation'),
     stdio: 'inherit',
   });

@@ -68,14 +68,14 @@ The tests will:
 ## Latest Test Results
 
 **Test Date:** 2026-03-09
-**Branch:** fix/elicitation-build-order
-**Commit:** e19668e
+**Branch:** main
+**Commit:** b74bf71
 **Tested By:** Claude Code
 **Environment:** Real Gmail API (service account) + local HTTP mock server for fallback
 
 ### Test Results
 
-**Note:** This is a build-fix-only change (reordered steps in `prepare-publish.js`). No Gmail server code or tests were changed. Manual test results carried forward from v0.4.0 (commit cf71c2f) which tested all Gmail API functionality.
+**Note:** This is a build-fix-only change (reordered steps and added --ignore-scripts in `prepare-publish.js`). No Gmail server code or tests were changed. Manual test results carried forward from v0.4.0 (commit cf71c2f) which tested all Gmail API functionality.
 
 **Automated Tests (mocked):**
 
@@ -91,15 +91,15 @@ Functional Tests: 115 passed (115)
 
 ### Notes
 
-- Build-fix-only change: reordered `prepare-publish.js` to build `@pulsemcp/mcp-elicitation` before the shared module that depends on it
+- Build-fix-only change: reordered `prepare-publish.js` to build `@pulsemcp/mcp-elicitation` before the shared module, with `--ignore-scripts` to avoid husky hook
 - No Gmail server code was modified — all prior manual test results remain valid
-- Fixes failed npm publishes for versions 0.3.0, 0.4.0, and 0.4.1
+- Fixes failed npm publishes for versions 0.3.0–0.4.2
 
 ## Historical Test Runs
 
 | Date       | Commit  | Status | Notes                                                                                        |
 | ---------- | ------- | ------ | -------------------------------------------------------------------------------------------- |
-| 2026-03-09 | e19668e | PASS   | v0.4.2 - build-fix-only (reordered prepare-publish.js), 115 functional                       |
+| 2026-03-09 | b74bf71 | PASS   | v0.4.3 - build-fix-only (reordered prepare-publish.js + --ignore-scripts), 115 functional    |
 | 2026-03-09 | e9ee1e5 | PASS   | v0.4.1 - packaging-only bump (updated bundled elicitation lib), 115 functional + 5 lib unit  |
 | 2026-03-09 | cf71c2f | PASS   | v0.4.0 - upsert_draft_email + list_draft_emails, 19 manual + 115 functional + 27 integration |
 | 2026-03-08 | edf3465 | PASS   | v0.3.0 - Elicitation support, 13 manual + 108 functional + 24 integration                    |
