@@ -15,7 +15,7 @@ const PARAM_DESCRIPTIONS = {
   search:
     'Search term to filter servers. Searches server names and titles. Example: "github", "slack".',
   updated_since:
-    'ISO 8601 timestamp to filter servers updated after this date. Example: "2024-01-01T00:00:00Z".',
+    'ISO 8601 timestamp to filter servers updated after this date. Example: "2024-01-01T00:00:00Z". Note: when this parameter is provided, results may include servers with any lifecycle status (including deleted) to support ETL sync workflows.',
   latest_only:
     'If true (default), only returns the latest version of each server. Set to false to include all versions.',
   expand_fields:
@@ -64,7 +64,7 @@ export function listServersTool(_server: Server, clientFactory: ClientFactory) {
   return {
     name: 'list_servers',
     description:
-      'Browse MCP servers from the PulseMCP Sub-Registry. Returns a paginated list of servers with their names, descriptions, and metadata. Use search to filter by name or description. Use cursor for pagination through large result sets.',
+      'Browse MCP servers from the PulseMCP Sub-Registry. Returns a paginated list of active and deprecated servers with their names, descriptions, and metadata. Deleted servers are excluded by default. Use search to filter by name or description. Use cursor for pagination through large result sets.',
     inputSchema: {
       type: 'object' as const,
       properties: {
