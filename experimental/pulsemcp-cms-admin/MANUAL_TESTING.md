@@ -3,7 +3,7 @@
 ## Latest Test Results
 
 **Date:** 2026-03-09
-**Commit:** 5ac0997
+**Commit:** 2dd788f
 **Version:** 0.9.3 (pre-release)
 **API Environment:** N/A (tool description and response formatting changes only, no API interaction changes)
 
