@@ -60,6 +60,7 @@ Required:
 Optional:
 
 - `TOOL_GROUPS` - Comma-separated list of tool groups (sessions, sessions_readonly, notifications, notifications_readonly, triggers, triggers_readonly, health, health_readonly)
+- `ALLOWED_AGENT_ROOTS` - Comma-separated list of allowed agent root names. When set, constrains sessions to only use these agent roots with their exact default MCP servers, blocks `change_mcp_servers`, and blocks trigger creation/updates
 - `SKIP_HEALTH_CHECKS` - Skip API validation at startup
 
 ## Tools

@@ -106,13 +106,14 @@ TOOL_GROUPS=sessions,notifications_readonly,triggers_readonly,health_readonly
 
 ### Environment Variables
 
-| Variable                      | Required | Description                                 | Default                                               |
-| ----------------------------- | -------- | ------------------------------------------- | ----------------------------------------------------- |
-| `AGENT_ORCHESTRATOR_BASE_URL` | Yes      | Base URL for the orchestrator API           | -                                                     |
-| `AGENT_ORCHESTRATOR_API_KEY`  | Yes      | API key for authentication                  | -                                                     |
-| `TOOL_GROUPS`                 | No       | Comma-separated list of enabled tool groups | `sessions,notifications,triggers,health` (all groups) |
-| `SKIP_HEALTH_CHECKS`          | No       | Skip API connectivity check at startup      | `false`                                               |
-| `HEALTH_CHECK_TIMEOUT`        | No       | Health check timeout in milliseconds        | `10000`                                               |
+| Variable                      | Required | Description                                                                                                                                                                                                                                   | Default                                               |
+| ----------------------------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------- |
+| `AGENT_ORCHESTRATOR_BASE_URL` | Yes      | Base URL for the orchestrator API                                                                                                                                                                                                             | -                                                     |
+| `AGENT_ORCHESTRATOR_API_KEY`  | Yes      | API key for authentication                                                                                                                                                                                                                    | -                                                     |
+| `TOOL_GROUPS`                 | No       | Comma-separated list of enabled tool groups                                                                                                                                                                                                   | `sessions,notifications,triggers,health` (all groups) |
+| `ALLOWED_AGENT_ROOTS`         | No       | Comma-separated list of allowed agent root names. When set, constrains the server to only permit sessions with these specific agent roots and their exact default MCP servers. Also blocks `change_mcp_servers` and trigger creation/updates. | -                                                     |
+| `SKIP_HEALTH_CHECKS`          | No       | Skip API connectivity check at startup                                                                                                                                                                                                        | `false`                                               |
+| `HEALTH_CHECK_TIMEOUT`        | No       | Health check timeout in milliseconds                                                                                                                                                                                                          | `10000`                                               |
 
 ### Claude Desktop
 

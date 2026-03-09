@@ -1497,6 +1497,17 @@ describe('validateAgentRootConstraints', () => {
     );
     expect(result.valid).toBe(true);
   });
+
+  it('should reject undefined mcp_servers when agent root has default servers', () => {
+    const result = validateAgentRootConstraints(
+      ['mcp-servers'],
+      agentRoots,
+      'https://github.com/pulsemcp/mcp-servers.git',
+      undefined
+    );
+    expect(result.valid).toBe(false);
+    expect(result.error).toContain('exact default MCP servers');
+  });
 });
 
 describe('ALLOWED_AGENT_ROOTS integration with get_configs', () => {
@@ -1660,5 +1671,170 @@ describe('ALLOWED_AGENT_ROOTS integration with start_session', () => {
 
     // Should have fetched configs since cache was empty
     expect(mockClient.getConfigs).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('ALLOWED_AGENT_ROOTS integration with action_session', () => {
+  let mockServer: Server;
+  let mockClient: ReturnType<typeof createMockOrchestratorClient>;
+  let clientFactory: () => ReturnType<typeof createMockOrchestratorClient>;
+  const originalEnv = process.env;
+
+  beforeEach(() => {
+    mockServer = {} as Server;
+    mockClient = createMockOrchestratorClient();
+    clientFactory = () => mockClient;
+  });
+
+  afterEach(() => {
+    process.env = originalEnv;
+  });
+
+  it('should block change_mcp_servers when ALLOWED_AGENT_ROOTS is set', async () => {
+    process.env = { ...originalEnv, ALLOWED_AGENT_ROOTS: 'mcp-servers' };
+
+    const tool = actionSessionTool(mockServer, clientFactory);
+    const result = await tool.handler({
+      session_id: 1,
+      action: 'change_mcp_servers',
+      mcp_servers: ['slack'],
+    });
+
+    expect(result.isError).toBe(true);
+    const text = (result as { content: Array<{ text: string }> }).content[0].text;
+    expect(text).toContain('ALLOWED_AGENT_ROOTS');
+    expect(text).toContain('change_mcp_servers');
+    expect(mockClient.changeMcpServers).not.toHaveBeenCalled();
+  });
+
+  it('should allow change_mcp_servers when ALLOWED_AGENT_ROOTS is not set', async () => {
+    delete process.env.ALLOWED_AGENT_ROOTS;
+
+    const tool = actionSessionTool(mockServer, clientFactory);
+    const result = await tool.handler({
+      session_id: 1,
+      action: 'change_mcp_servers',
+      mcp_servers: ['slack'],
+    });
+
+    expect(result.isError).toBeUndefined();
+    const text = (result as { content: Array<{ text: string }> }).content[0].text;
+    expect(text).toContain('MCP Servers Updated');
+    expect(mockClient.changeMcpServers).toHaveBeenCalled();
+  });
+
+  it('should allow other actions when ALLOWED_AGENT_ROOTS is set', async () => {
+    process.env = { ...originalEnv, ALLOWED_AGENT_ROOTS: 'mcp-servers' };
+
+    const tool = actionSessionTool(mockServer, clientFactory);
+    const result = await tool.handler({
+      session_id: 1,
+      action: 'pause',
+    });
+
+    expect(result.isError).toBeUndefined();
+    const text = (result as { content: Array<{ text: string }> }).content[0].text;
+    expect(text).toContain('Session Paused');
+  });
+});
+
+describe('ALLOWED_AGENT_ROOTS integration with action_trigger', () => {
+  let mockServer: Server;
+  let mockClient: ReturnType<typeof createMockOrchestratorClient>;
+  let clientFactory: () => ReturnType<typeof createMockOrchestratorClient>;
+  const originalEnv = process.env;
+
+  beforeEach(() => {
+    mockServer = {} as Server;
+    mockClient = createMockOrchestratorClient();
+    clientFactory = () => mockClient;
+  });
+
+  afterEach(() => {
+    process.env = originalEnv;
+  });
+
+  it('should block create when ALLOWED_AGENT_ROOTS is set', async () => {
+    process.env = { ...originalEnv, ALLOWED_AGENT_ROOTS: 'mcp-servers' };
+
+    const tool = actionTriggerTool(mockServer, clientFactory);
+    const result = await tool.handler({
+      action: 'create',
+      name: 'test-trigger',
+      trigger_type: 'slack',
+      agent_root_name: 'mcp-servers',
+      prompt_template: 'Test prompt',
+    });
+
+    expect(result.isError).toBe(true);
+    const text = (result as { content: Array<{ text: string }> }).content[0].text;
+    expect(text).toContain('ALLOWED_AGENT_ROOTS');
+    expect(text).toContain('create');
+    expect(mockClient.createTrigger).not.toHaveBeenCalled();
+  });
+
+  it('should block update when ALLOWED_AGENT_ROOTS is set', async () => {
+    process.env = { ...originalEnv, ALLOWED_AGENT_ROOTS: 'mcp-servers' };
+
+    const tool = actionTriggerTool(mockServer, clientFactory);
+    const result = await tool.handler({
+      action: 'update',
+      id: 1,
+      name: 'updated-trigger',
+    });
+
+    expect(result.isError).toBe(true);
+    const text = (result as { content: Array<{ text: string }> }).content[0].text;
+    expect(text).toContain('ALLOWED_AGENT_ROOTS');
+    expect(text).toContain('update');
+    expect(mockClient.updateTrigger).not.toHaveBeenCalled();
+  });
+
+  it('should allow delete when ALLOWED_AGENT_ROOTS is set', async () => {
+    process.env = { ...originalEnv, ALLOWED_AGENT_ROOTS: 'mcp-servers' };
+
+    const tool = actionTriggerTool(mockServer, clientFactory);
+    const result = await tool.handler({
+      action: 'delete',
+      id: 1,
+    });
+
+    expect(result.isError).toBeUndefined();
+    const text = (result as { content: Array<{ text: string }> }).content[0].text;
+    expect(text).toContain('Trigger Deleted');
+    expect(mockClient.deleteTrigger).toHaveBeenCalled();
+  });
+
+  it('should allow toggle when ALLOWED_AGENT_ROOTS is set', async () => {
+    process.env = { ...originalEnv, ALLOWED_AGENT_ROOTS: 'mcp-servers' };
+
+    const tool = actionTriggerTool(mockServer, clientFactory);
+    const result = await tool.handler({
+      action: 'toggle',
+      id: 1,
+    });
+
+    expect(result.isError).toBeUndefined();
+    const text = (result as { content: Array<{ text: string }> }).content[0].text;
+    expect(text).toContain('Trigger Toggled');
+    expect(mockClient.toggleTrigger).toHaveBeenCalled();
+  });
+
+  it('should allow create when ALLOWED_AGENT_ROOTS is not set', async () => {
+    delete process.env.ALLOWED_AGENT_ROOTS;
+
+    const tool = actionTriggerTool(mockServer, clientFactory);
+    const result = await tool.handler({
+      action: 'create',
+      name: 'test-trigger',
+      trigger_type: 'slack',
+      agent_root_name: 'mcp-servers',
+      prompt_template: 'Test prompt',
+    });
+
+    expect(result.isError).toBeUndefined();
+    const text = (result as { content: Array<{ text: string }> }).content[0].text;
+    expect(text).toContain('Trigger Created');
+    expect(mockClient.createTrigger).toHaveBeenCalled();
   });
 });
