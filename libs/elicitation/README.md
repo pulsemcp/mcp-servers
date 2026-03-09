@@ -179,6 +179,7 @@ interface ElicitationConfig {
   pollUrl?: string; // from ELICITATION_POLL_URL
   ttlMs: number; // from ELICITATION_TTL_MS (default: 300000 = 5 min)
   pollIntervalMs: number; // from ELICITATION_POLL_INTERVAL_MS (default: 5000, min: 1000)
+  sessionId?: string; // from ELICITATION_SESSION_ID
 }
 ```
 
@@ -186,13 +187,14 @@ Invalid numeric values (NaN, negative) fall back to defaults silently. Poll inte
 
 ## Environment Variables
 
-| Variable                       | Default  | Description                                                        |
-| ------------------------------ | -------- | ------------------------------------------------------------------ |
-| `ELICITATION_ENABLED`          | `true`   | Set to `"false"` to disable all elicitation (Tier 1 bypass)        |
-| `ELICITATION_REQUEST_URL`      | (none)   | POST endpoint for HTTP fallback approval requests                  |
-| `ELICITATION_POLL_URL`         | (none)   | GET base URL for polling approval status (`{pollUrl}/{requestId}`) |
-| `ELICITATION_TTL_MS`           | `300000` | TTL for HTTP fallback requests in milliseconds (5 minutes)         |
-| `ELICITATION_POLL_INTERVAL_MS` | `5000`   | Poll interval in milliseconds (minimum: 1000)                      |
+| Variable                       | Default  | Description                                                                                                                                                                          |
+| ------------------------------ | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `ELICITATION_ENABLED`          | `true`   | Set to `"false"` to disable all elicitation (Tier 1 bypass)                                                                                                                          |
+| `ELICITATION_REQUEST_URL`      | (none)   | POST endpoint for HTTP fallback approval requests                                                                                                                                    |
+| `ELICITATION_POLL_URL`         | (none)   | GET base URL for polling approval status (`{pollUrl}/{requestId}`)                                                                                                                   |
+| `ELICITATION_TTL_MS`           | `300000` | TTL for HTTP fallback requests in milliseconds (5 minutes)                                                                                                                           |
+| `ELICITATION_POLL_INTERVAL_MS` | `5000`   | Poll interval in milliseconds (minimum: 1000)                                                                                                                                        |
+| `ELICITATION_SESSION_ID`       | (none)   | Session identifier included as `com.pulsemcp/session-id` in `_meta` of HTTP fallback requests. Set by the orchestrator to link elicitation requests back to the originating session. |
 
 ## HTTP Fallback Protocol
 

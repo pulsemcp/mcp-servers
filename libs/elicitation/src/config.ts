@@ -22,6 +22,7 @@ function parsePositiveInt(value: string | undefined, defaultValue: number): numb
  *   ELICITATION_POLL_URL      - GET endpoint for HTTP fallback polling
  *   ELICITATION_TTL_MS        - Request TTL in milliseconds (default: 300000)
  *   ELICITATION_POLL_INTERVAL_MS - Poll interval in milliseconds (default: 5000, min: 1000)
+ *   ELICITATION_SESSION_ID      - Session identifier for HTTP fallback `_meta`
  */
 export function readElicitationConfig(
   env: Record<string, string | undefined> = process.env
@@ -40,5 +41,6 @@ export function readElicitationConfig(
     pollUrl: env.ELICITATION_POLL_URL,
     ttlMs: parsePositiveInt(env.ELICITATION_TTL_MS, DEFAULT_TTL_MS),
     pollIntervalMs,
+    sessionId: env.ELICITATION_SESSION_ID,
   };
 }

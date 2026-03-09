@@ -154,6 +154,7 @@ export async function requestConfirmation(
     const meta: ElicitationMeta = {
       'com.pulsemcp/request-id': clientRequestId,
       'com.pulsemcp/expires-at': new Date(expiresAt).toISOString(),
+      ...(cfg.sessionId && { 'com.pulsemcp/session-id': cfg.sessionId }),
       ...options.meta,
     };
 
