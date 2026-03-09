@@ -12,6 +12,13 @@ import type {
 import { readElicitationConfig } from './config.js';
 
 /**
+ * The set of action values recognized by the elicitation protocol.
+ * Includes 'pending' for completeness, though it is filtered before
+ * reaching the validation check in pollElicitationStatus.
+ */
+const VALID_ELICITATION_ACTIONS = new Set(['pending', 'accept', 'decline', 'cancel', 'expired']);
+
+/**
  * Checks whether the connected client supports native form elicitation.
  */
 function clientSupportsElicitation(server: MCPServerLike): boolean {
@@ -38,6 +45,17 @@ async function nativeElicit(
     requestedSchema,
   };
   const result = await server.elicitInput(params);
+
+  // Fail-safe: validate the action even from native elicitation.
+  // The TypeScript type says 'accept' | 'decline' | 'cancel', but at runtime
+  // the MCP client could return any string over the wire.
+  if (!VALID_ELICITATION_ACTIONS.has(result.action)) {
+    console.warn(
+      `[elicitation] Unrecognized native elicitation action "${result.action}". ` +
+        `Treating as "decline" (fail-safe).`
+    );
+    return { action: 'decline' };
+  }
 
   return {
     action: result.action,
@@ -104,6 +122,17 @@ async function pollElicitationStatus(
     const data = (await response.json()) as ElicitationPollResponse;
 
     if (data.action !== 'pending') {
+      // Fail-safe: only allow recognized action values through.
+      // Unrecognized actions are treated as 'decline' to prevent
+      // unintended execution of protected operations.
+      if (!VALID_ELICITATION_ACTIONS.has(data.action)) {
+        console.warn(
+          `[elicitation] Unrecognized poll action "${data.action}" for request ${requestId}. ` +
+            `Treating as "decline" (fail-safe).`
+        );
+        return { action: 'decline' };
+      }
+
       return {
         action: data.action,
         content: data.content ?? undefined,

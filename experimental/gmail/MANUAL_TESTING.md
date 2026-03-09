@@ -68,16 +68,24 @@ The tests will:
 ## Latest Test Results
 
 **Test Date:** 2026-03-09
-**Branch:** main
-**Commit:** b74bf71
+**Branch:** agent/elicitation-fail-safe
+**Commit:** 6454fc5
 **Tested By:** Claude Code
-**Environment:** Real Gmail API (service account) + local HTTP mock server for fallback
+**Environment:** Unit tests + functional tests (mocked)
 
 ### Test Results
 
-**Note:** This is a build-fix-only change (reordered steps and added --ignore-scripts in `prepare-publish.js`). No Gmail server code or tests were changed. Manual test results carried forward from v0.4.0 (commit cf71c2f) which tested all Gmail API functionality.
+**Note:** This change only modifies the elicitation confirmation gate logic (fail-safe validation). No Gmail API interaction code was changed. Manual test results carried forward from v0.4.0 (commit cf71c2f) which tested all Gmail API functionality.
 
-**Automated Tests (mocked):**
+**Elicitation Library Tests:**
+
+```
+Elicitation Tests: 12 passed (12)
+  - session-id.test.ts: 5 tests (existing)
+  - fail-safe.test.ts: 7 tests (new - validates fail-safe behavior)
+```
+
+**Gmail Functional Tests (mocked):**
 
 ```
 Functional Tests: 115 passed (115)
@@ -87,18 +95,19 @@ Functional Tests: 115 passed (115)
   - oauth-setup.test.ts: 5 tests
 ```
 
-**Overall:** 115 functional tests passed
+**Overall:** 127 tests passed (12 elicitation + 115 gmail functional)
 
 ### Notes
 
-- Build-fix-only change: reordered `prepare-publish.js` to build `@pulsemcp/mcp-elicitation` before the shared module, with `--ignore-scripts` to avoid husky hook
-- No Gmail server code was modified — all prior manual test results remain valid
-- Fixes failed npm publishes for versions 0.3.0–0.4.2
+- Confirmation-gate-only change: validates poll response actions against known set, treats unrecognized actions as 'decline'
+- No Gmail API code was modified — all prior manual test results remain valid
+- New fail-safe tests verify: valid actions pass through, unrecognized actions ("declined", "approved", "", garbage) are treated as 'decline' with warning
 
 ## Historical Test Runs
 
 | Date       | Commit  | Status | Notes                                                                                        |
 | ---------- | ------- | ------ | -------------------------------------------------------------------------------------------- |
+| 2026-03-09 | 6454fc5 | PASS   | v0.4.4 - fail-safe elicitation gate (no API changes), 12 elicitation + 115 functional        |
 | 2026-03-09 | b74bf71 | PASS   | v0.4.3 - build-fix-only (reordered prepare-publish.js + --ignore-scripts), 115 functional    |
 | 2026-03-09 | e9ee1e5 | PASS   | v0.4.1 - packaging-only bump (updated bundled elicitation lib), 115 functional + 5 lib unit  |
 | 2026-03-09 | cf71c2f | PASS   | v0.4.0 - upsert_draft_email + list_draft_emails, 19 manual + 115 functional + 27 integration |

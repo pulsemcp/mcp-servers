@@ -166,7 +166,20 @@ export function sendEmailTool(server: Server, clientFactory: ClientFactory) {
             elicitationConfig
           );
 
-          if (confirmation.action === 'decline' || confirmation.action === 'cancel') {
+          // Fail-safe: only proceed on explicit 'accept'.
+          // Any other action (decline, cancel, expired, or unrecognized) blocks the send.
+          if (confirmation.action !== 'accept') {
+            if (confirmation.action === 'expired') {
+              return {
+                content: [
+                  {
+                    type: 'text',
+                    text: 'Email sending confirmation expired. Please try again.',
+                  },
+                ],
+                isError: true,
+              };
+            }
             return {
               content: [
                 {
@@ -177,20 +190,8 @@ export function sendEmailTool(server: Server, clientFactory: ClientFactory) {
             };
           }
 
-          if (confirmation.action === 'expired') {
-            return {
-              content: [
-                {
-                  type: 'text',
-                  text: 'Email sending confirmation expired. Please try again.',
-                },
-              ],
-              isError: true,
-            };
-          }
-
-          // action === 'accept' with content.confirm === true, or
-          // action === 'accept' from disabled mode (no content)
+          // We reach here only when action === 'accept'.
+          // Still check if the user explicitly unchecked the confirm checkbox.
           if (
             confirmation.content &&
             'confirm' in confirmation.content &&
