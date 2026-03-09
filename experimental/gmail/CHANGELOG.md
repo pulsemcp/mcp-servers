@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.4.4] - 2026-03-09
+
 ### Fixed
 
 - **SECURITY**: Elicitation confirmation gate now uses fail-safe design — only explicit `accept` allows email to send. Previously, unrecognized action values (e.g., `"declined"` instead of `"decline"`) would fall through and allow the send to proceed
