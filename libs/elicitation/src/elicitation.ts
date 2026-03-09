@@ -76,6 +76,9 @@ async function postElicitationRequest(
   return data;
 }
 
+/** The set of action values recognized by the elicitation protocol. */
+const VALID_POLL_ACTIONS = new Set(['pending', 'accept', 'decline', 'cancel', 'expired']);
+
 /**
  * Polls the HTTP fallback endpoint until the request is resolved or expires.
  */
@@ -104,6 +107,17 @@ async function pollElicitationStatus(
     const data = (await response.json()) as ElicitationPollResponse;
 
     if (data.action !== 'pending') {
+      // Fail-safe: only allow recognized action values through.
+      // Unrecognized actions are treated as 'decline' to prevent
+      // unintended execution of protected operations.
+      if (!VALID_POLL_ACTIONS.has(data.action)) {
+        console.warn(
+          `[elicitation] Unrecognized poll action "${data.action}" for request ${requestId}. ` +
+            `Treating as "decline" (fail-safe).`
+        );
+        return { action: 'decline' };
+      }
+
       return {
         action: data.action,
         content: data.content ?? undefined,
