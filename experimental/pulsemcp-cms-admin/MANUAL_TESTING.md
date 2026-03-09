@@ -2,6 +2,33 @@
 
 ## Latest Test Results
 
+**Date:** 2026-03-09
+**Commit:** 0d4da1c
+**Version:** 0.9.3 (pre-release)
+**API Environment:** N/A (tool description and response formatting changes only, no API interaction changes)
+
+### Overall: ✅ Functional Tests PASSING (184/184, 8 test files)
+
+**v0.9.3 Changes:**
+
+- Clarified omission semantics in `save_mcp_implementation` and `update_mcp_server` tool descriptions
+- Added canonical URLs and remote endpoints to `save_mcp_implementation` create/update response output
+- Updated `save_mcp_implementation` CREATE example to show remote endpoints and canonical URLs can be included during creation
+
+**Functional Test Results: ✅ 184/184 PASSING (8 test files)**
+
+- 2 new tests added in `tools.test.ts`:
+  - `should include canonical URLs and remotes in update response` — verifies response output includes canonical URL and remote endpoint details when API returns them
+  - `should include canonical URLs and remotes in create response` — verifies create response includes canonical/remote details and get_mcp_server verification tip
+
+**Note on Manual Testing:**
+
+Manual tests were not run for this release — API credentials (`.env` file) were not available in this environment. This change modifies only tool description text and response output formatting. No API client code, request payloads, or response parsing logic was changed. The v0.9.2 manual test results remain valid for all API-facing functionality.
+
+---
+
+## Previous Test Results (v0.9.2)
+
 **Date:** 2026-03-08
 **Commit:** 6856ae1
 **Version:** 0.9.2 (pre-release)

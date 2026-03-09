@@ -27,8 +27,9 @@ const PARAM_DESCRIPTIONS = {
     'Override the automatically derived created date (ISO date string, e.g., "2025-01-15")',
   tags: 'Tags for the server. Replaces all existing tags when provided. Use tag slugs.',
   canonical_urls:
-    'Authoritative URLs for the server. Replaces all existing canonical URLs when provided.',
-  remotes: 'Remote endpoints for the server. Replaces all existing remotes when provided.',
+    'Authoritative URLs for the server. Providing this replaces ALL existing canonical URLs. Omitting leaves them unchanged. Pass an empty array to delete all.',
+  remotes:
+    'Remote endpoints for the server. Providing this replaces ALL existing remotes. Omitting leaves them unchanged. Pass an empty array to delete all.',
   internal_notes: 'Admin-only internal notes',
 } as const;
 
@@ -112,9 +113,14 @@ const UpdateMCPServerSchema = z.object({
 export function updateMCPServer(_server: Server, clientFactory: ClientFactory) {
   return {
     name: 'update_mcp_server',
-    description: `Update an MCP server's information. Only provided fields will be updated.
+    description: `Update an MCP server's information. Only provided fields will be updated; **omitted fields remain unchanged**.
 
 **Important:** Use the \`implementation_id\` from \`get_mcp_server\` or \`list_mcp_servers\`, NOT the server ID or slug.
+
+## Omission semantics
+- **Omitting** \`remotes\`, \`canonical_urls\`, or \`tags\` leaves existing values **unchanged** (does NOT clear them)
+- **Providing** \`remotes\`, \`canonical_urls\`, or \`tags\` **replaces ALL** existing entries (not a merge)
+- To **delete all** entries, pass an empty array (e.g., \`"remotes": []\`)
 
 ## Updating Basic Info
 \`\`\`json
@@ -139,7 +145,7 @@ export function updateMCPServer(_server: Server, clientFactory: ClientFactory) {
 \`\`\`
 
 ## Adding/Updating Canonical URLs
-Providing canonical_urls replaces ALL existing canonical URLs:
+Providing canonical_urls replaces ALL existing canonical URLs (omitting leaves them unchanged):
 \`\`\`json
 {
   "implementation_id": 456,
@@ -151,7 +157,7 @@ Providing canonical_urls replaces ALL existing canonical URLs:
 \`\`\`
 
 ## Adding/Updating Remote Endpoints
-Providing remotes replaces ALL existing remote endpoints:
+Providing remotes replaces ALL existing remote endpoints (omitting leaves them unchanged):
 \`\`\`json
 {
   "implementation_id": 456,
