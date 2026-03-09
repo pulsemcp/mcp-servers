@@ -37,15 +37,16 @@ describe('Gmail MCP Server Integration Tests', () => {
     it('should list available tools', async () => {
       const result = await client!.listTools();
       const tools = result.tools;
-      expect(tools.length).toBe(7);
+      expect(tools.length).toBe(8);
 
       const toolNames = tools.map((t) => t.name);
       expect(toolNames).toContain('list_email_conversations');
       expect(toolNames).toContain('get_email_conversation');
       expect(toolNames).toContain('search_email_conversations');
       expect(toolNames).toContain('download_email_attachments');
+      expect(toolNames).toContain('list_draft_emails');
       expect(toolNames).toContain('change_email_conversation');
-      expect(toolNames).toContain('draft_email');
+      expect(toolNames).toContain('upsert_draft_email');
       expect(toolNames).toContain('send_email');
     });
   });
@@ -172,9 +173,9 @@ describe('Gmail MCP Server Integration Tests', () => {
     });
   });
 
-  describe('draft_email', () => {
+  describe('upsert_draft_email', () => {
     it('should create a draft with plaintext_body', async () => {
-      const result = await client!.callTool('draft_email', {
+      const result = await client!.callTool('upsert_draft_email', {
         to: 'recipient@example.com',
         subject: 'Test Subject',
         plaintext_body: 'Test body content',
@@ -188,7 +189,7 @@ describe('Gmail MCP Server Integration Tests', () => {
     });
 
     it('should create a draft with html_body', async () => {
-      const result = await client!.callTool('draft_email', {
+      const result = await client!.callTool('upsert_draft_email', {
         to: 'recipient@example.com',
         subject: 'Test Subject',
         html_body: '<p>Hello <b>World</b></p>',
@@ -198,6 +199,60 @@ describe('Gmail MCP Server Integration Tests', () => {
       expect(result.content[0].type).toBe('text');
       expect(result.content[0].text).toContain('Draft created successfully');
       expect(result.content[0].text).toContain('**Format:** HTML');
+    });
+
+    it('should update an existing draft', async () => {
+      // First create a draft
+      const createResult = await client!.callTool('upsert_draft_email', {
+        to: 'recipient@example.com',
+        subject: 'Original Subject',
+        plaintext_body: 'Original body',
+      });
+      expect(createResult.content[0].text).toContain('Draft created successfully');
+
+      // Extract draft ID
+      const draftIdMatch = (createResult.content[0] as { text: string }).text.match(
+        /\*\*Draft ID:\*\*\s*(\S+)/
+      );
+      expect(draftIdMatch).not.toBeNull();
+      const draftId = draftIdMatch![1];
+
+      // Update the draft
+      const updateResult = await client!.callTool('upsert_draft_email', {
+        draft_id: draftId,
+        to: 'updated@example.com',
+        subject: 'Updated Subject',
+        plaintext_body: 'Updated body',
+      });
+
+      expect(updateResult.content).toHaveLength(1);
+      expect(updateResult.content[0].text).toContain('Draft updated successfully');
+      expect(updateResult.content[0].text).toContain(`**Draft ID:** ${draftId}`);
+    });
+  });
+
+  describe('list_draft_emails', () => {
+    it('should return empty message when no drafts exist', async () => {
+      const result = await client!.callTool('list_draft_emails', {});
+
+      expect(result.content).toHaveLength(1);
+      expect(result.content[0].text).toContain('No drafts found');
+    });
+
+    it('should list drafts after creating one', async () => {
+      // Create a draft first
+      await client!.callTool('upsert_draft_email', {
+        to: 'recipient@example.com',
+        subject: 'Integration Test Draft',
+        plaintext_body: 'Test body',
+      });
+
+      const result = await client!.callTool('list_draft_emails', {});
+
+      expect(result.content).toHaveLength(1);
+      expect(result.content[0].text).toContain('Found');
+      expect(result.content[0].text).toContain('draft(s)');
+      expect(result.content[0].text).toContain('Draft ID:');
     });
   });
 
@@ -356,7 +411,7 @@ describe('Gmail MCP Server - Elicitation Integration Tests', () => {
       await client.connect();
 
       // First create a draft
-      const draftResult = await client.callTool('draft_email', {
+      const draftResult = await client.callTool('upsert_draft_email', {
         to: 'recipient@example.com',
         subject: 'Draft Test',
         plaintext_body: 'Draft body',

@@ -199,12 +199,12 @@ describe('Gmail Client - Manual Tests', () => {
     });
   });
 
-  describe('draft_email', () => {
+  describe('upsert_draft_email', () => {
     it('should create a draft', async () => {
       const recipient =
         testRecipientEmail || process.env.GMAIL_IMPERSONATE_EMAIL || 'test@example.com';
 
-      const result = await client.callTool('draft_email', {
+      const result = await client.callTool('upsert_draft_email', {
         to: recipient,
         subject: `[TEST] Draft created by manual test - ${new Date().toISOString()}`,
         plaintext_body:

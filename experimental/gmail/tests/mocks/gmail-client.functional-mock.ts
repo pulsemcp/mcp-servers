@@ -168,6 +168,44 @@ export function createMockGmailClient(): IGmailClient {
       return draft;
     }),
 
+    updateDraft: vi
+      .fn()
+      .mockImplementation(async (draftId: string, options: Record<string, unknown>) => {
+        const index = mockDrafts.findIndex((d) => d.id === draftId);
+        if (index === -1) {
+          throw new Error(`Draft not found: ${draftId}`);
+        }
+
+        const bodyContent = (options.plaintextBody || options.htmlBody || '') as string;
+        const updatedDraft: Draft = {
+          id: draftId,
+          message: {
+            id: mockDrafts[index].message.id,
+            threadId: (options.threadId as string) || mockDrafts[index].message.threadId,
+            labelIds: ['DRAFT'],
+            snippet: bodyContent.substring(0, 100),
+            historyId: '12347',
+            internalDate: String(Date.now()),
+            payload: {
+              mimeType: options.htmlBody ? 'text/html' : 'text/plain',
+              headers: [
+                { name: 'Subject', value: options.subject as string },
+                { name: 'From', value: 'me@example.com' },
+                { name: 'To', value: options.to as string },
+                { name: 'Date', value: new Date().toISOString() },
+              ],
+              body: {
+                size: bodyContent.length,
+                data: Buffer.from(bodyContent).toString('base64url'),
+              },
+            },
+          },
+        };
+
+        mockDrafts[index] = updatedDraft;
+        return updatedDraft;
+      }),
+
     getDraft: vi.fn().mockImplementation(async (draftId: string) => {
       const draft = mockDrafts.find((d) => d.id === draftId);
       if (!draft) {

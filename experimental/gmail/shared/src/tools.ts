@@ -4,7 +4,8 @@ import { ClientFactory } from './server.js';
 import { listEmailConversationsTool } from './tools/list-email-conversations.js';
 import { getEmailConversationTool } from './tools/get-email-conversation.js';
 import { changeEmailConversationTool } from './tools/change-email-conversation.js';
-import { draftEmailTool } from './tools/draft-email.js';
+import { upsertDraftEmailTool } from './tools/draft-email.js';
+import { listDraftEmailsTool } from './tools/list-draft-emails.js';
 import { sendEmailTool } from './tools/send-email.js';
 import { searchEmailConversationsTool } from './tools/search-email-conversations.js';
 import { downloadEmailAttachmentsTool } from './tools/download-email-attachments.js';
@@ -47,8 +48,8 @@ interface ToolDefinition {
 /**
  * All available tools with their group assignments
  *
- * readonly: list_email_conversations, get_email_conversation, search_email_conversations, download_email_attachments
- * readwrite: all readonly tools + change_email_conversation, draft_email
+ * readonly: list_email_conversations, get_email_conversation, search_email_conversations, download_email_attachments, list_draft_emails
+ * readwrite: all readonly tools + change_email_conversation, upsert_draft_email
  * readwrite_external: all readwrite tools + send_email (external communication)
  */
 const ALL_TOOLS: ToolDefinition[] = [
@@ -63,9 +64,11 @@ const ALL_TOOLS: ToolDefinition[] = [
     factory: downloadEmailAttachmentsTool,
     groups: ['readonly', 'readwrite', 'readwrite_external'],
   },
+  // List drafts is read-only (doesn't modify mailbox state)
+  { factory: listDraftEmailsTool, groups: ['readonly', 'readwrite', 'readwrite_external'] },
   // Write tools (available in readwrite and readwrite_external)
   { factory: changeEmailConversationTool, groups: ['readwrite', 'readwrite_external'] },
-  { factory: draftEmailTool, groups: ['readwrite', 'readwrite_external'] },
+  { factory: upsertDraftEmailTool, groups: ['readwrite', 'readwrite_external'] },
   // External communication tools (only in readwrite_external - most dangerous)
   { factory: sendEmailTool, groups: ['readwrite_external'] },
 ];
