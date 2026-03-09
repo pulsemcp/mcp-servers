@@ -75,15 +75,16 @@ The tests will:
 
 ### Test Results
 
-**Manual Tests (real Gmail API): 17 passed**
+**Manual Tests (real Gmail API): 19 passed**
 
 ```
-gmail-client.test.ts: 13 passed
+gmail-client.test.ts: 15 passed
   - list_email_conversations: 2 passed (inbox listing, query filtering)
   - search_email_conversations: 1 passed
   - get_email_conversation: 1 passed
   - change_email_conversation: 1 passed (star/unstar)
-  - upsert_draft_email: 1 passed (create draft)
+  - upsert_draft_email: 2 passed (create draft, update existing draft)
+  - list_draft_emails: 1 passed (list drafts with metadata)
   - send_email: 1 passed
   - download_email_attachments: 1 passed
   - Native elicitation (accept): 1 passed — sent email after user accepted via MCP protocol
@@ -113,12 +114,13 @@ Integration Tests: 27 passed (27)
   - Elicitation tests: 7 passed
 ```
 
-**Overall:** 159 tests passed (115 functional + 27 integration + 17 manual)
+**Overall:** 161 tests passed (115 functional + 27 integration + 19 manual)
 
 ### Notes
 
 - Renamed `draft_email` to `upsert_draft_email` with optional `draft_id` for in-place updates
 - Added `list_draft_emails` tool with optional `thread_id` filtering
+- Both new tools (update draft, list drafts) manually tested against real Gmail API
 - All existing elicitation tests continue to pass
 - New updateDraft method added to IGmailClient interface and Gmail API client layer
 
@@ -126,7 +128,7 @@ Integration Tests: 27 passed (27)
 
 | Date       | Commit  | Status | Notes                                                                                        |
 | ---------- | ------- | ------ | -------------------------------------------------------------------------------------------- |
-| 2026-03-09 | cf71c2f | PASS   | v0.4.0 - upsert_draft_email + list_draft_emails, 17 manual + 115 functional + 27 integration |
+| 2026-03-09 | cf71c2f | PASS   | v0.4.0 - upsert_draft_email + list_draft_emails, 19 manual + 115 functional + 27 integration |
 | 2026-03-08 | edf3465 | PASS   | v0.3.0 - Elicitation support, 13 manual + 108 functional + 24 integration                    |
 | 2026-03-05 | 9be3fff | PASS   | v0.2.1 - MIME encoding fixes, 108 functional (no API changes, manual tests not re-run)       |
 | 2026-03-04 | 4d1634a | PASS   | v0.2.0 - HTML body support, 12 manual + 87 functional + 17 integration                       |

@@ -80,13 +80,18 @@ export function listDraftEmailsTool(server: Server, clientFactory: ClientFactory
         filtered = filtered.slice(0, parsed.count);
 
         if (filtered.length === 0) {
+          let noResultsText = parsed.thread_id
+            ? `No drafts found for thread ${parsed.thread_id}.`
+            : 'No drafts found.';
+          if (parsed.thread_id && drafts.length >= 100) {
+            noResultsText +=
+              '\n\n*Note: Only the most recent 100 drafts were searched. The draft may exist beyond this limit.*';
+          }
           return {
             content: [
               {
                 type: 'text',
-                text: parsed.thread_id
-                  ? `No drafts found for thread ${parsed.thread_id}.`
-                  : 'No drafts found.',
+                text: noResultsText,
               },
             ],
           };
