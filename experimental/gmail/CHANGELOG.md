@@ -4,6 +4,22 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-03-09
+
+### Added
+
+- `list_draft_emails` tool for listing existing email drafts with optional thread filtering
+  - Returns draft ID, thread ID, recipients, subject, and preview snippet for each draft
+  - Optional `thread_id` parameter filters drafts belonging to a specific conversation
+  - Available in all tool groups (readonly, readwrite, readwrite_external)
+
+### Changed
+
+- **BREAKING**: Renamed `draft_email` tool to `upsert_draft_email`
+  - New optional `draft_id` parameter: when provided, updates the existing draft in-place instead of creating a new one
+  - When `draft_id` is omitted, behavior is unchanged (creates a new draft)
+  - Addresses [issue #406](https://github.com/pulsemcp/mcp-servers/issues/406)
+
 ## [0.3.0] - 2026-03-08
 
 ### Added

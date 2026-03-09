@@ -4,6 +4,10 @@ import type { ClientFactory } from '../server.js';
 import { getHeader } from '../utils/email-helpers.js';
 
 const PARAM_DESCRIPTIONS = {
+  draft_id:
+    'ID of an existing draft to update. If provided, the draft is replaced in-place ' +
+    'with the new content. If omitted, a new draft is created. ' +
+    'Get draft IDs from list_draft_emails or from a previous upsert_draft_email response.',
   to: 'Recipient email address(es). For multiple recipients, separate with commas.',
   subject: 'Subject line of the email.',
   plaintext_body:
@@ -20,8 +24,9 @@ const PARAM_DESCRIPTIONS = {
     'with proper In-Reply-To and References headers. Also requires thread_id.',
 } as const;
 
-export const DraftEmailSchema = z
+export const UpsertDraftEmailSchema = z
   .object({
+    draft_id: z.string().optional().describe(PARAM_DESCRIPTIONS.draft_id),
     to: z.string().min(1).describe(PARAM_DESCRIPTIONS.to),
     subject: z.string().min(1).describe(PARAM_DESCRIPTIONS.subject),
     plaintext_body: z.string().min(1).optional().describe(PARAM_DESCRIPTIONS.plaintext_body),
@@ -40,9 +45,10 @@ export const DraftEmailSchema = z
     }
   );
 
-const TOOL_DESCRIPTION = `Create a draft email that can be reviewed and sent later.
+const TOOL_DESCRIPTION = `Create a new draft email or update an existing one.
 
 **Parameters:**
+- draft_id: ID of an existing draft to update (optional — omit to create a new draft)
 - to: Recipient email address(es) (required)
 - subject: Email subject line (required)
 - plaintext_body: Plain text body content (at least one of plaintext_body or html_body required)
@@ -60,20 +66,28 @@ To create a draft reply to an existing email:
 1. Get the thread_id and email_id from get_email_conversation
 2. Provide both thread_id and reply_to_email_id parameters
 
+**Updating a draft:**
+To update an existing draft, provide the draft_id from a previous upsert_draft_email response or from list_draft_emails. The draft is replaced in-place — all fields must be provided (not just the ones you want to change).
+
 **Use cases:**
 - Draft a new email for later review
 - Prepare a reply to an email conversation
+- Revise a draft after user feedback (without creating duplicates)
 - Save an email without sending it immediately
 
 **Note:** The draft will be saved in Gmail's Drafts folder. Use send_email with from_draft_id to send it.`;
 
-export function draftEmailTool(server: Server, clientFactory: ClientFactory) {
+export function upsertDraftEmailTool(server: Server, clientFactory: ClientFactory) {
   return {
-    name: 'draft_email',
+    name: 'upsert_draft_email',
     description: TOOL_DESCRIPTION,
     inputSchema: {
       type: 'object' as const,
       properties: {
+        draft_id: {
+          type: 'string',
+          description: PARAM_DESCRIPTIONS.draft_id,
+        },
         to: {
           type: 'string',
           description: PARAM_DESCRIPTIONS.to,
@@ -111,7 +125,7 @@ export function draftEmailTool(server: Server, clientFactory: ClientFactory) {
     },
     handler: async (args: unknown) => {
       try {
-        const parsed = DraftEmailSchema.parse(args ?? {});
+        const parsed = UpsertDraftEmailSchema.parse(args ?? {});
         const client = clientFactory();
 
         let inReplyTo: string | undefined;
@@ -134,7 +148,7 @@ export function draftEmailTool(server: Server, clientFactory: ClientFactory) {
           }
         }
 
-        const draft = await client.createDraft({
+        const draftOptions = {
           to: parsed.to,
           subject: parsed.subject,
           plaintextBody: parsed.plaintext_body,
@@ -144,9 +158,15 @@ export function draftEmailTool(server: Server, clientFactory: ClientFactory) {
           threadId: parsed.thread_id,
           inReplyTo,
           references,
-        });
+        };
 
-        let responseText = `Draft created successfully!\n\n**Draft ID:** ${draft.id}`;
+        const isUpdate = Boolean(parsed.draft_id);
+        const draft = isUpdate
+          ? await client.updateDraft(parsed.draft_id!, draftOptions)
+          : await client.createDraft(draftOptions);
+
+        const action = isUpdate ? 'updated' : 'created';
+        let responseText = `Draft ${action} successfully!\n\n**Draft ID:** ${draft.id}`;
 
         if (parsed.thread_id) {
           responseText += `\n**Thread ID:** ${parsed.thread_id}`;
@@ -185,7 +205,7 @@ export function draftEmailTool(server: Server, clientFactory: ClientFactory) {
           content: [
             {
               type: 'text',
-              text: `Error creating draft: ${error instanceof Error ? error.message : 'Unknown error'}`,
+              text: `Error ${(args as Record<string, unknown>)?.draft_id ? 'updating' : 'creating'} draft: ${error instanceof Error ? error.message : 'Unknown error'}`,
             },
           ],
           isError: true,

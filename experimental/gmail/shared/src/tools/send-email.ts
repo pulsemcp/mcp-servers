@@ -80,7 +80,7 @@ To send a reply to an existing email:
 **Use cases:**
 - Send a new email immediately
 - Reply to an existing email conversation
-- Send a draft that was created with draft_email
+- Send a draft that was created with upsert_draft_email
 
 **Warning:** This action sends the email immediately and cannot be undone.`;
 

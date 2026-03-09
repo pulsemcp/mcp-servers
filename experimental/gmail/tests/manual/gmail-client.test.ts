@@ -199,12 +199,12 @@ describe('Gmail Client - Manual Tests', () => {
     });
   });
 
-  describe('draft_email', () => {
+  describe('upsert_draft_email', () => {
     it('should create a draft', async () => {
       const recipient =
         testRecipientEmail || process.env.GMAIL_IMPERSONATE_EMAIL || 'test@example.com';
 
-      const result = await client.callTool('draft_email', {
+      const result = await client.callTool('upsert_draft_email', {
         to: recipient,
         subject: `[TEST] Draft created by manual test - ${new Date().toISOString()}`,
         plaintext_body:
@@ -215,6 +215,50 @@ describe('Gmail Client - Manual Tests', () => {
       const text = (result.content[0] as { text: string }).text;
       expect(text).toBeDefined();
       console.log(`Created draft, response length: ${text.length} chars`);
+    });
+
+    it('should update an existing draft', async () => {
+      const recipient =
+        testRecipientEmail || process.env.GMAIL_IMPERSONATE_EMAIL || 'test@example.com';
+
+      // Create a draft first
+      const createResult = await client.callTool('upsert_draft_email', {
+        to: recipient,
+        subject: `[TEST] Original draft - ${new Date().toISOString()}`,
+        plaintext_body: 'Original draft body.',
+      });
+      expect(createResult.isError).toBeFalsy();
+
+      const createText = (createResult.content[0] as { text: string }).text;
+      const draftIdMatch = createText.match(/\*\*Draft ID:\*\*\s*(\S+)/);
+      expect(draftIdMatch).not.toBeNull();
+      const draftId = draftIdMatch![1];
+      console.log(`Created draft ${draftId} for update test`);
+
+      // Update the draft
+      const updateResult = await client.callTool('upsert_draft_email', {
+        draft_id: draftId,
+        to: recipient,
+        subject: `[TEST] Updated draft - ${new Date().toISOString()}`,
+        plaintext_body: 'Updated draft body via upsert_draft_email.',
+      });
+      expect(updateResult.isError).toBeFalsy();
+
+      const updateText = (updateResult.content[0] as { text: string }).text;
+      expect(updateText).toContain('Draft updated successfully');
+      expect(updateText).toContain(draftId);
+      console.log(`Updated draft ${draftId} successfully`);
+    });
+  });
+
+  describe('list_draft_emails', () => {
+    it('should list drafts', async () => {
+      const result = await client.callTool('list_draft_emails', { count: 5 });
+      expect(result.isError).toBeFalsy();
+
+      const text = (result.content[0] as { text: string }).text;
+      expect(text).toBeDefined();
+      console.log(`list_draft_emails response: ${text.substring(0, 200)}...`);
     });
   });
 

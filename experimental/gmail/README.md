@@ -152,11 +152,11 @@ You can find the `client_email` and `private_key` values in your service account
 
 The server supports three tool groups for permission-based access control:
 
-| Group                | Tools Included                                                                     | Risk Level |
-| -------------------- | ---------------------------------------------------------------------------------- | ---------- |
-| `readonly`           | `list_email_conversations`, `get_email_conversation`, `search_email_conversations` | Low        |
-| `readwrite`          | All readonly tools + `change_email_conversation`, `draft_email`                    | Medium     |
-| `readwrite_external` | All readwrite tools + `send_email`                                                 | High       |
+| Group                | Tools Included                                                                                          | Risk Level |
+| -------------------- | ------------------------------------------------------------------------------------------------------- | ---------- |
+| `readonly`           | `list_email_conversations`, `get_email_conversation`, `search_email_conversations`, `list_draft_emails` | Low        |
+| `readwrite`          | All readonly tools + `change_email_conversation`, `upsert_draft_email`                                  | Medium     |
+| `readwrite_external` | All readwrite tools + `send_email`                                                                      | High       |
 
 By default, all tool groups are enabled. To restrict access, set the `GMAIL_ENABLED_TOOLGROUPS` environment variable:
 
@@ -254,12 +254,30 @@ Modify email labels and status (read/unread, starred, archived).
 }
 ```
 
-### draft_email
+### list_draft_emails
 
-Create a draft email, optionally as a reply to an existing conversation.
+List draft emails from Gmail with optional thread filtering.
 
 **Parameters:**
 
+- `count` (number, optional): Maximum number of drafts to return (default: 10, max: 100)
+- `thread_id` (string, optional): Filter drafts by conversation thread ID
+
+**Example:**
+
+```json
+{
+  "thread_id": "18abc123def456"
+}
+```
+
+### upsert_draft_email
+
+Create a new draft email or update an existing one. Optionally as a reply to an existing conversation.
+
+**Parameters:**
+
+- `draft_id` (string, optional): ID of an existing draft to update (omit to create a new draft)
 - `to` (string, required): Recipient email address
 - `subject` (string, required): Email subject
 - `plaintext_body` (string): Plain text body content (at least one of plaintext_body or html_body required)
@@ -271,7 +289,7 @@ Create a draft email, optionally as a reply to an existing conversation.
 
 At least one of `plaintext_body` or `html_body` must be provided. If both are provided, a multipart email is sent with both versions.
 
-**Example (plain text):**
+**Example (create new draft):**
 
 ```json
 {
@@ -281,12 +299,13 @@ At least one of `plaintext_body` or `html_body` must be provided. If both are pr
 }
 ```
 
-**Example (HTML):**
+**Example (update existing draft):**
 
 ```json
 {
+  "draft_id": "r123456789",
   "to": "recipient@example.com",
-  "subject": "Meeting Follow-up",
+  "subject": "Meeting Follow-up (revised)",
   "html_body": "<p>Thanks for the meeting today! Check out <a href=\"https://example.com/notes\">the notes</a>.</p>"
 }
 ```
