@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [0.9.3] - 2026-03-09
+
+### Improved
+
+- Clarified omission semantics in `save_mcp_implementation` and `update_mcp_server` tool descriptions — in `save_mcp_implementation`, documents that omitting `remote`/`canonical` leaves existing values unchanged; in `update_mcp_server`, documents the same for `remotes`/`canonical_urls`/`tags`. Providing these fields replaces ALL existing entries, and passing an empty array deletes all entries. Previously this behavior was ambiguous, leading to confusion about whether omitting fields would clear data.
+- Added canonical URLs and remote endpoints to `save_mcp_implementation` create/update response output — the response now shows canonical URL and remote endpoint counts with details when the API returns them, so callers can verify state immediately. Also adds a tip to use `get_mcp_server` for full verification after creation.
+- Updated `save_mcp_implementation` CREATE example to show remote endpoints and canonical URLs can be included during creation (not just on update).
+
 ## [0.9.2] - 2026-03-06
 
 ### Added

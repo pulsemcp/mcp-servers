@@ -1394,6 +1394,114 @@ describe('Newsletter Tools', () => {
       expect(text).toContain('- github_stars');
     });
 
+    it('should include canonical URLs and remotes in update response', async () => {
+      const mockUpdatedImplementation = {
+        id: 100,
+        name: 'Test Server',
+        slug: 'test-server',
+        type: 'server' as const,
+        status: 'live' as const,
+        updated_at: '2024-01-20T16:30:00Z',
+        canonical: [
+          { url: 'https://github.com/org/repo', scope: 'url' as const },
+          { url: 'https://example.com', scope: 'domain' as const, note: 'main site' },
+        ],
+        mcp_server: {
+          id: 50,
+          slug: 'test-server',
+          remotes: [
+            {
+              id: 1,
+              display_name: 'Smithery',
+              url_direct: 'https://smithery.ai/server/test',
+              transport: 'sse',
+            },
+            { id: 2, url_direct: 'https://api.example.com/mcp' },
+          ],
+        },
+      };
+
+      const mockClient = createMockClient({
+        saveMCPImplementation: vi.fn().mockResolvedValue(mockUpdatedImplementation),
+      });
+
+      const tool = saveMCPImplementation(mockServer, () => mockClient);
+      const result = await tool.handler({
+        id: 100,
+        canonical: [
+          { url: 'https://github.com/org/repo', scope: 'url' },
+          { url: 'https://example.com', scope: 'domain', note: 'main site' },
+        ],
+        remote: [
+          {
+            url_direct: 'https://smithery.ai/server/test',
+            transport: 'sse',
+            display_name: 'Smithery',
+          },
+          { url_direct: 'https://api.example.com/mcp' },
+        ],
+      });
+
+      const text = result.content[0].text;
+      expect(text).toContain('Canonical URLs:** 2');
+      expect(text).toContain('https://github.com/org/repo (url)');
+      expect(text).toContain('https://example.com (domain)');
+      expect(text).toContain('Remote Endpoints:** 2');
+      expect(text).toContain('Smithery');
+      expect(text).toContain('https://api.example.com/mcp');
+    });
+
+    it('should include canonical URLs and remotes in create response', async () => {
+      const mockCreatedImplementation = {
+        id: 200,
+        name: 'New Server',
+        slug: 'new-server',
+        type: 'server' as const,
+        status: 'draft' as const,
+        created_at: '2024-01-20T16:30:00Z',
+        canonical: [{ url: 'https://github.com/org/new-server', scope: 'url' as const }],
+        mcp_server: {
+          id: 60,
+          slug: 'new-server',
+          remotes: [
+            {
+              id: 1,
+              display_name: 'Main Remote',
+              url_direct: 'https://api.example.com/mcp',
+              transport: 'sse',
+            },
+          ],
+        },
+      };
+
+      const mockClient = createMockClient({
+        createMCPImplementation: vi.fn().mockResolvedValue(mockCreatedImplementation),
+      });
+
+      const tool = saveMCPImplementation(mockServer, () => mockClient);
+      const result = await tool.handler({
+        name: 'New Server',
+        type: 'server',
+        canonical: [{ url: 'https://github.com/org/new-server', scope: 'url' }],
+        remote: [
+          {
+            url_direct: 'https://api.example.com/mcp',
+            transport: 'sse',
+            display_name: 'Main Remote',
+          },
+        ],
+      });
+
+      const text = result.content[0].text;
+      expect(text).toContain('Successfully created new MCP implementation!');
+      expect(text).toContain('Canonical URLs:** 1');
+      expect(text).toContain('https://github.com/org/new-server (url)');
+      expect(text).toContain('Remote Endpoints:** 1');
+      expect(text).toContain('Main Remote');
+      expect(text).toContain('get_mcp_server');
+      expect(text).toContain('new-server');
+    });
+
     it('should require name and type when creating (no id)', async () => {
       const mockClient: IPulseMCPAdminClient = {
         getPosts: vi.fn(),
