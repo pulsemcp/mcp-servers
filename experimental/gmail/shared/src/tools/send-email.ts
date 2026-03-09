@@ -190,7 +190,8 @@ export function sendEmailTool(server: Server, clientFactory: ClientFactory) {
             };
           }
 
-          // action === 'accept' — also check if the user explicitly unchecked the confirm box
+          // We reach here only when action === 'accept'.
+          // Still check if the user explicitly unchecked the confirm checkbox.
           if (
             confirmation.content &&
             'confirm' in confirmation.content &&
