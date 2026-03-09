@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-03-09
+
 ### Added
 
 - `ALLOWED_AGENT_ROOTS` environment variable: comma-separated list of agent root names that constrains the server to only allow those specific preconfigured agent root invocations
