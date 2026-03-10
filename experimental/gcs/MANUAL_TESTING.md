@@ -12,6 +12,11 @@
 npm run test:manual
 ```
 
+## Latest Test Results
+
+**Commit:** 304feb7
+**Result:** Manual tests not re-run — this is a dependency-only change that pins `fast-xml-parser` to `>=5.3.4 <5.5.0` to work around a broken upstream release. No server code was modified. All functional tests (24/24) and integration tests (16/16) pass.
+
 ## Test Results
 
 ### 2026-02-28 - v0.1.1 (tool group change only, no API code changes)
