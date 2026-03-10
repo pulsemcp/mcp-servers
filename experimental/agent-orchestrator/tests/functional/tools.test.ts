@@ -1508,6 +1508,128 @@ describe('validateAgentRootConstraints', () => {
     expect(result.valid).toBe(false);
     expect(result.error).toContain('exact default MCP servers');
   });
+
+  // Subdirectory disambiguation tests — multiple agent roots sharing the same git_root
+  describe('subdirectory disambiguation', () => {
+    const monorepoRoots: AgentRootInfo[] = [
+      {
+        name: 'onboarding-research',
+        title: 'Research',
+        description: 'Research subagent',
+        git_root: 'https://github.com/pulsemcp/agents.git',
+        default_branch: 'main',
+        default_subdirectory: 'agent-roots/server-onboarding/subagents/research-and-catalog',
+        default_mcp_servers: ['pulse-server-directory-rw', 'pulse-redirects-rw'],
+      },
+      {
+        name: 'onboarding-configs',
+        title: 'Configs',
+        description: 'Configs subagent',
+        git_root: 'https://github.com/pulsemcp/agents.git',
+        default_branch: 'main',
+        default_subdirectory: 'agent-roots/server-onboarding/subagents/prepare-configs',
+        default_mcp_servers: ['remote-fs-screenshots', 'svg-tracer'],
+      },
+      {
+        name: 'onboarding-proctor',
+        title: 'Proctor',
+        description: 'Proctor subagent',
+        git_root: 'https://github.com/pulsemcp/agents.git',
+        default_branch: 'main',
+        default_subdirectory: 'agent-roots/server-onboarding/subagents/test-with-proctor',
+        default_mcp_servers: ['proctor-rw'],
+      },
+      {
+        name: 'onboarding-save',
+        title: 'Save',
+        description: 'Save subagent',
+        git_root: 'https://github.com/pulsemcp/agents.git',
+        default_branch: 'main',
+        default_subdirectory: 'agent-roots/server-onboarding/subagents/save-to-production',
+        default_mcp_servers: ['pulse-mirror-mgmt-rw', 'gcs-dewey-icons-rw'],
+      },
+    ];
+
+    const allAllowed = [
+      'onboarding-research',
+      'onboarding-configs',
+      'onboarding-proctor',
+      'onboarding-save',
+    ];
+
+    it('should match correct agent root by subdirectory when multiple share same git_root', () => {
+      const result = validateAgentRootConstraints(
+        allAllowed,
+        monorepoRoots,
+        'https://github.com/pulsemcp/agents.git',
+        ['pulse-mirror-mgmt-rw', 'gcs-dewey-icons-rw'],
+        'main',
+        'agent-roots/server-onboarding/subagents/save-to-production'
+      );
+      expect(result.valid).toBe(true);
+    });
+
+    it('should match research agent root by subdirectory', () => {
+      const result = validateAgentRootConstraints(
+        allAllowed,
+        monorepoRoots,
+        'https://github.com/pulsemcp/agents.git',
+        ['pulse-server-directory-rw', 'pulse-redirects-rw'],
+        'main',
+        'agent-roots/server-onboarding/subagents/research-and-catalog'
+      );
+      expect(result.valid).toBe(true);
+    });
+
+    it('should reject wrong mcp_servers even with correct subdirectory', () => {
+      const result = validateAgentRootConstraints(
+        allAllowed,
+        monorepoRoots,
+        'https://github.com/pulsemcp/agents.git',
+        ['pulse-mirror-mgmt-rw', 'gcs-dewey-icons-rw'],
+        'main',
+        'agent-roots/server-onboarding/subagents/research-and-catalog'
+      );
+      expect(result.valid).toBe(false);
+      expect(result.error).toContain('exact default MCP servers');
+      expect(result.error).toContain('onboarding-research');
+    });
+
+    it('should reject when subdirectory does not match any allowed root', () => {
+      const result = validateAgentRootConstraints(
+        allAllowed,
+        monorepoRoots,
+        'https://github.com/pulsemcp/agents.git',
+        ['some-server'],
+        'main',
+        'agent-roots/server-onboarding/subagents/nonexistent'
+      );
+      expect(result.valid).toBe(false);
+      expect(result.error).toContain('does not match');
+    });
+
+    it('should still work with single candidate (no disambiguation needed)', () => {
+      const result = validateAgentRootConstraints(
+        ['onboarding-save'],
+        monorepoRoots,
+        'https://github.com/pulsemcp/agents.git',
+        ['pulse-mirror-mgmt-rw', 'gcs-dewey-icons-rw']
+      );
+      expect(result.valid).toBe(true);
+    });
+
+    it('should match by subdirectory alone when branch is not provided', () => {
+      const result = validateAgentRootConstraints(
+        allAllowed,
+        monorepoRoots,
+        'https://github.com/pulsemcp/agents.git',
+        ['proctor-rw'],
+        undefined,
+        'agent-roots/server-onboarding/subagents/test-with-proctor'
+      );
+      expect(result.valid).toBe(true);
+    });
+  });
 });
 
 describe('ALLOWED_AGENT_ROOTS integration with get_configs', () => {
@@ -1671,6 +1793,103 @@ describe('ALLOWED_AGENT_ROOTS integration with start_session', () => {
 
     // Should have fetched configs since cache was empty
     expect(mockClient.getConfigs).toHaveBeenCalledTimes(1);
+  });
+
+  it('should disambiguate by subdirectory when multiple roots share same git_root', async () => {
+    process.env = {
+      ...originalEnv,
+      ALLOWED_AGENT_ROOTS: 'onboarding-research,onboarding-save',
+    };
+
+    // Override mock to return monorepo-style agent roots
+    mockClient.getConfigs = vi.fn().mockResolvedValue({
+      mcp_servers: [],
+      agent_roots: [
+        {
+          name: 'onboarding-research',
+          title: 'Research',
+          description: 'Research subagent',
+          git_root: 'https://github.com/pulsemcp/agents.git',
+          default_branch: 'main',
+          default_subdirectory: 'subagents/research',
+          default_mcp_servers: ['server-directory-rw'],
+        },
+        {
+          name: 'onboarding-save',
+          title: 'Save',
+          description: 'Save subagent',
+          git_root: 'https://github.com/pulsemcp/agents.git',
+          default_branch: 'main',
+          default_subdirectory: 'subagents/save',
+          default_mcp_servers: ['mirror-mgmt-rw'],
+        },
+      ],
+      stop_conditions: [],
+    });
+
+    const tool = startSessionTool(mockServer, clientFactory);
+
+    // Should match onboarding-save by subdirectory (not first match onboarding-research)
+    const result = await tool.handler({
+      git_root: 'https://github.com/pulsemcp/agents.git',
+      branch: 'main',
+      subdirectory: 'subagents/save',
+      mcp_servers: ['mirror-mgmt-rw'],
+      title: 'Test Save Session',
+    });
+
+    const text = (result as { content: Array<{ text: string }> }).content[0].text;
+    expect(text).toContain('Session Started Successfully');
+    expect(mockClient.createSession).toHaveBeenCalled();
+  });
+
+  it('should reject when subdirectory matches but mcp_servers are wrong', async () => {
+    process.env = {
+      ...originalEnv,
+      ALLOWED_AGENT_ROOTS: 'onboarding-research,onboarding-save',
+    };
+
+    mockClient.getConfigs = vi.fn().mockResolvedValue({
+      mcp_servers: [],
+      agent_roots: [
+        {
+          name: 'onboarding-research',
+          title: 'Research',
+          description: 'Research subagent',
+          git_root: 'https://github.com/pulsemcp/agents.git',
+          default_branch: 'main',
+          default_subdirectory: 'subagents/research',
+          default_mcp_servers: ['server-directory-rw'],
+        },
+        {
+          name: 'onboarding-save',
+          title: 'Save',
+          description: 'Save subagent',
+          git_root: 'https://github.com/pulsemcp/agents.git',
+          default_branch: 'main',
+          default_subdirectory: 'subagents/save',
+          default_mcp_servers: ['mirror-mgmt-rw'],
+        },
+      ],
+      stop_conditions: [],
+    });
+
+    const tool = startSessionTool(mockServer, clientFactory);
+
+    // Correct subdirectory for save, but wrong mcp_servers (research's servers)
+    const result = await tool.handler({
+      git_root: 'https://github.com/pulsemcp/agents.git',
+      branch: 'main',
+      subdirectory: 'subagents/save',
+      mcp_servers: ['server-directory-rw'],
+      title: 'Test Session',
+    });
+
+    expect(result.isError).toBe(true);
+    const text = (result as { content: Array<{ text: string }> }).content[0].text;
+    expect(text).toContain('exact default MCP servers');
+    expect(text).toContain('onboarding-save');
+    expect(mockClient.createSession).not.toHaveBeenCalled();
   });
 });
 

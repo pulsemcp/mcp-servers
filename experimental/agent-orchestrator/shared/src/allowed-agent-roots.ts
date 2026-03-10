@@ -57,9 +57,13 @@ export interface AgentRootValidationResult {
  * Validate a start_session request against the allowed agent roots constraints.
  *
  * When ALLOWED_AGENT_ROOTS is set:
- * - git_root must match one of the allowed agent roots
+ * - git_root (and optionally branch/subdirectory) must match one of the allowed agent roots
  * - mcp_servers must exactly match the default_mcp_servers of that agent root
  *   (no more, no less — any deviation is rejected)
+ *
+ * When multiple allowed agent roots share the same git_root, branch and subdirectory
+ * are used to disambiguate. This is critical for monorepo setups where multiple agent
+ * roots point to the same repository but different subdirectories.
  *
  * Returns { valid: true } if the request is allowed, or { valid: false, error: string } if not.
  */
@@ -67,16 +71,30 @@ export function validateAgentRootConstraints(
   allowedRoots: string[] | null,
   agentRoots: AgentRootInfo[],
   gitRoot?: string,
-  mcpServers?: string[]
+  mcpServers?: string[],
+  branch?: string,
+  subdirectory?: string
 ): AgentRootValidationResult {
   if (allowedRoots === null) {
     return { valid: true };
   }
 
-  // Find the matching agent root by git_root
-  const matchingRoot = agentRoots.find(
+  // Find all allowed agent roots that match by git_root
+  const candidates = agentRoots.filter(
     (root) => allowedRoots.includes(root.name) && root.git_root === gitRoot
   );
+
+  // When multiple candidates share the same git_root, disambiguate using branch and subdirectory
+  let matchingRoot: AgentRootInfo | undefined;
+  if (candidates.length > 1) {
+    matchingRoot = candidates.find((root) => {
+      const branchMatch = !branch || (root.default_branch ?? 'main') === branch;
+      const subdirMatch = !subdirectory || root.default_subdirectory === subdirectory;
+      return branchMatch && subdirMatch;
+    });
+  } else {
+    matchingRoot = candidates[0];
+  }
 
   if (!matchingRoot) {
     const allowedNames = allowedRoots.join(', ');
