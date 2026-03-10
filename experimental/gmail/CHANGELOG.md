@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- Draft deletion support via `upsert_draft_email` tool — set `delete: true` with a `draft_id` to permanently delete a draft
+  - Useful for removing corrupted or unwanted drafts that can't be loaded in Gmail
+  - When `delete` is true, all other parameters (to, subject, body, etc.) are ignored
+  - Addresses [issue #428](https://github.com/pulsemcp/mcp-servers/issues/428)
+
 ## [0.4.4] - 2026-03-09
 
 ### Fixed

@@ -5,9 +5,12 @@ import { getHeader } from '../utils/email-helpers.js';
 
 const PARAM_DESCRIPTIONS = {
   draft_id:
-    'ID of an existing draft to update. If provided, the draft is replaced in-place ' +
-    'with the new content. If omitted, a new draft is created. ' +
+    'ID of an existing draft to update or delete. If provided, the draft is replaced in-place ' +
+    'with the new content (or deleted if delete is true). If omitted, a new draft is created. ' +
     'Get draft IDs from list_draft_emails or from a previous upsert_draft_email response.',
+  delete:
+    'Set to true to delete the draft specified by draft_id. ' +
+    'Requires draft_id. All other parameters are ignored when deleting.',
   to: 'Recipient email address(es). For multiple recipients, separate with commas.',
   subject: 'Subject line of the email.',
   plaintext_body:
@@ -27,8 +30,9 @@ const PARAM_DESCRIPTIONS = {
 export const UpsertDraftEmailSchema = z
   .object({
     draft_id: z.string().optional().describe(PARAM_DESCRIPTIONS.draft_id),
-    to: z.string().min(1).describe(PARAM_DESCRIPTIONS.to),
-    subject: z.string().min(1).describe(PARAM_DESCRIPTIONS.subject),
+    delete: z.boolean().optional().describe(PARAM_DESCRIPTIONS.delete),
+    to: z.string().min(1).optional().describe(PARAM_DESCRIPTIONS.to),
+    subject: z.string().min(1).optional().describe(PARAM_DESCRIPTIONS.subject),
     plaintext_body: z.string().min(1).optional().describe(PARAM_DESCRIPTIONS.plaintext_body),
     html_body: z.string().min(1).optional().describe(PARAM_DESCRIPTIONS.html_body),
     cc: z.string().optional().describe(PARAM_DESCRIPTIONS.cc),
@@ -38,28 +42,39 @@ export const UpsertDraftEmailSchema = z
   })
   .refine(
     (data) => {
-      return Boolean(data.plaintext_body) || Boolean(data.html_body);
+      // Delete mode: only needs draft_id
+      if (data.delete) {
+        return Boolean(data.draft_id);
+      }
+      // Create/update mode: needs to, subject, and at least one body
+      return (
+        Boolean(data.to) &&
+        Boolean(data.subject) &&
+        (Boolean(data.plaintext_body) || Boolean(data.html_body))
+      );
     },
     {
-      message: 'At least one of plaintext_body or html_body must be provided.',
+      message:
+        'For delete: draft_id is required. For create/update: to, subject, and at least one of plaintext_body or html_body must be provided.',
     }
   );
 
-const TOOL_DESCRIPTION = `Create a new draft email or update an existing one.
+const TOOL_DESCRIPTION = `Create, update, or delete a draft email.
 
 **Parameters:**
-- draft_id: ID of an existing draft to update (optional — omit to create a new draft)
-- to: Recipient email address(es) (required)
-- subject: Email subject line (required)
-- plaintext_body: Plain text body content (at least one of plaintext_body or html_body required)
-- html_body: HTML body content for rich text formatting (at least one of plaintext_body or html_body required)
+- draft_id: ID of an existing draft to update or delete (optional — omit to create a new draft)
+- delete: Set to true to delete the draft specified by draft_id (optional)
+- to: Recipient email address(es) (required for create/update)
+- subject: Email subject line (required for create/update)
+- plaintext_body: Plain text body content (at least one of plaintext_body or html_body required for create/update)
+- html_body: HTML body content for rich text formatting (at least one of plaintext_body or html_body required for create/update)
 - cc: CC recipients (optional)
 - bcc: BCC recipients (optional)
 - thread_id: Thread ID to reply to an existing conversation (optional)
 - reply_to_email_id: Email ID to reply to, sets proper reply headers (optional)
 
 **Body content:**
-At least one of plaintext_body or html_body must be provided. If both are provided, a multipart email is sent with both plain text and HTML versions. Use html_body for rich formatting like hyperlinks, bold text, or lists.
+At least one of plaintext_body or html_body must be provided for create/update. If both are provided, a multipart email is sent with both plain text and HTML versions. Use html_body for rich formatting like hyperlinks, bold text, or lists.
 
 **Creating a reply:**
 To create a draft reply to an existing email:
@@ -69,11 +84,15 @@ To create a draft reply to an existing email:
 **Updating a draft:**
 To update an existing draft, provide the draft_id from a previous upsert_draft_email response or from list_draft_emails. The draft is replaced in-place — all fields must be provided (not just the ones you want to change).
 
+**Deleting a draft:**
+To delete a draft, provide the draft_id and set delete to true. All other parameters are ignored when deleting.
+
 **Use cases:**
 - Draft a new email for later review
 - Prepare a reply to an email conversation
 - Revise a draft after user feedback (without creating duplicates)
 - Save an email without sending it immediately
+- Delete a corrupted or unwanted draft
 
 **Note:** The draft will be saved in Gmail's Drafts folder. Use send_email with from_draft_id to send it.`;
 
@@ -87,6 +106,10 @@ export function upsertDraftEmailTool(server: Server, clientFactory: ClientFactor
         draft_id: {
           type: 'string',
           description: PARAM_DESCRIPTIONS.draft_id,
+        },
+        delete: {
+          type: 'boolean',
+          description: PARAM_DESCRIPTIONS.delete,
         },
         to: {
           type: 'string',
@@ -121,12 +144,25 @@ export function upsertDraftEmailTool(server: Server, clientFactory: ClientFactor
           description: PARAM_DESCRIPTIONS.reply_to_email_id,
         },
       },
-      required: ['to', 'subject'],
+      required: [],
     },
     handler: async (args: unknown) => {
       try {
         const parsed = UpsertDraftEmailSchema.parse(args ?? {});
         const client = clientFactory();
+
+        // Delete mode
+        if (parsed.delete) {
+          await client.deleteDraft(parsed.draft_id!);
+          return {
+            content: [
+              {
+                type: 'text',
+                text: `Draft deleted successfully!\n\n**Draft ID:** ${parsed.draft_id}`,
+              },
+            ],
+          };
+        }
 
         let inReplyTo: string | undefined;
         let references: string | undefined;
@@ -149,8 +185,8 @@ export function upsertDraftEmailTool(server: Server, clientFactory: ClientFactor
         }
 
         const draftOptions = {
-          to: parsed.to,
-          subject: parsed.subject,
+          to: parsed.to!,
+          subject: parsed.subject!,
           plaintextBody: parsed.plaintext_body,
           htmlBody: parsed.html_body,
           cc: parsed.cc,
@@ -201,11 +237,17 @@ export function upsertDraftEmailTool(server: Server, clientFactory: ClientFactor
           ],
         };
       } catch (error) {
+        const typedArgs = args as Record<string, unknown>;
+        const errorAction = typedArgs?.delete
+          ? 'deleting'
+          : typedArgs?.draft_id
+            ? 'updating'
+            : 'creating';
         return {
           content: [
             {
               type: 'text',
-              text: `Error ${(args as Record<string, unknown>)?.draft_id ? 'updating' : 'creating'} draft: ${error instanceof Error ? error.message : 'Unknown error'}`,
+              text: `Error ${errorAction} draft: ${error instanceof Error ? error.message : 'Unknown error'}`,
             },
           ],
           isError: true,
