@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.2] - 2026-03-10
+
+### Fixed
+
+- Pinned `fast-xml-parser` to `>=5.3.4 <5.5.0` to work around broken `file:` dependency in `fast-xml-parser@5.5.0` that causes `ERR_MODULE_NOT_FOUND` when installing via npx
+
 ## [0.1.1] - 2026-02-28
 
 ### Changed
