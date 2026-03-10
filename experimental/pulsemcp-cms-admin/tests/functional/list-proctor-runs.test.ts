@@ -99,6 +99,8 @@ describe('list_proctor_runs', () => {
             num_tools: 5,
             packages: ['npm'],
             remotes: ['streamable-http'],
+            known_missing_init_tools_list: false,
+            known_missing_auth_check: false,
           },
           {
             id: 789,
@@ -117,6 +119,8 @@ describe('list_proctor_runs', () => {
             num_tools: null,
             packages: [],
             remotes: [],
+            known_missing_init_tools_list: false,
+            known_missing_auth_check: false,
           },
         ],
         pagination: {

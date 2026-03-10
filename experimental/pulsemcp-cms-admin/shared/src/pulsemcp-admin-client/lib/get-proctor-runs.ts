@@ -17,6 +17,8 @@ interface RailsProctorRun {
   num_tools: number | null;
   packages: string[];
   remotes: string[];
+  known_missing_init_tools_list: boolean;
+  known_missing_auth_check: boolean;
 }
 
 interface RailsResponse {
@@ -113,6 +115,8 @@ export async function getProctorRuns(
       num_tools: run.num_tools,
       packages: run.packages,
       remotes: run.remotes,
+      known_missing_init_tools_list: run.known_missing_init_tools_list || false,
+      known_missing_auth_check: run.known_missing_auth_check || false,
     })),
     pagination: {
       current_page: data.meta.current_page,
