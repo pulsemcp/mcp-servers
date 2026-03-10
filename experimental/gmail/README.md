@@ -273,21 +273,22 @@ List draft emails from Gmail with optional thread filtering.
 
 ### upsert_draft_email
 
-Create a new draft email or update an existing one. Optionally as a reply to an existing conversation.
+Create, update, or delete a draft email. Optionally as a reply to an existing conversation.
 
 **Parameters:**
 
-- `draft_id` (string, optional): ID of an existing draft to update (omit to create a new draft)
-- `to` (string, required): Recipient email address
-- `subject` (string, required): Email subject
-- `plaintext_body` (string): Plain text body content (at least one of plaintext_body or html_body required)
-- `html_body` (string): HTML body content for rich text formatting (at least one of plaintext_body or html_body required)
+- `draft_id` (string, optional): ID of an existing draft to update or delete (omit to create a new draft)
+- `delete` (boolean, optional): Set to `true` to delete the draft specified by `draft_id`. All other parameters are ignored when deleting
+- `to` (string, required for create/update): Recipient email address
+- `subject` (string, required for create/update): Email subject
+- `plaintext_body` (string): Plain text body content (at least one of plaintext_body or html_body required for create/update)
+- `html_body` (string): HTML body content for rich text formatting (at least one of plaintext_body or html_body required for create/update)
 - `cc` (string, optional): CC recipients
 - `bcc` (string, optional): BCC recipients
 - `thread_id` (string, optional): Thread ID for replies
 - `reply_to_email_id` (string, optional): Email ID to reply to (sets References/In-Reply-To headers)
 
-At least one of `plaintext_body` or `html_body` must be provided. If both are provided, a multipart email is sent with both versions.
+For create/update: at least one of `plaintext_body` or `html_body` must be provided. If both are provided, a multipart email is sent with both versions.
 
 **Example (create new draft):**
 
@@ -307,6 +308,15 @@ At least one of `plaintext_body` or `html_body` must be provided. If both are pr
   "to": "recipient@example.com",
   "subject": "Meeting Follow-up (revised)",
   "html_body": "<p>Thanks for the meeting today! Check out <a href=\"https://example.com/notes\">the notes</a>.</p>"
+}
+```
+
+**Example (delete a draft):**
+
+```json
+{
+  "draft_id": "r123456789",
+  "delete": true
 }
 ```
 

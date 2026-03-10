@@ -67,46 +67,40 @@ The tests will:
 
 ## Latest Test Results
 
-**Test Date:** 2026-03-09
-**Branch:** agent/elicitation-fail-safe
-**Commit:** 6454fc5
+**Test Date:** 2026-03-10
+**Branch:** claude/add-draft-delete-to-upsert
+**Commit:** 273d5f5
 **Tested By:** Claude Code
-**Environment:** Unit tests + functional tests (mocked)
+**Environment:** Functional tests (mocked)
 
 ### Test Results
 
-**Note:** This change only modifies the elicitation confirmation gate logic (fail-safe validation). No Gmail API interaction code was changed. Manual test results carried forward from v0.4.0 (commit cf71c2f) which tested all Gmail API functionality.
-
-**Elicitation Library Tests:**
-
-```
-Elicitation Tests: 12 passed (12)
-  - session-id.test.ts: 5 tests (existing)
-  - fail-safe.test.ts: 7 tests (new - validates fail-safe behavior)
-```
+**Note:** This change adds a `delete` parameter to `upsert_draft_email` that routes to the existing `deleteDraft()` client method (implemented since v0.0.4). No new Gmail API interaction code was written — the underlying `DELETE /gmail/v1/users/me/drafts/{draftId}` endpoint call is unchanged. Manual test results carried forward from v0.4.0 (commit cf71c2f) which tested all Gmail API functionality including draft operations.
 
 **Gmail Functional Tests (mocked):**
 
 ```
-Functional Tests: 115 passed (115)
+Functional Tests: 119 passed (119)
   - mime-utils.test.ts: 19 tests
   - auth.test.ts: 12 tests
-  - tools.test.ts: 79 tests
+  - tools.test.ts: 83 tests (4 new: delete draft, delete non-existent, delete without draft_id, delete ignores other params)
   - oauth-setup.test.ts: 5 tests
 ```
 
-**Overall:** 127 tests passed (12 elicitation + 115 gmail functional)
+**Overall:** 119 tests passed
 
 ### Notes
 
-- Confirmation-gate-only change: validates poll response actions against known set, treats unrecognized actions as 'decline'
-- No Gmail API code was modified — all prior manual test results remain valid
-- New fail-safe tests verify: valid actions pass through, unrecognized actions ("declined", "approved", "", garbage) are treated as 'decline' with warning
+- Tool-level routing change only: adds `delete: true` parameter that calls existing `client.deleteDraft()` method
+- No new API interaction code — `deleteDraft()` has been in the codebase since v0.0.4 and was last manually tested with real APIs in v0.4.0
+- 4 new functional tests verify: successful deletion, error on non-existent draft, error when draft_id missing, extra params ignored during delete
+- `.env` credentials not available in this environment; manual API tests carried forward from v0.4.0
 
 ## Historical Test Runs
 
 | Date       | Commit  | Status | Notes                                                                                        |
 | ---------- | ------- | ------ | -------------------------------------------------------------------------------------------- |
+| 2026-03-10 | 273d5f5 | PASS   | v0.4.5 - delete param for upsert_draft_email (no new API code), 119 functional               |
 | 2026-03-09 | 6454fc5 | PASS   | v0.4.4 - fail-safe elicitation gate (no API changes), 12 elicitation + 115 functional        |
 | 2026-03-09 | b74bf71 | PASS   | v0.4.3 - build-fix-only (reordered prepare-publish.js + --ignore-scripts), 115 functional    |
 | 2026-03-09 | e9ee1e5 | PASS   | v0.4.1 - packaging-only bump (updated bundled elicitation lib), 115 functional + 5 lib unit  |

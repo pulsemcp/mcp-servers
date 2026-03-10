@@ -699,6 +699,83 @@ describe('Gmail MCP Server Tools', () => {
       expect(result.isError).toBe(true);
       expect(result.content[0].text).toContain('Error updating draft');
     });
+
+    it('should delete an existing draft when delete is true', async () => {
+      const tool = upsertDraftEmailTool(mockServer, () => mockClient);
+
+      // First create a draft
+      const createResult = await tool.handler({
+        to: 'recipient@example.com',
+        subject: 'Draft to Delete',
+        plaintext_body: 'This will be deleted',
+      });
+      expect(createResult.content[0].text).toContain('Draft created successfully');
+
+      // Extract draft ID
+      const draftIdMatch = createResult.content[0].text.match(/\*\*Draft ID:\*\*\s*(\S+)/);
+      expect(draftIdMatch).not.toBeNull();
+      const draftId = draftIdMatch![1];
+
+      // Delete the draft
+      const deleteResult = await tool.handler({
+        draft_id: draftId,
+        delete: true,
+      });
+
+      expect(deleteResult.content[0].text).toContain('Draft deleted successfully');
+      expect(deleteResult.content[0].text).toContain(`**Draft ID:** ${draftId}`);
+      expect(deleteResult.isError).toBeUndefined();
+      expect(mockClient.deleteDraft).toHaveBeenCalledWith(draftId);
+    });
+
+    it('should return error when deleting a non-existent draft', async () => {
+      const tool = upsertDraftEmailTool(mockServer, () => mockClient);
+      const result = await tool.handler({
+        draft_id: 'non_existent_draft',
+        delete: true,
+      });
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('Error deleting draft');
+    });
+
+    it('should return error when delete is true but draft_id is missing', async () => {
+      const tool = upsertDraftEmailTool(mockServer, () => mockClient);
+      const result = await tool.handler({
+        delete: true,
+      });
+
+      expect(result.isError).toBe(true);
+    });
+
+    it('should ignore other parameters when delete is true', async () => {
+      const tool = upsertDraftEmailTool(mockServer, () => mockClient);
+
+      // Create a draft first
+      const createResult = await tool.handler({
+        to: 'recipient@example.com',
+        subject: 'Draft to Delete',
+        plaintext_body: 'Body content',
+      });
+      const draftIdMatch = createResult.content[0].text.match(/\*\*Draft ID:\*\*\s*(\S+)/);
+      const draftId = draftIdMatch![1];
+
+      // Delete with extra params — they should be ignored
+      const deleteResult = await tool.handler({
+        draft_id: draftId,
+        delete: true,
+        to: 'someone@example.com',
+        subject: 'Ignored Subject',
+        plaintext_body: 'Ignored body',
+      });
+
+      expect(deleteResult.content[0].text).toContain('Draft deleted successfully');
+      expect(mockClient.deleteDraft).toHaveBeenCalledWith(draftId);
+      // createDraft should have been called exactly once (for the initial creation, not during delete)
+      expect(mockClient.createDraft).toHaveBeenCalledTimes(1);
+      // updateDraft should never have been called
+      expect(mockClient.updateDraft).not.toHaveBeenCalled();
+    });
   });
 
   describe('list_draft_emails', () => {
