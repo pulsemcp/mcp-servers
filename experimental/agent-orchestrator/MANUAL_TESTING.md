@@ -62,39 +62,39 @@ The tests will:
 ## Latest Test Results
 
 **Test Date:** 2026-03-10
-**Branch:** tadasant/clarify-subdirectory-description
-**Commit:** 7fe0577
+**Branch:** fix/allowed-agent-roots-subdirectory-matching
+**Commit:** 9f4e80f
 **Tested By:** Claude Code (automated)
 **Environment:** Sandbox — staging API unreachable; functional tests used
 
 ### Summary
 
-**Overall:** :white_check_mark: SUCCESS - 159/159 functional tests pass.
+**Overall:** :white_check_mark: SUCCESS - 167/167 functional tests pass.
 
-This change is description-only — the `subdirectory` parameter description in `start_session` was updated to clarify its intended use. No code logic, API client code, or tool behavior was modified. Functional tests verify all tool definitions and parameter schemas are correctly formed.
+Fixed `ALLOWED_AGENT_ROOTS` validation to use `subdirectory` and `branch` for disambiguation when multiple allowed agent roots share the same `git_root`. Added 8 new tests covering the subdirectory disambiguation logic for both unit and integration layers.
 
 | Test Category              | Status             | Tests   |
 | -------------------------- | ------------------ | ------- |
-| tools.test.ts              | :white_check_mark: | 126/126 |
+| tools.test.ts              | :white_check_mark: | 134/134 |
 | health-check.test.ts       | :white_check_mark: | 31/31   |
 | map-agent-root.test.ts     | :white_check_mark: | 2/2     |
 | Manual tests (staging API) | :hourglass: SKIP   | N/A     |
 
 ### Functionality Verified
 
-- :white_check_mark: **All tool definitions** - 126 tool tests pass, including start_session parameter schema validation
+- :white_check_mark: **All tool definitions** - 134 tool tests pass (8 new subdirectory disambiguation tests)
 - :white_check_mark: **Health check logic** - 31 tests pass unchanged
 - :white_check_mark: **Agent root mapping** - 2 tests pass unchanged
 
 ### Notes
 
 - Manual tests skipped: `.env` credentials not available in sandbox, and staging API is unreachable from sandbox environment
-- This is a description-only change (tool parameter text) — no runtime behavior was modified
-- Analogous to v0.2.4 which was also a parameter description update
+- TypeScript type check passes for changed files (no new errors)
 
 ### Key Changes in This Version
 
-- Improved `subdirectory` parameter description in `start_session` to clarify it should match preconfigured agent root defaults, not point at internal monorepo directories
+- `validateAgentRootConstraints()` now accepts `branch` and `subdirectory` params to disambiguate when multiple agent roots share the same `git_root`
+- `start_session` tool passes `branch` and `subdirectory` through to validation
 
 ---
 
