@@ -43,7 +43,7 @@ const TOOL_DESCRIPTION = `Quick title-based search for agent sessions in the Age
 **Session statuses:**
 - waiting: Session created, waiting to start
 - running: Agent is actively executing
-- needs_input: Agent has completed its current work and is idle. May indicate the task is done (most common) or that the agent needs additional input to continue. Check the session transcript to determine which case applies
+- needs_input: Agent has completed its current work and is idle. May indicate the task is done (most common) or that the agent needs additional input to continue. Check the session transcript to determine which case applies.
 - failed: Session encountered an error
 - archived: Session completed and archived`;
 
