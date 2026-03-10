@@ -12,7 +12,13 @@ const PARAM_DESCRIPTIONS = {
   git_root:
     'Repository URL or local path. Examples: "https://github.com/example/repo.git", "/path/to/repo"',
   branch: 'Git branch to work on. Default: "main"',
-  subdirectory: 'Subdirectory within the repository to focus on.',
+  subdirectory:
+    'Subdirectory within the repository to use as the agent working directory. ' +
+    'This should match a preconfigured agent root default_subdirectory from get_configs — it defines ' +
+    'the root scope for the agent session. Do NOT use this to point at internal package directories ' +
+    '(e.g. "experimental/gcs" in a monorepo) as this blinds the agent to root-level configuration ' +
+    'like CLAUDE.md, build scripts, CI workflows, and monorepo tooling. If no agent root defines ' +
+    'a default_subdirectory, leave this unset.',
   title:
     'STRONGLY RECOMMENDED: Always set a title — treat it as effectively required. ' +
     'The title appears in the AO web UI and push notifications, making sessions identifiable at a glance. ' +

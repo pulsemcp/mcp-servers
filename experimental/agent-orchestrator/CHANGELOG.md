@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Improved `start_session` tool's `subdirectory` parameter description to clarify it should match a preconfigured agent root, not point at arbitrary internal directories in a monorepo
+
 ## [0.4.0] - 2026-03-09
 
 ### Added
