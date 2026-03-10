@@ -168,6 +168,14 @@ Use cases:
             content += `   Remotes: ${run.remotes.join(', ')}\n`;
           }
 
+          if (run.known_missing_init_tools_list) {
+            content += `   Known Missing Init Tools List: yes\n`;
+          }
+
+          if (run.known_missing_auth_check) {
+            content += `   Known Missing Auth Check: yes\n`;
+          }
+
           content += '\n';
         }
 

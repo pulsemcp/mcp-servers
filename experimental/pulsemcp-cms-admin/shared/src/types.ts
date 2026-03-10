@@ -913,6 +913,8 @@ export interface ProctorRun {
   num_tools: number | null;
   packages: string[];
   remotes: string[];
+  known_missing_init_tools_list: boolean;
+  known_missing_auth_check: boolean;
 }
 
 export interface ProctorRunsResponse {
