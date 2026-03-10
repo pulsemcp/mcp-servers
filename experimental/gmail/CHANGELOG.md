@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.4.5] - 2026-03-10
+
 ### Added
 
 - Draft deletion support via `upsert_draft_email` tool — set `delete: true` with a `draft_id` to permanently delete a draft
