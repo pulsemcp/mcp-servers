@@ -2,6 +2,32 @@
 
 ## Latest Test Results
 
+**Date:** 2026-03-10
+**Commit:** bd7a865
+**Version:** 0.9.4 (pre-release)
+**API Environment:** N/A (test coverage addition and output formatting only, no API interaction changes)
+
+### Overall: ✅ Functional Tests PASSING (185/185, 8 test files)
+
+**v0.9.4 Changes:**
+
+- Added `known_missing_init_tools_list` and `known_missing_auth_check` flags to `list_proctor_runs` tool output (code from commit 72cae55, not previously published)
+- Added test coverage verifying `known_missing` flags render correctly when `true` and are omitted when `false`
+
+**Functional Test Results: ✅ 185/185 PASSING (8 test files)**
+
+- 1 new test added in `list-proctor-runs.test.ts`:
+  - `should render known_missing flags when true` — verifies "Known Missing Init Tools List: yes" and "Known Missing Auth Check: yes" appear in output when flags are `true`
+- Existing test updated to verify flags do NOT appear when `false`
+
+**Note on Manual Testing:**
+
+Manual tests were not run for this release — API credentials (`.env` file) were not available in this environment. This change publishes the `known_missing` flag support (code added in commit 72cae55) which adds two boolean fields to the `list_proctor_runs` output formatting. The API client data mapping code (`get-proctor-runs.ts`) was unchanged — the fields were already mapped with `|| false` defaults. The v0.9.2 manual test results remain valid for all API-facing functionality.
+
+---
+
+## Previous Test Results (v0.9.3)
+
 **Date:** 2026-03-09
 **Commit:** 2dd788f
 **Version:** 0.9.3 (pre-release)
