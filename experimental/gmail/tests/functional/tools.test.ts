@@ -771,9 +771,10 @@ describe('Gmail MCP Server Tools', () => {
 
       expect(deleteResult.content[0].text).toContain('Draft deleted successfully');
       expect(mockClient.deleteDraft).toHaveBeenCalledWith(draftId);
-      // createDraft/updateDraft should NOT have been called for this invocation
-      const deleteDraftCalls = (mockClient.deleteDraft as ReturnType<typeof vi.fn>).mock.calls;
-      expect(deleteDraftCalls[deleteDraftCalls.length - 1][0]).toBe(draftId);
+      // createDraft should have been called exactly once (for the initial creation, not during delete)
+      expect(mockClient.createDraft).toHaveBeenCalledTimes(1);
+      // updateDraft should never have been called
+      expect(mockClient.updateDraft).not.toHaveBeenCalled();
     });
   });
 

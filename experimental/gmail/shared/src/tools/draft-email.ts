@@ -40,24 +40,23 @@ export const UpsertDraftEmailSchema = z
     thread_id: z.string().optional().describe(PARAM_DESCRIPTIONS.thread_id),
     reply_to_email_id: z.string().optional().describe(PARAM_DESCRIPTIONS.reply_to_email_id),
   })
-  .refine(
-    (data) => {
-      // Delete mode: only needs draft_id
-      if (data.delete) {
-        return Boolean(data.draft_id);
+  .superRefine((data, ctx) => {
+    if (data.delete) {
+      if (!data.draft_id) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'draft_id is required when delete is true.',
+        });
       }
-      // Create/update mode: needs to, subject, and at least one body
-      return (
-        Boolean(data.to) &&
-        Boolean(data.subject) &&
-        (Boolean(data.plaintext_body) || Boolean(data.html_body))
-      );
-    },
-    {
-      message:
-        'For delete: draft_id is required. For create/update: to, subject, and at least one of plaintext_body or html_body must be provided.',
+      return;
     }
-  );
+    if (!data.to || !data.subject || (!data.plaintext_body && !data.html_body)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'to, subject, and at least one of plaintext_body or html_body must be provided.',
+      });
+    }
+  });
 
 const TOOL_DESCRIPTION = `Create, update, or delete a draft email.
 
