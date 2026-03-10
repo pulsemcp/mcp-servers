@@ -184,6 +184,9 @@ function formatAgentRoot(lines: string[], root: AgentRootInfo) {
   if (root.default_stop_condition) {
     lines.push(`- **Default Stop Condition:** \`${root.default_stop_condition}\``);
   }
+  if (root.default_skills && root.default_skills.length > 0) {
+    lines.push(`- **Default Skills:** ${root.default_skills.map((s) => `\`${s}\``).join(', ')}`);
+  }
   lines.push('');
 }
 

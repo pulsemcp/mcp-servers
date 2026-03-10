@@ -792,6 +792,62 @@ describe('Tools', () => {
       );
     });
 
+    it('should display default_skills in agent root output', async () => {
+      const tool = getConfigsTool(mockServer, clientFactory);
+
+      const result = await tool.handler({});
+      const text = (result as { content: Array<{ text: string }> }).content[0].text;
+
+      expect(text).toContain('**Default Skills:**');
+      expect(text).toContain('`discovery-classify`');
+      expect(text).toContain('`discovery-validate`');
+    });
+
+    it('should not display default_skills when empty', async () => {
+      mockClient.getConfigs = vi.fn().mockResolvedValue({
+        mcp_servers: [],
+        agent_roots: [
+          {
+            name: 'no-skills',
+            title: 'No Skills',
+            description: 'Agent root without skills',
+            git_root: 'https://github.com/example/repo.git',
+            default_skills: [],
+          },
+        ],
+        stop_conditions: [],
+      });
+
+      const tool = getConfigsTool(mockServer, clientFactory);
+
+      const result = await tool.handler({});
+      const text = (result as { content: Array<{ text: string }> }).content[0].text;
+
+      expect(text).not.toContain('**Default Skills:**');
+    });
+
+    it('should not display default_skills when undefined', async () => {
+      mockClient.getConfigs = vi.fn().mockResolvedValue({
+        mcp_servers: [],
+        agent_roots: [
+          {
+            name: 'no-skills',
+            title: 'No Skills',
+            description: 'Agent root without skills',
+            git_root: 'https://github.com/example/repo.git',
+          },
+        ],
+        stop_conditions: [],
+      });
+
+      const tool = getConfigsTool(mockServer, clientFactory);
+
+      const result = await tool.handler({});
+      const text = (result as { content: Array<{ text: string }> }).content[0].text;
+
+      expect(text).not.toContain('**Default Skills:**');
+    });
+
     it('should handle empty configs', async () => {
       mockClient.getConfigs = vi.fn().mockResolvedValue({
         mcp_servers: [],
