@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.2] - 2026-03-10
+
+### Fixed
+
+- `ALLOWED_AGENT_ROOTS` validation now uses `subdirectory` and `branch` to disambiguate when multiple allowed agent roots share the same `git_root`. Previously, `.find()` always returned the first match, causing incorrect MCP server validation for monorepo setups with multiple subagent roots.
+
 ## [0.4.1] - 2026-03-10
 
 ### Changed

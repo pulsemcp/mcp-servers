@@ -150,7 +150,9 @@ export function startSessionTool(_server: Server, clientFactory: () => IAgentOrc
             allowedRoots,
             configs.agent_roots,
             validatedArgs.git_root,
-            validatedArgs.mcp_servers
+            validatedArgs.mcp_servers,
+            validatedArgs.branch,
+            validatedArgs.subdirectory
           );
 
           if (!validation.valid) {
