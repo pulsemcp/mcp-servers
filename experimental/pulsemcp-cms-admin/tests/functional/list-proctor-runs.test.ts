@@ -233,13 +233,18 @@ describe('list_proctor_runs', () => {
     expect(result.isError).toBeFalsy();
     const text = result.content[0].text;
 
+    // Split output by server entry to verify per-server assertions
+    const campfireSection = text.split('**cube**')[0];
+    const cubeSection = text.split('**cube**')[1];
+
     // campfire: only known_missing_init_tools_list is true
-    expect(text).toContain('**campfire**');
-    expect(text).toContain('Known Missing Init Tools List: yes');
+    expect(campfireSection).toContain('**campfire**');
+    expect(campfireSection).toContain('Known Missing Init Tools List: yes');
+    expect(campfireSection).not.toContain('Known Missing Auth Check');
 
     // cube: both flags are true
-    expect(text).toContain('**cube**');
-    expect(text).toContain('Known Missing Auth Check: yes');
+    expect(cubeSection).toContain('Known Missing Init Tools List: yes');
+    expect(cubeSection).toContain('Known Missing Auth Check: yes');
   });
 
   it('should pass filter parameters to client', async () => {
