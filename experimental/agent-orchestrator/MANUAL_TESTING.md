@@ -61,48 +61,40 @@ The tests will:
 
 ## Latest Test Results
 
-**Test Date:** 2026-03-09
-**Branch:** tadasant/allowed-agent-roots
-**Commit:** 6bbb0fe
+**Test Date:** 2026-03-10
+**Branch:** tadasant/clarify-subdirectory-description
+**Commit:** 7fe0577
 **Tested By:** Claude Code (automated)
-**Environment:** Staging API (ao.staging.pulsemcp.com) — unreachable from sandbox; functional tests used instead
+**Environment:** Sandbox — staging API unreachable; functional tests used
 
 ### Summary
 
-**Overall:** :white_check_mark: SUCCESS - 150/150 functional tests pass (including 37 new ALLOWED_AGENT_ROOTS tests).
+**Overall:** :white_check_mark: SUCCESS - 159/159 functional tests pass.
 
-Manual tests (56 tests) could not connect to staging API from sandbox environment (DNS/network unreachable). This is a known sandbox limitation — the staging API health check fails with `fetch failed`. Since the changes in this version are pure logic (env var parsing, filtering, validation) that do not modify any API client code, functional tests with mocks provide full coverage.
+This change is description-only — the `subdirectory` parameter description in `start_session` was updated to clarify its intended use. No code logic, API client code, or tool behavior was modified. Functional tests verify all tool definitions and parameter schemas are correctly formed.
 
-| Test Category                       | Status             | Tests   |
-| ----------------------------------- | ------------------ | ------- |
-| Existing functional tests           | :white_check_mark: | 113/113 |
-| parseAllowedAgentRoots              | :white_check_mark: | 8/8     |
-| filterAgentRoots                    | :white_check_mark: | 4/4     |
-| validateAgentRootConstraints        | :white_check_mark: | 10/10   |
-| ALLOWED_AGENT_ROOTS + get_configs   | :white_check_mark: | 3/3     |
-| ALLOWED_AGENT_ROOTS + start_session | :white_check_mark: | 6/6     |
-| Manual tests (staging API)          | :hourglass: SKIP   | 56/56   |
+| Test Category              | Status             | Tests   |
+| -------------------------- | ------------------ | ------- |
+| tools.test.ts              | :white_check_mark: | 126/126 |
+| health-check.test.ts       | :white_check_mark: | 31/31   |
+| map-agent-root.test.ts     | :white_check_mark: | 2/2     |
+| Manual tests (staging API) | :hourglass: SKIP   | N/A     |
 
 ### Functionality Verified
 
-- :white_check_mark: **parseAllowedAgentRoots** - Parses comma-separated env var, handles empty/whitespace, prioritizes param over env var
-- :white_check_mark: **filterAgentRoots** - Filters agent roots by allowed list, handles null (no restrictions)
-- :white_check_mark: **validateAgentRootConstraints** - Validates git_root matches allowed root, enforces exact default MCP servers
-- :white_check_mark: **get_configs filtering** - Filters agent roots in response, shows "no agent roots" when all excluded
-- :white_check_mark: **start_session enforcement** - Rejects non-allowed git_root, rejects extra/fewer MCP servers, allows correct config
-- :white_check_mark: **All existing functionality** - 113 existing tests pass unchanged
+- :white_check_mark: **All tool definitions** - 126 tool tests pass, including start_session parameter schema validation
+- :white_check_mark: **Health check logic** - 31 tests pass unchanged
+- :white_check_mark: **Agent root mapping** - 2 tests pass unchanged
 
 ### Notes
 
-- Manual tests skipped due to sandbox network limitations (cannot reach ao.staging.pulsemcp.com)
-- No API client code was modified — all changes are in-process logic (env var parsing, array filtering, validation)
-- Functional tests with mocks fully cover the new ALLOWED_AGENT_ROOTS feature
+- Manual tests skipped: `.env` credentials not available in sandbox, and staging API is unreachable from sandbox environment
+- This is a description-only change (tool parameter text) — no runtime behavior was modified
+- Analogous to v0.2.4 which was also a parameter description update
 
 ### Key Changes in This Version
 
-- Added `ALLOWED_AGENT_ROOTS` environment variable for constraining server to specific preconfigured agent roots
-- `get_configs` filters out non-allowed agent roots from response
-- `start_session` rejects requests with non-allowed agent roots or non-default MCP server configurations
+- Improved `subdirectory` parameter description in `start_session` to clarify it should match preconfigured agent root defaults, not point at internal monorepo directories
 
 ---
 
