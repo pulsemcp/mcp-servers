@@ -51,7 +51,7 @@ const TOOL_DESCRIPTION = `Get detailed information about a specific agent sessio
 
 **Use cases:**
 - View detailed session information
-- Check session status and progress
+- Check session status and progress (use transcript to determine if a "needs_input" session has completed its task or needs follow-up)
 - Retrieve session transcript for review
 - Review logs for debugging
 - Inspect subagent transcripts`;
