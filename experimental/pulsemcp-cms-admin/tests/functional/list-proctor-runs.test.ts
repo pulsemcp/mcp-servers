@@ -166,6 +166,80 @@ describe('list_proctor_runs', () => {
     expect(text).toContain('Latest Tested: no');
     expect(text).toContain('Last Auth Check: never');
     expect(text).toContain('Last Tools List: never');
+
+    // known_missing flags should NOT appear when false
+    expect(text).not.toContain('Known Missing Init Tools List');
+    expect(text).not.toContain('Known Missing Auth Check');
+  });
+
+  it('should render known_missing flags when true', async () => {
+    const mockClient = createMockClient({
+      getProctorRuns: vi.fn().mockResolvedValue({
+        runs: [
+          {
+            id: 9719,
+            slug: 'campfire',
+            name: 'Campfire',
+            recommended: true,
+            mirrors_count: 1,
+            tenant_count: 0,
+            latest_version: null,
+            latest_mirror_id: null,
+            latest_mirror_name: null,
+            latest_tested: false,
+            last_auth_check_days: null,
+            last_tools_list_days: null,
+            auth_types: ['api_key'],
+            num_tools: null,
+            packages: [],
+            remotes: ['streamable-http'],
+            known_missing_init_tools_list: true,
+            known_missing_auth_check: false,
+          },
+          {
+            id: 9720,
+            slug: 'cube',
+            name: 'Cube',
+            recommended: true,
+            mirrors_count: 1,
+            tenant_count: 0,
+            latest_version: null,
+            latest_mirror_id: null,
+            latest_mirror_name: null,
+            latest_tested: false,
+            last_auth_check_days: null,
+            last_tools_list_days: null,
+            auth_types: ['oauth2'],
+            num_tools: null,
+            packages: [],
+            remotes: ['streamable-http'],
+            known_missing_init_tools_list: true,
+            known_missing_auth_check: true,
+          },
+        ],
+        pagination: {
+          current_page: 1,
+          total_pages: 1,
+          total_count: 2,
+          has_next: false,
+          limit: 30,
+        },
+      }),
+    });
+
+    const tool = listProctorRuns(mockServer, () => mockClient);
+    const result = await tool.handler({});
+
+    expect(result.isError).toBeFalsy();
+    const text = result.content[0].text;
+
+    // campfire: only known_missing_init_tools_list is true
+    expect(text).toContain('**campfire**');
+    expect(text).toContain('Known Missing Init Tools List: yes');
+
+    // cube: both flags are true
+    expect(text).toContain('**cube**');
+    expect(text).toContain('Known Missing Auth Check: yes');
   });
 
   it('should pass filter parameters to client', async () => {

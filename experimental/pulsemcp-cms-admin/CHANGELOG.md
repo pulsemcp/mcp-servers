@@ -6,6 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [0.9.4] - 2026-03-10
+
+### Added
+
+- Added `known_missing_init_tools_list` and `known_missing_auth_check` flags to `list_proctor_runs` tool output — when `true`, the tool now renders "Known Missing Init Tools List: yes" and/or "Known Missing Auth Check: yes" for each server, enabling the Proctor runner agent to skip exams that are known to fail (e.g., OAuth flows that can never complete)
+- Added test coverage verifying `known_missing` flags render correctly when `true` and are omitted when `false`
+
 ## [0.9.3] - 2026-03-09
 
 ### Improved
