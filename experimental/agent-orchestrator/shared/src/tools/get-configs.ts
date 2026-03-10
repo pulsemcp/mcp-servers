@@ -142,6 +142,9 @@ function formatResponse(configs: ConfigsResponse, fromCache: boolean) {
   lines.push('- Use `name` values from **MCP Servers** in `start_session` `mcp_servers` parameter');
   lines.push('- Use `git_root` from **Agent Roots** to start sessions with preconfigured defaults');
   lines.push(
+    '- If an **Agent Root** has a `default_subdirectory`, pass it as `subdirectory` in `start_session` — do not set `subdirectory` to arbitrary internal paths'
+  );
+  lines.push(
     '- Use `id` values from **Stop Conditions** in `start_session` `stop_condition` parameter'
   );
 
