@@ -6,6 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [0.9.5] - 2026-03-10
+
+### Fixed
+
+- Fixed root `package-lock.json` version for `pulsemcp-cms-admin` (was stale at `0.9.3`, now correctly `0.9.5`)
+- Improved `known_missing` flag test assertions to verify per-server output sections, ensuring campfire does NOT show `Known Missing Auth Check` when that flag is `false`
+
 ## [0.9.4] - 2026-03-10
 
 ### Added
