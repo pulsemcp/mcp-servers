@@ -36,14 +36,14 @@ const TOOL_DESCRIPTION = `Quick title-based search for agent sessions in the Age
 - Find a specific session by ID (set id parameter)
 - Search sessions by title keyword (set query parameter)
 - List all sessions with optional status filter
-- Monitor sessions requiring attention (status: "needs_input")
+- Monitor sessions that have completed or need attention (status: "needs_input")
 
 **Returns:** A list of matching sessions with their status, configuration, and metadata.
 
 **Session statuses:**
 - waiting: Session created, waiting to start
 - running: Agent is actively executing
-- needs_input: Agent paused, waiting for user input
+- needs_input: Agent has completed its current work and is idle. May indicate the task is done (most common) or that the agent needs additional input to continue. Check the session transcript to determine which case applies
 - failed: Session encountered an error
 - archived: Session completed and archived`;
 

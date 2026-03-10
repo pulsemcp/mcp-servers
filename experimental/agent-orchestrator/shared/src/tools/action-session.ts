@@ -46,10 +46,10 @@ const TOOL_DESCRIPTION = `Perform an action on an agent session.
 
 **Actions:**
 - **follow_up**: Send a follow-up prompt to a paused session (requires "prompt" parameter)
-- **pause**: Pause a running session, transitioning it to "needs_input" status
+- **pause**: Pause a running session, transitioning it to idle "needs_input" status
 - **restart**: Restart a paused or failed session without providing new input
 - **archive**: Archive a session (marks as completed)
-- **unarchive**: Restore an archived session to "needs_input" status
+- **unarchive**: Restore an archived session to idle "needs_input" status
 - **change_mcp_servers**: Update the MCP servers for a session (requires "mcp_servers" parameter)
 - **fork**: Fork a session from a specific transcript message (requires "message_index")
 - **refresh**: Refresh a single session's status from the execution provider

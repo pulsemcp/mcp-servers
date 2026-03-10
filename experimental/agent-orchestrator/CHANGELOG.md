@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.3] - 2026-03-10
+
+### Changed
+
+- Clarified `needs_input` session status description in tool descriptions to indicate it is the normal idle/completed state after a session finishes work, not necessarily a blocked state requiring user intervention
+
 ## [0.4.2] - 2026-03-10
 
 ### Fixed
