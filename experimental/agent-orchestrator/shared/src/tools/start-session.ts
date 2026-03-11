@@ -32,6 +32,8 @@ const PARAM_DESCRIPTIONS = {
     'Execution environment. Options: "local_filesystem" (runs locally), "remote_sandbox" (runs in isolated sandbox). Default: "local_filesystem"',
   mcp_servers:
     'List of MCP server names to enable for this session. Example: ["github-development", "slack"]',
+  skills:
+    'List of skill names to enable for this session. Example: ["discovery-classify", "publish-and-pr"]',
   config: 'Additional configuration as a JSON object.',
   custom_metadata:
     'User-defined metadata as a JSON object. Useful for tracking tickets, projects, etc.',
@@ -51,6 +53,7 @@ export const StartSessionSchema = z.object({
     .optional()
     .describe(PARAM_DESCRIPTIONS.execution_provider),
   mcp_servers: z.array(z.string()).optional().describe(PARAM_DESCRIPTIONS.mcp_servers),
+  skills: z.array(z.string()).optional().describe(PARAM_DESCRIPTIONS.skills),
   config: z.record(z.unknown()).optional().describe(PARAM_DESCRIPTIONS.config),
   custom_metadata: z.record(z.unknown()).optional().describe(PARAM_DESCRIPTIONS.custom_metadata),
 });
@@ -65,10 +68,12 @@ const TOOL_DESCRIPTION = `Start a new agent session in the Agent Orchestrator.
 - If a prompt is provided, the agent job is automatically queued to start
 - If no prompt is provided, creates a clone-only session that can be started later with action_session
 
+**Defaults from Agent Roots:** When starting a session that matches a preconfigured agent root (from \`get_configs\`), the agent root defines \`default_mcp_servers\` and \`default_skills\`. In most cases, you should pass these defaults through — omitting them means the session won't have MCP servers or skills configured. You can reduce the set (e.g., drop an MCP server you don't need), but when \`ALLOWED_AGENT_ROOTS\` is active, you cannot add servers beyond the defaults. Skills are not constrained — you can augment with additional skills as needed. As a rule of thumb: always pass the defaults unless you have a specific reason to remove something.
+
 **Use cases:**
 - Start a new agent task on a repository
 - Create a session to work on a specific branch
-- Set up an agent with specific MCP servers enabled
+- Set up an agent with specific MCP servers and skills enabled
 - Create a session with custom metadata for tracking`;
 
 export function startSessionTool(_server: Server, clientFactory: () => IAgentOrchestratorClient) {
@@ -119,6 +124,11 @@ export function startSessionTool(_server: Server, clientFactory: () => IAgentOrc
           type: 'array',
           items: { type: 'string' },
           description: PARAM_DESCRIPTIONS.mcp_servers,
+        },
+        skills: {
+          type: 'array',
+          items: { type: 'string' },
+          description: PARAM_DESCRIPTIONS.skills,
         },
         config: {
           type: 'object',

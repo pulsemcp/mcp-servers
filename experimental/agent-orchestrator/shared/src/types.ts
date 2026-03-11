@@ -181,6 +181,7 @@ export interface CreateSessionRequest {
   stop_condition?: string;
   execution_provider?: string;
   mcp_servers?: string[];
+  skills?: string[];
   config?: Record<string, unknown>;
   custom_metadata?: Record<string, unknown>;
 }
