@@ -567,6 +567,7 @@ export function createIntegrationMockOrchestratorClient(
             git_root: 'https://github.com/pulsemcp/mcp-servers.git',
             default_branch: 'main',
             default_mcp_servers: ['github-development'],
+            default_skills: ['discovery-classify', 'discovery-validate'],
           },
         ],
         stop_conditions: [

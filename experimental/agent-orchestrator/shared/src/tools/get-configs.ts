@@ -16,7 +16,7 @@ const TOOL_DESCRIPTION = `Fetches all static configuration data in a single call
 
 Returns:
 - **MCP servers**: Available servers for use with start_session (name, title, description)
-- **Agent roots**: Preconfigured repository settings with defaults (git_root, branch, mcp_servers, stop_condition)
+- **Agent roots**: Preconfigured repository settings with defaults (git_root, branch, mcp_servers, skills, stop_condition)
 - **Stop conditions**: Available session completion criteria (id, name, description)
 
 **Use this tool** to get all configuration options before calling start_session.
