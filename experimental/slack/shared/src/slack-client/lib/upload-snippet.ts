@@ -29,7 +29,6 @@ export async function uploadSnippet(
     filename?: string;
     title?: string;
     threadTs?: string;
-    filetype?: string;
   }
 ): Promise<SlackFile> {
   const filename = options.filename ?? 'snippet.txt';
@@ -41,10 +40,6 @@ export async function uploadSnippet(
     filename,
     length: length.toString(),
   });
-
-  if (options.filetype) {
-    params.set('snippet_type', options.filetype);
-  }
 
   const uploadUrlResponse = await fetch(`${baseUrl}/files.getUploadURLExternal?${params}`, {
     method: 'GET',
@@ -67,7 +62,7 @@ export async function uploadSnippet(
     throw new Error('Missing upload_url or file_id in response');
   }
 
-  // Step 2: Upload the file content to the provided URL
+  // Step 2: Upload the file content to the presigned URL (no auth headers needed)
   const uploadResponse = await fetch(uploadUrlData.upload_url, {
     method: 'POST',
     headers: {
@@ -85,7 +80,7 @@ export async function uploadSnippet(
   // Step 3: Complete the upload and share in channel
   const completeBody: {
     files: Array<{ id: string; title?: string }>;
-    channel_id?: string;
+    channel_id: string;
     thread_ts?: string;
   } = {
     files: [
@@ -94,11 +89,8 @@ export async function uploadSnippet(
         title: options.title,
       },
     ],
+    channel_id: options.channelId,
   };
-
-  if (options.channelId) {
-    completeBody.channel_id = options.channelId;
-  }
 
   if (options.threadTs) {
     completeBody.thread_ts = options.threadTs;

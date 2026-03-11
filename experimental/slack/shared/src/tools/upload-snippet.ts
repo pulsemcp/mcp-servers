@@ -10,14 +10,12 @@ const PARAM_DESCRIPTIONS = {
     'The text content to upload as a snippet. Can be arbitrarily long — ' +
     'use this instead of slack_post_message when content exceeds message length limits.',
   filename:
-    'Filename for the snippet (e.g., "output.txt", "error.log"). ' + 'Default: "snippet.txt".',
+    'Filename for the snippet (e.g., "output.txt", "error.log", "code.py"). ' +
+    'Slack uses the file extension for syntax highlighting. Default: "snippet.txt".',
   title: 'Title displayed in Slack above the snippet.',
   thread_ts:
     'Post the snippet as a thread reply to this message timestamp. ' +
     'If omitted, the snippet is posted as a new message in the channel.',
-  filetype:
-    'File type hint for syntax highlighting (e.g., "text", "javascript", "python", "json"). ' +
-    'Default: "text".',
 } as const;
 
 export const UploadSnippetSchema = z.object({
@@ -26,7 +24,6 @@ export const UploadSnippetSchema = z.object({
   filename: z.string().optional().describe(PARAM_DESCRIPTIONS.filename),
   title: z.string().optional().describe(PARAM_DESCRIPTIONS.title),
   thread_ts: z.string().optional().describe(PARAM_DESCRIPTIONS.thread_ts),
-  filetype: z.string().optional().describe(PARAM_DESCRIPTIONS.filetype),
 });
 
 const TOOL_DESCRIPTION = `Upload text content as a file snippet to a Slack channel.
@@ -43,7 +40,7 @@ Uploads content as a text file/snippet, bypassing Slack's message length limits.
 - Share code snippets or configuration files
 - Upload large JSON or text payloads
 
-**Note:** For short messages that fit within Slack's limits, use slack_post_message instead.`;
+**Note:** For short messages that fit within Slack's limits, use slack_post_message instead. Use the filename extension to control syntax highlighting (e.g., "code.py" for Python).`;
 
 export function uploadSnippetTool(server: Server, clientFactory: ClientFactory) {
   return {
@@ -72,10 +69,6 @@ export function uploadSnippetTool(server: Server, clientFactory: ClientFactory) 
           type: 'string',
           description: PARAM_DESCRIPTIONS.thread_ts,
         },
-        filetype: {
-          type: 'string',
-          description: PARAM_DESCRIPTIONS.filetype,
-        },
       },
       required: ['channel_id', 'content'],
     },
@@ -89,7 +82,6 @@ export function uploadSnippetTool(server: Server, clientFactory: ClientFactory) 
           filename: parsed.filename,
           title: parsed.title,
           threadTs: parsed.thread_ts,
-          filetype: parsed.filetype,
         });
 
         const parts = [
@@ -111,7 +103,8 @@ export function uploadSnippetTool(server: Server, clientFactory: ClientFactory) 
           parts.push(`Permalink: ${file.permalink}`);
         }
 
-        parts.push(`\nContent length: ${parsed.content.length} characters`);
+        const byteLength = Buffer.from(parsed.content, 'utf-8').length;
+        parts.push(`\nContent length: ${byteLength} bytes`);
 
         return {
           content: [

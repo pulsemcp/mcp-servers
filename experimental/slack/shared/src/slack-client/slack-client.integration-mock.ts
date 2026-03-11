@@ -168,7 +168,6 @@ export function createIntegrationMockSlackClient(
         filename?: string;
         title?: string;
         threadTs?: string;
-        filetype?: string;
       }
     ): Promise<SlackFile> {
       return {

@@ -333,7 +333,6 @@ describe('Slack MCP Server Integration Tests', () => {
         content: 'console.log("hello world");',
         filename: 'example.js',
         title: 'Code Example',
-        filetype: 'javascript',
       });
 
       expect(result.content[0].type).toBe('text');

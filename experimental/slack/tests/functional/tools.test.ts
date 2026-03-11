@@ -309,7 +309,7 @@ describe('Slack MCP Server Tools', () => {
       expect(result.content[0].text).toContain('Channel: C123456789');
       expect(result.content[0].text).toContain('File ID: F111222333');
       expect(result.content[0].text).toContain('snippet.txt');
-      expect(result.content[0].text).toContain('37 characters');
+      expect(result.content[0].text).toContain('37 bytes');
       expect(mockClient.uploadSnippet).toHaveBeenCalledWith(
         'Hello, this is a long snippet content',
         expect.objectContaining({ channelId: 'C123456789' })
@@ -324,7 +324,6 @@ describe('Slack MCP Server Tools', () => {
         filename: 'output.log',
         title: 'Build Output',
         thread_ts: '1234567890.123456',
-        filetype: 'text',
       });
 
       expect(mockClient.uploadSnippet).toHaveBeenCalledWith('Some content', {
@@ -332,7 +331,6 @@ describe('Slack MCP Server Tools', () => {
         filename: 'output.log',
         title: 'Build Output',
         threadTs: '1234567890.123456',
-        filetype: 'text',
       });
     });
 
@@ -350,6 +348,13 @@ describe('Slack MCP Server Tools', () => {
     it('should require channel_id and content', async () => {
       const tool = uploadSnippetTool(mockServer, () => mockClient);
       const result = await tool.handler({ channel_id: 'C123456789' });
+
+      expect(result.isError).toBe(true);
+    });
+
+    it('should reject empty content', async () => {
+      const tool = uploadSnippetTool(mockServer, () => mockClient);
+      const result = await tool.handler({ channel_id: 'C123456789', content: '' });
 
       expect(result.isError).toBe(true);
     });

@@ -92,7 +92,6 @@ export interface ISlackClient {
       filename?: string;
       title?: string;
       threadTs?: string;
-      filetype?: string;
     }
   ): Promise<SlackFile>;
 }
@@ -192,7 +191,6 @@ export class SlackClient implements ISlackClient {
       filename?: string;
       title?: string;
       threadTs?: string;
-      filetype?: string;
     }
   ): Promise<SlackFile> {
     const { uploadSnippet } = await import('./slack-client/lib/upload-snippet.js');

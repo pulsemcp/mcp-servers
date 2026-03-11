@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- New `slack_upload_snippet` tool — uploads text content as a file snippet to Slack channels, bypassing message length limits. Uses the modern `files.getUploadURLExternal` + `files.completeUploadExternal` API flow. Supports optional filename, title, thread replies, and filetype hints.
+- New `slack_upload_snippet` tool — uploads text content as a file snippet to Slack channels, bypassing message length limits. Uses the modern `files.getUploadURLExternal` + `files.completeUploadExternal` API flow. Supports optional filename (with syntax highlighting via file extension), title, and thread replies.
 
 ## [0.0.3] - 2026-02-24
 
