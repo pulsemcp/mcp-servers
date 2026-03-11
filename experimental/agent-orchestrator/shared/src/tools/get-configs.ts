@@ -145,6 +145,9 @@ function formatResponse(configs: ConfigsResponse, fromCache: boolean) {
     '- If an **Agent Root** has a `default_subdirectory`, pass it as `subdirectory` in `start_session` — do not set `subdirectory` to arbitrary internal paths'
   );
   lines.push(
+    "- Pass `default_skills` from **Agent Roots** in the `skills` parameter of `start_session` — sessions won't have skills loaded unless you explicitly pass them"
+  );
+  lines.push(
     '- Use `id` values from **Stop Conditions** in `start_session` `stop_condition` parameter'
   );
 

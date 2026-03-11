@@ -201,6 +201,40 @@ describe('Tools', () => {
       // (and ALLOWED_AGENT_ROOTS is not set)
       expect(mockClient.getConfigs).not.toHaveBeenCalled();
     });
+
+    it('should pass skills parameter to createSession', async () => {
+      const tool = startSessionTool(mockServer, clientFactory);
+
+      await tool.handler({
+        title: 'Session with Skills',
+        prompt: 'Do something',
+        git_root: 'https://github.com/test/repo.git',
+        skills: ['discovery-classify', 'publish-and-pr'],
+      });
+
+      expect(mockClient.createSession).toHaveBeenCalledWith(
+        expect.objectContaining({
+          skills: ['discovery-classify', 'publish-and-pr'],
+        })
+      );
+    });
+
+    it('should pass skills as empty array when explicitly set', async () => {
+      const tool = startSessionTool(mockServer, clientFactory);
+
+      await tool.handler({
+        title: 'Session without Skills',
+        prompt: 'Do something',
+        git_root: 'https://github.com/test/repo.git',
+        skills: [],
+      });
+
+      expect(mockClient.createSession).toHaveBeenCalledWith(
+        expect.objectContaining({
+          skills: [],
+        })
+      );
+    });
   });
 
   describe('get_session', () => {
@@ -939,6 +973,17 @@ describe('Tools', () => {
       const text = (result as { content: Array<{ text: string }> }).content[0].text;
 
       expect(text).not.toContain('**Default Skills:**');
+    });
+
+    it('should include skills usage note in output', async () => {
+      const tool = getConfigsTool(mockServer, clientFactory);
+
+      const result = await tool.handler({});
+      const text = (result as { content: Array<{ text: string }> }).content[0].text;
+
+      expect(text).toContain(
+        'Pass `default_skills` from **Agent Roots** in the `skills` parameter of `start_session`'
+      );
     });
 
     it('should handle empty configs', async () => {
@@ -1913,6 +1958,26 @@ describe('ALLOWED_AGENT_ROOTS integration with start_session', () => {
     const text = (result as { content: Array<{ text: string }> }).content[0].text;
     expect(text).toContain('exact default MCP servers');
     expect(mockClient.createSession).not.toHaveBeenCalled();
+  });
+
+  it('should allow session with extra skills even when ALLOWED_AGENT_ROOTS is set', async () => {
+    process.env = { ...originalEnv, ALLOWED_AGENT_ROOTS: 'mcp-servers' };
+
+    const tool = startSessionTool(mockServer, clientFactory);
+    const result = await tool.handler({
+      git_root: 'https://github.com/pulsemcp/mcp-servers.git',
+      mcp_servers: ['github-development'],
+      skills: ['discovery-classify', 'discovery-validate', 'extra-skill'],
+      title: 'Test Session',
+    });
+
+    const text = (result as { content: Array<{ text: string }> }).content[0].text;
+    expect(text).toContain('Session Started Successfully');
+    expect(mockClient.createSession).toHaveBeenCalledWith(
+      expect.objectContaining({
+        skills: ['discovery-classify', 'discovery-validate', 'extra-skill'],
+      })
+    );
   });
 
   it('should allow session with no restrictions when env var not set', async () => {
