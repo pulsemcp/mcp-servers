@@ -145,6 +145,7 @@ export interface AgentRootInfo {
   default_subdirectory?: string;
   default_stop_condition?: string;
   default_mcp_servers?: string[];
+  default_skills?: string[];
 }
 
 // Stop Condition info (session completion criteria)

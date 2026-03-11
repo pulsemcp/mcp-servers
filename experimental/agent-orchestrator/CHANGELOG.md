@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.4] - 2026-03-11
+
+### Added
+
+- `default_skills` field is now included in `get_configs` tool response for agent roots. Previously, the `default_skills` configured on agent roots in Agent Orchestrator were silently dropped during the API response mapping.
+
 ## [0.4.3] - 2026-03-10
 
 ### Changed

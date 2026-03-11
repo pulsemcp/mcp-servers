@@ -74,6 +74,7 @@ export interface RawAgentRoot {
   default_stop_condition?: string;
   default?: boolean;
   default_mcp_servers?: string[];
+  default_skills?: string[];
 }
 
 /**
@@ -102,6 +103,7 @@ export function mapAgentRoot(raw: RawAgentRoot): AgentRootInfo {
     default_subdirectory: raw.subdirectory,
     default_stop_condition: raw.default_stop_condition,
     default_mcp_servers: raw.default_mcp_servers,
+    default_skills: raw.default_skills,
   };
 }
 

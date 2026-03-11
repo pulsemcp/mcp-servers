@@ -61,40 +61,43 @@ The tests will:
 
 ## Latest Test Results
 
-**Test Date:** 2026-03-10
-**Branch:** agent-orchestrator-bot/clarify-needs-input-status
-**Commit:** 322b42a
+**Test Date:** 2026-03-11
+**Branch:** agent-orchestrator/add-default-skills-to-get-configs
+**Commit:** cb0d4bd
 **Tested By:** Claude Code (automated)
-**Environment:** Sandbox — staging API unreachable; functional and integration tests used
+**Environment:** Sandbox — staging API unreachable; functional tests used
 
 ### Summary
 
-**Overall:** :white_check_mark: SUCCESS - 134/134 functional tests pass, 13/13 integration tests pass.
+**Overall:** :white_check_mark: SUCCESS - 170/170 functional tests pass (3 new tests added).
 
-Updated `needs_input` session status descriptions in tool metadata to clarify it is the normal idle/completed state, not necessarily a blocked state.
+Added `default_skills` field to `get_configs` response for agent roots. Previously silently dropped during API response mapping.
 
 | Test Category              | Status             | Tests   |
 | -------------------------- | ------------------ | ------- |
-| tools.test.ts (functional) | :white_check_mark: | 134/134 |
-| integration tests          | :white_check_mark: | 13/13   |
+| map-agent-root.test.ts     | :white_check_mark: | 2/2     |
+| health-check.test.ts       | :white_check_mark: | 31/31   |
+| tools.test.ts (functional) | :white_check_mark: | 137/137 |
 | Manual tests (staging API) | :hourglass: SKIP   | N/A     |
 
 ### Functionality Verified
 
-- :white_check_mark: **All tool definitions** - 134 functional tests pass
-- :white_check_mark: **Integration tests** - 13/13 pass (1 pre-existing stale tool count assertion excluded)
+- :white_check_mark: **All tool definitions** - 137 functional tests pass (3 new tests for default_skills)
+- :white_check_mark: **mapAgentRoot mapping** - 2/2 tests pass (default_skills mapped and omitted correctly)
+- :white_check_mark: **Health check** - 31/31 tests pass
 - :white_check_mark: **Build succeeds** - TypeScript compilation clean
+- :white_check_mark: **CI green** - All 3 checks pass (Build & Test, Lint & Type Check, Validate Publish Files)
 
 ### Notes
 
 - Manual tests skipped: `.env` credentials not available in sandbox, and staging API is unreachable from sandbox environment
-- This is a documentation-only change (tool description strings) with no code logic changes — manual API tests would not cover description text content
+- This change adds a new field to the response format — manual API tests would verify the API returns `default_skills`, but the mapping and formatting logic is fully covered by functional tests
 
 ### Key Changes in This Version
 
-- Updated `needs_input` status description in `quick_search_sessions` tool
-- Updated use case line in `quick_search_sessions` tool
-- Updated `pause` and `unarchive` action descriptions in `action_session` tool
+- Added `default_skills` to `RawAgentRoot`, `mapAgentRoot()`, `AgentRootInfo`, and `formatAgentRoot()`
+- Updated `TOOL_DESCRIPTION` to mention skills in agent roots defaults
+- Updated functional and integration mocks with `default_skills` data
 
 ---
 
