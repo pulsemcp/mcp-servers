@@ -195,6 +195,95 @@ describe('Slack MCP Server - Manual Tests', () => {
     });
   });
 
+  describe('Snippet Upload Operations', () => {
+    let testChannelId: string;
+    let postedMessageTs: string;
+
+    beforeAll(async () => {
+      const channelsResult = await client.callTool('slack_get_channels', {});
+      expect(channelsResult.isError).toBeFalsy();
+
+      const channelsText = (channelsResult.content[0] as { text: string }).text;
+      const idMatch = channelsText.match(/ID: (\S+)/);
+      if (!idMatch) {
+        throw new Error('No channels available for testing');
+      }
+      testChannelId = idMatch[1];
+
+      // Post a message to use as a thread parent
+      const postResult = await client.callTool('slack_post_message', {
+        channel_id: testChannelId,
+        text: `Upload snippet test thread at ${new Date().toISOString()}`,
+      });
+      expect(postResult.isError).toBeFalsy();
+      const postText = (postResult.content[0] as { text: string }).text;
+      const tsMatch = postText.match(/Timestamp: (\S+)/);
+      postedMessageTs = tsMatch![1];
+    });
+
+    it('should upload a text snippet to a channel', async () => {
+      const longContent =
+        'This is a test snippet uploaded via slack_upload_snippet.\n' +
+        'It can contain arbitrarily long content that would exceed message limits.\n' +
+        'Line 3 of the snippet.\n'.repeat(10);
+
+      const result = await client.callTool('slack_upload_snippet', {
+        channel_id: testChannelId,
+        content: longContent,
+        filename: 'test-snippet.txt',
+        title: 'MCP Server Test Snippet',
+      });
+      expect(result.isError).toBeFalsy();
+
+      const text = (result.content[0] as { text: string }).text;
+      expect(text).toContain('Snippet uploaded successfully');
+      expect(text).toContain('File ID:');
+      expect(text).toContain('test-snippet.txt');
+      expect(text).toContain('MCP Server Test Snippet');
+      console.log(`Snippet uploaded:\n${text}`);
+    });
+
+    it('should upload a snippet as a thread reply', async () => {
+      if (!postedMessageTs) {
+        throw new Error('No message to reply to - run previous test first');
+      }
+
+      const result = await client.callTool('slack_upload_snippet', {
+        channel_id: testChannelId,
+        content: 'Thread reply snippet content',
+        thread_ts: postedMessageTs,
+        filename: 'thread-reply.txt',
+      });
+      expect(result.isError).toBeFalsy();
+
+      const text = (result.content[0] as { text: string }).text;
+      expect(text).toContain('Snippet uploaded successfully');
+      expect(text).toContain('Thread:');
+      console.log(`Thread snippet uploaded:\n${text}`);
+    });
+
+    it('should upload a snippet with a code filename for syntax highlighting', async () => {
+      const codeContent = `function greet(name: string): string {
+  return \`Hello, \${name}!\`;
+}
+
+console.log(greet("Slack MCP"));`;
+
+      const result = await client.callTool('slack_upload_snippet', {
+        channel_id: testChannelId,
+        content: codeContent,
+        filename: 'example.ts',
+        title: 'TypeScript Example',
+      });
+      expect(result.isError).toBeFalsy();
+
+      const text = (result.content[0] as { text: string }).text;
+      expect(text).toContain('Snippet uploaded successfully');
+      expect(text).toContain('example.ts');
+      console.log(`Code snippet uploaded:\n${text}`);
+    });
+  });
+
   describe('File Download Operations', () => {
     let testChannelId: string;
 

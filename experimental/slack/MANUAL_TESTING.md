@@ -23,6 +23,7 @@ This file tracks the **most recent** manual test results for the Slack MCP serve
    - `chat:write` - Send messages
    - `reactions:write` - Add reactions
    - `files:read` - Access file info and download files
+   - `files:write` - Upload files and snippets
 
 3. **Important: Bot must be invited to channels**
    - For reading messages, threads, and adding reactions, the bot must be a member of the channel
