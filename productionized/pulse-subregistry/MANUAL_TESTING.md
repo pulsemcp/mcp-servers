@@ -6,7 +6,7 @@ This file tracks manual testing results for the pulse-subregistry MCP server.
 
 **Test Date:** 2026-03-11
 **Branch:** agent/fix-latest-only-false-version-param
-**Commit:** 5e84b0d
+**Commit:** 26b9dff
 **Tested By:** Claude
 **Environment:** Real API with tenant `pulsemcp-admin`
 
