@@ -981,9 +981,9 @@ describe('Tools', () => {
       const result = await tool.handler({});
       const text = (result as { content: Array<{ text: string }> }).content[0].text;
 
-      expect(text).toContain('default_skills');
-      expect(text).toContain('skills');
-      expect(text).toContain('start_session');
+      expect(text).toContain(
+        'Pass `default_skills` from **Agent Roots** in the `skills` parameter of `start_session`'
+      );
     });
 
     it('should handle empty configs', async () => {
