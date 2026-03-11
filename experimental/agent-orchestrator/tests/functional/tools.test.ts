@@ -15,7 +15,7 @@ import { actionTriggerTool } from '../../shared/src/tools/action-trigger.js';
 import { getSystemHealthTool } from '../../shared/src/tools/get-system-health.js';
 import { actionHealthTool } from '../../shared/src/tools/action-health.js';
 import { getTranscriptArchiveTool } from '../../shared/src/tools/get-transcript-archive.js';
-import { clearConfigsCache } from '../../shared/src/cache/configs-cache.js';
+import { clearConfigsCache, setConfigsCache } from '../../shared/src/cache/configs-cache.js';
 import { parseEnabledToolGroups, createRegisterTools } from '../../shared/src/tools.js';
 import {
   parseAllowedAgentRoots,
@@ -85,6 +85,14 @@ describe('Tools', () => {
   });
 
   describe('start_session', () => {
+    beforeEach(() => {
+      clearConfigsCache();
+    });
+
+    afterEach(() => {
+      clearConfigsCache();
+    });
+
     it('should start a session', async () => {
       const tool = startSessionTool(mockServer, clientFactory);
 
@@ -107,6 +115,91 @@ describe('Tools', () => {
           git_root: 'https://github.com/test/repo.git',
         })
       );
+    });
+
+    it('should resolve stop_condition ID to its description', async () => {
+      const tool = startSessionTool(mockServer, clientFactory);
+
+      await tool.handler({
+        title: 'Session with stop condition',
+        prompt: 'Do something',
+        stop_condition: 'pr_merged',
+      });
+
+      expect(mockClient.createSession).toHaveBeenCalledWith(
+        expect.objectContaining({
+          stop_condition: 'Stop when the pull request is merged',
+        })
+      );
+    });
+
+    it('should pass through stop_condition as-is when ID does not match any known condition', async () => {
+      const tool = startSessionTool(mockServer, clientFactory);
+
+      await tool.handler({
+        title: 'Session with custom stop condition',
+        prompt: 'Do something',
+        stop_condition: 'custom_unknown_condition',
+      });
+
+      expect(mockClient.createSession).toHaveBeenCalledWith(
+        expect.objectContaining({
+          stop_condition: 'custom_unknown_condition',
+        })
+      );
+    });
+
+    it('should fetch configs when cache is empty for stop_condition resolution', async () => {
+      const tool = startSessionTool(mockServer, clientFactory);
+
+      await tool.handler({
+        title: 'Session with stop condition',
+        prompt: 'Do something',
+        stop_condition: 'ci_passing',
+      });
+
+      expect(mockClient.getConfigs).toHaveBeenCalledTimes(1);
+      expect(mockClient.createSession).toHaveBeenCalledWith(
+        expect.objectContaining({
+          stop_condition: 'Stop when CI checks pass',
+        })
+      );
+    });
+
+    it('should use cached configs for stop_condition resolution', async () => {
+      // Pre-populate the cache
+      const configs = await mockClient.getConfigs();
+      setConfigsCache(configs);
+      mockClient.getConfigs = vi.fn().mockResolvedValue(configs);
+
+      const tool = startSessionTool(mockServer, clientFactory);
+
+      await tool.handler({
+        title: 'Session with stop condition',
+        prompt: 'Do something',
+        stop_condition: 'pr_merged',
+      });
+
+      // Should not have fetched configs again since cache was populated
+      expect(mockClient.getConfigs).not.toHaveBeenCalled();
+      expect(mockClient.createSession).toHaveBeenCalledWith(
+        expect.objectContaining({
+          stop_condition: 'Stop when the pull request is merged',
+        })
+      );
+    });
+
+    it('should not fetch configs when no stop_condition is provided', async () => {
+      const tool = startSessionTool(mockServer, clientFactory);
+
+      await tool.handler({
+        title: 'Session without stop condition',
+        prompt: 'Do something',
+      });
+
+      // getConfigs should NOT be called when no stop_condition is provided
+      // (and ALLOWED_AGENT_ROOTS is not set)
+      expect(mockClient.getConfigs).not.toHaveBeenCalled();
     });
   });
 
