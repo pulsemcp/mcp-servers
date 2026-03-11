@@ -81,6 +81,20 @@ export interface ISlackClient {
    * Download a file from Slack (requires authenticated URL)
    */
   downloadFile(fileUrl: string): Promise<Buffer>;
+
+  /**
+   * Upload text content as a snippet/file to a channel
+   */
+  uploadSnippet(
+    content: string,
+    options: {
+      channelId: string;
+      filename?: string;
+      title?: string;
+      threadTs?: string;
+      filetype?: string;
+    }
+  ): Promise<SlackFile>;
 }
 
 /**
@@ -169,6 +183,20 @@ export class SlackClient implements ISlackClient {
   async downloadFile(fileUrl: string): Promise<Buffer> {
     const { downloadFile } = await import('./slack-client/lib/download-file.js');
     return downloadFile(this.headers, fileUrl);
+  }
+
+  async uploadSnippet(
+    content: string,
+    options: {
+      channelId: string;
+      filename?: string;
+      title?: string;
+      threadTs?: string;
+      filetype?: string;
+    }
+  ): Promise<SlackFile> {
+    const { uploadSnippet } = await import('./slack-client/lib/upload-snippet.js');
+    return uploadSnippet(this.baseUrl, this.headers, content, options);
   }
 }
 

@@ -160,6 +160,26 @@ export function createIntegrationMockSlackClient(
     async downloadFile(): Promise<Buffer> {
       return Buffer.from('mock-file-content');
     },
+
+    async uploadSnippet(
+      content: string,
+      options: {
+        channelId: string;
+        filename?: string;
+        title?: string;
+        threadTs?: string;
+        filetype?: string;
+      }
+    ): Promise<SlackFile> {
+      return {
+        id: `F${Date.now()}`,
+        name: options.filename ?? 'snippet.txt',
+        title: options.title,
+        mimetype: 'text/plain',
+        size: content.length,
+        permalink: `https://slack.com/files/mock/${options.filename ?? 'snippet.txt'}`,
+      };
+    },
   };
 
   return client;
