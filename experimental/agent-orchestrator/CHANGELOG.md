@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.6] - 2026-03-11
+
 ### Added
 
 - `skills` parameter on `start_session` tool — an optional array of skill name strings, passed through to the Agent Orchestrator API when creating sessions. Skills are not constrained by `ALLOWED_AGENT_ROOTS`.

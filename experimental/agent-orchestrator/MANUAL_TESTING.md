@@ -62,43 +62,38 @@ The tests will:
 ## Latest Test Results
 
 **Test Date:** 2026-03-11
-**Branch:** tadasant/resolve-stop-condition-description
-**Commit:** b3d628d
+**Branch:** tadasant/add-skills-param-start-session
+**Commit:** ac11400
 **Tested By:** Claude Code (automated)
-**Environment:** Sandbox — staging API unreachable; functional tests used
+**Environment:** Production (https://ao.pulsemcp.com)
 
 ### Summary
 
-**Overall:** :white_check_mark: SUCCESS - 142/142 functional tests pass (5 new tests added).
+**Overall:** :white_check_mark: SUCCESS - 56/56 manual tests pass, 174/174 functional tests pass.
 
-Fixed `start_session` to resolve stop_condition ID to its human-readable description before passing to the agent. Previously only the opaque ID was sent.
+Added `skills` parameter to `start_session` tool, mirroring `mcp_servers` pattern. Updated tool descriptions and `get_configs` usage notes.
 
-| Test Category              | Status             | Tests   |
-| -------------------------- | ------------------ | ------- |
-| tools.test.ts (functional) | :white_check_mark: | 142/142 |
-| Manual tests (staging API) | :hourglass: SKIP   | N/A     |
+| Test Category                 | Status             | Tests   |
+| ----------------------------- | ------------------ | ------- |
+| map-agent-root.test.ts        | :white_check_mark: | 2/2     |
+| health-check.test.ts          | :white_check_mark: | 31/31   |
+| tools.test.ts (functional)    | :white_check_mark: | 141/141 |
+| Manual tests (production API) | :white_check_mark: | 56/56   |
 
 ### Functionality Verified
 
-- :white_check_mark: **All tool definitions** - 142 functional tests pass (5 new tests for stop_condition resolution)
-- :white_check_mark: **Stop condition ID resolved to description** - Verified via mock that `"pr_merged"` becomes `"Stop when the pull request is merged"`
-- :white_check_mark: **Unknown stop conditions pass through as-is** - Backward compatible for custom/unknown IDs
-- :white_check_mark: **Configs fetched when cache empty** - Verified getConfigs called when no cache exists
-- :white_check_mark: **Cached configs reused** - Verified getConfigs not called when cache populated
-- :white_check_mark: **No configs fetch when no stop_condition** - Verified no unnecessary API calls
-- :white_check_mark: **Lint passes** - ESLint and Prettier clean
+- :white_check_mark: **All tool definitions** - 141 functional tests pass (4 new tests for skills parameter)
+- :white_check_mark: **Manual tests** - 56/56 pass against production API (start_session, get_configs, search, actions, triggers, health, notifications)
+- :white_check_mark: **mapAgentRoot mapping** - 2/2 tests pass
+- :white_check_mark: **Health check** - 31/31 tests pass
 - :white_check_mark: **Build succeeds** - TypeScript compilation clean
-
-### Notes
-
-- Manual tests skipped: `.env` credentials not available in sandbox, and staging API is unreachable from sandbox environment
-- This change reuses the existing `getConfigsCache`/`setConfigsCache` pattern already used by ALLOWED_AGENT_ROOTS validation, so the config-fetching path is well-tested
 
 ### Key Changes in This Version
 
-- `start_session` handler now resolves `stop_condition` ID to its description from configs before calling `createSession`
-- Updated `stop_condition` parameter description to clarify it accepts an ID that gets resolved
-- Added 5 new functional tests covering resolution, pass-through, caching, and no-op scenarios
+- Added `skills` parameter to `start_session` (schema, inputSchema, type, description)
+- Updated `start_session` description with defaults guidance for agent roots
+- Added skills usage note to `get_configs` output
+- Skills are NOT constrained by `ALLOWED_AGENT_ROOTS` (unlike `mcp_servers`)
 
 ---
 
