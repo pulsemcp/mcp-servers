@@ -104,13 +104,24 @@ export function listServersTool(_server: Server, clientFactory: ClientFactory) {
         const validatedArgs = listServersArgsSchema.parse(args);
         const client = clientFactory();
 
-        const response = await client.listServers({
+        const listOptions: {
+          limit: number;
+          cursor?: string;
+          search?: string;
+          updatedSince?: string;
+          version?: string;
+        } = {
           limit: validatedArgs.limit,
           cursor: validatedArgs.cursor,
           search: validatedArgs.search,
           updatedSince: validatedArgs.updated_since,
-          version: validatedArgs.latest_only ? 'latest' : undefined,
-        });
+        };
+
+        if (validatedArgs.latest_only) {
+          listOptions.version = 'latest';
+        }
+
+        const response = await client.listServers(listOptions);
 
         const filteredResponse = applyTruncation(response, validatedArgs.expand_fields);
         const jsonOutput = formatServerListAsJson(filteredResponse);

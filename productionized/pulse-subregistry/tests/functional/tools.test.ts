@@ -155,9 +155,21 @@ describe('list_servers tool', () => {
     const tool = listServersTool(mockServer, clientFactory);
     await tool.handler({});
 
-    expect(mockClient.listServers).toHaveBeenCalledWith(
-      expect.objectContaining({ version: 'latest' })
-    );
+    const callArgs = (mockClient.listServers as ReturnType<typeof vi.fn>).mock.calls[0][0];
+    expect(callArgs.version).toBe('latest');
+  });
+
+  it('should pass version=latest when latest_only=true explicitly', async () => {
+    (mockClient.listServers as ReturnType<typeof vi.fn>).mockResolvedValue({
+      servers: [],
+      metadata: { count: 0 },
+    });
+
+    const tool = listServersTool(mockServer, clientFactory);
+    await tool.handler({ latest_only: true });
+
+    const callArgs = (mockClient.listServers as ReturnType<typeof vi.fn>).mock.calls[0][0];
+    expect(callArgs.version).toBe('latest');
   });
 
   it('should not pass version when latest_only=false', async () => {
@@ -169,9 +181,8 @@ describe('list_servers tool', () => {
     const tool = listServersTool(mockServer, clientFactory);
     await tool.handler({ latest_only: false });
 
-    expect(mockClient.listServers).toHaveBeenCalledWith(
-      expect.objectContaining({ version: undefined })
-    );
+    const callArgs = (mockClient.listServers as ReturnType<typeof vi.fn>).mock.calls[0][0];
+    expect(callArgs).not.toHaveProperty('version');
   });
 
   it('should truncate long strings by default', async () => {

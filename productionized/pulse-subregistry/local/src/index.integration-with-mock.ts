@@ -55,6 +55,8 @@ class MockPulseSubregistryClient implements IPulseSubregistryClient {
         ];
 
     // Wrap servers in ServerEntry structure { server: {...}, _meta: {...} }
+    // Include the version filter received from the tool for test verification
+    const versionFilterReceived = options?.version;
     let servers = rawServers.map((s: Record<string, unknown>) => ({
       server: s,
       _meta: {},
@@ -80,7 +82,9 @@ class MockPulseSubregistryClient implements IPulseSubregistryClient {
       metadata: {
         count: servers.length,
         nextCursor: mockNextCursor,
-      },
+        // Expose version filter for test verification (extra fields pass through JSON serialization)
+        versionFilter: versionFilterReceived ?? null,
+      } as unknown as ListServersResponse['metadata'],
     };
   }
 

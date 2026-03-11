@@ -89,6 +89,69 @@ describe('PulseMCP Sub-Registry API - Manual Tests', () => {
       console.log(`list_servers search "github" response length: ${text.length} chars`);
     });
 
+    it('should return all versions when latest_only=false', async () => {
+      const result = await client.callTool('list_servers', {
+        latest_only: false,
+        limit: 100,
+      });
+      expect(result.isError).toBeFalsy();
+
+      const text = (result.content[0] as { text: string }).text;
+      const parsed = JSON.parse(text);
+
+      // Count latest vs non-latest entries
+      type ServerWithMeta = {
+        server: { name: string };
+        _meta?: { 'com.pulsemcp/server-version'?: { isLatest?: boolean } };
+      };
+      const latestCount = parsed.servers.filter(
+        (s: ServerWithMeta) => s._meta?.['com.pulsemcp/server-version']?.isLatest === true
+      ).length;
+      const nonLatestCount = parsed.servers.filter(
+        (s: ServerWithMeta) => s._meta?.['com.pulsemcp/server-version']?.isLatest === false
+      ).length;
+      const unknownCount = parsed.servers.length - latestCount - nonLatestCount;
+
+      console.log(
+        `list_servers with latest_only=false (limit=100): ${parsed.servers.length} servers returned`
+      );
+      console.log(
+        `  latest: ${latestCount}, non-latest: ${nonLatestCount}, unknown: ${unknownCount}`
+      );
+
+      // When latest_only=false, should return all versions (both latest and non-latest)
+      // The response should include at least some latest versions
+      if (parsed.servers.length > 0) {
+        expect(latestCount + nonLatestCount).toBeGreaterThan(0);
+        // With enough results, we expect to see both latest and non-latest entries
+        expect(latestCount).toBeGreaterThan(0);
+      }
+    });
+
+    it('should return only latest versions by default (latest_only=true)', async () => {
+      const result = await client.callTool('list_servers', {
+        limit: 10,
+      });
+      expect(result.isError).toBeFalsy();
+
+      const text = (result.content[0] as { text: string }).text;
+      const parsed = JSON.parse(text);
+      console.log(
+        `list_servers with latest_only=true (default): ${parsed.servers.length} servers returned`
+      );
+
+      // When latest_only=true (default), all returned entries should be latest
+      const allLatest = parsed.servers.every(
+        (s: { _meta?: { 'com.pulsemcp/server-version'?: { isLatest?: boolean } } }) =>
+          s._meta?.['com.pulsemcp/server-version']?.isLatest === true
+      );
+      console.log(`All entries are latest: ${allLatest}`);
+
+      if (parsed.servers.length > 0) {
+        expect(allLatest).toBe(true);
+      }
+    });
+
     it('should support pagination with cursor', async () => {
       const firstResult = await client.callTool('list_servers', {
         limit: 2,
