@@ -2,6 +2,30 @@
 
 ## Latest Test Results
 
+**Date:** 2026-03-11
+**Commit:** 53fbf11
+**Version:** 0.9.6 (pre-release)
+**API Environment:** N/A (import mechanism change only, no API interaction changes)
+
+### Overall: ✅ Functional Tests PASSING (185/185, 8 test files)
+
+**v0.9.6 Changes:**
+
+- Replaced all 65 dynamic `await import()` calls in `PulseMCPAdminClient` with static imports to fix `Cannot find module` errors for `save-results-for-mirror.js` and `get-proctor-runs.js` in some production environments
+
+**Functional Test Results: ✅ 185/185 PASSING (8 test files)**
+
+- All 8 functional test files pass with 0 failures
+- Build succeeds with 0 TypeScript errors, compiled output has 67 static imports and 0 dynamic imports
+
+**Note on Manual Testing:**
+
+Manual tests were not run for this release — API credentials (`.env` file) were not available in this environment. This change replaces dynamic `await import()` calls with static top-level imports in `server.ts`. No API client code, request payloads, response parsing logic, or tool behavior was changed — the same functions are called with the same arguments, only the import mechanism changed. The v0.9.2 manual test results remain valid for all API-facing functionality.
+
+---
+
+## Previous Test Results (v0.9.5)
+
 **Date:** 2026-03-10
 **Commit:** 5e5c059
 **Version:** 0.9.5 (pre-release)

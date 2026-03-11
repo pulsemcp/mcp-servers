@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [0.9.6] - 2026-03-11
+
+### Fixed
+
+- Replaced all dynamic `await import()` calls in `PulseMCPAdminClient` with static imports to fix `Cannot find module` errors for `save-results-for-mirror.js` and `get-proctor-runs.js` in some production environments
+
 ## [0.9.5] - 2026-03-10
 
 ### Fixed

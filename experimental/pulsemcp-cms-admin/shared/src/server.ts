@@ -66,6 +66,74 @@ import type {
   DiscoveredUrlStats,
 } from './types.js';
 
+// Static imports for all API client functions (replaces dynamic imports
+// which can fail at runtime in some environments due to ESM resolution)
+import { getPosts } from './pulsemcp-admin-client/lib/get-posts.js';
+import { getPost } from './pulsemcp-admin-client/lib/get-post.js';
+import { createPost } from './pulsemcp-admin-client/lib/create-post.js';
+import { updatePost } from './pulsemcp-admin-client/lib/update-post.js';
+import { uploadImage } from './pulsemcp-admin-client/lib/upload-image.js';
+import { getAuthors } from './pulsemcp-admin-client/lib/get-authors.js';
+import { getAuthorBySlug } from './pulsemcp-admin-client/lib/get-author-by-slug.js';
+import { getAuthorById } from './pulsemcp-admin-client/lib/get-author-by-id.js';
+import { getMCPServerBySlug } from './pulsemcp-admin-client/lib/get-mcp-server-by-slug.js';
+import { getMCPServerById } from './pulsemcp-admin-client/lib/get-mcp-server-by-id.js';
+import { getMCPClientBySlug } from './pulsemcp-admin-client/lib/get-mcp-client-by-slug.js';
+import { getMCPClientById } from './pulsemcp-admin-client/lib/get-mcp-client-by-id.js';
+import { getMCPImplementationById } from './pulsemcp-admin-client/lib/get-mcp-implementation-by-id.js';
+import { searchMCPImplementations } from './pulsemcp-admin-client/lib/search-mcp-implementations.js';
+import { getDraftMCPImplementations } from './pulsemcp-admin-client/lib/get-draft-mcp-implementations.js';
+import { saveMCPImplementation } from './pulsemcp-admin-client/lib/save-mcp-implementation.js';
+import { createMCPImplementation } from './pulsemcp-admin-client/lib/create-mcp-implementation.js';
+import { sendEmail } from './pulsemcp-admin-client/lib/send-email.js';
+import { searchProviders } from './pulsemcp-admin-client/lib/search-providers.js';
+import { getProviderById } from './pulsemcp-admin-client/lib/get-provider-by-id.js';
+import { getOfficialMirrorQueueItems } from './pulsemcp-admin-client/lib/get-official-mirror-queue-items.js';
+import { getOfficialMirrorQueueItem } from './pulsemcp-admin-client/lib/get-official-mirror-queue-item.js';
+import { approveOfficialMirrorQueueItem } from './pulsemcp-admin-client/lib/approve-official-mirror-queue-item.js';
+import { approveOfficialMirrorQueueItemWithoutModifying } from './pulsemcp-admin-client/lib/approve-official-mirror-queue-item-without-modifying.js';
+import { rejectOfficialMirrorQueueItem } from './pulsemcp-admin-client/lib/reject-official-mirror-queue-item.js';
+import { addOfficialMirrorToRegularQueue } from './pulsemcp-admin-client/lib/add-official-mirror-to-regular-queue.js';
+import { unlinkOfficialMirrorQueueItem } from './pulsemcp-admin-client/lib/unlink-official-mirror-queue-item.js';
+import { getUnofficialMirrors } from './pulsemcp-admin-client/lib/get-unofficial-mirrors.js';
+import { getUnofficialMirror } from './pulsemcp-admin-client/lib/get-unofficial-mirror.js';
+import { createUnofficialMirror } from './pulsemcp-admin-client/lib/create-unofficial-mirror.js';
+import { updateUnofficialMirror } from './pulsemcp-admin-client/lib/update-unofficial-mirror.js';
+import { deleteUnofficialMirror } from './pulsemcp-admin-client/lib/delete-unofficial-mirror.js';
+import { getOfficialMirrors } from './pulsemcp-admin-client/lib/get-official-mirrors.js';
+import { getOfficialMirror } from './pulsemcp-admin-client/lib/get-official-mirror.js';
+import { getTenants } from './pulsemcp-admin-client/lib/get-tenants.js';
+import { getTenant } from './pulsemcp-admin-client/lib/get-tenant.js';
+import { getMcpJsons } from './pulsemcp-admin-client/lib/get-mcp-jsons.js';
+import { getMcpJson } from './pulsemcp-admin-client/lib/get-mcp-json.js';
+import { createMcpJson } from './pulsemcp-admin-client/lib/create-mcp-json.js';
+import { updateMcpJson } from './pulsemcp-admin-client/lib/update-mcp-json.js';
+import { deleteMcpJson } from './pulsemcp-admin-client/lib/delete-mcp-json.js';
+import { getUnifiedMCPServers } from './pulsemcp-admin-client/lib/get-unified-mcp-servers.js';
+import { getUnifiedMCPServer } from './pulsemcp-admin-client/lib/get-unified-mcp-server.js';
+import { updateUnifiedMCPServer } from './pulsemcp-admin-client/lib/update-unified-mcp-server.js';
+import { getRedirects } from './pulsemcp-admin-client/lib/get-redirects.js';
+import { getRedirect } from './pulsemcp-admin-client/lib/get-redirect.js';
+import { createRedirect } from './pulsemcp-admin-client/lib/create-redirect.js';
+import { updateRedirect } from './pulsemcp-admin-client/lib/update-redirect.js';
+import { deleteRedirect } from './pulsemcp-admin-client/lib/delete-redirect.js';
+import { getGoodJobs } from './pulsemcp-admin-client/lib/get-good-jobs.js';
+import { getGoodJob } from './pulsemcp-admin-client/lib/get-good-job.js';
+import { getGoodJobCronSchedules } from './pulsemcp-admin-client/lib/get-good-job-cron-schedules.js';
+import { getGoodJobProcesses } from './pulsemcp-admin-client/lib/get-good-job-processes.js';
+import { getGoodJobStatistics } from './pulsemcp-admin-client/lib/get-good-job-statistics.js';
+import { retryGoodJob } from './pulsemcp-admin-client/lib/retry-good-job.js';
+import { discardGoodJob } from './pulsemcp-admin-client/lib/discard-good-job.js';
+import { rescheduleGoodJob } from './pulsemcp-admin-client/lib/reschedule-good-job.js';
+import { forceTriggerGoodJobCron } from './pulsemcp-admin-client/lib/force-trigger-good-job-cron.js';
+import { cleanupGoodJobs } from './pulsemcp-admin-client/lib/cleanup-good-jobs.js';
+import { runExamForMirror } from './pulsemcp-admin-client/lib/run-exam-for-mirror.js';
+import { saveResultsForMirror } from './pulsemcp-admin-client/lib/save-results-for-mirror.js';
+import { getProctorRuns } from './pulsemcp-admin-client/lib/get-proctor-runs.js';
+import { getDiscoveredUrls } from './pulsemcp-admin-client/lib/get-discovered-urls.js';
+import { markDiscoveredUrlProcessed } from './pulsemcp-admin-client/lib/mark-discovered-url-processed.js';
+import { getDiscoveredUrlStats } from './pulsemcp-admin-client/lib/get-discovered-url-stats.js';
+
 // PulseMCP Admin API client interface
 export interface IPulseMCPAdminClient {
   getPosts(params?: {
@@ -332,22 +400,18 @@ export class PulseMCPAdminClient implements IPulseMCPAdminClient {
     direction?: 'asc' | 'desc';
     page?: number;
   }): Promise<PostsResponse> {
-    const { getPosts } = await import('./pulsemcp-admin-client/lib/get-posts.js');
     return getPosts(this.apiKey, this.baseUrl, params);
   }
 
   async getPost(slug: string): Promise<Post> {
-    const { getPost } = await import('./pulsemcp-admin-client/lib/get-post.js');
     return getPost(this.apiKey, this.baseUrl, slug);
   }
 
   async createPost(params: CreatePostParams): Promise<Post> {
-    const { createPost } = await import('./pulsemcp-admin-client/lib/create-post.js');
     return createPost(this.apiKey, this.baseUrl, params);
   }
 
   async updatePost(slug: string, params: UpdatePostParams): Promise<Post> {
-    const { updatePost } = await import('./pulsemcp-admin-client/lib/update-post.js');
     return updatePost(this.apiKey, this.baseUrl, slug, params);
   }
 
@@ -356,52 +420,38 @@ export class PulseMCPAdminClient implements IPulseMCPAdminClient {
     fileName: string,
     fileData: Buffer
   ): Promise<ImageUploadResponse> {
-    const { uploadImage } = await import('./pulsemcp-admin-client/lib/upload-image.js');
     return uploadImage(this.apiKey, this.baseUrl, postSlug, fileName, fileData);
   }
 
   async getAuthors(params?: { search?: string; page?: number }): Promise<AuthorsResponse> {
-    const { getAuthors } = await import('./pulsemcp-admin-client/lib/get-authors.js');
     return getAuthors(this.apiKey, this.baseUrl, params);
   }
 
   async getAuthorBySlug(slug: string): Promise<Author> {
-    const { getAuthorBySlug } = await import('./pulsemcp-admin-client/lib/get-author-by-slug.js');
     return getAuthorBySlug(this.apiKey, this.baseUrl, slug);
   }
 
   async getAuthorById(id: number): Promise<Author | null> {
-    const { getAuthorById } = await import('./pulsemcp-admin-client/lib/get-author-by-id.js');
     return getAuthorById(this.apiKey, this.baseUrl, id);
   }
 
   async getMCPServerBySlug(slug: string): Promise<MCPServer> {
-    const { getMCPServerBySlug } =
-      await import('./pulsemcp-admin-client/lib/get-mcp-server-by-slug.js');
     return getMCPServerBySlug(this.apiKey, this.baseUrl, slug);
   }
 
   async getMCPServerById(id: number): Promise<MCPServer | null> {
-    const { getMCPServerById } =
-      await import('./pulsemcp-admin-client/lib/get-mcp-server-by-id.js');
     return getMCPServerById(this.apiKey, this.baseUrl, id);
   }
 
   async getMCPClientBySlug(slug: string): Promise<MCPClient> {
-    const { getMCPClientBySlug } =
-      await import('./pulsemcp-admin-client/lib/get-mcp-client-by-slug.js');
     return getMCPClientBySlug(this.apiKey, this.baseUrl, slug);
   }
 
   async getMCPClientById(id: number): Promise<MCPClient | null> {
-    const { getMCPClientById } =
-      await import('./pulsemcp-admin-client/lib/get-mcp-client-by-id.js');
     return getMCPClientById(this.apiKey, this.baseUrl, id);
   }
 
   async getMCPImplementationById(id: number): Promise<MCPImplementation | null> {
-    const { getMCPImplementationById } =
-      await import('./pulsemcp-admin-client/lib/get-mcp-implementation-by-id.js');
     return getMCPImplementationById(this.apiKey, this.baseUrl, id);
   }
 
@@ -412,8 +462,6 @@ export class PulseMCPAdminClient implements IPulseMCPAdminClient {
     limit?: number;
     offset?: number;
   }): Promise<MCPImplementationsResponse> {
-    const { searchMCPImplementations } =
-      await import('./pulsemcp-admin-client/lib/search-mcp-implementations.js');
     return searchMCPImplementations(this.apiKey, this.baseUrl, params);
   }
 
@@ -421,8 +469,6 @@ export class PulseMCPAdminClient implements IPulseMCPAdminClient {
     page?: number;
     search?: string;
   }): Promise<MCPImplementationsResponse> {
-    const { getDraftMCPImplementations } =
-      await import('./pulsemcp-admin-client/lib/get-draft-mcp-implementations.js');
     return getDraftMCPImplementations(this.apiKey, this.baseUrl, params);
   }
 
@@ -430,14 +476,10 @@ export class PulseMCPAdminClient implements IPulseMCPAdminClient {
     id: number,
     params: SaveMCPImplementationParams
   ): Promise<MCPImplementation> {
-    const { saveMCPImplementation } =
-      await import('./pulsemcp-admin-client/lib/save-mcp-implementation.js');
     return saveMCPImplementation(this.apiKey, this.baseUrl, id, params);
   }
 
   async createMCPImplementation(params: CreateMCPImplementationParams): Promise<MCPImplementation> {
-    const { createMCPImplementation } =
-      await import('./pulsemcp-admin-client/lib/create-mcp-implementation.js');
     return createMCPImplementation(this.apiKey, this.baseUrl, params);
   }
 
@@ -461,7 +503,6 @@ export class PulseMCPAdminClient implements IPulseMCPAdminClient {
     created_at: string;
     updated_at: string;
   }> {
-    const { sendEmail } = await import('./pulsemcp-admin-client/lib/send-email.js');
     return sendEmail(this.apiKey, this.baseUrl, params);
   }
 
@@ -470,12 +511,10 @@ export class PulseMCPAdminClient implements IPulseMCPAdminClient {
     limit?: number;
     offset?: number;
   }): Promise<ProvidersResponse> {
-    const { searchProviders } = await import('./pulsemcp-admin-client/lib/search-providers.js');
     return searchProviders(this.apiKey, this.baseUrl, params);
   }
 
   async getProviderById(id: number): Promise<Provider | null> {
-    const { getProviderById } = await import('./pulsemcp-admin-client/lib/get-provider-by-id.js');
     return getProviderById(this.apiKey, this.baseUrl, id);
   }
 
@@ -486,14 +525,10 @@ export class PulseMCPAdminClient implements IPulseMCPAdminClient {
     limit?: number;
     offset?: number;
   }): Promise<OfficialMirrorQueueResponse> {
-    const { getOfficialMirrorQueueItems } =
-      await import('./pulsemcp-admin-client/lib/get-official-mirror-queue-items.js');
     return getOfficialMirrorQueueItems(this.apiKey, this.baseUrl, params);
   }
 
   async getOfficialMirrorQueueItem(id: number): Promise<OfficialMirrorQueueItemDetail> {
-    const { getOfficialMirrorQueueItem } =
-      await import('./pulsemcp-admin-client/lib/get-official-mirror-queue-item.js');
     return getOfficialMirrorQueueItem(this.apiKey, this.baseUrl, id);
   }
 
@@ -501,34 +536,24 @@ export class PulseMCPAdminClient implements IPulseMCPAdminClient {
     id: number,
     mcpServerSlug: string
   ): Promise<OfficialMirrorQueueActionResponse> {
-    const { approveOfficialMirrorQueueItem } =
-      await import('./pulsemcp-admin-client/lib/approve-official-mirror-queue-item.js');
     return approveOfficialMirrorQueueItem(this.apiKey, this.baseUrl, id, mcpServerSlug);
   }
 
   async approveOfficialMirrorQueueItemWithoutModifying(
     id: number
   ): Promise<OfficialMirrorQueueActionResponse> {
-    const { approveOfficialMirrorQueueItemWithoutModifying } =
-      await import('./pulsemcp-admin-client/lib/approve-official-mirror-queue-item-without-modifying.js');
     return approveOfficialMirrorQueueItemWithoutModifying(this.apiKey, this.baseUrl, id);
   }
 
   async rejectOfficialMirrorQueueItem(id: number): Promise<OfficialMirrorQueueActionResponse> {
-    const { rejectOfficialMirrorQueueItem } =
-      await import('./pulsemcp-admin-client/lib/reject-official-mirror-queue-item.js');
     return rejectOfficialMirrorQueueItem(this.apiKey, this.baseUrl, id);
   }
 
   async addOfficialMirrorToRegularQueue(id: number): Promise<OfficialMirrorQueueActionResponse> {
-    const { addOfficialMirrorToRegularQueue } =
-      await import('./pulsemcp-admin-client/lib/add-official-mirror-to-regular-queue.js');
     return addOfficialMirrorToRegularQueue(this.apiKey, this.baseUrl, id);
   }
 
   async unlinkOfficialMirrorQueueItem(id: number): Promise<OfficialMirrorQueueActionResponse> {
-    const { unlinkOfficialMirrorQueueItem } =
-      await import('./pulsemcp-admin-client/lib/unlink-official-mirror-queue-item.js');
     return unlinkOfficialMirrorQueueItem(this.apiKey, this.baseUrl, id);
   }
 
@@ -539,20 +564,14 @@ export class PulseMCPAdminClient implements IPulseMCPAdminClient {
     limit?: number;
     offset?: number;
   }): Promise<UnofficialMirrorsResponse> {
-    const { getUnofficialMirrors } =
-      await import('./pulsemcp-admin-client/lib/get-unofficial-mirrors.js');
     return getUnofficialMirrors(this.apiKey, this.baseUrl, params);
   }
 
   async getUnofficialMirror(id: number): Promise<UnofficialMirror> {
-    const { getUnofficialMirror } =
-      await import('./pulsemcp-admin-client/lib/get-unofficial-mirror.js');
     return getUnofficialMirror(this.apiKey, this.baseUrl, id);
   }
 
   async createUnofficialMirror(params: CreateUnofficialMirrorParams): Promise<UnofficialMirror> {
-    const { createUnofficialMirror } =
-      await import('./pulsemcp-admin-client/lib/create-unofficial-mirror.js');
     return createUnofficialMirror(this.apiKey, this.baseUrl, params);
   }
 
@@ -560,14 +579,10 @@ export class PulseMCPAdminClient implements IPulseMCPAdminClient {
     id: number,
     params: UpdateUnofficialMirrorParams
   ): Promise<UnofficialMirror> {
-    const { updateUnofficialMirror } =
-      await import('./pulsemcp-admin-client/lib/update-unofficial-mirror.js');
     return updateUnofficialMirror(this.apiKey, this.baseUrl, id, params);
   }
 
   async deleteUnofficialMirror(id: number): Promise<{ success: boolean; message: string }> {
-    const { deleteUnofficialMirror } =
-      await import('./pulsemcp-admin-client/lib/delete-unofficial-mirror.js');
     return deleteUnofficialMirror(this.apiKey, this.baseUrl, id);
   }
 
@@ -580,14 +595,10 @@ export class PulseMCPAdminClient implements IPulseMCPAdminClient {
     limit?: number;
     offset?: number;
   }): Promise<OfficialMirrorsResponse> {
-    const { getOfficialMirrors } =
-      await import('./pulsemcp-admin-client/lib/get-official-mirrors.js');
     return getOfficialMirrors(this.apiKey, this.baseUrl, params);
   }
 
   async getOfficialMirror(id: number): Promise<OfficialMirrorRest> {
-    const { getOfficialMirror } =
-      await import('./pulsemcp-admin-client/lib/get-official-mirror.js');
     return getOfficialMirror(this.apiKey, this.baseUrl, id);
   }
 
@@ -598,12 +609,10 @@ export class PulseMCPAdminClient implements IPulseMCPAdminClient {
     limit?: number;
     offset?: number;
   }): Promise<TenantsResponse> {
-    const { getTenants } = await import('./pulsemcp-admin-client/lib/get-tenants.js');
     return getTenants(this.apiKey, this.baseUrl, params);
   }
 
   async getTenant(idOrSlug: number | string): Promise<Tenant> {
-    const { getTenant } = await import('./pulsemcp-admin-client/lib/get-tenant.js');
     return getTenant(this.apiKey, this.baseUrl, idOrSlug);
   }
 
@@ -614,27 +623,22 @@ export class PulseMCPAdminClient implements IPulseMCPAdminClient {
     limit?: number;
     offset?: number;
   }): Promise<McpJsonsResponse> {
-    const { getMcpJsons } = await import('./pulsemcp-admin-client/lib/get-mcp-jsons.js');
     return getMcpJsons(this.apiKey, this.baseUrl, params);
   }
 
   async getMcpJson(id: number): Promise<McpJson> {
-    const { getMcpJson } = await import('./pulsemcp-admin-client/lib/get-mcp-json.js');
     return getMcpJson(this.apiKey, this.baseUrl, id);
   }
 
   async createMcpJson(params: CreateMcpJsonParams): Promise<McpJson> {
-    const { createMcpJson } = await import('./pulsemcp-admin-client/lib/create-mcp-json.js');
     return createMcpJson(this.apiKey, this.baseUrl, params);
   }
 
   async updateMcpJson(id: number, params: UpdateMcpJsonParams): Promise<McpJson> {
-    const { updateMcpJson } = await import('./pulsemcp-admin-client/lib/update-mcp-json.js');
     return updateMcpJson(this.apiKey, this.baseUrl, id, params);
   }
 
   async deleteMcpJson(id: number): Promise<{ success: boolean; message: string }> {
-    const { deleteMcpJson } = await import('./pulsemcp-admin-client/lib/delete-mcp-json.js');
     return deleteMcpJson(this.apiKey, this.baseUrl, id);
   }
 
@@ -646,14 +650,10 @@ export class PulseMCPAdminClient implements IPulseMCPAdminClient {
     limit?: number;
     offset?: number;
   }): Promise<UnifiedMCPServersResponse> {
-    const { getUnifiedMCPServers } =
-      await import('./pulsemcp-admin-client/lib/get-unified-mcp-servers.js');
     return getUnifiedMCPServers(this.apiKey, this.baseUrl, params);
   }
 
   async getUnifiedMCPServer(slug: string): Promise<UnifiedMCPServer> {
-    const { getUnifiedMCPServer } =
-      await import('./pulsemcp-admin-client/lib/get-unified-mcp-server.js');
     return getUnifiedMCPServer(this.apiKey, this.baseUrl, slug);
   }
 
@@ -661,8 +661,6 @@ export class PulseMCPAdminClient implements IPulseMCPAdminClient {
     implementationId: number,
     params: UpdateUnifiedMCPServerParams
   ): Promise<UnifiedMCPServer> {
-    const { updateUnifiedMCPServer } =
-      await import('./pulsemcp-admin-client/lib/update-unified-mcp-server.js');
     return updateUnifiedMCPServer(this.apiKey, this.baseUrl, implementationId, params);
   }
 
@@ -673,27 +671,22 @@ export class PulseMCPAdminClient implements IPulseMCPAdminClient {
     limit?: number;
     offset?: number;
   }): Promise<RedirectsResponse> {
-    const { getRedirects } = await import('./pulsemcp-admin-client/lib/get-redirects.js');
     return getRedirects(this.apiKey, this.baseUrl, params);
   }
 
   async getRedirect(id: number): Promise<Redirect> {
-    const { getRedirect } = await import('./pulsemcp-admin-client/lib/get-redirect.js');
     return getRedirect(this.apiKey, this.baseUrl, id);
   }
 
   async createRedirect(params: CreateRedirectParams): Promise<Redirect> {
-    const { createRedirect } = await import('./pulsemcp-admin-client/lib/create-redirect.js');
     return createRedirect(this.apiKey, this.baseUrl, params);
   }
 
   async updateRedirect(id: number, params: UpdateRedirectParams): Promise<Redirect> {
-    const { updateRedirect } = await import('./pulsemcp-admin-client/lib/update-redirect.js');
     return updateRedirect(this.apiKey, this.baseUrl, id, params);
   }
 
   async deleteRedirect(id: number): Promise<{ success: boolean; message: string }> {
-    const { deleteRedirect } = await import('./pulsemcp-admin-client/lib/delete-redirect.js');
     return deleteRedirect(this.apiKey, this.baseUrl, id);
   }
 
@@ -707,52 +700,38 @@ export class PulseMCPAdminClient implements IPulseMCPAdminClient {
     limit?: number;
     offset?: number;
   }): Promise<GoodJobsResponse> {
-    const { getGoodJobs } = await import('./pulsemcp-admin-client/lib/get-good-jobs.js');
     return getGoodJobs(this.apiKey, this.baseUrl, params);
   }
 
   async getGoodJob(id: string): Promise<GoodJob> {
-    const { getGoodJob } = await import('./pulsemcp-admin-client/lib/get-good-job.js');
     return getGoodJob(this.apiKey, this.baseUrl, id);
   }
 
   async getGoodJobCronSchedules(): Promise<GoodJobCronSchedule[]> {
-    const { getGoodJobCronSchedules } =
-      await import('./pulsemcp-admin-client/lib/get-good-job-cron-schedules.js');
     return getGoodJobCronSchedules(this.apiKey, this.baseUrl);
   }
 
   async getGoodJobProcesses(): Promise<GoodJobProcess[]> {
-    const { getGoodJobProcesses } =
-      await import('./pulsemcp-admin-client/lib/get-good-job-processes.js');
     return getGoodJobProcesses(this.apiKey, this.baseUrl);
   }
 
   async getGoodJobStatistics(): Promise<GoodJobStatistics> {
-    const { getGoodJobStatistics } =
-      await import('./pulsemcp-admin-client/lib/get-good-job-statistics.js');
     return getGoodJobStatistics(this.apiKey, this.baseUrl);
   }
 
   async retryGoodJob(id: string): Promise<GoodJobActionResponse> {
-    const { retryGoodJob } = await import('./pulsemcp-admin-client/lib/retry-good-job.js');
     return retryGoodJob(this.apiKey, this.baseUrl, id);
   }
 
   async discardGoodJob(id: string): Promise<GoodJobActionResponse> {
-    const { discardGoodJob } = await import('./pulsemcp-admin-client/lib/discard-good-job.js');
     return discardGoodJob(this.apiKey, this.baseUrl, id);
   }
 
   async rescheduleGoodJob(id: string, scheduledAt: string): Promise<GoodJobActionResponse> {
-    const { rescheduleGoodJob } =
-      await import('./pulsemcp-admin-client/lib/reschedule-good-job.js');
     return rescheduleGoodJob(this.apiKey, this.baseUrl, id, scheduledAt);
   }
 
   async forceTriggerGoodJobCron(cronKey: string): Promise<GoodJobActionResponse> {
-    const { forceTriggerGoodJobCron } =
-      await import('./pulsemcp-admin-client/lib/force-trigger-good-job-cron.js');
     return forceTriggerGoodJobCron(this.apiKey, this.baseUrl, cronKey);
   }
 
@@ -760,26 +739,21 @@ export class PulseMCPAdminClient implements IPulseMCPAdminClient {
     older_than_days?: number;
     status?: GoodJobStatus;
   }): Promise<GoodJobCleanupResponse> {
-    const { cleanupGoodJobs } = await import('./pulsemcp-admin-client/lib/cleanup-good-jobs.js');
     return cleanupGoodJobs(this.apiKey, this.baseUrl, params);
   }
 
   // Proctor REST API methods
   async runExamForMirror(params: ProctorRunExamParams): Promise<ProctorRunExamResponse> {
-    const { runExamForMirror } = await import('./pulsemcp-admin-client/lib/run-exam-for-mirror.js');
     return runExamForMirror(this.apiKey, this.baseUrl, params);
   }
 
   async saveResultsForMirror(
     params: ProctorSaveResultsParams
   ): Promise<ProctorSaveResultsResponse> {
-    const { saveResultsForMirror } =
-      await import('./pulsemcp-admin-client/lib/save-results-for-mirror.js');
     return saveResultsForMirror(this.apiKey, this.baseUrl, params);
   }
 
   async getProctorRuns(params?: GetProctorRunsParams): Promise<ProctorRunsResponse> {
-    const { getProctorRuns } = await import('./pulsemcp-admin-client/lib/get-proctor-runs.js');
     return getProctorRuns(this.apiKey, this.baseUrl, params);
   }
 
@@ -789,22 +763,16 @@ export class PulseMCPAdminClient implements IPulseMCPAdminClient {
     page?: number;
     per_page?: number;
   }): Promise<DiscoveredUrlsResponse> {
-    const { getDiscoveredUrls } =
-      await import('./pulsemcp-admin-client/lib/get-discovered-urls.js');
     return getDiscoveredUrls(this.apiKey, this.baseUrl, params);
   }
 
   async markDiscoveredUrlProcessed(
     params: MarkDiscoveredUrlProcessedParams
   ): Promise<MarkDiscoveredUrlProcessedResponse> {
-    const { markDiscoveredUrlProcessed } =
-      await import('./pulsemcp-admin-client/lib/mark-discovered-url-processed.js');
     return markDiscoveredUrlProcessed(this.apiKey, this.baseUrl, params);
   }
 
   async getDiscoveredUrlStats(): Promise<DiscoveredUrlStats> {
-    const { getDiscoveredUrlStats } =
-      await import('./pulsemcp-admin-client/lib/get-discovered-url-stats.js');
     return getDiscoveredUrlStats(this.apiKey, this.baseUrl);
   }
 }
