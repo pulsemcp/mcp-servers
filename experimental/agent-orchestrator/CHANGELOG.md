@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `skills` parameter on `start_session` tool — an optional array of skill name strings, passed through to the Agent Orchestrator API when creating sessions. Skills are not constrained by `ALLOWED_AGENT_ROOTS`.
+- `start_session` tool description now includes guidance about passing `default_mcp_servers` and `default_skills` from agent roots
+- `get_configs` usage notes now include guidance about passing `default_skills` via the `skills` parameter
+
 ## [0.4.5] - 2026-03-11
 
 ### Fixed
