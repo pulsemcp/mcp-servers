@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.5] - 2026-03-11
+
 ### Fixed
 
 - `start_session` now resolves the `stop_condition` ID to its full description before passing it to the agent. Previously, only the opaque ID (e.g. `"pr_merged"`) was sent, leaving the agent without meaningful context about when to stop.
