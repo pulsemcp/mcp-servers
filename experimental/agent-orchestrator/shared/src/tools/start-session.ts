@@ -27,7 +27,7 @@ const PARAM_DESCRIPTIONS = {
     'Only omit if you truly have zero context about the session purpose, which should be extremely rare.',
   slug: 'URL-friendly identifier for the session. Must be unique.',
   stop_condition:
-    'Condition that determines when the agent should stop. Passed to the agent as context.',
+    'Stop condition ID from get_configs (e.g. "pr_merged"). The description is automatically resolved and passed to the agent as context.',
   execution_provider:
     'Execution environment. Options: "local_filesystem" (runs locally), "remote_sandbox" (runs in isolated sandbox). Default: "local_filesystem"',
   mcp_servers:
@@ -163,7 +163,24 @@ export function startSessionTool(_server: Server, clientFactory: () => IAgentOrc
           }
         }
 
-        const session = await client.createSession(validatedArgs);
+        // Resolve stop_condition ID to its description so the agent receives
+        // meaningful context about when to stop, not just an opaque identifier.
+        let createArgs = validatedArgs;
+        if (validatedArgs.stop_condition) {
+          let configs = getConfigsCache();
+          if (!configs) {
+            configs = await client.getConfigs();
+            setConfigsCache(configs);
+          }
+          const match = configs.stop_conditions.find(
+            (sc) => sc.id === validatedArgs.stop_condition
+          );
+          if (match) {
+            createArgs = { ...validatedArgs, stop_condition: match.description };
+          }
+        }
+
+        const session = await client.createSession(createArgs);
 
         const lines = [
           `## Session Started Successfully`,
