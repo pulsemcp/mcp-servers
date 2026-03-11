@@ -4,55 +4,45 @@ This file tracks manual testing results for the pulse-subregistry MCP server.
 
 ## Latest Test Results
 
-**Test Date:** 2026-03-09
-**Branch:** agent/update-subregistry-tool-descriptions-for-lifecycle
-**Commit:** 01e27bc
+**Test Date:** 2026-03-11
+**Branch:** agent/fix-latest-only-false-version-param
+**Commit:** 26b9dff
 **Tested By:** Claude
-**Environment:** Description-only changes (tool description string updates) — no API behavior affected
+**Environment:** Real API with tenant `pulsemcp-admin`
 
 ### Test Results
 
-**Type:** Description-only changes — manual tests not re-run (no functional changes, no API key available)
-**Status:** All manual tests passed in previous version (7/7 on commit 872cd0b). Changes only modify tool description strings — no parameters, logic, or API calls affected. 42/42 functional tests pass.
-**Pass Rate:** 100% (functional tests); manual tests deferred (description-only change)
-
-### list_servers tool
-
-- [x] Returns list of servers from the Sub-Registry (30 servers returned)
-- [x] Search filtering works correctly (search "github" returns relevant results)
-- [x] Pagination works with cursor (2 pages tested with no overlap)
-- [x] Limit parameter works correctly (limit=5 returned 5 servers)
-- [x] Rate limiting handled gracefully (5 parallel requests succeeded)
-
-### get_server tool
-
-- [x] Returns server details for a known server (`io.github.upstash/context7`)
-- [x] "latest" version works as default
-- [x] Server not found error is handled correctly (returned proper error message)
-
-### Sample API Response
-
-Successfully retrieved server details including:
-
-- Server name/title: `Context7`
-- Description: `Up-to-date code docs for any prompt`
-- Version: `1.0.30`
-- Repository: `https://github.com/upstash/context7`
-- Website: `https://context7.com`
-- Icons, remotes, and package information
-
-### Test Output Summary
+**Pass Rate:** 7/7 (100%)
 
 ```
 Tests: 7 passed (7)
-- list_servers > should list servers from the Sub-Registry (551ms)
-- list_servers > should respect limit parameter (305ms)
-- list_servers > should search servers by name/description (425ms)
-- list_servers > should support pagination with cursor (705ms)
-- get_server > should get server details with latest version (774ms)
-- get_server > should handle server not found error (389ms)
-- error handling > should handle rate limiting gracefully (646ms)
+- list_servers > should list servers from the Sub-Registry (1922ms)
+- list_servers > should respect limit parameter (648ms)
+- list_servers > should search servers by name/description (645ms)
+- list_servers > should return all versions when latest_only=false (1569ms)
+- list_servers > should return only latest versions by default (latest_only=true) (640ms)
+- list_servers > should support pagination with cursor (320ms)
+- get_server > should get server details (306ms)
 ```
+
+### list_servers tool
+
+- [x] Returns list of servers from the Sub-Registry (30 servers returned with default settings)
+- [x] Search filtering works correctly (search "github" returns relevant results)
+- [x] Pagination works (tested with limit=2)
+- [x] Limit parameter works correctly (limit=5 returned 5 servers)
+- [x] `latest_only=false` returns all versions including both latest and non-latest (100 servers: 9 latest, 91 non-latest)
+- [x] `latest_only=true` (default) returns only latest versions (10 servers, all with isLatest=true)
+
+### get_server tool
+
+- [x] Returns server details when queried with server name
+
+### Key Verification for Bug Fix (Issue #434)
+
+- [x] E2E: With `latest_only=false` and `limit=100`, the API returned 100 servers: 9 with `isLatest: true` and 91 with `isLatest: false`, confirming that all versions (both latest and non-latest) are returned
+- [x] E2E: With `latest_only=true` (default), all 10 returned servers had `isLatest: true`, confirming the filter works correctly
+- [x] The fix ensures the `version` query parameter is completely omitted (not set to `undefined` or `false`) when `latest_only=false`
 
 ## Test Requirements
 

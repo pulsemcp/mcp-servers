@@ -141,6 +141,30 @@ export function runIntegrationTests(mode: TestMode) {
         ).toBe(true);
       });
 
+      it('should pass version=latest when latest_only is true (default)', async () => {
+        client = await createTestMCPClientWithMocks(mode.serverPath, {
+          listSuccess: true,
+        });
+
+        const result = await client.callTool('list_servers', {});
+        const parsed = JSON.parse(result.content[0].text);
+
+        // Default latest_only=true should pass version='latest' to the client
+        expect(parsed.metadata.versionFilter).toBe('latest');
+      });
+
+      it('should not pass version filter when latest_only=false', async () => {
+        client = await createTestMCPClientWithMocks(mode.serverPath, {
+          listSuccess: true,
+        });
+
+        const result = await client.callTool('list_servers', { latest_only: false });
+        const parsed = JSON.parse(result.content[0].text);
+
+        // latest_only=false should omit version, returning all versions
+        expect(parsed.metadata.versionFilter).toBeNull();
+      });
+
       it('should handle list_servers pagination', async () => {
         client = await createTestMCPClientWithMocks(mode.serverPath, {
           listSuccess: true,
