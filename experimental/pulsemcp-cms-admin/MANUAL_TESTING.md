@@ -2,6 +2,44 @@
 
 ## Latest Test Results
 
+**Date:** 2026-03-12
+**Commit:** PENDING
+**Version:** 0.9.7 (pre-release)
+**API Environment:** Staging (admin.staging.pulsemcp.com)
+
+### Overall: ✅ Manual Tests PASSING (163/163, 11 test files) | ✅ Functional Tests PASSING (135/135)
+
+**v0.9.7 Changes:**
+
+- Added `get_proctor_metadata` tool to the proctor toolset — returns available runtimes (with IDs and Docker images) and exam types from the Proctor API
+
+**Manual Test Results: ✅ 163/163 PASSING (11 test files, 42.85s)**
+
+All manual tests run against staging API and passing:
+
+1. mcp-servers-tools.manual.test.ts (36 tests)
+2. server-directory-tools.manual.test.ts (17 tests)
+3. rest-api-tools.manual.test.ts (28 tests)
+4. good-jobs-tools.manual.test.ts (21 tests)
+5. discovered-urls-tools.manual.test.ts (10 tests)
+6. search-mcp-implementations.manual.test.ts (11 tests)
+7. redirect-tools.manual.test.ts (13 tests)
+8. find-providers.manual.test.ts (9 tests)
+9. send-email.manual.test.ts (1 test)
+10. pulsemcp-cms-admin.manual.test.ts (6 tests)
+11. proctor-tools.manual.test.ts (12 tests)
+
+**Functional Test Results: ✅ 135/135 PASSING (4 test files)**
+
+- get-proctor-metadata.test.ts: 6 tests — metadata fetching, empty results, error handling, tool metadata, group filtering
+- list-proctor-runs.test.ts: 9 tests — updated group counts (5 tools in proctor, 3 in proctor_readonly)
+- tools.test.ts: 104 tests — updated total count to 58, proctor_readonly to 3
+- discovered-urls-tools.test.ts: 16 tests — mock client updated
+
+---
+
+## Previous Test Results (v0.9.6)
+
 **Date:** 2026-03-11
 **Commit:** 53fbf11
 **Version:** 0.9.6 (pre-release)

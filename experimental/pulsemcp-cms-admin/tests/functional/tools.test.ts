@@ -106,6 +106,7 @@ function createMockClient(overrides?: Partial<IPulseMCPAdminClient>): IPulseMCPA
     runExamForMirror: vi.fn(),
     saveResultsForMirror: vi.fn(),
     getProctorRuns: vi.fn(),
+    getProctorMetadata: vi.fn(),
     // Discovered URL methods
     getDiscoveredUrls: vi.fn(),
     markDiscoveredUrlProcessed: vi.fn(),
@@ -939,8 +940,8 @@ describe('Newsletter Tools', () => {
       const listToolsHandler = handlers.get('tools/list');
       const result = await listToolsHandler({ method: 'tools/list', params: {} });
 
-      // 6 newsletter + 4 server_directory + 7 official_queue + 5 unofficial_mirrors + 2 official_mirrors + 2 tenants + 5 mcp_jsons + 3 mcp_servers + 5 redirects + 10 good_jobs + 4 proctor + 3 discovered_urls + 1 notifications = 57 tools
-      expect(result.tools).toHaveLength(57);
+      // 6 newsletter + 4 server_directory + 7 official_queue + 5 unofficial_mirrors + 2 official_mirrors + 2 tenants + 5 mcp_jsons + 3 mcp_servers + 5 redirects + 10 good_jobs + 5 proctor + 3 discovered_urls + 1 notifications = 58 tools
+      expect(result.tools).toHaveLength(58);
     });
 
     it('should register only read-only newsletter tools when newsletter_readonly group is enabled', async () => {
@@ -985,11 +986,12 @@ describe('Newsletter Tools', () => {
       const listToolsHandler = handlers.get('tools/list');
       const result = await listToolsHandler({ method: 'tools/list', params: {} });
 
-      expect(result.tools).toHaveLength(2); // Read-only proctor tools: get_exam_result + list_proctor_runs
+      expect(result.tools).toHaveLength(3); // Read-only proctor tools: get_exam_result + list_proctor_runs + get_proctor_metadata
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const toolNames = result.tools.map((t: any) => t.name);
       expect(toolNames).toContain('get_exam_result');
       expect(toolNames).toContain('list_proctor_runs');
+      expect(toolNames).toContain('get_proctor_metadata');
       // Write tools should NOT be present
       expect(toolNames).not.toContain('run_exam_for_mirror');
       expect(toolNames).not.toContain('save_results_for_mirror');
