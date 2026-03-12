@@ -7,13 +7,13 @@
 **Version:** 0.9.7 (pre-release)
 **API Environment:** Staging (admin.staging.pulsemcp.com)
 
-### Overall: ✅ Manual Tests PASSING (163/163, 11 test files) | ✅ Functional Tests PASSING (135/135)
+### Overall: ✅ Manual Tests PASSING (164/164, 11 test files) | ✅ Functional Tests PASSING (135/135)
 
 **v0.9.7 Changes:**
 
 - Added `get_proctor_metadata` tool to the proctor toolset — returns available runtimes (with IDs and Docker images) and exam types from the Proctor API
 
-**Manual Test Results: ✅ 163/163 PASSING (11 test files, 42.85s)**
+**Manual Test Results: ✅ 164/164 PASSING (11 test files, 46.49s)**
 
 All manual tests run against staging API and passing:
 
@@ -27,7 +27,7 @@ All manual tests run against staging API and passing:
 8. find-providers.manual.test.ts (9 tests)
 9. send-email.manual.test.ts (1 test)
 10. pulsemcp-cms-admin.manual.test.ts (6 tests)
-11. proctor-tools.manual.test.ts (12 tests)
+11. proctor-tools.manual.test.ts (13 tests) — includes new `get_proctor_metadata` tool E2E test
 
 **Functional Test Results: ✅ 135/135 PASSING (4 test files)**
 
