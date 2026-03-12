@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Auto-truncation of exam results to reduce response size
+  - Strings longer than 200 characters are automatically replaced with truncation messages
+  - Deep nested objects (depth >= 6, > 500 chars) are truncated to prevent oversized responses
+  - `expand_fields` parameter added to `run_exam` tool to selectively expand truncated fields
+  - Examples: `expand_fields: ["tools[].inputSchema"]` to see full tool schemas
+
 ## [0.1.5] - 2026-01-19
 
 ### Fixed

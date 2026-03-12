@@ -358,5 +358,92 @@ describe('Proctor Tools - Functional Tests', () => {
         })
       );
     });
+
+    it('should auto-truncate long strings in exam results', async () => {
+      const longDescription = 'x'.repeat(300);
+      const resultWithLongStrings = {
+        ...mockClient,
+        runExam: vi.fn().mockImplementation(() =>
+          arrayToAsyncGenerator([
+            {
+              type: 'result',
+              data: {
+                status: 'passed',
+                tools: [{ name: 'my_tool', description: longDescription }],
+              },
+            },
+          ])
+        ),
+      };
+
+      const tool = runExam(mockServer, () => resultWithLongStrings);
+      const result = await tool.handler({
+        runtime_id: 'v0.0.37',
+        exam_id: 'proctor-mcp-client-init-tools-list',
+        mcp_json: '{}',
+      });
+
+      expect(result.content[0].text).toContain('passed');
+      expect(result.content[0].text).toContain('TRUNCATED');
+      expect(result.content[0].text).not.toContain(longDescription);
+    });
+
+    it('should preserve short fields in exam results without truncation', async () => {
+      const resultWithShortFields = {
+        ...mockClient,
+        runExam: vi.fn().mockImplementation(() =>
+          arrayToAsyncGenerator([
+            {
+              type: 'result',
+              data: {
+                status: 'passed',
+                result_id: 'abc-123',
+                tool_count: 5,
+              },
+            },
+          ])
+        ),
+      };
+
+      const tool = runExam(mockServer, () => resultWithShortFields);
+      const result = await tool.handler({
+        runtime_id: 'v0.0.37',
+        exam_id: 'proctor-mcp-client-init-tools-list',
+        mcp_json: '{}',
+      });
+
+      expect(result.content[0].text).toContain('passed');
+      expect(result.content[0].text).toContain('abc-123');
+      expect(result.content[0].text).not.toContain('TRUNCATED');
+    });
+
+    it('should expand specified fields via expand_fields parameter', async () => {
+      const longDescription = 'y'.repeat(300);
+      const resultWithLongStrings = {
+        ...mockClient,
+        runExam: vi.fn().mockImplementation(() =>
+          arrayToAsyncGenerator([
+            {
+              type: 'result',
+              data: {
+                status: 'passed',
+                tools: [{ name: 'my_tool', description: longDescription }],
+              },
+            },
+          ])
+        ),
+      };
+
+      const tool = runExam(mockServer, () => resultWithLongStrings);
+      const result = await tool.handler({
+        runtime_id: 'v0.0.37',
+        exam_id: 'proctor-mcp-client-init-tools-list',
+        mcp_json: '{}',
+        expand_fields: ['tools[].description'],
+      });
+
+      expect(result.content[0].text).toContain(longDescription);
+      expect(result.content[0].text).not.toContain('TRUNCATED');
+    });
   });
 });

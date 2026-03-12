@@ -1,6 +1,7 @@
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { z } from 'zod';
 import type { ClientFactory } from '../server.js';
+import { truncateStrings, deepClone } from '../utils/truncation.js';
 
 // Parameter descriptions - single source of truth
 const PARAM_DESCRIPTIONS = {
@@ -106,6 +107,8 @@ When provided, these credentials are passed to proctor-mcp-client which loads th
 - client_id: OAuth client ID
 - client_secret: OAuth client secret
 - expires_at: ISO 8601 timestamp when the access token expires`,
+  expand_fields:
+    'Array of dot-notation paths to show in full (not truncated). By default, long strings (>200 chars) and deep objects in exam results are auto-truncated to reduce response size. Use this to expand specific fields. Examples: ["tools[].inputSchema", "input"].',
 } as const;
 
 const PreloadedCredentialsSchema = z.object({
@@ -155,6 +158,7 @@ const RunExamSchema = z.object({
   preloaded_credentials: OptionalPreloadedCredentialsSchema.optional().describe(
     PARAM_DESCRIPTIONS.preloaded_credentials
   ),
+  expand_fields: z.array(z.string()).optional().describe(PARAM_DESCRIPTIONS.expand_fields),
 });
 
 export function runExam(_server: Server, clientFactory: ClientFactory) {
@@ -187,7 +191,8 @@ The mcp_json parameter accepts a JSON object with server configurations. Each se
 - Use get_proctor_metadata first to discover available runtimes and exams
 - The mcp_json must be a valid JSON string representing the mcp.json format
 - Custom runtime images require the "__custom__" runtime_id and custom_runtime_image parameter
-- Underscore-prefixed fields in mcp_json are used for exam setup only and stripped before server execution`,
+- Underscore-prefixed fields in mcp_json are used for exam setup only and stripped before server execution
+- Results are auto-truncated to reduce response size. Long strings (>200 chars) and deep nested objects are replaced with truncation messages. Use the expand_fields parameter to retrieve full content for specific fields`,
     inputSchema: {
       type: 'object',
       properties: {
@@ -228,6 +233,11 @@ The mcp_json parameter accepts a JSON object with server configurations. Each se
             expires_at: { type: 'string' },
           },
           required: ['server_key', 'access_token'],
+        },
+        expand_fields: {
+          type: 'array',
+          items: { type: 'string' },
+          description: PARAM_DESCRIPTIONS.expand_fields,
         },
       },
       required: ['runtime_id', 'exam_id', 'mcp_json'],
@@ -314,8 +324,12 @@ The mcp_json parameter accepts a JSON object with server configurations. Each se
         }
 
         if (finalResult) {
+          const truncatedResult = truncateStrings(
+            deepClone(finalResult),
+            validatedArgs.expand_fields || []
+          );
           content += '### Result\n\n```json\n';
-          content += JSON.stringify(finalResult, null, 2);
+          content += JSON.stringify(truncatedResult, null, 2);
           content += '\n```\n';
         }
 
