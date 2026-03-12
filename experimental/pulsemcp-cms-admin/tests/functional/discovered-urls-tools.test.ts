@@ -70,6 +70,7 @@ function createMockClient(overrides?: Partial<IPulseMCPAdminClient>): IPulseMCPA
     runExamForMirror: vi.fn(),
     saveResultsForMirror: vi.fn(),
     getProctorRuns: vi.fn(),
+    getProctorMetadata: vi.fn(),
     getDiscoveredUrls: vi.fn(),
     markDiscoveredUrlProcessed: vi.fn(),
     getDiscoveredUrlStats: vi.fn(),

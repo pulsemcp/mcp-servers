@@ -946,6 +946,23 @@ export interface GetProctorRunsParams {
   offset?: number;
 }
 
+export interface ProctorRuntime {
+  id: string;
+  name: string;
+  image: string;
+}
+
+export interface ProctorExam {
+  id: string;
+  name: string;
+  description: string;
+}
+
+export interface ProctorMetadataResponse {
+  runtimes: ProctorRuntime[];
+  exams: ProctorExam[];
+}
+
 // ============================================================
 // Discovered URL Types
 // For managing discovered URLs that need processing into MCP implementations

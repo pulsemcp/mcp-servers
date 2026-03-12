@@ -63,6 +63,7 @@ import { runExamForMirror } from './tools/run-exam-for-mirror.js';
 import { getExamResult } from './tools/get-exam-result.js';
 import { saveResultsForMirror } from './tools/save-results-for-mirror.js';
 import { listProctorRuns } from './tools/list-proctor-runs.js';
+import { getProctorMetadata } from './tools/get-proctor-metadata.js';
 // Discovered URLs tools
 import { listDiscoveredUrls } from './tools/list-discovered-urls.js';
 import { markDiscoveredUrlProcessed } from './tools/mark-discovered-url-processed.js';
@@ -91,7 +92,7 @@ import { getDiscoveredUrlStats } from './tools/get-discovered-url-stats.js';
  * - mcp_servers / mcp_servers_readonly: Unified MCP server tools (abstracted interface)
  * - redirects / redirects_readonly: URL redirect management tools
  * - good_jobs / good_jobs_readonly: GoodJob background job management tools
- * - proctor / proctor_readonly: Proctor exam execution and result storage tools. The readonly variant includes get_exam_result and list_proctor_runs for retrieving stored results without running exams or saving
+ * - proctor / proctor_readonly: Proctor exam execution and result storage tools. The readonly variant includes get_exam_result, list_proctor_runs, and get_proctor_metadata for retrieving stored results and metadata without running exams or saving
  * - discovered_urls / discovered_urls_readonly: Discovered URL management tools for processing URLs into MCP implementations
  * - notifications: Notification email tools (send_impl_posted_notif). Separated from server_directory so notification capability can be granted independently.
  */
@@ -325,6 +326,7 @@ const ALL_TOOLS: ToolDefinition[] = [
   { factory: getExamResult, groups: ['proctor'], isWriteOperation: false },
   { factory: saveResultsForMirror, groups: ['proctor'], isWriteOperation: true },
   { factory: listProctorRuns, groups: ['proctor'], isWriteOperation: false },
+  { factory: getProctorMetadata, groups: ['proctor'], isWriteOperation: false },
   // Discovered URLs tools
   { factory: listDiscoveredUrls, groups: ['discovered_urls'], isWriteOperation: false },
   {
@@ -475,7 +477,7 @@ function shouldIncludeTool(toolDef: ToolDefinition, enabledGroups: ToolGroup[]):
  * - good_jobs: GoodJob background job management tools (read + write)
  * - good_jobs_readonly: GoodJob tools (read only)
  * - proctor: Proctor exam execution and result storage tools (read + write)
- * - proctor_readonly: Proctor tools (read only - get_exam_result and list_proctor_runs)
+ * - proctor_readonly: Proctor tools (read only - get_exam_result, list_proctor_runs, and get_proctor_metadata)
  * - discovered_urls: Discovered URL management tools for processing URLs into MCP implementations (read + write)
  * - discovered_urls_readonly: Discovered URL tools (read only - list and stats)
  * - notifications: Notification email tools - send_impl_posted_notif (write-only, no readonly variant)

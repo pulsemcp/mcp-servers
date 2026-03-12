@@ -68,6 +68,7 @@ function createMockClient(overrides?: Partial<IPulseMCPAdminClient>): IPulseMCPA
     runExamForMirror: vi.fn(),
     saveResultsForMirror: vi.fn(),
     getProctorRuns: vi.fn(),
+    getProctorMetadata: vi.fn(),
     getDiscoveredUrls: vi.fn(),
     markDiscoveredUrlProcessed: vi.fn(),
     getDiscoveredUrlStats: vi.fn(),
@@ -363,7 +364,8 @@ describe('list_proctor_runs', () => {
       expect(names).toContain('run_exam_for_mirror');
       expect(names).toContain('get_exam_result');
       expect(names).toContain('save_results_for_mirror');
-      expect(result.tools).toHaveLength(4);
+      expect(names).toContain('get_proctor_metadata');
+      expect(result.tools).toHaveLength(5);
     });
 
     it('should include list_proctor_runs in proctor_readonly group', async () => {
@@ -382,10 +384,11 @@ describe('list_proctor_runs', () => {
       const names = result.tools.map((t: { name: string }) => t.name);
       expect(names).toContain('list_proctor_runs');
       expect(names).toContain('get_exam_result');
+      expect(names).toContain('get_proctor_metadata');
       // Write operations should be excluded
       expect(names).not.toContain('run_exam_for_mirror');
       expect(names).not.toContain('save_results_for_mirror');
-      expect(result.tools).toHaveLength(2);
+      expect(result.tools).toHaveLength(3);
     });
 
     it('should include proctor in default groups', () => {

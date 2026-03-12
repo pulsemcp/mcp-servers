@@ -18,6 +18,7 @@ dotenv.config({ path: path.join(__dirname, '../../.env') });
  * (empty output data when saving via result_id).
  *
  * Tools tested:
+ *   - get_proctor_metadata: Get available runtimes and exams
  *   - run_exam_for_mirror: Run proctor exams against an unofficial mirror
  *   - get_exam_result: Retrieve full stored exam result by result_id
  *   - save_results_for_mirror: Save exam results using result_id from run_exam_for_mirror
@@ -90,6 +91,7 @@ describe('Proctor Tools - Manual Tests with Real API', () => {
       const tools = await client.listTools();
       const toolNames = tools.tools.map((t) => t.name);
 
+      expect(toolNames).toContain('get_proctor_metadata');
       expect(toolNames).toContain('run_exam_for_mirror');
       expect(toolNames).toContain('get_exam_result');
       expect(toolNames).toContain('save_results_for_mirror');
@@ -112,6 +114,27 @@ describe('Proctor Tools - Manual Tests with Real API', () => {
       expect(tool!.inputSchema.required).toContain('result_id');
       expect(tool!.inputSchema.properties).toHaveProperty('result_id');
       expect(tool!.inputSchema.properties).not.toHaveProperty('results');
+    });
+  });
+
+  describe('get_proctor_metadata', () => {
+    it('should return available runtimes and exams', async () => {
+      const result = await client.callTool('get_proctor_metadata', {});
+
+      expect(result.isError).toBeFalsy();
+      expect(result.content).toHaveLength(1);
+      expect(result.content[0].type).toBe('text');
+
+      const text = result.content[0].text;
+      console.log('Proctor metadata:', text);
+
+      // Should contain both sections
+      expect(text).toContain('## Available Proctor Runtimes');
+      expect(text).toContain('## Available Exams');
+
+      // Should list at least one runtime with id and image
+      expect(text).toMatch(/\*\*.+\*\* \(id: `.+`\)/);
+      expect(text).toContain('Image: `');
     });
   });
 

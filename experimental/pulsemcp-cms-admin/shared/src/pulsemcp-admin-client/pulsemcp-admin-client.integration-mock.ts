@@ -1198,6 +1198,13 @@ export function createMockPulseMCPAdminClient(mockData: MockData): IPulseMCPAdmi
       };
     },
 
+    async getProctorMetadata() {
+      return {
+        runtimes: [],
+        exams: [],
+      };
+    },
+
     // Discovered URL methods
     async getDiscoveredUrls() {
       return {

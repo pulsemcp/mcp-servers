@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [0.9.7] - 2026-03-12
+
+### Added
+
+- Added `get_proctor_metadata` tool to the proctor toolset — returns available runtimes (with IDs and Docker images) and exam types from the Proctor API, enabling discovery of runtime IDs needed for `run_exam_for_mirror`
+
 ## [0.9.6] - 2026-03-11
 
 ### Fixed
