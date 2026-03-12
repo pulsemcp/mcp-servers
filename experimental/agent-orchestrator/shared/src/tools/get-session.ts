@@ -6,7 +6,7 @@ import type { Session, Log, SubagentTranscript } from '../types.js';
 const PARAM_DESCRIPTIONS = {
   id: 'Session ID (numeric) or slug (string). Examples: "1", "fix-auth-bug-20250115"',
   include_transcript:
-    'Include the full transcript of the session. Default: false. Set to true for complete conversation history.',
+    'Include the full transcript inline. Default: false. WARNING: can be very large and may overwhelm your context window. When false, the transcript file path is returned instead so you can grep/tail it efficiently (see tool description for tips).',
   transcript_format:
     'Format for transcript retrieval: "text" (human-readable) or "json" (structured). Only used when include_transcript is true. When specified, fetches transcript via dedicated endpoint instead of inline.',
   include_logs:
@@ -45,9 +45,11 @@ export const GetSessionSchema = z.object({
 const TOOL_DESCRIPTION = `Get detailed information about a specific agent session.
 
 **Returns:** Complete session details including status, configuration, metadata, and optionally:
-- Full session transcript
+- Full session transcript (WARNING: can be very large)
 - Session logs (paginated)
 - Subagent transcripts (paginated)
+
+**Transcript access:** By default (include_transcript=false), the response includes the transcript file path instead of the full content. You can then efficiently grep, tail, or read specific sections of that file — for example, read the last ~100 lines to see the most recent messages. This avoids overwhelming your context window with massive transcripts.
 
 **Use cases:**
 - View detailed session information
@@ -124,6 +126,17 @@ function formatSessionDetails(session: Session, includeTranscript: boolean): str
     lines.push('```');
     lines.push(session.transcript);
     lines.push('```');
+  }
+
+  // When transcript is not included inline, provide file path hints for efficient access
+  if (!includeTranscript && session.session_id) {
+    lines.push('');
+    lines.push('### Transcript File');
+    lines.push(`- **Path pattern:** \`~/.claude/projects/*/${session.session_id}.jsonl\``);
+    lines.push(`- **Find exact path:** \`ls ~/.claude/projects/*/${session.session_id}.jsonl\``);
+    lines.push(
+      '- **Tip:** Once you have the exact path, read the last ~100 lines to see the most recent messages, or grep for specific keywords. This avoids loading the entire transcript into your context window.'
+    );
   }
 
   return lines.join('\n');

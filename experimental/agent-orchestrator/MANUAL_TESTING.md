@@ -61,39 +61,37 @@ The tests will:
 
 ## Latest Test Results
 
-**Test Date:** 2026-03-11
-**Branch:** tadasant/add-skills-param-start-session
-**Commit:** 75351ad
+**Test Date:** 2026-03-12
+**Branch:** tadasant/get-session-transcript-filepath
+**Commit:** 24d98ce
 **Tested By:** Claude Code (automated)
 **Environment:** Production (https://ao.pulsemcp.com)
 
 ### Summary
 
-**Overall:** :white_check_mark: SUCCESS - 56/56 manual tests pass, 179/179 functional tests pass.
+**Overall:** :white_check_mark: SUCCESS - 56/56 manual tests pass, 152/152 functional tests pass.
 
-Added `skills` parameter to `start_session` tool, mirroring `mcp_servers` pattern. Updated tool descriptions and `get_configs` usage notes.
+Added transcript file path output to `get_session` when `include_transcript` is not set to true, with tips on efficiently reading specific sections via grep/tail.
 
 | Test Category                 | Status             | Tests   |
 | ----------------------------- | ------------------ | ------- |
-| map-agent-root.test.ts        | :white_check_mark: | 2/2     |
-| health-check.test.ts          | :white_check_mark: | 31/31   |
-| tools.test.ts (functional)    | :white_check_mark: | 146/146 |
+| tools.test.ts (functional)    | :white_check_mark: | 152/152 |
 | Manual tests (production API) | :white_check_mark: | 56/56   |
+| Build                         | :white_check_mark: | Clean   |
 
 ### Functionality Verified
 
-- :white_check_mark: **All tool definitions** - 146 functional tests pass (4 new tests for skills parameter)
-- :white_check_mark: **Manual tests** - 56/56 pass against production API (start_session, get_configs, search, actions, triggers, health, notifications)
-- :white_check_mark: **mapAgentRoot mapping** - 2/2 tests pass
-- :white_check_mark: **Health check** - 31/31 tests pass
+- :white_check_mark: **All tool definitions** - 152 functional tests pass (3 new tests for transcript file path)
+- :white_check_mark: **Manual tests** - 56/56 pass against production API (search, get_session, actions, triggers, health, notifications, configs)
 - :white_check_mark: **Build succeeds** - TypeScript compilation clean
+- :white_check_mark: **Lint/format** - Clean on all changed files
 
 ### Key Changes in This Version
 
-- Added `skills` parameter to `start_session` (schema, inputSchema, type, description)
-- Updated `start_session` description with defaults guidance for agent roots
-- Added skills usage note to `get_configs` output
-- Skills are NOT constrained by `ALLOWED_AGENT_ROOTS` (unlike `mcp_servers`)
+- `get_session` returns transcript file path (`~/.claude/projects/*/{session_id}.jsonl`) when `include_transcript` is false
+- Updated `include_transcript` parameter description with warnings about large transcripts
+- Added tip about reading last ~100 lines and grepping for keywords
+- Added note about subagent transcripts being stored as siblings
 
 ---
 

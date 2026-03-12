@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.7] - 2026-03-12
+
+### Changed
+
+- `get_session` tool now returns the transcript file path (e.g. `~/.claude/projects/*/{session_id}.jsonl`) when `include_transcript` is not set to true, with tips on efficiently reading specific sections via grep/tail instead of loading the entire transcript into context
+- Updated `include_transcript` parameter description to warn about large transcripts and recommend using the file path for targeted reads
+
 ## [0.4.6] - 2026-03-11
 
 ### Added

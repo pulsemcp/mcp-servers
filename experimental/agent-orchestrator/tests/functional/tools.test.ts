@@ -303,6 +303,119 @@ describe('Tools', () => {
         'Subagent Transcripts'
       );
     });
+
+    it('should include transcript file path when include_transcript is false and session_id exists', async () => {
+      mockClient.getSession = vi.fn().mockResolvedValue({
+        id: 1,
+        slug: 'test-session',
+        title: 'Test Session',
+        status: 'running',
+        agent_type: 'claude_code',
+        prompt: 'Test prompt',
+        git_root: 'https://github.com/test/repo.git',
+        branch: 'main',
+        subdirectory: null,
+        execution_provider: 'local_filesystem',
+        stop_condition: null,
+        mcp_servers: [],
+        config: {},
+        metadata: {},
+        custom_metadata: {},
+        session_id: 'session_abc123',
+        job_id: 'job_123',
+        running_job_id: null,
+        archived_at: null,
+        created_at: '2025-01-15T14:30:00Z',
+        updated_at: '2025-01-15T14:35:00Z',
+      });
+      const tool = getSessionTool(mockServer, clientFactory);
+
+      const result = await tool.handler({ id: 1 });
+
+      const text = (result as { content: Array<{ text: string }> }).content[0].text;
+      expect(text).toContain('### Transcript File');
+      expect(text).toContain('session_abc123.jsonl');
+      expect(text).toContain('~/.claude/projects/*/session_abc123.jsonl');
+      expect(text).toContain('read the last ~100 lines');
+      expect(text).toContain('ls ~/.claude/projects/*/session_abc123.jsonl');
+    });
+
+    it('should not include transcript file path when include_transcript is true', async () => {
+      mockClient.getSession = vi.fn().mockResolvedValue({
+        id: 1,
+        slug: 'test-session',
+        title: 'Test Session',
+        status: 'running',
+        agent_type: 'claude_code',
+        prompt: 'Test prompt',
+        git_root: 'https://github.com/test/repo.git',
+        branch: 'main',
+        subdirectory: null,
+        execution_provider: 'local_filesystem',
+        stop_condition: null,
+        mcp_servers: [],
+        config: {},
+        metadata: {},
+        custom_metadata: {},
+        session_id: 'session_abc123',
+        job_id: 'job_123',
+        running_job_id: null,
+        archived_at: null,
+        created_at: '2025-01-15T14:30:00Z',
+        updated_at: '2025-01-15T14:35:00Z',
+      });
+      const tool = getSessionTool(mockServer, clientFactory);
+
+      const result = await tool.handler({ id: 1, include_transcript: true });
+
+      const text = (result as { content: Array<{ text: string }> }).content[0].text;
+      expect(text).not.toContain('### Transcript File');
+    });
+
+    it('should not include transcript file path when using transcript_format', async () => {
+      mockClient.getSession = vi.fn().mockResolvedValue({
+        id: 1,
+        slug: 'test-session',
+        title: 'Test Session',
+        status: 'running',
+        agent_type: 'claude_code',
+        prompt: 'Test prompt',
+        git_root: 'https://github.com/test/repo.git',
+        branch: 'main',
+        subdirectory: null,
+        execution_provider: 'local_filesystem',
+        stop_condition: null,
+        mcp_servers: [],
+        config: {},
+        metadata: {},
+        custom_metadata: {},
+        session_id: 'session_abc123',
+        job_id: 'job_123',
+        running_job_id: null,
+        archived_at: null,
+        created_at: '2025-01-15T14:30:00Z',
+        updated_at: '2025-01-15T14:35:00Z',
+      });
+      const tool = getSessionTool(mockServer, clientFactory);
+
+      const result = await tool.handler({
+        id: 1,
+        include_transcript: true,
+        transcript_format: 'text',
+      });
+
+      const text = (result as { content: Array<{ text: string }> }).content[0].text;
+      expect(text).not.toContain('### Transcript File');
+    });
+
+    it('should not include transcript file path when session_id is null', async () => {
+      const tool = getSessionTool(mockServer, clientFactory);
+
+      const result = await tool.handler({ id: 1 });
+
+      const text = (result as { content: Array<{ text: string }> }).content[0].text;
+      expect(text).not.toContain('### Transcript File');
+    });
   });
 
   describe('action_session', () => {
