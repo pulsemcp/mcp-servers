@@ -9,6 +9,7 @@ import { replyToThreadTool } from '../../shared/src/tools/reply-to-thread.js';
 import { updateMessageTool } from '../../shared/src/tools/update-message.js';
 import { reactToMessageTool } from '../../shared/src/tools/react-to-message.js';
 import { downloadFileTool } from '../../shared/src/tools/download-file.js';
+import { uploadSnippetTool } from '../../shared/src/tools/upload-snippet.js';
 import type { ISlackClient } from '../../shared/src/server.js';
 
 describe('Slack MCP Server Tools', () => {
@@ -293,6 +294,83 @@ describe('Slack MCP Server Tools', () => {
 
       expect(result.isError).toBe(true);
       expect(result.content[0].text).toContain('Error downloading file');
+    });
+  });
+
+  describe('slack_upload_snippet', () => {
+    it('should upload a snippet with required params', async () => {
+      const tool = uploadSnippetTool(mockServer, () => mockClient);
+      const result = await tool.handler({
+        channel_id: 'C123456789',
+        content: 'Hello, this is a long snippet content',
+      });
+
+      expect(result.content[0].text).toContain('Snippet uploaded successfully');
+      expect(result.content[0].text).toContain('Channel: C123456789');
+      expect(result.content[0].text).toContain('File ID: F111222333');
+      expect(result.content[0].text).toContain('snippet.txt');
+      expect(result.content[0].text).toContain('37 bytes');
+      expect(mockClient.uploadSnippet).toHaveBeenCalledWith(
+        'Hello, this is a long snippet content',
+        expect.objectContaining({ channelId: 'C123456789' })
+      );
+    });
+
+    it('should pass optional parameters', async () => {
+      const tool = uploadSnippetTool(mockServer, () => mockClient);
+      await tool.handler({
+        channel_id: 'C123456789',
+        content: 'Some content',
+        filename: 'output.log',
+        title: 'Build Output',
+        thread_ts: '1234567890.123456',
+      });
+
+      expect(mockClient.uploadSnippet).toHaveBeenCalledWith('Some content', {
+        channelId: 'C123456789',
+        filename: 'output.log',
+        title: 'Build Output',
+        threadTs: '1234567890.123456',
+      });
+    });
+
+    it('should include thread info when thread_ts is provided', async () => {
+      const tool = uploadSnippetTool(mockServer, () => mockClient);
+      const result = await tool.handler({
+        channel_id: 'C123456789',
+        content: 'Thread snippet',
+        thread_ts: '1234567890.123456',
+      });
+
+      expect(result.content[0].text).toContain('Thread: 1234567890.123456');
+    });
+
+    it('should require channel_id and content', async () => {
+      const tool = uploadSnippetTool(mockServer, () => mockClient);
+      const result = await tool.handler({ channel_id: 'C123456789' });
+
+      expect(result.isError).toBe(true);
+    });
+
+    it('should reject empty content', async () => {
+      const tool = uploadSnippetTool(mockServer, () => mockClient);
+      const result = await tool.handler({ channel_id: 'C123456789', content: '' });
+
+      expect(result.isError).toBe(true);
+    });
+
+    it('should handle errors gracefully', async () => {
+      (mockClient.uploadSnippet as ReturnType<typeof vi.fn>).mockRejectedValue(
+        new Error('channel_not_found')
+      );
+      const tool = uploadSnippetTool(mockServer, () => mockClient);
+      const result = await tool.handler({
+        channel_id: 'C000000000',
+        content: 'Some content',
+      });
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('Error uploading snippet');
     });
   });
 });

@@ -10,6 +10,7 @@ import { replyToThreadTool } from './tools/reply-to-thread.js';
 import { updateMessageTool } from './tools/update-message.js';
 import { reactToMessageTool } from './tools/react-to-message.js';
 import { downloadFileTool } from './tools/download-file.js';
+import { uploadSnippetTool } from './tools/upload-snippet.js';
 
 /**
  * Tool groups for permission-based access control
@@ -80,6 +81,7 @@ const ALL_TOOLS: ToolDefinition[] = [
   { factory: replyToThreadTool, groups: ['write'] },
   { factory: updateMessageTool, groups: ['write'] },
   { factory: reactToMessageTool, groups: ['write'] },
+  { factory: uploadSnippetTool, groups: ['write'] },
 ];
 
 /**

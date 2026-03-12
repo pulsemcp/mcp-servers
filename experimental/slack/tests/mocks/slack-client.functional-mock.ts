@@ -178,5 +178,14 @@ export function createMockSlackClient(): ISlackClient {
     }),
 
     downloadFile: vi.fn().mockResolvedValue(Buffer.from('fake-file-content')),
+
+    uploadSnippet: vi.fn().mockResolvedValue({
+      id: 'F111222333',
+      name: 'snippet.txt',
+      title: 'Test Snippet',
+      mimetype: 'text/plain',
+      size: 1024,
+      permalink: 'https://slack.com/files/snippet.txt',
+    }),
   };
 }

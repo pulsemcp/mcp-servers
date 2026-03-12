@@ -138,7 +138,7 @@ describe('Slack MCP Server Integration Tests', () => {
       const result = await client.listTools();
       const tools = result.tools;
 
-      expect(tools).toHaveLength(8);
+      expect(tools).toHaveLength(9);
 
       const toolNames = tools.map((t) => t.name);
       expect(toolNames).toContain('slack_get_channels');
@@ -149,6 +149,7 @@ describe('Slack MCP Server Integration Tests', () => {
       expect(toolNames).toContain('slack_reply_to_thread');
       expect(toolNames).toContain('slack_update_message');
       expect(toolNames).toContain('slack_react_to_message');
+      expect(toolNames).toContain('slack_upload_snippet');
     });
 
     it('should have proper tool descriptions and schemas', async () => {
@@ -306,6 +307,52 @@ describe('Slack MCP Server Integration Tests', () => {
       expect(result.content[0].type).toBe('text');
       expect(result.content[0].text).toContain('Reaction added successfully');
       expect(result.content[0].text).toContain(':thumbsup:');
+    });
+  });
+
+  describe('slack_upload_snippet Tool', () => {
+    it('should upload a snippet to a channel', async () => {
+      if (!client) throw new Error('Client not initialized');
+
+      const result = await client.callTool('slack_upload_snippet', {
+        channel_id: 'C111111111',
+        content: 'This is a test snippet with some long content that would exceed message limits.',
+      });
+
+      expect(result.content[0].type).toBe('text');
+      expect(result.content[0].text).toContain('Snippet uploaded successfully');
+      expect(result.content[0].text).toContain('Channel: C111111111');
+      expect(result.content[0].text).toContain('File ID:');
+    });
+
+    it('should upload a snippet with optional parameters', async () => {
+      if (!client) throw new Error('Client not initialized');
+
+      const result = await client.callTool('slack_upload_snippet', {
+        channel_id: 'C111111111',
+        content: 'console.log("hello world");',
+        filename: 'example.js',
+        title: 'Code Example',
+      });
+
+      expect(result.content[0].type).toBe('text');
+      expect(result.content[0].text).toContain('Snippet uploaded successfully');
+      expect(result.content[0].text).toContain('example.js');
+      expect(result.content[0].text).toContain('Code Example');
+    });
+
+    it('should upload a snippet as a thread reply', async () => {
+      if (!client) throw new Error('Client not initialized');
+
+      const result = await client.callTool('slack_upload_snippet', {
+        channel_id: 'C111111111',
+        content: 'Thread snippet content',
+        thread_ts: '1234567890.123456',
+      });
+
+      expect(result.content[0].type).toBe('text');
+      expect(result.content[0].text).toContain('Snippet uploaded successfully');
+      expect(result.content[0].text).toContain('Thread: 1234567890.123456');
     });
   });
 });
