@@ -42,32 +42,35 @@ npm run test:manual
 
 ## Latest Test Results
 
-**Test Date:** 2026-02-24
-**Branch:** claude/slack-attachment-support
-**Commit:** af026d3
+**Test Date:** 2026-03-12
+**Branch:** main
+**Commit:** 3aa6e4d
 **Tested By:** Claude
 
 ### Summary
 
-**Manual tests:** 9 of 9 tests passed (100%)
-**Functional tests:** 21 of 21 tests passed (100%)
-**Integration tests:** 12 of 12 tests passed (100%)
+**Manual tests:** 12 of 12 tests passed (100%)
+**Functional tests:** 27 of 27 tests passed (100%)
+**Integration tests:** 15 of 15 tests passed (100%)
 
-### Manual Test Results (v0.0.3)
+### Manual Test Results (v0.0.4)
 
-| Test                       | Status  | Notes                                                               |
-| -------------------------- | ------- | ------------------------------------------------------------------- |
-| List channels              | ✅ Pass | Found channels via real Slack API                                   |
-| Get channel info           | ✅ Pass | Retrieved #general (C08AX7WQ552) with metadata                      |
-| Post message               | ✅ Pass | Posted message to #general                                          |
-| Add reaction               | ✅ Pass | Added white_check_mark reaction                                     |
-| Update message             | ✅ Pass | Updated posted message content                                      |
-| Post thread reply          | ✅ Pass | Reply posted to thread                                              |
-| Get thread with replies    | ✅ Pass | Retrieved thread with 1 reply                                       |
-| Download file from channel | ✅ Pass | Downloaded image.png (199.8 KB) to /tmp/slack-files via file:// URI |
-| Handle invalid file ID     | ✅ Pass | Returns error "Slack API error: file_not_found"                     |
+| Test                                         | Status  | Notes                                                                                    |
+| -------------------------------------------- | ------- | ---------------------------------------------------------------------------------------- |
+| List channels                                | ✅ Pass | Found channels via real Slack API                                                        |
+| Get channel info                             | ✅ Pass | Retrieved #general (C08AX7WQ552) with metadata                                           |
+| Post message                                 | ✅ Pass | Posted message to #general (ts: 1773274782.325359)                                       |
+| Add reaction                                 | ✅ Pass | Added white_check_mark reaction                                                          |
+| Update message                               | ✅ Pass | Updated posted message content                                                           |
+| Post thread reply                            | ✅ Pass | Reply posted to thread (ts: 1773274783.610479)                                           |
+| Get thread with replies                      | ✅ Pass | Retrieved thread with 1 reply                                                            |
+| Upload text snippet to channel               | ✅ Pass | Uploaded test-snippet.txt (362 bytes), File ID: F0AL6202L68, permalink confirmed         |
+| Upload snippet as thread reply               | ✅ Pass | Uploaded thread-reply.txt (28 bytes) to thread, File ID: F0AKW2LA6V9                     |
+| Upload code snippet with syntax highlighting | ✅ Pass | Uploaded example.ts (102 bytes) with TypeScript title, File ID: F0AL0CBBFJA              |
+| Download file from channel                   | ✅ Pass | Downloaded example.ts (102 B) to /tmp/slack-files/F0AL0CBBFJA-example.ts via file:// URI |
+| Handle invalid file ID                       | ✅ Pass | Returns error "Slack API error: file_not_found"                                          |
 
-### Functional Test Results (v0.0.3)
+### Functional Test Results (v0.0.4)
 
 | Test                                             | Status  | Notes                                            |
 | ------------------------------------------------ | ------- | ------------------------------------------------ |
@@ -92,23 +95,32 @@ npm run test:manual
 | Download file successfully                       | ✅ Pass | Downloads to /tmp, returns file:// URI           |
 | Require file_id parameter                        | ✅ Pass | Returns error without file_id                    |
 | Handle download errors                           | ✅ Pass | Returns isError with error message               |
+| Upload snippet with required params              | ✅ Pass | Uploads snippet, returns file info               |
+| Upload snippet with optional params              | ✅ Pass | All optional params passed correctly             |
+| Upload snippet with thread_ts                    | ✅ Pass | Thread info included in response                 |
+| Require channel_id and content                   | ✅ Pass | Returns error without content                    |
+| Reject empty content                             | ✅ Pass | Empty string rejected by Zod validation          |
+| Handle upload errors                             | ✅ Pass | Returns isError with error message               |
 
-### Integration Test Results (v0.0.3)
+### Integration Test Results (v0.0.4)
 
-| Test                                      | Status  | Notes                                          |
-| ----------------------------------------- | ------- | ---------------------------------------------- |
-| Initialize successfully                   | ✅ Pass | Server starts and connects                     |
-| Register all expected tools               | ✅ Pass | 8 tools registered (added slack_download_file) |
-| Proper tool descriptions and schemas      | ✅ Pass | Schemas validated                              |
-| List all channels                         | ✅ Pass | Found 2 channels                               |
-| Get specific channel details              | ✅ Pass | Channel metadata correct                       |
-| Include messages when requested           | ✅ Pass | Messages displayed                             |
-| Display attachments and files in messages | ✅ Pass | Files show ID + download hint                  |
-| Get thread with replies                   | ✅ Pass | Parent + reply shown                           |
-| Post a new message                        | ✅ Pass | Message posted                                 |
-| Reply to a thread                         | ✅ Pass | Reply posted                                   |
-| Update a message                          | ✅ Pass | Message updated                                |
-| Add a reaction                            | ✅ Pass | Reaction added                                 |
+| Test                                      | Status  | Notes                                           |
+| ----------------------------------------- | ------- | ----------------------------------------------- |
+| Initialize successfully                   | ✅ Pass | Server starts and connects                      |
+| Register all expected tools               | ✅ Pass | 9 tools registered (added slack_upload_snippet) |
+| Proper tool descriptions and schemas      | ✅ Pass | Schemas validated                               |
+| List all channels                         | ✅ Pass | Found 2 channels                                |
+| Get specific channel details              | ✅ Pass | Channel metadata correct                        |
+| Include messages when requested           | ✅ Pass | Messages displayed                              |
+| Display attachments and files in messages | ✅ Pass | Files show ID + download hint                   |
+| Get thread with replies                   | ✅ Pass | Parent + reply shown                            |
+| Post a new message                        | ✅ Pass | Message posted                                  |
+| Reply to a thread                         | ✅ Pass | Reply posted                                    |
+| Update a message                          | ✅ Pass | Message updated                                 |
+| Add a reaction                            | ✅ Pass | Reaction added                                  |
+| Upload snippet to channel                 | ✅ Pass | Snippet uploaded with file ID                   |
+| Upload snippet with optional params       | ✅ Pass | Filename and title confirmed                    |
+| Upload snippet as thread reply            | ✅ Pass | Thread info in response                         |
 
 ## Getting the Bot Token
 
