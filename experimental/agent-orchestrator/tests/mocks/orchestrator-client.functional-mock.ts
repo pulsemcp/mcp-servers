@@ -29,7 +29,7 @@ const defaultSession: Session = {
   config: {},
   metadata: {},
   custom_metadata: {},
-  session_id: 'session_abc123',
+  session_id: null,
   job_id: 'job_123',
   running_job_id: null,
   archived_at: null,
