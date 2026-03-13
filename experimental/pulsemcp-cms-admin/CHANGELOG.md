@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [0.9.9] - 2026-03-13
+
 ### Added
 
 - Added `needs_indexing` status filter to `list_discovered_urls` — enables the ingest subagent to query URLs awaiting indexing via `WHERE processing_result = 'needs_indexing'`
