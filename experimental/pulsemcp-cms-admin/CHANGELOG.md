@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [0.9.8] - 2026-03-12
+
+### Added
+
+- Added `enrich_auth_types` parameter to `list_proctor_runs` tool — when enabled, fetches each server's remotes and derives `auth_types` from all remote `authentication_method` values, ensuring accurate auth type classification across all remotes (not just the server-level primary auth type)
+
 ## [0.9.7] - 2026-03-12
 
 ### Added

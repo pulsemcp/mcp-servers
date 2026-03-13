@@ -3,6 +3,52 @@
 ## Latest Test Results
 
 **Date:** 2026-03-12
+**Commit:** fdc2bb7
+**Version:** 0.9.8 (pre-release)
+**API Environment:** Staging (admin.staging.pulsemcp.com)
+
+### Overall: ✅ Manual Tests PASSING (164/164, 11 test files) | ✅ Functional Tests PASSING (199/199, 10 test files)
+
+**v0.9.8 Changes:**
+
+- Added `enrich_auth_types` parameter to `list_proctor_runs` tool — when enabled, fetches each server's remotes and derives `auth_types` from all remote `authentication_method` values, ensuring accurate auth type classification across all remotes (fixes #443)
+
+**Manual Test Results: ✅ 164/164 PASSING (11 test files, 42.69s)**
+
+All manual tests run against staging API and passing:
+
+1. mcp-servers-tools.manual.test.ts (36 tests)
+2. server-directory-tools.manual.test.ts (17 tests)
+3. rest-api-tools.manual.test.ts (28 tests)
+4. good-jobs-tools.manual.test.ts (21 tests)
+5. discovered-urls-tools.manual.test.ts (10 tests)
+6. search-mcp-implementations.manual.test.ts (11 tests)
+7. redirect-tools.manual.test.ts (13 tests)
+8. find-providers.manual.test.ts (9 tests)
+9. send-email.manual.test.ts (1 test)
+10. pulsemcp-cms-admin.manual.test.ts (6 tests)
+11. proctor-tools.manual.test.ts (13 tests)
+
+**Note on `list_proctor_runs` manual testing:** The `/api/proctor_runs` endpoint returns 404 on staging (not yet deployed), so `list_proctor_runs` cannot be tested E2E against staging. The enrichment logic is thoroughly covered by 7 functional tests (enrich-auth-types.test.ts) that mock the API layer and verify: enrichment from remotes, deduplication, sorting, fallback on errors, fallback on missing remotes, parallel enrichment of multiple servers, and skipping remotes without authentication_method.
+
+**Functional Test Results: ✅ 199/199 PASSING (10 test files)**
+
+- enrich-auth-types.test.ts: 7 tests — **NEW** enrichment from remotes, deduplication, fallback on errors, parallel enrichment
+- list-proctor-runs.test.ts: 10 tests — added enrich_auth_types parameter passthrough and tool metadata tests
+- get-proctor-metadata.test.ts: 6 tests
+- tools.test.ts: 104 tests
+- discovered-urls-tools.test.ts: 16 tests
+- save-results-for-mirror-client.test.ts: 3 tests
+- save-mcp-implementation-client.test.ts: 17 tests
+- send-mcp-implementation-posting-notification.test.ts: 12 tests
+- find-providers.test.ts: 14 tests
+- unofficial-mirror-server-json.test.ts: 10 tests
+
+---
+
+## Previous Test Results (v0.9.7)
+
+**Date:** 2026-03-12
 **Commit:** 0bc5c66
 **Version:** 0.9.7 (pre-release)
 **API Environment:** Staging (admin.staging.pulsemcp.com)

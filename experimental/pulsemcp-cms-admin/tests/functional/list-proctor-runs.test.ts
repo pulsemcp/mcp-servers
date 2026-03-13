@@ -283,7 +283,32 @@ describe('list_proctor_runs', () => {
       direction: 'desc',
       limit: 10,
       offset: 20,
+      enrich_auth_types: undefined,
     });
+  });
+
+  it('should pass enrich_auth_types parameter to client', async () => {
+    const getProctorRunsMock = vi.fn().mockResolvedValue({
+      runs: [],
+      pagination: {
+        current_page: 1,
+        total_pages: 1,
+        total_count: 0,
+        has_next: false,
+        limit: 30,
+      },
+    });
+
+    const mockClient = createMockClient({
+      getProctorRuns: getProctorRunsMock,
+    });
+
+    const tool = listProctorRuns(mockServer, () => mockClient);
+    await tool.handler({ enrich_auth_types: true });
+
+    expect(getProctorRunsMock).toHaveBeenCalledWith(
+      expect.objectContaining({ enrich_auth_types: true })
+    );
   });
 
   it('should handle API errors gracefully', async () => {
@@ -343,6 +368,7 @@ describe('list_proctor_runs', () => {
     expect(tool.inputSchema.properties).toHaveProperty('direction');
     expect(tool.inputSchema.properties).toHaveProperty('limit');
     expect(tool.inputSchema.properties).toHaveProperty('offset');
+    expect(tool.inputSchema.properties).toHaveProperty('enrich_auth_types');
   });
 
   describe('tool group filtering for proctor', () => {

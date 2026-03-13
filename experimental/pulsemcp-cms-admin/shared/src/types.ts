@@ -944,6 +944,7 @@ export interface GetProctorRunsParams {
   direction?: 'asc' | 'desc';
   limit?: number;
   offset?: number;
+  enrich_auth_types?: boolean;
 }
 
 export interface ProctorRuntime {

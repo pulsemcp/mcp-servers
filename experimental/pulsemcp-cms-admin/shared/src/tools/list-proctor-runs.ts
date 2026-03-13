@@ -11,6 +11,8 @@ const PARAM_DESCRIPTIONS = {
   direction: 'Sort direction: asc or desc. Default: asc',
   limit: 'Results per page, range 1-100. Default: 30',
   offset: 'Pagination offset. Default: 0',
+  enrich_auth_types:
+    "When true, enriches auth_types by fetching each server's remotes and deriving all authentication methods. This makes additional API calls (one per server) but returns accurate auth_types reflecting all remote auth modes. Use when routing decisions depend on auth_types accuracy (e.g., Phase 1 vs Phase 2 routing). Default: false",
 } as const;
 
 const ListProctorRunsSchema = z.object({
@@ -33,6 +35,7 @@ const ListProctorRunsSchema = z.object({
   direction: z.enum(['asc', 'desc']).optional().describe(PARAM_DESCRIPTIONS.direction),
   limit: z.number().min(1).max(100).optional().describe(PARAM_DESCRIPTIONS.limit),
   offset: z.number().min(0).optional().describe(PARAM_DESCRIPTIONS.offset),
+  enrich_auth_types: z.boolean().optional().describe(PARAM_DESCRIPTIONS.enrich_auth_types),
 });
 
 export function listProctorRuns(_server: Server, clientFactory: ClientFactory) {
@@ -67,7 +70,8 @@ Use cases:
 - Find servers that haven't been tested yet (untested appear first by default)
 - Check which servers have stale proctor results
 - Filter to recommended servers to prioritize testing
-- Search for a specific server's testing status`,
+- Search for a specific server's testing status
+- Use enrich_auth_types=true when auth_types accuracy matters (e.g., for routing servers into OAuth vs non-OAuth phases)`,
     inputSchema: {
       type: 'object',
       properties: {
@@ -95,6 +99,10 @@ Use cases:
         },
         limit: { type: 'number', minimum: 1, maximum: 100, description: PARAM_DESCRIPTIONS.limit },
         offset: { type: 'number', minimum: 0, description: PARAM_DESCRIPTIONS.offset },
+        enrich_auth_types: {
+          type: 'boolean',
+          description: PARAM_DESCRIPTIONS.enrich_auth_types,
+        },
       },
     },
     handler: async (args: unknown) => {
@@ -110,6 +118,7 @@ Use cases:
           direction: validatedArgs.direction,
           limit: validatedArgs.limit,
           offset: validatedArgs.offset,
+          enrich_auth_types: validatedArgs.enrich_auth_types,
         });
 
         let content = `Found ${response.runs.length} proctor run summaries`;
