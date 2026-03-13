@@ -3,13 +3,17 @@ import { z } from 'zod';
 import type { ClientFactory } from '../server.js';
 
 const PARAM_DESCRIPTIONS = {
-  status: 'Filter by processing status: "pending" (unprocessed, default), "processed", or "all"',
+  status:
+    'Filter by processing status: "pending" (unprocessed, default), "processed", "needs_indexing" (awaiting indexing), or "all"',
   page: 'Page number for pagination. Default: 1',
   per_page: 'Results per page, range 1-100. Default: 50',
 } as const;
 
 const ListDiscoveredUrlsSchema = z.object({
-  status: z.enum(['pending', 'processed', 'all']).optional().describe(PARAM_DESCRIPTIONS.status),
+  status: z
+    .enum(['pending', 'processed', 'needs_indexing', 'all'])
+    .optional()
+    .describe(PARAM_DESCRIPTIONS.status),
   page: z.number().min(1).optional().describe(PARAM_DESCRIPTIONS.page),
   per_page: z.number().min(1).max(100).optional().describe(PARAM_DESCRIPTIONS.per_page),
 });
@@ -39,13 +43,14 @@ Example response:
 Use cases:
 - Browse unprocessed discovered URLs for review
 - Page through pending URLs to process them into MCP implementations
+- Query needs_indexing URLs for the daily ingest pipeline
 - Check processed URLs for audit purposes`,
     inputSchema: {
       type: 'object',
       properties: {
         status: {
           type: 'string',
-          enum: ['pending', 'processed', 'all'],
+          enum: ['pending', 'processed', 'needs_indexing', 'all'],
           description: PARAM_DESCRIPTIONS.status,
         },
         page: { type: 'number', minimum: 1, description: PARAM_DESCRIPTIONS.page },

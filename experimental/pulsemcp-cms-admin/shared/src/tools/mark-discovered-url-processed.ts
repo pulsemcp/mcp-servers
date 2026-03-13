@@ -6,14 +6,16 @@ import type { DiscoveredUrlResult } from '../types.js';
 const PARAM_DESCRIPTIONS = {
   id: 'The ID of the discovered URL to mark as processed',
   result:
-    'Processing result: "posted" (created MCP implementation), "skipped" (not relevant), "rejected" (invalid), or "error" (processing failed)',
+    'Processing result: "posted" (published MCP implementation), "drafted" (created draft MCP implementation), "skipped" (not relevant), "rejected" (invalid), "error" (processing failed), or "needs_indexing" (awaiting indexing)',
   notes: 'Reason for skip/reject/error (e.g., "Not an MCP server", "Duplicate of ID 5678")',
   mcp_implementation_id: 'The ID of the created mcp_implementation (only when result is "posted")',
 } as const;
 
 const MarkDiscoveredUrlProcessedSchema = z.object({
   id: z.number().describe(PARAM_DESCRIPTIONS.id),
-  result: z.enum(['posted', 'skipped', 'rejected', 'error']).describe(PARAM_DESCRIPTIONS.result),
+  result: z
+    .enum(['posted', 'skipped', 'rejected', 'error', 'needs_indexing', 'drafted'])
+    .describe(PARAM_DESCRIPTIONS.result),
   notes: z.string().optional().describe(PARAM_DESCRIPTIONS.notes),
   mcp_implementation_id: z.number().optional().describe(PARAM_DESCRIPTIONS.mcp_implementation_id),
 });
@@ -26,17 +28,19 @@ export function markDiscoveredUrlProcessed(_server: Server, clientFactory: Clien
 Idempotent — calling on an already-processed URL updates the fields.
 
 Use cases:
-- Mark a URL as "posted" after creating an MCP implementation from it
+- Mark a URL as "posted" after publishing an MCP implementation from it
+- Mark a URL as "drafted" after creating a draft MCP implementation from it
 - Mark a URL as "skipped" if it's not relevant (e.g., not an MCP server)
 - Mark a URL as "rejected" if it's invalid or a duplicate
-- Mark a URL as "error" if processing failed`,
+- Mark a URL as "error" if processing failed
+- Mark a URL as "needs_indexing" to flag it for the indexing pipeline`,
     inputSchema: {
       type: 'object',
       properties: {
         id: { type: 'number', description: PARAM_DESCRIPTIONS.id },
         result: {
           type: 'string',
-          enum: ['posted', 'skipped', 'rejected', 'error'],
+          enum: ['posted', 'skipped', 'rejected', 'error', 'needs_indexing', 'drafted'],
           description: PARAM_DESCRIPTIONS.result,
         },
         notes: { type: 'string', description: PARAM_DESCRIPTIONS.notes },

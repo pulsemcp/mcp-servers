@@ -375,7 +375,7 @@ export interface IPulseMCPAdminClient {
 
   // Discovered URL REST API methods
   getDiscoveredUrls(params?: {
-    status?: 'pending' | 'processed' | 'all';
+    status?: 'pending' | 'processed' | 'needs_indexing' | 'all';
     page?: number;
     per_page?: number;
   }): Promise<DiscoveredUrlsResponse>;
@@ -767,7 +767,7 @@ export class PulseMCPAdminClient implements IPulseMCPAdminClient {
 
   // Discovered URL REST API methods
   async getDiscoveredUrls(params?: {
-    status?: 'pending' | 'processed' | 'all';
+    status?: 'pending' | 'processed' | 'needs_indexing' | 'all';
     page?: number;
     per_page?: number;
   }): Promise<DiscoveredUrlsResponse> {
