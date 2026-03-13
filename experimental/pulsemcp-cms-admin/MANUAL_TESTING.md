@@ -9,7 +9,7 @@
 
 ### Overall: ✅ Manual Tests PASSING (165/165, 11 test files) | ✅ Functional Tests PASSING (19/19 discovered-urls)
 
-**v0.9.8 Changes:**
+**v0.9.9 Changes:**
 
 - Added `needs_indexing` status filter to `list_discovered_urls`
 - Added `needs_indexing` and `drafted` result values to `mark_discovered_url_processed`

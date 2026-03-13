@@ -8,7 +8,8 @@ const PARAM_DESCRIPTIONS = {
   result:
     'Processing result: "posted" (published MCP implementation), "drafted" (created draft MCP implementation), "skipped" (not relevant), "rejected" (invalid), "error" (processing failed), or "needs_indexing" (awaiting indexing)',
   notes: 'Reason for skip/reject/error (e.g., "Not an MCP server", "Duplicate of ID 5678")',
-  mcp_implementation_id: 'The ID of the created mcp_implementation (only when result is "posted")',
+  mcp_implementation_id:
+    'The ID of the created mcp_implementation (when result is "posted" or "drafted")',
 } as const;
 
 const MarkDiscoveredUrlProcessedSchema = z.object({
