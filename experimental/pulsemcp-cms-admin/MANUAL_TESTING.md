@@ -2,18 +2,20 @@
 
 ## Latest Test Results
 
-**Date:** 2026-03-12
-**Commit:** 0bc5c66
-**Version:** 0.9.7 (pre-release)
+**Date:** 2026-03-13
+**Commit:** 8c30fcc
+**Version:** 0.9.9 (pre-release)
 **API Environment:** Staging (admin.staging.pulsemcp.com)
 
-### Overall: ✅ Manual Tests PASSING (164/164, 11 test files) | ✅ Functional Tests PASSING (135/135)
+### Overall: ✅ Manual Tests PASSING (165/165, 11 test files) | ✅ Functional Tests PASSING (19/19 discovered-urls)
 
-**v0.9.7 Changes:**
+**v0.9.9 Changes:**
 
-- Added `get_proctor_metadata` tool to the proctor toolset — returns available runtimes (with IDs and Docker images) and exam types from the Proctor API
+- Added `needs_indexing` status filter to `list_discovered_urls`
+- Added `needs_indexing` and `drafted` result values to `mark_discovered_url_processed`
+- Updated `DiscoveredUrlResult` type to include `'needs_indexing' | 'drafted'`
 
-**Manual Test Results: ✅ 164/164 PASSING (11 test files, 46.49s)**
+**Manual Test Results: ✅ 165/165 PASSING (11 test files, 43.48s)**
 
 All manual tests run against staging API and passing:
 
@@ -21,20 +23,19 @@ All manual tests run against staging API and passing:
 2. server-directory-tools.manual.test.ts (17 tests)
 3. rest-api-tools.manual.test.ts (28 tests)
 4. good-jobs-tools.manual.test.ts (21 tests)
-5. discovered-urls-tools.manual.test.ts (10 tests)
+5. discovered-urls-tools.manual.test.ts (11 tests) — includes new `needs_indexing` status filter test
 6. search-mcp-implementations.manual.test.ts (11 tests)
 7. redirect-tools.manual.test.ts (13 tests)
 8. find-providers.manual.test.ts (9 tests)
 9. send-email.manual.test.ts (1 test)
 10. pulsemcp-cms-admin.manual.test.ts (6 tests)
-11. proctor-tools.manual.test.ts (13 tests) — includes new `get_proctor_metadata` tool E2E test
+11. proctor-tools.manual.test.ts (13 tests)
 
-**Functional Test Results: ✅ 135/135 PASSING (4 test files)**
+**Note on `needs_indexing` status filter:** The staging API does not yet support `needs_indexing` as a status filter for `list_discovered_urls` (depends on pulsemcp/pulsemcp#2241). The manual test verifies that the MCP server accepts the parameter (no Zod validation error) and handles the API error gracefully. Once the backend is updated, the filter will work end-to-end.
 
-- get-proctor-metadata.test.ts: 6 tests — metadata fetching, empty results, error handling, tool metadata, group filtering
-- list-proctor-runs.test.ts: 9 tests — updated group counts (5 tools in proctor, 3 in proctor_readonly)
-- tools.test.ts: 104 tests — updated total count to 58, proctor_readonly to 3
-- discovered-urls-tools.test.ts: 16 tests — mock client updated
+**Functional Test Results: ✅ 19/19 PASSING (discovered-urls-tools.test.ts)**
+
+- 3 new tests added: `needs_indexing` status filter, `drafted` result with implementation ID, `needs_indexing` result value
 
 ---
 

@@ -110,6 +110,27 @@ describe('Discovered URLs Tools - Manual Tests with Real API', () => {
       expect(text).toContain('discovered URLs');
     });
 
+    it('should accept needs_indexing status filter', async () => {
+      const result = await client.callTool('list_discovered_urls', {
+        status: 'needs_indexing',
+      });
+
+      const text = result.content[0].text;
+      console.log('list_discovered_urls (needs_indexing):', text.substring(0, 500));
+
+      // The API may return results or an error depending on whether the backend
+      // has been updated to support the needs_indexing status filter
+      // (depends on pulsemcp/pulsemcp#2241). Either way, the MCP server should
+      // accept the parameter without a Zod validation error.
+      if (result.isError) {
+        // Backend hasn't been updated yet — expect a meaningful API error, not a validation error
+        expect(text).toContain('Error fetching discovered URLs');
+        expect(text).not.toContain('ZodError');
+      } else {
+        expect(text).toContain('discovered URLs');
+      }
+    });
+
     it('should list processed discovered URLs', async () => {
       const result = await client.callTool('list_discovered_urls', {
         status: 'processed',

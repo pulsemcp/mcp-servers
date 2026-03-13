@@ -144,6 +144,29 @@ describe('Discovered URLs Tools', () => {
       });
     });
 
+    it('should pass needs_indexing status filter to client', async () => {
+      const getDiscoveredUrlsMock = vi.fn().mockResolvedValue({
+        urls: [],
+        has_more: false,
+        total_count: 0,
+        page: 1,
+        per_page: 50,
+      });
+
+      const mockClient = createMockClient({
+        getDiscoveredUrls: getDiscoveredUrlsMock,
+      });
+
+      const tool = listDiscoveredUrls(mockServer, () => mockClient);
+      await tool.handler({ status: 'needs_indexing' });
+
+      expect(getDiscoveredUrlsMock).toHaveBeenCalledWith({
+        status: 'needs_indexing',
+        page: undefined,
+        per_page: undefined,
+      });
+    });
+
     it('should handle API errors gracefully', async () => {
       const mockClient = createMockClient({
         getDiscoveredUrls: vi.fn().mockRejectedValue(new Error('Invalid API key')),
@@ -218,6 +241,64 @@ describe('Discovered URLs Tools', () => {
         id: 12345,
         result: 'skipped',
         notes: 'Not an MCP server',
+        mcp_implementation_id: undefined,
+      });
+    });
+
+    it('should mark a URL as drafted with implementation ID', async () => {
+      const markMock = vi.fn().mockResolvedValue({
+        success: true,
+        id: 12345,
+        processed_at: '2026-02-25T06:15:00Z',
+      });
+
+      const mockClient = createMockClient({
+        markDiscoveredUrlProcessed: markMock,
+      });
+
+      const tool = markDiscoveredUrlProcessed(mockServer, () => mockClient);
+      const result = await tool.handler({
+        id: 12345,
+        result: 'drafted',
+        mcp_implementation_id: 9999,
+      });
+
+      expect(result.isError).toBeFalsy();
+      expect(result.content[0].text).toContain('Successfully marked discovered URL (ID: 12345)');
+      expect(result.content[0].text).toContain('drafted');
+      expect(result.content[0].text).toContain('MCP Implementation ID:** 9999');
+      expect(markMock).toHaveBeenCalledWith({
+        id: 12345,
+        result: 'drafted',
+        notes: undefined,
+        mcp_implementation_id: 9999,
+      });
+    });
+
+    it('should mark a URL as needs_indexing', async () => {
+      const markMock = vi.fn().mockResolvedValue({
+        success: true,
+        id: 12345,
+        processed_at: '2026-02-25T06:15:00Z',
+      });
+
+      const mockClient = createMockClient({
+        markDiscoveredUrlProcessed: markMock,
+      });
+
+      const tool = markDiscoveredUrlProcessed(mockServer, () => mockClient);
+      const result = await tool.handler({
+        id: 12345,
+        result: 'needs_indexing',
+      });
+
+      expect(result.isError).toBeFalsy();
+      expect(result.content[0].text).toContain('Successfully marked discovered URL (ID: 12345)');
+      expect(result.content[0].text).toContain('needs_indexing');
+      expect(markMock).toHaveBeenCalledWith({
+        id: 12345,
+        result: 'needs_indexing',
+        notes: undefined,
         mcp_implementation_id: undefined,
       });
     });

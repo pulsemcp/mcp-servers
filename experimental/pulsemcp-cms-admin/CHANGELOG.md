@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [0.9.9] - 2026-03-13
+
+### Added
+
+- Added `needs_indexing` status filter to `list_discovered_urls` — enables the ingest subagent to query URLs awaiting indexing via `WHERE processing_result = 'needs_indexing'`
+- Added `needs_indexing` and `drafted` result values to `mark_discovered_url_processed` — `drafted` is used when the ingest subagent creates a draft MCP implementation, `needs_indexing` is used by crawl jobs to flag URLs for the indexing pipeline
+- Updated `DiscoveredUrlResult` type to include `'needs_indexing' | 'drafted'`
+
 ## [0.9.7] - 2026-03-12
 
 ### Added

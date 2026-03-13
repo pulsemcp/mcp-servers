@@ -968,7 +968,13 @@ export interface ProctorMetadataResponse {
 // For managing discovered URLs that need processing into MCP implementations
 // ============================================================
 
-export type DiscoveredUrlResult = 'posted' | 'skipped' | 'rejected' | 'error';
+export type DiscoveredUrlResult =
+  | 'posted'
+  | 'skipped'
+  | 'rejected'
+  | 'error'
+  | 'needs_indexing'
+  | 'drafted';
 
 export interface DiscoveredUrl {
   id: number;

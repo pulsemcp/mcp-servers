@@ -33,7 +33,7 @@ export async function getDiscoveredUrls(
   apiKey: string,
   baseUrl: string,
   params?: {
-    status?: 'pending' | 'processed' | 'all';
+    status?: 'pending' | 'processed' | 'needs_indexing' | 'all';
     page?: number;
     per_page?: number;
   }
