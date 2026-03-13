@@ -12,7 +12,7 @@ const PARAM_DESCRIPTIONS = {
   limit: 'Results per page, range 1-100. Default: 30',
   offset: 'Pagination offset. Default: 0',
   enrich_auth_types:
-    "When true, enriches auth_types by fetching each server's remotes and deriving all authentication methods. This makes additional API calls (one per server) but returns accurate auth_types reflecting all remote auth modes. Use when routing decisions depend on auth_types accuracy (e.g., Phase 1 vs Phase 2 routing). Default: false",
+    "When true, enriches auth_types by fetching each server's remotes and deriving all authentication methods. This makes additional API calls (one per server) but returns accurate auth_types reflecting all remote auth modes. Use when downstream decisions depend on precise auth type classification. Default: false",
 } as const;
 
 const ListProctorRunsSchema = z.object({

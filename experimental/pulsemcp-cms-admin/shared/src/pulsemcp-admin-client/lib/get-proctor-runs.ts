@@ -1,5 +1,4 @@
-import type { ProctorRunsResponse } from '../../types.js';
-import { getUnifiedMCPServer } from './get-unified-mcp-server.js';
+import type { GetProctorRunsParams, ProctorRunsResponse } from '../../types.js';
 
 interface RailsProctorRun {
   id: number;
@@ -33,6 +32,60 @@ interface RailsResponse {
   };
 }
 
+interface RailsImplementationWithRemotes {
+  mcp_server_id?: number | null;
+  mcp_server?: {
+    remotes?: Array<{ authentication_method?: string }>;
+  } | null;
+}
+
+const ENRICHMENT_CONCURRENCY = 5;
+
+/**
+ * Fetch a server's remote authentication methods via the implementations search endpoint.
+ * Uses a single API call (lighter than getUnifiedMCPServer which makes 2 calls).
+ */
+async function fetchRemoteAuthMethods(
+  apiKey: string,
+  baseUrl: string,
+  slug: string
+): Promise<string[]> {
+  const searchUrl = new URL('/api/implementations/search', baseUrl);
+  searchUrl.searchParams.append('q', slug);
+  searchUrl.searchParams.append('type', 'server');
+  searchUrl.searchParams.append('limit', '50');
+
+  const response = await fetch(searchUrl.toString(), {
+    method: 'GET',
+    headers: {
+      'X-API-Key': apiKey,
+      Accept: 'application/json',
+    },
+  });
+
+  if (!response.ok) {
+    return [];
+  }
+
+  const data = (await response.json()) as { data: RailsImplementationWithRemotes[] };
+
+  // Find the implementation whose mcp_server slug matches exactly
+  for (const impl of data.data) {
+    const remotes = impl.mcp_server?.remotes;
+    if (remotes && remotes.length > 0) {
+      const authMethods = remotes
+        .map((r) => r.authentication_method)
+        .filter((method): method is string => !!method);
+      const unique = [...new Set(authMethods)];
+      if (unique.length > 0) {
+        return unique.sort();
+      }
+    }
+  }
+
+  return [];
+}
+
 /**
  * Derive auth_types from a server's remotes by extracting unique authentication_method values.
  * Falls back to the original auth_types if the server lookup fails or returns no remotes.
@@ -44,15 +97,9 @@ async function enrichAuthTypes(
   fallbackAuthTypes: string[]
 ): Promise<string[]> {
   try {
-    const server = await getUnifiedMCPServer(apiKey, baseUrl, slug);
-    if (server.remotes && server.remotes.length > 0) {
-      const authMethods = server.remotes
-        .map((r) => r.authentication_method)
-        .filter((method): method is string => !!method);
-      const unique = [...new Set(authMethods)];
-      if (unique.length > 0) {
-        return unique.sort();
-      }
+    const authMethods = await fetchRemoteAuthMethods(apiKey, baseUrl, slug);
+    if (authMethods.length > 0) {
+      return authMethods;
     }
   } catch {
     // Fall through to return original auth_types
@@ -60,27 +107,32 @@ async function enrichAuthTypes(
   return fallbackAuthTypes;
 }
 
+/**
+ * Run async tasks with a concurrency limit.
+ */
+async function runWithConcurrency<T>(
+  tasks: (() => Promise<T>)[],
+  concurrency: number
+): Promise<T[]> {
+  const results: T[] = new Array(tasks.length);
+  let nextIndex = 0;
+
+  async function runNext(): Promise<void> {
+    while (nextIndex < tasks.length) {
+      const index = nextIndex++;
+      results[index] = await tasks[index]();
+    }
+  }
+
+  const workers = Array.from({ length: Math.min(concurrency, tasks.length) }, () => runNext());
+  await Promise.all(workers);
+  return results;
+}
+
 export async function getProctorRuns(
   apiKey: string,
   baseUrl: string,
-  params?: {
-    q?: string;
-    recommended?: boolean;
-    tenant_ids?: string;
-    sort?:
-      | 'slug'
-      | 'name'
-      | 'mirrors'
-      | 'recommended'
-      | 'tenants'
-      | 'latest_tested'
-      | 'last_auth_check'
-      | 'last_tools_list';
-    direction?: 'asc' | 'desc';
-    limit?: number;
-    offset?: number;
-    enrich_auth_types?: boolean;
-  }
+  params?: GetProctorRunsParams
 ): Promise<ProctorRunsResponse> {
   const url = new URL('/api/proctor_runs', baseUrl);
 
@@ -126,7 +178,7 @@ export async function getProctorRuns(
 
   const data = (await response.json()) as RailsResponse;
 
-  const runs = data.data.map((run) => ({
+  let runs = data.data.map((run) => ({
     id: run.id,
     slug: run.slug,
     name: run.name,
@@ -148,12 +200,14 @@ export async function getProctorRuns(
   }));
 
   // Enrich auth_types by fetching each server's remotes and deriving auth types
-  // from their authentication_method fields
+  // from their authentication_method fields. Uses concurrency limit to avoid
+  // hammering the API with too many parallel requests.
   if (params?.enrich_auth_types) {
-    const enrichPromises = runs.map(async (run) => {
-      run.auth_types = await enrichAuthTypes(apiKey, baseUrl, run.slug, run.auth_types);
-    });
-    await Promise.all(enrichPromises);
+    const enrichedAuthTypes = await runWithConcurrency(
+      runs.map((run) => () => enrichAuthTypes(apiKey, baseUrl, run.slug, run.auth_types)),
+      ENRICHMENT_CONCURRENCY
+    );
+    runs = runs.map((run, i) => ({ ...run, auth_types: enrichedAuthTypes[i] }));
   }
 
   return {

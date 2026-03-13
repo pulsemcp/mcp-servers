@@ -1,15 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { getProctorRuns } from '../../shared/src/pulsemcp-admin-client/lib/get-proctor-runs.js';
 
-// Mock the getUnifiedMCPServer dependency
-vi.mock('../../shared/src/pulsemcp-admin-client/lib/get-unified-mcp-server.js', () => ({
-  getUnifiedMCPServer: vi.fn(),
-}));
-
-import { getUnifiedMCPServer } from '../../shared/src/pulsemcp-admin-client/lib/get-unified-mcp-server.js';
-
-const mockedGetUnifiedMCPServer = vi.mocked(getUnifiedMCPServer);
-
 function createMockRailsResponse(
   runs: Array<{
     slug: string;
@@ -47,22 +38,35 @@ function createMockRailsResponse(
   };
 }
 
+function createMockImplSearchResponse(remotes: Array<{ authentication_method?: string }>) {
+  return {
+    data: [
+      {
+        mcp_server_id: 1,
+        mcp_server: { remotes },
+      },
+    ],
+  };
+}
+
 describe('getProctorRuns enrich_auth_types', () => {
   const apiKey = 'test-api-key';
   const baseUrl = 'https://admin.test.example.com';
+  let fetchMock: ReturnType<typeof vi.spyOn>;
 
   beforeEach(() => {
     vi.resetAllMocks();
   });
 
   afterEach(() => {
+    if (fetchMock) fetchMock.mockRestore();
     vi.restoreAllMocks();
   });
 
   it('should not enrich auth_types when enrich_auth_types is not set', async () => {
     const mockResponse = createMockRailsResponse([{ slug: 'huggingface', auth_types: ['open'] }]);
 
-    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
+    fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
       ok: true,
       json: async () => mockResponse,
     } as Response);
@@ -70,185 +74,172 @@ describe('getProctorRuns enrich_auth_types', () => {
     const result = await getProctorRuns(apiKey, baseUrl);
 
     expect(result.runs[0].auth_types).toEqual(['open']);
-    expect(mockedGetUnifiedMCPServer).not.toHaveBeenCalled();
-
-    fetchMock.mockRestore();
+    // Only the initial proctor_runs fetch, no enrichment calls
+    expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
-  it('should enrich auth_types from server remotes when enrich_auth_types is true', async () => {
+  it('should not enrich auth_types when enrich_auth_types is explicitly false', async () => {
     const mockResponse = createMockRailsResponse([{ slug: 'huggingface', auth_types: ['open'] }]);
 
-    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
+    fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
       ok: true,
       json: async () => mockResponse,
     } as Response);
 
-    mockedGetUnifiedMCPServer.mockResolvedValueOnce({
-      id: 5017,
-      slug: 'huggingface',
-      implementation_id: 100,
-      name: 'Hugging Face',
-      status: 'live',
-      remotes: [
-        { id: 1, authentication_method: 'oauth', transport: 'streamable_http' },
-        { id: 2, authentication_method: 'api_key', transport: 'streamable_http' },
-        { id: 3, authentication_method: 'open', transport: 'streamable_http' },
-      ],
-    });
+    const result = await getProctorRuns(apiKey, baseUrl, { enrich_auth_types: false });
+
+    expect(result.runs[0].auth_types).toEqual(['open']);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('should enrich auth_types from server remotes when enrich_auth_types is true', async () => {
+    const proctorResponse = createMockRailsResponse([
+      { slug: 'huggingface', auth_types: ['open'] },
+    ]);
+    const implResponse = createMockImplSearchResponse([
+      { authentication_method: 'oauth' },
+      { authentication_method: 'api_key' },
+      { authentication_method: 'open' },
+    ]);
+
+    fetchMock = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce({ ok: true, json: async () => proctorResponse } as Response)
+      .mockResolvedValueOnce({ ok: true, json: async () => implResponse } as Response);
 
     const result = await getProctorRuns(apiKey, baseUrl, { enrich_auth_types: true });
 
     expect(result.runs[0].auth_types).toEqual(['api_key', 'oauth', 'open']);
-    expect(mockedGetUnifiedMCPServer).toHaveBeenCalledWith(apiKey, baseUrl, 'huggingface');
-
-    fetchMock.mockRestore();
+    // 1 proctor_runs call + 1 implementations/search call
+    expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
   it('should deduplicate auth_types from remotes', async () => {
-    const mockResponse = createMockRailsResponse([
+    const proctorResponse = createMockRailsResponse([
       { slug: 'test-server', auth_types: ['api_key'] },
     ]);
+    const implResponse = createMockImplSearchResponse([
+      { authentication_method: 'api_key' },
+      { authentication_method: 'api_key' },
+      { authentication_method: 'oauth' },
+    ]);
 
-    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
-      ok: true,
-      json: async () => mockResponse,
-    } as Response);
-
-    mockedGetUnifiedMCPServer.mockResolvedValueOnce({
-      id: 1,
-      slug: 'test-server',
-      implementation_id: 1,
-      name: 'Test',
-      status: 'live',
-      remotes: [
-        { id: 1, authentication_method: 'api_key', transport: 'streamable_http' },
-        { id: 2, authentication_method: 'api_key', transport: 'sse' },
-        { id: 3, authentication_method: 'oauth', transport: 'streamable_http' },
-      ],
-    });
+    fetchMock = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce({ ok: true, json: async () => proctorResponse } as Response)
+      .mockResolvedValueOnce({ ok: true, json: async () => implResponse } as Response);
 
     const result = await getProctorRuns(apiKey, baseUrl, { enrich_auth_types: true });
 
-    // Should be deduplicated and sorted
     expect(result.runs[0].auth_types).toEqual(['api_key', 'oauth']);
-
-    fetchMock.mockRestore();
   });
 
-  it('should fall back to original auth_types when server lookup fails', async () => {
-    const mockResponse = createMockRailsResponse([
+  it('should fall back to original auth_types when enrichment fetch fails', async () => {
+    const proctorResponse = createMockRailsResponse([
       { slug: 'failing-server', auth_types: ['open'] },
     ]);
 
-    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
-      ok: true,
-      json: async () => mockResponse,
-    } as Response);
-
-    mockedGetUnifiedMCPServer.mockRejectedValueOnce(new Error('Server not found'));
+    fetchMock = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce({ ok: true, json: async () => proctorResponse } as Response)
+      .mockRejectedValueOnce(new Error('Network error'));
 
     const result = await getProctorRuns(apiKey, baseUrl, { enrich_auth_types: true });
 
-    // Falls back to original auth_types
     expect(result.runs[0].auth_types).toEqual(['open']);
+  });
 
-    fetchMock.mockRestore();
+  it('should fall back to original auth_types when enrichment returns non-ok', async () => {
+    const proctorResponse = createMockRailsResponse([
+      { slug: 'not-found', auth_types: ['api_key'] },
+    ]);
+
+    fetchMock = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce({ ok: true, json: async () => proctorResponse } as Response)
+      .mockResolvedValueOnce({ ok: false, status: 404 } as Response);
+
+    const result = await getProctorRuns(apiKey, baseUrl, { enrich_auth_types: true });
+
+    expect(result.runs[0].auth_types).toEqual(['api_key']);
   });
 
   it('should fall back to original auth_types when server has no remotes', async () => {
-    const mockResponse = createMockRailsResponse([{ slug: 'no-remotes', auth_types: ['api_key'] }]);
+    const proctorResponse = createMockRailsResponse([
+      { slug: 'no-remotes', auth_types: ['api_key'] },
+    ]);
+    const implResponse = createMockImplSearchResponse([]);
 
-    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
-      ok: true,
-      json: async () => mockResponse,
-    } as Response);
-
-    mockedGetUnifiedMCPServer.mockResolvedValueOnce({
-      id: 1,
-      slug: 'no-remotes',
-      implementation_id: 1,
-      name: 'No Remotes',
-      status: 'live',
-      remotes: [],
-    });
+    fetchMock = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce({ ok: true, json: async () => proctorResponse } as Response)
+      .mockResolvedValueOnce({ ok: true, json: async () => implResponse } as Response);
 
     const result = await getProctorRuns(apiKey, baseUrl, { enrich_auth_types: true });
 
-    // Falls back to original auth_types when no remotes
     expect(result.runs[0].auth_types).toEqual(['api_key']);
-
-    fetchMock.mockRestore();
   });
 
-  it('should enrich auth_types for multiple servers in parallel', async () => {
-    const mockResponse = createMockRailsResponse([
+  it('should fall back when all remotes have null/undefined authentication_method', async () => {
+    const proctorResponse = createMockRailsResponse([
+      { slug: 'no-auth-methods', auth_types: ['open'] },
+    ]);
+    const implResponse = createMockImplSearchResponse([{ authentication_method: undefined }, {}]);
+
+    fetchMock = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce({ ok: true, json: async () => proctorResponse } as Response)
+      .mockResolvedValueOnce({ ok: true, json: async () => implResponse } as Response);
+
+    const result = await getProctorRuns(apiKey, baseUrl, { enrich_auth_types: true });
+
+    expect(result.runs[0].auth_types).toEqual(['open']);
+  });
+
+  it('should enrich auth_types for multiple servers with concurrency', async () => {
+    const proctorResponse = createMockRailsResponse([
       { slug: 'server-a', auth_types: ['open'] },
       { slug: 'server-b', auth_types: ['api_key'] },
     ]);
+    const implResponseA = createMockImplSearchResponse([
+      { authentication_method: 'open' },
+      { authentication_method: 'oauth' },
+    ]);
+    const implResponseB = createMockImplSearchResponse([
+      { authentication_method: 'api_key' },
+      { authentication_method: 'oauth' },
+    ]);
 
-    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
-      ok: true,
-      json: async () => mockResponse,
-    } as Response);
-
-    mockedGetUnifiedMCPServer
-      .mockResolvedValueOnce({
-        id: 1,
-        slug: 'server-a',
-        implementation_id: 1,
-        name: 'Server A',
-        status: 'live',
-        remotes: [
-          { id: 1, authentication_method: 'open', transport: 'streamable_http' },
-          { id: 2, authentication_method: 'oauth', transport: 'streamable_http' },
-        ],
-      })
-      .mockResolvedValueOnce({
-        id: 2,
-        slug: 'server-b',
-        implementation_id: 2,
-        name: 'Server B',
-        status: 'live',
-        remotes: [
-          { id: 3, authentication_method: 'api_key', transport: 'streamable_http' },
-          { id: 4, authentication_method: 'oauth', transport: 'sse' },
-        ],
-      });
+    fetchMock = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce({ ok: true, json: async () => proctorResponse } as Response)
+      .mockResolvedValueOnce({ ok: true, json: async () => implResponseA } as Response)
+      .mockResolvedValueOnce({ ok: true, json: async () => implResponseB } as Response);
 
     const result = await getProctorRuns(apiKey, baseUrl, { enrich_auth_types: true });
 
     expect(result.runs[0].auth_types).toEqual(['oauth', 'open']);
     expect(result.runs[1].auth_types).toEqual(['api_key', 'oauth']);
-    expect(mockedGetUnifiedMCPServer).toHaveBeenCalledTimes(2);
-
-    fetchMock.mockRestore();
+    expect(fetchMock).toHaveBeenCalledTimes(3);
   });
 
   it('should skip remotes with no authentication_method', async () => {
-    const mockResponse = createMockRailsResponse([{ slug: 'partial-auth', auth_types: ['open'] }]);
+    const proctorResponse = createMockRailsResponse([
+      { slug: 'partial-auth', auth_types: ['open'] },
+    ]);
+    const implResponse = createMockImplSearchResponse([
+      { authentication_method: 'oauth' },
+      {}, // No authentication_method
+      { authentication_method: undefined },
+    ]);
 
-    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
-      ok: true,
-      json: async () => mockResponse,
-    } as Response);
-
-    mockedGetUnifiedMCPServer.mockResolvedValueOnce({
-      id: 1,
-      slug: 'partial-auth',
-      implementation_id: 1,
-      name: 'Partial Auth',
-      status: 'live',
-      remotes: [
-        { id: 1, authentication_method: 'oauth', transport: 'streamable_http' },
-        { id: 2, transport: 'sse' }, // No authentication_method
-        { id: 3, authentication_method: undefined, transport: 'streamable_http' },
-      ],
-    });
+    fetchMock = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce({ ok: true, json: async () => proctorResponse } as Response)
+      .mockResolvedValueOnce({ ok: true, json: async () => implResponse } as Response);
 
     const result = await getProctorRuns(apiKey, baseUrl, { enrich_auth_types: true });
 
     expect(result.runs[0].auth_types).toEqual(['oauth']);
-
-    fetchMock.mockRestore();
   });
 });
