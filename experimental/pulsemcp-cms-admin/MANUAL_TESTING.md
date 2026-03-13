@@ -3,7 +3,7 @@
 ## Latest Test Results
 
 **Date:** 2026-03-12
-**Commit:** fdc2bb7
+**Commit:** d44789a
 **Version:** 0.9.8 (pre-release)
 **API Environment:** Staging (admin.staging.pulsemcp.com)
 
