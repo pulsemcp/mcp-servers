@@ -169,11 +169,19 @@ Use cases:
           }
 
           if (run.known_missing_init_tools_list) {
-            content += `   Known Missing Init Tools List: yes\n`;
+            content += `   Known Missing Init Tools List: yes`;
+            if (run.known_missing_init_tools_list_filter_to) {
+              content += ` (filter to: ${run.known_missing_init_tools_list_filter_to})`;
+            }
+            content += '\n';
           }
 
           if (run.known_missing_auth_check) {
-            content += `   Known Missing Auth Check: yes\n`;
+            content += `   Known Missing Auth Check: yes`;
+            if (run.known_missing_auth_check_filter_to) {
+              content += ` (filter to: ${run.known_missing_auth_check_filter_to})`;
+            }
+            content += '\n';
           }
 
           content += '\n';

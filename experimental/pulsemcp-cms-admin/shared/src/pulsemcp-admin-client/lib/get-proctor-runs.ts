@@ -19,6 +19,8 @@ interface RailsProctorRun {
   remotes: string[];
   known_missing_init_tools_list: boolean;
   known_missing_auth_check: boolean;
+  known_missing_init_tools_list_filter_to: string | null;
+  known_missing_auth_check_filter_to: string | null;
 }
 
 interface RailsResponse {
@@ -117,6 +119,8 @@ export async function getProctorRuns(
       remotes: run.remotes,
       known_missing_init_tools_list: run.known_missing_init_tools_list || false,
       known_missing_auth_check: run.known_missing_auth_check || false,
+      known_missing_init_tools_list_filter_to: run.known_missing_init_tools_list_filter_to || null,
+      known_missing_auth_check_filter_to: run.known_missing_auth_check_filter_to || null,
     })),
     pagination: {
       current_page: data.meta.current_page,

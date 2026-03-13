@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Added
+
+- Added `known_missing_init_tools_list_filter_to` and `known_missing_auth_check_filter_to` fields to `list_proctor_runs` output — when set, known-missing suppression only applies to specific transports (e.g., `remotes[0]`) rather than blanket-suppressing all transports on the server
+
 ## [0.9.9] - 2026-03-13
 
 ### Added

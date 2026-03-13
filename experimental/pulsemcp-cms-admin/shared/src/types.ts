@@ -915,6 +915,8 @@ export interface ProctorRun {
   remotes: string[];
   known_missing_init_tools_list: boolean;
   known_missing_auth_check: boolean;
+  known_missing_init_tools_list_filter_to: string | null;
+  known_missing_auth_check_filter_to: string | null;
 }
 
 export interface ProctorRunsResponse {
