@@ -102,6 +102,8 @@ describe('list_proctor_runs', () => {
             remotes: ['streamable-http'],
             known_missing_init_tools_list: false,
             known_missing_auth_check: false,
+            known_missing_init_tools_list_filter_to: null,
+            known_missing_auth_check_filter_to: null,
           },
           {
             id: 789,
@@ -122,6 +124,8 @@ describe('list_proctor_runs', () => {
             remotes: [],
             known_missing_init_tools_list: false,
             known_missing_auth_check: false,
+            known_missing_init_tools_list_filter_to: null,
+            known_missing_auth_check_filter_to: null,
           },
         ],
         pagination: {
@@ -196,6 +200,8 @@ describe('list_proctor_runs', () => {
             remotes: ['streamable-http'],
             known_missing_init_tools_list: true,
             known_missing_auth_check: false,
+            known_missing_init_tools_list_filter_to: null,
+            known_missing_auth_check_filter_to: null,
           },
           {
             id: 9720,
@@ -216,6 +222,8 @@ describe('list_proctor_runs', () => {
             remotes: ['streamable-http'],
             known_missing_init_tools_list: true,
             known_missing_auth_check: true,
+            known_missing_init_tools_list_filter_to: null,
+            known_missing_auth_check_filter_to: null,
           },
         ],
         pagination: {
@@ -238,14 +246,149 @@ describe('list_proctor_runs', () => {
     const campfireSection = text.split('**cube**')[0];
     const cubeSection = text.split('**cube**')[1];
 
-    // campfire: only known_missing_init_tools_list is true
+    // campfire: only known_missing_init_tools_list is true, no filter_to
     expect(campfireSection).toContain('**campfire**');
     expect(campfireSection).toContain('Known Missing Init Tools List: yes');
+    expect(campfireSection).not.toContain('filter to:');
     expect(campfireSection).not.toContain('Known Missing Auth Check');
 
-    // cube: both flags are true
+    // cube: both flags are true, no filter_to
     expect(cubeSection).toContain('Known Missing Init Tools List: yes');
     expect(cubeSection).toContain('Known Missing Auth Check: yes');
+    expect(cubeSection).not.toContain('filter to:');
+  });
+
+  it('should render filter_to suffix when known_missing flags have filter values', async () => {
+    const mockClient = createMockClient({
+      getProctorRuns: vi.fn().mockResolvedValue({
+        runs: [
+          {
+            id: 100,
+            slug: 'filtered-both',
+            name: 'Filtered Both',
+            recommended: false,
+            mirrors_count: 3,
+            tenant_count: 1,
+            latest_version: null,
+            latest_mirror_id: null,
+            latest_mirror_name: null,
+            latest_tested: false,
+            last_auth_check_days: null,
+            last_tools_list_days: null,
+            auth_types: [],
+            num_tools: null,
+            packages: [],
+            remotes: ['streamable-http', 'sse'],
+            known_missing_init_tools_list: true,
+            known_missing_auth_check: true,
+            known_missing_init_tools_list_filter_to: 'remotes[0]',
+            known_missing_auth_check_filter_to: 'remotes[0],remotes[1]',
+          },
+          {
+            id: 101,
+            slug: 'filtered-one',
+            name: 'Filtered One',
+            recommended: false,
+            mirrors_count: 2,
+            tenant_count: 0,
+            latest_version: null,
+            latest_mirror_id: null,
+            latest_mirror_name: null,
+            latest_tested: false,
+            last_auth_check_days: null,
+            last_tools_list_days: null,
+            auth_types: [],
+            num_tools: null,
+            packages: [],
+            remotes: ['streamable-http'],
+            known_missing_init_tools_list: true,
+            known_missing_auth_check: false,
+            known_missing_init_tools_list_filter_to: 'remotes[0]',
+            known_missing_auth_check_filter_to: null,
+          },
+        ],
+        pagination: {
+          current_page: 1,
+          total_pages: 1,
+          total_count: 2,
+          has_next: false,
+          limit: 30,
+        },
+      }),
+    });
+
+    const tool = listProctorRuns(mockServer, () => mockClient);
+    const result = await tool.handler({});
+
+    expect(result.isError).toBeFalsy();
+    const text = result.content[0].text;
+
+    // Split by second server entry
+    const filteredBothSection = text.split('**filtered-one**')[0];
+    const filteredOneSection = text.split('**filtered-one**')[1];
+
+    // filtered-both: both flags with filter_to values
+    expect(filteredBothSection).toContain(
+      'Known Missing Init Tools List: yes (filter to: remotes[0])'
+    );
+    expect(filteredBothSection).toContain(
+      'Known Missing Auth Check: yes (filter to: remotes[0],remotes[1])'
+    );
+
+    // filtered-one: only init_tools_list with filter_to
+    expect(filteredOneSection).toContain(
+      'Known Missing Init Tools List: yes (filter to: remotes[0])'
+    );
+    expect(filteredOneSection).not.toContain('Known Missing Auth Check');
+  });
+
+  it('should not render filter_to when known_missing boolean is false', async () => {
+    const mockClient = createMockClient({
+      getProctorRuns: vi.fn().mockResolvedValue({
+        runs: [
+          {
+            id: 200,
+            slug: 'inconsistent-data',
+            name: 'Inconsistent Data',
+            recommended: false,
+            mirrors_count: 1,
+            tenant_count: 0,
+            latest_version: null,
+            latest_mirror_id: null,
+            latest_mirror_name: null,
+            latest_tested: false,
+            last_auth_check_days: null,
+            last_tools_list_days: null,
+            auth_types: [],
+            num_tools: null,
+            packages: [],
+            remotes: ['streamable-http'],
+            known_missing_init_tools_list: false,
+            known_missing_auth_check: false,
+            known_missing_init_tools_list_filter_to: 'remotes[0]',
+            known_missing_auth_check_filter_to: 'remotes[1]',
+          },
+        ],
+        pagination: {
+          current_page: 1,
+          total_pages: 1,
+          total_count: 1,
+          has_next: false,
+          limit: 30,
+        },
+      }),
+    });
+
+    const tool = listProctorRuns(mockServer, () => mockClient);
+    const result = await tool.handler({});
+
+    expect(result.isError).toBeFalsy();
+    const text = result.content[0].text;
+
+    // When the boolean flags are false, neither the label nor filter_to should appear
+    expect(text).not.toContain('Known Missing Init Tools List');
+    expect(text).not.toContain('Known Missing Auth Check');
+    expect(text).not.toContain('filter to:');
   });
 
   it('should pass filter parameters to client', async () => {
