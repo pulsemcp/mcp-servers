@@ -3,6 +3,31 @@
 ## Latest Test Results
 
 **Date:** 2026-03-13
+**Commit:** 9cbbc52
+**Version:** 0.9.10 (pre-release)
+**API Environment:** N/A (response mapping and display formatting only, no API interaction changes)
+
+### Overall: ✅ Functional Tests PASSING (11/11 list-proctor-runs)
+
+**v0.9.10 Changes:**
+
+- Added `known_missing_init_tools_list_filter_to` and `known_missing_auth_check_filter_to` fields to `list_proctor_runs` output
+- When set, display appends ` (filter to: <value>)` to the known-missing flag line
+
+**Functional Test Results: ✅ 11/11 PASSING (list-proctor-runs.test.ts)**
+
+- 2 new tests added: `should render filter_to suffix when known_missing flags have filter values`, `should not render filter_to when known_missing boolean is false`
+- All 9 existing tests continue to pass with `filter_to: null` in mock data
+
+**Note on Manual Testing:**
+
+Manual tests were not run for this release — API credentials (`.env` file) were not available in this environment. This change adds two optional `string | null` fields to the response mapper (`|| null` default) and appends a parenthetical suffix to the display output when the fields are non-null. No API client code, request payloads, or endpoint URLs were changed. The v0.9.9 manual test results remain valid for all API-facing functionality.
+
+---
+
+## Previous Test Results (v0.9.9)
+
+**Date:** 2026-03-13
 **Commit:** 8c30fcc
 **Version:** 0.9.9 (pre-release)
 **API Environment:** Staging (admin.staging.pulsemcp.com)
