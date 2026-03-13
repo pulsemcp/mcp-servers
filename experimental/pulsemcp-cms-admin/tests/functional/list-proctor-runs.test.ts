@@ -342,6 +342,55 @@ describe('list_proctor_runs', () => {
     expect(filteredOneSection).not.toContain('Known Missing Auth Check');
   });
 
+  it('should not render filter_to when known_missing boolean is false', async () => {
+    const mockClient = createMockClient({
+      getProctorRuns: vi.fn().mockResolvedValue({
+        runs: [
+          {
+            id: 200,
+            slug: 'inconsistent-data',
+            name: 'Inconsistent Data',
+            recommended: false,
+            mirrors_count: 1,
+            tenant_count: 0,
+            latest_version: null,
+            latest_mirror_id: null,
+            latest_mirror_name: null,
+            latest_tested: false,
+            last_auth_check_days: null,
+            last_tools_list_days: null,
+            auth_types: [],
+            num_tools: null,
+            packages: [],
+            remotes: ['streamable-http'],
+            known_missing_init_tools_list: false,
+            known_missing_auth_check: false,
+            known_missing_init_tools_list_filter_to: 'remotes[0]',
+            known_missing_auth_check_filter_to: 'remotes[1]',
+          },
+        ],
+        pagination: {
+          current_page: 1,
+          total_pages: 1,
+          total_count: 1,
+          has_next: false,
+          limit: 30,
+        },
+      }),
+    });
+
+    const tool = listProctorRuns(mockServer, () => mockClient);
+    const result = await tool.handler({});
+
+    expect(result.isError).toBeFalsy();
+    const text = result.content[0].text;
+
+    // When the boolean flags are false, neither the label nor filter_to should appear
+    expect(text).not.toContain('Known Missing Init Tools List');
+    expect(text).not.toContain('Known Missing Auth Check');
+    expect(text).not.toContain('filter to:');
+  });
+
   it('should pass filter parameters to client', async () => {
     const getProctorRunsMock = vi.fn().mockResolvedValue({
       runs: [],
