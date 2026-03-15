@@ -68,20 +68,22 @@ Typical usage:
 
       // Filter by section
       if (validatedArgs.section) {
-        const typeMap: Record<string, string> = {
-          exam_results: 'exam_result',
-          logs: 'log',
-          summary: 'summary',
-          errors: 'error',
+        const typeMap: Record<string, string[]> = {
+          exam_results: ['exam_result', 'result'],
+          logs: ['log'],
+          summary: ['summary'],
+          errors: ['error'],
         };
-        const targetType = typeMap[validatedArgs.section];
-        lines = lines.filter((line) => line.type === targetType);
+        const targetTypes = typeMap[validatedArgs.section];
+        lines = lines.filter((line) => targetTypes.includes(line.type));
       }
 
-      // Filter by mirror_id
+      // Filter by mirror_id (applies to both 'exam_result' and 'result' types)
       if (validatedArgs.mirror_id !== undefined) {
         lines = lines.filter(
-          (line) => line.type !== 'exam_result' || line.mirror_id === validatedArgs.mirror_id
+          (line) =>
+            (line.type !== 'exam_result' && line.type !== 'result') ||
+            line.mirror_id === validatedArgs.mirror_id
         );
       }
 

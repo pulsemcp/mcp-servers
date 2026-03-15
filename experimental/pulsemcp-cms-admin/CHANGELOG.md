@@ -6,6 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [0.9.11] - 2026-03-15
+
+### Fixed
+
+- Fixed exam results not being captured when the proctor API returns `type: 'result'` instead of `type: 'exam_result'` — NDJSON parser now normalizes the type during parsing so downstream tools (`get_exam_result`, `save_results_for_mirror`) handle both variants
+- Added diagnostic warning when `run_exam_for_mirror` receives no exam_result lines, showing line type counts to help debug large payload issues (e.g., 680KB+ init-tools-list responses)
+
 ## [0.9.10] - 2026-03-13
 
 ### Added

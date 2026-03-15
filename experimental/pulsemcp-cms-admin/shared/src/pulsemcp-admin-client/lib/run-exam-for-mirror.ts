@@ -53,7 +53,17 @@ export async function runExamForMirror(
     const trimmed = line.trim();
     if (trimmed) {
       try {
-        lines.push(JSON.parse(trimmed) as ProctorExamStreamLine);
+        const parsed = JSON.parse(trimmed) as ProctorExamStreamLine;
+        // Normalize 'result' type to 'exam_result' for compatibility.
+        // The proctor run_exam endpoint emits type:'result' while
+        // run_exam_for_mirror emits type:'exam_result'. If the backend
+        // ever sends 'result' on this endpoint, treat it as 'exam_result'
+        // so downstream filtering (get_exam_result, save_results_for_mirror)
+        // works correctly.
+        if (parsed.type === 'result') {
+          parsed.type = 'exam_result';
+        }
+        lines.push(parsed);
       } catch {
         // Include malformed lines as error entries so they're visible in output
         lines.push({ type: 'error', message: `Malformed NDJSON line: ${trimmed}` });

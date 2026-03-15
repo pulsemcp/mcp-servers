@@ -80,7 +80,7 @@ Typical workflow:
         // processedBy } at the top level of the saved results column.
         // We must unwrap through data.result.result to reach it.
         const results = stored.lines
-          .filter((line) => line.type === 'exam_result')
+          .filter((line) => line.type === 'exam_result' || line.type === 'result')
           .map((line) => {
             const data = line.data as Record<string, unknown> | undefined;
             // Unwrap nested result objects to find the exam payload

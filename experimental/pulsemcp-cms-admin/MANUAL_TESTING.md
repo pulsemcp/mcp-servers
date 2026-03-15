@@ -2,6 +2,35 @@
 
 ## Latest Test Results
 
+**Date:** 2026-03-15
+**Commit:** (see PR branch)
+**Version:** 0.9.11 (pre-release)
+**API Environment:** N/A (client-side NDJSON parsing and type normalization only, no API interaction changes)
+
+### Overall: ✅ Functional Tests PASSING (200/200, 9 test files)
+
+**v0.9.11 Changes:**
+
+- Fixed exam results not being captured when the proctor API returns `type: 'result'` instead of `type: 'exam_result'` — NDJSON parser now normalizes the type during parsing
+- Added diagnostic warning when `run_exam_for_mirror` receives no exam_result lines, showing line type counts
+- Added defense-in-depth handling of `result` type in `get_exam_result`, `save_results_for_mirror`, and `run_exam_for_mirror` switch statement
+
+**Functional Test Results: ✅ 200/200 PASSING (9 test files)**
+
+- 4 new tests added:
+  - `should show warning when no exam_result lines are received` — verifies diagnostic output when API returns logs+summary but no exam_result lines
+  - `should handle result type lines as exam_result (type normalization)` — verifies 'result' type is treated as 'exam_result' in run_exam_for_mirror
+  - `should include result type lines when filtering by exam_results section` — verifies get_exam_result handles 'result' type in section filter
+  - `should save result type lines as exam results` — verifies save_results_for_mirror processes 'result' type lines
+
+**Note on Manual Testing:**
+
+Manual tests were not run for this release — API credentials (`.env` file) were not available in this environment. This change modifies only client-side NDJSON parsing logic (type normalization from 'result' to 'exam_result') and adds diagnostic warnings when no exam_result lines are received. No API client code, request payloads, or endpoint URLs were changed. The v0.9.9 manual test results remain valid for all API-facing functionality.
+
+---
+
+## Previous Test Results (v0.9.10)
+
 **Date:** 2026-03-13
 **Commit:** 9cbbc52
 **Version:** 0.9.10 (pre-release)

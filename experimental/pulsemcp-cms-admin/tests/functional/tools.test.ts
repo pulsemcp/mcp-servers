@@ -2816,6 +2816,67 @@ describe('Newsletter Tools', () => {
         expect(result.isError).toBe(true);
         expect(result.content[0].text).toContain('Error running proctor exam: Invalid API key');
       });
+
+      it('should show warning when no exam_result lines are received', async () => {
+        const { runExamForMirror } = await import('../../shared/src/tools/run-exam-for-mirror.js');
+        const mockClient = createMockClient({
+          runExamForMirror: vi.fn().mockResolvedValue({
+            lines: [
+              { type: 'log', message: 'Starting exam for mirror 155' },
+              { type: 'log', message: 'stdout length: 680062 bytes' },
+              { type: 'log', message: 'Successfully parsed JSON output' },
+              { type: 'summary', total: 0, passed: 0, failed: 0, skipped: 0 },
+            ],
+          }),
+        });
+
+        const tool = runExamForMirror(mockServer, () => mockClient);
+        const result = await tool.handler({
+          mirror_ids: [155],
+          runtime_id: 'fly-machines-v1',
+          exam_type: 'init-tools-list',
+        });
+
+        expect(result.isError).toBeUndefined();
+        expect(result.content[0].text).toContain('Warning');
+        expect(result.content[0].text).toContain('No exam_result lines received');
+        expect(result.content[0].text).toContain('4 lines');
+      });
+
+      it('should handle result type lines as exam_result (type normalization)', async () => {
+        const { runExamForMirror } = await import('../../shared/src/tools/run-exam-for-mirror.js');
+        // Simulate the proctor API sending 'result' type instead of 'exam_result'
+        const mockClient = createMockClient({
+          runExamForMirror: vi.fn().mockResolvedValue({
+            lines: [
+              { type: 'log', message: 'Starting exam' },
+              {
+                type: 'result',
+                mirror_id: 155,
+                exam_id: 'init-tools-list',
+                status: 'pass',
+                data: { tools: [{ name: 'test_tool' }] },
+              },
+              { type: 'summary', total: 1, passed: 1, failed: 0, skipped: 0 },
+            ],
+          }),
+        });
+
+        const tool = runExamForMirror(mockServer, () => mockClient);
+        const result = await tool.handler({
+          mirror_ids: [155],
+          runtime_id: 'fly-machines-v1',
+          exam_type: 'init-tools-list',
+        });
+
+        expect(result.isError).toBeUndefined();
+        // Should treat 'result' type the same as 'exam_result'
+        expect(result.content[0].text).toContain('Exam Result');
+        expect(result.content[0].text).toContain('Status: pass');
+        expect(result.content[0].text).toContain('Passed: 1');
+        // Should NOT show the "no exam_result lines" warning
+        expect(result.content[0].text).not.toContain('Warning');
+      });
     });
 
     describe('get_exam_result', () => {
@@ -2902,6 +2963,34 @@ describe('Newsletter Tools', () => {
         expect(result.content[0].text).toContain('Mirror Filter: 123');
         expect(result.content[0].text).toContain('"mirror_id": 123');
         expect(result.content[0].text).not.toContain('"mirror_id": 456');
+      });
+
+      it('should include result type lines when filtering by exam_results section', async () => {
+        const { getExamResult } = await import('../../shared/src/tools/get-exam-result.js');
+        // Store lines with 'result' type (not normalized — simulates legacy stored data)
+        const lines = [
+          { type: 'log' as const, message: 'Starting exam' },
+          {
+            type: 'result' as const,
+            mirror_id: 155,
+            exam_id: 'init-tools-list',
+            status: 'pass',
+            data: { tools: [{ name: 'test_tool' }] },
+          },
+          { type: 'summary' as const, total: 1, passed: 1, failed: 0, skipped: 0 },
+        ];
+
+        const resultId = examResultStore.store([155], 'fly-machines-v1', 'init-tools-list', lines);
+
+        const tool = getExamResult(mockServer, () => createMockClient());
+        const result = await tool.handler({
+          result_id: resultId,
+          section: 'exam_results',
+        });
+
+        expect(result.content[0].text).toContain('Section Filter: exam_results');
+        expect(result.content[0].text).toContain('test_tool');
+        expect(result.content[0].text).not.toContain('"type": "log"');
       });
 
       it('should return error for unknown result_id', async () => {
@@ -3364,6 +3453,43 @@ describe('Newsletter Tools', () => {
 
         expect(result.content[0].text).toContain('Errors (1)');
         expect(result.content[0].text).toContain('Missing exam_id or result data for entry');
+      });
+
+      it('should save result type lines as exam results', async () => {
+        const { saveResultsForMirror } =
+          await import('../../shared/src/tools/save-results-for-mirror.js');
+
+        // Store lines with 'result' type (not normalized — simulates legacy stored data)
+        const lines = [
+          {
+            type: 'result' as const,
+            mirror_id: 155,
+            exam_id: 'init-tools-list',
+            status: 'pass',
+            data: { tools_count: 10 },
+          },
+        ];
+        const resultId = examResultStore.store([155], 'fly-machines-v1', 'init-tools-list', lines);
+
+        const saveFn = vi.fn().mockResolvedValue({
+          saved: [{ exam_id: 'init-tools-list', proctor_result_id: 301 }],
+          errors: [],
+        });
+        const mockClient = createMockClient({ saveResultsForMirror: saveFn });
+
+        const tool = saveResultsForMirror(mockServer, () => mockClient);
+        const result = await tool.handler({
+          mirror_id: 155,
+          result_id: resultId,
+        });
+
+        expect(result.isError).toBeUndefined();
+        expect(result.content[0].text).toContain('Successfully Saved (1)');
+        expect(saveFn).toHaveBeenCalledWith({
+          mirror_id: 155,
+          runtime_id: 'fly-machines-v1',
+          results: [{ exam_id: 'init-tools-list', status: 'pass', data: { tools_count: 10 } }],
+        });
       });
     });
   });

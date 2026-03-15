@@ -129,12 +129,21 @@ Use cases:
         content += `Exam Type: ${validatedArgs.exam_type}\n`;
         content += `Runtime: ${validatedArgs.runtime_id}\n\n`;
 
+        // Count line types for diagnostics
+        const typeCounts: Record<string, number> = {};
+        for (const line of response.lines) {
+          typeCounts[line.type] = (typeCounts[line.type] || 0) + 1;
+        }
+
+        const hasExamResults = (typeCounts['exam_result'] || 0) + (typeCounts['result'] || 0) > 0;
+
         for (const line of response.lines) {
           switch (line.type) {
             case 'log':
               content += `[LOG] ${line.message || JSON.stringify(line)}\n`;
               break;
-            case 'exam_result': {
+            case 'exam_result':
+            case 'result': {
               const data = line.data as Record<string, unknown> | undefined;
               const mirrorId = line.mirror_id ?? data?.mirror_id ?? 'unknown';
               content += `\n**Exam Result** (Mirror: ${mirrorId})\n`;
@@ -159,6 +168,16 @@ Use cases:
             default:
               content += `${JSON.stringify(line)}\n`;
           }
+        }
+
+        // Add diagnostics when no exam_result lines were received
+        if (!hasExamResults && response.lines.length > 0) {
+          content += `\n**Warning**: No exam_result lines received from the proctor API.\n`;
+          content += `This typically means the exam ran but the result payload was too large for the backend to capture.\n`;
+          content += `Stream contained ${response.lines.length} lines: ${Object.entries(typeCounts)
+            .map(([t, c]) => `${c} ${t}`)
+            .join(', ')}.\n`;
+          content += `Try re-running with max_retries to see if the issue is transient.\n`;
         }
 
         content += `\n\nUse \`get_exam_result\` with result_id "${resultId}" to see full untruncated data.`;

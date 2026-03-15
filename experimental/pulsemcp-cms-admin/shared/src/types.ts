@@ -854,7 +854,9 @@ export interface GoodJobCleanupResponse {
 // ============================================================
 
 export interface ProctorExamStreamLine {
-  type: 'log' | 'exam_result' | 'summary' | 'error';
+  // 'result' is accepted for compatibility with the proctor run_exam endpoint
+  // but is normalized to 'exam_result' during NDJSON parsing.
+  type: 'log' | 'exam_result' | 'result' | 'summary' | 'error';
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   [key: string]: any;
 }
