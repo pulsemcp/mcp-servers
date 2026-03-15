@@ -177,7 +177,7 @@ Use cases:
           content += `Stream contained ${response.lines.length} lines: ${Object.entries(typeCounts)
             .map(([t, c]) => `${c} ${t}`)
             .join(', ')}.\n`;
-          content += `Try re-running with max_retries to see if the issue is transient.\n`;
+          content += `This may be transient — try re-running the exam. If the issue persists, the server's output may exceed the backend's capture limit.\n`;
         }
 
         content += `\n\nUse \`get_exam_result\` with result_id "${resultId}" to see full untruncated data.`;

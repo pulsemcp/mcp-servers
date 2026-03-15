@@ -2843,9 +2843,9 @@ describe('Newsletter Tools', () => {
         expect(result.content[0].text).toContain('4 lines');
       });
 
-      it('should handle result type lines as exam_result (type normalization)', async () => {
+      it('should handle result type lines as exam_result (defense-in-depth at handler level)', async () => {
         const { runExamForMirror } = await import('../../shared/src/tools/run-exam-for-mirror.js');
-        // Simulate the proctor API sending 'result' type instead of 'exam_result'
+        // Defense-in-depth: if result type bypasses NDJSON normalization (e.g. legacy stored data)
         const mockClient = createMockClient({
           runExamForMirror: vi.fn().mockResolvedValue({
             lines: [
