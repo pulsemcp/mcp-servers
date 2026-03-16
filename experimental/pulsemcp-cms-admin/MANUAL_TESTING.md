@@ -5,9 +5,9 @@
 **Date:** 2026-03-16
 **Commit:** d7ddabd
 **Version:** 0.9.11 (pre-release)
-**API Environment:** N/A (field extraction fixes only, no API interaction changes)
+**API Environment:** https://admin.staging.pulsemcp.com
 
-### Overall: ✅ Functional Tests PASSING (198/198)
+### Overall: ✅ Functional Tests PASSING (198/198) + Manual Tests PASSING (162/165)
 
 **v0.9.11 Changes:**
 
@@ -20,9 +20,17 @@
 - 2 new tests added covering real NDJSON structure: status extraction from `data.result.status`, summary from `data.total_exams`/`data.successful`, mirror_id filter from `data.mirror_id`
 - 1 existing test strengthened with status assertion verifying `extractStatus` uses nested `data.result.status`
 
-**Note on Manual Testing:**
+**Manual Test Results: ✅ 162/165 PASSING (3 failures are pre-existing staging data issues)**
 
-Manual tests were not run for this release — API credentials (`.env` file) were not available in this environment. These changes fix how fields are extracted from the proctor NDJSON response payload (reading from nested `data.*` instead of top-level `line.*`). No API client code, request payloads, or endpoint URLs were changed. The bug was confirmed independently by running `run_exam_for_mirror` against mirror 166 (context7) in session 1844, which showed `Status: unknown` and `Total: 0` before the fix.
+Ran `npm run test:manual` against staging API. 10/11 test files passed. The 3 failures are in `proctor-tools.manual.test.ts` due to the auto-discovered mirror (10158, pipeboard-meta-ads) having no saved mcp_json records on staging — the exam is skipped with 0 results, so the E2E flow tests expecting exam_result lines fail. This is a staging data issue, not a code bug.
+
+**Targeted manual verification of all 3 fixes against mirror 166 (context7/upstash-context7):**
+
+- `run_exam_for_mirror(mirror_ids=[166], runtime_id="proctor-mcp-client-0.0.55-configs-0.0.10", exam_type="init-tools-list")`:
+  - **Bug 1 fix confirmed**: Output shows `Status: completed` (was `Status: unknown` before fix)
+  - **Bug 3 fix confirmed**: Output shows `Total: 2, Passed: 2` (was `Total: 0, Passed: 0` before fix)
+- `get_exam_result(result_id, mirror_id=166)`:
+  - **Bug 2 fix confirmed**: Returns results with `Mirror Filter: 166` (was "No matching lines" before fix)
 
 ---
 
