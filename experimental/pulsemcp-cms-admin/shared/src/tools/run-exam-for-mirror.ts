@@ -146,13 +146,15 @@ Use cases:
               }
               break;
             }
-            case 'summary':
+            case 'summary': {
+              const summaryData = line.data as Record<string, unknown> | undefined;
               content += `\n**Summary**\n`;
-              content += `  Total: ${line.total || 0}\n`;
-              content += `  Passed: ${line.passed || 0}\n`;
-              content += `  Failed: ${line.failed || 0}\n`;
-              content += `  Skipped: ${line.skipped || 0}\n`;
+              content += `  Total: ${summaryData?.total_exams ?? line.total ?? 0}\n`;
+              content += `  Passed: ${summaryData?.successful ?? line.passed ?? 0}\n`;
+              content += `  Failed: ${summaryData?.failed ?? line.failed ?? 0}\n`;
+              content += `  Skipped: ${summaryData?.skipped ?? line.skipped ?? 0}\n`;
               break;
+            }
             case 'error':
               content += `\n**Error**: ${line.message || line.error || JSON.stringify(line)}\n`;
               break;

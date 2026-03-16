@@ -2,6 +2,32 @@
 
 ## Latest Test Results
 
+**Date:** 2026-03-16
+**Commit:** e2fa2b8
+**Version:** 0.9.11 (pre-release)
+**API Environment:** N/A (field extraction fixes only, no API interaction changes)
+
+### Overall: ✅ Functional Tests PASSING (198/198)
+
+**v0.9.11 Changes:**
+
+- Fixed `extractStatus()` to read `data.result.status` instead of only `data.status` — was returning `'unknown'` for all exam results
+- Fixed `get_exam_result` mirror_id filter to check `line.data.mirror_id` — was failing to match any results
+- Fixed `run_exam_for_mirror` summary to read `data.total_exams`/`data.successful` — was showing `Total: 0, Passed: 0`
+
+**Functional Test Results: ✅ 198/198 PASSING**
+
+- 2 new tests added covering real NDJSON structure: status extraction from `data.result.status`, summary from `data.total_exams`/`data.successful`, mirror_id filter from `data.mirror_id`
+- 1 existing test strengthened with status assertion verifying `extractStatus` uses nested `data.result.status`
+
+**Note on Manual Testing:**
+
+Manual tests were not run for this release — API credentials (`.env` file) were not available in this environment. These changes fix how fields are extracted from the proctor NDJSON response payload (reading from nested `data.*` instead of top-level `line.*`). No API client code, request payloads, or endpoint URLs were changed. The bug was confirmed independently by running `run_exam_for_mirror` against mirror 166 (context7) in session 1844, which showed `Status: unknown` and `Total: 0` before the fix.
+
+---
+
+## Previous Test Results (v0.9.10)
+
 **Date:** 2026-03-13
 **Commit:** 9cbbc52
 **Version:** 0.9.10 (pre-release)

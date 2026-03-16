@@ -78,11 +78,15 @@ Typical usage:
         lines = lines.filter((line) => line.type === targetType);
       }
 
-      // Filter by mirror_id
+      // Filter by mirror_id — check both top-level and data.mirror_id
+      // since the backend nests mirror_id inside the data payload.
       if (validatedArgs.mirror_id !== undefined) {
-        lines = lines.filter(
-          (line) => line.type !== 'exam_result' || line.mirror_id === validatedArgs.mirror_id
-        );
+        lines = lines.filter((line) => {
+          if (line.type !== 'exam_result') return true;
+          const data = line.data as Record<string, unknown> | undefined;
+          const mirrorId = line.mirror_id ?? data?.mirror_id;
+          return mirrorId === validatedArgs.mirror_id;
+        });
       }
 
       let content = `**Exam Result Details**\n\n`;

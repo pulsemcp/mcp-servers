@@ -2816,6 +2816,55 @@ describe('Newsletter Tools', () => {
         expect(result.isError).toBe(true);
         expect(result.content[0].text).toContain('Error running proctor exam: Invalid API key');
       });
+
+      it('should extract status from data.result.status (real NDJSON structure)', async () => {
+        const { runExamForMirror } = await import('../../shared/src/tools/run-exam-for-mirror.js');
+        const mockClient = createMockClient({
+          runExamForMirror: vi.fn().mockResolvedValue({
+            lines: [
+              {
+                type: 'exam_result',
+                // mirror_id is inside data, NOT at top level
+                data: {
+                  mirror_id: 155,
+                  server_slug: 'pagerduty',
+                  exam_id: 'proctor-mcp-client-init-tools-list',
+                  result: {
+                    status: 'completed',
+                    exam_id: 'bbb3ca84-test',
+                    machine_id: 'abc123',
+                    result: {
+                      input: { mirror_id: 155 },
+                      output: { tools: [{ name: 'tool_a' }] },
+                    },
+                  },
+                },
+              },
+              {
+                type: 'summary',
+                data: { total_exams: 1, successful: 1, failed: 0, skipped: 0 },
+              },
+            ],
+          }),
+        });
+
+        const tool = runExamForMirror(mockServer, () => mockClient);
+        const result = await tool.handler({
+          mirror_ids: [155],
+          runtime_id: 'fly-machines-v1',
+          exam_type: 'init-tools-list',
+        });
+
+        expect(result.isError).toBeUndefined();
+        // Status should be extracted from data.result.status, not show 'unknown'
+        expect(result.content[0].text).toContain('Status: completed');
+        expect(result.content[0].text).not.toContain('Status: unknown');
+        // Mirror ID should be extracted from data.mirror_id
+        expect(result.content[0].text).toContain('Mirror: 155');
+        // Summary should use data.total_exams and data.successful
+        expect(result.content[0].text).toContain('Total: 1');
+        expect(result.content[0].text).toContain('Passed: 1');
+      });
     });
 
     describe('get_exam_result', () => {
@@ -2902,6 +2951,42 @@ describe('Newsletter Tools', () => {
         expect(result.content[0].text).toContain('Mirror Filter: 123');
         expect(result.content[0].text).toContain('"mirror_id": 123');
         expect(result.content[0].text).not.toContain('"mirror_id": 456');
+      });
+
+      it('should filter by mirror_id inside data payload (real NDJSON structure)', async () => {
+        const { getExamResult } = await import('../../shared/src/tools/get-exam-result.js');
+        const lines = [
+          {
+            type: 'exam_result' as const,
+            // mirror_id only inside data, NOT at top level
+            data: {
+              mirror_id: 155,
+              exam_id: 'proctor-mcp-client-init-tools-list',
+              result: { status: 'completed' },
+            },
+          },
+          {
+            type: 'exam_result' as const,
+            data: {
+              mirror_id: 200,
+              exam_id: 'proctor-mcp-client-init-tools-list',
+              result: { status: 'completed' },
+            },
+          },
+        ];
+
+        const resultId = examResultStore.store(
+          [155, 200],
+          'fly-machines-v1',
+          'init-tools-list',
+          lines
+        );
+
+        const tool = getExamResult(mockServer, () => createMockClient());
+        const result = await tool.handler({ result_id: resultId, mirror_id: 155 });
+
+        expect(result.content[0].text).toContain('"mirror_id": 155');
+        expect(result.content[0].text).not.toContain('"mirror_id": 200');
       });
 
       it('should return error for unknown result_id', async () => {
@@ -3203,6 +3288,9 @@ describe('Newsletter Tools', () => {
         expect(calledResults[0].data).not.toHaveProperty('error');
         // And output must be at the top level, not nested under result
         expect(calledResults[0].data).toHaveProperty('output');
+        // Status should be extracted from data.result.status ('completed'),
+        // not 'unknown' — verifies extractStatus looks into nested result
+        expect(calledResults[0].status).toBe('completed');
       });
 
       it('should not clean up store when save has errors', async () => {
