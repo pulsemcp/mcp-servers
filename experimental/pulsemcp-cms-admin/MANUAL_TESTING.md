@@ -3,7 +3,7 @@
 ## Latest Test Results
 
 **Date:** 2026-03-16
-**Commit:** e2fa2b8
+**Commit:** d7ddabd
 **Version:** 0.9.11 (pre-release)
 **API Environment:** N/A (field extraction fixes only, no API interaction changes)
 
