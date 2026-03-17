@@ -2,30 +2,53 @@
 
 ## Latest Test Results
 
-**Date:** 2026-03-13
-**Commit:** 9cbbc52
-**Version:** 0.9.10 (pre-release)
-**API Environment:** N/A (response mapping and display formatting only, no API interaction changes)
+**Date:** 2026-03-16
+**Commit:** 9cfff0f
+**Version:** 0.9.11 (pre-release)
+**API Environment:** Staging (admin.staging.pulsemcp.com)
 
-### Overall: ✅ Functional Tests PASSING (11/11 list-proctor-runs)
+### Overall: ✅ Manual Tests PASSING (171/174, 12 test files) — 3 pre-existing proctor failures
 
-**v0.9.10 Changes:**
+**v0.9.11 Changes:**
 
-- Added `known_missing_init_tools_list_filter_to` and `known_missing_auth_check_filter_to` fields to `list_proctor_runs` output
-- When set, display appends ` (filter to: <value>)` to the known-missing flag line
+- Added `moz` toolgroup with 3 new tools: `get_moz_metrics`, `get_moz_backlinks`, `get_moz_stored_metrics`
+- New API client functions for MOZ endpoints (`/api/moz/metrics`, `/api/moz/backlinks`, `/api/moz/stored_metrics`)
 
-**Functional Test Results: ✅ 11/11 PASSING (list-proctor-runs.test.ts)**
+**Manual Test Results: ✅ 171/174 PASSING (12 test files, 44.54s)**
 
-- 2 new tests added: `should render filter_to suffix when known_missing flags have filter values`, `should not render filter_to when known_missing boolean is false`
-- All 9 existing tests continue to pass with `filter_to: null` in mock data
+All MOZ manual tests passing against staging API (9/9):
 
-**Note on Manual Testing:**
+1. moz-tools.manual.test.ts (9 tests) — **all passing**
+   - Tool availability: all 3 MOZ tools registered
+   - get_moz_metrics: returns live metrics (PA 94, DA 96, Spam 1 for github.com)
+   - get_moz_backlinks: returns backlink data with source pages and anchor text
+   - get_moz_stored_metrics: returns paginated stored data (or empty for staging)
+   - Error handling: 404 for nonexistent servers in stored metrics
 
-Manual tests were not run for this release — API credentials (`.env` file) were not available in this environment. This change adds two optional `string | null` fields to the response mapper (`|| null` default) and appends a parenthetical suffix to the display output when the fields are non-null. No API client code, request payloads, or endpoint URLs were changed. The v0.9.9 manual test results remain valid for all API-facing functionality.
+All other test files passing (162/165):
+
+2. mcp-servers-tools.manual.test.ts (36 tests)
+3. server-directory-tools.manual.test.ts (17 tests)
+4. rest-api-tools.manual.test.ts (28 tests)
+5. good-jobs-tools.manual.test.ts (21 tests)
+6. discovered-urls-tools.manual.test.ts (19 tests)
+7. search-mcp-implementations.manual.test.ts (6 tests)
+8. redirect-tools.manual.test.ts (8 tests)
+9. list-proctor-runs.manual.test.ts (11 tests)
+10. newsletter-tools.manual.test.ts (6 tests)
+11. canonicals-tools.manual.test.ts (7 tests)
+
+**Pre-existing Failures (3/174) — proctor-tools.manual.test.ts:**
+
+These 3 failures are in the proctor end-to-end flow and pre-date this PR. They relate to staging data (mirror 10158 has "no saved mcp_json records"), not to MOZ changes:
+
+- `should retrieve the full stored result via get_exam_result`
+- `should retrieve only exam_results section via section filter`
+- `should save results using result_id and preserve output data`
 
 ---
 
-## Previous Test Results (v0.9.9)
+## Previous Test Results (v0.9.10)
 
 **Date:** 2026-03-13
 **Commit:** 8c30fcc

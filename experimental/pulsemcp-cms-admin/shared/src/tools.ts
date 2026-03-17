@@ -68,6 +68,10 @@ import { getProctorMetadata } from './tools/get-proctor-metadata.js';
 import { listDiscoveredUrls } from './tools/list-discovered-urls.js';
 import { markDiscoveredUrlProcessed } from './tools/mark-discovered-url-processed.js';
 import { getDiscoveredUrlStats } from './tools/get-discovered-url-stats.js';
+// MOZ tools
+import { getMozMetrics } from './tools/get-moz-metrics.js';
+import { getMozBacklinks } from './tools/get-moz-backlinks.js';
+import { getMozStoredMetrics } from './tools/get-moz-stored-metrics.js';
 
 /**
  * Tool group definitions - groups of related tools that can be enabled/disabled together
@@ -94,6 +98,7 @@ import { getDiscoveredUrlStats } from './tools/get-discovered-url-stats.js';
  * - good_jobs / good_jobs_readonly: GoodJob background job management tools
  * - proctor / proctor_readonly: Proctor exam execution and result storage tools. The readonly variant includes get_exam_result, list_proctor_runs, and get_proctor_metadata for retrieving stored results and metadata without running exams or saving
  * - discovered_urls / discovered_urls_readonly: Discovered URL management tools for processing URLs into MCP implementations
+ * - moz / moz_readonly: MOZ SEO metrics tools (live URL metrics, backlinks, stored historical data)
  * - notifications: Notification email tools (send_impl_posted_notif). Separated from server_directory so notification capability can be granted independently.
  */
 export type ToolGroup =
@@ -121,6 +126,8 @@ export type ToolGroup =
   | 'proctor_readonly'
   | 'discovered_urls'
   | 'discovered_urls_readonly'
+  | 'moz'
+  | 'moz_readonly'
   | 'notifications';
 
 /** Base groups without _readonly suffix */
@@ -137,6 +144,7 @@ type BaseToolGroup =
   | 'good_jobs'
   | 'proctor'
   | 'discovered_urls'
+  | 'moz'
   | 'notifications';
 
 interface Tool {
@@ -335,6 +343,10 @@ const ALL_TOOLS: ToolDefinition[] = [
     isWriteOperation: true,
   },
   { factory: getDiscoveredUrlStats, groups: ['discovered_urls'], isWriteOperation: false },
+  // MOZ tools (all read-only - live metrics, backlinks, and stored data)
+  { factory: getMozMetrics, groups: ['moz'], isWriteOperation: false },
+  { factory: getMozBacklinks, groups: ['moz'], isWriteOperation: false },
+  { factory: getMozStoredMetrics, groups: ['moz'], isWriteOperation: false },
 ];
 
 /**
@@ -365,6 +377,8 @@ const VALID_TOOL_GROUPS: ToolGroup[] = [
   'proctor_readonly',
   'discovered_urls',
   'discovered_urls_readonly',
+  'moz',
+  'moz_readonly',
   'notifications',
 ];
 
@@ -384,6 +398,7 @@ const BASE_TOOL_GROUPS: BaseToolGroup[] = [
   'good_jobs',
   'proctor',
   'discovered_urls',
+  'moz',
   'notifications',
 ];
 
@@ -480,6 +495,8 @@ function shouldIncludeTool(toolDef: ToolDefinition, enabledGroups: ToolGroup[]):
  * - proctor_readonly: Proctor tools (read only - get_exam_result, list_proctor_runs, and get_proctor_metadata)
  * - discovered_urls: Discovered URL management tools for processing URLs into MCP implementations (read + write)
  * - discovered_urls_readonly: Discovered URL tools (read only - list and stats)
+ * - moz: MOZ SEO metrics tools - live URL metrics, backlinks, and stored historical data (all read-only)
+ * - moz_readonly: MOZ tools (read only - same as moz since all tools are read-only)
  * - notifications: Notification email tools - send_impl_posted_notif (write-only, no readonly variant)
  *
  * @param clientFactory - Factory function that creates client instances
