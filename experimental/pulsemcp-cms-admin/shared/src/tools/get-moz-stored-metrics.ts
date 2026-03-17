@@ -78,7 +78,7 @@ Use cases:
         });
 
         let content = `**Stored MOZ Metrics for server "${validatedArgs.server_id}"**`;
-        if (validatedArgs.canonical_id) {
+        if (validatedArgs.canonical_id !== undefined) {
           content += ` (canonical ID: ${validatedArgs.canonical_id})`;
         }
         content += '\n\n';
