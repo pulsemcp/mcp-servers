@@ -92,6 +92,14 @@ This server is built and tested on macOS with Claude Desktop. It should work wit
 | `run_exam_for_mirror`                  | proctor            | write      | Run proctor exams against unofficial mirrors via Fly Machines. Returns truncated summary with `result_id`. |
 | `get_exam_result`                      | proctor            | read       | Retrieve full untruncated exam results by `result_id`, with optional section/mirror filtering.             |
 | `save_results_for_mirror`              | proctor            | write      | Save proctor exam results via `result_id` from `run_exam_for_mirror`.                                      |
+| `list_proctor_runs`                    | proctor            | read       | List proctor runs with filtering by name, recommended status, and tenant IDs.                              |
+| `get_proctor_metadata`                 | proctor            | read       | Get available proctor runtimes and exam types.                                                             |
+| `list_discovered_urls`                 | discovered_urls    | read       | List discovered URLs with status filtering and pagination.                                                 |
+| `mark_discovered_url_processed`        | discovered_urls    | write      | Mark a discovered URL as processed with a result status.                                                   |
+| `get_discovered_url_stats`             | discovered_urls    | read       | Get summary statistics for discovered URLs pipeline.                                                       |
+| `get_moz_metrics`                      | moz                | read       | Fetch live URL metrics from the MOZ API (page authority, domain authority, spam score, link counts).       |
+| `get_moz_backlinks`                    | moz                | read       | Fetch live backlink data from the MOZ API (source pages, anchor text, domain authority).                   |
+| `get_moz_stored_metrics`               | moz                | read       | List stored/historical MOZ data for a server's canonicals with pagination.                                 |
 
 # Tool Groups
 
@@ -124,8 +132,12 @@ This server organizes tools into groups that can be selectively enabled or disab
 | `redirects_readonly`          | 2     | URL redirects read-only (list, get)                                                                                                                                         |
 | `good_jobs`                   | 10    | Full GoodJob background job management (read + write)                                                                                                                       |
 | `good_jobs_readonly`          | 5     | GoodJob read-only (list, get, stats, processes, cron)                                                                                                                       |
-| `proctor`                     | 3     | Proctor exam execution, result retrieval, and result storage (read + write)                                                                                                 |
-| `proctor_readonly`            | 1     | Proctor results read-only (`get_exam_result`)                                                                                                                               |
+| `proctor`                     | 5     | Proctor exam execution, result retrieval, and result storage (read + write)                                                                                                 |
+| `proctor_readonly`            | 3     | Proctor results read-only (`get_exam_result`, `list_proctor_runs`, `get_proctor_metadata`)                                                                                  |
+| `discovered_urls`             | 3     | Discovered URL management (read + write)                                                                                                                                    |
+| `discovered_urls_readonly`    | 2     | Discovered URL tools read-only (list, stats)                                                                                                                                |
+| `moz`                         | 3     | MOZ SEO metrics — live URL metrics, backlinks, and stored historical data (all read-only)                                                                                   |
+| `moz_readonly`                | 3     | MOZ tools read-only (alias — all MOZ tools are read-only)                                                                                                                   |
 
 ### Tools by Group
 
@@ -158,14 +170,19 @@ This server organizes tools into groups that can be selectively enabled or disab
   - Read-only: `list_good_jobs`, `get_good_job`, `list_good_job_cron_schedules`, `list_good_job_processes`, `get_good_job_queue_statistics`
   - Write: `retry_good_job`, `discard_good_job`, `reschedule_good_job`, `force_trigger_good_job_cron`, `cleanup_good_jobs`
 - **proctor** / **proctor_readonly**:
-  - Read-only: `get_exam_result`
+  - Read-only: `get_exam_result`, `list_proctor_runs`, `get_proctor_metadata`
   - Write: `run_exam_for_mirror`, `save_results_for_mirror`
+- **discovered_urls** / **discovered_urls_readonly**:
+  - Read-only: `list_discovered_urls`, `get_discovered_url_stats`
+  - Write: `mark_discovered_url_processed`
+- **moz** / **moz_readonly**:
+  - Read-only: `get_moz_metrics`, `get_moz_backlinks`, `get_moz_stored_metrics`
 
 ## Environment Variables
 
-| Variable      | Description                                 | Default                                                                                                                                                      |
-| ------------- | ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `TOOL_GROUPS` | Comma-separated list of enabled tool groups | `newsletter,server_directory,official_queue,unofficial_mirrors,official_mirrors,tenants,mcp_jsons,mcp_servers,redirects,good_jobs,proctor` (all base groups) |
+| Variable      | Description                                 | Default                                                                                                                                                                          |
+| ------------- | ------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `TOOL_GROUPS` | Comma-separated list of enabled tool groups | `newsletter,server_directory,official_queue,unofficial_mirrors,official_mirrors,tenants,mcp_jsons,mcp_servers,redirects,good_jobs,proctor,discovered_urls,moz` (all base groups) |
 
 ## Examples
 
@@ -190,7 +207,7 @@ TOOL_GROUPS=server_directory_readonly
 Enable all groups with read-only access:
 
 ```bash
-TOOL_GROUPS=newsletter_readonly,server_directory_readonly,official_queue_readonly,unofficial_mirrors_readonly,official_mirrors_readonly,tenants_readonly,mcp_jsons_readonly,mcp_servers_readonly,redirects_readonly,good_jobs_readonly,proctor_readonly
+TOOL_GROUPS=newsletter_readonly,server_directory_readonly,official_queue_readonly,unofficial_mirrors_readonly,official_mirrors_readonly,tenants_readonly,mcp_jsons_readonly,mcp_servers_readonly,redirects_readonly,good_jobs_readonly,proctor_readonly,discovered_urls_readonly,moz_readonly
 ```
 
 Note: `proctor_readonly` includes only `get_exam_result` for retrieving stored results. `notifications` has no readonly variant since sending emails is always a write operation.

@@ -111,6 +111,9 @@ function createMockClient(overrides?: Partial<IPulseMCPAdminClient>): IPulseMCPA
     getDiscoveredUrls: vi.fn(),
     markDiscoveredUrlProcessed: vi.fn(),
     getDiscoveredUrlStats: vi.fn(),
+    getMozMetrics: vi.fn(),
+    getMozBacklinks: vi.fn(),
+    getMozStoredMetrics: vi.fn(),
     ...overrides,
   };
 }
@@ -778,6 +781,7 @@ describe('Newsletter Tools', () => {
         'good_jobs',
         'proctor',
         'discovered_urls',
+        'moz',
         'notifications',
       ]);
     });
@@ -797,6 +801,7 @@ describe('Newsletter Tools', () => {
         'good_jobs',
         'proctor',
         'discovered_urls',
+        'moz',
         'notifications',
       ]);
     });
@@ -940,8 +945,8 @@ describe('Newsletter Tools', () => {
       const listToolsHandler = handlers.get('tools/list');
       const result = await listToolsHandler({ method: 'tools/list', params: {} });
 
-      // 6 newsletter + 4 server_directory + 7 official_queue + 5 unofficial_mirrors + 2 official_mirrors + 2 tenants + 5 mcp_jsons + 3 mcp_servers + 5 redirects + 10 good_jobs + 5 proctor + 3 discovered_urls + 1 notifications = 58 tools
-      expect(result.tools).toHaveLength(58);
+      // 6 newsletter + 4 server_directory + 7 official_queue + 5 unofficial_mirrors + 2 official_mirrors + 2 tenants + 5 mcp_jsons + 3 mcp_servers + 5 redirects + 10 good_jobs + 5 proctor + 3 discovered_urls + 3 moz + 1 notifications = 61 tools
+      expect(result.tools).toHaveLength(61);
     });
 
     it('should register only read-only newsletter tools when newsletter_readonly group is enabled', async () => {

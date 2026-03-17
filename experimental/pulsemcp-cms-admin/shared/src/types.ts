@@ -1015,3 +1015,64 @@ export interface DiscoveredUrlStats {
   rejected_today: number;
   errored_today: number;
 }
+
+// ============================================================
+// MOZ Types
+// MOZ URL metrics, backlinks, and stored historical data
+// ============================================================
+
+export interface MozMetrics {
+  page_authority?: number;
+  domain_authority?: number;
+  spam_score?: number;
+  root_domains_to_page?: number;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  [key: string]: any;
+}
+
+export interface MozMetricsResponse {
+  metrics: MozMetrics;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  raw_response: Record<string, any>;
+  processed_at: string;
+}
+
+export interface MozBacklink {
+  source_page?: string;
+  anchor_text?: string;
+  domain_authority?: number;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  [key: string]: any;
+}
+
+export interface MozBacklinksResponse {
+  backlinks: MozBacklink[];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  raw_response: Record<string, any>;
+  processed_at: string;
+}
+
+export interface MozStoredMetric {
+  id: number;
+  canonical_id: number;
+  canonical_url: string;
+  scope?: string;
+  timestamp: string;
+  triggered_by: string;
+  page_authority?: number;
+  root_domains_to_page?: number;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  site_metrics?: Record<string, any>;
+  created_at: string;
+}
+
+export interface MozStoredMetricsResponse {
+  data: MozStoredMetric[];
+  meta: {
+    current_page: number;
+    total_pages: number;
+    total_count: number;
+    has_next: boolean;
+    limit: number;
+  };
+}
