@@ -1,12 +1,8 @@
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { z } from 'zod';
 import { requestConfirmation, createConfirmationSchema } from '@pulsemcp/mcp-elicitation';
-import {
-  IOnePasswordClient,
-  OnePasswordItemDetails,
-  OnePasswordSafeItemDetails,
-  OnePasswordSafeField,
-} from '../types.js';
+import { IOnePasswordClient } from '../types.js';
+import { sanitizeItemDetails } from './sanitize.js';
 import { readOnePasswordElicitationConfig } from '../elicitation-config.js';
 
 const PARAM_DESCRIPTIONS = {
@@ -42,31 +38,6 @@ Stores username/password credentials in the specified vault. Optionally include 
 - Create credentials for new services or accounts
 
 **Note:** The password is passed as a CLI argument which may briefly appear in process lists.`;
-
-/**
- * Sanitize item details by removing all internal IDs
- */
-function sanitizeItemDetails(item: OnePasswordItemDetails): OnePasswordSafeItemDetails {
-  return {
-    title: item.title,
-    category: item.category,
-    vault: {
-      name: item.vault.name,
-    },
-    tags: item.tags,
-    fields: item.fields?.map(
-      (f): OnePasswordSafeField => ({
-        type: f.type,
-        purpose: f.purpose,
-        label: f.label,
-        value: f.value,
-      })
-    ),
-    urls: item.urls,
-    created_at: item.created_at,
-    updated_at: item.updated_at,
-  };
-}
 
 /**
  * Tool for creating login items
@@ -157,6 +128,8 @@ export function createLoginTool(server: Server, clientFactory: () => IOnePasswor
             };
           }
 
+          // Defense-in-depth: some MCP clients may return action='accept' without the
+          // user explicitly checking the confirmation checkbox. Guard against this edge case.
           if (
             confirmation.content &&
             'confirm' in confirmation.content &&

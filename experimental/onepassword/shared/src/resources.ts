@@ -37,7 +37,7 @@ export function registerResources(server: Server) {
       const config = {
         server: {
           name: 'onepassword-mcp-server',
-          version: '0.1.0',
+          version: '0.2.0',
           transport: 'stdio',
         },
         environment: {

@@ -282,7 +282,7 @@ describe('1Password Tools', () => {
     it('should handle NotFoundError gracefully', async () => {
       mockClient.getItem = vi
         .fn()
-        .mockRejectedValue(new OnePasswordNotFoundError('item-123', 'item'));
+        .mockRejectedValue(new OnePasswordNotFoundError('Item "item-123" not found'));
 
       const tool = getItemTool(mockServer, () => mockClient);
       const result = await tool.handler({ itemId: 'item-123' });

@@ -3,11 +3,11 @@ import { z } from 'zod';
 import { requestConfirmation, createConfirmationSchema } from '@pulsemcp/mcp-elicitation';
 import {
   IOnePasswordClient,
-  OnePasswordItemDetails,
   OnePasswordField,
   OnePasswordSafeItemDetails,
   OnePasswordSafeField,
 } from '../types.js';
+import { sanitizeItemDetails } from './sanitize.js';
 import {
   readOnePasswordElicitationConfig,
   isItemWhitelisted,
@@ -82,40 +82,6 @@ function isSensitiveField(field: OnePasswordField | OnePasswordSafeField): boole
 }
 
 /**
- * Sanitize a field by removing internal IDs
- */
-function sanitizeField(field: OnePasswordField): OnePasswordSafeField {
-  return {
-    type: field.type,
-    purpose: field.purpose,
-    label: field.label,
-    value: field.value,
-    // Intentionally omit: id, reference
-  };
-}
-
-/**
- * Sanitize item details by removing all internal IDs
- */
-function sanitizeItemDetails(item: OnePasswordItemDetails): OnePasswordSafeItemDetails {
-  return {
-    title: item.title,
-    category: item.category,
-    vault: {
-      name: item.vault.name,
-      // Intentionally omit: id
-    },
-    tags: item.tags,
-    fields: item.fields?.map(sanitizeField),
-    // Intentionally omit: sections (they contain IDs)
-    urls: item.urls,
-    created_at: item.created_at,
-    updated_at: item.updated_at,
-    // Intentionally omit: id
-  };
-}
-
-/**
  * Redact sensitive fields from an item
  */
 function redactSensitiveFields(item: OnePasswordSafeItemDetails): OnePasswordSafeItemDetails {
@@ -179,7 +145,8 @@ async function shouldRevealCredentials(
     return { reveal: false };
   }
 
-  // Check for explicit false on confirm checkbox
+  // Defense-in-depth: some MCP clients may return action='accept' without the
+  // user explicitly checking the confirmation checkbox. Guard against this edge case.
   if (
     confirmation.content &&
     'confirm' in confirmation.content &&
