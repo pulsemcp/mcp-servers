@@ -371,11 +371,10 @@ describe('Zoom API Functional Tests (fetch mocked)', () => {
     });
   });
 
-  describe('createMCPServer and registerHandlers with mocked API', () => {
-    it('should wire up the full server with real ZoomClient and handle tool calls', async () => {
+  describe('createMCPServer and registerHandlers', () => {
+    it('should register handlers without errors using a real ZoomClient factory', async () => {
       const { createMCPServer } = await import('../../shared/src/server.js');
 
-      // Mock the API response for a list_meetings call
       fetchSpy.mockResolvedValueOnce(
         mockFetchResponse({
           page_size: 30,
@@ -399,16 +398,14 @@ describe('Zoom API Functional Tests (fetch mocked)', () => {
 
       const { server: mcpServer, registerHandlers } = createMCPServer({ version: '1.0.0' });
 
-      // Use a real ZoomClient — only fetch is mocked
+      // registerHandlers wires up ListToolsRequest and CallToolRequest handlers.
+      // MCP-level dispatch is verified in integration tests via TestMCPClient;
+      // here we verify the registration itself succeeds with a real client factory.
       const clientFactory = () => new ZoomClient(TEST_TOKEN);
       await registerHandlers(mcpServer, clientFactory);
-
-      // Directly invoke the CallToolRequest handler through the server's internal routing
-      // We can't easily call server.request() without a transport, but we can verify
-      // that registerHandlers completed without errors, which validates the full wiring
       expect(mcpServer).toBeDefined();
 
-      // Verify we can still call tools through the tool factory pattern
+      // Verify the same factory produces a working tool
       const tool = listMeetingsTool(mcpServer, clientFactory);
       const response = await tool.handler({});
       expect(response.content[0].text).toContain('Full Stack Test Meeting');

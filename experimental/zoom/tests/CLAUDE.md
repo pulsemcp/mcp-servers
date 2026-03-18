@@ -33,7 +33,7 @@ Tests that exercise internal code paths with mocked external boundaries.
 
 ### Integration Tests (`tests/integration/`)
 
-Full MCP protocol tests via `TestMCPClient` that verify the server speaks MCP correctly. These use a mock client injected via `ZOOM_MOCK_DATA` to avoid hitting the real API.
+Full MCP protocol tests via `TestMCPClient` that verify the server speaks MCP correctly. These pass mock data via the `ZOOM_MOCK_DATA` environment variable, which the integration entry point parses to construct a mock `IZoomClient`, avoiding real API calls.
 
 ### Manual Tests (`tests/manual/`)
 
