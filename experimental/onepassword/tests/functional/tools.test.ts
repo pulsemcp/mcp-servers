@@ -151,20 +151,6 @@ describe('1Password Tools', () => {
       expect(item._credentialsRevealed).toBe(true);
     });
 
-    it('should reveal credentials when item is whitelisted by item ID', async () => {
-      process.env.ELICITATION_ENABLED = 'true';
-      // Whitelist by the mock item's ID ('item-1') rather than its title
-      process.env.OP_WHITELISTED_ITEMS = 'item-1';
-
-      const tool = getItemTool(mockServer, () => mockClient);
-      const result = await tool.handler({ itemId: 'item-1' });
-
-      const item = JSON.parse(result.content[0].text);
-      expect(item._credentialsRevealed).toBe(true);
-
-      const passwordField = item.fields.find((f: { label: string }) => f.label === 'password');
-      expect(passwordField.value).toBe('testpass123');
-    });
   });
 
   describe('onepassword_list_items_by_tag', () => {

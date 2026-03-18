@@ -53,7 +53,7 @@ function validateEnvironment(): void {
     },
     {
       name: 'OP_WHITELISTED_ITEMS',
-      description: 'Comma-separated item titles that bypass read elicitation',
+      description: 'Comma-separated item titles or IDs that bypass read elicitation',
       defaultValue: 'none',
     },
   ];

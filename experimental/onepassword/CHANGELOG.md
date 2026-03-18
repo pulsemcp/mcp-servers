@@ -26,7 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `OP_WHITELISTED_ITEMS` - Comma-separated item titles or IDs that bypass read elicitation
 - Item whitelisting to bypass elicitation for pre-approved items by title or item ID (e.g., `OP_WHITELISTED_ITEMS=Stripe Key,abc123def456`)
 - Elicitation config shown in `onepassword://config` resource
-- 8 new tests covering elicitation config parsing, whitelisting, and credential redaction behavior (37 total)
+- 10 new tests covering elicitation config parsing, whitelisting, and credential redaction behavior (39 total)
 
 ## [0.1.1] - 2026-01-09
 

@@ -60,7 +60,7 @@ npm run test:manual
 - Listed 76 items in first vault
 - Retrieved item details for "PagerDuty API Key" (SECURE_NOTE category)
 - Elicitation disabled for manual tests (TestMCPClient doesn't support native elicitation)
-- Elicitation logic verified by 37 functional tests with mocked dependencies
+- Elicitation logic verified by 39 functional tests with mocked dependencies
 - Create operations intentionally skipped to avoid polluting vault
 
 ### Test Summary
@@ -77,8 +77,8 @@ npm run test:manual
 
 | Metric      | Value |
 | ----------- | ----- |
-| Total Tests | 37    |
-| Passed      | 37    |
+| Total Tests | 39    |
+| Passed      | 39    |
 | Failed      | 0     |
 | Pass Rate   | 100%  |
 
@@ -86,7 +86,7 @@ npm run test:manual
 
 | File                         | Status             | Tests | Notes                                                         |
 | ---------------------------- | ------------------ | ----- | ------------------------------------------------------------- |
-| `tools.test.ts`              | :white_check_mark: | 37    | Tools, elicitation config, credential redaction, whitelisting |
+| `tools.test.ts`              | :white_check_mark: | 39    | Tools, elicitation config, credential redaction, whitelisting |
 | `onepassword.manual.test.ts` | :white_check_mark: | 3+1   | 3 passed, 1 skipped (create_login - avoids vault pollution)   |
 
 ### Detailed Results

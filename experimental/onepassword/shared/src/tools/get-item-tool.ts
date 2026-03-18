@@ -31,7 +31,7 @@ Retrieves item information including metadata and fields. For security, **sensit
 
 **Approval behavior (configurable via environment variables):**
 - If elicitation is enabled (default), you will be asked to confirm before credentials are shown
-- Whitelisted items (via OP_WHITELISTED_ITEMS) bypass the confirmation prompt
+- Whitelisted items (via OP_WHITELISTED_ITEMS, matched by title or item ID) bypass the confirmation prompt
 - If elicitation is disabled, credentials are returned directly
 
 **Returns:**
