@@ -36,6 +36,26 @@ function validateEnvironment(): void {
       description: 'Skip health checks on startup (true/false)',
       defaultValue: 'false',
     },
+    {
+      name: 'ELICITATION_ENABLED',
+      description: 'Master toggle for user confirmation prompts (true/false)',
+      defaultValue: 'true',
+    },
+    {
+      name: 'OP_ELICITATION_READ',
+      description: 'Prompt before revealing credentials (true/false)',
+      defaultValue: 'follows ELICITATION_ENABLED',
+    },
+    {
+      name: 'OP_ELICITATION_WRITE',
+      description: 'Prompt before creating items (true/false)',
+      defaultValue: 'follows ELICITATION_ENABLED',
+    },
+    {
+      name: 'OP_WHITELISTED_ITEMS',
+      description: 'Comma-separated item titles that bypass read elicitation',
+      defaultValue: 'none',
+    },
   ];
 
   const missing = required.filter(({ name }) => !process.env[name]);

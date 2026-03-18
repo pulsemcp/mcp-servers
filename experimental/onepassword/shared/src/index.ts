@@ -34,15 +34,12 @@ export {
   type ParsedOnePasswordUrl,
 } from './url-parser.js';
 
-// Unlocked items management exports
+// Elicitation config exports
 export {
-  unlockItem,
-  lockItem,
-  isItemUnlocked,
-  getUnlockedItems,
-  clearUnlockedItems,
-  getUnlockedItemCount,
-} from './unlocked-items.js';
+  readOnePasswordElicitationConfig,
+  isItemWhitelisted,
+  type OnePasswordElicitationConfig,
+} from './elicitation-config.js';
 
 // Logging exports (re-exported for convenience)
 export { logServerStart, logError, logWarning, logDebug } from './logging.js';

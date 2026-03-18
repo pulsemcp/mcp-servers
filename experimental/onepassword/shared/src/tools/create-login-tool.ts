@@ -1,11 +1,13 @@
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { z } from 'zod';
+import { requestConfirmation, createConfirmationSchema } from '@pulsemcp/mcp-elicitation';
 import {
   IOnePasswordClient,
   OnePasswordItemDetails,
   OnePasswordSafeItemDetails,
   OnePasswordSafeField,
 } from '../types.js';
+import { readOnePasswordElicitationConfig } from '../elicitation-config.js';
 
 const PARAM_DESCRIPTIONS = {
   vaultId: 'The ID of the vault to create the login in.',
@@ -69,7 +71,7 @@ function sanitizeItemDetails(item: OnePasswordItemDetails): OnePasswordSafeItemD
 /**
  * Tool for creating login items
  */
-export function createLoginTool(_server: Server, clientFactory: () => IOnePasswordClient) {
+export function createLoginTool(server: Server, clientFactory: () => IOnePasswordClient) {
   return {
     name: 'onepassword_create_login',
     description: TOOL_DESCRIPTION,
@@ -107,6 +109,70 @@ export function createLoginTool(_server: Server, clientFactory: () => IOnePasswo
     handler: async (args: unknown) => {
       try {
         const validatedArgs = CreateLoginSchema.parse(args);
+
+        // Check if write elicitation is enabled
+        const elicitConfig = readOnePasswordElicitationConfig();
+        if (elicitConfig.writeElicitationEnabled) {
+          const confirmMessage =
+            `About to create a login item in 1Password:\n` +
+            `  Title: ${validatedArgs.title}\n` +
+            `  Username: ${validatedArgs.username}\n` +
+            (validatedArgs.url ? `  URL: ${validatedArgs.url}\n` : '') +
+            (validatedArgs.tags ? `  Tags: ${validatedArgs.tags.join(', ')}\n` : '');
+
+          const confirmation = await requestConfirmation(
+            {
+              server,
+              message: confirmMessage,
+              requestedSchema: createConfirmationSchema(
+                'Create this login?',
+                'Confirm that you want to create this login item in 1Password.'
+              ),
+              meta: {
+                'com.pulsemcp/tool-name': 'onepassword_create_login',
+              },
+            },
+            elicitConfig.base
+          );
+
+          if (confirmation.action !== 'accept') {
+            if (confirmation.action === 'expired') {
+              return {
+                content: [
+                  {
+                    type: 'text',
+                    text: 'Login creation confirmation expired. Please try again.',
+                  },
+                ],
+                isError: true,
+              };
+            }
+            return {
+              content: [
+                {
+                  type: 'text',
+                  text: 'Login creation was cancelled by the user.',
+                },
+              ],
+            };
+          }
+
+          if (
+            confirmation.content &&
+            'confirm' in confirmation.content &&
+            confirmation.content.confirm === false
+          ) {
+            return {
+              content: [
+                {
+                  type: 'text',
+                  text: 'Login creation was not confirmed.',
+                },
+              ],
+            };
+          }
+        }
+
         const client = clientFactory();
         const item = await client.createLogin(
           validatedArgs.vaultId,

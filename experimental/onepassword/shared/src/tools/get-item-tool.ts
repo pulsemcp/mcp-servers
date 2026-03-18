@@ -1,5 +1,6 @@
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { z } from 'zod';
+import { requestConfirmation, createConfirmationSchema } from '@pulsemcp/mcp-elicitation';
 import {
   IOnePasswordClient,
   OnePasswordItemDetails,
@@ -7,7 +8,11 @@ import {
   OnePasswordSafeItemDetails,
   OnePasswordSafeField,
 } from '../types.js';
-import { isItemUnlocked } from '../unlocked-items.js';
+import {
+  readOnePasswordElicitationConfig,
+  isItemWhitelisted,
+  type OnePasswordElicitationConfig,
+} from '../elicitation-config.js';
 
 const PARAM_DESCRIPTIONS = {
   itemId: 'The title of the item to retrieve. Get item titles from onepassword_list_items.',
@@ -22,23 +27,24 @@ export const GetItemSchema = z.object({
 
 const TOOL_DESCRIPTION = `Get the details of a specific 1Password item.
 
-Retrieves item information including metadata and fields. For security, **sensitive credential fields are redacted by default**.
+Retrieves item information including metadata and fields. For security, **sensitive credential fields require approval before being revealed**.
 
-**To access actual credentials:**
-1. First use \`onepassword_unlock_item\` with the item's 1Password URL (copy from the 1Password app)
-2. Then call this tool - credentials will be included for unlocked items
+**Approval behavior (configurable via environment variables):**
+- If elicitation is enabled (default), you will be asked to confirm before credentials are shown
+- Whitelisted items (via OP_WHITELISTED_ITEMS) bypass the confirmation prompt
+- If elicitation is disabled, credentials are returned directly
 
 **Returns:**
 - Item metadata (title, category, vault, tags, timestamps)
 - Field names and types
-- For UNLOCKED items: actual credential values
-- For LOCKED items: field values show "[REDACTED - use unlock_item first]"
+- For APPROVED items: actual credential values
+- For DENIED items: field values show "[REDACTED]"
 
-**Security Note:** Item IDs are intentionally omitted. To access credentials, use the onepassword_unlock_item tool with a URL copied from the 1Password app.
+**Security Note:** Item IDs are intentionally omitted from the response.
 
 **Use cases:**
 - View item metadata and structure
-- Retrieve credentials after unlocking
+- Retrieve credentials after approval
 - Discover what fields an item contains`;
 
 // Field types that contain sensitive data and should be redacted
@@ -90,7 +96,6 @@ function sanitizeField(field: OnePasswordField): OnePasswordSafeField {
 
 /**
  * Sanitize item details by removing all internal IDs
- * This prevents constructing unlock URLs without explicit user action
  */
 function sanitizeItemDetails(item: OnePasswordItemDetails): OnePasswordSafeItemDetails {
   return {
@@ -121,7 +126,7 @@ function redactSensitiveFields(item: OnePasswordSafeItemDetails): OnePasswordSaf
       if (isSensitiveField(field) && field.value) {
         return {
           ...field,
-          value: '[REDACTED - use unlock_item first]',
+          value: '[REDACTED]',
         };
       }
       return field;
@@ -132,9 +137,64 @@ function redactSensitiveFields(item: OnePasswordSafeItemDetails): OnePasswordSaf
 }
 
 /**
+ * Determine whether to show credentials for this item based on elicitation config.
+ * Returns true if credentials should be revealed, false if they should be redacted.
+ */
+async function shouldRevealCredentials(
+  server: Server,
+  itemTitle: string,
+  elicitConfig: OnePasswordElicitationConfig
+): Promise<{ reveal: boolean }> {
+  // If read elicitation is disabled, allow by default
+  if (!elicitConfig.readElicitationEnabled) {
+    return { reveal: true };
+  }
+
+  // Check whitelist - bypass elicitation for pre-approved items
+  if (isItemWhitelisted(elicitConfig, itemTitle)) {
+    return { reveal: true };
+  }
+
+  // Request confirmation via elicitation
+  const confirmation = await requestConfirmation(
+    {
+      server,
+      message:
+        `1Password credential access requested:\n` +
+        `  Item: ${itemTitle}\n\n` +
+        `Approve to reveal sensitive fields (passwords, secrets, tokens, etc.).`,
+      requestedSchema: createConfirmationSchema(
+        'Reveal credentials?',
+        `Allow access to sensitive fields in "${itemTitle}".`
+      ),
+      meta: {
+        'com.pulsemcp/tool-name': 'onepassword_get_item',
+      },
+    },
+    elicitConfig.base
+  );
+
+  // Fail-safe: only proceed on explicit 'accept'
+  if (confirmation.action !== 'accept') {
+    return { reveal: false };
+  }
+
+  // Check for explicit false on confirm checkbox
+  if (
+    confirmation.content &&
+    'confirm' in confirmation.content &&
+    confirmation.content.confirm === false
+  ) {
+    return { reveal: false };
+  }
+
+  return { reveal: true };
+}
+
+/**
  * Tool for getting item details
  */
-export function getItemTool(_server: Server, clientFactory: () => IOnePasswordClient) {
+export function getItemTool(server: Server, clientFactory: () => IOnePasswordClient) {
   return {
     name: 'onepassword_get_item',
     description: TOOL_DESCRIPTION,
@@ -158,22 +218,30 @@ export function getItemTool(_server: Server, clientFactory: () => IOnePasswordCl
         const client = clientFactory();
         const item = await client.getItem(validatedArgs.itemId, validatedArgs.vaultId);
 
-        // Check if item is unlocked (using internal ID - not exposed to user)
-        const isUnlocked = isItemUnlocked(item.id);
-
         // Sanitize item to remove all IDs before responding
         const sanitizedItem = sanitizeItemDetails(item);
 
-        // Redact sensitive fields if not unlocked
-        const responseItem = isUnlocked ? sanitizedItem : redactSensitiveFields(sanitizedItem);
+        // Check if item has any sensitive fields worth gating
+        const hasSensitiveFields = sanitizedItem.fields?.some(
+          (f) => isSensitiveField(f) && f.value
+        );
 
-        // Add unlock status to the response
+        let credentialsRevealed = true;
+
+        if (hasSensitiveFields) {
+          const elicitConfig = readOnePasswordElicitationConfig();
+          const { reveal } = await shouldRevealCredentials(server, item.title, elicitConfig);
+          credentialsRevealed = reveal;
+        }
+
+        // Redact sensitive fields if not approved
+        const responseItem = credentialsRevealed
+          ? sanitizedItem
+          : redactSensitiveFields(sanitizedItem);
+
         const response = {
           ...responseItem,
-          _unlocked: isUnlocked,
-          _note: isUnlocked
-            ? 'Full credentials included (item is unlocked)'
-            : 'Sensitive fields redacted. Use onepassword_unlock_item with the item URL to access credentials.',
+          _credentialsRevealed: credentialsRevealed,
         };
 
         return {
