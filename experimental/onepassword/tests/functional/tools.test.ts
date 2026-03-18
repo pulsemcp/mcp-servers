@@ -150,7 +150,6 @@ describe('1Password Tools', () => {
       const item = JSON.parse(result.content[0].text);
       expect(item._credentialsRevealed).toBe(true);
     });
-
   });
 
   describe('onepassword_list_items_by_tag', () => {
