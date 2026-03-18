@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.19.1",
+    "@pulsemcp/mcp-elicitation": "file:../../../libs/elicitation",
     "zod": "^3.24.1"
   },
   "devDependencies": {

@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-03-18
+
+### Changed
+
+- **BREAKING**: Replace `onepassword_unlock_item` tool and manual URL-based unlock flow with MCP elicitation-based approval
+  - Credential access in `onepassword_get_item` now prompts for user confirmation via elicitation instead of requiring a 1Password URL
+  - Write operations (`onepassword_create_login`, `onepassword_create_secure_note`) now prompt for confirmation before creating items
+  - Remove `onepassword_unlock_item` tool and in-memory unlock state (`unlocked-items.ts`)
+
+### Added
+
+- Elicitation-based approval for both read and write operations using `@pulsemcp/mcp-elicitation`
+- Configurable elicitation via environment variables:
+  - `ELICITATION_ENABLED` - Master toggle (default: `true`)
+  - `OP_ELICITATION_READ` - Per-action override for credential access (default: follows master)
+  - `OP_ELICITATION_WRITE` - Per-action override for write operations (default: follows master)
+  - `OP_WHITELISTED_ITEMS` - Comma-separated item titles or IDs that bypass read elicitation
+- Item whitelisting to bypass elicitation for pre-approved items by title or item ID (e.g., `OP_WHITELISTED_ITEMS=Stripe Key,abc123def456`)
+- Elicitation config shown in `onepassword://config` resource
+- 10 new tests covering elicitation config parsing, whitelisting, and credential redaction behavior (39 total)
+
 ## [0.1.1] - 2026-01-09
 
 ### Security
