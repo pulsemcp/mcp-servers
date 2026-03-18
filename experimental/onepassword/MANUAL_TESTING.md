@@ -84,10 +84,10 @@ npm run test:manual
 
 ### Test Files
 
-| File                         | Status             | Tests | Notes                                                       |
-| ---------------------------- | ------------------ | ----- | ----------------------------------------------------------- |
+| File                         | Status             | Tests | Notes                                                         |
+| ---------------------------- | ------------------ | ----- | ------------------------------------------------------------- |
 | `tools.test.ts`              | :white_check_mark: | 37    | Tools, elicitation config, credential redaction, whitelisting |
-| `onepassword.manual.test.ts` | :white_check_mark: | 3+1   | 3 passed, 1 skipped (create_login - avoids vault pollution)  |
+| `onepassword.manual.test.ts` | :white_check_mark: | 3+1   | 3 passed, 1 skipped (create_login - avoids vault pollution)   |
 
 ### Detailed Results
 
