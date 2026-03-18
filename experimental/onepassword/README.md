@@ -95,15 +95,15 @@ Restart Claude Desktop and you should be ready to go!
 
 ## Environment Variables
 
-| Variable                   | Required | Description                                              | Default                       |
-| -------------------------- | -------- | -------------------------------------------------------- | ----------------------------- |
-| `OP_SERVICE_ACCOUNT_TOKEN` | Yes      | 1Password service account token                          | -                             |
-| `ENABLED_TOOLGROUPS`       | No       | Comma-separated tool groups                              | All enabled                   |
-| `SKIP_HEALTH_CHECKS`       | No       | Skip credential validation on start                      | `false`                       |
-| `ELICITATION_ENABLED`      | No       | Master toggle for user confirmation prompts              | `true`                        |
-| `OP_ELICITATION_READ`      | No       | Prompt before revealing credentials                      | follows `ELICITATION_ENABLED` |
-| `OP_ELICITATION_WRITE`     | No       | Prompt before creating items                             | follows `ELICITATION_ENABLED` |
-| `OP_WHITELISTED_ITEMS`     | No       | Comma-separated item titles that bypass read elicitation | none                          |
+| Variable                   | Required | Description                                                     | Default                       |
+| -------------------------- | -------- | --------------------------------------------------------------- | ----------------------------- |
+| `OP_SERVICE_ACCOUNT_TOKEN` | Yes      | 1Password service account token                                 | -                             |
+| `ENABLED_TOOLGROUPS`       | No       | Comma-separated tool groups                                     | All enabled                   |
+| `SKIP_HEALTH_CHECKS`       | No       | Skip credential validation on start                             | `false`                       |
+| `ELICITATION_ENABLED`      | No       | Master toggle for user confirmation prompts                     | `true`                        |
+| `OP_ELICITATION_READ`      | No       | Prompt before revealing credentials                             | follows `ELICITATION_ENABLED` |
+| `OP_ELICITATION_WRITE`     | No       | Prompt before creating items                                    | follows `ELICITATION_ENABLED` |
+| `OP_WHITELISTED_ITEMS`     | No       | Comma-separated item titles or IDs that bypass read elicitation | none                          |
 
 ## Security Considerations
 
@@ -117,7 +117,7 @@ Restart Claude Desktop and you should be ready to go!
 1. By default, `onepassword_get_item` returns item metadata but shows `[REDACTED]` for sensitive fields
 2. If elicitation is enabled (default), the server prompts the user to approve credential access
 3. Once approved, the full credentials are returned for that request
-4. Whitelisted items (via `OP_WHITELISTED_ITEMS`) bypass the approval prompt entirely
+4. Whitelisted items (via `OP_WHITELISTED_ITEMS`, matched by title or item ID) bypass the approval prompt entirely
 
 ### Configuration Examples
 
@@ -134,10 +134,10 @@ OP_ELICITATION_READ=false
 OP_ELICITATION_WRITE=true
 ```
 
-**Whitelist specific items** (always auto-approve these):
+**Whitelist specific items by title or ID** (always auto-approve these):
 
 ```bash
-OP_WHITELISTED_ITEMS="Stripe Key,AWS Credentials,GitHub Token"
+OP_WHITELISTED_ITEMS="Stripe Key,AWS Credentials,abc123def456"
 ```
 
 ## Development

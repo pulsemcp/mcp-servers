@@ -16,13 +16,14 @@ export interface OnePasswordElicitationConfig {
   readElicitationEnabled: boolean;
   /** Whether to elicit confirmation for write operations (create_login, create_secure_note) */
   writeElicitationEnabled: boolean;
-  /** Set of whitelisted item titles (case-insensitive) that bypass read elicitation */
+  /** Set of whitelisted item titles or IDs (case-insensitive) that bypass read elicitation */
   whitelistedItems: Set<string>;
 }
 
 /**
  * Parse a comma-separated list of whitelisted items from an environment variable.
- * Items are stored lowercase for case-insensitive matching.
+ * Each entry can be either an item title or an item ID.
+ * Entries are stored lowercase for case-insensitive matching.
  */
 function parseWhitelistedItems(value?: string): Set<string> {
   if (!value || value.trim() === '') {
@@ -52,8 +53,8 @@ function parseBooleanEnv(value: string | undefined, defaultValue: boolean): bool
  *   ELICITATION_ENABLED          - Master toggle (default: true). When false, all elicitation is bypassed.
  *   OP_ELICITATION_READ          - Override for read operations (default: follows ELICITATION_ENABLED)
  *   OP_ELICITATION_WRITE         - Override for write operations (default: follows ELICITATION_ENABLED)
- *   OP_WHITELISTED_ITEMS         - Comma-separated list of item titles that bypass read elicitation
- *                                  (e.g., "Stripe Key,AWS Credentials")
+ *   OP_WHITELISTED_ITEMS         - Comma-separated list of item titles or item IDs that bypass read elicitation
+ *                                  (e.g., "Stripe Key,AWS Credentials,abc123def456")
  *
  * Plus all standard elicitation env vars (ELICITATION_REQUEST_URL, etc.)
  */
@@ -82,10 +83,18 @@ export function readOnePasswordElicitationConfig(
 
 /**
  * Check if a specific item is whitelisted (bypasses read elicitation).
+ * Matches against both item title and item ID (case-insensitive).
  */
 export function isItemWhitelisted(
   config: OnePasswordElicitationConfig,
-  itemTitle: string
+  itemTitle: string,
+  itemId?: string
 ): boolean {
-  return config.whitelistedItems.has(itemTitle.toLowerCase());
+  if (config.whitelistedItems.has(itemTitle.toLowerCase())) {
+    return true;
+  }
+  if (itemId && config.whitelistedItems.has(itemId.toLowerCase())) {
+    return true;
+  }
+  return false;
 }

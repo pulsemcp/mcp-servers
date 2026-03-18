@@ -150,6 +150,21 @@ describe('1Password Tools', () => {
       const item = JSON.parse(result.content[0].text);
       expect(item._credentialsRevealed).toBe(true);
     });
+
+    it('should reveal credentials when item is whitelisted by item ID', async () => {
+      process.env.ELICITATION_ENABLED = 'true';
+      // Whitelist by the mock item's ID ('item-1') rather than its title
+      process.env.OP_WHITELISTED_ITEMS = 'item-1';
+
+      const tool = getItemTool(mockServer, () => mockClient);
+      const result = await tool.handler({ itemId: 'item-1' });
+
+      const item = JSON.parse(result.content[0].text);
+      expect(item._credentialsRevealed).toBe(true);
+
+      const passwordField = item.fields.find((f: { label: string }) => f.label === 'password');
+      expect(passwordField.value).toBe('testpass123');
+    });
   });
 
   describe('onepassword_list_items_by_tag', () => {
@@ -477,6 +492,22 @@ describe('1Password Tools', () => {
       expect(isItemWhitelisted(config, 'Stripe Key')).toBe(true);
       expect(isItemWhitelisted(config, 'AWS')).toBe(true);
     });
+
+    it('should match whitelisted items by item ID', () => {
+      const config = readOnePasswordElicitationConfig({
+        OP_WHITELISTED_ITEMS: 'abc123def456,Stripe Key',
+      });
+      // Match by title
+      expect(isItemWhitelisted(config, 'Stripe Key')).toBe(true);
+      // Match by itemId (second argument)
+      expect(isItemWhitelisted(config, 'Unknown Title', 'abc123def456')).toBe(true);
+      // Case-insensitive itemId matching
+      expect(isItemWhitelisted(config, 'Unknown Title', 'ABC123DEF456')).toBe(true);
+      // Neither title nor itemId matches
+      expect(isItemWhitelisted(config, 'Unknown Title', 'unknown-id')).toBe(false);
+      // No itemId provided, title doesn't match
+      expect(isItemWhitelisted(config, 'Unknown Title')).toBe(false);
+    });
   });
 
   // =============================================================================
@@ -512,6 +543,21 @@ describe('1Password Tools', () => {
     it('should show full credentials for whitelisted item even with elicitation enabled', async () => {
       process.env.ELICITATION_ENABLED = 'true';
       process.env.OP_WHITELISTED_ITEMS = 'Test Login';
+
+      const tool = getItemTool(mockServer, () => mockClient);
+      const result = await tool.handler({ itemId: 'item-1' });
+
+      const item = JSON.parse(result.content[0].text);
+      expect(item._credentialsRevealed).toBe(true);
+
+      const passwordField = item.fields.find((f: { label: string }) => f.label === 'password');
+      expect(passwordField.value).toBe('testpass123');
+    });
+
+    it('should show full credentials when item is whitelisted by ID with elicitation enabled', async () => {
+      process.env.ELICITATION_ENABLED = 'true';
+      // Whitelist by the mock item's ID rather than title
+      process.env.OP_WHITELISTED_ITEMS = 'item-1';
 
       const tool = getItemTool(mockServer, () => mockClient);
       const result = await tool.handler({ itemId: 'item-1' });

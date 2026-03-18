@@ -109,6 +109,7 @@ function redactSensitiveFields(item: OnePasswordSafeItemDetails): OnePasswordSaf
 async function shouldRevealCredentials(
   server: Server,
   itemTitle: string,
+  itemId: string,
   elicitConfig: OnePasswordElicitationConfig
 ): Promise<{ reveal: boolean }> {
   // If read elicitation is disabled, allow by default
@@ -116,8 +117,8 @@ async function shouldRevealCredentials(
     return { reveal: true };
   }
 
-  // Check whitelist - bypass elicitation for pre-approved items
-  if (isItemWhitelisted(elicitConfig, itemTitle)) {
+  // Check whitelist - bypass elicitation for pre-approved items (matches title or ID)
+  if (isItemWhitelisted(elicitConfig, itemTitle, itemId)) {
     return { reveal: true };
   }
 
@@ -197,7 +198,12 @@ export function getItemTool(server: Server, clientFactory: () => IOnePasswordCli
 
         if (hasSensitiveFields) {
           const elicitConfig = readOnePasswordElicitationConfig();
-          const { reveal } = await shouldRevealCredentials(server, item.title, elicitConfig);
+          const { reveal } = await shouldRevealCredentials(
+            server,
+            item.title,
+            item.id,
+            elicitConfig
+          );
           credentialsRevealed = reveal;
         }
 

@@ -23,8 +23,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `ELICITATION_ENABLED` - Master toggle (default: `true`)
   - `OP_ELICITATION_READ` - Per-action override for credential access (default: follows master)
   - `OP_ELICITATION_WRITE` - Per-action override for write operations (default: follows master)
-  - `OP_WHITELISTED_ITEMS` - Comma-separated item titles that bypass read elicitation
-- Item whitelisting to bypass elicitation for pre-approved items (e.g., `OP_WHITELISTED_ITEMS=Stripe Key,AWS Credentials`)
+  - `OP_WHITELISTED_ITEMS` - Comma-separated item titles or IDs that bypass read elicitation
+- Item whitelisting to bypass elicitation for pre-approved items by title or item ID (e.g., `OP_WHITELISTED_ITEMS=Stripe Key,abc123def456`)
 - Elicitation config shown in `onepassword://config` resource
 - 8 new tests covering elicitation config parsing, whitelisting, and credential redaction behavior (37 total)
 
