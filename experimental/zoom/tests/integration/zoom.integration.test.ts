@@ -68,8 +68,8 @@ describe('Zoom MCP Server Integration Tests', () => {
   });
 
   it('should list tools', async () => {
-    const tools = await client!.listTools();
-    const toolNames = tools.map((t: { name: string }) => t.name);
+    const result = await client!.listTools();
+    const toolNames = result.tools.map((t: { name: string }) => t.name);
 
     expect(toolNames).toContain('list_meetings');
     expect(toolNames).toContain('get_meeting');
