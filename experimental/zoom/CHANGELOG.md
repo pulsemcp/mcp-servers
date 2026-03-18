@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.1.0]
+
 ### Added
 
 - Initial Zoom MCP server implementation with 3 tools:
