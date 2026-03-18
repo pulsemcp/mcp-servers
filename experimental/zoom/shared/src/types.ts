@@ -33,15 +33,6 @@ export interface ZoomRecordingMeeting {
   recording_files: ZoomRecording[];
 }
 
-export interface ZoomUser {
-  id: string;
-  email: string;
-  first_name: string;
-  last_name: string;
-  type: number;
-  status: string;
-}
-
 export interface ListMeetingsResponse {
   page_size: number;
   total_records: number;

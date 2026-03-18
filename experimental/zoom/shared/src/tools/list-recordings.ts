@@ -3,8 +3,8 @@ import { z } from 'zod';
 import type { IZoomClient } from '../server.js';
 
 const PARAM_DESCRIPTIONS = {
-  from: 'Start date for recording search in YYYY-MM-DD format. Defaults to 30 days ago. Example: "2025-01-01"',
-  to: 'End date for recording search in YYYY-MM-DD format. Defaults to today. Example: "2025-01-31"',
+  from: 'Start date for recording search in YYYY-MM-DD format. Example: "2025-01-01"',
+  to: 'End date for recording search in YYYY-MM-DD format. Example: "2025-01-31"',
   page_size:
     'Number of recordings to return per page (1-300, default: 30). Use smaller values for faster responses.',
 } as const;
@@ -79,7 +79,7 @@ export function listRecordingsTool(_server: Server, clientFactory: () => IZoomCl
           lines.push(`- Files:`);
           for (const file of meeting.recording_files) {
             lines.push(
-              `  - ${file.file_type} (${file.recording_type}): ${(file.file_size / 1024 / 1024).toFixed(1)} MB`
+              `  - ${file.file_type} (${file.recording_type}): ${(file.file_size / 1024 / 1024).toFixed(1)} MB — ${file.download_url}`
             );
           }
           lines.push('');

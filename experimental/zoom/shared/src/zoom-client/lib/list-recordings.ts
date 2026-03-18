@@ -21,7 +21,10 @@ export async function listRecordings(
   });
 
   if (!response.ok) {
-    throw new Error(`Failed to list recordings: ${response.status} ${response.statusText}`);
+    const body = await response.text();
+    throw new Error(
+      `Failed to list recordings: ${response.status} ${response.statusText} - ${body}`
+    );
   }
 
   return response.json() as Promise<ListRecordingsResponse>;
