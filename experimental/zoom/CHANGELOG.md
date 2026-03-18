@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- Functional tests that mock only the Zoom API (`global.fetch`), exercising the full internal stack: ZoomClient, tool handlers, Zod validation, output formatting (15 tests)
+- `tests/CLAUDE.md` documenting testing philosophy: only mock external services, never mock internal code
+
 ### Fixed
 
 - URL-encode meeting IDs in API calls to handle UUID-based IDs with special characters
