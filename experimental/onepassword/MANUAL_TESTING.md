@@ -42,36 +42,23 @@ npm run test:manual
 
 ## Latest Test Results
 
-**Test Date:** 2026-03-19 16:58 UTC
-**Branch:** ao-agent/fix-onepassword-publish-v2
-**Commit:** 883be6b
+**Test Date:** 2026-03-19
+**Branch:** claude/fix-onepassword-elicitation-bundling
+**Commit:** e7061f2
 **Tested By:** Claude
-**Environment:** Real 1Password API with service account credentials (from prior PR #453; this PR is a publish infrastructure fix only)
+**Environment:** Packaging-only fix — no server code changes. Verified via `npm pack` tarball inspection and 39 functional tests
 
 ### Test Results
 
-**Type:** Manual tests against real 1Password API
-**Status:** :white_check_mark: All manual tests passed
+**Type:** npm pack tarball verification + functional tests
+**Status:** :white_check_mark: All verifications passed
 
 **Details:**
 
-- Connected to real 1Password service account
-- Listed 4 vaults successfully (Proctor Accounts & Secrets, PulseMCP Sub-Registry API, Team, Test Vault)
-- Listed 76 items in first vault
-- Retrieved item details for "PagerDuty API Key" (SECURE_NOTE category)
-- Elicitation disabled for manual tests (TestMCPClient doesn't support native elicitation)
-- Elicitation logic verified by 39 functional tests with mocked dependencies
-- Create operations intentionally skipped to avoid polluting vault
-
-### Test Summary
-
-| Metric      | Value |
-| ----------- | ----- |
-| Total Tests | 4     |
-| Passed      | 3     |
-| Skipped     | 1     |
-| Failed      | 0     |
-| Pass Rate   | 100%  |
+- Ran `prepare-publish.js` and verified `npm pack` tarball now includes `node_modules/@pulsemcp/mcp-elicitation/` (build/*.js, package.json)
+- Previously the tarball was missing the elicitation library entirely, causing `ERR_MODULE_NOT_FOUND` at runtime
+- 39 functional tests pass (unchanged server logic)
+- Manual API tests not re-run: this PR only changes `prepare-publish.js` (build infrastructure), not server code. Prior manual tests on commit `883be6b` (PR #453) verified the same server logic
 
 ### Functional Test Summary
 
@@ -82,21 +69,20 @@ npm run test:manual
 | Failed      | 0     |
 | Pass Rate   | 100%  |
 
+### npm pack Verification
+
+| Check                                             | Status             |
+| ------------------------------------------------- | ------------------ |
+| `prepare-publish.js` runs without errors           | :white_check_mark: |
+| Tarball includes `node_modules/@pulsemcp/mcp-elicitation/build/*.js` | :white_check_mark: |
+| Tarball includes `node_modules/@pulsemcp/mcp-elicitation/package.json` | :white_check_mark: |
+| `bundled deps: 1` reported by npm pack             | :white_check_mark: |
+
 ### Test Files
 
-| File                         | Status             | Tests | Notes                                                         |
-| ---------------------------- | ------------------ | ----- | ------------------------------------------------------------- |
-| `tools.test.ts`              | :white_check_mark: | 39    | Tools, elicitation config, credential redaction, whitelisting |
-| `onepassword.manual.test.ts` | :white_check_mark: | 3+1   | 3 passed, 1 skipped (create_login - avoids vault pollution)   |
-
-### Detailed Results
-
-Manual tests ran against real 1Password API with elicitation disabled (ELICITATION_ENABLED=false). Results:
-
-- **list_vaults**: SUCCESS - Found 4 vault(s)
-- **list_items**: SUCCESS - Found 76 item(s) in vault
-- **get_item**: SUCCESS - Retrieved item "PagerDuty API Key" (SECURE_NOTE)
-- **create_login**: SKIPPED - Intentionally skipped to avoid polluting vault
+| File            | Status             | Tests | Notes                                                         |
+| --------------- | ------------------ | ----- | ------------------------------------------------------------- |
+| `tools.test.ts` | :white_check_mark: | 39    | Tools, elicitation config, credential redaction, whitelisting |
 
 ---
 
