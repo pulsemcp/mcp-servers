@@ -18,7 +18,17 @@ async function prepare() {
     process.exit(1);
   }
 
-  // Build shared directory first
+  // Build the elicitation library first (shared depends on it via file: link)
+  const elicitationDir = join(__dirname, '../../../libs/elicitation');
+  console.log('Building elicitation library...');
+  try {
+    execSync('npm install && npm run build', { cwd: elicitationDir, stdio: 'inherit' });
+  } catch (e) {
+    console.error('Failed to build elicitation library:', e.message);
+    process.exit(1);
+  }
+
+  // Build shared directory
   const sharedDir = join(__dirname, '../shared');
   console.log('Building shared directory...');
   try {
