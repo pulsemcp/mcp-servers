@@ -77,20 +77,14 @@ async function prepare() {
   // The file: link in package.json points to the monorepo source, which doesn't exist when
   // the package is installed via npx. bundledDependencies requires the package to physically
   // exist in node_modules/ at publish time so npm can include it in the tarball.
-  const elicitationNodeModulesDir = join(
-    __dirname,
-    'node_modules/@pulsemcp/mcp-elicitation'
-  );
+  const elicitationNodeModulesDir = join(__dirname, 'node_modules/@pulsemcp/mcp-elicitation');
   console.log('Copying elicitation library into node_modules for bundling...');
   await rm(elicitationNodeModulesDir, { recursive: true, force: true });
   await mkdir(elicitationNodeModulesDir, { recursive: true });
   await cp(join(elicitationDir, 'build'), join(elicitationNodeModulesDir, 'build'), {
     recursive: true,
   });
-  await cp(
-    join(elicitationDir, 'package.json'),
-    join(elicitationNodeModulesDir, 'package.json')
-  );
+  await cp(join(elicitationDir, 'package.json'), join(elicitationNodeModulesDir, 'package.json'));
 
   console.log('Elicitation library bundled for publishing');
 }

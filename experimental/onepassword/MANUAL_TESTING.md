@@ -55,7 +55,7 @@ npm run test:manual
 
 **Details:**
 
-- Ran `prepare-publish.js` and verified `npm pack` tarball now includes `node_modules/@pulsemcp/mcp-elicitation/` (build/*.js, package.json)
+- Ran `prepare-publish.js` and verified `npm pack` tarball now includes `node_modules/@pulsemcp/mcp-elicitation/` (build/\*.js, package.json)
 - Previously the tarball was missing the elicitation library entirely, causing `ERR_MODULE_NOT_FOUND` at runtime
 - 39 functional tests pass (unchanged server logic)
 - Manual API tests not re-run: this PR only changes `prepare-publish.js` (build infrastructure), not server code. Prior manual tests on commit `883be6b` (PR #453) verified the same server logic
@@ -71,12 +71,12 @@ npm run test:manual
 
 ### npm pack Verification
 
-| Check                                             | Status             |
-| ------------------------------------------------- | ------------------ |
-| `prepare-publish.js` runs without errors           | :white_check_mark: |
-| Tarball includes `node_modules/@pulsemcp/mcp-elicitation/build/*.js` | :white_check_mark: |
+| Check                                                                  | Status             |
+| ---------------------------------------------------------------------- | ------------------ |
+| `prepare-publish.js` runs without errors                               | :white_check_mark: |
+| Tarball includes `node_modules/@pulsemcp/mcp-elicitation/build/*.js`   | :white_check_mark: |
 | Tarball includes `node_modules/@pulsemcp/mcp-elicitation/package.json` | :white_check_mark: |
-| `bundled deps: 1` reported by npm pack             | :white_check_mark: |
+| `bundled deps: 1` reported by npm pack                                 | :white_check_mark: |
 
 ### Test Files
 
