@@ -1234,5 +1234,34 @@ export function createMockPulseMCPAdminClient(mockData: MockData): IPulseMCPAdmi
         errored_today: 0,
       };
     },
+
+    async getMozMetrics() {
+      return {
+        metrics: { page_authority: 50, domain_authority: 60 },
+        raw_response: {},
+        processed_at: new Date().toISOString(),
+      };
+    },
+
+    async getMozBacklinks() {
+      return {
+        backlinks: [],
+        raw_response: {},
+        processed_at: new Date().toISOString(),
+      };
+    },
+
+    async getMozStoredMetrics() {
+      return {
+        data: [],
+        meta: {
+          current_page: 1,
+          total_pages: 0,
+          total_count: 0,
+          has_next: false,
+          limit: 30,
+        },
+      };
+    },
   };
 }

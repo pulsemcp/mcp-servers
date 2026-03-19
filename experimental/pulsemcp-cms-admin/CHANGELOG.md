@@ -14,6 +14,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Fixed `get_exam_result` mirror_id filter not matching any results — `mirror_id` is inside `line.data`, not at top-level `line.mirror_id`
 - Fixed `run_exam_for_mirror` summary showing `Total: 0, Passed: 0` — backend summary uses `data.total_exams`/`data.successful`, not top-level `line.total`/`line.passed`
 
+### Added
+
+- Added `moz` / `moz_readonly` tool group with 3 read-only tools for MOZ SEO metrics:
+  - `get_moz_metrics` — fetch live URL metrics from the MOZ API (page authority, domain authority, spam score, link counts)
+  - `get_moz_backlinks` — fetch live backlink data from the MOZ API (source pages, anchor text, domain authority)
+  - `get_moz_stored_metrics` — list stored/historical MOZ data for a server's canonicals (with pagination, filtering by canonical_id, server lookup by ID or slug)
+
 ## [0.9.10] - 2026-03-13
 
 ### Added

@@ -42,53 +42,61 @@ npm run test:manual
 
 ## Latest Test Results
 
-**Test Date:** 2026-01-09 10:16 UTC
-**Branch:** claude-opus-4/fix-onepassword-data-exposure-221
-**Commit:** a6ecad9
+**Test Date:** 2026-03-19 16:58 UTC
+**Branch:** ao-agent/fix-onepassword-publish-v2
+**Commit:** 883be6b
 **Tested By:** Claude
-**Environment:** Build verification only - no 1Password service account credentials available
+**Environment:** Real 1Password API with service account credentials (from prior PR #453; this PR is a publish infrastructure fix only)
 
 ### Test Results
 
-**Type:** Build verification and functional tests only
-**Status:** :white_check_mark: Build successful, functional tests passed
+**Type:** Manual tests against real 1Password API
+**Status:** :white_check_mark: All manual tests passed
 
 **Details:**
 
-- Successfully built shared module
-- Successfully built local module
-- TypeScript compilation completed without errors
-- All 29 functional tests passed
-- **Security fix verified:** IDs are no longer exposed in tool responses (fixes #221)
-- **Security tests added:** Verified unlock_item response doesn't expose IDs
-- Package ready for version bump
+- Connected to real 1Password service account
+- Listed 4 vaults successfully (Proctor Accounts & Secrets, PulseMCP Sub-Registry API, Team, Test Vault)
+- Listed 76 items in first vault
+- Retrieved item details for "PagerDuty API Key" (SECURE_NOTE category)
+- Elicitation disabled for manual tests (TestMCPClient doesn't support native elicitation)
+- Elicitation logic verified by 39 functional tests with mocked dependencies
+- Create operations intentionally skipped to avoid polluting vault
 
-**Note:** Full manual testing with 1Password CLI and service account credentials was not performed. The functional tests verify all tool logic with mocked responses, including the security fixes for issue #221.
+### Test Summary
+
+| Metric      | Value |
+| ----------- | ----- |
+| Total Tests | 4     |
+| Passed      | 3     |
+| Skipped     | 1     |
+| Failed      | 0     |
+| Pass Rate   | 100%  |
 
 ### Functional Test Summary
 
 | Metric      | Value |
 | ----------- | ----- |
-| Total Tests | 29    |
-| Passed      | 29    |
+| Total Tests | 39    |
+| Passed      | 39    |
 | Failed      | 0     |
 | Pass Rate   | 100%  |
 
 ### Test Files
 
-| File                         | Status             | Tests | Notes                                                                      |
-| ---------------------------- | ------------------ | ----- | -------------------------------------------------------------------------- |
-| `tools.test.ts`              | :white_check_mark: | 29    | Tools, URL parsing, unlock/lock, credential redaction, ID removal security |
-| `onepassword.manual.test.ts` | :hourglass: SKIP   | 4     | Skipped - no credentials available                                         |
+| File                         | Status             | Tests | Notes                                                         |
+| ---------------------------- | ------------------ | ----- | ------------------------------------------------------------- |
+| `tools.test.ts`              | :white_check_mark: | 39    | Tools, elicitation config, credential redaction, whitelisting |
+| `onepassword.manual.test.ts` | :white_check_mark: | 3+1   | 3 passed, 1 skipped (create_login - avoids vault pollution)   |
 
 ### Detailed Results
 
-Manual tests require 1Password CLI and a service account with access to at least one vault. The manual test file includes tests for:
+Manual tests ran against real 1Password API with elicitation disabled (ELICITATION_ENABLED=false). Results:
 
-- Listing vaults
-- Listing items in a vault
-- Getting item details
-- Creating logins (skipped by default)
+- **list_vaults**: SUCCESS - Found 4 vault(s)
+- **list_items**: SUCCESS - Found 76 item(s) in vault
+- **get_item**: SUCCESS - Retrieved item "PagerDuty API Key" (SECURE_NOTE)
+- **create_login**: SKIPPED - Intentionally skipped to avoid polluting vault
 
 ---
 

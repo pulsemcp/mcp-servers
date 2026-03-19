@@ -65,6 +65,10 @@ import type {
   MarkDiscoveredUrlProcessedParams,
   MarkDiscoveredUrlProcessedResponse,
   DiscoveredUrlStats,
+  // MOZ types
+  MozMetricsResponse,
+  MozBacklinksResponse,
+  MozStoredMetricsResponse,
 } from './types.js';
 
 // Static imports for all API client functions (replaces dynamic imports
@@ -135,6 +139,9 @@ import { getProctorMetadata } from './pulsemcp-admin-client/lib/get-proctor-meta
 import { getDiscoveredUrls } from './pulsemcp-admin-client/lib/get-discovered-urls.js';
 import { markDiscoveredUrlProcessed } from './pulsemcp-admin-client/lib/mark-discovered-url-processed.js';
 import { getDiscoveredUrlStats } from './pulsemcp-admin-client/lib/get-discovered-url-stats.js';
+import { getMozMetrics } from './pulsemcp-admin-client/lib/get-moz-metrics.js';
+import { getMozBacklinks } from './pulsemcp-admin-client/lib/get-moz-backlinks.js';
+import { getMozStoredMetrics } from './pulsemcp-admin-client/lib/get-moz-stored-metrics.js';
 
 // PulseMCP Admin API client interface
 export interface IPulseMCPAdminClient {
@@ -385,6 +392,25 @@ export interface IPulseMCPAdminClient {
   ): Promise<MarkDiscoveredUrlProcessedResponse>;
 
   getDiscoveredUrlStats(): Promise<DiscoveredUrlStats>;
+
+  // MOZ REST API methods
+  getMozMetrics(params: {
+    url: string;
+    scope?: 'url' | 'domain' | 'subdomain';
+  }): Promise<MozMetricsResponse>;
+
+  getMozBacklinks(params: {
+    url: string;
+    scope?: 'url' | 'domain' | 'subdomain';
+    limit?: number;
+  }): Promise<MozBacklinksResponse>;
+
+  getMozStoredMetrics(params: {
+    server_id: string;
+    canonical_id?: number;
+    limit?: number;
+    offset?: number;
+  }): Promise<MozStoredMetricsResponse>;
 }
 
 // PulseMCP Admin API client implementation
@@ -782,6 +808,31 @@ export class PulseMCPAdminClient implements IPulseMCPAdminClient {
 
   async getDiscoveredUrlStats(): Promise<DiscoveredUrlStats> {
     return getDiscoveredUrlStats(this.apiKey, this.baseUrl);
+  }
+
+  // MOZ REST API methods
+  async getMozMetrics(params: {
+    url: string;
+    scope?: 'url' | 'domain' | 'subdomain';
+  }): Promise<MozMetricsResponse> {
+    return getMozMetrics(this.apiKey, this.baseUrl, params);
+  }
+
+  async getMozBacklinks(params: {
+    url: string;
+    scope?: 'url' | 'domain' | 'subdomain';
+    limit?: number;
+  }): Promise<MozBacklinksResponse> {
+    return getMozBacklinks(this.apiKey, this.baseUrl, params);
+  }
+
+  async getMozStoredMetrics(params: {
+    server_id: string;
+    canonical_id?: number;
+    limit?: number;
+    offset?: number;
+  }): Promise<MozStoredMetricsResponse> {
+    return getMozStoredMetrics(this.apiKey, this.baseUrl, params);
   }
 }
 

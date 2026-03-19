@@ -29,8 +29,8 @@ export interface OnePasswordRawItem {
 
 /**
  * Represents a 1Password item in list format (safe fields only, no IDs)
- * Item IDs are intentionally omitted to prevent constructing unlock URLs
- * without explicit user action through the 1Password app.
+ * Item IDs are intentionally omitted as a defense-in-depth measure
+ * to prevent direct item manipulation via internal identifiers.
  */
 export interface OnePasswordItem {
   title: string;
@@ -101,8 +101,8 @@ export interface OnePasswordSafeField {
 
 /**
  * Sanitized item details for API response (no internal IDs)
- * Item IDs are intentionally omitted to prevent constructing unlock URLs
- * without explicit user action through the 1Password app.
+ * Item IDs are intentionally omitted as a defense-in-depth measure
+ * to prevent direct item manipulation via internal identifiers.
  */
 export interface OnePasswordSafeItemDetails {
   title: string;
