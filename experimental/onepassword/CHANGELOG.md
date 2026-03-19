@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-03-19
+
+### Fixed
+
+- Fix npm publish failure by building `@pulsemcp/mcp-elicitation` dependency before shared module in `prepare-publish.js`
+
 ## [0.2.0] - 2026-03-18
 
 ### Changed
