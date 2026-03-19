@@ -94,4 +94,7 @@ async function prepare() {
   console.log('Elicitation library bundled for publishing');
 }
 
-prepare().catch(console.error);
+prepare().catch((error) => {
+  console.error('Prepare publish failed:', error);
+  process.exit(1);
+});
