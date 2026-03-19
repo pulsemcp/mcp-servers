@@ -22,7 +22,10 @@ async function prepare() {
   const elicitationDir = join(__dirname, '../../../libs/elicitation');
   console.log('Building elicitation library...');
   try {
-    execSync('npm install && npm run build', { cwd: elicitationDir, stdio: 'inherit' });
+    execSync('npm install --ignore-scripts && npm run build', {
+      cwd: elicitationDir,
+      stdio: 'inherit',
+    });
   } catch (e) {
     console.error('Failed to build elicitation library:', e.message);
     process.exit(1);
