@@ -79,12 +79,17 @@ async function prepare() {
   // exist in node_modules/ at publish time so npm can include it in the tarball.
   const elicitationNodeModulesDir = join(__dirname, 'node_modules/@pulsemcp/mcp-elicitation');
   console.log('Copying elicitation library into node_modules for bundling...');
-  await rm(elicitationNodeModulesDir, { recursive: true, force: true });
-  await mkdir(elicitationNodeModulesDir, { recursive: true });
-  await cp(join(elicitationDir, 'build'), join(elicitationNodeModulesDir, 'build'), {
-    recursive: true,
-  });
-  await cp(join(elicitationDir, 'package.json'), join(elicitationNodeModulesDir, 'package.json'));
+  try {
+    await rm(elicitationNodeModulesDir, { recursive: true, force: true });
+    await mkdir(elicitationNodeModulesDir, { recursive: true });
+    await cp(join(elicitationDir, 'build'), join(elicitationNodeModulesDir, 'build'), {
+      recursive: true,
+    });
+    await cp(join(elicitationDir, 'package.json'), join(elicitationNodeModulesDir, 'package.json'));
+  } catch (e) {
+    console.error('Failed to copy elicitation library for bundling:', e.message);
+    process.exit(1);
+  }
 
   console.log('Elicitation library bundled for publishing');
 }
