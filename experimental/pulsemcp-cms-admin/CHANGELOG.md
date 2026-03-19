@@ -8,6 +8,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [0.9.11] - 2026-03-16
 
+### Fixed
+
+- Fixed `extractStatus()` returning `'unknown'` for all exam results — status is at `data.result.status` in the real NDJSON structure, not `data.status`
+- Fixed `get_exam_result` mirror_id filter not matching any results — `mirror_id` is inside `line.data`, not at top-level `line.mirror_id`
+- Fixed `run_exam_for_mirror` summary showing `Total: 0, Passed: 0` — backend summary uses `data.total_exams`/`data.successful`, not top-level `line.total`/`line.passed`
+
 ### Added
 
 - Added `moz` / `moz_readonly` tool group with 3 read-only tools for MOZ SEO metrics:

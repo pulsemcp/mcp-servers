@@ -3,6 +3,40 @@
 ## Latest Test Results
 
 **Date:** 2026-03-16
+**Commit:** d7ddabd
+**Version:** 0.9.11 (pre-release)
+**API Environment:** https://admin.staging.pulsemcp.com
+
+### Overall: ✅ Functional Tests PASSING (198/198) + Manual Tests PASSING (162/165)
+
+**v0.9.11 Changes:**
+
+- Fixed `extractStatus()` to read `data.result.status` instead of only `data.status` — was returning `'unknown'` for all exam results
+- Fixed `get_exam_result` mirror_id filter to check `line.data.mirror_id` — was failing to match any results
+- Fixed `run_exam_for_mirror` summary to read `data.total_exams`/`data.successful` — was showing `Total: 0, Passed: 0`
+
+**Functional Test Results: ✅ 198/198 PASSING**
+
+- 2 new tests added covering real NDJSON structure: status extraction from `data.result.status`, summary from `data.total_exams`/`data.successful`, mirror_id filter from `data.mirror_id`
+- 1 existing test strengthened with status assertion verifying `extractStatus` uses nested `data.result.status`
+
+**Manual Test Results: ✅ 162/165 PASSING (3 failures are pre-existing staging data issues)**
+
+Ran `npm run test:manual` against staging API. 10/11 test files passed. The 3 failures are in `proctor-tools.manual.test.ts` due to the auto-discovered mirror (10158, pipeboard-meta-ads) having no saved mcp_json records on staging — the exam is skipped with 0 results, so the E2E flow tests expecting exam_result lines fail. This is a staging data issue, not a code bug.
+
+**Targeted manual verification of all 3 fixes against mirror 166 (context7/upstash-context7):**
+
+- `run_exam_for_mirror(mirror_ids=[166], runtime_id="proctor-mcp-client-0.0.55-configs-0.0.10", exam_type="init-tools-list")`:
+  - **Bug 1 fix confirmed**: Output shows `Status: completed` (was `Status: unknown` before fix)
+  - **Bug 3 fix confirmed**: Output shows `Total: 2, Passed: 2` (was `Total: 0, Passed: 0` before fix)
+- `get_exam_result(result_id, mirror_id=166)`:
+  - **Bug 2 fix confirmed**: Returns results with `Mirror Filter: 166` (was "No matching lines" before fix)
+
+---
+
+## Previous Test Results (v0.9.11 — MOZ tools)
+
+**Date:** 2026-03-16
 **Commit:** 69778e3
 **Version:** 0.9.11 (pre-release)
 **API Environment:** Staging (admin.staging.pulsemcp.com)

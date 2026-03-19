@@ -35,7 +35,10 @@ export function extractExamId(line: ProctorExamStreamLine): string {
  */
 export function extractStatus(line: ProctorExamStreamLine): string {
   const data = line.data as Record<string, unknown> | undefined;
-  return (data?.status as string) || (line.status as string) || 'unknown';
+  const result = data?.result as Record<string, unknown> | undefined;
+  return (
+    (result?.status as string) || (data?.status as string) || (line.status as string) || 'unknown'
+  );
 }
 
 /**
