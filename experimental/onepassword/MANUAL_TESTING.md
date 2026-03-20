@@ -65,30 +65,31 @@ This PR adds `DANGEROUSLY_SKIP_ELICITATIONS` env variable and startup safety val
 
 ### Functional Test Results
 
-**Status:** :white_check_mark: 52 passed, 0 failed
+**Status:** :white_check_mark: 59 passed, 0 failed
 
 | Metric      | Value |
 | ----------- | ----- |
-| Total Tests | 52    |
-| Passed      | 52    |
+| Total Tests | 59    |
+| Passed      | 59    |
 | Failed      | 0     |
 | Pass Rate   | 100%  |
 
 ### Key Tests Added/Modified
 
-| Test Category                                 | Count | Notes                                                |
-| --------------------------------------------- | ----- | ---------------------------------------------------- |
-| `isDangerouslySkipElicitations` helper        | 5     | Validates true/false/case-insensitive/unset behavior |
-| `hasHttpElicitationFallback` helper           | 4     | Validates URL presence detection                     |
-| `ELICITATION_ENABLED=false` bypass prevention | 2     | Confirms direct ELICITATION_ENABLED=false is ignored |
-| DANGEROUSLY_SKIP_ELICITATIONS behavior        | 2     | Case-insensitive true, explicit false values         |
+| Test Category                                 | Count | Notes                                                    |
+| --------------------------------------------- | ----- | -------------------------------------------------------- |
+| `isDangerouslySkipElicitations` helper        | 5     | Validates true/false/case-insensitive/unset behavior     |
+| `hasHttpElicitationFallback` helper           | 6     | Validates URL presence, whitespace-only URL rejection    |
+| `checkElicitationSafety` startup gate         | 6     | Validates safe/unsafe states for all config combinations |
+| `ELICITATION_ENABLED=false` bypass prevention | 1     | Confirms direct ELICITATION_ENABLED=false is ignored     |
+| DANGEROUSLY_SKIP_ELICITATIONS behavior        | 2     | Case-insensitive true, explicit false values             |
 
 ### Test Files
 
-| File                         | Status             | Tests | Notes                                                                      |
-| ---------------------------- | ------------------ | ----- | -------------------------------------------------------------------------- |
-| `tools.test.ts` (functional) | :white_check_mark: | 52    | Tools, elicitation config, credential redaction, whitelisting, new helpers |
-| `onepassword.manual.test.ts` | :white_check_mark: | 3/4   | Real 1Password API calls with DANGEROUSLY_SKIP_ELICITATIONS=true           |
+| File                         | Status             | Tests | Notes                                                                        |
+| ---------------------------- | ------------------ | ----- | ---------------------------------------------------------------------------- |
+| `tools.test.ts` (functional) | :white_check_mark: | 59    | Tools, elicitation config, credential redaction, whitelisting, safety checks |
+| `onepassword.manual.test.ts` | :white_check_mark: | 3/4   | Real 1Password API calls with DANGEROUSLY_SKIP_ELICITATIONS=true             |
 
 ---
 

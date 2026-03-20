@@ -441,6 +441,15 @@ describe('1Password Tools', () => {
       expect(config.writeElicitationEnabled).toBe(true);
     });
 
+    it('should ignore ELICITATION_ENABLED=false (bypass prevention)', () => {
+      const config = readOnePasswordElicitationConfig({
+        ELICITATION_ENABLED: 'false',
+      });
+      expect(config.base.enabled).toBe(true);
+      expect(config.readElicitationEnabled).toBe(true);
+      expect(config.writeElicitationEnabled).toBe(true);
+    });
+
     it('should respect DANGEROUSLY_SKIP_ELICITATIONS even with per-action enabled', () => {
       const config = readOnePasswordElicitationConfig({
         DANGEROUSLY_SKIP_ELICITATIONS: 'true',
