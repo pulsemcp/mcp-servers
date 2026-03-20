@@ -456,6 +456,26 @@ describe('1Password Tools', () => {
       expect(config.writeElicitationEnabled).toBe(false);
     });
 
+    it('should ignore ELICITATION_ENABLED=false without DANGEROUSLY_SKIP_ELICITATIONS', () => {
+      // Users cannot bypass the safety check by setting ELICITATION_ENABLED=false directly
+      const config = readOnePasswordElicitationConfig({
+        ELICITATION_ENABLED: 'false',
+      });
+      expect(config.readElicitationEnabled).toBe(true);
+      expect(config.writeElicitationEnabled).toBe(true);
+    });
+
+    it('should ignore ELICITATION_ENABLED=false even with HTTP fallback URLs', () => {
+      // Even with HTTP fallback configured, ELICITATION_ENABLED=false alone should not bypass
+      const config = readOnePasswordElicitationConfig({
+        ELICITATION_ENABLED: 'false',
+        ELICITATION_REQUEST_URL: 'https://example.com/request',
+        ELICITATION_POLL_URL: 'https://example.com/poll',
+      });
+      expect(config.readElicitationEnabled).toBe(true);
+      expect(config.writeElicitationEnabled).toBe(true);
+    });
+
     it('should parse whitelisted items', () => {
       const config = readOnePasswordElicitationConfig({
         OP_WHITELISTED_ITEMS: 'Stripe Key, AWS Credentials, GitHub Token',

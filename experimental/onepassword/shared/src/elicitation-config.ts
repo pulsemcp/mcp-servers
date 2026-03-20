@@ -81,9 +81,14 @@ export function hasHttpElicitationFallback(
 export function readOnePasswordElicitationConfig(
   env: Record<string, string | undefined> = process.env
 ): OnePasswordElicitationConfig {
-  // DANGEROUSLY_SKIP_ELICITATIONS=true overrides the base config to disable elicitation
+  // The 1Password server ignores ELICITATION_ENABLED directly — the only way to disable
+  // elicitation is via DANGEROUSLY_SKIP_ELICITATIONS=true. This prevents users from
+  // bypassing the safety check by setting ELICITATION_ENABLED=false directly.
   const dangerouslySkip = isDangerouslySkipElicitations(env);
-  const effectiveEnv = dangerouslySkip ? { ...env, ELICITATION_ENABLED: 'false' } : env;
+  const effectiveEnv = {
+    ...env,
+    ELICITATION_ENABLED: dangerouslySkip ? 'false' : 'true',
+  };
   const base = readElicitationConfig(effectiveEnv);
 
   // Per-action overrides default to the base enabled state

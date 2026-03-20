@@ -128,7 +128,7 @@ Restart Claude Desktop and you should be ready to go!
 DANGEROUSLY_SKIP_ELICITATIONS=true
 ```
 
-**Only confirm writes, auto-approve reads**:
+**Only confirm writes, auto-approve reads** (requires HTTP fallback URLs or `DANGEROUSLY_SKIP_ELICITATIONS=true` for startup):
 
 ```bash
 OP_ELICITATION_READ=false
@@ -140,6 +140,8 @@ OP_ELICITATION_WRITE=true
 ```bash
 OP_WHITELISTED_ITEMS="Stripe Key,AWS Credentials,abc123def456"
 ```
+
+> **Note:** `ELICITATION_ENABLED` is not supported by this server. Use `DANGEROUSLY_SKIP_ELICITATIONS=true` to disable all confirmations.
 
 ## Development
 
