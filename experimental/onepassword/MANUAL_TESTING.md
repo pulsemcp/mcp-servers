@@ -42,47 +42,53 @@ npm run test:manual
 
 ## Latest Test Results
 
-**Test Date:** 2026-03-19
-**Branch:** claude/fix-onepassword-elicitation-bundling
-**Commit:** e7061f2
+**Test Date:** 2026-03-20
+**Branch:** tadasant/dangerously-skip-elicitations
+**Commit:** eee3e6b
 **Tested By:** Claude
-**Environment:** Packaging-only fix — no server code changes. Verified via `npm pack` tarball inspection and 39 functional tests
+**Environment:** Linux, Node.js, 1Password CLI with service account token
 
-### Test Results
+### Summary
 
-**Type:** npm pack tarball verification + functional tests
-**Status:** :white_check_mark: All verifications passed
+This PR adds `DANGEROUSLY_SKIP_ELICITATIONS` env variable and startup safety validation. The server now refuses to start unless elicitation is configured (HTTP fallback URLs) or explicitly opted out (`DANGEROUSLY_SKIP_ELICITATIONS=true`). Manual tests verify real 1Password API operations work correctly with the new elicitation bypass mechanism.
 
-**Details:**
+### Manual Test Results
 
-- Ran `prepare-publish.js` and verified `npm pack` tarball now includes `node_modules/@pulsemcp/mcp-elicitation/` (build/\*.js, package.json)
-- Previously the tarball was missing the elicitation library entirely, causing `ERR_MODULE_NOT_FOUND` at runtime
-- 39 functional tests pass (unchanged server logic)
-- Manual API tests not re-run: this PR only changes `prepare-publish.js` (build infrastructure), not server code. Prior manual tests on commit `883be6b` (PR #453) verified the same server logic
+**Status:** :white_check_mark: 3 passed, 1 skipped (expected)
 
-### Functional Test Summary
+| Test                                | Status             | Notes                                                     |
+| ----------------------------------- | ------------------ | --------------------------------------------------------- |
+| list vaults via MCP tool call       | :white_check_mark: | Successfully listed vaults via real 1Password API         |
+| list items via MCP tool call        | :white_check_mark: | Successfully listed items in vault via real 1Password API |
+| get item details via MCP tool call  | :white_check_mark: | Successfully retrieved item with credentials via real API |
+| list items by tag via MCP tool call | :hourglass:        | Skipped — no items with test tag in vault (expected)      |
+
+### Functional Test Results
+
+**Status:** :white_check_mark: 52 passed, 0 failed
 
 | Metric      | Value |
 | ----------- | ----- |
-| Total Tests | 39    |
-| Passed      | 39    |
+| Total Tests | 52    |
+| Passed      | 52    |
 | Failed      | 0     |
 | Pass Rate   | 100%  |
 
-### npm pack Verification
+### Key Tests Added/Modified
 
-| Check                                                                  | Status             |
-| ---------------------------------------------------------------------- | ------------------ |
-| `prepare-publish.js` runs without errors                               | :white_check_mark: |
-| Tarball includes `node_modules/@pulsemcp/mcp-elicitation/build/*.js`   | :white_check_mark: |
-| Tarball includes `node_modules/@pulsemcp/mcp-elicitation/package.json` | :white_check_mark: |
-| `bundled deps: 1` reported by npm pack                                 | :white_check_mark: |
+| Test Category                                 | Count | Notes                                                |
+| --------------------------------------------- | ----- | ---------------------------------------------------- |
+| `isDangerouslySkipElicitations` helper        | 5     | Validates true/false/case-insensitive/unset behavior |
+| `hasHttpElicitationFallback` helper           | 4     | Validates URL presence detection                     |
+| `ELICITATION_ENABLED=false` bypass prevention | 2     | Confirms direct ELICITATION_ENABLED=false is ignored |
+| DANGEROUSLY_SKIP_ELICITATIONS behavior        | 2     | Case-insensitive true, explicit false values         |
 
 ### Test Files
 
-| File            | Status             | Tests | Notes                                                         |
-| --------------- | ------------------ | ----- | ------------------------------------------------------------- |
-| `tools.test.ts` | :white_check_mark: | 39    | Tools, elicitation config, credential redaction, whitelisting |
+| File                         | Status             | Tests | Notes                                                                      |
+| ---------------------------- | ------------------ | ----- | -------------------------------------------------------------------------- |
+| `tools.test.ts` (functional) | :white_check_mark: | 52    | Tools, elicitation config, credential redaction, whitelisting, new helpers |
+| `onepassword.manual.test.ts` | :white_check_mark: | 3/4   | Real 1Password API calls with DANGEROUSLY_SKIP_ELICITATIONS=true           |
 
 ---
 
