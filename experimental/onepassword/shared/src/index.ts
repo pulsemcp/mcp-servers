@@ -38,6 +38,8 @@ export {
 export {
   readOnePasswordElicitationConfig,
   isItemWhitelisted,
+  isDangerouslySkipElicitations,
+  hasHttpElicitationFallback,
   type OnePasswordElicitationConfig,
 } from './elicitation-config.js';
 

@@ -16,6 +16,8 @@ import { parseOnePasswordUrl, extractItemIdFromUrl } from '../../shared/src/url-
 import {
   readOnePasswordElicitationConfig,
   isItemWhitelisted,
+  isDangerouslySkipElicitations,
+  hasHttpElicitationFallback,
 } from '../../shared/src/elicitation-config.js';
 
 describe('1Password Tools', () => {
@@ -31,9 +33,12 @@ describe('1Password Tools', () => {
   afterEach(() => {
     // Restore env vars
     delete process.env.ELICITATION_ENABLED;
+    delete process.env.DANGEROUSLY_SKIP_ELICITATIONS;
     delete process.env.OP_ELICITATION_READ;
     delete process.env.OP_ELICITATION_WRITE;
     delete process.env.OP_WHITELISTED_ITEMS;
+    delete process.env.ELICITATION_REQUEST_URL;
+    delete process.env.ELICITATION_POLL_URL;
   });
 
   describe('onepassword_list_vaults', () => {
@@ -71,7 +76,7 @@ describe('1Password Tools', () => {
 
   describe('onepassword_get_item', () => {
     it('should get item details without exposing IDs when elicitation is disabled', async () => {
-      process.env.ELICITATION_ENABLED = 'false';
+      process.env.DANGEROUSLY_SKIP_ELICITATIONS = 'true';
 
       const tool = getItemTool(mockServer, () => mockClient);
       const result = await tool.handler({ itemId: 'item-1' });
@@ -91,7 +96,7 @@ describe('1Password Tools', () => {
     });
 
     it('should pass vaultId when provided', async () => {
-      process.env.ELICITATION_ENABLED = 'false';
+      process.env.DANGEROUSLY_SKIP_ELICITATIONS = 'true';
 
       const tool = getItemTool(mockServer, () => mockClient);
       await tool.handler({ itemId: 'item-1', vaultId: 'vault-1' });
@@ -100,7 +105,7 @@ describe('1Password Tools', () => {
     });
 
     it('should reveal credentials when elicitation is disabled', async () => {
-      process.env.ELICITATION_ENABLED = 'false';
+      process.env.DANGEROUSLY_SKIP_ELICITATIONS = 'true';
 
       const tool = getItemTool(mockServer, () => mockClient);
       const result = await tool.handler({ itemId: 'item-1' });
@@ -166,7 +171,7 @@ describe('1Password Tools', () => {
 
   describe('onepassword_create_login', () => {
     it('should create a new login item without exposing IDs when elicitation is disabled', async () => {
-      process.env.ELICITATION_ENABLED = 'false';
+      process.env.DANGEROUSLY_SKIP_ELICITATIONS = 'true';
 
       const tool = createLoginTool(mockServer, () => mockClient);
       const result = await tool.handler({
@@ -191,7 +196,7 @@ describe('1Password Tools', () => {
     });
 
     it('should pass optional url and tags', async () => {
-      process.env.ELICITATION_ENABLED = 'false';
+      process.env.DANGEROUSLY_SKIP_ELICITATIONS = 'true';
 
       const tool = createLoginTool(mockServer, () => mockClient);
       await tool.handler({
@@ -233,7 +238,7 @@ describe('1Password Tools', () => {
 
   describe('onepassword_create_secure_note', () => {
     it('should create a new secure note without exposing IDs when elicitation is disabled', async () => {
-      process.env.ELICITATION_ENABLED = 'false';
+      process.env.DANGEROUSLY_SKIP_ELICITATIONS = 'true';
 
       const tool = createSecureNoteTool(mockServer, () => mockClient);
       const result = await tool.handler({
@@ -276,7 +281,7 @@ describe('1Password Tools', () => {
   // =============================================================================
   describe('Error Handling', () => {
     beforeEach(() => {
-      process.env.ELICITATION_ENABLED = 'false';
+      process.env.DANGEROUSLY_SKIP_ELICITATIONS = 'true';
     });
 
     it('should handle NotFoundError gracefully', async () => {
@@ -424,9 +429,9 @@ describe('1Password Tools', () => {
       expect(config.whitelistedItems.size).toBe(0);
     });
 
-    it('should disable all elicitation when ELICITATION_ENABLED is false', () => {
+    it('should disable all elicitation when DANGEROUSLY_SKIP_ELICITATIONS is true', () => {
       const config = readOnePasswordElicitationConfig({
-        ELICITATION_ENABLED: 'false',
+        DANGEROUSLY_SKIP_ELICITATIONS: 'true',
       });
       expect(config.readElicitationEnabled).toBe(false);
       expect(config.writeElicitationEnabled).toBe(false);
@@ -441,9 +446,9 @@ describe('1Password Tools', () => {
       expect(config.writeElicitationEnabled).toBe(true);
     });
 
-    it('should respect master disable even with per-action enabled', () => {
+    it('should respect DANGEROUSLY_SKIP_ELICITATIONS even with per-action enabled', () => {
       const config = readOnePasswordElicitationConfig({
-        ELICITATION_ENABLED: 'false',
+        DANGEROUSLY_SKIP_ELICITATIONS: 'true',
         OP_ELICITATION_READ: 'true',
         OP_ELICITATION_WRITE: 'true',
       });
@@ -493,6 +498,83 @@ describe('1Password Tools', () => {
       // No itemId provided, title doesn't match
       expect(isItemWhitelisted(config, 'Unknown Title')).toBe(false);
     });
+
+    it('should not treat DANGEROUSLY_SKIP_ELICITATIONS=false as skip', () => {
+      const config = readOnePasswordElicitationConfig({
+        DANGEROUSLY_SKIP_ELICITATIONS: 'false',
+      });
+      expect(config.readElicitationEnabled).toBe(true);
+      expect(config.writeElicitationEnabled).toBe(true);
+    });
+
+    it('should be case-insensitive for DANGEROUSLY_SKIP_ELICITATIONS', () => {
+      const config = readOnePasswordElicitationConfig({
+        DANGEROUSLY_SKIP_ELICITATIONS: 'TRUE',
+      });
+      expect(config.readElicitationEnabled).toBe(false);
+      expect(config.writeElicitationEnabled).toBe(false);
+    });
+  });
+
+  // =============================================================================
+  // DANGEROUSLY_SKIP_ELICITATIONS HELPER TESTS
+  // =============================================================================
+  describe('isDangerouslySkipElicitations', () => {
+    it('should return false when not set', () => {
+      expect(isDangerouslySkipElicitations({})).toBe(false);
+    });
+
+    it('should return true when set to "true"', () => {
+      expect(isDangerouslySkipElicitations({ DANGEROUSLY_SKIP_ELICITATIONS: 'true' })).toBe(true);
+    });
+
+    it('should return true when set to "TRUE" (case-insensitive)', () => {
+      expect(isDangerouslySkipElicitations({ DANGEROUSLY_SKIP_ELICITATIONS: 'TRUE' })).toBe(true);
+    });
+
+    it('should return false when set to "false"', () => {
+      expect(isDangerouslySkipElicitations({ DANGEROUSLY_SKIP_ELICITATIONS: 'false' })).toBe(false);
+    });
+
+    it('should return false when set to any other value', () => {
+      expect(isDangerouslySkipElicitations({ DANGEROUSLY_SKIP_ELICITATIONS: 'yes' })).toBe(false);
+      expect(isDangerouslySkipElicitations({ DANGEROUSLY_SKIP_ELICITATIONS: '1' })).toBe(false);
+      expect(isDangerouslySkipElicitations({ DANGEROUSLY_SKIP_ELICITATIONS: '' })).toBe(false);
+    });
+  });
+
+  // =============================================================================
+  // HTTP ELICITATION FALLBACK DETECTION TESTS
+  // =============================================================================
+  describe('hasHttpElicitationFallback', () => {
+    it('should return false when no URLs are set', () => {
+      expect(hasHttpElicitationFallback({})).toBe(false);
+    });
+
+    it('should return false when only request URL is set', () => {
+      expect(
+        hasHttpElicitationFallback({
+          ELICITATION_REQUEST_URL: 'https://example.com/request',
+        })
+      ).toBe(false);
+    });
+
+    it('should return false when only poll URL is set', () => {
+      expect(
+        hasHttpElicitationFallback({
+          ELICITATION_POLL_URL: 'https://example.com/poll',
+        })
+      ).toBe(false);
+    });
+
+    it('should return true when both URLs are set', () => {
+      expect(
+        hasHttpElicitationFallback({
+          ELICITATION_REQUEST_URL: 'https://example.com/request',
+          ELICITATION_POLL_URL: 'https://example.com/poll',
+        })
+      ).toBe(true);
+    });
   });
 
   // =============================================================================
@@ -513,7 +595,7 @@ describe('1Password Tools', () => {
     });
 
     it('should show full credentials when elicitation is disabled', async () => {
-      process.env.ELICITATION_ENABLED = 'false';
+      process.env.DANGEROUSLY_SKIP_ELICITATIONS = 'true';
 
       const tool = getItemTool(mockServer, () => mockClient);
       const result = await tool.handler({ itemId: 'item-1' });

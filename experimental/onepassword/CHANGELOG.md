@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **BREAKING**: Server now refuses to start unless elicitation is configured or explicitly opted out. Previously, the server would silently allow carte blanche access to all 1Password secrets when elicitation was not configured.
+- **BREAKING**: Replace `ELICITATION_ENABLED=false` with `DANGEROUSLY_SKIP_ELICITATIONS=true` as the way to bypass all confirmation prompts. The explicit, intentionally-named variable makes it clear that skipping elicitation is a dangerous operation.
+
+### Added
+
+- `DANGEROUSLY_SKIP_ELICITATIONS` environment variable — must be explicitly set to `"true"` to disable all elicitation prompts
+- Startup safety validation that checks for a configured elicitation mechanism (HTTP fallback URLs) or explicit opt-out before allowing the server to start
+
 ## [0.2.3] - 2026-03-19
 
 ### Fixed
