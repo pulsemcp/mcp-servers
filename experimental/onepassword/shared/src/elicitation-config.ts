@@ -4,9 +4,10 @@ import { readElicitationConfig, type ElicitationConfig } from '@pulsemcp/mcp-eli
  * 1Password-specific elicitation configuration.
  *
  * Layers:
- * 1. Base elicitation config (ELICITATION_ENABLED, etc.) from @pulsemcp/mcp-elicitation
- * 2. Per-action overrides: OP_ELICITATION_READ, OP_ELICITATION_WRITE
- * 3. Whitelisted items: OP_WHITELISTED_ITEMS (bypass elicitation for specific items)
+ * 1. Base elicitation config from @pulsemcp/mcp-elicitation
+ * 2. DANGEROUSLY_SKIP_ELICITATIONS override (must be explicitly "true" to bypass all elicitation)
+ * 3. Per-action overrides: OP_ELICITATION_READ, OP_ELICITATION_WRITE
+ * 4. Whitelisted items: OP_WHITELISTED_ITEMS (bypass elicitation for specific items)
  */
 
 export interface OnePasswordElicitationConfig {
@@ -47,21 +48,46 @@ function parseBooleanEnv(value: string | undefined, defaultValue: boolean): bool
 }
 
 /**
+ * Check whether DANGEROUSLY_SKIP_ELICITATIONS is explicitly set to "true".
+ */
+export function isDangerouslySkipElicitations(
+  env: Record<string, string | undefined> = process.env
+): boolean {
+  return env.DANGEROUSLY_SKIP_ELICITATIONS?.toLowerCase() === 'true';
+}
+
+/**
+ * Check whether HTTP fallback elicitation URLs are configured.
+ */
+export function hasHttpElicitationFallback(
+  env: Record<string, string | undefined> = process.env
+): boolean {
+  return !!(env.ELICITATION_REQUEST_URL?.trim() && env.ELICITATION_POLL_URL?.trim());
+}
+
+/**
  * Read the full 1Password elicitation configuration from environment variables.
  *
  * Environment variables:
- *   ELICITATION_ENABLED          - Master toggle (default: true). When false, all elicitation is bypassed.
- *   OP_ELICITATION_READ          - Override for read operations (default: follows ELICITATION_ENABLED)
- *   OP_ELICITATION_WRITE         - Override for write operations (default: follows ELICITATION_ENABLED)
- *   OP_WHITELISTED_ITEMS         - Comma-separated list of item titles or item IDs that bypass read elicitation
- *                                  (e.g., "Stripe Key,AWS Credentials,abc123def456")
+ *   DANGEROUSLY_SKIP_ELICITATIONS - Must be explicitly "true" to bypass all elicitation.
+ *   OP_ELICITATION_READ           - Override for read operations (default: follows elicitation enabled state)
+ *   OP_ELICITATION_WRITE          - Override for write operations (default: follows elicitation enabled state)
+ *   OP_WHITELISTED_ITEMS          - Comma-separated list of item titles or item IDs that bypass read elicitation
+ *                                   (e.g., "Stripe Key,AWS Credentials,abc123def456")
  *
  * Plus all standard elicitation env vars (ELICITATION_REQUEST_URL, etc.)
  */
 export function readOnePasswordElicitationConfig(
   env: Record<string, string | undefined> = process.env
 ): OnePasswordElicitationConfig {
-  const base = readElicitationConfig(env);
+  // Map DANGEROUSLY_SKIP_ELICITATIONS to the base library's enabled flag.
+  // The 1Password server does not use ELICITATION_ENABLED — the only way to disable
+  // elicitation is via DANGEROUSLY_SKIP_ELICITATIONS=true.
+  const dangerouslySkip = isDangerouslySkipElicitations(env);
+  const base = readElicitationConfig({
+    ...env,
+    ELICITATION_ENABLED: dangerouslySkip ? 'false' : 'true',
+  });
 
   // Per-action overrides default to the base enabled state
   const readElicitationEnabled = base.enabled
@@ -79,6 +105,32 @@ export function readOnePasswordElicitationConfig(
     writeElicitationEnabled,
     whitelistedItems,
   };
+}
+
+/**
+ * Result of the elicitation safety check.
+ */
+export type ElicitationSafetyResult =
+  | { safe: true; reason: 'dangerously_skip' | 'http_fallback' }
+  | { safe: false; reason: 'no_elicitation_configured' };
+
+/**
+ * Check whether the elicitation configuration is safe to start the server.
+ *
+ * Returns a result indicating whether the server should be allowed to start and why.
+ * This is the pure logic extracted from the startup validation — callers decide what
+ * to do with the result (e.g., log and exit, or assert in tests).
+ */
+export function checkElicitationSafety(
+  env: Record<string, string | undefined> = process.env
+): ElicitationSafetyResult {
+  if (isDangerouslySkipElicitations(env)) {
+    return { safe: true, reason: 'dangerously_skip' };
+  }
+  if (hasHttpElicitationFallback(env)) {
+    return { safe: true, reason: 'http_fallback' };
+  }
+  return { safe: false, reason: 'no_elicitation_configured' };
 }
 
 /**

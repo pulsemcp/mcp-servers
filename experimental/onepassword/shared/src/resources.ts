@@ -47,9 +47,10 @@ export function registerResources(server: Server) {
             : 'not set',
           ENABLED_TOOLGROUPS: process.env.ENABLED_TOOLGROUPS || 'all (default)',
           SKIP_HEALTH_CHECKS: process.env.SKIP_HEALTH_CHECKS || 'false',
-          ELICITATION_ENABLED: process.env.ELICITATION_ENABLED || 'true (default)',
-          OP_ELICITATION_READ: process.env.OP_ELICITATION_READ || 'follows ELICITATION_ENABLED',
-          OP_ELICITATION_WRITE: process.env.OP_ELICITATION_WRITE || 'follows ELICITATION_ENABLED',
+          DANGEROUSLY_SKIP_ELICITATIONS:
+            process.env.DANGEROUSLY_SKIP_ELICITATIONS || 'not set (elicitation required)',
+          OP_ELICITATION_READ: process.env.OP_ELICITATION_READ || 'true (default)',
+          OP_ELICITATION_WRITE: process.env.OP_ELICITATION_WRITE || 'true (default)',
           OP_WHITELISTED_ITEMS: process.env.OP_WHITELISTED_ITEMS || 'none',
         },
         capabilities: {

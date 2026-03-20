@@ -5,6 +5,7 @@ import { fileURLToPath } from 'url';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { createMCPServer, OnePasswordClient } from '../shared/index.js';
 import { logServerStart, logError, logWarning } from '../shared/logging.js';
+import { checkElicitationSafety } from '../shared/elicitation-config.js';
 
 // Read version from package.json
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -37,19 +38,20 @@ function validateEnvironment(): void {
       defaultValue: 'false',
     },
     {
-      name: 'ELICITATION_ENABLED',
-      description: 'Master toggle for user confirmation prompts (true/false)',
-      defaultValue: 'true',
+      name: 'DANGEROUSLY_SKIP_ELICITATIONS',
+      description:
+        'Set to "true" to bypass ALL confirmation prompts (exposes all secrets without approval)',
+      defaultValue: 'not set (elicitation required)',
     },
     {
       name: 'OP_ELICITATION_READ',
       description: 'Prompt before revealing credentials (true/false)',
-      defaultValue: 'follows ELICITATION_ENABLED',
+      defaultValue: 'true',
     },
     {
       name: 'OP_ELICITATION_WRITE',
       description: 'Prompt before creating items (true/false)',
-      defaultValue: 'follows ELICITATION_ENABLED',
+      defaultValue: 'true',
     },
     {
       name: 'OP_WHITELISTED_ITEMS',
@@ -91,6 +93,69 @@ function validateEnvironment(): void {
   if (process.env.ENABLED_TOOLGROUPS) {
     logWarning('config', `Tool groups filter active: ${process.env.ENABLED_TOOLGROUPS}`);
   }
+
+  // Validate elicitation safety
+  validateElicitationSafety();
+}
+
+/**
+ * Ensures the server cannot start without elicitation protection unless explicitly opted out.
+ *
+ * Without this check, the server would silently allow carte blanche access to all 1Password
+ * secrets when elicitation is not configured — a dangerous default for a credentials manager.
+ *
+ * The server will start if ANY of the following is true:
+ * 1. HTTP fallback URLs are configured (ELICITATION_REQUEST_URL + ELICITATION_POLL_URL)
+ * 2. DANGEROUSLY_SKIP_ELICITATIONS=true is explicitly set
+ *
+ * If neither condition is met, the server refuses to start. Native MCP client elicitation
+ * support cannot be detected at startup (it requires an active client connection), so
+ * users relying solely on native elicitation should configure HTTP fallback URLs as well,
+ * or set DANGEROUSLY_SKIP_ELICITATIONS=true if they accept the risk.
+ */
+function validateElicitationSafety(): void {
+  const result = checkElicitationSafety();
+
+  if (result.safe && result.reason === 'dangerously_skip') {
+    logWarning(
+      'security',
+      'DANGEROUSLY_SKIP_ELICITATIONS=true — all confirmation prompts are disabled. ' +
+        'All secrets will be accessible without user approval.'
+    );
+    return;
+  }
+
+  if (result.safe) {
+    // HTTP fallback is configured, elicitation will work
+    return;
+  }
+
+  // No elicitation mechanism is guaranteed to be available at startup
+  logError('security', 'Server cannot start: no elicitation mechanism is configured.');
+  console.error('');
+  console.error('This 1Password MCP server requires user confirmation prompts (elicitation) to be');
+  console.error(
+    'configured before it will start. Without elicitation, all secrets would be accessible'
+  );
+  console.error('to any connected MCP client without user approval.');
+  console.error('');
+  console.error('To fix this, choose one of the following options:');
+  console.error('');
+  console.error('  Option 1: Configure HTTP elicitation fallback (recommended):');
+  console.error('    export ELICITATION_REQUEST_URL="https://your-endpoint/request"');
+  console.error('    export ELICITATION_POLL_URL="https://your-endpoint/poll"');
+  console.error('');
+  console.error('  Option 2: Explicitly opt out of elicitation (use with caution):');
+  console.error('    export DANGEROUSLY_SKIP_ELICITATIONS=true');
+  console.error('');
+  console.error('Note: If your MCP client supports native elicitation (e.g., Claude Desktop),');
+  console.error(
+    'you still need to configure HTTP fallback URLs or set DANGEROUSLY_SKIP_ELICITATIONS=true'
+  );
+  console.error('since native support cannot be verified at server startup time.');
+  console.error('');
+
+  process.exit(1);
 }
 
 // =============================================================================

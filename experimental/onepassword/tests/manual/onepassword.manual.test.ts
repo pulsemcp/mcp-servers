@@ -56,7 +56,7 @@ describe('1Password Manual Tests', () => {
         OP_CONFIG_DIR: process.env.OP_CONFIG_DIR || path.join(os.tmpdir(), 'op-mcp-test-config'),
         SKIP_HEALTH_CHECKS: 'true',
         // Disable elicitation for manual tests since TestMCPClient doesn't support it
-        ELICITATION_ENABLED: 'false',
+        DANGEROUSLY_SKIP_ELICITATIONS: 'true',
       },
       debug: false,
     });

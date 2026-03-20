@@ -95,18 +95,19 @@ Restart Claude Desktop and you should be ready to go!
 
 ## Environment Variables
 
-| Variable                   | Required | Description                                                     | Default                       |
-| -------------------------- | -------- | --------------------------------------------------------------- | ----------------------------- |
-| `OP_SERVICE_ACCOUNT_TOKEN` | Yes      | 1Password service account token                                 | -                             |
-| `ENABLED_TOOLGROUPS`       | No       | Comma-separated tool groups                                     | All enabled                   |
-| `SKIP_HEALTH_CHECKS`       | No       | Skip credential validation on start                             | `false`                       |
-| `ELICITATION_ENABLED`      | No       | Master toggle for user confirmation prompts                     | `true`                        |
-| `OP_ELICITATION_READ`      | No       | Prompt before revealing credentials                             | follows `ELICITATION_ENABLED` |
-| `OP_ELICITATION_WRITE`     | No       | Prompt before creating items                                    | follows `ELICITATION_ENABLED` |
-| `OP_WHITELISTED_ITEMS`     | No       | Comma-separated item titles or IDs that bypass read elicitation | none                          |
+| Variable                        | Required | Description                                                            | Default                        |
+| ------------------------------- | -------- | ---------------------------------------------------------------------- | ------------------------------ |
+| `OP_SERVICE_ACCOUNT_TOKEN`      | Yes      | 1Password service account token                                        | -                              |
+| `ENABLED_TOOLGROUPS`            | No       | Comma-separated tool groups                                            | All enabled                    |
+| `SKIP_HEALTH_CHECKS`            | No       | Skip credential validation on start                                    | `false`                        |
+| `DANGEROUSLY_SKIP_ELICITATIONS` | No       | Set to `true` to bypass ALL confirmation prompts (exposes all secrets) | not set (elicitation required) |
+| `OP_ELICITATION_READ`           | No       | Prompt before revealing credentials                                    | `true`                         |
+| `OP_ELICITATION_WRITE`          | No       | Prompt before creating items                                           | `true`                         |
+| `OP_WHITELISTED_ITEMS`          | No       | Comma-separated item titles or IDs that bypass read elicitation        | none                           |
 
 ## Security Considerations
 
+- **Startup safety check**: The server refuses to start unless elicitation is configured (HTTP fallback URLs) or explicitly opted out via `DANGEROUSLY_SKIP_ELICITATIONS=true`. This prevents accidental carte blanche access to all secrets.
 - **Elicitation-based approval**: By default, `get_item` prompts the user for confirmation before revealing sensitive credentials. Write operations also require approval.
 - **Service Account Token**: Passed via environment variable, never logged
 - **CLI Arguments**: Passwords for create operations are passed as CLI arguments (briefly visible in process list)
@@ -115,7 +116,7 @@ Restart Claude Desktop and you should be ready to go!
 ### How Credential Approval Works
 
 1. By default, `onepassword_get_item` returns item metadata but shows `[REDACTED]` for sensitive fields
-2. If elicitation is enabled (default), the server prompts the user to approve credential access
+2. The server prompts the user to approve credential access via elicitation
 3. Once approved, the full credentials are returned for that request
 4. Whitelisted items (via `OP_WHITELISTED_ITEMS`, matched by title or item ID) bypass the approval prompt entirely
 
@@ -124,12 +125,14 @@ Restart Claude Desktop and you should be ready to go!
 **Disable all confirmations** (fully automated workflows):
 
 ```bash
-ELICITATION_ENABLED=false
+DANGEROUSLY_SKIP_ELICITATIONS=true
 ```
 
-**Only confirm writes, auto-approve reads**:
+**Only confirm writes, auto-approve reads** (requires HTTP fallback URLs for startup — `DANGEROUSLY_SKIP_ELICITATIONS=true` overrides per-action settings):
 
 ```bash
+ELICITATION_REQUEST_URL="https://your-endpoint/request"
+ELICITATION_POLL_URL="https://your-endpoint/poll"
 OP_ELICITATION_READ=false
 OP_ELICITATION_WRITE=true
 ```
