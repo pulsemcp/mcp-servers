@@ -18,6 +18,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `DANGEROUSLY_SKIP_ELICITATIONS` environment variable — must be explicitly set to `"true"` to disable all elicitation prompts
 - Startup safety validation that checks for a configured elicitation mechanism (HTTP fallback URLs) or explicit opt-out before allowing the server to start
+- `checkElicitationSafety()` helper for testable startup safety logic
+- Whitespace-only URL trimming in HTTP fallback URL detection
 
 ## [0.2.3] - 2026-03-19
 

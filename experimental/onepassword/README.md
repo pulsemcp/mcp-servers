@@ -128,9 +128,11 @@ Restart Claude Desktop and you should be ready to go!
 DANGEROUSLY_SKIP_ELICITATIONS=true
 ```
 
-**Only confirm writes, auto-approve reads** (requires HTTP fallback URLs or `DANGEROUSLY_SKIP_ELICITATIONS=true` for startup):
+**Only confirm writes, auto-approve reads** (requires HTTP fallback URLs for startup — `DANGEROUSLY_SKIP_ELICITATIONS=true` overrides per-action settings):
 
 ```bash
+ELICITATION_REQUEST_URL="https://your-endpoint/request"
+ELICITATION_POLL_URL="https://your-endpoint/poll"
 OP_ELICITATION_READ=false
 OP_ELICITATION_WRITE=true
 ```

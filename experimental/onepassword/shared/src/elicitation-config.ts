@@ -62,7 +62,7 @@ export function isDangerouslySkipElicitations(
 export function hasHttpElicitationFallback(
   env: Record<string, string | undefined> = process.env
 ): boolean {
-  return !!(env.ELICITATION_REQUEST_URL && env.ELICITATION_POLL_URL);
+  return !!(env.ELICITATION_REQUEST_URL?.trim() && env.ELICITATION_POLL_URL?.trim());
 }
 
 /**
@@ -107,6 +107,32 @@ export function readOnePasswordElicitationConfig(
     writeElicitationEnabled,
     whitelistedItems,
   };
+}
+
+/**
+ * Result of the elicitation safety check.
+ */
+export type ElicitationSafetyResult =
+  | { safe: true; reason: 'dangerously_skip' | 'http_fallback' }
+  | { safe: false; reason: 'no_elicitation_configured' };
+
+/**
+ * Check whether the elicitation configuration is safe to start the server.
+ *
+ * Returns a result indicating whether the server should be allowed to start and why.
+ * This is the pure logic extracted from the startup validation — callers decide what
+ * to do with the result (e.g., log and exit, or assert in tests).
+ */
+export function checkElicitationSafety(
+  env: Record<string, string | undefined> = process.env
+): ElicitationSafetyResult {
+  if (isDangerouslySkipElicitations(env)) {
+    return { safe: true, reason: 'dangerously_skip' };
+  }
+  if (hasHttpElicitationFallback(env)) {
+    return { safe: true, reason: 'http_fallback' };
+  }
+  return { safe: false, reason: 'no_elicitation_configured' };
 }
 
 /**

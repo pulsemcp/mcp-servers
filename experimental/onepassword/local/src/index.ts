@@ -5,10 +5,7 @@ import { fileURLToPath } from 'url';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { createMCPServer, OnePasswordClient } from '../shared/index.js';
 import { logServerStart, logError, logWarning } from '../shared/logging.js';
-import {
-  isDangerouslySkipElicitations,
-  hasHttpElicitationFallback,
-} from '../shared/elicitation-config.js';
+import { checkElicitationSafety } from '../shared/elicitation-config.js';
 
 // Read version from package.json
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -117,10 +114,9 @@ function validateEnvironment(): void {
  * or set DANGEROUSLY_SKIP_ELICITATIONS=true if they accept the risk.
  */
 function validateElicitationSafety(): void {
-  const dangerouslySkip = isDangerouslySkipElicitations();
-  const hasHttpFallback = hasHttpElicitationFallback();
+  const result = checkElicitationSafety();
 
-  if (dangerouslySkip) {
+  if (result.safe && result.reason === 'dangerously_skip') {
     logWarning(
       'security',
       'DANGEROUSLY_SKIP_ELICITATIONS=true — all confirmation prompts are disabled. ' +
@@ -129,7 +125,7 @@ function validateElicitationSafety(): void {
     return;
   }
 
-  if (hasHttpFallback) {
+  if (result.safe) {
     // HTTP fallback is configured, elicitation will work
     return;
   }

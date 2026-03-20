@@ -18,6 +18,7 @@ import {
   isItemWhitelisted,
   isDangerouslySkipElicitations,
   hasHttpElicitationFallback,
+  checkElicitationSafety,
 } from '../../shared/src/elicitation-config.js';
 
 describe('1Password Tools', () => {
@@ -594,6 +595,74 @@ describe('1Password Tools', () => {
           ELICITATION_POLL_URL: 'https://example.com/poll',
         })
       ).toBe(true);
+    });
+
+    it('should return false when URLs are whitespace-only', () => {
+      expect(
+        hasHttpElicitationFallback({
+          ELICITATION_REQUEST_URL: '  ',
+          ELICITATION_POLL_URL: '  ',
+        })
+      ).toBe(false);
+    });
+
+    it('should return false when one URL is whitespace-only', () => {
+      expect(
+        hasHttpElicitationFallback({
+          ELICITATION_REQUEST_URL: 'https://example.com/request',
+          ELICITATION_POLL_URL: '  ',
+        })
+      ).toBe(false);
+    });
+  });
+
+  // =============================================================================
+  // ELICITATION SAFETY CHECK TESTS
+  // =============================================================================
+  describe('checkElicitationSafety', () => {
+    it('should return safe with dangerously_skip when DANGEROUSLY_SKIP_ELICITATIONS=true', () => {
+      const result = checkElicitationSafety({ DANGEROUSLY_SKIP_ELICITATIONS: 'true' });
+      expect(result).toEqual({ safe: true, reason: 'dangerously_skip' });
+    });
+
+    it('should return safe with http_fallback when both URLs are configured', () => {
+      const result = checkElicitationSafety({
+        ELICITATION_REQUEST_URL: 'https://example.com/request',
+        ELICITATION_POLL_URL: 'https://example.com/poll',
+      });
+      expect(result).toEqual({ safe: true, reason: 'http_fallback' });
+    });
+
+    it('should return unsafe when no elicitation mechanism is configured', () => {
+      const result = checkElicitationSafety({});
+      expect(result).toEqual({ safe: false, reason: 'no_elicitation_configured' });
+    });
+
+    it('should return unsafe when ELICITATION_ENABLED=false without DANGEROUSLY_SKIP', () => {
+      const result = checkElicitationSafety({ ELICITATION_ENABLED: 'false' });
+      expect(result).toEqual({ safe: false, reason: 'no_elicitation_configured' });
+    });
+
+    it('should return unsafe when DANGEROUSLY_SKIP_ELICITATIONS=false', () => {
+      const result = checkElicitationSafety({ DANGEROUSLY_SKIP_ELICITATIONS: 'false' });
+      expect(result).toEqual({ safe: false, reason: 'no_elicitation_configured' });
+    });
+
+    it('should prefer dangerously_skip over http_fallback when both configured', () => {
+      const result = checkElicitationSafety({
+        DANGEROUSLY_SKIP_ELICITATIONS: 'true',
+        ELICITATION_REQUEST_URL: 'https://example.com/request',
+        ELICITATION_POLL_URL: 'https://example.com/poll',
+      });
+      expect(result).toEqual({ safe: true, reason: 'dangerously_skip' });
+    });
+
+    it('should return unsafe when URLs are whitespace-only', () => {
+      const result = checkElicitationSafety({
+        ELICITATION_REQUEST_URL: '  ',
+        ELICITATION_POLL_URL: '  ',
+      });
+      expect(result).toEqual({ safe: false, reason: 'no_elicitation_configured' });
     });
   });
 

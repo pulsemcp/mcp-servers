@@ -40,7 +40,9 @@ export {
   isItemWhitelisted,
   isDangerouslySkipElicitations,
   hasHttpElicitationFallback,
+  checkElicitationSafety,
   type OnePasswordElicitationConfig,
+  type ElicitationSafetyResult,
 } from './elicitation-config.js';
 
 // Logging exports (re-exported for convenience)
