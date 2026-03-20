@@ -143,8 +143,6 @@ OP_ELICITATION_WRITE=true
 OP_WHITELISTED_ITEMS="Stripe Key,AWS Credentials,abc123def456"
 ```
 
-> **Note:** `ELICITATION_ENABLED` is not supported by this server. Use `DANGEROUSLY_SKIP_ELICITATIONS=true` to disable all confirmations.
-
 ## Development
 
 ### Project Structure

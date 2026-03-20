@@ -33,7 +33,6 @@ describe('1Password Tools', () => {
 
   afterEach(() => {
     // Restore env vars
-    delete process.env.ELICITATION_ENABLED;
     delete process.env.DANGEROUSLY_SKIP_ELICITATIONS;
     delete process.env.OP_ELICITATION_READ;
     delete process.env.OP_ELICITATION_WRITE;
@@ -118,8 +117,7 @@ describe('1Password Tools', () => {
       expect(passwordField.value).toBe('testpass123');
     });
 
-    it('should reveal credentials when read elicitation is disabled but master is enabled', async () => {
-      process.env.ELICITATION_ENABLED = 'true';
+    it('should reveal credentials when read elicitation is disabled', async () => {
       process.env.OP_ELICITATION_READ = 'false';
 
       const tool = getItemTool(mockServer, () => mockClient);
@@ -133,7 +131,6 @@ describe('1Password Tools', () => {
     });
 
     it('should reveal credentials for whitelisted items without elicitation', async () => {
-      process.env.ELICITATION_ENABLED = 'true';
       process.env.OP_WHITELISTED_ITEMS = 'Test Login,Other Item';
 
       const tool = getItemTool(mockServer, () => mockClient);
@@ -147,7 +144,6 @@ describe('1Password Tools', () => {
     });
 
     it('should be case-insensitive for whitelisted items', async () => {
-      process.env.ELICITATION_ENABLED = 'true';
       process.env.OP_WHITELISTED_ITEMS = 'test login';
 
       const tool = getItemTool(mockServer, () => mockClient);
@@ -220,7 +216,6 @@ describe('1Password Tools', () => {
     });
 
     it('should create login without prompt when write elicitation is disabled', async () => {
-      process.env.ELICITATION_ENABLED = 'true';
       process.env.OP_ELICITATION_WRITE = 'false';
 
       const tool = createLoginTool(mockServer, () => mockClient);
@@ -261,7 +256,6 @@ describe('1Password Tools', () => {
     });
 
     it('should create note without prompt when write elicitation is disabled', async () => {
-      process.env.ELICITATION_ENABLED = 'true';
       process.env.OP_ELICITATION_WRITE = 'false';
 
       const tool = createSecureNoteTool(mockServer, () => mockClient);
@@ -457,26 +451,6 @@ describe('1Password Tools', () => {
       expect(config.writeElicitationEnabled).toBe(false);
     });
 
-    it('should ignore ELICITATION_ENABLED=false without DANGEROUSLY_SKIP_ELICITATIONS', () => {
-      // Users cannot bypass the safety check by setting ELICITATION_ENABLED=false directly
-      const config = readOnePasswordElicitationConfig({
-        ELICITATION_ENABLED: 'false',
-      });
-      expect(config.readElicitationEnabled).toBe(true);
-      expect(config.writeElicitationEnabled).toBe(true);
-    });
-
-    it('should ignore ELICITATION_ENABLED=false even with HTTP fallback URLs', () => {
-      // Even with HTTP fallback configured, ELICITATION_ENABLED=false alone should not bypass
-      const config = readOnePasswordElicitationConfig({
-        ELICITATION_ENABLED: 'false',
-        ELICITATION_REQUEST_URL: 'https://example.com/request',
-        ELICITATION_POLL_URL: 'https://example.com/poll',
-      });
-      expect(config.readElicitationEnabled).toBe(true);
-      expect(config.writeElicitationEnabled).toBe(true);
-    });
-
     it('should parse whitelisted items', () => {
       const config = readOnePasswordElicitationConfig({
         OP_WHITELISTED_ITEMS: 'Stripe Key, AWS Credentials, GitHub Token',
@@ -638,11 +612,6 @@ describe('1Password Tools', () => {
       expect(result).toEqual({ safe: false, reason: 'no_elicitation_configured' });
     });
 
-    it('should return unsafe when ELICITATION_ENABLED=false without DANGEROUSLY_SKIP', () => {
-      const result = checkElicitationSafety({ ELICITATION_ENABLED: 'false' });
-      expect(result).toEqual({ safe: false, reason: 'no_elicitation_configured' });
-    });
-
     it('should return unsafe when DANGEROUSLY_SKIP_ELICITATIONS=false', () => {
       const result = checkElicitationSafety({ DANGEROUSLY_SKIP_ELICITATIONS: 'false' });
       expect(result).toEqual({ safe: false, reason: 'no_elicitation_configured' });
@@ -673,7 +642,6 @@ describe('1Password Tools', () => {
     it('should return error when elicitation is enabled but no mechanism available', async () => {
       // When elicitation is enabled but no mechanism (no native support, no HTTP fallback),
       // the elicitation library throws. The tool catches this and returns an error.
-      process.env.ELICITATION_ENABLED = 'true';
       process.env.OP_ELICITATION_READ = 'true';
 
       const tool = getItemTool(mockServer, () => mockClient);
@@ -697,7 +665,6 @@ describe('1Password Tools', () => {
     });
 
     it('should show full credentials for whitelisted item even with elicitation enabled', async () => {
-      process.env.ELICITATION_ENABLED = 'true';
       process.env.OP_WHITELISTED_ITEMS = 'Test Login';
 
       const tool = getItemTool(mockServer, () => mockClient);
@@ -711,7 +678,6 @@ describe('1Password Tools', () => {
     });
 
     it('should show full credentials when item is whitelisted by ID with elicitation enabled', async () => {
-      process.env.ELICITATION_ENABLED = 'true';
       // Whitelist by the mock item's ID rather than title
       process.env.OP_WHITELISTED_ITEMS = 'item-1';
 

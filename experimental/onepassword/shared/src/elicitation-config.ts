@@ -4,7 +4,7 @@ import { readElicitationConfig, type ElicitationConfig } from '@pulsemcp/mcp-eli
  * 1Password-specific elicitation configuration.
  *
  * Layers:
- * 1. Base elicitation config (ELICITATION_ENABLED, etc.) from @pulsemcp/mcp-elicitation
+ * 1. Base elicitation config from @pulsemcp/mcp-elicitation
  * 2. DANGEROUSLY_SKIP_ELICITATIONS override (must be explicitly "true" to bypass all elicitation)
  * 3. Per-action overrides: OP_ELICITATION_READ, OP_ELICITATION_WRITE
  * 4. Whitelisted items: OP_WHITELISTED_ITEMS (bypass elicitation for specific items)
@@ -70,7 +70,6 @@ export function hasHttpElicitationFallback(
  *
  * Environment variables:
  *   DANGEROUSLY_SKIP_ELICITATIONS - Must be explicitly "true" to bypass all elicitation.
- *                                    Replaces ELICITATION_ENABLED=false for disabling confirmations.
  *   OP_ELICITATION_READ           - Override for read operations (default: follows elicitation enabled state)
  *   OP_ELICITATION_WRITE          - Override for write operations (default: follows elicitation enabled state)
  *   OP_WHITELISTED_ITEMS          - Comma-separated list of item titles or item IDs that bypass read elicitation
@@ -81,15 +80,14 @@ export function hasHttpElicitationFallback(
 export function readOnePasswordElicitationConfig(
   env: Record<string, string | undefined> = process.env
 ): OnePasswordElicitationConfig {
-  // The 1Password server ignores ELICITATION_ENABLED directly — the only way to disable
-  // elicitation is via DANGEROUSLY_SKIP_ELICITATIONS=true. This prevents users from
-  // bypassing the safety check by setting ELICITATION_ENABLED=false directly.
+  // Map DANGEROUSLY_SKIP_ELICITATIONS to the base library's enabled flag.
+  // The 1Password server does not use ELICITATION_ENABLED — the only way to disable
+  // elicitation is via DANGEROUSLY_SKIP_ELICITATIONS=true.
   const dangerouslySkip = isDangerouslySkipElicitations(env);
-  const effectiveEnv = {
+  const base = readElicitationConfig({
     ...env,
     ELICITATION_ENABLED: dangerouslySkip ? 'false' : 'true',
-  };
-  const base = readElicitationConfig(effectiveEnv);
+  });
 
   // Per-action overrides default to the base enabled state
   const readElicitationEnabled = base.enabled
