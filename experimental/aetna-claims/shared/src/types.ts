@@ -85,7 +85,7 @@ export interface AetnaClaimsConfig {
 // Tool Input Schemas
 // =============================================================================
 
-export const PrepareClaimSchema = z.object({
+export const SubmitClaimSchema = z.object({
   member_name: z.string().describe('Name of the member the claim is for'),
   claim_type: z
     .enum(['Medical', 'Dental', 'Vision', 'Pharmacy'])
@@ -115,14 +115,6 @@ export const PrepareClaimSchema = z.object({
     .default(false)
     .describe(
       "Are any family members' expenses covered by another group health plan, Medicare, or government plan?"
-    ),
-});
-
-export const SubmitClaimSchema = z.object({
-  confirmation_token: z
-    .string()
-    .describe(
-      'The confirmation token from prepare_claim_to_submit. This confirms user has reviewed the claim details.'
     ),
 });
 

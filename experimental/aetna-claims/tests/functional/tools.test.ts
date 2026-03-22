@@ -4,6 +4,9 @@ import { createMockAetnaClaimsClient } from '../mocks/aetna-claims-client.functi
 import { CallToolRequestSchema } from '@modelcontextprotocol/sdk/types.js';
 import type { IAetnaClaimsClient } from '../../shared/src/server.js';
 
+// Disable elicitation for functional tests so submit_claim doesn't prompt
+process.env.ELICITATION_ENABLED = 'false';
+
 describe('Aetna Claims Tools', () => {
   let mockClient: IAetnaClaimsClient;
   let callTool: (name: string, args: unknown) => Promise<unknown>;
@@ -35,9 +38,9 @@ describe('Aetna Claims Tools', () => {
     };
   });
 
-  describe('prepare_claim_to_submit', () => {
-    it('should prepare a claim successfully', async () => {
-      const result = await callTool('prepare_claim_to_submit', {
+  describe('submit_claim', () => {
+    it('should submit a claim successfully with elicitation disabled', async () => {
+      const result = await callTool('submit_claim', {
         member_name: 'Tadas Antanavicius',
         claim_type: 'Medical',
         date_of_service: '01/15/2025',
@@ -45,64 +48,24 @@ describe('Aetna Claims Tools', () => {
       });
 
       const text = (result as { content: Array<{ text: string }> }).content[0].text;
-      expect(text).toContain('IMPORTANT: This claim has been prepared but NOT submitted');
-      expect(text).toContain('Tadas Antanavicius');
-      expect(text).toContain('Medical');
-      expect(text).toContain('$150.00');
-      expect(text).toContain('confirmation_token');
+      expect(text).toContain('submitted successfully');
+      expect(text).toContain('Claim ID');
+      expect(text).toContain('TEST-CLAIM-001');
     });
 
-    it('should include optional fields when provided', async () => {
-      const result = await callTool('prepare_claim_to_submit', {
+    it('should include confirmation number on success', async () => {
+      const result = await callTool('submit_claim', {
         member_name: 'Tadas Antanavicius',
         claim_type: 'Medical',
         date_of_service: '01/15/2025',
-        end_date: '01/20/2025',
         amount_paid: '$500.00',
         reimburse_provider: true,
         is_accident_related: true,
-        is_outside_us: false,
       });
 
       const text = (result as { content: Array<{ text: string }> }).content[0].text;
-      expect(text).toContain('Tadas Antanavicius');
-      expect(text).toContain('Medical');
-    });
-  });
-
-  describe('submit_claim', () => {
-    it('should fail with invalid token', async () => {
-      const result = await callTool('submit_claim', {
-        confirmation_token: 'invalid-token',
-      });
-
-      const text = (result as { content: Array<{ text: string }> }).content[0].text;
-      expect(text).toContain('Invalid or expired confirmation token');
-    });
-
-    it('should succeed with valid token after prepare', async () => {
-      // First prepare a claim
-      const prepareResult = await callTool('prepare_claim_to_submit', {
-        member_name: 'Tadas Antanavicius',
-        claim_type: 'Medical',
-        date_of_service: '01/15/2025',
-        amount_paid: '$150.00',
-      });
-
-      // Extract token from the result
-      const prepareText = (prepareResult as { content: Array<{ text: string }> }).content[0].text;
-      const tokenMatch = prepareText.match(/confirmation_token: "([^"]+)"/);
-      expect(tokenMatch).toBeTruthy();
-      const token = tokenMatch![1];
-
-      // Submit with the token
-      const submitResult = await callTool('submit_claim', {
-        confirmation_token: token,
-      });
-
-      const submitText = (submitResult as { content: Array<{ text: string }> }).content[0].text;
-      expect(submitText).toContain('submitted successfully');
-      expect(submitText).toContain('Claim ID');
+      expect(text).toContain('Confirmation Number');
+      expect(text).toContain('TEST-CONF-12345');
     });
   });
 

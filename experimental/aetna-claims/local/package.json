@@ -12,7 +12,12 @@
     "build/**/*.d.ts",
     "shared/**/*.js",
     "shared/**/*.d.ts",
+    "node_modules/@pulsemcp/mcp-elicitation/**/*.js",
+    "node_modules/@pulsemcp/mcp-elicitation/package.json",
     "README.md"
+  ],
+  "bundledDependencies": [
+    "@pulsemcp/mcp-elicitation"
   ],
   "scripts": {
     "build": "tsc",
@@ -29,6 +34,7 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.19.1",
+    "@pulsemcp/mcp-elicitation": "file:../../../libs/elicitation",
     "imapflow": "^1.0.171",
     "playwright": "^1.49.1",
     "playwright-extra": "^4.3.6",

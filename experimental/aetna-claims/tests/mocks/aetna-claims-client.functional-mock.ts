@@ -11,8 +11,6 @@ import type {
  * Mock Aetna Claims client for functional tests
  */
 export function createMockAetnaClaimsClient(): IAetnaClaimsClient {
-  let mockToken: string | null = null;
-
   return {
     async initialize(): Promise<void> {
       // No-op for mock
@@ -31,7 +29,6 @@ export function createMockAetnaClaimsClient(): IAetnaClaimsClient {
       isOutsideUS: boolean = false,
       hasOtherCoverage: boolean = false
     ): Promise<ClaimSubmissionData> {
-      mockToken = 'test-confirmation-token-12345';
       return {
         memberName,
         claimType,
@@ -46,33 +43,11 @@ export function createMockAetnaClaimsClient(): IAetnaClaimsClient {
         hasOtherCoverage,
         isReadyToSubmit: true,
         validationErrors: [],
-        confirmationMessage: `IMPORTANT: This claim has been prepared but NOT submitted yet.
-
-To submit this claim, call submit_claim with confirmation_token: "${mockToken}"
-
-Claim Details:
-- Member: ${memberName}
-- Type: ${claimType}
-- Date of Service: ${dateOfService}${endDate ? ` to ${endDate}` : ''}
-- Amount Paid: ${amountPaid}
-- Reimburse Provider: ${reimburseProvider ? 'Yes' : 'No'}
-- Accident Related: ${isAccidentRelated ? 'Yes' : 'No'}
-- Employment Related: ${isEmploymentRelated ? 'Yes' : 'No'}
-- Outside US: ${isOutsideUS ? 'Yes' : 'No'}
-- Other Coverage: ${hasOtherCoverage ? 'Yes' : 'No'}
-
-The user MUST explicitly confirm they want to submit this claim before calling submit_claim.`,
+        confirmationMessage: 'Claim form filled and ready for submission.',
       };
     },
 
-    async submitClaim(confirmationToken: string): Promise<ClaimSubmissionResult> {
-      if (confirmationToken !== mockToken) {
-        return {
-          success: false,
-          message: 'Invalid or expired confirmation token',
-        };
-      }
-      mockToken = null;
+    async submitClaim(): Promise<ClaimSubmissionResult> {
       return {
         success: true,
         message: 'Claim submitted successfully',

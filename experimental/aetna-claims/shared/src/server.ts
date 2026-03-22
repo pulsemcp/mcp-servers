@@ -8,7 +8,6 @@ import type {
   ClaimSubmissionResult,
 } from './types.js';
 import { logDebug, logWarning } from './logging.js';
-import { randomBytes } from 'crypto';
 import { mkdirSync, existsSync } from 'fs';
 import { join } from 'path';
 
@@ -44,10 +43,9 @@ export interface IAetnaClaimsClient {
   ): Promise<ClaimSubmissionData>;
 
   /**
-   * Actually submit a prepared claim
-   * Requires user confirmation via token from prepareClaimToSubmit
+   * Actually submit a prepared claim (form must already be filled via prepareClaimToSubmit)
    */
-  submitClaim(confirmationToken: string): Promise<ClaimSubmissionResult>;
+  submitClaim(): Promise<ClaimSubmissionResult>;
 
   /**
    * Get all claims from the claims page
@@ -84,13 +82,6 @@ export class AetnaClaimsClient implements IAetnaClaimsClient {
   private page: import('playwright').Page | null = null;
   private config: AetnaClaimsConfig;
   private isInitialized = false;
-
-  // Store pending claim data for submission confirmation
-  private pendingClaimData: ClaimSubmissionData | null = null;
-  private pendingConfirmationToken: string | null = null;
-  private pendingTokenCreatedAt: number | null = null;
-  // Token expires after 2 minutes
-  private static readonly TOKEN_EXPIRY_MS = 120_000;
 
   constructor(config: AetnaClaimsConfig) {
     this.config = config;
@@ -547,11 +538,7 @@ export class AetnaClaimsClient implements IAetnaClaimsClient {
       }
     }
 
-    // Generate confirmation token
-    const token = randomBytes(16).toString('hex');
-    this.pendingConfirmationToken = token;
-    this.pendingTokenCreatedAt = Date.now();
-    this.pendingClaimData = {
+    return {
       memberName,
       claimType,
       dateOfService,
@@ -565,57 +552,15 @@ export class AetnaClaimsClient implements IAetnaClaimsClient {
       hasOtherCoverage,
       isReadyToSubmit: validationErrors.length === 0,
       validationErrors,
-      confirmationMessage: '',
+      confirmationMessage:
+        validationErrors.length > 0
+          ? `Cannot submit claim - validation errors:\n${validationErrors.join('\n')}`
+          : 'Claim form filled and ready for submission.',
     };
-
-    if (validationErrors.length > 0) {
-      this.pendingClaimData.confirmationMessage = `Cannot submit claim - validation errors:\n${validationErrors.join('\n')}`;
-    } else {
-      this.pendingClaimData.confirmationMessage =
-        `IMPORTANT: This claim has been prepared but NOT submitted yet.\n\n` +
-        `To submit this claim, call submit_claim with confirmation_token: "${token}"\n\n` +
-        `Claim Details:\n` +
-        `- Member: ${memberName}\n` +
-        `- Type: ${claimType}\n` +
-        `- Date of Service: ${dateOfService}${endDate ? ` to ${endDate}` : ''}\n` +
-        `- Amount Paid: ${amountPaid}\n` +
-        `- Reimburse Provider: ${reimburseProvider ? 'Yes' : 'No'}\n` +
-        `- Invoice File: ${invoiceFilePath || 'None'}\n` +
-        `- Accident Related: ${isAccidentRelated ? 'Yes' : 'No'}\n` +
-        `- Employment Related: ${isEmploymentRelated ? 'Yes' : 'No'}\n` +
-        `- Outside US: ${isOutsideUS ? 'Yes' : 'No'}\n` +
-        `- Other Coverage: ${hasOtherCoverage ? 'Yes' : 'No'}\n\n` +
-        `The user MUST explicitly confirm they want to submit this claim before calling submit_claim.`;
-    }
-
-    return this.pendingClaimData;
   }
 
-  async submitClaim(confirmationToken: string): Promise<ClaimSubmissionResult> {
+  async submitClaim(): Promise<ClaimSubmissionResult> {
     const page = await this.ensureBrowser();
-
-    // Validate token
-    if (!this.pendingConfirmationToken || confirmationToken !== this.pendingConfirmationToken) {
-      return {
-        success: false,
-        message:
-          'Invalid or expired confirmation token. Please call prepare_claim_to_submit first.',
-      };
-    }
-
-    // Check token expiry
-    if (
-      this.pendingTokenCreatedAt &&
-      Date.now() - this.pendingTokenCreatedAt > AetnaClaimsClient.TOKEN_EXPIRY_MS
-    ) {
-      this.pendingConfirmationToken = null;
-      this.pendingTokenCreatedAt = null;
-      this.pendingClaimData = null;
-      return {
-        success: false,
-        message: 'Confirmation token has expired. Please call prepare_claim_to_submit again.',
-      };
-    }
 
     try {
       // Set up network monitoring to verify form submission
@@ -665,11 +610,6 @@ export class AetnaClaimsClient implements IAetnaClaimsClient {
 
       // Clean up request listener
       page.removeListener('request', requestListener);
-
-      // Clear pending data
-      this.pendingConfirmationToken = null;
-      this.pendingTokenCreatedAt = null;
-      this.pendingClaimData = null;
 
       if (isSuccess) {
         return {
