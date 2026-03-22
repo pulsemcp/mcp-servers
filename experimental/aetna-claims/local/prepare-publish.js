@@ -18,12 +18,22 @@ async function preparePublish() {
   console.log('Preparing for npm publish...');
 
   // Build elicitation library first (shared depends on it)
-  // --ignore-scripts avoids triggering the monorepo root's husky prepare hook
-  console.log('Building elicitation library...');
-  execSync('npm install --ignore-scripts && npm run build', {
-    cwd: join(__dirname, '../../../libs/elicitation'),
-    stdio: 'inherit',
-  });
+  const elicitationDir = join(__dirname, '../../../libs/elicitation');
+  const elicitationBuildPath = join(elicitationDir, 'build/index.js');
+  if (!existsSync(elicitationBuildPath)) {
+    console.log('Building elicitation library...');
+    // Install @types/node explicitly since workspace hoisting may not be available
+    execSync('npm install --ignore-scripts --no-package-lock @types/node typescript', {
+      cwd: elicitationDir,
+      stdio: 'inherit',
+    });
+    execSync('npm run build', {
+      cwd: elicitationDir,
+      stdio: 'inherit',
+    });
+  } else {
+    console.log('Elicitation library already built, skipping...');
+  }
 
   // Build shared (depends on elicitation)
   console.log('Building shared module...');
@@ -60,12 +70,12 @@ async function preparePublish() {
 
   console.log('Copying elicitation build files...');
   await cp(
-    join(__dirname, '../../../libs/elicitation/build'),
+    join(elicitationDir, 'build'),
     join(elicitationNodeModulesPath, 'build'),
     { recursive: true }
   );
   await cp(
-    join(__dirname, '../../../libs/elicitation/package.json'),
+    join(elicitationDir, 'package.json'),
     join(elicitationNodeModulesPath, 'package.json')
   );
 
