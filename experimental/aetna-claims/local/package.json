@@ -1,0 +1,54 @@
+{
+  "name": "aetna-claims-mcp-server",
+  "version": "0.1.0",
+  "description": "MCP server for Aetna health insurance claims management with Playwright automation and email 2FA",
+  "main": "build/index.js",
+  "type": "module",
+  "bin": {
+    "aetna-claims-mcp-server": "./build/index.js"
+  },
+  "files": [
+    "build/**/*.js",
+    "build/**/*.d.ts",
+    "shared/**/*.js",
+    "shared/**/*.d.ts",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "start": "node build/index.js",
+    "dev": "tsx src/index.ts",
+    "predev": "cd ../shared && npm run build && cd ../local && node setup-dev.js",
+    "prebuild": "cd ../shared && npm run build && cd ../local && node setup-dev.js",
+    "prepublishOnly": "node prepare-publish.js && node ../scripts/prepare-npm-readme.js",
+    "lint": "eslint . --ext .ts,.tsx",
+    "lint:fix": "eslint . --ext .ts,.tsx --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "stage-publish": "npm version"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.19.1",
+    "imapflow": "^1.0.171",
+    "playwright": "^1.49.1",
+    "playwright-extra": "^4.3.6",
+    "puppeteer-extra-plugin-stealth": "^2.11.2",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.6",
+    "tsx": "^4.19.4",
+    "typescript": "^5.7.3"
+  },
+  "keywords": [
+    "mcp",
+    "aetna",
+    "health",
+    "insurance",
+    "claims",
+    "playwright",
+    "2fa"
+  ],
+  "author": "PulseMCP",
+  "license": "MIT"
+}
