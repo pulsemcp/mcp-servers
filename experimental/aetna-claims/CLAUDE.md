@@ -27,7 +27,7 @@ This MCP server provides Playwright-based browser automation for Aetna health in
 
 - **Lazy Browser Initialization**: Browser launches on first tool use
 - **Persistent Session**: Single browser/context/page across all tool calls
-- **Confirmation Token Pattern**: For submit_claim to require explicit user confirmation
+- **Elicitation Confirmation**: Uses `@pulsemcp/mcp-elicitation` for user confirmation before claim submission
 - **Background Login**: Non-blocking login after server starts
 - **Email 2FA**: Polls IMAP inbox for Aetna verification codes during login
 

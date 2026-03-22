@@ -7,7 +7,7 @@ An MCP server for managing Aetna health insurance claims using Playwright browse
 - **Automated Login with Email 2FA**: Logs into Aetna's health portal and handles email-based two-factor authentication by reading verification codes via IMAP
 - **View Claims**: Retrieve all insurance claims from your Aetna account
 - **Claim Details**: Get detailed information about specific claims including financial breakdown
-- **Submit Claims**: Prepare and submit new insurance claims with a safety confirmation flow
+- **Submit Claims**: Submit new insurance claims with elicitation-based user confirmation
 
 ## Tools
 
@@ -19,9 +19,9 @@ Get all insurance claims from your Aetna account.
 
 Get detailed information about a specific claim including financial breakdown (billed, allowed, paid, deductible, copay, coinsurance).
 
-### `prepare_claim_to_submit`
+### `submit_claim`
 
-Prepare a claim for submission. Fills out the form and validates everything before submitting. Returns a confirmation token that must be used with `submit_claim`.
+Submit a health insurance claim on Aetna. This tool fills out the claim form, requests user confirmation via elicitation, and submits the claim if confirmed.
 
 Parameters:
 
@@ -37,10 +37,6 @@ Parameters:
 - `is_outside_us`: Services outside the U.S. (default: false)
 - `has_other_coverage`: Other group health plan coverage (default: false)
 
-### `submit_claim`
-
-Submit a prepared claim using the confirmation token from `prepare_claim_to_submit`.
-
 ## Configuration
 
 ### Required Environment Variables
@@ -54,13 +50,16 @@ Submit a prepared claim using the confirmation token from `prepare_claim_to_subm
 
 ### Optional Environment Variables
 
-| Variable             | Default                | Description                    |
-| -------------------- | ---------------------- | ------------------------------ |
-| `EMAIL_IMAP_HOST`    | `imap.gmail.com`       | IMAP server host               |
-| `EMAIL_IMAP_PORT`    | `993`                  | IMAP server port               |
-| `HEADLESS`           | `true`                 | Run browser in headless mode   |
-| `TIMEOUT`            | `30000`                | Browser operation timeout (ms) |
-| `AETNA_DOWNLOAD_DIR` | `/tmp/aetna-downloads` | Document download directory    |
+| Variable                  | Default                | Description                                       |
+| ------------------------- | ---------------------- | ------------------------------------------------- |
+| `EMAIL_IMAP_HOST`         | `imap.gmail.com`       | IMAP server host                                  |
+| `EMAIL_IMAP_PORT`         | `993`                  | IMAP server port                                  |
+| `HEADLESS`                | `true`                 | Run browser in headless mode                      |
+| `TIMEOUT`                 | `30000`                | Browser operation timeout (ms)                    |
+| `AETNA_DOWNLOAD_DIR`      | `/tmp/aetna-downloads` | Document download directory                       |
+| `ELICITATION_ENABLED`     | `true`                 | Set to `false` to skip user confirmation          |
+| `ELICITATION_REQUEST_URL` | (none)                 | POST endpoint for HTTP fallback approval requests |
+| `ELICITATION_POLL_URL`    | (none)                 | GET base URL for polling approval status          |
 
 ### Gmail Setup for 2FA
 

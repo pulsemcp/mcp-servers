@@ -99,6 +99,7 @@ export const SubmitClaimSchema = z.object({
     .describe('If true, reimburse the provider directly instead of the member'),
   invoice_file_path: z
     .string()
+    .regex(/\.(jpe?g|pdf|png|docx)$/i, 'Invoice file must be JPEG, PDF, PNG, or DOCX')
     .optional()
     .describe('Path to the itemized bill file to upload (JPEG, PDF, PNG, or DOCX)'),
   is_accident_related: z.boolean().default(false).describe('Is this claim related to an accident?'),
@@ -119,5 +120,11 @@ export const SubmitClaimSchema = z.object({
 });
 
 export const GetClaimDetailsSchema = z.object({
-  claim_id: z.string().describe('The ID of the claim to get details for'),
+  claim_id: z
+    .string()
+    .regex(
+      /^[A-Za-z0-9._-]+$/,
+      'Claim ID must contain only alphanumeric characters, dots, hyphens, and underscores'
+    )
+    .describe('The ID of the claim to get details for'),
 });
