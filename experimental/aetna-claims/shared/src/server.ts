@@ -167,13 +167,13 @@ export class AetnaClaimsClient implements IAetnaClaimsClient {
         } finally {
           lock.release();
         }
-
-        await client.logout();
       } catch (error) {
         logWarning(
           '2fa',
           `Email check failed: ${error instanceof Error ? error.message : String(error)}`
         );
+      } finally {
+        await client.logout().catch(() => {});
       }
 
       if (foundCode) {
@@ -562,16 +562,16 @@ export class AetnaClaimsClient implements IAetnaClaimsClient {
   async submitClaim(): Promise<ClaimSubmissionResult> {
     const page = await this.ensureBrowser();
 
-    try {
-      // Set up network monitoring to verify form submission
-      let formSubmitted = false;
-      const requestListener = (request: { method(): string; url(): string }) => {
-        if (request.method() === 'POST' && request.url().includes('claim')) {
-          formSubmitted = true;
-        }
-      };
-      page.on('request', requestListener);
+    // Set up network monitoring to verify form submission
+    let formSubmitted = false;
+    const requestListener = (request: { method(): string; url(): string }) => {
+      if (request.method() === 'POST' && request.url().includes('claim')) {
+        formSubmitted = true;
+      }
+    };
+    page.on('request', requestListener);
 
+    try {
       // Click the Next/Submit button to proceed through the form
       const nextButton = await page.$(
         'button:has-text("Next"), button:has-text("Submit"), button[type="submit"]'
@@ -608,9 +608,6 @@ export class AetnaClaimsClient implements IAetnaClaimsClient {
         /(?:confirmation|reference|claim)\s*(?:number|#|id)[:\s]*([A-Z0-9-]+)/i
       );
 
-      // Clean up request listener
-      page.removeListener('request', requestListener);
-
       if (isSuccess) {
         return {
           success: true,
@@ -635,6 +632,8 @@ export class AetnaClaimsClient implements IAetnaClaimsClient {
         success: false,
         message: `Error during submission: ${error instanceof Error ? error.message : String(error)}`,
       };
+    } finally {
+      page.removeListener('request', requestListener);
     }
   }
 

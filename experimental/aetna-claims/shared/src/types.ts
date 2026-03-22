@@ -100,6 +100,7 @@ export const SubmitClaimSchema = z.object({
   invoice_file_path: z
     .string()
     .regex(/\.(jpe?g|pdf|png|docx)$/i, 'Invoice file must be JPEG, PDF, PNG, or DOCX')
+    .refine((p) => !p.includes('..'), 'Invoice path cannot contain ".." components')
     .optional()
     .describe('Path to the itemized bill file to upload (JPEG, PDF, PNG, or DOCX)'),
   is_accident_related: z.boolean().default(false).describe('Is this claim related to an accident?'),
