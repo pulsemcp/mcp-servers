@@ -18,12 +18,18 @@ async function preparePublish() {
   console.log('Preparing for npm publish...');
 
   // Build elicitation library first (shared depends on it)
-  // --ignore-scripts avoids triggering the monorepo root's husky prepare hook
-  console.log('Building elicitation library...');
-  execSync('npm install --ignore-scripts && npm run build', {
-    cwd: join(__dirname, '../../../libs/elicitation'),
-    stdio: 'inherit',
-  });
+  const elicitationDir = join(__dirname, '../../../libs/elicitation');
+  const elicitationBuildExists = existsSync(join(elicitationDir, 'build/index.js'));
+  if (!elicitationBuildExists) {
+    // --ignore-scripts avoids triggering the monorepo root's husky prepare hook
+    console.log('Building elicitation library...');
+    execSync('npm install --ignore-scripts && npm run build', {
+      cwd: elicitationDir,
+      stdio: 'inherit',
+    });
+  } else {
+    console.log('Elicitation library already built, skipping...');
+  }
 
   // Build shared (depends on elicitation)
   console.log('Building shared module...');
