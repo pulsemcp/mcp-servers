@@ -131,6 +131,8 @@ export class AetnaClaimsClient implements IAetnaClaimsClient {
         logger: false,
       });
 
+      let foundCode: string | null = null;
+
       try {
         await client.connect();
         const lock = await client.getMailboxLock('INBOX');
@@ -159,15 +161,15 @@ export class AetnaClaimsClient implements IAetnaClaimsClient {
                 /(?:verification|security|one[- ]time|OTP|code)[^0-9]*(\d{4,8})/i
               );
               if (codeMatch) {
-                logDebug('2fa', `Found verification code: ${codeMatch[1]}`);
-                return codeMatch[1];
+                foundCode = codeMatch[1];
               }
 
               // Also try pattern where code appears prominently
-              const prominentCode = body.match(/\b(\d{6})\b/);
-              if (prominentCode) {
-                logDebug('2fa', `Found probable 6-digit code: ${prominentCode[1]}`);
-                return prominentCode[1];
+              if (!foundCode) {
+                const prominentCode = body.match(/\b(\d{6})\b/);
+                if (prominentCode) {
+                  foundCode = prominentCode[1];
+                }
               }
             }
           }
@@ -181,6 +183,11 @@ export class AetnaClaimsClient implements IAetnaClaimsClient {
           '2fa',
           `Email check failed: ${error instanceof Error ? error.message : String(error)}`
         );
+      }
+
+      if (foundCode) {
+        logDebug('2fa', 'Found verification code in email');
+        return foundCode;
       }
 
       if (attempt < maxAttempts) {
@@ -613,11 +620,12 @@ export class AetnaClaimsClient implements IAetnaClaimsClient {
     try {
       // Set up network monitoring to verify form submission
       let formSubmitted = false;
-      page.on('request', (request) => {
+      const requestListener = (request: { method(): string; url(): string }) => {
         if (request.method() === 'POST' && request.url().includes('claim')) {
           formSubmitted = true;
         }
-      });
+      };
+      page.on('request', requestListener);
 
       // Click the Next/Submit button to proceed through the form
       const nextButton = await page.$(
@@ -654,6 +662,9 @@ export class AetnaClaimsClient implements IAetnaClaimsClient {
       const confMatch = pageText.match(
         /(?:confirmation|reference|claim)\s*(?:number|#|id)[:\s]*([A-Z0-9-]+)/i
       );
+
+      // Clean up request listener
+      page.removeListener('request', requestListener);
 
       // Clear pending data
       this.pendingConfirmationToken = null;
