@@ -1,63 +1,78 @@
 #!/usr/bin/env node
-import { cp, rm } from 'fs/promises';
+/**
+ * Prepares the local package for npm publishing
+ * - Builds the elicitation library
+ * - Builds the shared module
+ * - Copies built files (instead of symlinks)
+ */
+
+import { cp, rm, mkdir } from 'fs/promises';
+import { existsSync } from 'fs';
+import { execSync } from 'child_process';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
-import { execSync } from 'child_process';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
-async function prepare() {
-  console.log('Preparing for publish...');
+async function preparePublish() {
+  console.log('Preparing for npm publish...');
 
-  // First, ensure TypeScript is available
-  console.log('Installing TypeScript for build...');
-  try {
-    execSync('npm install --no-save typescript @types/node', { stdio: 'inherit' });
-  } catch (e) {
-    console.error('Failed to install TypeScript:', e.message);
-    process.exit(1);
+  // Build elicitation library first (shared depends on it)
+  // --ignore-scripts avoids triggering the monorepo root's husky prepare hook
+  console.log('Building elicitation library...');
+  execSync('npm install --ignore-scripts && npm run build', {
+    cwd: join(__dirname, '../../../libs/elicitation'),
+    stdio: 'inherit',
+  });
+
+  // Build shared (depends on elicitation)
+  console.log('Building shared module...');
+  execSync('npm install && npm run build', {
+    cwd: join(__dirname, '../shared'),
+    stdio: 'inherit',
+  });
+
+  // Build local using symlink (like dev)
+  console.log('Setting up development symlink...');
+  execSync('node setup-dev.js', { cwd: __dirname, stdio: 'inherit' });
+
+  console.log('Building local module...');
+  execSync('npx tsc', { cwd: __dirname, stdio: 'inherit' });
+
+  // Remove symlink and copy actual files
+  const sharedPath = join(__dirname, 'shared');
+
+  if (existsSync(sharedPath)) {
+    await rm(sharedPath, { recursive: true, force: true });
   }
 
-  // Build shared directory first
-  const sharedDir = join(__dirname, '../shared');
-  console.log('Building shared directory...');
-  try {
-    execSync('npm install && npm run build', { cwd: sharedDir, stdio: 'inherit' });
-  } catch (e) {
-    console.error('Failed to build shared directory:', e.message);
-    process.exit(1);
+  await mkdir(sharedPath, { recursive: true });
+
+  console.log('Copying shared build files...');
+  await cp(join(__dirname, '../shared/build'), sharedPath, { recursive: true });
+
+  // Copy elicitation into node_modules for bundling
+  const elicitationNodeModulesPath = join(__dirname, 'node_modules/@pulsemcp/mcp-elicitation');
+  if (existsSync(elicitationNodeModulesPath)) {
+    await rm(elicitationNodeModulesPath, { recursive: true, force: true });
   }
+  await mkdir(elicitationNodeModulesPath, { recursive: true });
 
-  // Set up the shared directory for the build
-  console.log('Setting up shared directory for build...');
-  try {
-    await rm(join(__dirname, 'shared'), { recursive: true, force: true });
-    execSync(`node setup-dev.js`, { cwd: __dirname, stdio: 'inherit' });
-  } catch (e) {
-    console.error('Failed to set up shared directory:', e.message);
-    process.exit(1);
-  }
+  console.log('Copying elicitation build files...');
+  await cp(
+    join(__dirname, '../../../libs/elicitation/build'),
+    join(elicitationNodeModulesPath, 'build'),
+    { recursive: true }
+  );
+  await cp(
+    join(__dirname, '../../../libs/elicitation/package.json'),
+    join(elicitationNodeModulesPath, 'package.json')
+  );
 
-  // Now build the local package
-  console.log('Building local package...');
-  try {
-    execSync('npx tsc', { stdio: 'inherit' });
-  } catch (e) {
-    console.error('Failed to build local package:', e.message);
-    process.exit(1);
-  }
-
-  // Clean up the symlink and copy the actual files for publishing
-  try {
-    await rm(join(__dirname, 'shared'), { recursive: true, force: true });
-  } catch (e) {
-    // Ignore if doesn't exist
-  }
-
-  // Copy the built shared files
-  await cp(join(__dirname, '../shared/build'), join(__dirname, 'shared'), { recursive: true });
-
-  console.log('Copied shared files to local package');
+  console.log('Ready for npm publish!');
 }
 
-prepare().catch(console.error);
+preparePublish().catch((error) => {
+  console.error('Prepare publish failed:', error);
+  process.exit(1);
+});
