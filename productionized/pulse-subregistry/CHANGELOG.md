@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.0.5] - 2026-03-31
+
+### Changed
+
+- Improved startup log message format for consistency
+
 ## [0.0.4] - 2026-03-11
 
 ### Fixed
