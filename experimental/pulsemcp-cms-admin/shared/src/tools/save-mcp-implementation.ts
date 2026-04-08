@@ -39,10 +39,13 @@ const PARAM_DESCRIPTIONS = {
     'Subfolder path within the repository, for monorepos. Omit for root-level projects.',
   // Remote endpoints
   remote:
-    'Array of remote endpoint configurations for MCP servers. Each remote can have: id (existing remote ID or blank for new), url_direct, url_setup, transport (e.g., "sse"), host_platform (e.g., "smithery"), host_infrastructure (e.g., "cloudflare"), authentication_method (e.g., "open"), cost (e.g., "free"), status (defaults to "live"), display_name, and internal_notes.',
+    'Array of remote endpoint configurations for MCP servers. Providing this replaces ALL existing remotes. Omitting leaves them unchanged. Pass an empty array to delete all. Each remote can have: id (existing remote ID or blank for new), url_direct, url_setup, transport (e.g., "sse"), host_platform (e.g., "smithery"), host_infrastructure (e.g., "cloudflare"), authentication_method (e.g., "open"), cost (e.g., "free"), status (defaults to "live"), display_name, and internal_notes.',
   // Canonical URLs
   canonical:
-    'Array of canonical URL configurations. Each entry must have: url (the canonical URL), scope (one of "domain", "subdomain", "subfolder", or "url"), and optional note for additional context.',
+    'Array of canonical URL configurations. Providing this replaces ALL existing canonical URLs. Omitting leaves them unchanged. Pass an empty array to delete all. Each entry must have: url (the canonical URL), scope (one of "domain", "subdomain", or "url"), and optional note for additional context.',
+  // Flags
+  verified_no_remote_canonicals:
+    'Mark that this server has been verified to have no remote canonical URLs (true = verified no remote canonicals exist, false = reset/canonicals found)',
   // Other fields
   internal_notes:
     'Admin-only notes. Not displayed publicly. Used for tracking submission sources, reviewer comments, etc.',
@@ -104,12 +107,17 @@ const SaveMCPImplementationSchema = z.object({
     .array(
       z.object({
         url: z.string(),
-        scope: z.enum(['domain', 'subdomain', 'subfolder', 'url']),
+        scope: z.enum(['domain', 'subdomain', 'url']),
         note: z.string().optional(),
       })
     )
     .optional()
     .describe(PARAM_DESCRIPTIONS.canonical),
+  // Flags
+  verified_no_remote_canonicals: z
+    .boolean()
+    .optional()
+    .describe(PARAM_DESCRIPTIONS.verified_no_remote_canonicals),
   // Other fields
   internal_notes: z.string().optional().describe(PARAM_DESCRIPTIONS.internal_notes),
 });
@@ -122,14 +130,17 @@ export function saveMCPImplementation(_server: Server, clientFactory: ClientFact
 **Creating a new implementation:**
 - Omit the \`id\` field to create a new implementation
 - Required fields for creation: \`name\`, \`type\` (either "server" or "client")
+- Remote endpoints and canonical URLs CAN be included on creation
 
 **Updating an existing implementation:**
 - Provide the \`id\` field to update an existing implementation
-- Only provided fields will be updated; omitted fields remain unchanged
+- Only provided fields will be updated; **omitted fields remain unchanged**
+- Omitting \`remote\` or \`canonical\` leaves existing values unchanged (does NOT clear them)
+- Providing \`remote: []\` or \`canonical: []\` (empty array) will DELETE all existing entries
 
 All business logic from the Rails controller is applied (validation, associations, callbacks).
 
-Example request (CREATE new implementation):
+Example request (CREATE with remote endpoints and canonical URLs):
 {
   "name": "My New MCP Server",
   "type": "server",
@@ -137,7 +148,19 @@ Example request (CREATE new implementation):
   "classification": "community",
   "implementation_language": "typescript",
   "github_owner": "myorg",
-  "github_repo": "my-mcp-server"
+  "github_repo": "my-mcp-server",
+  "remote": [
+    {
+      "url_direct": "https://api.example.com/mcp",
+      "transport": "sse",
+      "host_platform": "smithery",
+      "authentication_method": "open",
+      "cost": "free"
+    }
+  ],
+  "canonical": [
+    { "url": "https://github.com/myorg/my-mcp-server", "scope": "url" }
+  ]
 }
 
 Example request (UPDATE existing implementation):
@@ -150,7 +173,7 @@ Example request (UPDATE existing implementation):
   "implementation_language": "typescript"
 }
 
-Example request (with remote endpoints - new remote):
+Example request (UPDATE with remote endpoints - replaces ALL existing remotes):
 {
   "id": 11371,
   "remote": [
@@ -167,21 +190,12 @@ Example request (with remote endpoints - new remote):
   ]
 }
 
-Example response:
-{
-  "id": 11371,
-  "name": "GitHub MCP Server",
-  "slug": "github-mcp-server",
-  "type": "server",
-  "status": "live",
-  "classification": "official",
-  "updated_at": "2024-01-20T16:30:00Z"
-}
-
 Important notes:
 - Omit \`id\` to CREATE, provide \`id\` to UPDATE
 - When creating: \`name\` and \`type\` are required
 - When updating: only provided fields will be changed
+- **Omission semantics:** omitting \`remote\` or \`canonical\` leaves them unchanged. To clear them, pass an empty array.
+- Providing \`remote\` or \`canonical\` replaces ALL existing entries (not a merge)
 - CREATE-ONLY restrictions:
   - \`github_stars\` is read-only (derived from GitHub repository)
   - \`mcp_server_id\`/\`mcp_client_id\` are created automatically based on \`type\`
@@ -190,17 +204,7 @@ Important notes:
 - Setting mcp_server_id or mcp_client_id to null will unlink the association (UPDATE only)
 - Remote endpoints are for MCP servers only and configure how they can be accessed
 - Canonical URLs help identify the authoritative source for the implementation
-
-Use cases:
-- Create new MCP implementation entries
-- Update draft implementations before publishing
-- Change implementation status (draft → live, live → archived)
-- Update metadata (stars, language, classification)
-- Link or unlink MCP server/client associations
-- Update descriptions and documentation
-- Modify URLs and provider information
-- Add or update remote endpoint configurations for servers
-- Set canonical URLs for implementations`,
+- After creating/updating, use \`get_mcp_server\` to verify the full state including remotes and canonical URLs`,
     inputSchema: {
       type: 'object',
       properties: {
@@ -317,12 +321,17 @@ Use cases:
             type: 'object',
             properties: {
               url: { type: 'string' },
-              scope: { type: 'string', enum: ['domain', 'subdomain', 'subfolder', 'url'] },
+              scope: { type: 'string', enum: ['domain', 'subdomain', 'url'] },
               note: { type: 'string' },
             },
             required: ['url', 'scope'],
           },
           description: PARAM_DESCRIPTIONS.canonical,
+        },
+        // Flags
+        verified_no_remote_canonicals: {
+          type: 'boolean',
+          description: PARAM_DESCRIPTIONS.verified_no_remote_canonicals,
         },
         // Other fields
         internal_notes: {
@@ -398,8 +407,27 @@ Use cases:
             content += `**URL:** ${implementation.url}\n`;
           }
 
+          if (implementation.canonical && implementation.canonical.length > 0) {
+            content += `**Canonical URLs:** ${implementation.canonical.length}\n`;
+            implementation.canonical.forEach((c) => {
+              content += `  - ${c.url} (${c.scope})\n`;
+            });
+          }
+
+          const remotes = implementation.mcp_server?.remotes;
+          if (remotes && remotes.length > 0) {
+            content += `**Remote Endpoints:** ${remotes.length}\n`;
+            remotes.forEach((r) => {
+              content += `  - ${r.display_name || r.url_direct || `ID ${r.id}`}\n`;
+            });
+          }
+
           if (implementation.created_at) {
             content += `**Created:** ${new Date(implementation.created_at).toLocaleDateString()}\n`;
+          }
+
+          if (implementation.type === 'server') {
+            content += `\n**Tip:** Use \`get_mcp_server\` with slug \`${implementation.slug}\` to verify the full state including remotes and canonical URLs.\n`;
           }
 
           return {
@@ -466,6 +494,21 @@ Use cases:
 
           if (implementation.mcp_client_id) {
             content += `**Linked MCP Client ID:** ${implementation.mcp_client_id}\n`;
+          }
+
+          if (implementation.canonical && implementation.canonical.length > 0) {
+            content += `**Canonical URLs:** ${implementation.canonical.length}\n`;
+            implementation.canonical.forEach((c) => {
+              content += `  - ${c.url} (${c.scope})\n`;
+            });
+          }
+
+          const updateRemotes = implementation.mcp_server?.remotes;
+          if (updateRemotes && updateRemotes.length > 0) {
+            content += `**Remote Endpoints:** ${updateRemotes.length}\n`;
+            updateRemotes.forEach((r) => {
+              content += `  - ${r.display_name || r.url_direct || `ID ${r.id}`}\n`;
+            });
           }
 
           if (implementation.updated_at) {

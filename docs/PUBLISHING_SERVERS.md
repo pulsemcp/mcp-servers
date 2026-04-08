@@ -48,13 +48,14 @@ After staging the publication, update the server's CHANGELOG.md file:
 
 For servers with manual tests (that require real API credentials):
 
-1. Run the manual tests (automatically builds and tests):
+1. **Check for credentials first**: Verify that the `.env` file exists in the MCP server's source root and contains the required API keys. **If the `.env` file is missing or doesn't have the required credentials, STOP and ask the user to provide them. Do NOT skip manual tests or proceed without credentials.**
+2. Run the manual tests (automatically builds and tests):
    ```bash
    npm run test:manual
    ```
-2. Update `MANUAL_TESTING.md` with the test results (overwrite previous results)
-3. Include commit hash, test date/time in PT, and results summary
-4. Use real API credentials from .env for proper testing
+3. Update `MANUAL_TESTING.md` with the test results (overwrite previous results)
+4. Include commit hash, test date/time in PT, and results summary
+5. Use real API credentials from .env for proper testing
 
 Example:
 
@@ -154,7 +155,7 @@ Before creating a PR:
 - [ ] Version bumped using `npm run stage-publish`
 - [ ] CHANGELOG.md updated with new version section
 - [ ] All tests pass (`npm test`, `npm run test:integration`)
-- [ ] Manual tests run and results updated in MANUAL_TESTING.md (if applicable)
+- [ ] Manual tests run and results updated in MANUAL_TESTING.md (if applicable — if `.env` credentials are missing, ask the user for them; do NOT skip)
 - [ ] Build succeeds (`npm run build`)
 - [ ] No sensitive information in code
 - [ ] Git tag created and pushed

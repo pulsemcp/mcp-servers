@@ -3,6 +3,7 @@ import { z } from 'zod';
 import type { IAgentOrchestratorClient } from '../orchestrator-client/orchestrator-client.js';
 import type { ConfigsResponse, AgentRootInfo, StopConditionInfo, MCPServerInfo } from '../types.js';
 import { getConfigsCache, setConfigsCache } from '../cache/configs-cache.js';
+import { parseAllowedAgentRoots, filterAgentRoots } from '../allowed-agent-roots.js';
 
 export const GetConfigsSchema = z.object({
   force_refresh: z
@@ -15,7 +16,7 @@ const TOOL_DESCRIPTION = `Fetches all static configuration data in a single call
 
 Returns:
 - **MCP servers**: Available servers for use with start_session (name, title, description)
-- **Agent roots**: Preconfigured repository settings with defaults (git_root, branch, mcp_servers, stop_condition)
+- **Agent roots**: Preconfigured repository settings with defaults (git_root, branch, mcp_servers, skills, stop_condition)
 - **Stop conditions**: Available session completion criteria (id, name, description)
 
 **Use this tool** to get all configuration options before calling start_session.
@@ -44,17 +45,17 @@ export function getConfigsTool(_server: Server, clientFactory: () => IAgentOrche
         // Use cached data if available and not forcing refresh
         const cachedConfigs = getConfigsCache();
         if (cachedConfigs !== null && !forceRefresh) {
-          return formatResponse(cachedConfigs, true);
+          return formatResponse(applyAgentRootFilter(cachedConfigs), true);
         }
 
         // Fetch fresh data using unified configs endpoint
         const client = clientFactory();
         const configs = await client.getConfigs();
 
-        // Update shared cache
+        // Update shared cache (store unfiltered data so filtering is always applied fresh)
         setConfigsCache(configs);
 
-        return formatResponse(configs, false);
+        return formatResponse(applyAgentRootFilter(configs), false);
       } catch (error) {
         return {
           content: [
@@ -67,6 +68,17 @@ export function getConfigsTool(_server: Server, clientFactory: () => IAgentOrche
         };
       }
     },
+  };
+}
+
+function applyAgentRootFilter(configs: ConfigsResponse): ConfigsResponse {
+  const allowedRoots = parseAllowedAgentRoots();
+  if (allowedRoots === null) {
+    return configs;
+  }
+  return {
+    ...configs,
+    agent_roots: filterAgentRoots(configs.agent_roots, allowedRoots),
   };
 }
 
@@ -130,6 +142,12 @@ function formatResponse(configs: ConfigsResponse, fromCache: boolean) {
   lines.push('- Use `name` values from **MCP Servers** in `start_session` `mcp_servers` parameter');
   lines.push('- Use `git_root` from **Agent Roots** to start sessions with preconfigured defaults');
   lines.push(
+    '- If an **Agent Root** has a `default_subdirectory`, pass it as `subdirectory` in `start_session` — do not set `subdirectory` to arbitrary internal paths'
+  );
+  lines.push(
+    "- Pass `default_skills` from **Agent Roots** in the `skills` parameter of `start_session` — sessions won't have skills loaded unless you explicitly pass them"
+  );
+  lines.push(
     '- Use `id` values from **Stop Conditions** in `start_session` `stop_condition` parameter'
   );
 
@@ -168,6 +186,9 @@ function formatAgentRoot(lines: string[], root: AgentRootInfo) {
   }
   if (root.default_stop_condition) {
     lines.push(`- **Default Stop Condition:** \`${root.default_stop_condition}\``);
+  }
+  if (root.default_skills && root.default_skills.length > 0) {
+    lines.push(`- **Default Skills:** ${root.default_skills.map((s) => `\`${s}\``).join(', ')}`);
   }
   lines.push('');
 }

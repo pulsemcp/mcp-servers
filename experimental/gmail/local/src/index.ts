@@ -5,12 +5,32 @@ import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 import { createMCPServer } from '../shared/index.js';
 import { logServerStart, logError, logWarning } from '../shared/logging.js';
+import { runOAuthSetup } from './oauth-setup.js';
 
 // Read version from package.json
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const packageJsonPath = join(__dirname, '..', 'package.json');
 const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf-8'));
 const VERSION = packageJson.version;
+
+// =============================================================================
+// CLI SUBCOMMAND HANDLING
+// =============================================================================
+
+// Check for subcommands before env validation (e.g., "oauth-setup")
+const subcommand = process.argv[2];
+if (subcommand === 'oauth-setup') {
+  runOAuthSetup(process.argv.slice(3)).catch((error) => {
+    console.error('Error:', error.message);
+    process.exit(1);
+  });
+} else {
+  // Run the MCP server (default behavior)
+  main().catch((error) => {
+    logError('main', error);
+    process.exit(1);
+  });
+}
 
 // =============================================================================
 // ENVIRONMENT VALIDATION
@@ -55,7 +75,7 @@ function validateEnvironment(): void {
     console.error('  GMAIL_OAUTH_CLIENT_SECRET: OAuth2 client secret');
     console.error('  GMAIL_OAUTH_REFRESH_TOKEN: Refresh token from one-time consent flow');
     console.error('\nRun the setup script to obtain a refresh token:');
-    console.error('  npx tsx scripts/oauth-setup.ts <client_id> <client_secret>');
+    console.error('  npx gmail-workspace-mcp-server oauth-setup <client_id> <client_secret>');
     console.error('\n======================================================\n');
     process.exit(1);
   }
@@ -98,7 +118,9 @@ function validateEnvironment(): void {
   console.error('  GMAIL_OAUTH_CLIENT_ID: OAuth2 client ID from Google Cloud Console');
   console.error('  GMAIL_OAUTH_CLIENT_SECRET: OAuth2 client secret');
   console.error('  GMAIL_OAUTH_REFRESH_TOKEN: Refresh token from one-time consent flow');
-  console.error('\n  Setup: Run `npx tsx scripts/oauth-setup.ts <client_id> <client_secret>`');
+  console.error(
+    '\n  Setup: Run `npx gmail-workspace-mcp-server oauth-setup <client_id> <client_secret>`'
+  );
   console.error('\n--- Option 2: Service Account (for Google Workspace) ---');
   console.error('  GMAIL_SERVICE_ACCOUNT_CLIENT_EMAIL: Service account email address');
   console.error('    Example: my-service-account@my-project.iam.gserviceaccount.com');
@@ -146,9 +168,3 @@ async function main() {
 
   logServerStart('Gmail');
 }
-
-// Run the server
-main().catch((error) => {
-  logError('main', error);
-  process.exit(1);
-});

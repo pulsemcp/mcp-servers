@@ -37,48 +37,69 @@ This is an MCP ([Model Context Protocol](https://modelcontextprotocol.io/)) Serv
 
 This server is built and tested on macOS with Claude Desktop. It should work with other MCP clients as well.
 
-| Tool Name                              | Tool Group         | Read/Write | Description                                                                   |
-| -------------------------------------- | ------------------ | ---------- | ----------------------------------------------------------------------------- |
-| `get_newsletter_posts`                 | newsletter         | read       | List newsletter posts with search, sorting, and pagination options.           |
-| `get_newsletter_post`                  | newsletter         | read       | Retrieve a specific newsletter post by its unique slug.                       |
-| `draft_newsletter_post`                | newsletter         | write      | Create a new draft newsletter post with title, body, and metadata.            |
-| `update_newsletter_post`               | newsletter         | write      | Update an existing newsletter post's content and metadata (except status).    |
-| `upload_image`                         | newsletter         | write      | Upload an image and attach it to a specific newsletter post.                  |
-| `get_authors`                          | newsletter         | read       | Get a list of authors with optional search and pagination.                    |
-| `search_mcp_implementations`           | server_directory   | read       | Search for MCP servers and clients in the PulseMCP registry.                  |
-| `get_draft_mcp_implementations`        | server_directory   | read       | Retrieve paginated list of draft MCP implementations needing review.          |
-| `find_providers`                       | server_directory   | read       | Search for providers by ID, name, URL, or slug.                               |
-| `save_mcp_implementation`              | server_directory   | write      | Update an MCP implementation (replicates Admin panel "Save Changes" button).  |
-| `send_impl_posted_notif`               | server_directory   | write      | Send email notification when MCP implementation goes live.                    |
-| `get_official_mirror_queue_items`      | official_queue     | read       | List and filter official mirror queue entries with pagination and search.     |
-| `get_official_mirror_queue_item`       | official_queue     | read       | Get detailed information about a single official mirror queue entry.          |
-| `approve_official_mirror_queue_item`   | official_queue     | write      | Approve a queue entry and link it to an existing MCP server (async).          |
-| `approve_mirror_no_modify`             | official_queue     | write      | Approve without updating the linked server.                                   |
-| `reject_official_mirror_queue_item`    | official_queue     | write      | Reject a queue entry (async operation).                                       |
-| `add_official_mirror_to_regular_queue` | official_queue     | write      | Convert a queue entry to a draft MCP implementation (async).                  |
-| `unlink_official_mirror_queue_item`    | official_queue     | write      | Unlink a queue entry from its linked MCP server.                              |
-| `get_unofficial_mirrors`               | unofficial_mirrors | read       | List unofficial mirrors with search, pagination, and MCP server filtering.    |
-| `get_unofficial_mirror`                | unofficial_mirrors | read       | Get detailed unofficial mirror info by ID or name.                            |
-| `create_unofficial_mirror`             | unofficial_mirrors | write      | Create a new unofficial mirror entry with JSON data.                          |
-| `update_unofficial_mirror`             | unofficial_mirrors | write      | Update an existing unofficial mirror by ID.                                   |
-| `delete_unofficial_mirror`             | unofficial_mirrors | write      | Delete an unofficial mirror by ID (irreversible).                             |
-| `get_official_mirrors`                 | official_mirrors   | read       | List official mirrors with search, status, and processing filters.            |
-| `get_official_mirror`                  | official_mirrors   | read       | Get detailed official mirror info by ID or name.                              |
-| `get_tenants`                          | tenants            | read       | List tenants with search and admin status filtering.                          |
-| `get_tenant`                           | tenants            | read       | Get detailed tenant info by ID or slug.                                       |
-| `get_mcp_jsons`                        | mcp_jsons          | read       | List MCP JSON configs with mirror and server filtering.                       |
-| `get_mcp_json`                         | mcp_jsons          | read       | Get a single MCP JSON configuration by ID.                                    |
-| `create_mcp_json`                      | mcp_jsons          | write      | Create a new MCP JSON configuration for an unofficial mirror.                 |
-| `update_mcp_json`                      | mcp_jsons          | write      | Update an existing MCP JSON configuration by ID.                              |
-| `delete_mcp_json`                      | mcp_jsons          | write      | Delete an MCP JSON configuration by ID (irreversible).                        |
-| `list_mcp_servers`                     | mcp_servers        | read       | List/search MCP servers with filtering by status, classification, pagination. |
-| `get_mcp_server`                       | mcp_servers        | read       | Get detailed MCP server info by slug (unified view of all admin UI fields).   |
-| `update_mcp_server`                    | mcp_servers        | write      | Update an MCP server's fields (all admin UI fields supported).                |
-| `get_redirects`                        | redirects          | read       | List URL redirects with search, status filtering, and pagination.             |
-| `get_redirect`                         | redirects          | read       | Get detailed redirect info by ID.                                             |
-| `create_redirect`                      | redirects          | write      | Create a new URL redirect entry.                                              |
-| `update_redirect`                      | redirects          | write      | Update an existing URL redirect by ID.                                        |
-| `delete_redirect`                      | redirects          | write      | Delete a URL redirect by ID (irreversible).                                   |
+| Tool Name                              | Tool Group         | Read/Write | Description                                                                                                |
+| -------------------------------------- | ------------------ | ---------- | ---------------------------------------------------------------------------------------------------------- |
+| `get_newsletter_posts`                 | newsletter         | read       | List newsletter posts with search, sorting, and pagination options.                                        |
+| `get_newsletter_post`                  | newsletter         | read       | Retrieve a specific newsletter post by its unique slug.                                                    |
+| `draft_newsletter_post`                | newsletter         | write      | Create a new draft newsletter post with title, body, and metadata.                                         |
+| `update_newsletter_post`               | newsletter         | write      | Update an existing newsletter post's content and metadata (except status).                                 |
+| `upload_image`                         | newsletter         | write      | Upload an image and attach it to a specific newsletter post.                                               |
+| `get_authors`                          | newsletter         | read       | Get a list of authors with optional search and pagination.                                                 |
+| `search_mcp_implementations`           | server_directory   | read       | Search for MCP servers and clients in the PulseMCP registry.                                               |
+| `get_draft_mcp_implementations`        | server_directory   | read       | Retrieve paginated list of draft MCP implementations needing review.                                       |
+| `find_providers`                       | server_directory   | read       | Search for providers by ID, name, URL, or slug.                                                            |
+| `save_mcp_implementation`              | server_directory   | write      | Update an MCP implementation (replicates Admin panel "Save Changes" button).                               |
+| `send_impl_posted_notif`               | server_directory   | write      | Send email notification when MCP implementation goes live.                                                 |
+| `get_official_mirror_queue_items`      | official_queue     | read       | List and filter official mirror queue entries with pagination and search.                                  |
+| `get_official_mirror_queue_item`       | official_queue     | read       | Get detailed information about a single official mirror queue entry.                                       |
+| `approve_official_mirror_queue_item`   | official_queue     | write      | Approve a queue entry and link it to an existing MCP server (async).                                       |
+| `approve_mirror_no_modify`             | official_queue     | write      | Approve without updating the linked server.                                                                |
+| `reject_official_mirror_queue_item`    | official_queue     | write      | Reject a queue entry (async operation).                                                                    |
+| `add_official_mirror_to_regular_queue` | official_queue     | write      | Convert a queue entry to a draft MCP implementation (async).                                               |
+| `unlink_official_mirror_queue_item`    | official_queue     | write      | Unlink a queue entry from its linked MCP server.                                                           |
+| `get_unofficial_mirrors`               | unofficial_mirrors | read       | List unofficial mirrors with search, pagination, and MCP server filtering.                                 |
+| `get_unofficial_mirror`                | unofficial_mirrors | read       | Get detailed unofficial mirror info by ID or name.                                                         |
+| `create_unofficial_mirror`             | unofficial_mirrors | write      | Create a new unofficial mirror entry with JSON data.                                                       |
+| `update_unofficial_mirror`             | unofficial_mirrors | write      | Update an existing unofficial mirror by ID.                                                                |
+| `delete_unofficial_mirror`             | unofficial_mirrors | write      | Delete an unofficial mirror by ID (irreversible).                                                          |
+| `get_official_mirrors`                 | official_mirrors   | read       | List official mirrors with search, status, and processing filters.                                         |
+| `get_official_mirror`                  | official_mirrors   | read       | Get detailed official mirror info by ID or name.                                                           |
+| `get_tenants`                          | tenants            | read       | List tenants with search and admin status filtering.                                                       |
+| `get_tenant`                           | tenants            | read       | Get detailed tenant info by ID or slug.                                                                    |
+| `get_mcp_jsons`                        | mcp_jsons          | read       | List MCP JSON configs with mirror and server filtering.                                                    |
+| `get_mcp_json`                         | mcp_jsons          | read       | Get a single MCP JSON configuration by ID.                                                                 |
+| `create_mcp_json`                      | mcp_jsons          | write      | Create a new MCP JSON configuration for an unofficial mirror.                                              |
+| `update_mcp_json`                      | mcp_jsons          | write      | Update an existing MCP JSON configuration by ID.                                                           |
+| `delete_mcp_json`                      | mcp_jsons          | write      | Delete an MCP JSON configuration by ID (irreversible).                                                     |
+| `list_mcp_servers`                     | mcp_servers        | read       | List/search MCP servers with filtering by status, classification, pagination.                              |
+| `get_mcp_server`                       | mcp_servers        | read       | Get detailed MCP server info by slug (unified view of all admin UI fields).                                |
+| `update_mcp_server`                    | mcp_servers        | write      | Update an MCP server's fields (all admin UI fields supported).                                             |
+| `get_redirects`                        | redirects          | read       | List URL redirects with search, status filtering, and pagination.                                          |
+| `get_redirect`                         | redirects          | read       | Get detailed redirect info by ID.                                                                          |
+| `create_redirect`                      | redirects          | write      | Create a new URL redirect entry.                                                                           |
+| `update_redirect`                      | redirects          | write      | Update an existing URL redirect by ID.                                                                     |
+| `delete_redirect`                      | redirects          | write      | Delete a URL redirect by ID (irreversible).                                                                |
+| `list_good_jobs`                       | good_jobs          | read       | List and filter background jobs by queue, status, job class, and date range.                               |
+| `get_good_job`                         | good_jobs          | read       | Get detailed information about a specific background job.                                                  |
+| `list_good_job_cron_schedules`         | good_jobs          | read       | List all configured cron schedules.                                                                        |
+| `list_good_job_processes`              | good_jobs          | read       | List active worker processes.                                                                              |
+| `get_good_job_queue_statistics`        | good_jobs          | read       | Get aggregate job statistics by status.                                                                    |
+| `retry_good_job`                       | good_jobs          | write      | Retry a failed or discarded background job.                                                                |
+| `discard_good_job`                     | good_jobs          | write      | Discard a background job to prevent retries.                                                               |
+| `reschedule_good_job`                  | good_jobs          | write      | Reschedule a background job to a new time.                                                                 |
+| `force_trigger_good_job_cron`          | good_jobs          | write      | Force trigger a cron schedule immediately.                                                                 |
+| `cleanup_good_jobs`                    | good_jobs          | write      | Clean up old background jobs by status and age.                                                            |
+| `run_exam_for_mirror`                  | proctor            | write      | Run proctor exams against unofficial mirrors via Fly Machines. Returns truncated summary with `result_id`. |
+| `get_exam_result`                      | proctor            | read       | Retrieve full untruncated exam results by `result_id`, with optional section/mirror filtering.             |
+| `save_results_for_mirror`              | proctor            | write      | Save proctor exam results via `result_id` from `run_exam_for_mirror`.                                      |
+| `list_proctor_runs`                    | proctor            | read       | List proctor runs with filtering by name, recommended status, and tenant IDs.                              |
+| `get_proctor_metadata`                 | proctor            | read       | Get available proctor runtimes and exam types.                                                             |
+| `list_discovered_urls`                 | discovered_urls    | read       | List discovered URLs with status filtering and pagination.                                                 |
+| `mark_discovered_url_processed`        | discovered_urls    | write      | Mark a discovered URL as processed with a result status.                                                   |
+| `get_discovered_url_stats`             | discovered_urls    | read       | Get summary statistics for discovered URLs pipeline.                                                       |
+| `get_moz_metrics`                      | moz                | read       | Fetch live URL metrics from the MOZ API (page authority, domain authority, spam score, link counts).       |
+| `get_moz_backlinks`                    | moz                | read       | Fetch live backlink data from the MOZ API (source pages, anchor text, domain authority).                   |
+| `get_moz_stored_metrics`               | moz                | read       | List stored/historical MOZ data for a server's canonicals with pagination.                                 |
 
 # Tool Groups
 
@@ -89,35 +110,43 @@ This server organizes tools into groups that can be selectively enabled or disab
 
 ## Available Groups
 
-| Group                         | Tools | Description                                 |
-| ----------------------------- | ----- | ------------------------------------------- |
-| `newsletter`                  | 6     | Full newsletter management (read + write)   |
-| `newsletter_readonly`         | 3     | Newsletter read-only (get posts, authors)   |
-| `server_directory`            | 5     | Full MCP server directory (read + write)    |
-| `server_directory_readonly`   | 3     | MCP server directory read-only              |
-| `official_queue`              | 7     | Full official mirror queue (read + write)   |
-| `official_queue_readonly`     | 2     | Official mirror queue read-only             |
-| `unofficial_mirrors`          | 5     | Full unofficial mirrors CRUD (read + write) |
-| `unofficial_mirrors_readonly` | 2     | Unofficial mirrors read-only                |
-| `official_mirrors`            | 2     | Official mirrors REST API (read-only)       |
-| `official_mirrors_readonly`   | 2     | Official mirrors read-only (alias)          |
-| `tenants`                     | 2     | Tenants REST API (read-only)                |
-| `tenants_readonly`            | 2     | Tenants read-only (alias)                   |
-| `mcp_jsons`                   | 5     | Full MCP JSON configurations (read + write) |
-| `mcp_jsons_readonly`          | 2     | MCP JSON configurations read-only           |
-| `mcp_servers`                 | 3     | Full MCP servers management (read + write)  |
-| `mcp_servers_readonly`        | 2     | MCP servers read-only (list, get)           |
-| `redirects`                   | 5     | Full URL redirect management (read + write) |
-| `redirects_readonly`          | 2     | URL redirects read-only (list, get)         |
+| Group                         | Tools | Description                                                                                                                                                                 |
+| ----------------------------- | ----- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `newsletter`                  | 6     | Full newsletter management (read + write)                                                                                                                                   |
+| `newsletter_readonly`         | 3     | Newsletter read-only (get posts, authors)                                                                                                                                   |
+| `server_directory`            | 27    | Comprehensive superset: includes all tools from mcp_servers, unofficial_mirrors, official_mirrors, official_queue, mcp_jsons, plus implementations/providers (read + write) |
+| `server_directory_readonly`   | 13    | Server directory read-only subset                                                                                                                                           |
+| `official_queue`              | 7     | Full official mirror queue (read + write)                                                                                                                                   |
+| `official_queue_readonly`     | 2     | Official mirror queue read-only                                                                                                                                             |
+| `unofficial_mirrors`          | 5     | Full unofficial mirrors CRUD (read + write)                                                                                                                                 |
+| `unofficial_mirrors_readonly` | 2     | Unofficial mirrors read-only                                                                                                                                                |
+| `official_mirrors`            | 2     | Official mirrors REST API (read-only)                                                                                                                                       |
+| `official_mirrors_readonly`   | 2     | Official mirrors read-only (alias)                                                                                                                                          |
+| `tenants`                     | 2     | Tenants REST API (read-only)                                                                                                                                                |
+| `tenants_readonly`            | 2     | Tenants read-only (alias)                                                                                                                                                   |
+| `mcp_jsons`                   | 5     | Full MCP JSON configurations (read + write)                                                                                                                                 |
+| `mcp_jsons_readonly`          | 2     | MCP JSON configurations read-only                                                                                                                                           |
+| `mcp_servers`                 | 3     | Full MCP servers management (read + write)                                                                                                                                  |
+| `mcp_servers_readonly`        | 2     | MCP servers read-only (list, get)                                                                                                                                           |
+| `redirects`                   | 5     | Full URL redirect management (read + write)                                                                                                                                 |
+| `redirects_readonly`          | 2     | URL redirects read-only (list, get)                                                                                                                                         |
+| `good_jobs`                   | 10    | Full GoodJob background job management (read + write)                                                                                                                       |
+| `good_jobs_readonly`          | 5     | GoodJob read-only (list, get, stats, processes, cron)                                                                                                                       |
+| `proctor`                     | 5     | Proctor exam execution, result retrieval, and result storage (read + write)                                                                                                 |
+| `proctor_readonly`            | 3     | Proctor results read-only (`get_exam_result`, `list_proctor_runs`, `get_proctor_metadata`)                                                                                  |
+| `discovered_urls`             | 3     | Discovered URL management (read + write)                                                                                                                                    |
+| `discovered_urls_readonly`    | 2     | Discovered URL tools read-only (list, stats)                                                                                                                                |
+| `moz`                         | 3     | MOZ SEO metrics — live URL metrics, backlinks, and stored historical data (all read-only)                                                                                   |
+| `moz_readonly`                | 3     | MOZ tools read-only (alias — all MOZ tools are read-only)                                                                                                                   |
 
 ### Tools by Group
 
 - **newsletter** / **newsletter_readonly**:
   - Read-only: `get_newsletter_posts`, `get_newsletter_post`, `get_authors`
   - Write: `draft_newsletter_post`, `update_newsletter_post`, `upload_image`
-- **server_directory** / **server_directory_readonly**:
-  - Read-only: `search_mcp_implementations`, `get_draft_mcp_implementations`, `find_providers`
-  - Write: `save_mcp_implementation`, `send_impl_posted_notif`
+- **server_directory** / **server_directory_readonly** (superset — includes tools from mcp_servers, unofficial_mirrors, official_mirrors, official_queue, and mcp_jsons):
+  - Read-only: `search_mcp_implementations`, `get_draft_mcp_implementations`, `find_providers`, `list_mcp_servers`, `get_mcp_server`, `get_unofficial_mirrors`, `get_unofficial_mirror`, `get_official_mirrors`, `get_official_mirror`, `get_official_mirror_queue_items`, `get_official_mirror_queue_item`, `get_mcp_jsons`, `get_mcp_json`
+  - Write: `save_mcp_implementation`, `send_impl_posted_notif`, `update_mcp_server`, `create_unofficial_mirror`, `update_unofficial_mirror`, `delete_unofficial_mirror`, `approve_official_mirror_queue_item`, `approve_mirror_no_modify`, `reject_official_mirror_queue_item`, `add_official_mirror_to_regular_queue`, `unlink_official_mirror_queue_item`, `create_mcp_json`, `update_mcp_json`, `delete_mcp_json`
 - **official_queue** / **official_queue_readonly**:
   - Read-only: `get_official_mirror_queue_items`, `get_official_mirror_queue_item`
   - Write: `approve_official_mirror_queue_item`, `approve_mirror_no_modify`, `reject_official_mirror_queue_item`, `add_official_mirror_to_regular_queue`, `unlink_official_mirror_queue_item`
@@ -137,12 +166,23 @@ This server organizes tools into groups that can be selectively enabled or disab
 - **redirects** / **redirects_readonly**:
   - Read-only: `get_redirects`, `get_redirect`
   - Write: `create_redirect`, `update_redirect`, `delete_redirect`
+- **good_jobs** / **good_jobs_readonly**:
+  - Read-only: `list_good_jobs`, `get_good_job`, `list_good_job_cron_schedules`, `list_good_job_processes`, `get_good_job_queue_statistics`
+  - Write: `retry_good_job`, `discard_good_job`, `reschedule_good_job`, `force_trigger_good_job_cron`, `cleanup_good_jobs`
+- **proctor** / **proctor_readonly**:
+  - Read-only: `get_exam_result`, `list_proctor_runs`, `get_proctor_metadata`
+  - Write: `run_exam_for_mirror`, `save_results_for_mirror`
+- **discovered_urls** / **discovered_urls_readonly**:
+  - Read-only: `list_discovered_urls`, `get_discovered_url_stats`
+  - Write: `mark_discovered_url_processed`
+- **moz** / **moz_readonly**:
+  - Read-only: `get_moz_metrics`, `get_moz_backlinks`, `get_moz_stored_metrics`
 
 ## Environment Variables
 
-| Variable      | Description                                 | Default                                                                                                                                    |
-| ------------- | ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
-| `TOOL_GROUPS` | Comma-separated list of enabled tool groups | `newsletter,server_directory,official_queue,unofficial_mirrors,official_mirrors,tenants,mcp_jsons,mcp_servers,redirects` (all base groups) |
+| Variable      | Description                                 | Default                                                                                                                                                                          |
+| ------------- | ------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `TOOL_GROUPS` | Comma-separated list of enabled tool groups | `newsletter,server_directory,official_queue,unofficial_mirrors,official_mirrors,tenants,mcp_jsons,mcp_servers,redirects,good_jobs,proctor,discovered_urls,moz` (all base groups) |
 
 ## Examples
 
@@ -167,8 +207,10 @@ TOOL_GROUPS=server_directory_readonly
 Enable all groups with read-only access:
 
 ```bash
-TOOL_GROUPS=newsletter_readonly,server_directory_readonly,official_queue_readonly,unofficial_mirrors_readonly,official_mirrors_readonly,tenants_readonly,mcp_jsons_readonly,mcp_servers_readonly,redirects_readonly
+TOOL_GROUPS=newsletter_readonly,server_directory_readonly,official_queue_readonly,unofficial_mirrors_readonly,official_mirrors_readonly,tenants_readonly,mcp_jsons_readonly,mcp_servers_readonly,redirects_readonly,good_jobs_readonly,proctor_readonly,discovered_urls_readonly,moz_readonly
 ```
+
+Note: `proctor_readonly` includes only `get_exam_result` for retrieving stored results. `notifications` has no readonly variant since sending emails is always a write operation.
 
 Mix full and read-only access per group:
 
@@ -190,7 +232,7 @@ TOOL_GROUPS=newsletter,server_directory_readonly
 - Enable or disable specific tool groups by setting `TOOL_GROUPS` environment variable
 - Use `_readonly` suffixes to restrict groups to read-only operations (e.g., `server_directory_readonly`)
 - Use the `remote` array parameter in `save_mcp_implementation` to configure remote endpoints for MCP servers (transport, host_platform, authentication_method, etc.)
-- Use the `canonical` array parameter in `save_mcp_implementation` to set canonical URLs with scope (domain, subdomain, subfolder, or url)
+- Use the `canonical` array parameter in `save_mcp_implementation` to set canonical URLs with scope (domain, subdomain, or url)
 - Remote endpoints allow specifying how MCP servers can be accessed (direct URL, setup URL, authentication method, cost, etc.)
 - When updating existing remotes, include the remote `id` (number from `get_draft_mcp_implementations`) in the remote object
 - Use `list_mcp_servers` to browse MCP servers with filtering by status (draft/live/archived) and classification (official/community)
@@ -303,7 +345,7 @@ Add to your Claude Desktop configuration:
       "args": ["/path/to/pulsemcp-cms-admin/local/build/index.js"],
       "env": {
         "PULSEMCP_ADMIN_API_KEY": "your-api-key-here",
-        "TOOL_GROUPS": "newsletter,server_directory,official_queue,unofficial_mirrors,official_mirrors,tenants,mcp_jsons,mcp_servers,redirects"
+        "TOOL_GROUPS": "newsletter,server_directory,official_queue,unofficial_mirrors,official_mirrors,tenants,mcp_jsons,mcp_servers,redirects,good_jobs,proctor"
       }
     }
   }
@@ -320,7 +362,7 @@ For read-only access:
       "args": ["/path/to/pulsemcp-cms-admin/local/build/index.js"],
       "env": {
         "PULSEMCP_ADMIN_API_KEY": "your-api-key-here",
-        "TOOL_GROUPS": "newsletter_readonly,server_directory_readonly,official_queue_readonly,unofficial_mirrors_readonly,official_mirrors_readonly,tenants_readonly,mcp_jsons_readonly,mcp_servers_readonly,redirects_readonly"
+        "TOOL_GROUPS": "newsletter_readonly,server_directory_readonly,official_queue_readonly,unofficial_mirrors_readonly,official_mirrors_readonly,tenants_readonly,mcp_jsons_readonly,mcp_servers_readonly,redirects_readonly,good_jobs_readonly"
       }
     }
   }

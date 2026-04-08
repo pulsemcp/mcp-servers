@@ -6,6 +6,180 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [0.9.11] - 2026-03-16
+
+### Fixed
+
+- Fixed `extractStatus()` returning `'unknown'` for all exam results — status is at `data.result.status` in the real NDJSON structure, not `data.status`
+- Fixed `get_exam_result` mirror_id filter not matching any results — `mirror_id` is inside `line.data`, not at top-level `line.mirror_id`
+- Fixed `run_exam_for_mirror` summary showing `Total: 0, Passed: 0` — backend summary uses `data.total_exams`/`data.successful`, not top-level `line.total`/`line.passed`
+
+### Added
+
+- Added `moz` / `moz_readonly` tool group with 3 read-only tools for MOZ SEO metrics:
+  - `get_moz_metrics` — fetch live URL metrics from the MOZ API (page authority, domain authority, spam score, link counts)
+  - `get_moz_backlinks` — fetch live backlink data from the MOZ API (source pages, anchor text, domain authority)
+  - `get_moz_stored_metrics` — list stored/historical MOZ data for a server's canonicals (with pagination, filtering by canonical_id, server lookup by ID or slug)
+
+## [0.9.10] - 2026-03-13
+
+### Added
+
+- Added `known_missing_init_tools_list_filter_to` and `known_missing_auth_check_filter_to` fields to `list_proctor_runs` output — when set, known-missing suppression only applies to specific transports (e.g., `remotes[0]`) rather than blanket-suppressing all transports on the server
+
+## [0.9.9] - 2026-03-13
+
+### Added
+
+- Added `needs_indexing` status filter to `list_discovered_urls` — enables the ingest subagent to query URLs awaiting indexing via `WHERE processing_result = 'needs_indexing'`
+- Added `needs_indexing` and `drafted` result values to `mark_discovered_url_processed` — `drafted` is used when the ingest subagent creates a draft MCP implementation, `needs_indexing` is used by crawl jobs to flag URLs for the indexing pipeline
+- Updated `DiscoveredUrlResult` type to include `'needs_indexing' | 'drafted'`
+
+## [0.9.7] - 2026-03-12
+
+### Added
+
+- Added `get_proctor_metadata` tool to the proctor toolset — returns available runtimes (with IDs and Docker images) and exam types from the Proctor API, enabling discovery of runtime IDs needed for `run_exam_for_mirror`
+
+## [0.9.6] - 2026-03-11
+
+### Fixed
+
+- Replaced all dynamic `await import()` calls in `PulseMCPAdminClient` with static imports to fix `Cannot find module` errors for `save-results-for-mirror.js` and `get-proctor-runs.js` in some production environments
+
+## [0.9.5] - 2026-03-10
+
+### Fixed
+
+- Fixed root `package-lock.json` version for `pulsemcp-cms-admin` (was stale at `0.9.3`, now correctly `0.9.5`)
+- Improved `known_missing` flag test assertions to verify per-server output sections, ensuring campfire does NOT show `Known Missing Auth Check` when that flag is `false`
+
+## [0.9.4] - 2026-03-10
+
+### Added
+
+- Added `known_missing_init_tools_list` and `known_missing_auth_check` flags to `list_proctor_runs` tool output — when `true`, the tool now renders "Known Missing Init Tools List: yes" and/or "Known Missing Auth Check: yes" for each server, enabling the Proctor runner agent to skip exams that are known to fail (e.g., OAuth flows that can never complete)
+- Added test coverage verifying `known_missing` flags render correctly when `true` and are omitted when `false`
+
+## [0.9.3] - 2026-03-09
+
+### Improved
+
+- Clarified omission semantics in `save_mcp_implementation` and `update_mcp_server` tool descriptions — in `save_mcp_implementation`, documents that omitting `remote`/`canonical` leaves existing values unchanged; in `update_mcp_server`, documents the same for `remotes`/`canonical_urls`/`tags`. Providing these fields replaces ALL existing entries, and passing an empty array deletes all entries. Previously this behavior was ambiguous, leading to confusion about whether omitting fields would clear data.
+- Added canonical URLs and remote endpoints to `save_mcp_implementation` create/update response output — the response now shows canonical URL and remote endpoint counts with details when the API returns them, so callers can verify state immediately. Also adds a tip to use `get_mcp_server` for full verification after creation.
+- Updated `save_mcp_implementation` CREATE example to show remote endpoints and canonical URLs can be included during creation (not just on update).
+
+## [0.9.2] - 2026-03-06
+
+### Added
+
+- Added `verified_no_remote_canonicals` boolean field to MCP server tools — distinguishes "hasn't been checked for remote canonical URLs" from "checked and confirmed none exist". Available in `get_mcp_server` / `update_mcp_server` / `save_mcp_implementation` tools. The field lives on the MCPServer record (not the implementation) and is read from the `mcp_server` nested object in API responses.
+
+## [0.9.1] - 2026-03-05
+
+### Changed
+
+- **BREAKING**: Removed `subfolder` from canonical URL scope enum — valid scopes are now `domain`, `subdomain`, and `url` only. The `subfolder` scope has been removed from the REST API.
+
+## [0.9.0] - 2026-03-02
+
+### Added
+
+- Added `list_proctor_runs` tool to the proctor toolset — lists proctor run summaries for MCP servers showing testing status, auth-check/tools-list results, and server metadata. Supports search, filtering by recommended status and tenant IDs, sorting, and pagination. Read-only (included in `proctor_readonly` group).
+
+## [0.8.0] - 2026-03-02
+
+### Changed
+
+- **BREAKING**: Removed `results` array parameter from `save_results_for_mirror` tool — `result_id` (from `run_exam_for_mirror`) is now the only way to provide exam results. This simplifies the tool interface and ensures results always flow through the server-side store, avoiding large payloads in LLM context.
+
+## [0.7.4] - 2026-03-01
+
+### Fixed
+
+- Fixed `save_results_for_mirror` not unwrapping double-nested `data.result.result` from real proctor API responses — the proctor API returns exam payloads at `data.result.result` (not `data.result`), so `{input, output, processedBy}` was still wrapped in an envelope containing `exam_id`, `machine_id`, `logs`, etc. Now recursively unwraps nested `result` objects to extract the actual payload.
+
+## [0.7.3] - 2026-03-01
+
+### Fixed
+
+- Fixed `save_results_for_mirror` saving wrong JSON structure via `result_id` — the API client was nesting exam result fields (input, output, processedBy) under an extra `data` key, producing `{status, data: {input, output, processedBy}}` instead of the flat `{status, input, output, processedBy}` format the PulseMCP dashboard expects. Now spreads result data fields directly into the result object.
+
+## [0.7.2] - 2026-03-01
+
+### Fixed
+
+- Fixed `save_results_for_mirror` saving empty `output` when using `result_id` — the proctor API returns output data nested inside `line.data.result`, but the tool was passing the entire `line.data` wrapper (containing metadata like `mirror_id`, `exam_id`) as the result data, causing `output` to be nested too deeply for the backend to find. Now extracts `line.data.result` when present so that `output` is at the expected depth.
+
+## [0.7.1] - 2026-02-28
+
+### Fixed
+
+- Replaced in-memory exam result store with file-based storage in `/tmp/` — results now persist across tool calls without relying on process memory
+- Fixed `exam_id` showing as "unknown" in display metadata and save operations — now extracts `exam_id` from the data payload (`line.data.exam_id`) when not present at the top level of the stream line
+- Fixed `save_results_for_mirror` to read `exam_id` and `status` from the actual data payload instead of potentially empty top-level display fields
+
+## [0.7.0] - 2026-02-28
+
+### Added
+
+- Added server-side in-memory result store for proctor exam results with UUID-based `result_id` references
+- `run_exam_for_mirror` now stores full results server-side and returns a truncated summary with a `result_id` — large keys like tool input schemas are truncated to keep responses within MCP size limits
+- Added `get_exam_result` tool to retrieve full untruncated exam results on demand, with optional filtering by section (`exam_results`, `logs`, `summary`, `errors`) and `mirror_id`
+- `save_results_for_mirror` now accepts a `result_id` instead of requiring the full results payload — the server retrieves the stored result automatically, eliminating the LLM context round-trip for large payloads
+- Added `proctor_readonly` tool group variant containing `get_exam_result` for read-only access to stored results
+- Bounded in-memory store with MAX_RESULTS=100 FIFO eviction to prevent unbounded memory growth
+- Automatic store cleanup after successful save via `save_results_for_mirror`
+- `save_results_for_mirror` rejects providing both `result_id` and `results` to prevent ambiguity
+
+## [0.6.14] - 2026-02-28
+
+### Changed
+
+- Moved `send_impl_posted_notif` from `server_directory` group to new dedicated `notifications` tool group for notification email isolation
+- Added `notifications` as a new base tool group (write-only, no readonly variant)
+
+## [0.6.13] - 2026-02-28
+
+### Fixed
+
+- Fixed `save_results_for_mirror` client library to nest each result under a `result` key as expected by the PulseMCP Admin API (`{exam_id, result: {status, data}}` instead of flat `{exam_id, status, data}`)
+- Fixed `save_results_for_mirror` error response parsing to handle both string errors (e.g., `["Missing exam_id or result data for entry"]`) and object errors (e.g., `[{exam_id, error}]`) from the API
+
+## [0.6.12] - 2026-02-27
+
+### Fixed
+
+- Fixed API endpoint paths for discovered_urls tools from `/admin/api/discovered_urls` to `/api/discovered_urls` — the discovered_urls endpoints use a different path prefix than other admin endpoints
+
+## [0.6.11] - 2026-02-25
+
+### Added
+
+- Added `discovered_urls` and `discovered_urls_readonly` tool groups for managing discovered URLs that need processing into MCP implementations
+  - `list_discovered_urls` - List discovered URLs filtered by processing status (pending/processed/all) with pagination, ordered by oldest first
+  - `mark_discovered_url_processed` - Mark a discovered URL as processed with a result (posted/skipped/rejected/error), optional notes, and optional MCP implementation ID
+  - `get_discovered_url_stats` - Get summary statistics including pending count and today's processing breakdown
+
+### Fixed
+
+- Improved 422 error handling in `mark_discovered_url_processed` to handle both `{ errors: [] }` and `{ error: string }` Rails response formats
+- Fixed trailing whitespace in `get_discovered_url_stats` output (added `.trim()` for consistency with other tools)
+
+## [0.6.10] - 2026-02-24
+
+### Added
+
+- Added `proctor` tool group for proctor exam execution and result storage (no readonly variant — both tools trigger side effects)
+  - `run_exam_for_mirror` - Run proctor exams (auth-check, init-tools-list, or both) against unofficial mirrors via Fly Machines
+  - `save_results_for_mirror` - Save proctor exam results for an unofficial mirror with automatic sensitive data redaction
+- Expanded `server_directory` tool group to be a comprehensive superset that includes tools from `mcp_servers`, `unofficial_mirrors`, `official_mirrors`, `official_queue`, and `mcp_jsons` groups for unified server directory management
+
+### Changed
+
+- **BREAKING**: Expanded `server_directory` tool group from 5 tools to 27 tools. Existing deployments using `TOOL_GROUPS=server_directory` will now expose additional tools including write operations from `mcp_servers`, `unofficial_mirrors`, `official_mirrors`, `official_queue`, and `mcp_jsons` groups. If you want the original 5-tool scope, switch to a more specific group like `mcp_jsons` or use readonly variants.
+- Tool definitions now support multiple group memberships, allowing tools to appear in both their specific group and the broader `server_directory` superset
+
 ## [0.6.9] - 2026-02-20
 
 ### Added

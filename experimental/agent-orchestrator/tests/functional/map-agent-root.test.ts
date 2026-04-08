@@ -15,6 +15,7 @@ describe('mapAgentRoot', () => {
       subdirectory: 'experimental/twist',
       default_stop_condition: 'open-reviewed-green-pr',
       default_mcp_servers: ['github-development'],
+      default_skills: ['discovery-classify', 'discovery-validate'],
       custom: false,
       default: true,
     };
@@ -30,12 +31,16 @@ describe('mapAgentRoot', () => {
       default_subdirectory: 'experimental/twist',
       default_stop_condition: 'open-reviewed-green-pr',
       default_mcp_servers: ['github-development'],
+      default_skills: ['discovery-classify', 'discovery-validate'],
     });
 
     // Verify renamed fields specifically
     expect(result.title).toBe(raw.display_name);
     expect(result.git_root).toBe(raw.url);
     expect(result.default_subdirectory).toBe(raw.subdirectory);
+
+    // Verify passthrough fields
+    expect(result.default_skills).toEqual(raw.default_skills);
 
     // Verify API-only fields are not present
     expect(result).not.toHaveProperty('custom');
@@ -64,6 +69,7 @@ describe('mapAgentRoot', () => {
       default_subdirectory: undefined,
       default_stop_condition: undefined,
       default_mcp_servers: undefined,
+      default_skills: undefined,
     });
   });
 });

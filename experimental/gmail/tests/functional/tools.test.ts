@@ -5,7 +5,8 @@ import { listEmailConversationsTool } from '../../shared/src/tools/list-email-co
 import { getEmailConversationTool } from '../../shared/src/tools/get-email-conversation.js';
 import { searchEmailConversationsTool } from '../../shared/src/tools/search-email-conversations.js';
 import { changeEmailConversationTool } from '../../shared/src/tools/change-email-conversation.js';
-import { draftEmailTool } from '../../shared/src/tools/draft-email.js';
+import { upsertDraftEmailTool } from '../../shared/src/tools/draft-email.js';
+import { listDraftEmailsTool } from '../../shared/src/tools/list-draft-emails.js';
 import { sendEmailTool } from '../../shared/src/tools/send-email.js';
 import { downloadEmailAttachmentsTool } from '../../shared/src/tools/download-email-attachments.js';
 import type { IGmailClient } from '../../shared/src/server.js';
@@ -22,6 +23,8 @@ describe('Gmail MCP Server Tools', () => {
   beforeEach(() => {
     mockClient = createMockGmailClient();
     mockServer = {} as Server;
+    // Disable elicitation in functional tests (no real server for elicitation)
+    process.env.ELICITATION_ENABLED = 'false';
   });
 
   describe('list_email_conversations', () => {
@@ -546,28 +549,46 @@ describe('Gmail MCP Server Tools', () => {
     });
   });
 
-  describe('draft_email', () => {
-    it('should create a draft', async () => {
-      const tool = draftEmailTool(mockServer, () => mockClient);
+  describe('upsert_draft_email', () => {
+    it('should create a draft with plaintext_body', async () => {
+      const tool = upsertDraftEmailTool(mockServer, () => mockClient);
       const result = await tool.handler({
         to: 'recipient@example.com',
         subject: 'Test Subject',
-        body: 'Test body content',
+        plaintext_body: 'Test body content',
       });
 
       expect(result.content[0].text).toContain('Draft created successfully');
       expect(result.content[0].text).toContain('Draft ID:');
       expect(result.content[0].text).toContain('recipient@example.com');
       expect(result.content[0].text).toContain('Test Subject');
+      expect(result.content[0].text).toContain('**Format:** Plain text');
       expect(mockClient.createDraft).toHaveBeenCalled();
     });
 
-    it('should create a draft with CC and BCC', async () => {
-      const tool = draftEmailTool(mockServer, () => mockClient);
+    it('should create a draft with html_body', async () => {
+      const tool = upsertDraftEmailTool(mockServer, () => mockClient);
       const result = await tool.handler({
         to: 'recipient@example.com',
         subject: 'Test Subject',
-        body: 'Test body content',
+        html_body: '<p>Hello <b>World</b></p>',
+      });
+
+      expect(result.content[0].text).toContain('Draft created successfully');
+      expect(result.content[0].text).toContain('**Format:** HTML');
+      expect(mockClient.createDraft).toHaveBeenCalledWith(
+        expect.objectContaining({
+          htmlBody: '<p>Hello <b>World</b></p>',
+        })
+      );
+    });
+
+    it('should create a draft with CC and BCC', async () => {
+      const tool = upsertDraftEmailTool(mockServer, () => mockClient);
+      const result = await tool.handler({
+        to: 'recipient@example.com',
+        subject: 'Test Subject',
+        plaintext_body: 'Test body content',
         cc: 'cc@example.com',
         bcc: 'bcc@example.com',
       });
@@ -578,11 +599,11 @@ describe('Gmail MCP Server Tools', () => {
     });
 
     it('should create a reply draft with thread_id', async () => {
-      const tool = draftEmailTool(mockServer, () => mockClient);
+      const tool = upsertDraftEmailTool(mockServer, () => mockClient);
       const result = await tool.handler({
         to: 'recipient@example.com',
         subject: 'Re: Test Subject',
-        body: 'Test reply content',
+        plaintext_body: 'Test reply content',
         thread_id: 'thread_001',
         reply_to_email_id: 'msg_001',
       });
@@ -592,27 +613,291 @@ describe('Gmail MCP Server Tools', () => {
       expect(result.content[0].text).toContain('reply in an existing conversation');
     });
 
-    it('should require to, subject, and body parameters', async () => {
-      const tool = draftEmailTool(mockServer, () => mockClient);
+    it('should require at least one of plaintext_body or html_body', async () => {
+      const tool = upsertDraftEmailTool(mockServer, () => mockClient);
+      const result = await tool.handler({
+        to: 'test@example.com',
+        subject: 'Test Subject',
+      });
+
+      expect(result.isError).toBe(true);
+    });
+
+    it('should create a multipart draft when both plaintext_body and html_body are provided', async () => {
+      const tool = upsertDraftEmailTool(mockServer, () => mockClient);
+      const result = await tool.handler({
+        to: 'recipient@example.com',
+        subject: 'Test Subject',
+        plaintext_body: 'Plain text version',
+        html_body: '<p>HTML version</p>',
+      });
+
+      expect(result.content[0].text).toContain('Draft created successfully');
+      expect(result.content[0].text).toContain('**Format:** Multipart (plain text + HTML)');
+      expect(mockClient.createDraft).toHaveBeenCalledWith(
+        expect.objectContaining({
+          plaintextBody: 'Plain text version',
+          htmlBody: '<p>HTML version</p>',
+        })
+      );
+    });
+
+    it('should require to and subject parameters', async () => {
+      const tool = upsertDraftEmailTool(mockServer, () => mockClient);
       const result = await tool.handler({ to: 'test@example.com' });
 
       expect(result.isError).toBe(true);
     });
+
+    it('should update an existing draft when draft_id is provided', async () => {
+      const tool = upsertDraftEmailTool(mockServer, () => mockClient);
+
+      // First create a draft
+      const createResult = await tool.handler({
+        to: 'recipient@example.com',
+        subject: 'Original Subject',
+        plaintext_body: 'Original body',
+      });
+      expect(createResult.content[0].text).toContain('Draft created successfully');
+
+      // Extract draft ID
+      const draftIdMatch = createResult.content[0].text.match(/\*\*Draft ID:\*\*\s*(\S+)/);
+      expect(draftIdMatch).not.toBeNull();
+      const draftId = draftIdMatch![1];
+
+      // Update the draft
+      const updateResult = await tool.handler({
+        draft_id: draftId,
+        to: 'updated@example.com',
+        subject: 'Updated Subject',
+        plaintext_body: 'Updated body',
+      });
+
+      expect(updateResult.content[0].text).toContain('Draft updated successfully');
+      expect(updateResult.content[0].text).toContain(`**Draft ID:** ${draftId}`);
+      expect(updateResult.content[0].text).toContain('updated@example.com');
+      expect(updateResult.content[0].text).toContain('Updated Subject');
+      expect(mockClient.updateDraft).toHaveBeenCalledWith(
+        draftId,
+        expect.objectContaining({
+          to: 'updated@example.com',
+          subject: 'Updated Subject',
+          plaintextBody: 'Updated body',
+        })
+      );
+    });
+
+    it('should return error when updating a non-existent draft', async () => {
+      const tool = upsertDraftEmailTool(mockServer, () => mockClient);
+      const result = await tool.handler({
+        draft_id: 'non_existent_draft',
+        to: 'recipient@example.com',
+        subject: 'Test',
+        plaintext_body: 'Test',
+      });
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('Error updating draft');
+    });
+
+    it('should delete an existing draft when delete is true', async () => {
+      const tool = upsertDraftEmailTool(mockServer, () => mockClient);
+
+      // First create a draft
+      const createResult = await tool.handler({
+        to: 'recipient@example.com',
+        subject: 'Draft to Delete',
+        plaintext_body: 'This will be deleted',
+      });
+      expect(createResult.content[0].text).toContain('Draft created successfully');
+
+      // Extract draft ID
+      const draftIdMatch = createResult.content[0].text.match(/\*\*Draft ID:\*\*\s*(\S+)/);
+      expect(draftIdMatch).not.toBeNull();
+      const draftId = draftIdMatch![1];
+
+      // Delete the draft
+      const deleteResult = await tool.handler({
+        draft_id: draftId,
+        delete: true,
+      });
+
+      expect(deleteResult.content[0].text).toContain('Draft deleted successfully');
+      expect(deleteResult.content[0].text).toContain(`**Draft ID:** ${draftId}`);
+      expect(deleteResult.isError).toBeUndefined();
+      expect(mockClient.deleteDraft).toHaveBeenCalledWith(draftId);
+    });
+
+    it('should return error when deleting a non-existent draft', async () => {
+      const tool = upsertDraftEmailTool(mockServer, () => mockClient);
+      const result = await tool.handler({
+        draft_id: 'non_existent_draft',
+        delete: true,
+      });
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('Error deleting draft');
+    });
+
+    it('should return error when delete is true but draft_id is missing', async () => {
+      const tool = upsertDraftEmailTool(mockServer, () => mockClient);
+      const result = await tool.handler({
+        delete: true,
+      });
+
+      expect(result.isError).toBe(true);
+    });
+
+    it('should ignore other parameters when delete is true', async () => {
+      const tool = upsertDraftEmailTool(mockServer, () => mockClient);
+
+      // Create a draft first
+      const createResult = await tool.handler({
+        to: 'recipient@example.com',
+        subject: 'Draft to Delete',
+        plaintext_body: 'Body content',
+      });
+      const draftIdMatch = createResult.content[0].text.match(/\*\*Draft ID:\*\*\s*(\S+)/);
+      const draftId = draftIdMatch![1];
+
+      // Delete with extra params — they should be ignored
+      const deleteResult = await tool.handler({
+        draft_id: draftId,
+        delete: true,
+        to: 'someone@example.com',
+        subject: 'Ignored Subject',
+        plaintext_body: 'Ignored body',
+      });
+
+      expect(deleteResult.content[0].text).toContain('Draft deleted successfully');
+      expect(mockClient.deleteDraft).toHaveBeenCalledWith(draftId);
+      // createDraft should have been called exactly once (for the initial creation, not during delete)
+      expect(mockClient.createDraft).toHaveBeenCalledTimes(1);
+      // updateDraft should never have been called
+      expect(mockClient.updateDraft).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('list_draft_emails', () => {
+    it('should return empty message when no drafts exist', async () => {
+      const tool = listDraftEmailsTool(mockServer, () => mockClient);
+      const result = await tool.handler({});
+
+      expect(result.content[0].text).toContain('No drafts found');
+    });
+
+    it('should list drafts after creating them', async () => {
+      // Create a draft first
+      const draftTool = upsertDraftEmailTool(mockServer, () => mockClient);
+      await draftTool.handler({
+        to: 'recipient@example.com',
+        subject: 'Test Draft',
+        plaintext_body: 'Test body',
+      });
+
+      const tool = listDraftEmailsTool(mockServer, () => mockClient);
+      const result = await tool.handler({});
+
+      expect(result.content[0].text).toContain('Found 1 draft(s)');
+      expect(result.content[0].text).toContain('Draft ID:');
+      expect(result.content[0].text).toContain('Test Draft');
+      expect(result.content[0].text).toContain('recipient@example.com');
+    });
+
+    it('should filter drafts by thread_id', async () => {
+      const draftTool = upsertDraftEmailTool(mockServer, () => mockClient);
+
+      // Create a draft with thread_id
+      await draftTool.handler({
+        to: 'recipient@example.com',
+        subject: 'Thread Draft',
+        plaintext_body: 'In thread',
+        thread_id: 'thread_001',
+        reply_to_email_id: 'msg_001',
+      });
+
+      // Create another draft without thread_id
+      await draftTool.handler({
+        to: 'other@example.com',
+        subject: 'Other Draft',
+        plaintext_body: 'Not in thread',
+      });
+
+      const tool = listDraftEmailsTool(mockServer, () => mockClient);
+      const result = await tool.handler({ thread_id: 'thread_001' });
+
+      expect(result.content[0].text).toContain('Found 1 draft(s)');
+      expect(result.content[0].text).toContain('Thread Draft');
+      expect(result.content[0].text).not.toContain('Other Draft');
+    });
+
+    it('should return empty message when no drafts match thread_id', async () => {
+      const tool = listDraftEmailsTool(mockServer, () => mockClient);
+      const result = await tool.handler({ thread_id: 'nonexistent_thread' });
+
+      expect(result.content[0].text).toContain('No drafts found');
+    });
+
+    it('should handle errors', async () => {
+      (mockClient.listDrafts as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('API error'));
+      const tool = listDraftEmailsTool(mockServer, () => mockClient);
+      const result = await tool.handler({});
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('Error listing drafts');
+    });
   });
 
   describe('send_email', () => {
-    it('should send a new email', async () => {
+    it('should send a new email with plaintext_body', async () => {
       const tool = sendEmailTool(mockServer, () => mockClient);
       const result = await tool.handler({
         to: 'recipient@example.com',
         subject: 'Test Subject',
-        body: 'Test body content',
+        plaintext_body: 'Test body content',
       });
 
       expect(result.content[0].text).toContain('Email sent successfully');
       expect(result.content[0].text).toContain('Message ID:');
       expect(result.content[0].text).toContain('Thread ID:');
+      expect(result.content[0].text).toContain('**Format:** Plain text');
       expect(mockClient.sendMessage).toHaveBeenCalled();
+    });
+
+    it('should send a new email with html_body', async () => {
+      const tool = sendEmailTool(mockServer, () => mockClient);
+      const result = await tool.handler({
+        to: 'recipient@example.com',
+        subject: 'Test Subject',
+        html_body: '<p>Hello <a href="https://example.com">World</a></p>',
+      });
+
+      expect(result.content[0].text).toContain('Email sent successfully');
+      expect(result.content[0].text).toContain('**Format:** HTML');
+      expect(mockClient.sendMessage).toHaveBeenCalledWith(
+        expect.objectContaining({
+          htmlBody: '<p>Hello <a href="https://example.com">World</a></p>',
+        })
+      );
+    });
+
+    it('should send a multipart email when both plaintext_body and html_body are provided', async () => {
+      const tool = sendEmailTool(mockServer, () => mockClient);
+      const result = await tool.handler({
+        to: 'recipient@example.com',
+        subject: 'Test Subject',
+        plaintext_body: 'Plain text version',
+        html_body: '<p>HTML version</p>',
+      });
+
+      expect(result.content[0].text).toContain('Email sent successfully');
+      expect(result.content[0].text).toContain('**Format:** Multipart (plain text + HTML)');
+      expect(mockClient.sendMessage).toHaveBeenCalledWith(
+        expect.objectContaining({
+          plaintextBody: 'Plain text version',
+          htmlBody: '<p>HTML version</p>',
+        })
+      );
     });
 
     it('should send a draft', async () => {
@@ -620,7 +905,7 @@ describe('Gmail MCP Server Tools', () => {
       await (mockClient.createDraft as ReturnType<typeof vi.fn>)({
         to: 'test@example.com',
         subject: 'Test',
-        body: 'Test',
+        plaintextBody: 'Test',
       });
 
       const tool = sendEmailTool(mockServer, () => mockClient);
@@ -637,7 +922,7 @@ describe('Gmail MCP Server Tools', () => {
       const result = await tool.handler({
         to: 'recipient@example.com',
         subject: 'Re: Test Subject',
-        body: 'Test reply content',
+        plaintext_body: 'Test reply content',
         thread_id: 'thread_001',
         reply_to_email_id: 'msg_001',
       });
@@ -646,9 +931,19 @@ describe('Gmail MCP Server Tools', () => {
       expect(result.content[0].text).toContain('reply in an existing conversation');
     });
 
-    it('should require either from_draft_id OR to/subject/body', async () => {
+    it('should require either from_draft_id OR to/subject/plaintext_body|html_body', async () => {
       const tool = sendEmailTool(mockServer, () => mockClient);
       const result = await tool.handler({});
+
+      expect(result.isError).toBe(true);
+    });
+
+    it('should reject when to and subject provided but no body', async () => {
+      const tool = sendEmailTool(mockServer, () => mockClient);
+      const result = await tool.handler({
+        to: 'test@example.com',
+        subject: 'Test',
+      });
 
       expect(result.isError).toBe(true);
     });
@@ -661,7 +956,7 @@ describe('Gmail MCP Server Tools', () => {
       const result = await tool.handler({
         to: 'test@example.com',
         subject: 'Test',
-        body: 'Test',
+        plaintext_body: 'Test',
       });
 
       expect(result.isError).toBe(true);

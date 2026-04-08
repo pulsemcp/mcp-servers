@@ -19,6 +19,7 @@ export {
 export type {
   FlightOffer,
   FlightSegment,
+  FlightExtensions,
   DateGridEntry,
   DateGridResult,
   AirportResult,

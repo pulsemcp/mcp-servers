@@ -19,7 +19,7 @@ The response includes:
 - **Basic info**: name, descriptions, status, classification, implementation language
 - **Provider**: organization/person details
 - **Source code location**: GitHub repository info with stars and last update
-- **Canonical URLs**: authoritative URLs with scope (domain, subdomain, subfolder, url)
+- **Canonical URLs**: authoritative URLs with scope (domain, subdomain, url)
 - **Remote endpoints**: all deployment endpoints with transport, platform, auth, and cost info
 - **Tags**: categorization tags
 - **Download statistics**: npm download estimates
@@ -53,7 +53,7 @@ Example response:
     "github_stars": 5000
   },
   "canonical_urls": [
-    { "url": "https://github.com/modelcontextprotocol/servers", "scope": "subfolder" }
+    { "url": "https://github.com/modelcontextprotocol/servers", "scope": "domain" }
   ],
   "remotes": [
     {
@@ -108,6 +108,9 @@ Example response:
         }
         if (server.recommended !== undefined) {
           content += `**Recommended:** ${server.recommended ? 'Yes' : 'No'}\n`;
+        }
+        if (server.verified_no_remote_canonicals !== undefined) {
+          content += `**Verified No Remote Canonicals:** ${server.verified_no_remote_canonicals ? 'Yes' : 'No'}\n`;
         }
 
         if (server.short_description) {

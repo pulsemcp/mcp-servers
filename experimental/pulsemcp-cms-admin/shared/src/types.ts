@@ -116,7 +116,7 @@ export interface RemoteEndpointParams {
 
 export interface CanonicalUrlParams {
   url: string;
-  scope: 'domain' | 'subdomain' | 'subfolder' | 'url';
+  scope: 'domain' | 'subdomain' | 'url';
   note?: string;
 }
 
@@ -137,6 +137,8 @@ export interface MCPServer {
   downloads_estimate_last_four_weeks?: number;
   visitors_estimate_total?: number;
   mcp_server_remotes_count?: number;
+  recommended?: boolean;
+  verified_no_remote_canonicals?: boolean;
   tags?: MCPServerTag[];
   remotes?: MCPServerRemote[];
 }
@@ -235,6 +237,7 @@ export interface SaveMCPImplementationParams {
 
   // Flags
   recommended?: boolean; // Mark this server as recommended by PulseMCP
+  verified_no_remote_canonicals?: boolean; // Mark that this server has been verified to have no remote canonical URLs
 
   // Date overrides
   created_on_override?: string; // ISO date string to override the automatically derived created date
@@ -294,6 +297,7 @@ export interface CreateMCPImplementationParams {
 
   // Flags
   recommended?: boolean; // Mark this server as recommended by PulseMCP
+  verified_no_remote_canonicals?: boolean; // Mark that this server has been verified to have no remote canonical URLs
 
   // Date overrides
   created_on_override?: string; // ISO date string to override the automatically derived created date
@@ -636,6 +640,7 @@ export interface UnifiedMCPServer {
 
   // Flags
   recommended?: boolean; // Whether this server is recommended by PulseMCP
+  verified_no_remote_canonicals?: boolean; // Whether this server has been verified to have no remote canonical URLs
 
   // Canonical URLs
   canonical_urls?: CanonicalUrl[];
@@ -708,6 +713,7 @@ export interface UpdateUnifiedMCPServerParams {
 
   // Flags
   recommended?: boolean; // Mark this server as recommended by PulseMCP
+  verified_no_remote_canonicals?: boolean; // Mark that this server has been verified to have no remote canonical URLs
 
   // Date overrides
   created_on_override?: string; // ISO date string to override the automatically derived created date
@@ -840,4 +846,233 @@ export interface GoodJobCleanupResponse {
   success: boolean;
   message: string;
   deleted_count?: number;
+}
+
+// ============================================================
+// Proctor Types
+// Proctor exam execution and result storage for unofficial mirrors
+// ============================================================
+
+export interface ProctorExamStreamLine {
+  type: 'log' | 'exam_result' | 'summary' | 'error';
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  [key: string]: any;
+}
+
+export interface ProctorRunExamParams {
+  mirror_ids: number[];
+  runtime_id: string;
+  exam_type: 'auth-check' | 'init-tools-list' | 'both';
+  max_retries?: number;
+}
+
+export interface ProctorRunExamResponse {
+  lines: ProctorExamStreamLine[];
+}
+
+export interface ProctorResultInput {
+  exam_id: string;
+  status: string;
+  data?: Record<string, unknown>;
+}
+
+export interface ProctorSaveResultsParams {
+  mirror_id: number;
+  runtime_id: string;
+  results: ProctorResultInput[];
+}
+
+export interface ProctorSaveResultsResponse {
+  saved: Array<{
+    exam_id: string;
+    proctor_result_id: number;
+  }>;
+  errors: Array<
+    | string
+    | {
+        exam_id: string;
+        error: string;
+      }
+  >;
+}
+
+export interface ProctorRun {
+  id: number;
+  slug: string;
+  name: string | null;
+  recommended: boolean;
+  mirrors_count: number;
+  tenant_count: number;
+  latest_version: string | null;
+  latest_mirror_id: number | null;
+  latest_mirror_name: string | null;
+  latest_tested: boolean;
+  last_auth_check_days: number | null;
+  last_tools_list_days: number | null;
+  auth_types: string[];
+  num_tools: number | null;
+  packages: string[];
+  remotes: string[];
+  known_missing_init_tools_list: boolean;
+  known_missing_auth_check: boolean;
+  known_missing_init_tools_list_filter_to: string | null;
+  known_missing_auth_check_filter_to: string | null;
+}
+
+export interface ProctorRunsResponse {
+  runs: ProctorRun[];
+  pagination?: {
+    current_page: number;
+    total_pages: number;
+    total_count: number;
+    has_next?: boolean;
+    limit?: number;
+  };
+}
+
+export interface GetProctorRunsParams {
+  q?: string;
+  recommended?: boolean;
+  tenant_ids?: string;
+  sort?:
+    | 'slug'
+    | 'name'
+    | 'mirrors'
+    | 'recommended'
+    | 'tenants'
+    | 'latest_tested'
+    | 'last_auth_check'
+    | 'last_tools_list';
+  direction?: 'asc' | 'desc';
+  limit?: number;
+  offset?: number;
+}
+
+export interface ProctorRuntime {
+  id: string;
+  name: string;
+  image: string;
+}
+
+export interface ProctorExam {
+  id: string;
+  name: string;
+  description: string;
+}
+
+export interface ProctorMetadataResponse {
+  runtimes: ProctorRuntime[];
+  exams: ProctorExam[];
+}
+
+// ============================================================
+// Discovered URL Types
+// For managing discovered URLs that need processing into MCP implementations
+// ============================================================
+
+export type DiscoveredUrlResult =
+  | 'posted'
+  | 'skipped'
+  | 'rejected'
+  | 'error'
+  | 'needs_indexing'
+  | 'drafted';
+
+export interface DiscoveredUrl {
+  id: number;
+  url: string;
+  source: string;
+  created_at: string;
+  metadata: Record<string, unknown>;
+}
+
+export interface DiscoveredUrlsResponse {
+  urls: DiscoveredUrl[];
+  has_more: boolean;
+  total_count: number;
+  page: number;
+  per_page: number;
+}
+
+export interface MarkDiscoveredUrlProcessedParams {
+  id: number;
+  result: DiscoveredUrlResult;
+  notes?: string;
+  mcp_implementation_id?: number;
+}
+
+export interface MarkDiscoveredUrlProcessedResponse {
+  success: boolean;
+  id: number;
+  processed_at: string;
+}
+
+export interface DiscoveredUrlStats {
+  pending: number;
+  processed_today: number;
+  posted_today: number;
+  skipped_today: number;
+  rejected_today: number;
+  errored_today: number;
+}
+
+// ============================================================
+// MOZ Types
+// MOZ URL metrics, backlinks, and stored historical data
+// ============================================================
+
+export interface MozMetrics {
+  page_authority?: number;
+  domain_authority?: number;
+  spam_score?: number;
+  root_domains_to_page?: number;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  [key: string]: any;
+}
+
+export interface MozMetricsResponse {
+  metrics: MozMetrics;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  raw_response: Record<string, any>;
+  processed_at: string;
+}
+
+export interface MozBacklink {
+  source_page?: string;
+  anchor_text?: string;
+  domain_authority?: number;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  [key: string]: any;
+}
+
+export interface MozBacklinksResponse {
+  backlinks: MozBacklink[];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  raw_response: Record<string, any>;
+  processed_at: string;
+}
+
+export interface MozStoredMetric {
+  id: number;
+  canonical_id: number;
+  canonical_url: string;
+  scope?: string;
+  timestamp: string;
+  triggered_by: string;
+  page_authority?: number;
+  root_domains_to_page?: number;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  site_metrics?: Record<string, any>;
+  created_at: string;
+}
+
+export interface MozStoredMetricsResponse {
+  data: MozStoredMetric[];
+  meta: {
+    current_page: number;
+    total_pages: number;
+    total_count: number;
+    has_next: boolean;
+    limit: number;
+  };
 }

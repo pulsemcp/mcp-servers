@@ -1,6 +1,6 @@
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { createRegisterTools } from './tools.js';
-import type { Channel, Message } from './types.js';
+import type { Channel, Message, SlackFile } from './types.js';
 
 /**
  * Slack API client interface
@@ -71,6 +71,29 @@ export interface ISlackClient {
    * Add a reaction to a message
    */
   addReaction(channelId: string, timestamp: string, emoji: string): Promise<void>;
+
+  /**
+   * Get file metadata from Slack
+   */
+  getFileInfo(fileId: string): Promise<SlackFile>;
+
+  /**
+   * Download a file from Slack (requires authenticated URL)
+   */
+  downloadFile(fileUrl: string): Promise<Buffer>;
+
+  /**
+   * Upload text content as a snippet/file to a channel
+   */
+  uploadSnippet(
+    content: string,
+    options: {
+      channelId: string;
+      filename?: string;
+      title?: string;
+      threadTs?: string;
+    }
+  ): Promise<SlackFile>;
 }
 
 /**
@@ -149,6 +172,29 @@ export class SlackClient implements ISlackClient {
   async addReaction(channelId: string, timestamp: string, emoji: string): Promise<void> {
     const { addReaction } = await import('./slack-client/lib/add-reaction.js');
     return addReaction(this.baseUrl, this.headers, channelId, timestamp, emoji);
+  }
+
+  async getFileInfo(fileId: string): Promise<SlackFile> {
+    const { getFileInfo } = await import('./slack-client/lib/get-file-info.js');
+    return getFileInfo(this.baseUrl, this.headers, fileId);
+  }
+
+  async downloadFile(fileUrl: string): Promise<Buffer> {
+    const { downloadFile } = await import('./slack-client/lib/download-file.js');
+    return downloadFile(this.headers, fileUrl);
+  }
+
+  async uploadSnippet(
+    content: string,
+    options: {
+      channelId: string;
+      filename?: string;
+      title?: string;
+      threadTs?: string;
+    }
+  ): Promise<SlackFile> {
+    const { uploadSnippet } = await import('./slack-client/lib/upload-snippet.js');
+    return uploadSnippet(this.baseUrl, this.headers, content, options);
   }
 }
 

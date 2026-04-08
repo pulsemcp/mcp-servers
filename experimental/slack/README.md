@@ -11,6 +11,7 @@ A Model Context Protocol (MCP) server for integrating with Slack workspaces. Thi
 - **Reply to Threads** - Continue threaded conversations
 - **Update Messages** - Edit previously posted messages
 - **React to Messages** - Add emoji reactions to messages
+- **Upload Snippets** - Upload text content as file snippets (for long content that exceeds message limits)
 
 ## Setup
 
@@ -38,6 +39,7 @@ A Model Context Protocol (MCP) server for integrating with Slack workspaces. Thi
    - `groups:history` - View messages in private channels
    - `chat:write` - Send messages
    - `reactions:write` - Add reactions
+   - `files:write` - Upload files and snippets
 5. Install the app to your workspace
 6. Copy the **Bot User OAuth Token** (starts with `xoxb-`)
 
@@ -85,12 +87,13 @@ Restart Claude Desktop and you should be ready to go!
 
 ### Write Tools
 
-| Tool                     | Description                        |
-| ------------------------ | ---------------------------------- |
-| `slack_post_message`     | Post a new message to a channel    |
-| `slack_reply_to_thread`  | Reply to an existing thread        |
-| `slack_update_message`   | Update a previously posted message |
-| `slack_react_to_message` | Add an emoji reaction to a message |
+| Tool                     | Description                                        |
+| ------------------------ | -------------------------------------------------- |
+| `slack_post_message`     | Post a new message to a channel                    |
+| `slack_reply_to_thread`  | Reply to an existing thread                        |
+| `slack_update_message`   | Update a previously posted message                 |
+| `slack_react_to_message` | Add an emoji reaction to a message                 |
+| `slack_upload_snippet`   | Upload text content as a file snippet to a channel |
 
 ## Tool Groups
 

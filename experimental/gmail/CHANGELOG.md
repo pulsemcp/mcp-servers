@@ -4,6 +4,102 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.4.5] - 2026-03-10
+
+### Added
+
+- Draft deletion support via `upsert_draft_email` tool — set `delete: true` with a `draft_id` to permanently delete a draft
+  - Useful for removing corrupted or unwanted drafts that can't be loaded in Gmail
+  - When `delete` is true, all other parameters (to, subject, body, etc.) are ignored
+  - Addresses [issue #428](https://github.com/pulsemcp/mcp-servers/issues/428)
+
+## [0.4.4] - 2026-03-09
+
+### Fixed
+
+- **SECURITY**: Elicitation confirmation gate now uses fail-safe design — only explicit `accept` allows email to send. Previously, unrecognized action values (e.g., `"declined"` instead of `"decline"`) would fall through and allow the send to proceed
+  - Addresses [issue #410](https://github.com/pulsemcp/mcp-servers/issues/410)
+
+## [0.4.3] - 2026-03-09
+
+### Fixed
+
+- Fixed publish build order: elicitation library is now built before the shared module that depends on it, with `--ignore-scripts` to avoid monorepo husky hook (fixes failed publishes of 0.3.0–0.4.2)
+
+## [0.4.2] - 2026-03-09
+
+### Fixed
+
+- Fixed publish build order: elicitation library is now built before the shared module that depends on it (fixes failed publishes of 0.3.0, 0.4.0, 0.4.1)
+
+## [0.4.1] - 2026-03-09
+
+### Changed
+
+- Updated bundled `@pulsemcp/mcp-elicitation` library to v1.0.1: HTTP fallback requests now automatically include `com.pulsemcp/session-id` in `_meta` when `ELICITATION_SESSION_ID` environment variable is set
+
+## [0.4.0] - 2026-03-09
+
+### Added
+
+- `list_draft_emails` tool for listing existing email drafts with optional thread filtering
+  - Returns draft ID, thread ID, recipients, subject, and preview snippet for each draft
+  - Optional `thread_id` parameter filters drafts belonging to a specific conversation
+  - Available in all tool groups (readonly, readwrite, readwrite_external)
+
+### Changed
+
+- **BREAKING**: Renamed `draft_email` tool to `upsert_draft_email`
+  - New optional `draft_id` parameter: when provided, updates the existing draft in-place instead of creating a new one
+  - When `draft_id` is omitted, behavior is unchanged (creates a new draft)
+  - Addresses [issue #406](https://github.com/pulsemcp/mcp-servers/issues/406)
+
+## [0.3.0] - 2026-03-08
+
+### Added
+
+- Elicitation support for `send_email` tool — prompts for user confirmation before sending emails
+  - Uses the new `@pulsemcp/mcp-elicitation` library for MCP-native elicitation with HTTP fallback
+  - Configurable via `ELICITATION_ENABLED` environment variable (defaults to `true`)
+  - When enabled with a supporting MCP client, displays email details (recipients, subject, CC/BCC) or draft ID for confirmation
+  - Supports native MCP elicitation protocol and HTTP-based fallback for clients without native support
+  - Gracefully handles decline, cancel, expiration, and explicit non-confirmation responses
+  - Safe NaN guards on numeric environment variables (`ELICITATION_TTL_MS`, `ELICITATION_POLL_INTERVAL_MS`) with minimum 1s poll interval
+  - Addresses [issue #384](https://github.com/pulsemcp/mcp-servers/issues/384)
+
+## [0.2.1] - 2026-03-05
+
+### Fixed
+
+- UTF-8 characters in email subject lines (e.g., em dashes, accented characters, emoji) are now properly encoded using RFC 2047 encoded-words, preventing character corruption in Gmail
+  - Addresses [issue #388](https://github.com/pulsemcp/mcp-servers/issues/388) (Bug 1)
+- Leading newlines in email body content are now stripped to prevent extra blank lines at the top of draft and sent emails
+  - Addresses [issue #388](https://github.com/pulsemcp/mcp-servers/issues/388) (Bug 2)
+
+## [0.2.0] - 2026-03-04
+
+### Changed
+
+- **BREAKING**: `draft_email` and `send_email` tools now use `plaintext_body` and `html_body` parameters instead of `body`
+  - At least one of `plaintext_body` or `html_body` must be provided
+  - If both are provided, a multipart/alternative email is sent with both versions
+  - Use `html_body` for rich text formatting (hyperlinks, bold, lists, etc.)
+  - Use `plaintext_body` for plain text emails
+  - When `html_body` is provided, the email is sent with `text/html` content type
+  - Addresses [issue #385](https://github.com/pulsemcp/mcp-servers/issues/385)
+
+## [0.1.2] - 2026-02-22
+
+### Added
+
+- `oauth-setup` CLI subcommand so personal Gmail users can obtain a refresh token directly via `npx gmail-workspace-mcp-server oauth-setup <client_id> <client_secret>` without cloning the repository or installing extra dependencies
+  - Addresses [issue #349](https://github.com/pulsemcp/mcp-servers/issues/349)
+
+### Fixed
+
+- OAuth setup no longer requires cloning the repo — the flow is now bundled in the published npm package as a built-in subcommand
+- Error messages now reference the working `npx gmail-workspace-mcp-server oauth-setup` command instead of the unavailable `npx tsx scripts/oauth-setup.ts`
+
 ## [0.1.1] - 2026-02-09
 
 ### Added

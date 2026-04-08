@@ -39,9 +39,16 @@ function validateEnvironment(): void {
 
   const optional: { name: string; description: string; defaultValue?: string }[] = [
     {
-      name: 'ENABLED_TOOLGROUPS',
-      description: 'Comma-separated list of tool groups to enable (readonly,write,admin)',
+      name: 'TOOL_GROUPS',
+      description:
+        'Comma-separated list of tool groups to enable (sessions,sessions_readonly,notifications,notifications_readonly,triggers,triggers_readonly,health,health_readonly)',
       defaultValue: 'all groups enabled',
+    },
+    {
+      name: 'ALLOWED_AGENT_ROOTS',
+      description:
+        'Comma-separated list of allowed agent root names. When set, only these agent roots are shown in get_configs and allowed in start_session (with their exact default MCP servers only)',
+      defaultValue: 'all agent roots allowed',
     },
     {
       name: 'SKIP_HEALTH_CHECKS',
@@ -85,8 +92,11 @@ function validateEnvironment(): void {
   }
 
   // Log warnings for common configuration issues
-  if (process.env.ENABLED_TOOLGROUPS) {
-    logWarning('config', `Tool groups filter active: ${process.env.ENABLED_TOOLGROUPS}`);
+  if (process.env.TOOL_GROUPS) {
+    logWarning('config', `Tool groups filter active: ${process.env.TOOL_GROUPS}`);
+  }
+  if (process.env.ALLOWED_AGENT_ROOTS) {
+    logWarning('config', `Allowed agent roots filter active: ${process.env.ALLOWED_AGENT_ROOTS}`);
   }
 }
 

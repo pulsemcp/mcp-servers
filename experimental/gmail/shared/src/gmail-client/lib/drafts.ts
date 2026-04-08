@@ -28,7 +28,8 @@ export async function createDraft(
   options: {
     to: string;
     subject: string;
-    body: string;
+    plaintextBody?: string;
+    htmlBody?: string;
     cc?: string;
     bcc?: string;
     threadId?: string;
@@ -132,6 +133,56 @@ export async function listDrafts(
     nextPageToken: data.nextPageToken,
     resultSizeEstimate: data.resultSizeEstimate,
   };
+}
+
+/**
+ * Updates an existing draft email
+ */
+export async function updateDraft(
+  baseUrl: string,
+  headers: Record<string, string>,
+  from: string,
+  draftId: string,
+  options: {
+    to: string;
+    subject: string;
+    plaintextBody?: string;
+    htmlBody?: string;
+    cc?: string;
+    bcc?: string;
+    threadId?: string;
+    inReplyTo?: string;
+    references?: string;
+  }
+): Promise<Draft> {
+  const url = `${baseUrl}/drafts/${draftId}`;
+
+  const rawMessage = buildMimeMessage(from, options);
+  const encodedMessage = toBase64Url(rawMessage);
+
+  const requestBody: {
+    message: { raw: string; threadId?: string };
+  } = {
+    message: {
+      raw: encodedMessage,
+    },
+  };
+
+  if (options.threadId) {
+    requestBody.message.threadId = options.threadId;
+  }
+
+  const response = await fetch(url, {
+    method: 'PUT',
+    headers,
+    body: JSON.stringify(requestBody),
+  });
+
+  if (!response.ok) {
+    handleApiError(response.status, 'updating draft', draftId);
+  }
+
+  return (await response.json()) as Draft;
 }
 
 /**

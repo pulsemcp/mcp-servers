@@ -202,17 +202,18 @@ function createMockClient(): IGmailClient {
     },
 
     async createDraft(options) {
+      const bodyContent = options.plaintextBody || options.htmlBody || '';
       const draft: Draft = {
         id: `draft_${draftIdCounter++}`,
         message: {
           id: `msg_${messageIdCounter++}`,
           threadId: options.threadId || `thread_${messageIdCounter}`,
           labelIds: ['DRAFT'],
-          snippet: options.body.substring(0, 100),
+          snippet: bodyContent.substring(0, 100),
           historyId: '12347',
           internalDate: String(Date.now()),
           payload: {
-            mimeType: 'text/plain',
+            mimeType: options.htmlBody ? 'text/html' : 'text/plain',
             headers: [
               { name: 'Subject', value: options.subject },
               { name: 'From', value: 'me@example.com' },
@@ -220,8 +221,8 @@ function createMockClient(): IGmailClient {
               { name: 'Date', value: new Date().toISOString() },
             ],
             body: {
-              size: options.body.length,
-              data: Buffer.from(options.body).toString('base64url'),
+              size: bodyContent.length,
+              data: Buffer.from(bodyContent).toString('base64url'),
             },
           },
         },
@@ -229,6 +230,42 @@ function createMockClient(): IGmailClient {
 
       mockDrafts.push(draft);
       return draft;
+    },
+
+    async updateDraft(draftId, options) {
+      const index = mockDrafts.findIndex((d) => d.id === draftId);
+      if (index === -1) {
+        throw new Error(`Draft not found: ${draftId}`);
+      }
+
+      const bodyContent = options.plaintextBody || options.htmlBody || '';
+      const updatedDraft: Draft = {
+        id: draftId,
+        message: {
+          id: mockDrafts[index].message.id,
+          threadId: options.threadId || mockDrafts[index].message.threadId,
+          labelIds: ['DRAFT'],
+          snippet: bodyContent.substring(0, 100),
+          historyId: '12347',
+          internalDate: String(Date.now()),
+          payload: {
+            mimeType: options.htmlBody ? 'text/html' : 'text/plain',
+            headers: [
+              { name: 'Subject', value: options.subject },
+              { name: 'From', value: 'me@example.com' },
+              { name: 'To', value: options.to },
+              { name: 'Date', value: new Date().toISOString() },
+            ],
+            body: {
+              size: bodyContent.length,
+              data: Buffer.from(bodyContent).toString('base64url'),
+            },
+          },
+        },
+      };
+
+      mockDrafts[index] = updatedDraft;
+      return updatedDraft;
     },
 
     async getDraft(draftId) {
@@ -264,15 +301,16 @@ function createMockClient(): IGmailClient {
     },
 
     async sendMessage(options) {
+      const bodyContent = options.plaintextBody || options.htmlBody || '';
       const sentMessage: Email = {
         id: `msg_${messageIdCounter++}`,
         threadId: options.threadId || `thread_${messageIdCounter}`,
         labelIds: ['SENT'],
-        snippet: options.body.substring(0, 100),
+        snippet: bodyContent.substring(0, 100),
         historyId: '12348',
         internalDate: String(Date.now()),
         payload: {
-          mimeType: 'text/plain',
+          mimeType: options.htmlBody ? 'text/html' : 'text/plain',
           headers: [
             { name: 'Subject', value: options.subject },
             { name: 'From', value: 'me@example.com' },
@@ -280,8 +318,8 @@ function createMockClient(): IGmailClient {
             { name: 'Date', value: new Date().toISOString() },
           ],
           body: {
-            size: options.body.length,
-            data: Buffer.from(options.body).toString('base64url'),
+            size: bodyContent.length,
+            data: Buffer.from(bodyContent).toString('base64url'),
           },
         },
       };

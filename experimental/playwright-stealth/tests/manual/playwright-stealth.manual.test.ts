@@ -34,6 +34,7 @@ describe('Playwright Client Manual Tests', () => {
           TIMEOUT: '30000',
           STEALTH_MODE: 'false',
           PATH: process.env.PATH || '',
+          PLAYWRIGHT_BROWSERS_PATH: process.env.PLAYWRIGHT_BROWSERS_PATH || '',
         },
       });
       await client.connect();
@@ -78,6 +79,67 @@ describe('Playwright Client Manual Tests', () => {
       }
     });
 
+    it('should take a screenshot of a specific element by CSS selector', async () => {
+      // Navigate to example.com first to ensure page is loaded
+      await client.callTool('browser_execute', {
+        code: `await page.goto('https://example.com');`,
+      });
+
+      const result = await client.callTool('browser_screenshot', {
+        selector: 'h1',
+      });
+
+      expect(result.isError).toBeFalsy();
+      expect(result.content.length).toBeGreaterThan(0);
+
+      // Find the image content
+      const imageContent = result.content.find(
+        (c: { type: string }) => (c as { type: string }).type === 'image'
+      ) as { type: string; data: string; mimeType: string } | undefined;
+
+      expect(imageContent).toBeDefined();
+      expect(imageContent!.mimeType).toBe('image/png');
+      expect(imageContent!.data.length).toBeGreaterThan(100);
+      console.log('Selector screenshot data size:', imageContent!.data.length, 'chars (base64)');
+
+      // Verify a resource_link is returned
+      const resourceLink = result.content.find(
+        (c: { type: string }) => (c as { type: string }).type === 'resource_link'
+      ) as { type: string; uri: string } | undefined;
+
+      expect(resourceLink).toBeDefined();
+      expect(resourceLink!.uri).toMatch(/^file:\/\//);
+      console.log('Selector screenshot saved to:', resourceLink!.uri);
+    });
+
+    it('should take a screenshot of a page region by clip coordinates', async () => {
+      const result = await client.callTool('browser_screenshot', {
+        clip: { x: 0, y: 0, width: 400, height: 300 },
+      });
+
+      expect(result.isError).toBeFalsy();
+      expect(result.content.length).toBeGreaterThan(0);
+
+      // Find the image content
+      const imageContent = result.content.find(
+        (c: { type: string }) => (c as { type: string }).type === 'image'
+      ) as { type: string; data: string; mimeType: string } | undefined;
+
+      expect(imageContent).toBeDefined();
+      expect(imageContent!.mimeType).toBe('image/png');
+      expect(imageContent!.data.length).toBeGreaterThan(100);
+      console.log('Clip screenshot data size:', imageContent!.data.length, 'chars (base64)');
+
+      // Verify a resource_link is returned
+      const resourceLink = result.content.find(
+        (c: { type: string }) => (c as { type: string }).type === 'resource_link'
+      ) as { type: string; uri: string } | undefined;
+
+      expect(resourceLink).toBeDefined();
+      expect(resourceLink!.uri).toMatch(/^file:\/\//);
+      console.log('Clip screenshot saved to:', resourceLink!.uri);
+    });
+
     it('should get browser state', async () => {
       const result = await client.callTool('browser_get_state', {});
 
@@ -113,6 +175,7 @@ describe('Playwright Client Manual Tests', () => {
           TIMEOUT: '30000',
           STEALTH_MODE: 'false',
           PATH: process.env.PATH || '',
+          PLAYWRIGHT_BROWSERS_PATH: process.env.PLAYWRIGHT_BROWSERS_PATH || '',
         },
       });
       await client.connect();
@@ -230,6 +293,7 @@ describe('Playwright Client Manual Tests', () => {
           TIMEOUT: '30000',
           STEALTH_MODE: 'true',
           PATH: process.env.PATH || '',
+          PLAYWRIGHT_BROWSERS_PATH: process.env.PLAYWRIGHT_BROWSERS_PATH || '',
         },
       });
       await client.connect();
@@ -309,6 +373,7 @@ describe('Playwright Client Manual Tests', () => {
           TIMEOUT: '30000',
           STEALTH_MODE: 'false',
           PATH: process.env.PATH || '',
+          PLAYWRIGHT_BROWSERS_PATH: process.env.PLAYWRIGHT_BROWSERS_PATH || '',
         },
       });
       await client.connect();
@@ -352,6 +417,7 @@ describe('Playwright Client Manual Tests', () => {
           TIMEOUT: '30000',
           STEALTH_MODE: 'true',
           PATH: process.env.PATH || '',
+          PLAYWRIGHT_BROWSERS_PATH: process.env.PLAYWRIGHT_BROWSERS_PATH || '',
         },
       });
       await client.connect();
@@ -396,6 +462,7 @@ describe('Playwright Client Manual Tests', () => {
           TIMEOUT: '5000',
           STEALTH_MODE: 'false',
           PATH: process.env.PATH || '',
+          PLAYWRIGHT_BROWSERS_PATH: process.env.PLAYWRIGHT_BROWSERS_PATH || '',
         },
       });
       await client.connect();
@@ -458,6 +525,7 @@ describe('Playwright Client Manual Tests', () => {
         STEALTH_MODE: 'false',
         PROXY_URL: proxyUrl!,
         PATH: process.env.PATH || '',
+        PLAYWRIGHT_BROWSERS_PATH: process.env.PLAYWRIGHT_BROWSERS_PATH || '',
       };
       if (proxyUsername) env.PROXY_USERNAME = proxyUsername;
       if (proxyPassword) env.PROXY_PASSWORD = proxyPassword;
@@ -504,6 +572,7 @@ describe('Playwright Client Manual Tests', () => {
           TIMEOUT: '60000',
           STEALTH_MODE: 'false',
           PATH: process.env.PATH || '',
+          PLAYWRIGHT_BROWSERS_PATH: process.env.PLAYWRIGHT_BROWSERS_PATH || '',
         },
       });
       await directClient.connect();
@@ -536,6 +605,7 @@ describe('Playwright Client Manual Tests', () => {
         STEALTH_MODE: 'true',
         PROXY_URL: proxyUrl!,
         PATH: process.env.PATH || '',
+        PLAYWRIGHT_BROWSERS_PATH: process.env.PLAYWRIGHT_BROWSERS_PATH || '',
       };
       if (proxyUsername) env.PROXY_USERNAME = proxyUsername;
       if (proxyPassword) env.PROXY_PASSWORD = proxyPassword;

@@ -138,17 +138,18 @@ export function createMockGmailClient(): IGmailClient {
     }),
 
     createDraft: vi.fn().mockImplementation(async (options) => {
+      const bodyContent = options.plaintextBody || options.htmlBody || '';
       const draft: Draft = {
         id: `draft_${draftIdCounter++}`,
         message: {
           id: `msg_${messageIdCounter++}`,
           threadId: options.threadId || `thread_${messageIdCounter}`,
           labelIds: ['DRAFT'],
-          snippet: options.body.substring(0, 100),
+          snippet: bodyContent.substring(0, 100),
           historyId: '12347',
           internalDate: String(Date.now()),
           payload: {
-            mimeType: 'text/plain',
+            mimeType: options.htmlBody ? 'text/html' : 'text/plain',
             headers: [
               { name: 'Subject', value: options.subject },
               { name: 'From', value: 'me@example.com' },
@@ -156,8 +157,8 @@ export function createMockGmailClient(): IGmailClient {
               { name: 'Date', value: new Date().toISOString() },
             ],
             body: {
-              size: options.body.length,
-              data: Buffer.from(options.body).toString('base64url'),
+              size: bodyContent.length,
+              data: Buffer.from(bodyContent).toString('base64url'),
             },
           },
         },
@@ -165,6 +166,42 @@ export function createMockGmailClient(): IGmailClient {
 
       mockDrafts.push(draft);
       return draft;
+    }),
+
+    updateDraft: vi.fn().mockImplementation(async (draftId: string, options) => {
+      const index = mockDrafts.findIndex((d) => d.id === draftId);
+      if (index === -1) {
+        throw new Error(`Draft not found: ${draftId}`);
+      }
+
+      const bodyContent = options.plaintextBody || options.htmlBody || '';
+      const updatedDraft: Draft = {
+        id: draftId,
+        message: {
+          id: mockDrafts[index].message.id,
+          threadId: options.threadId || mockDrafts[index].message.threadId,
+          labelIds: ['DRAFT'],
+          snippet: bodyContent.substring(0, 100),
+          historyId: '12347',
+          internalDate: String(Date.now()),
+          payload: {
+            mimeType: options.htmlBody ? 'text/html' : 'text/plain',
+            headers: [
+              { name: 'Subject', value: options.subject },
+              { name: 'From', value: 'me@example.com' },
+              { name: 'To', value: options.to },
+              { name: 'Date', value: new Date().toISOString() },
+            ],
+            body: {
+              size: bodyContent.length,
+              data: Buffer.from(bodyContent).toString('base64url'),
+            },
+          },
+        },
+      };
+
+      mockDrafts[index] = updatedDraft;
+      return updatedDraft;
     }),
 
     getDraft: vi.fn().mockImplementation(async (draftId: string) => {
@@ -200,15 +237,16 @@ export function createMockGmailClient(): IGmailClient {
     }),
 
     sendMessage: vi.fn().mockImplementation(async (options) => {
+      const bodyContent = options.plaintextBody || options.htmlBody || '';
       const sentMessage: Email = {
         id: `msg_${messageIdCounter++}`,
         threadId: options.threadId || `thread_${messageIdCounter}`,
         labelIds: ['SENT'],
-        snippet: options.body.substring(0, 100),
+        snippet: bodyContent.substring(0, 100),
         historyId: '12348',
         internalDate: String(Date.now()),
         payload: {
-          mimeType: 'text/plain',
+          mimeType: options.htmlBody ? 'text/html' : 'text/plain',
           headers: [
             { name: 'Subject', value: options.subject },
             { name: 'From', value: 'me@example.com' },
@@ -216,8 +254,8 @@ export function createMockGmailClient(): IGmailClient {
             { name: 'Date', value: new Date().toISOString() },
           ],
           body: {
-            size: options.body.length,
-            data: Buffer.from(options.body).toString('base64url'),
+            size: bodyContent.length,
+            data: Buffer.from(bodyContent).toString('base64url'),
           },
         },
       };

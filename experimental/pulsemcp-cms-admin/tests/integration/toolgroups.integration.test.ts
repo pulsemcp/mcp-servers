@@ -87,29 +87,33 @@ describe('PulseMCP CMS Admin - Toolgroups Integration Tests', () => {
       await client.disconnect();
     });
 
-    it('should only register server_directory tools', async () => {
+    it('should only register server_directory tools (superset)', async () => {
       const tools = await client.listTools();
 
-      expect(tools.tools).toHaveLength(5); // search, get_drafts, find_providers, save, send_notification
+      // server_directory is a superset: 4 original + 7 official_queue + 5 unofficial_mirrors + 2 official_mirrors + 5 mcp_jsons + 3 mcp_servers = 26
+      // (send_impl_posted_notif moved to separate 'notifications' group)
+      expect(tools.tools).toHaveLength(26);
       const toolNames = tools.tools.map((t) => t.name);
 
-      // Server queue tools should be present
+      // Server directory core tools should be present
       expect(toolNames).toContain('search_mcp_implementations');
       expect(toolNames).toContain('get_draft_mcp_implementations');
       expect(toolNames).toContain('find_providers');
       expect(toolNames).toContain('save_mcp_implementation');
-      expect(toolNames).toContain('send_impl_posted_notif');
+
+      // send_impl_posted_notif is now in the 'notifications' group, NOT server_directory
+      expect(toolNames).not.toContain('send_impl_posted_notif');
+
+      // Tools from overlapping groups should also be present
+      expect(toolNames).toContain('get_official_mirror_queue_items');
+      expect(toolNames).toContain('get_unofficial_mirrors');
+      expect(toolNames).toContain('get_official_mirrors');
+      expect(toolNames).toContain('get_mcp_jsons');
+      expect(toolNames).toContain('list_mcp_servers');
 
       // Newsletter tools should NOT be present
       expect(toolNames).not.toContain('get_newsletter_posts');
-      expect(toolNames).not.toContain('get_newsletter_post');
-      expect(toolNames).not.toContain('draft_newsletter_post');
-      expect(toolNames).not.toContain('update_newsletter_post');
-      expect(toolNames).not.toContain('upload_image');
       expect(toolNames).not.toContain('get_authors');
-
-      // Official queue tools should NOT be present
-      expect(toolNames).not.toContain('get_official_mirror_queue_items');
     });
 
     it('should successfully call server_directory tool', async () => {
@@ -160,7 +164,8 @@ describe('PulseMCP CMS Admin - Toolgroups Integration Tests', () => {
     it('should register newsletter and server_directory tools', async () => {
       const tools = await client.listTools();
 
-      expect(tools.tools).toHaveLength(11); // 6 newsletter + 5 server_directory
+      // 6 newsletter + 26 server_directory (superset, without send_impl_posted_notif) = 32
+      expect(tools.tools).toHaveLength(32);
       const toolNames = tools.tools.map((t) => t.name);
 
       // All newsletter tools should be present
@@ -171,15 +176,17 @@ describe('PulseMCP CMS Admin - Toolgroups Integration Tests', () => {
       expect(toolNames).toContain('upload_image');
       expect(toolNames).toContain('get_authors');
 
-      // All server_directory tools should be present
+      // All server_directory tools should be present (including overlapping groups)
       expect(toolNames).toContain('search_mcp_implementations');
       expect(toolNames).toContain('get_draft_mcp_implementations');
       expect(toolNames).toContain('find_providers');
       expect(toolNames).toContain('save_mcp_implementation');
-      expect(toolNames).toContain('send_impl_posted_notif');
+      expect(toolNames).toContain('get_official_mirror_queue_items');
+      expect(toolNames).toContain('get_unofficial_mirrors');
+      expect(toolNames).toContain('list_mcp_servers');
 
-      // Official queue tools should NOT be present (not enabled)
-      expect(toolNames).not.toContain('get_official_mirror_queue_items');
+      // send_impl_posted_notif is NOT here (it's in the 'notifications' group)
+      expect(toolNames).not.toContain('send_impl_posted_notif');
     });
   });
 
@@ -303,18 +310,20 @@ describe('PulseMCP CMS Admin - Toolgroups Integration Tests', () => {
     it('should register all tools by default', async () => {
       const tools = await client.listTools();
 
-      // 6 newsletter + 5 server_directory + 7 official_queue + 5 unofficial_mirrors + 2 official_mirrors + 2 tenants + 5 mcp_jsons + 3 mcp_servers + 5 redirects = 40 tools
-      expect(tools.tools).toHaveLength(40);
+      // 6 newsletter + 4 server_directory + 7 official_queue + 5 unofficial_mirrors + 2 official_mirrors + 2 tenants + 5 mcp_jsons + 3 mcp_servers + 5 redirects + 10 good_jobs + 5 proctor + 3 discovered_urls + 1 notifications + 3 moz = 61 tools
+      expect(tools.tools).toHaveLength(61);
       const toolNames = tools.tools.map((t) => t.name);
 
       // Newsletter tools
       expect(toolNames).toContain('get_newsletter_posts');
 
-      // Server queue tools
+      // Server directory tools
       expect(toolNames).toContain('search_mcp_implementations');
       expect(toolNames).toContain('get_draft_mcp_implementations');
       expect(toolNames).toContain('find_providers');
       expect(toolNames).toContain('save_mcp_implementation');
+
+      // Notification tools (separate group)
       expect(toolNames).toContain('send_impl_posted_notif');
 
       // Official queue tools
@@ -359,6 +368,61 @@ describe('PulseMCP CMS Admin - Toolgroups Integration Tests', () => {
       expect(toolNames).toContain('create_redirect');
       expect(toolNames).toContain('update_redirect');
       expect(toolNames).toContain('delete_redirect');
+
+      // Proctor tools
+      expect(toolNames).toContain('run_exam_for_mirror');
+      expect(toolNames).toContain('get_exam_result');
+      expect(toolNames).toContain('save_results_for_mirror');
+
+      // Discovered URLs tools
+      expect(toolNames).toContain('list_discovered_urls');
+      expect(toolNames).toContain('mark_discovered_url_processed');
+      expect(toolNames).toContain('get_discovered_url_stats');
+
+      // MOZ tools
+      expect(toolNames).toContain('get_moz_metrics');
+      expect(toolNames).toContain('get_moz_backlinks');
+      expect(toolNames).toContain('get_moz_stored_metrics');
+    });
+  });
+
+  describe('notifications group only', () => {
+    let client: TestMCPClient;
+
+    beforeAll(async () => {
+      const serverPath = path.join(
+        __dirname,
+        '../../local/build/local/src/index.integration-with-mock.js'
+      );
+
+      client = new TestMCPClient({
+        serverPath: serverPath,
+        env: {
+          ...process.env,
+          TOOL_GROUPS: 'notifications',
+          PULSEMCP_MOCK_DATA: JSON.stringify({}),
+        },
+      });
+      await client.connect();
+    });
+
+    afterAll(async () => {
+      await client.disconnect();
+    });
+
+    it('should only register notification tools', async () => {
+      const tools = await client.listTools();
+
+      expect(tools.tools).toHaveLength(1);
+      const toolNames = tools.tools.map((t) => t.name);
+
+      // Notification tools should be present
+      expect(toolNames).toContain('send_impl_posted_notif');
+
+      // Other groups should NOT be present
+      expect(toolNames).not.toContain('search_mcp_implementations');
+      expect(toolNames).not.toContain('get_newsletter_posts');
+      expect(toolNames).not.toContain('get_official_mirror_queue_items');
     });
   });
 
@@ -389,8 +453,8 @@ describe('PulseMCP CMS Admin - Toolgroups Integration Tests', () => {
     it('should register only read-only tools from all groups', async () => {
       const tools = await client.listTools();
 
-      // 3 newsletter read + 3 server_directory read + 2 official_queue read = 8 tools
-      expect(tools.tools).toHaveLength(8);
+      // 3 newsletter read + 13 server_directory read (superset, already includes official_queue read) = 16 tools
+      expect(tools.tools).toHaveLength(16);
       const toolNames = tools.tools.map((t) => t.name);
 
       // Read-only newsletter tools
@@ -398,12 +462,12 @@ describe('PulseMCP CMS Admin - Toolgroups Integration Tests', () => {
       expect(toolNames).toContain('get_newsletter_post');
       expect(toolNames).toContain('get_authors');
 
-      // Read-only server queue tools
+      // Read-only server directory tools (including overlapping groups)
       expect(toolNames).toContain('search_mcp_implementations');
       expect(toolNames).toContain('get_draft_mcp_implementations');
       expect(toolNames).toContain('find_providers');
 
-      // Read-only official queue tools
+      // Read-only official queue tools (also available via server_directory_readonly)
       expect(toolNames).toContain('get_official_mirror_queue_items');
       expect(toolNames).toContain('get_official_mirror_queue_item');
 
@@ -442,8 +506,8 @@ describe('PulseMCP CMS Admin - Toolgroups Integration Tests', () => {
     it('should allow different access levels per group', async () => {
       const tools = await client.listTools();
 
-      // 6 newsletter (all) + 3 server_directory (read-only) = 9 tools
-      expect(tools.tools).toHaveLength(9);
+      // 6 newsletter (all) + 13 server_directory (read-only superset) = 19 tools
+      expect(tools.tools).toHaveLength(19);
       const toolNames = tools.tools.map((t) => t.name);
 
       // Newsletter write tools should be present (full access)
@@ -451,17 +515,18 @@ describe('PulseMCP CMS Admin - Toolgroups Integration Tests', () => {
       expect(toolNames).toContain('update_newsletter_post');
       expect(toolNames).toContain('upload_image');
 
-      // Server queue read tools should be present
+      // Server directory read tools should be present (including overlapping groups)
       expect(toolNames).toContain('search_mcp_implementations');
       expect(toolNames).toContain('get_draft_mcp_implementations');
       expect(toolNames).toContain('find_providers');
+      expect(toolNames).toContain('get_official_mirror_queue_items');
+      expect(toolNames).toContain('get_unofficial_mirrors');
+      expect(toolNames).toContain('list_mcp_servers');
 
-      // Server queue write tools should NOT be present (read-only)
+      // Server directory write tools should NOT be present (read-only)
       expect(toolNames).not.toContain('save_mcp_implementation');
       expect(toolNames).not.toContain('send_impl_posted_notif');
-
-      // Official queue tools should NOT be present (not enabled)
-      expect(toolNames).not.toContain('get_official_mirror_queue_items');
+      expect(toolNames).not.toContain('approve_official_mirror_queue_item');
     });
   });
 });

@@ -4,6 +4,7 @@ export type { IProctorClient, ClientFactory, CreateMCPServerOptions } from './se
 export { createRegisterTools, parseEnabledToolGroups } from './tools.js';
 export type { ToolGroup } from './tools.js';
 export { logServerStart, logError, logWarning, logDebug } from './logging.js';
+export { truncateStrings, deepClone } from './utils/truncation.js';
 
 // Re-export types
 export type {

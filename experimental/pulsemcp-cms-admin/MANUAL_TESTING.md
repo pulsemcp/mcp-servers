@@ -2,6 +2,603 @@
 
 ## Latest Test Results
 
+**Date:** 2026-03-16
+**Commit:** d7ddabd
+**Version:** 0.9.11 (pre-release)
+**API Environment:** https://admin.staging.pulsemcp.com
+
+### Overall: ✅ Functional Tests PASSING (198/198) + Manual Tests PASSING (162/165)
+
+**v0.9.11 Changes:**
+
+- Fixed `extractStatus()` to read `data.result.status` instead of only `data.status` — was returning `'unknown'` for all exam results
+- Fixed `get_exam_result` mirror_id filter to check `line.data.mirror_id` — was failing to match any results
+- Fixed `run_exam_for_mirror` summary to read `data.total_exams`/`data.successful` — was showing `Total: 0, Passed: 0`
+
+**Functional Test Results: ✅ 198/198 PASSING**
+
+- 2 new tests added covering real NDJSON structure: status extraction from `data.result.status`, summary from `data.total_exams`/`data.successful`, mirror_id filter from `data.mirror_id`
+- 1 existing test strengthened with status assertion verifying `extractStatus` uses nested `data.result.status`
+
+**Manual Test Results: ✅ 162/165 PASSING (3 failures are pre-existing staging data issues)**
+
+Ran `npm run test:manual` against staging API. 10/11 test files passed. The 3 failures are in `proctor-tools.manual.test.ts` due to the auto-discovered mirror (10158, pipeboard-meta-ads) having no saved mcp_json records on staging — the exam is skipped with 0 results, so the E2E flow tests expecting exam_result lines fail. This is a staging data issue, not a code bug.
+
+**Targeted manual verification of all 3 fixes against mirror 166 (context7/upstash-context7):**
+
+- `run_exam_for_mirror(mirror_ids=[166], runtime_id="proctor-mcp-client-0.0.55-configs-0.0.10", exam_type="init-tools-list")`:
+  - **Bug 1 fix confirmed**: Output shows `Status: completed` (was `Status: unknown` before fix)
+  - **Bug 3 fix confirmed**: Output shows `Total: 2, Passed: 2` (was `Total: 0, Passed: 0` before fix)
+- `get_exam_result(result_id, mirror_id=166)`:
+  - **Bug 2 fix confirmed**: Returns results with `Mirror Filter: 166` (was "No matching lines" before fix)
+
+---
+
+## Previous Test Results (v0.9.11 — MOZ tools)
+
+**Date:** 2026-03-16
+**Commit:** 69778e3
+**Version:** 0.9.11 (pre-release)
+**API Environment:** Staging (admin.staging.pulsemcp.com)
+
+### Overall: ✅ Manual Tests PASSING (171/174, 12 test files) — 3 pre-existing proctor failures
+
+**v0.9.11 Changes:**
+
+- Added `moz` toolgroup with 3 new tools: `get_moz_metrics`, `get_moz_backlinks`, `get_moz_stored_metrics`
+- New API client functions for MOZ endpoints (`/api/moz/metrics`, `/api/moz/backlinks`, `/api/moz/stored_metrics`)
+
+**Manual Test Results: ✅ 171/174 PASSING (12 test files, 44.54s)**
+
+All MOZ manual tests passing against staging API (9/9):
+
+1. moz-tools.manual.test.ts (9 tests) — **all passing**
+   - Tool availability: all 3 MOZ tools registered
+   - get_moz_metrics: returns live metrics (PA 94, DA 96, Spam 1 for github.com)
+   - get_moz_backlinks: returns backlink data with source pages and anchor text
+   - get_moz_stored_metrics: returns paginated stored data (or empty for staging)
+   - Error handling: 404 for nonexistent servers in stored metrics
+
+All other test files passing (162/165):
+
+2. mcp-servers-tools.manual.test.ts (36 tests)
+3. server-directory-tools.manual.test.ts (17 tests)
+4. rest-api-tools.manual.test.ts (28 tests)
+5. good-jobs-tools.manual.test.ts (21 tests)
+6. discovered-urls-tools.manual.test.ts (19 tests)
+7. search-mcp-implementations.manual.test.ts (6 tests)
+8. redirect-tools.manual.test.ts (8 tests)
+9. list-proctor-runs.manual.test.ts (11 tests)
+10. newsletter-tools.manual.test.ts (6 tests)
+11. canonicals-tools.manual.test.ts (7 tests)
+
+**Pre-existing Failures (3/174) — proctor-tools.manual.test.ts:**
+
+These 3 failures are in the proctor end-to-end flow and pre-date this PR. They relate to staging data (mirror 10158 has "no saved mcp_json records"), not to MOZ changes:
+
+- `should retrieve the full stored result via get_exam_result`
+- `should retrieve only exam_results section via section filter`
+- `should save results using result_id and preserve output data`
+
+---
+
+## Previous Test Results (v0.9.10)
+
+**Date:** 2026-03-13
+**Commit:** 8c30fcc
+**Version:** 0.9.9 (pre-release)
+**API Environment:** Staging (admin.staging.pulsemcp.com)
+
+### Overall: ✅ Manual Tests PASSING (165/165, 11 test files) | ✅ Functional Tests PASSING (19/19 discovered-urls)
+
+**v0.9.9 Changes:**
+
+- Added `needs_indexing` status filter to `list_discovered_urls`
+- Added `needs_indexing` and `drafted` result values to `mark_discovered_url_processed`
+- Updated `DiscoveredUrlResult` type to include `'needs_indexing' | 'drafted'`
+
+**Manual Test Results: ✅ 165/165 PASSING (11 test files, 43.48s)**
+
+All manual tests run against staging API and passing:
+
+1. mcp-servers-tools.manual.test.ts (36 tests)
+2. server-directory-tools.manual.test.ts (17 tests)
+3. rest-api-tools.manual.test.ts (28 tests)
+4. good-jobs-tools.manual.test.ts (21 tests)
+5. discovered-urls-tools.manual.test.ts (11 tests) — includes new `needs_indexing` status filter test
+6. search-mcp-implementations.manual.test.ts (11 tests)
+7. redirect-tools.manual.test.ts (13 tests)
+8. find-providers.manual.test.ts (9 tests)
+9. send-email.manual.test.ts (1 test)
+10. pulsemcp-cms-admin.manual.test.ts (6 tests)
+11. proctor-tools.manual.test.ts (13 tests)
+
+**Note on `needs_indexing` status filter:** The staging API does not yet support `needs_indexing` as a status filter for `list_discovered_urls` (depends on pulsemcp/pulsemcp#2241). The manual test verifies that the MCP server accepts the parameter (no Zod validation error) and handles the API error gracefully. Once the backend is updated, the filter will work end-to-end.
+
+**Functional Test Results: ✅ 19/19 PASSING (discovered-urls-tools.test.ts)**
+
+- 3 new tests added: `needs_indexing` status filter, `drafted` result with implementation ID, `needs_indexing` result value
+
+---
+
+## Previous Test Results (v0.9.6)
+
+**Date:** 2026-03-11
+**Commit:** 53fbf11
+**Version:** 0.9.6 (pre-release)
+**API Environment:** N/A (import mechanism change only, no API interaction changes)
+
+### Overall: ✅ Functional Tests PASSING (185/185, 8 test files)
+
+**v0.9.6 Changes:**
+
+- Replaced all 65 dynamic `await import()` calls in `PulseMCPAdminClient` with static imports to fix `Cannot find module` errors for `save-results-for-mirror.js` and `get-proctor-runs.js` in some production environments
+
+**Functional Test Results: ✅ 185/185 PASSING (8 test files)**
+
+- All 8 functional test files pass with 0 failures
+- Build succeeds with 0 TypeScript errors, compiled output has 67 static imports and 0 dynamic imports
+
+**Note on Manual Testing:**
+
+Manual tests were not run for this release — API credentials (`.env` file) were not available in this environment. This change replaces dynamic `await import()` calls with static top-level imports in `server.ts`. No API client code, request payloads, response parsing logic, or tool behavior was changed — the same functions are called with the same arguments, only the import mechanism changed. The v0.9.2 manual test results remain valid for all API-facing functionality.
+
+---
+
+## Previous Test Results (v0.9.5)
+
+**Date:** 2026-03-10
+**Commit:** 5e5c059
+**Version:** 0.9.5 (pre-release)
+**API Environment:** N/A (test assertion improvement and lockfile fix only, no API interaction changes)
+
+### Overall: ✅ Functional Tests PASSING (185/185, 8 test files)
+
+**v0.9.5 Changes:**
+
+- Fixed root `package-lock.json` version for `pulsemcp-cms-admin` (was stale at `0.9.3`, now correctly `0.9.5`)
+- Improved `known_missing` flag test assertions to verify per-server output sections
+
+**Functional Test Results: ✅ 185/185 PASSING (8 test files)**
+
+- Test `should render known_missing flags when true` improved: now splits output by server entry and verifies campfire does NOT show `Known Missing Auth Check` when that flag is `false`
+
+**Note on Manual Testing:**
+
+Manual tests were not run for this release — API credentials (`.env` file) were not available in this environment. This change fixes the root `package-lock.json` version and improves test assertions. No API client code, request payloads, or response parsing logic was changed. The v0.9.2 manual test results remain valid for all API-facing functionality.
+
+---
+
+## Previous Test Results (v0.9.4)
+
+**Date:** 2026-03-10
+**Commit:** bd7a865
+**Version:** 0.9.4 (pre-release)
+**API Environment:** N/A (test coverage addition and output formatting only, no API interaction changes)
+
+### Overall: ✅ Functional Tests PASSING (185/185, 8 test files)
+
+**v0.9.4 Changes:**
+
+- Added `known_missing_init_tools_list` and `known_missing_auth_check` flags to `list_proctor_runs` tool output (code from commit 72cae55, not previously published)
+- Added test coverage verifying `known_missing` flags render correctly when `true` and are omitted when `false`
+
+**Functional Test Results: ✅ 185/185 PASSING (8 test files)**
+
+- 1 new test added in `list-proctor-runs.test.ts`:
+  - `should render known_missing flags when true` — verifies "Known Missing Init Tools List: yes" and "Known Missing Auth Check: yes" appear in output when flags are `true`
+- Existing test updated to verify flags do NOT appear when `false`
+
+**Note on Manual Testing:**
+
+Manual tests were not run for this release — API credentials (`.env` file) were not available in this environment. This change publishes the `known_missing` flag support (code added in commit 72cae55) which adds two boolean fields to the `list_proctor_runs` output formatting. The API client data mapping code (`get-proctor-runs.ts`) was unchanged — the fields were already mapped with `|| false` defaults. The v0.9.2 manual test results remain valid for all API-facing functionality.
+
+---
+
+## Previous Test Results (v0.9.3)
+
+**Date:** 2026-03-09
+**Commit:** 2dd788f
+**Version:** 0.9.3 (pre-release)
+**API Environment:** N/A (tool description and response formatting changes only, no API interaction changes)
+
+### Overall: ✅ Functional Tests PASSING (184/184, 8 test files)
+
+**v0.9.3 Changes:**
+
+- Clarified omission semantics in `save_mcp_implementation` and `update_mcp_server` tool descriptions
+- Added canonical URLs and remote endpoints to `save_mcp_implementation` create/update response output
+- Updated `save_mcp_implementation` CREATE example to show remote endpoints and canonical URLs can be included during creation
+
+**Functional Test Results: ✅ 184/184 PASSING (8 test files)**
+
+- 2 new tests added in `tools.test.ts`:
+  - `should include canonical URLs and remotes in update response` — verifies response output includes canonical URL and remote endpoint details when API returns them
+  - `should include canonical URLs and remotes in create response` — verifies create response includes canonical/remote details and get_mcp_server verification tip
+
+**Note on Manual Testing:**
+
+Manual tests were not run for this release — API credentials (`.env` file) were not available in this environment. This change modifies only tool description text and response output formatting. No API client code, request payloads, or response parsing logic was changed. The v0.9.2 manual test results remain valid for all API-facing functionality.
+
+---
+
+## Previous Test Results (v0.9.2)
+
+**Date:** 2026-03-08
+**Commit:** 6856ae1
+**Version:** 0.9.2 (pre-release)
+**API Environment:** Staging (admin.staging.pulsemcp.com)
+
+### Overall: ✅ Functional Tests PASSING (182/182, 8 test files) | ✅ Manual Tests PASSING (163/163, 11 test files)
+
+**v0.9.2 Changes:**
+
+- Added `verified_no_remote_canonicals` boolean field to MCP server tools (`get_mcp_server`, `update_mcp_server`, `save_mcp_implementation`)
+- Field reads from `mcp_server` nested object in API responses (not the implementation level)
+- Backend PR pulsemcp/pulsemcp#2161 merged — exposes `verified_no_remote_canonicals` and `recommended` in GET API responses
+
+**Functional Test Results: ✅ 182/182 PASSING (8 test files)**
+
+**Manual Test Results: ✅ 163/163 PASSING (11 test files, 41.67s)**
+
+All manual tests run against staging API and passing:
+
+1. mcp-servers-tools.manual.test.ts (36 tests) — list, get, update, e2e workflow
+2. server-directory-tools.manual.test.ts (17 tests)
+3. rest-api-tools.manual.test.ts (28 tests)
+4. good-jobs-tools.manual.test.ts (21 tests)
+5. discovered-urls-tools.manual.test.ts (10 tests)
+6. search-mcp-implementations.manual.test.ts (11 tests)
+7. redirect-tools.manual.test.ts (13 tests)
+8. find-providers.manual.test.ts (9 tests)
+9. send-email.manual.test.ts (1 test)
+10. pulsemcp-cms-admin.manual.test.ts (6 tests)
+11. proctor-tools.manual.test.ts (12 tests)
+
+**Note on `verified_no_remote_canonicals` field testing:**
+
+The backend PR (pulsemcp/pulsemcp#2161) has been merged but may not yet be deployed to staging. The API currently returns `null`/absent for the new field in the `mcp_server` nested object. The client-side code correctly reads the field from `mcpServer.verified_no_remote_canonicals` and will display it once the backend deployment includes the new serializer fields. No regressions observed — all existing manual tests pass.
+
+---
+
+## Previous Test Results (v0.9.1)
+
+**Date:** 2026-03-05
+**Commit:** eb0b27b
+**Version:** 0.9.1 (pre-release)
+**API Environment:** Staging (admin.staging.pulsemcp.com)
+
+### Overall: ✅ ALL TESTS PASSING — 179 functional, 163 manual (11 test files)
+
+**v0.9.1 Changes:**
+
+- **BREAKING**: Removed `subfolder` from canonical URL scope enum — valid scopes are now `domain`, `subdomain`, and `url` only
+
+**Functional Test Results: ✅ 179/179 PASSING (8 test files)**
+
+**Manual Test Results: ✅ 163/163 PASSING (11 test files)**
+
+All manual tests run against staging API and passing, including:
+
+- MCP server tools (list, get, update with canonical URLs using valid scopes)
+- Server directory tools (save_mcp_implementation with canonical URLs)
+- REST API tools, redirect tools, newsletter tools, discovered URLs tools
+- Good jobs tools, proctor tools
+
+---
+
+## Previous Test Results (v0.9.0)
+
+**Date:** 2026-03-02
+**Commit:** 2866c01
+**Version:** 0.9.0 (pre-release)
+**API Environment:** N/A (new read-only tool calling not-yet-deployed backend endpoint)
+
+### Overall: ✅ Functional Tests PASSING (179/179)
+
+**v0.9.0 Changes:**
+
+- Added `list_proctor_runs` tool to the proctor toolset — lists proctor run summaries for MCP servers showing testing status, auth-check/tools-list results, and server metadata. Supports search, filtering by recommended status and tenant IDs, sorting, and pagination. Read-only (included in `proctor_readonly` group).
+
+**Functional Test Results: ✅ 179/179 PASSING (8 test files)**
+
+New test file: `list-proctor-runs.test.ts` — 8 tests:
+
+- Fetches and formats proctor runs with full pagination
+- Handles fully populated and sparse/untested server entries
+- Passes all filter parameters (q, recommended, tenant_ids, sort, direction, limit, offset) to client
+- Handles API errors gracefully
+- Handles empty results
+- Correct tool metadata (name, description, all parameters)
+- Tool group filtering: 4 tools in `proctor` group, 2 read-only tools in `proctor_readonly` group
+- `proctor` included in default groups
+
+Updated existing tests:
+
+- `tools.test.ts`: Updated total tool count from 56 to 57, updated `proctor_readonly` count from 1 to 2 (now includes `list_proctor_runs`)
+- `discovered-urls-tools.test.ts`: Added `getProctorRuns` to mock client
+- All 3 mock client definitions updated with `getProctorRuns: vi.fn()`
+
+**Note on Manual Testing:**
+
+Manual tests were not run for this release — the backend endpoint (`GET /api/proctor_runs`) is being added in pulsemcp/pulsemcp#2136 which has not yet been merged or deployed to staging. Additionally, API credentials (`.env` file) were not available in this environment. This is a new read-only tool that follows the exact same API client patterns as all other list/get tools (e.g., `get_unofficial_mirrors`, `list_good_jobs`). The v0.7.2 manual test results remain valid for all existing API-facing functionality.
+
+---
+
+## Previous Test Results (v0.8.0)
+
+**Date:** 2026-03-02
+**Commit:** 4a3e77d
+**Version:** 0.8.0 (pre-release)
+**API Environment:** N/A (parameter removal only, no API interaction changes)
+
+### Overall: ✅ Functional Tests PASSING (171/171)
+
+**v0.8.0 Changes:**
+
+- **BREAKING**: Removed `results` array parameter from `save_results_for_mirror` tool — `result_id` (from `run_exam_for_mirror`) is now the only way to provide exam results. This simplifies the tool interface and ensures results always flow through the server-side store, avoiding large payloads in LLM context.
+
+**Functional Test Results: ✅ 171/171 PASSING**
+
+- Updated existing tests: removed tests for direct `results` array path, converted remaining tests to use `result_id`
+- Added new test: `should require result_id parameter` — verifies Zod validation rejects missing `result_id`
+- Updated manual test file: removed "save_results_for_mirror with direct results array" test section, updated schema assertions
+- All existing `result_id`-based tests continue to pass (unwrapping, extraction, partial failures, error handling)
+
+**Note on Manual Testing:**
+
+Manual tests were not run for this release — API credentials (`.env` file) were not available in this environment. This change removes a user-facing parameter (`results` array) from the tool schema; it does not modify any API interaction logic, request format, or response handling. The underlying API client (`save-results-for-mirror.ts` in `pulsemcp-admin-client/lib/`) is completely unchanged. The v0.7.2 manual test results remain valid for all API-facing functionality.
+
+---
+
+## Previous Test Results (v0.7.4)
+
+**Date:** 2026-03-01
+**Commit:** 1bb0a7b
+**Version:** 0.7.4 (pre-release)
+**API Environment:** N/A (result extraction fix only, no manual tests required)
+
+### Overall: ✅ Functional Tests PASSING (172/172)
+
+**v0.7.4 Changes:**
+
+- Fixed `save_results_for_mirror` not unwrapping double-nested `data.result.result` from real proctor API responses. The proctor API returns exam payloads at `data.result.result`, not `data.result`, so `{input, output, processedBy}` was still wrapped in an envelope containing `exam_id`, `machine_id`, `logs`, etc. Now recursively unwraps nested `result` objects to extract the actual payload. (Fixes #376)
+
+**Functional Test Results: ✅ 172/172 PASSING**
+
+- 1 new test added in `tools.test.ts` using the exact real proctor API structure from issue #376 comment:
+  - Verifies double-nested `data.result.result` is unwrapped to `{input, output, processedBy}`
+  - Asserts no envelope fields (`logs`, `machine_id`, `error`) leak into saved data
+  - Confirms `output` is at the top level of the extracted payload
+
+**Note on Manual Testing:**
+
+Manual tests were skipped for this release. The change is in the result extraction logic within `save-results-for-mirror.ts` tool handler. API credentials were not available in this environment. The v0.7.2 manual test results remain valid for all other functionality.
+
+---
+
+## Previous Test Results (v0.7.3)
+
+**Date:** 2026-03-01
+**Commit:** c76b7a6
+**Version:** 0.7.3 (pre-release)
+**API Environment:** N/A (API client change only, no manual tests required)
+
+### Overall: ✅ Functional Tests PASSING (171/171)
+
+**v0.7.3 Changes:**
+
+- Fixed `save_results_for_mirror` API client to spread result data fields directly into the `result` object instead of nesting under an extra `data` key.
+
+---
+
+## Previous Test Results (v0.7.2)
+
+**Date:** 2026-03-01
+**Commit:** d3560b7
+**Version:** 0.7.2 (pre-release)
+**API Environment:** staging (https://admin.staging.pulsemcp.com)
+
+### Overall: ✅ Functional Tests PASSING (168/168) | ✅ Manual Tests PASSING (164/164 across 11 test files)
+
+**v0.7.2 Changes:**
+
+- Fixed `save_results_for_mirror` saving empty `output` when using `result_id` — the proctor API returns output data nested inside `line.data.result`, but the tool was passing the entire `line.data` wrapper (containing metadata like `mirror_id`, `exam_id`) as the result data, causing `output` to be nested too deeply for the backend to find. Now extracts `line.data.result` when present so that `output` is at the expected depth. (Fixes #374)
+
+**Manual Test Results: ✅ 164/164 PASSING across 11 test files (240.51s)**
+
+1. ✅ good-jobs-tools.manual.test.ts (21 tests)
+2. ✅ rest-api-tools.manual.test.ts (28 tests)
+3. ✅ discovered-urls-tools.manual.test.ts (10 tests)
+4. ✅ mcp-servers-tools.manual.test.ts (36 tests)
+5. ✅ server-directory-tools.manual.test.ts (17 tests)
+6. ✅ search-mcp-implementations.manual.test.ts (11 tests)
+7. ✅ redirect-tools.manual.test.ts (13 tests)
+8. ✅ find-providers.manual.test.ts (9 tests)
+9. ✅ send-email.manual.test.ts (1 test)
+10. ✅ pulsemcp-cms-admin.manual.test.ts (6 tests)
+11. ✅ proctor-tools.manual.test.ts (12 tests) — **NEW**
+
+**New proctor manual test file (proctor-tools.manual.test.ts) — 12 tests:**
+
+- Tool Registration (3 tests): All proctor tools registered with correct schemas
+- **E2E flow (5 tests)**: Full run → store → get → save pipeline against real staging API
+  - Finds a mirror with mcp_json configs
+  - Runs `run_exam_for_mirror` with dynamically-fetched runtime_id from `/api/proctor/metadata`
+  - Verifies `result_id` UUID returned
+  - Retrieves full result via `get_exam_result` and section-filtered result
+  - Saves results via `save_results_for_mirror` using `result_id` — **verifies fix for #374** (output data preserved)
+- Direct array save (1 test): Saves results passed directly without `result_id`
+- Error handling (3 tests): Invalid result_id, unknown result_id, invalid runtime
+
+**Functional Test Results: ✅ 168/168 PASSING**
+
+The proctor tools are covered by 22 functional tests (2 new tests added for the output data fix):
+
+1. ExamResultStore FIFO eviction with file-based storage (1 test)
+2. `run_exam_for_mirror` — store results, truncation, data-payload extraction (5 tests)
+3. `get_exam_result` with section and mirror_id filtering (4 tests)
+4. `save_results_for_mirror` with result_id-based flow, nested result extraction (6 tests)
+5. Store cleanup after successful save / retention on errors (2 tests)
+6. `proctor_readonly` group filtering (1 test)
+7. Backward compatibility with explicit results array (1 test)
+8. Error handling for unknown result_ids, string errors, API failures (4 tests)
+
+**New tests specifically verifying the fix:**
+
+- `save_results_for_mirror` preserves `output` data from nested `line.data.result` when saving via `result_id` (previously the entire `line.data` wrapper was passed, causing `output` to be nested too deeply)
+- `save_results_for_mirror` uses nested result object for data field instead of full data wrapper
+
+---
+
+## Previous Test Results (v0.7.0)
+
+**Date:** 2026-02-28
+**Commit:** 753e189
+**Version:** 0.7.0 (pre-release)
+**API Environment:** staging (https://admin.staging.pulsemcp.com)
+
+### Overall: ✅ Functional Tests PASSING (97/97) | ✅ Manual Tests PASSING (152/152 across 10 test files)
+
+**v0.7.0 Changes:**
+
+- Added server-side in-memory result store for proctor exam results with UUID-based `result_id` references
+- `run_exam_for_mirror` now stores full results server-side and returns a truncated summary with a `result_id`
+- Added `get_exam_result` tool for on-demand drill-down into stored results
+- `save_results_for_mirror` now accepts `result_id` instead of requiring the full results payload
+- Added `proctor_readonly` tool group variant
+- Bounded in-memory store with MAX_RESULTS=100 FIFO eviction
+- Automatic store cleanup after successful save via `save_results_for_mirror`
+
+**Manual Test Results: ✅ 152/152 PASSING across 10 test files (73.78s)**
+
+1. ✅ good-jobs-tools.manual.test.ts (21 tests)
+2. ✅ rest-api-tools.manual.test.ts (28 tests)
+3. ✅ discovered-urls-tools.manual.test.ts (10 tests)
+4. ✅ mcp-servers-tools.manual.test.ts (36 tests)
+5. ✅ server-directory-tools.manual.test.ts (17 tests)
+6. ✅ search-mcp-implementations.manual.test.ts (11 tests)
+7. ✅ redirect-tools.manual.test.ts (13 tests)
+8. ✅ find-providers.manual.test.ts (9 tests)
+9. ✅ send-email.manual.test.ts (1 test)
+10. ✅ pulsemcp-cms-admin.manual.test.ts (6 tests)
+
+**Note:** No proctor-specific manual tests exist yet (proctor API endpoints require a mirror with a running runtime). The proctor tools (`run_exam_for_mirror`, `get_exam_result`, `save_results_for_mirror`) are covered by 18 functional tests verifying:
+
+1. Result storage with UUID generation (3 tests)
+2. Truncation of large tool listings (omitting inputSchema, adding tools_count) (1 test)
+3. `get_exam_result` with section and mirror_id filtering (4 tests)
+4. `save_results_for_mirror` with result_id-based flow (2 tests)
+5. Store cleanup after successful save / retention on errors (2 tests)
+6. `proctor_readonly` group filtering (1 test)
+7. Backward compatibility with explicit results array (3 tests)
+8. Error handling for unknown result_ids (2 tests)
+
+---
+
+## Previous Test Results (v0.6.13)
+
+**Date:** 2026-02-28
+**Commit:** 86be247
+**Version:** 0.6.13 (pre-release)
+**API Environment:** staging (https://admin.staging.pulsemcp.com)
+
+### Overall: ✅ Functional Tests PASSING (153/153) | ✅ Manual Tests PASSING (152/152 across 10 test files)
+
+**v0.6.13 Changes:**
+
+- Fixed `save_results_for_mirror` client library to nest each result under a `result` key as expected by the PulseMCP Admin API (`{exam_id, result: {status, data}}` instead of flat `{exam_id, status, data}`)
+- Fixed `save_results_for_mirror` error response parsing to handle both string errors (e.g., `["Missing exam_id or result data for entry"]`) and object errors (e.g., `[{exam_id, error}]`) from the API
+
+**Manual Test Results: ✅ 152/152 PASSING across 10 test files (40.63s)**
+
+1. ✅ good-jobs-tools.manual.test.ts (21 tests)
+2. ✅ rest-api-tools.manual.test.ts (28 tests)
+3. ✅ discovered-urls-tools.manual.test.ts (10 tests)
+4. ✅ mcp-servers-tools.manual.test.ts (36 tests)
+5. ✅ server-directory-tools.manual.test.ts (17 tests)
+6. ✅ search-mcp-implementations.manual.test.ts (11 tests)
+7. ✅ redirect-tools.manual.test.ts (13 tests)
+8. ✅ find-providers.manual.test.ts (9 tests)
+9. ✅ pulsemcp-cms-admin.manual.test.ts (6 tests)
+10. ✅ send-email.manual.test.ts (1 test)
+
+**E2E verification of the fix:**
+
+- Confirmed the nested result format (`{exam_id, result: {status, data}}`) passes API validation at `POST /api/proctor/save_results_for_mirror` — API progresses past "Missing exam_id or result data for entry" to runtime validation ("Invalid runtime" because no real runtime_id was available for testing)
+- New functional test added for string error format handling
+
+---
+
+## Previous Test Results (v0.6.12)
+
+**Date:** 2026-02-27
+**Commit:** 350ff2d
+**Version:** 0.6.12
+**API Environment:** staging (https://admin.staging.pulsemcp.com)
+
+### Overall: ✅ Functional Tests PASSING (152/152) | ✅ Manual Tests PASSING (10/10 discovered_urls tests)
+
+**v0.6.12 Changes:**
+
+- Fixed API endpoint paths from `/admin/api/discovered_urls` to `/api/discovered_urls` — the discovered_urls endpoints use a different path prefix than other admin endpoints
+
+**Discovered URLs Manual Test Results (discovered-urls-tools.manual.test.ts): ✅ 10/10 PASSING**
+
+- ✅ Tool Availability (1 test): All 3 discovered_urls tools registered correctly with `TOOL_GROUPS=discovered_urls`
+- ✅ `list_discovered_urls` default (1 test): Returns 50 URLs, 106,614 total, has_more=true, oldest first
+- ✅ `list_discovered_urls` pending filter (1 test): Working, extracts first URL ID for subsequent tests
+- ✅ `list_discovered_urls` all filter (1 test): Returns all URLs regardless of status
+- ✅ `list_discovered_urls` processed filter (1 test): Returns processed URLs
+- ✅ `list_discovered_urls` pagination per_page=5 (1 test): Correctly limits results
+- ✅ `list_discovered_urls` page 2 (1 test): Returns second page of results
+- ✅ `get_discovered_url_stats` (1 test): Returns stats — pending: 106,614, processed_today: 0
+- ✅ `mark_discovered_url_processed` non-existent ID (1 test): Returns proper "not found" error
+- ✅ `mark_discovered_url_processed` real URL (1 test): Successfully marked URL ID 1 as skipped with notes
+
+**Key observations from staging data:**
+
+- 106,614 pending discovered URLs in staging
+- Metadata fields include: `anchor_text`, `discovered_at`, `discovered_on_url`, `internal_notes`, `date_to_recrawl`, `processed_at`, `processing_result`, `processing_notes`, `mcp_implementation_id`
+- API response format matches expected: `{ data: [...], meta: { total_count, page, per_page, has_more } }`
+- mark_processed returns 404 with `{ error: "Discovered URL not found" }` for non-existent IDs
+
+---
+
+## Previous Test Results (v0.6.10)
+
+**Date:** 2026-02-24
+**Commit:** 374f0ef
+**Version:** 0.6.10
+**API Environment:** N/A (no API credentials available for manual testing)
+
+### Overall: ✅ Functional Tests PASSING (136/136) + Integration Tests PASSING (11/11)
+
+**v0.6.10 Changes:**
+
+- Added `proctor` tool group (no readonly variant — both tools trigger side effects):
+  - `run_exam_for_mirror` - Run proctor exams against unofficial mirrors via Fly Machines
+  - `save_results_for_mirror` - Save proctor exam results with automatic sensitive data redaction
+- Expanded `server_directory` to be a comprehensive superset group covering `mcp_servers`, `unofficial_mirrors`, `official_mirrors`, `official_queue`, and `mcp_jsons` tools
+- Changed tool definitions to support multi-group membership (`group` → `groups` array)
+
+**Note on Manual Testing:**
+
+The proctor backend API endpoints (pulsemcp/pulsemcp#2116) were merged on 2026-02-24 and may not yet be deployed to staging. API credentials (`.env` file) were not available in this environment to run manual tests. The proctor tools follow the same client library patterns as all other tools in this server. Functional tests verify:
+
+1. Tool registration and schema validation (all 52 tools registered correctly)
+2. Multi-group membership (tools appear in both specific group and `server_directory` superset)
+3. Parameter parsing and Zod validation for proctor tool inputs
+4. NDJSON response parsing for `run_exam_for_mirror`
+5. Error handling for API failures (401, 403, 404, 422)
+6. Output formatting for saved results and stream events
+
+The `server_directory` expansion is a configuration/grouping change only — no API behavior changes. The same underlying tools are accessible, just via an additional group.
+
+---
+
+## Previous Test Results (v0.6.9)
+
 **Date:** 2026-02-20
 **Commit:** fc7edae
 **Version:** 0.6.9
@@ -569,7 +1166,7 @@ Added canonical URL management with scoped definitions:
 
 - `canonical`: Array of canonical URL configurations
   - `url`: The canonical URL
-  - `scope`: Scope level (domain, subdomain, subfolder, url)
+  - `scope`: Scope level (domain, subdomain, url)
   - `note`: Optional explanatory note
 
 **Important**: The API uses replacement semantics - sending canonical data replaces all existing canonicals.

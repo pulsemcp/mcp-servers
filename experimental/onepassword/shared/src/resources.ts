@@ -37,7 +37,7 @@ export function registerResources(server: Server) {
       const config = {
         server: {
           name: 'onepassword-mcp-server',
-          version: '0.1.0',
+          version: '0.2.0',
           transport: 'stdio',
         },
         environment: {
@@ -47,6 +47,11 @@ export function registerResources(server: Server) {
             : 'not set',
           ENABLED_TOOLGROUPS: process.env.ENABLED_TOOLGROUPS || 'all (default)',
           SKIP_HEALTH_CHECKS: process.env.SKIP_HEALTH_CHECKS || 'false',
+          DANGEROUSLY_SKIP_ELICITATIONS:
+            process.env.DANGEROUSLY_SKIP_ELICITATIONS || 'not set (elicitation required)',
+          OP_ELICITATION_READ: process.env.OP_ELICITATION_READ || 'true (default)',
+          OP_ELICITATION_WRITE: process.env.OP_ELICITATION_WRITE || 'true (default)',
+          OP_WHITELISTED_ITEMS: process.env.OP_WHITELISTED_ITEMS || 'none',
         },
         capabilities: {
           tools: true,

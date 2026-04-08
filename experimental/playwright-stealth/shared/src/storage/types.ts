@@ -7,6 +7,8 @@ export interface ScreenshotMetadata {
   pageUrl?: string;
   pageTitle?: string;
   fullPage: boolean;
+  selector?: string;
+  clip?: { x: number; y: number; width: number; height: number };
 }
 
 export interface ScreenshotResourceData {

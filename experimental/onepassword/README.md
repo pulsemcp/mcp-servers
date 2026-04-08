@@ -4,12 +4,13 @@ MCP server for interacting with 1Password via the CLI. Enables AI assistants to 
 
 ## Highlights
 
-- **Credential unlocking via URL** - Users must explicitly share a 1Password URL to unlock an item before credentials are exposed
+- **Elicitation-based approval** - Users are prompted for confirmation before credentials are revealed or items are created
+- **Configurable per-action** - Enable/disable elicitation independently for read and write operations
+- **Item whitelisting** - Pre-approve specific items to bypass elicitation prompts
 - Secure credential access via 1Password CLI
 - Service account authentication for automation
 - Read and write operations for vaults and items
 - Tool grouping for permission-based access control
-- Comprehensive testing setup
 
 ## Prerequisites
 
@@ -23,15 +24,14 @@ MCP server for interacting with 1Password via the CLI. Enables AI assistants to 
 
 ### Tools
 
-| Tool                             | Group    | Description                                             |
-| -------------------------------- | -------- | ------------------------------------------------------- |
-| `onepassword_list_vaults`        | readonly | List all accessible vaults                              |
-| `onepassword_list_items`         | readonly | List items in a specific vault                          |
-| `onepassword_get_item`           | readonly | Get item details (credentials redacted unless unlocked) |
-| `onepassword_list_items_by_tag`  | readonly | Find items by tag                                       |
-| `onepassword_unlock_item`        | readonly | Unlock an item via 1Password URL for credential access  |
-| `onepassword_create_login`       | write    | Create a new login credential                           |
-| `onepassword_create_secure_note` | write    | Create a new secure note                                |
+| Tool                             | Group    | Description                                               |
+| -------------------------------- | -------- | --------------------------------------------------------- |
+| `onepassword_list_vaults`        | readonly | List all accessible vaults                                |
+| `onepassword_list_items`         | readonly | List items in a specific vault                            |
+| `onepassword_get_item`           | readonly | Get item details (credentials require approval to reveal) |
+| `onepassword_list_items_by_tag`  | readonly | Find items by tag                                         |
+| `onepassword_create_login`       | write    | Create a new login credential (requires approval)         |
+| `onepassword_create_secure_note` | write    | Create a new secure note (requires approval)              |
 
 ### Resources
 
@@ -95,29 +95,53 @@ Restart Claude Desktop and you should be ready to go!
 
 ## Environment Variables
 
-| Variable                   | Required | Description                         | Default     |
-| -------------------------- | -------- | ----------------------------------- | ----------- |
-| `OP_SERVICE_ACCOUNT_TOKEN` | Yes      | 1Password service account token     | -           |
-| `ENABLED_TOOLGROUPS`       | No       | Comma-separated tool groups         | All enabled |
-| `SKIP_HEALTH_CHECKS`       | No       | Skip credential validation on start | `false`     |
+| Variable                        | Required | Description                                                            | Default                        |
+| ------------------------------- | -------- | ---------------------------------------------------------------------- | ------------------------------ |
+| `OP_SERVICE_ACCOUNT_TOKEN`      | Yes      | 1Password service account token                                        | -                              |
+| `ENABLED_TOOLGROUPS`            | No       | Comma-separated tool groups                                            | All enabled                    |
+| `SKIP_HEALTH_CHECKS`            | No       | Skip credential validation on start                                    | `false`                        |
+| `DANGEROUSLY_SKIP_ELICITATIONS` | No       | Set to `true` to bypass ALL confirmation prompts (exposes all secrets) | not set (elicitation required) |
+| `OP_ELICITATION_READ`           | No       | Prompt before revealing credentials                                    | `true`                         |
+| `OP_ELICITATION_WRITE`          | No       | Prompt before creating items                                           | `true`                         |
+| `OP_WHITELISTED_ITEMS`          | No       | Comma-separated item titles or IDs that bypass read elicitation        | none                           |
 
 ## Security Considerations
 
-- **Credential Unlocking**: By default, `get_item` returns item metadata but redacts sensitive credentials. Users must explicitly share a 1Password URL via `unlock_item` to expose the actual credentials.
+- **Startup safety check**: The server refuses to start unless elicitation is configured (HTTP fallback URLs) or explicitly opted out via `DANGEROUSLY_SKIP_ELICITATIONS=true`. This prevents accidental carte blanche access to all secrets.
+- **Elicitation-based approval**: By default, `get_item` prompts the user for confirmation before revealing sensitive credentials. Write operations also require approval.
 - **Service Account Token**: Passed via environment variable, never logged
 - **CLI Arguments**: Passwords for create operations are passed as CLI arguments (briefly visible in process list)
 - **Recommendation**: Use `readonly` tool group unless write access is specifically needed
 
-### How Credential Unlocking Works
+### How Credential Approval Works
 
-1. By default, `onepassword_get_item` returns item metadata but shows `[REDACTED - use unlock_item first]` for sensitive fields
-2. To access credentials, the user must:
-   - Copy the item's URL from 1Password (right-click → Copy Link)
-   - Provide the URL to `onepassword_unlock_item`
-3. Once unlocked, `onepassword_get_item` will return the full credentials for that item
-4. Unlocked items remain accessible only for the current session (resets on server restart)
+1. By default, `onepassword_get_item` returns item metadata but shows `[REDACTED]` for sensitive fields
+2. The server prompts the user to approve credential access via elicitation
+3. Once approved, the full credentials are returned for that request
+4. Whitelisted items (via `OP_WHITELISTED_ITEMS`, matched by title or item ID) bypass the approval prompt entirely
 
-This provides an explicit consent mechanism - users must actively share a 1Password link to grant credential access.
+### Configuration Examples
+
+**Disable all confirmations** (fully automated workflows):
+
+```bash
+DANGEROUSLY_SKIP_ELICITATIONS=true
+```
+
+**Only confirm writes, auto-approve reads** (requires HTTP fallback URLs for startup — `DANGEROUSLY_SKIP_ELICITATIONS=true` overrides per-action settings):
+
+```bash
+ELICITATION_REQUEST_URL="https://your-endpoint/request"
+ELICITATION_POLL_URL="https://your-endpoint/poll"
+OP_ELICITATION_READ=false
+OP_ELICITATION_WRITE=true
+```
+
+**Whitelist specific items by title or ID** (always auto-approve these):
+
+```bash
+OP_WHITELISTED_ITEMS="Stripe Key,AWS Credentials,abc123def456"
+```
 
 ## Development
 

@@ -191,7 +191,9 @@ Manual tests are designed to test the MCP server against real external APIs. The
    OTHER_ENV_VAR=value
    ```
 
-2. Run manual tests:
+2. **Check for credentials**: Before running manual tests, verify the `.env` file exists and contains the required API keys. **If the `.env` file is missing or incomplete, STOP and ask the user to provide the credentials. Do NOT skip manual tests or proceed without them.**
+
+3. Run manual tests:
    ```bash
    npm run test:manual
    ```

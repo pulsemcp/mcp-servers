@@ -232,6 +232,58 @@ describe('saveMCPImplementation API client', () => {
     });
   });
 
+  describe('verified_no_remote_canonicals flag', () => {
+    it('should send verified_no_remote_canonicals=true in form data', async () => {
+      let capturedBody: string | undefined;
+
+      global.fetch = vi.fn().mockImplementation(async (_url, options) => {
+        capturedBody = options?.body?.toString();
+        return mockSuccessResponse();
+      });
+
+      await saveMCPImplementation(mockApiKey, mockBaseUrl, 100, {
+        verified_no_remote_canonicals: true,
+      });
+
+      expect(capturedBody).toBeDefined();
+      const params = new URLSearchParams(capturedBody);
+      expect(params.get('mcp_implementation[verified_no_remote_canonicals]')).toBe('true');
+    });
+
+    it('should send verified_no_remote_canonicals=false in form data', async () => {
+      let capturedBody: string | undefined;
+
+      global.fetch = vi.fn().mockImplementation(async (_url, options) => {
+        capturedBody = options?.body?.toString();
+        return mockSuccessResponse();
+      });
+
+      await saveMCPImplementation(mockApiKey, mockBaseUrl, 100, {
+        verified_no_remote_canonicals: false,
+      });
+
+      expect(capturedBody).toBeDefined();
+      const params = new URLSearchParams(capturedBody);
+      expect(params.get('mcp_implementation[verified_no_remote_canonicals]')).toBe('false');
+    });
+
+    it('should not send verified_no_remote_canonicals when undefined', async () => {
+      let capturedBody: string | undefined;
+
+      global.fetch = vi.fn().mockImplementation(async (_url, options) => {
+        capturedBody = options?.body?.toString();
+        return mockSuccessResponse();
+      });
+
+      await saveMCPImplementation(mockApiKey, mockBaseUrl, 100, {
+        name: 'Test',
+      });
+
+      expect(capturedBody).toBeDefined();
+      expect(capturedBody).not.toContain('verified_no_remote_canonicals');
+    });
+  });
+
   describe('error handling for 422 validation errors', () => {
     it('should handle empty errors array by providing a default message', async () => {
       global.fetch = vi.fn().mockImplementation(async () => ({

@@ -1167,5 +1167,101 @@ export function createMockPulseMCPAdminClient(mockData: MockData): IPulseMCPAdmi
         deleted_count: 0,
       };
     },
+
+    // Proctor methods
+    async runExamForMirror() {
+      return {
+        lines: [
+          { type: 'log' as const, message: 'Starting exam run' },
+          {
+            type: 'summary' as const,
+            total: 0,
+            passed: 0,
+            failed: 0,
+            skipped: 0,
+          },
+        ],
+      };
+    },
+
+    async saveResultsForMirror() {
+      return {
+        saved: [],
+        errors: [],
+      };
+    },
+
+    async getProctorRuns() {
+      return {
+        runs: [],
+        pagination: { current_page: 1, total_pages: 1, total_count: 0, has_next: false, limit: 30 },
+      };
+    },
+
+    async getProctorMetadata() {
+      return {
+        runtimes: [],
+        exams: [],
+      };
+    },
+
+    // Discovered URL methods
+    async getDiscoveredUrls() {
+      return {
+        urls: [],
+        has_more: false,
+        total_count: 0,
+        page: 1,
+        per_page: 50,
+      };
+    },
+
+    async markDiscoveredUrlProcessed(params) {
+      return {
+        success: true,
+        id: params.id,
+        processed_at: new Date().toISOString(),
+      };
+    },
+
+    async getDiscoveredUrlStats() {
+      return {
+        pending: 0,
+        processed_today: 0,
+        posted_today: 0,
+        skipped_today: 0,
+        rejected_today: 0,
+        errored_today: 0,
+      };
+    },
+
+    async getMozMetrics() {
+      return {
+        metrics: { page_authority: 50, domain_authority: 60 },
+        raw_response: {},
+        processed_at: new Date().toISOString(),
+      };
+    },
+
+    async getMozBacklinks() {
+      return {
+        backlinks: [],
+        raw_response: {},
+        processed_at: new Date().toISOString(),
+      };
+    },
+
+    async getMozStoredMetrics() {
+      return {
+        data: [],
+        meta: {
+          current_page: 1,
+          total_pages: 0,
+          total_count: 0,
+          has_next: false,
+          limit: 30,
+        },
+      };
+    },
   };
 }

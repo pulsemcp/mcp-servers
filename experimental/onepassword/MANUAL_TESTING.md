@@ -42,53 +42,54 @@ npm run test:manual
 
 ## Latest Test Results
 
-**Test Date:** 2026-01-09 10:16 UTC
-**Branch:** claude-opus-4/fix-onepassword-data-exposure-221
-**Commit:** a6ecad9
+**Test Date:** 2026-03-20
+**Branch:** tadasant/dangerously-skip-elicitations
+**Commit:** eee3e6b
 **Tested By:** Claude
-**Environment:** Build verification only - no 1Password service account credentials available
+**Environment:** Linux, Node.js, 1Password CLI with service account token
 
-### Test Results
+### Summary
 
-**Type:** Build verification and functional tests only
-**Status:** :white_check_mark: Build successful, functional tests passed
+This PR adds `DANGEROUSLY_SKIP_ELICITATIONS` env variable and startup safety validation. The server now refuses to start unless elicitation is configured (HTTP fallback URLs) or explicitly opted out (`DANGEROUSLY_SKIP_ELICITATIONS=true`). Manual tests verify real 1Password API operations work correctly with the new elicitation bypass mechanism.
 
-**Details:**
+### Manual Test Results
 
-- Successfully built shared module
-- Successfully built local module
-- TypeScript compilation completed without errors
-- All 29 functional tests passed
-- **Security fix verified:** IDs are no longer exposed in tool responses (fixes #221)
-- **Security tests added:** Verified unlock_item response doesn't expose IDs
-- Package ready for version bump
+**Status:** :white_check_mark: 3 passed, 1 skipped (expected)
 
-**Note:** Full manual testing with 1Password CLI and service account credentials was not performed. The functional tests verify all tool logic with mocked responses, including the security fixes for issue #221.
+| Test                                | Status             | Notes                                                     |
+| ----------------------------------- | ------------------ | --------------------------------------------------------- |
+| list vaults via MCP tool call       | :white_check_mark: | Successfully listed vaults via real 1Password API         |
+| list items via MCP tool call        | :white_check_mark: | Successfully listed items in vault via real 1Password API |
+| get item details via MCP tool call  | :white_check_mark: | Successfully retrieved item with credentials via real API |
+| list items by tag via MCP tool call | :hourglass:        | Skipped — no items with test tag in vault (expected)      |
 
-### Functional Test Summary
+### Functional Test Results
+
+**Status:** :white_check_mark: 59 passed, 0 failed
 
 | Metric      | Value |
 | ----------- | ----- |
-| Total Tests | 29    |
-| Passed      | 29    |
+| Total Tests | 59    |
+| Passed      | 59    |
 | Failed      | 0     |
 | Pass Rate   | 100%  |
 
+### Key Tests Added/Modified
+
+| Test Category                                 | Count | Notes                                                    |
+| --------------------------------------------- | ----- | -------------------------------------------------------- |
+| `isDangerouslySkipElicitations` helper        | 5     | Validates true/false/case-insensitive/unset behavior     |
+| `hasHttpElicitationFallback` helper           | 6     | Validates URL presence, whitespace-only URL rejection    |
+| `checkElicitationSafety` startup gate         | 6     | Validates safe/unsafe states for all config combinations |
+| `ELICITATION_ENABLED=false` bypass prevention | 1     | Confirms direct ELICITATION_ENABLED=false is ignored     |
+| DANGEROUSLY_SKIP_ELICITATIONS behavior        | 2     | Case-insensitive true, explicit false values             |
+
 ### Test Files
 
-| File                         | Status             | Tests | Notes                                                                      |
-| ---------------------------- | ------------------ | ----- | -------------------------------------------------------------------------- |
-| `tools.test.ts`              | :white_check_mark: | 29    | Tools, URL parsing, unlock/lock, credential redaction, ID removal security |
-| `onepassword.manual.test.ts` | :hourglass: SKIP   | 4     | Skipped - no credentials available                                         |
-
-### Detailed Results
-
-Manual tests require 1Password CLI and a service account with access to at least one vault. The manual test file includes tests for:
-
-- Listing vaults
-- Listing items in a vault
-- Getting item details
-- Creating logins (skipped by default)
+| File                         | Status             | Tests | Notes                                                                        |
+| ---------------------------- | ------------------ | ----- | ---------------------------------------------------------------------------- |
+| `tools.test.ts` (functional) | :white_check_mark: | 59    | Tools, elicitation config, credential redaction, whitelisting, safety checks |
+| `onepassword.manual.test.ts` | :white_check_mark: | 3/4   | Real 1Password API calls with DANGEROUSLY_SKIP_ELICITATIONS=true             |
 
 ---
 

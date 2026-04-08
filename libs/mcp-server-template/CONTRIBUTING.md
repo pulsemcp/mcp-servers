@@ -86,6 +86,7 @@ Manual tests are important when your server interacts with external APIs:
 - Verify actual API integration works correctly
 - Test response shapes and error handling
 - Are NOT run in CI to avoid external dependencies
+- **If the `.env` file is missing or doesn't contain the required API keys/credentials, STOP and ask the user to provide them. Do NOT silently skip manual tests or proceed without credentials.**
 
 ## Testing with a test.ts file
 

@@ -48,24 +48,22 @@ Use this for personal `@gmail.com` accounts or any Google account without Worksp
 
 #### Getting a Refresh Token
 
-Run the one-time setup script from a clone of the repository:
+Run the built-in setup command:
 
 ```bash
-git clone https://github.com/pulsemcp/mcp-servers.git
-cd mcp-servers/experimental/gmail
-npx tsx scripts/oauth-setup.ts <client_id> <client_secret>
+npx gmail-workspace-mcp-server oauth-setup <client_id> <client_secret>
 ```
 
 You can also pass credentials via environment variables:
 
 ```bash
-GMAIL_OAUTH_CLIENT_ID=... GMAIL_OAUTH_CLIENT_SECRET=... npx tsx scripts/oauth-setup.ts
+GMAIL_OAUTH_CLIENT_ID=... GMAIL_OAUTH_CLIENT_SECRET=... npx gmail-workspace-mcp-server oauth-setup
 ```
 
 **Port conflict?** If port 3000 is already in use, specify a different port:
 
 ```bash
-PORT=3001 npx tsx scripts/oauth-setup.ts <client_id> <client_secret>
+PORT=3001 npx gmail-workspace-mcp-server oauth-setup <client_id> <client_secret>
 ```
 
 Desktop app credentials automatically allow `http://localhost` redirects on any port, so no additional Google Cloud Console configuration is needed.
@@ -154,11 +152,11 @@ You can find the `client_email` and `private_key` values in your service account
 
 The server supports three tool groups for permission-based access control:
 
-| Group                | Tools Included                                                                     | Risk Level |
-| -------------------- | ---------------------------------------------------------------------------------- | ---------- |
-| `readonly`           | `list_email_conversations`, `get_email_conversation`, `search_email_conversations` | Low        |
-| `readwrite`          | All readonly tools + `change_email_conversation`, `draft_email`                    | Medium     |
-| `readwrite_external` | All readwrite tools + `send_email`                                                 | High       |
+| Group                | Tools Included                                                                                          | Risk Level |
+| -------------------- | ------------------------------------------------------------------------------------------------------- | ---------- |
+| `readonly`           | `list_email_conversations`, `get_email_conversation`, `search_email_conversations`, `list_draft_emails` | Low        |
+| `readwrite`          | All readonly tools + `change_email_conversation`, `upsert_draft_email`                                  | Medium     |
+| `readwrite_external` | All readwrite tools + `send_email`                                                                      | High       |
 
 By default, all tool groups are enabled. To restrict access, set the `GMAIL_ENABLED_TOOLGROUPS` environment variable:
 
@@ -256,25 +254,69 @@ Modify email labels and status (read/unread, starred, archived).
 }
 ```
 
-### draft_email
+### list_draft_emails
 
-Create a draft email, optionally as a reply to an existing conversation.
+List draft emails from Gmail with optional thread filtering.
 
 **Parameters:**
 
-- `to` (string, required): Recipient email address
-- `subject` (string, required): Email subject
-- `body` (string, required): Email body (plain text)
-- `thread_id` (string, optional): Thread ID for replies
-- `reply_to_email_id` (string, optional): Email ID to reply to (sets References/In-Reply-To headers)
+- `count` (number, optional): Maximum number of drafts to return (default: 10, max: 100)
+- `thread_id` (string, optional): Filter drafts by conversation thread ID
 
 **Example:**
 
 ```json
 {
+  "thread_id": "18abc123def456"
+}
+```
+
+### upsert_draft_email
+
+Create, update, or delete a draft email. Optionally as a reply to an existing conversation.
+
+**Parameters:**
+
+- `draft_id` (string, optional): ID of an existing draft to update or delete (omit to create a new draft)
+- `delete` (boolean, optional): Set to `true` to delete the draft specified by `draft_id`. All other parameters are ignored when deleting
+- `to` (string, required for create/update): Recipient email address
+- `subject` (string, required for create/update): Email subject
+- `plaintext_body` (string): Plain text body content (at least one of plaintext_body or html_body required for create/update)
+- `html_body` (string): HTML body content for rich text formatting (at least one of plaintext_body or html_body required for create/update)
+- `cc` (string, optional): CC recipients
+- `bcc` (string, optional): BCC recipients
+- `thread_id` (string, optional): Thread ID for replies
+- `reply_to_email_id` (string, optional): Email ID to reply to (sets References/In-Reply-To headers)
+
+For create/update: at least one of `plaintext_body` or `html_body` must be provided. If both are provided, a multipart email is sent with both versions.
+
+**Example (create new draft):**
+
+```json
+{
   "to": "recipient@example.com",
   "subject": "Meeting Follow-up",
-  "body": "Thanks for the meeting today!"
+  "plaintext_body": "Thanks for the meeting today!"
+}
+```
+
+**Example (update existing draft):**
+
+```json
+{
+  "draft_id": "r123456789",
+  "to": "recipient@example.com",
+  "subject": "Meeting Follow-up (revised)",
+  "html_body": "<p>Thanks for the meeting today! Check out <a href=\"https://example.com/notes\">the notes</a>.</p>"
+}
+```
+
+**Example (delete a draft):**
+
+```json
+{
+  "draft_id": "r123456789",
+  "delete": true
 }
 ```
 
@@ -286,18 +328,31 @@ Send an email directly or from an existing draft.
 
 - `to` (string, conditional): Recipient email (required unless sending from draft)
 - `subject` (string, conditional): Email subject (required unless sending from draft)
-- `body` (string, conditional): Email body (required unless sending from draft)
+- `plaintext_body` (string): Plain text body content (at least one of plaintext_body or html_body required, unless sending a draft)
+- `html_body` (string): HTML body content for rich text formatting (at least one of plaintext_body or html_body required, unless sending a draft)
+- `cc` (string, optional): CC recipients
+- `bcc` (string, optional): BCC recipients
 - `from_draft_id` (string, optional): Send an existing draft by ID
 - `thread_id` (string, optional): Thread ID for replies
 - `reply_to_email_id` (string, optional): Email ID to reply to
 
-**Example (new email):**
+**Example (plain text email):**
 
 ```json
 {
   "to": "recipient@example.com",
   "subject": "Hello",
-  "body": "This is a test email."
+  "plaintext_body": "This is a test email."
+}
+```
+
+**Example (HTML email):**
+
+```json
+{
+  "to": "recipient@example.com",
+  "subject": "Hello",
+  "html_body": "<p>Check out <a href=\"https://example.com\">our website</a> for more details.</p>"
 }
 ```
 

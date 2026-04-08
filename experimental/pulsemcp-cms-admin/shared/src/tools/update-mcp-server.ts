@@ -21,20 +21,23 @@ const PARAM_DESCRIPTIONS = {
   package_registry: 'Package registry: npm, pypi, cargo, etc.',
   package_name: 'Package name on the registry (e.g., "@modelcontextprotocol/server-filesystem")',
   recommended: 'Mark this server as recommended by PulseMCP',
+  verified_no_remote_canonicals:
+    'Mark that this server has been verified to have no remote canonical URLs (true = verified no remote canonicals exist, false = reset/canonicals found)',
   created_on_override:
     'Override the automatically derived created date (ISO date string, e.g., "2025-01-15")',
-  tags: 'Tags for the server. Replaces all existing tags when provided. Use tag slugs.',
+  tags: 'Tags for the server. Providing this replaces ALL existing tags. Omitting leaves them unchanged. Pass an empty array to delete all. Use tag slugs.',
   canonical_urls:
-    'Authoritative URLs for the server. Replaces all existing canonical URLs when provided.',
-  remotes: 'Remote endpoints for the server. Replaces all existing remotes when provided.',
+    'Authoritative URLs for the server. Providing this replaces ALL existing canonical URLs. Omitting leaves them unchanged. Pass an empty array to delete all.',
+  remotes:
+    'Remote endpoints for the server. Providing this replaces ALL existing remotes. Omitting leaves them unchanged. Pass an empty array to delete all.',
   internal_notes: 'Admin-only internal notes',
 } as const;
 
 const CanonicalUrlSchema = z.object({
   url: z.string().describe('The canonical URL'),
   scope: z
-    .enum(['domain', 'subdomain', 'subfolder', 'url'])
-    .describe('Scope of the canonical: domain, subdomain, subfolder, or url (exact match)'),
+    .enum(['domain', 'subdomain', 'url'])
+    .describe('Scope of the canonical: domain, subdomain, or url (exact match)'),
   note: z.string().optional().describe('Optional note about this canonical URL'),
 });
 
@@ -93,6 +96,10 @@ const UpdateMCPServerSchema = z.object({
   package_registry: z.string().optional().describe(PARAM_DESCRIPTIONS.package_registry),
   package_name: z.string().optional().describe(PARAM_DESCRIPTIONS.package_name),
   recommended: z.boolean().optional().describe(PARAM_DESCRIPTIONS.recommended),
+  verified_no_remote_canonicals: z
+    .boolean()
+    .optional()
+    .describe(PARAM_DESCRIPTIONS.verified_no_remote_canonicals),
   created_on_override: z.string().optional().describe(PARAM_DESCRIPTIONS.created_on_override),
   tags: z.array(z.string()).optional().describe(PARAM_DESCRIPTIONS.tags),
   canonical_urls: z
@@ -106,9 +113,14 @@ const UpdateMCPServerSchema = z.object({
 export function updateMCPServer(_server: Server, clientFactory: ClientFactory) {
   return {
     name: 'update_mcp_server',
-    description: `Update an MCP server's information. Only provided fields will be updated.
+    description: `Update an MCP server's information. Only provided fields will be updated; **omitted fields remain unchanged**.
 
 **Important:** Use the \`implementation_id\` from \`get_mcp_server\` or \`list_mcp_servers\`, NOT the server ID or slug.
+
+## Omission semantics
+- **Omitting** \`remotes\`, \`canonical_urls\`, or \`tags\` leaves existing values **unchanged** (does NOT clear them)
+- **Providing** \`remotes\`, \`canonical_urls\`, or \`tags\` **replaces ALL** existing entries (not a merge)
+- To **delete all** entries, pass an empty array (e.g., \`"remotes": []\`)
 
 ## Updating Basic Info
 \`\`\`json
@@ -133,19 +145,19 @@ export function updateMCPServer(_server: Server, clientFactory: ClientFactory) {
 \`\`\`
 
 ## Adding/Updating Canonical URLs
-Providing canonical_urls replaces ALL existing canonical URLs:
+Providing canonical_urls replaces ALL existing canonical URLs (omitting leaves them unchanged):
 \`\`\`json
 {
   "implementation_id": 456,
   "canonical_urls": [
-    { "url": "https://github.com/org/repo", "scope": "subfolder" },
+    { "url": "https://github.com/org/repo", "scope": "domain" },
     { "url": "https://npmjs.com/package/name", "scope": "url" }
   ]
 }
 \`\`\`
 
 ## Adding/Updating Remote Endpoints
-Providing remotes replaces ALL existing remote endpoints:
+Providing remotes replaces ALL existing remote endpoints (omitting leaves them unchanged):
 \`\`\`json
 {
   "implementation_id": 456,
@@ -232,6 +244,10 @@ Create new provider:
         package_registry: { type: 'string', description: PARAM_DESCRIPTIONS.package_registry },
         package_name: { type: 'string', description: PARAM_DESCRIPTIONS.package_name },
         recommended: { type: 'boolean', description: PARAM_DESCRIPTIONS.recommended },
+        verified_no_remote_canonicals: {
+          type: 'boolean',
+          description: PARAM_DESCRIPTIONS.verified_no_remote_canonicals,
+        },
         created_on_override: {
           type: 'string',
           description: PARAM_DESCRIPTIONS.created_on_override,
@@ -249,7 +265,7 @@ Create new provider:
               url: { type: 'string', description: 'The canonical URL' },
               scope: {
                 type: 'string',
-                enum: ['domain', 'subdomain', 'subfolder', 'url'],
+                enum: ['domain', 'subdomain', 'url'],
                 description: 'Scope of the canonical',
               },
               note: { type: 'string', description: 'Optional note' },
@@ -339,6 +355,10 @@ Create new provider:
 
         if (server.recommended !== undefined) {
           content += `**Recommended:** ${server.recommended ? 'Yes' : 'No'}\n`;
+        }
+
+        if (server.verified_no_remote_canonicals !== undefined) {
+          content += `**Verified No Remote Canonicals:** ${server.verified_no_remote_canonicals ? 'Yes' : 'No'}\n`;
         }
 
         if (server.updated_at) {

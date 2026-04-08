@@ -7,6 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-03-03
+
+### Added
+
+- Element screenshots: New `selector` parameter for `browser_screenshot` to capture a specific element by CSS selector (e.g., `#main-content`, `.hero-banner`, `table.results`)
+- Region screenshots: New `clip` parameter for `browser_screenshot` to capture a rectangular region of the page by coordinates (`{x, y, width, height}`)
+- `selector`, `clip`, and `fullPage` are mutually exclusive — only one can be specified per call
+- Session state preservation during video recording: Cookies and localStorage are now automatically saved and restored when the browser context is recycled for `browser_start_recording` and `browser_stop_recording`, using Playwright's `storageState` API
+- sessionStorage for the current origin is also preserved on a best-effort basis during recording start/stop
+
+### Changed
+
+- **BREAKING**: `browser_start_recording` and `browser_stop_recording` no longer warn about session state being lost, since state is now preserved
+
+## [0.1.0] - 2026-02-23
+
+### Added
+
+- New `browser_start_recording` tool to start video recording of browser interactions using context recycling
+- New `browser_stop_recording` tool to stop recording and save the video as an MCP resource (WebM format)
+- Video storage system following the existing screenshot storage pattern (`FileSystemVideoStorage`, `VideoStorageFactory`)
+- New `VIDEO_STORAGE_PATH` environment variable to configure video storage location (default: `/tmp/playwright-videos`)
+- Videos exposed as MCP resources via `resources/list` and `resources/read` handlers alongside screenshots
+- Recording state tracking on `PlaywrightClient` with `isRecording()` method
+- Context recycling approach: starting/stopping recording creates a new browser context with/without `recordVideo` option, automatically navigating back to the previous URL
+- Clear tool descriptions documenting that cookies/localStorage/sessionStorage are lost when recording starts or stops
+
 ## [0.0.9] - 2026-01-18
 
 ### Fixed

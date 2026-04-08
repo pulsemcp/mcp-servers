@@ -3,6 +3,7 @@ export {
   type IPlaywrightClient,
   type ClientFactory,
   type CreateMCPServerOptions,
+  type StopRecordingResult,
 } from './server.js';
 export { createRegisterTools } from './tools.js';
 export { registerResources } from './resources.js';

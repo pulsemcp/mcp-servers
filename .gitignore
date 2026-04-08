@@ -1,6 +1,7 @@
 # Dependencies
 node_modules
 .npm
+.npm-cache
 .pnp.*
 .pnp/
 
@@ -61,3 +62,6 @@ mcp-json-profiles/.secrets
 
 # Test publish directories
 **/.test-publish/
+
+# Claude skills - auto-generated, should not be version-controlled
+**/.claude/skills/

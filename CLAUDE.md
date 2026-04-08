@@ -20,7 +20,50 @@ This is a monorepo containing Model Context Protocol (MCP) servers built by Puls
 - Branch naming: `<github-username>/<feature-description>` (e.g., `tadasant/fix-bug`)
 - Main branch has CI/CD
 - Always include test coverage for changes
-- PRs should have concise titles and detailed descriptions
+- PRs should have concise titles and detailed descriptions using this format:
+
+### PR Description Format
+
+**This overrides the default Claude Code PR template.** Do NOT use a `## Test plan` section with unchecked checkboxes. Instead, use this format:
+
+```
+## Summary
+<what changed and why>
+
+## Verification
+- [x] <what you actually did to verify this works>
+- [x] <proof: concrete evidence it works — not just an assertion>
+```
+
+The `## Verification` section documents how you closed the loop — what you _actually did_, not what _should be done_. Every checkbox must be checked before the PR is opened. If you can't verify something, explain why instead of leaving an unchecked box.
+
+### Proof: Show, Don't Tell
+
+Every verification item should include **proof** — concrete evidence that the change works. "Tested it and it works" is NOT proof. A screenshot, a test output, or a confirmation receipt IS proof.
+
+**Proof types and when to use them:**
+
+1. **E2E test report** — For backend/logic changes. Describe what you tested end-to-end and what happened. This is the most common type.
+2. **Screenshot** — For UI changes. **UI changes MUST include screenshots. No exceptions.**
+3. **External confirmation** — For tasks with external side effects (API calls, emails sent, deployments). Show the confirmation or response.
+
+Good examples:
+
+- `[x] E2E: created a session via the API, verified it appeared in the dashboard with correct metadata`
+- `[x] Screenshot of updated settings page: ![settings](url)`
+- `[x] Ran migration on staging, verified column exists: `SELECT column_name FROM information_schema.columns WHERE table_name = 'users';``
+- `[x] Sent test email via new endpoint, confirmed delivery in Mailgun logs`
+- `[x] CI green (lint + tests pass)`
+- `[x] Self-reviewed PR diff — no unintended changes`
+
+Bad examples (NEVER do this):
+
+- `[ ] CI passes` — unchecked box, aspirational
+- `[ ] Verify the server works end-to-end` — unchecked box, aspirational
+- `[x] Tested it and it works` — this is an assertion, not proof. What did you test? What happened?
+- `[x] Verified the feature works correctly` — says nothing. Show what you did and what you saw
+
+Unchecked boxes in a PR description are useless — they describe aspirational work that nobody will do. Checked boxes without proof are almost as bad — they're assertions without evidence. Close the loop with concrete proof before handing the PR to a human.
 
 ### IMPORTANT: Git Branch Management
 
@@ -267,6 +310,10 @@ npm run test:manual
 
 **Note**: Always use `.env` files in the MCP server's source root to store API keys and credentials. Never commit these files to version control.
 
+**CRITICAL: Manual tests MUST run against staging, not production.** For servers that connect to PulseMCP APIs (like `pulsemcp-cms-admin`), always set `PULSEMCP_ADMIN_API_URL=https://admin.staging.pulsemcp.com` in the `.env` file. The default API URL is production — running manual tests without the staging URL will either fail with "Invalid API key" (if using a staging key) or mutate production data (if using a production key). Check each server's `.env.example` for the required variables.
+
+**CRITICAL: If the `.env` file is missing or doesn't contain the required API keys/credentials, STOP and ask the user to provide them.** Do NOT silently skip manual tests or proceed without credentials. Check for the `.env` file BEFORE attempting to run manual tests — if it's missing or looks incomplete, ask the user for the required credentials immediately.
+
 ### CRITICAL: Manual Test Integrity Policy
 
 **Manual tests MUST actually test real functionality against real APIs. No exceptions.**
@@ -409,8 +456,8 @@ Don't add: basic TypeScript fixes, standard npm troubleshooting, obvious file op
 - When simplifying tool parameters, consider the MCP best practices guide in libs/mcp-server-template/shared/src/tools/TOOL_DESCRIPTIONS_GUIDE.md for writing clear descriptions
 - Breaking changes in tool parameters should be clearly marked in CHANGELOG.md with **BREAKING** prefix to alert users
 - When using `set -e` in shell scripts with npm commands, be aware that `npm view` returns exit code 1 when a package doesn't exist yet - use `|| true` to prevent premature script termination during npm registry propagation checks
-- **For `/publish_and_pr` command**: This means "stage for publishing and update PR" - it does NOT mean actually publish to npm. The workflow is: bump version → update changelog → commit → push → update PR. NPM publishing happens automatically via CI when PR is merged
-- **Manual Testing Before Publishing**: Always run manual tests (with real API credentials) before staging a version bump to ensure the server works correctly with external APIs
+- **For `/publish-and-pr` skill**: This means "stage for publishing and update PR" - it does NOT mean actually publish to npm. The workflow is: bump version → update changelog → commit → push → update PR. NPM publishing happens automatically via CI when PR is merged
+- **Manual Testing Before Publishing**: Always run manual tests (with real API credentials) before staging a version bump to ensure the server works correctly with external APIs. If the `.env` file with credentials is missing, STOP and ask the user to provide them — do NOT skip manual tests
 - **Git Tag Format for Version Bumps**: When creating git tags for version bumps, use the format `package-name@version` (e.g., `appsignal-mcp-server@0.2.12`, `@pulsemcp/pulse-fetch@0.2.10`). The CI verify-publications workflow expects this exact format, not `server-name-vX.Y.Z`
 - **Manual Testing and CI**: The verify-publications CI check requires that MANUAL_TESTING.md references a commit that's in the PR's history. If you make any commits after running manual tests (even just test fixes), the CI will fail. For test-only fixes, this is a known limitation that doesn't require re-running manual tests. When updating MANUAL_TESTING.md for packaging-only changes, ensure the commit hash matches a commit in the current PR branch
 - **npm Package Files Field**: When specifying files to include in npm packages, use specific glob patterns (e.g., `"build/**/*.js"`) rather than entire directories (e.g., `"build/"`) to ensure proper file permissions and avoid including non-executable files. This prevents "Permission denied" errors when users run the package with npx
@@ -427,6 +474,7 @@ Don't add: basic TypeScript fixes, standard npm troubleshooting, obvious file op
 - Manual tests should run against built code (not source) - create a `run-manual-built.js` script that builds the project first, then runs tests against the compiled JavaScript
 - CI should fail when MANUAL_TESTING.md isn't updated for the current PR, but NOT when tests fail (some failures might be expected due to API limitations)
 - **Manual test setup checklist**: Verify .env exists with real API keys, run `ci:install` to install all workspace dependencies, run `build:test` to build everything including test-mcp-client
+- **CRITICAL: Missing credentials policy**: If the `.env` file is missing or doesn't contain the required API keys/credentials for manual tests, STOP and ask the user to provide them. Do NOT silently skip manual tests or proceed without credentials. Agents must check for `.env` BEFORE running manual tests and prompt the user if it's missing or incomplete
 - **CRITICAL: Manual tests must actually pass against real APIs** - NEVER write tests that skip or gracefully handle missing backend endpoints. If an API endpoint doesn't exist, do not write client code for it. A "passing" test that silently skips on 404 is worse than no test at all because it provides false confidence
 
 ### Monorepo Dependency Management

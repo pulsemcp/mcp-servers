@@ -160,6 +160,7 @@ async function createTestMCPClientWithMock(
     serverPath,
     env: {
       ONEPASSWORD_MOCK_DATA: JSON.stringify(mockData),
+      DANGEROUSLY_SKIP_ELICITATIONS: 'true',
     },
     debug: false,
   });

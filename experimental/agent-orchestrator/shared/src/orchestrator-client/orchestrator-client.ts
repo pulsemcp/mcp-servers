@@ -31,6 +31,35 @@ import type {
   StopConditionInfo,
   ConfigsResponse,
   SendPushNotificationResponse,
+  EnqueuedMessage,
+  EnqueuedMessagesResponse,
+  EnqueuedMessageResponse,
+  EnqueuedMessageInterruptResponse,
+  EnqueuedMessageStatus,
+  Trigger,
+  TriggerType,
+  TriggerStatus,
+  TriggersResponse,
+  TriggerResponse,
+  TriggerChannelsResponse,
+  CreateTriggerRequest,
+  UpdateTriggerRequest,
+  Notification,
+  NotificationsResponse,
+  NotificationResponse,
+  NotificationBadgeResponse,
+  NotificationMarkAllReadResponse,
+  NotificationDismissAllReadResponse,
+  HealthReport,
+  HealthActionResponse,
+  CliStatusResponse,
+  CliActionResponse,
+  ForkSessionResponse,
+  RefreshSessionResponse,
+  RefreshAllSessionsResponse,
+  BulkArchiveResponse,
+  TranscriptResponse,
+  TranscriptArchiveStatusResponse,
 } from '../types.js';
 
 /** Raw agent root shape as returned by the Rails API */
@@ -45,6 +74,7 @@ export interface RawAgentRoot {
   default_stop_condition?: string;
   default?: boolean;
   default_mcp_servers?: string[];
+  default_skills?: string[];
 }
 
 /**
@@ -73,6 +103,7 @@ export function mapAgentRoot(raw: RawAgentRoot): AgentRootInfo {
     default_subdirectory: raw.subdirectory,
     default_stop_condition: raw.default_stop_condition,
     default_mcp_servers: raw.default_mcp_servers,
+    default_skills: raw.default_skills,
   };
 }
 
@@ -93,7 +124,6 @@ export interface IAgentOrchestratorClient {
   searchSessions(
     query: string,
     options?: {
-      search_contents?: boolean;
       status?: SessionStatus;
       agent_type?: string;
       show_archived?: boolean;
@@ -181,6 +211,87 @@ export interface IAgentOrchestratorClient {
     sessionId: string | number,
     message: string
   ): Promise<SendPushNotificationResponse>;
+
+  // Session Extensions
+  forkSession(id: string | number, messageIndex: number): Promise<ForkSessionResponse>;
+  refreshSession(id: string | number): Promise<RefreshSessionResponse>;
+  refreshAllSessions(): Promise<RefreshAllSessionsResponse>;
+  updateSessionNotes(id: string | number, notes: string): Promise<Session>;
+  toggleFavorite(id: string | number): Promise<Session & { favorited: boolean }>;
+  bulkArchiveSessions(sessionIds: number[]): Promise<BulkArchiveResponse>;
+  getTranscript(id: string | number, format?: 'text' | 'json'): Promise<TranscriptResponse>;
+
+  // Enqueued Messages
+  listEnqueuedMessages(
+    sessionId: string | number,
+    options?: {
+      status?: EnqueuedMessageStatus;
+      page?: number;
+      per_page?: number;
+    }
+  ): Promise<EnqueuedMessagesResponse>;
+  getEnqueuedMessage(sessionId: string | number, messageId: number): Promise<EnqueuedMessage>;
+  createEnqueuedMessage(
+    sessionId: string | number,
+    data: { content: string; stop_condition?: string }
+  ): Promise<EnqueuedMessage>;
+  updateEnqueuedMessage(
+    sessionId: string | number,
+    messageId: number,
+    data: { content?: string; stop_condition?: string }
+  ): Promise<EnqueuedMessage>;
+  deleteEnqueuedMessage(sessionId: string | number, messageId: number): Promise<void>;
+  reorderEnqueuedMessage(
+    sessionId: string | number,
+    messageId: number,
+    position: number
+  ): Promise<EnqueuedMessage>;
+  interruptEnqueuedMessage(
+    sessionId: string | number,
+    messageId: number
+  ): Promise<EnqueuedMessageInterruptResponse>;
+
+  // Triggers
+  listTriggers(options?: {
+    trigger_type?: TriggerType;
+    status?: TriggerStatus;
+    page?: number;
+    per_page?: number;
+  }): Promise<TriggersResponse>;
+  getTrigger(id: number): Promise<TriggerResponse>;
+  createTrigger(data: CreateTriggerRequest): Promise<Trigger>;
+  updateTrigger(id: number, data: UpdateTriggerRequest): Promise<Trigger>;
+  deleteTrigger(id: number): Promise<void>;
+  toggleTrigger(id: number): Promise<Trigger>;
+  getTriggerChannels(): Promise<TriggerChannelsResponse>;
+
+  // Notification Management
+  listNotifications(options?: {
+    status?: string;
+    page?: number;
+    per_page?: number;
+  }): Promise<NotificationsResponse>;
+  getNotification(id: number): Promise<Notification>;
+  getNotificationBadge(): Promise<NotificationBadgeResponse>;
+  markNotificationRead(id: number): Promise<Notification>;
+  markAllNotificationsRead(): Promise<NotificationMarkAllReadResponse>;
+  dismissNotification(id: number): Promise<void>;
+  dismissAllReadNotifications(): Promise<NotificationDismissAllReadResponse>;
+
+  // Health
+  getHealth(): Promise<HealthReport>;
+  cleanupProcesses(): Promise<HealthActionResponse>;
+  retrySessions(sessionIds?: number[]): Promise<HealthActionResponse>;
+  archiveOldSessions(days?: number): Promise<HealthActionResponse>;
+
+  // CLIs
+  getCliStatus(): Promise<CliStatusResponse>;
+  refreshCli(): Promise<CliActionResponse>;
+  clearCliCache(): Promise<CliActionResponse>;
+
+  // Transcript Archive
+  getTranscriptArchiveStatus(): Promise<TranscriptArchiveStatusResponse>;
+  getTranscriptArchiveDownloadUrl(): { url: string; apiKey: string };
 }
 
 /** Default timeout for API requests in milliseconds */
@@ -277,6 +388,79 @@ export class AgentOrchestratorClient implements IAgentOrchestratorClient {
     return response.json() as T;
   }
 
+  /**
+   * Like request(), but reads the response as text and wraps it in a TranscriptResponse.
+   * Used for API endpoints that return raw text instead of JSON (e.g., transcript with format=text).
+   */
+  private async requestText(
+    method: string,
+    path: string,
+    body?: Record<string, unknown>,
+    queryParams?: Record<string, unknown>
+  ): Promise<TranscriptResponse> {
+    const url = new URL(`${this.baseUrl}${path}`);
+    if (queryParams) {
+      Object.entries(queryParams).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          url.searchParams.append(key, String(value));
+        }
+      });
+    }
+
+    const headers: Record<string, string> = {
+      Authorization: `Bearer ${this.apiKey}`,
+    };
+
+    if (body) {
+      headers['Content-Type'] = 'application/json';
+    }
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), this.timeoutMs);
+
+    const options: RequestInit = {
+      method,
+      headers,
+      signal: controller.signal,
+    };
+
+    if (body && (method === 'POST' || method === 'PATCH' || method === 'PUT')) {
+      options.body = JSON.stringify(body);
+    }
+
+    let response: Response;
+    try {
+      response = await fetch(url.toString(), options);
+    } catch (error) {
+      clearTimeout(timeoutId);
+      if (error instanceof Error && error.name === 'AbortError') {
+        throw new Error(`Request timeout after ${this.timeoutMs}ms`);
+      }
+      throw error;
+    } finally {
+      clearTimeout(timeoutId);
+    }
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      let errorMessage: string;
+      try {
+        const errorJson = JSON.parse(errorText);
+        errorMessage = errorJson.message || errorJson.error || errorText;
+      } catch {
+        errorMessage = errorText;
+      }
+      throw new Error(`API Error (${response.status}): ${errorMessage}`);
+    }
+
+    if (response.status === 204) {
+      return { transcript_text: '' };
+    }
+
+    const text = await response.text();
+    return { transcript_text: text };
+  }
+
   // Sessions
   async listSessions(options?: {
     status?: SessionStatus;
@@ -291,7 +475,6 @@ export class AgentOrchestratorClient implements IAgentOrchestratorClient {
   async searchSessions(
     query: string,
     options?: {
-      search_contents?: boolean;
       status?: SessionStatus;
       agent_type?: string;
       show_archived?: boolean;
@@ -479,5 +662,262 @@ export class AgentOrchestratorClient implements IAgentOrchestratorClient {
       session_id: sessionId,
       message,
     });
+  }
+
+  // Session Extensions
+  async forkSession(id: string | number, messageIndex: number): Promise<ForkSessionResponse> {
+    return this.request<ForkSessionResponse>('POST', `/sessions/${id}/fork`, {
+      message_index: messageIndex,
+    });
+  }
+
+  async refreshSession(id: string | number): Promise<RefreshSessionResponse> {
+    return this.request<RefreshSessionResponse>('POST', `/sessions/${id}/refresh`);
+  }
+
+  async refreshAllSessions(): Promise<RefreshAllSessionsResponse> {
+    return this.request<RefreshAllSessionsResponse>('POST', '/sessions/refresh_all');
+  }
+
+  async updateSessionNotes(id: string | number, notes: string): Promise<Session> {
+    const response = await this.request<SessionResponse>('PATCH', `/sessions/${id}/notes`, {
+      session_notes: notes,
+    });
+    return response.session;
+  }
+
+  async toggleFavorite(id: string | number): Promise<Session & { favorited: boolean }> {
+    return this.request<Session & { favorited: boolean }>(
+      'POST',
+      `/sessions/${id}/toggle_favorite`
+    );
+  }
+
+  async bulkArchiveSessions(sessionIds: number[]): Promise<BulkArchiveResponse> {
+    return this.request<BulkArchiveResponse>('POST', '/sessions/bulk_archive', {
+      session_ids: sessionIds,
+    });
+  }
+
+  async getTranscript(
+    id: string | number,
+    format: 'text' | 'json' = 'json'
+  ): Promise<TranscriptResponse> {
+    if (format === 'text') {
+      // The API returns raw text (not JSON) when format=text,
+      // so we must use response.text() instead of response.json()
+      return this.requestText('GET', `/sessions/${id}/transcript`, undefined, { format });
+    }
+    return this.request<TranscriptResponse>('GET', `/sessions/${id}/transcript`, undefined, {
+      format,
+    });
+  }
+
+  // Enqueued Messages
+  async listEnqueuedMessages(
+    sessionId: string | number,
+    options?: {
+      status?: EnqueuedMessageStatus;
+      page?: number;
+      per_page?: number;
+    }
+  ): Promise<EnqueuedMessagesResponse> {
+    return this.request<EnqueuedMessagesResponse>(
+      'GET',
+      `/sessions/${sessionId}/enqueued_messages`,
+      undefined,
+      options
+    );
+  }
+
+  async getEnqueuedMessage(
+    sessionId: string | number,
+    messageId: number
+  ): Promise<EnqueuedMessage> {
+    const response = await this.request<EnqueuedMessageResponse>(
+      'GET',
+      `/sessions/${sessionId}/enqueued_messages/${messageId}`
+    );
+    return response.enqueued_message;
+  }
+
+  async createEnqueuedMessage(
+    sessionId: string | number,
+    data: { content: string; stop_condition?: string }
+  ): Promise<EnqueuedMessage> {
+    const response = await this.request<EnqueuedMessageResponse>(
+      'POST',
+      `/sessions/${sessionId}/enqueued_messages`,
+      data
+    );
+    return response.enqueued_message;
+  }
+
+  async updateEnqueuedMessage(
+    sessionId: string | number,
+    messageId: number,
+    data: { content?: string; stop_condition?: string }
+  ): Promise<EnqueuedMessage> {
+    const response = await this.request<EnqueuedMessageResponse>(
+      'PATCH',
+      `/sessions/${sessionId}/enqueued_messages/${messageId}`,
+      data
+    );
+    return response.enqueued_message;
+  }
+
+  async deleteEnqueuedMessage(sessionId: string | number, messageId: number): Promise<void> {
+    await this.request<void>('DELETE', `/sessions/${sessionId}/enqueued_messages/${messageId}`);
+  }
+
+  async reorderEnqueuedMessage(
+    sessionId: string | number,
+    messageId: number,
+    position: number
+  ): Promise<EnqueuedMessage> {
+    const response = await this.request<EnqueuedMessageResponse>(
+      'PATCH',
+      `/sessions/${sessionId}/enqueued_messages/${messageId}/reorder`,
+      { position }
+    );
+    return response.enqueued_message;
+  }
+
+  async interruptEnqueuedMessage(
+    sessionId: string | number,
+    messageId: number
+  ): Promise<EnqueuedMessageInterruptResponse> {
+    return this.request<EnqueuedMessageInterruptResponse>(
+      'POST',
+      `/sessions/${sessionId}/enqueued_messages/${messageId}/interrupt`
+    );
+  }
+
+  // Triggers
+  async listTriggers(options?: {
+    trigger_type?: TriggerType;
+    status?: TriggerStatus;
+    page?: number;
+    per_page?: number;
+  }): Promise<TriggersResponse> {
+    return this.request<TriggersResponse>('GET', '/triggers', undefined, options);
+  }
+
+  async getTrigger(id: number): Promise<TriggerResponse> {
+    return this.request<TriggerResponse>('GET', `/triggers/${id}`);
+  }
+
+  async createTrigger(data: CreateTriggerRequest): Promise<Trigger> {
+    const response = await this.request<TriggerResponse>('POST', '/triggers', data);
+    return response.trigger;
+  }
+
+  async updateTrigger(id: number, data: UpdateTriggerRequest): Promise<Trigger> {
+    const response = await this.request<TriggerResponse>('PATCH', `/triggers/${id}`, data);
+    return response.trigger;
+  }
+
+  async deleteTrigger(id: number): Promise<void> {
+    await this.request<void>('DELETE', `/triggers/${id}`);
+  }
+
+  async toggleTrigger(id: number): Promise<Trigger> {
+    const response = await this.request<TriggerResponse>('POST', `/triggers/${id}/toggle`);
+    return response.trigger;
+  }
+
+  async getTriggerChannels(): Promise<TriggerChannelsResponse> {
+    return this.request<TriggerChannelsResponse>('GET', '/triggers/channels');
+  }
+
+  // Notification Management
+  async listNotifications(options?: {
+    status?: string;
+    page?: number;
+    per_page?: number;
+  }): Promise<NotificationsResponse> {
+    return this.request<NotificationsResponse>('GET', '/notifications', undefined, options);
+  }
+
+  async getNotification(id: number): Promise<Notification> {
+    const response = await this.request<NotificationResponse>('GET', `/notifications/${id}`);
+    return response.notification;
+  }
+
+  async getNotificationBadge(): Promise<NotificationBadgeResponse> {
+    return this.request<NotificationBadgeResponse>('GET', '/notifications/badge');
+  }
+
+  async markNotificationRead(id: number): Promise<Notification> {
+    const response = await this.request<NotificationResponse>(
+      'PATCH',
+      `/notifications/${id}/mark_read`
+    );
+    return response.notification;
+  }
+
+  async markAllNotificationsRead(): Promise<NotificationMarkAllReadResponse> {
+    return this.request<NotificationMarkAllReadResponse>('PATCH', '/notifications/mark_all_read');
+  }
+
+  async dismissNotification(id: number): Promise<void> {
+    await this.request<void>('DELETE', `/notifications/${id}`);
+  }
+
+  async dismissAllReadNotifications(): Promise<NotificationDismissAllReadResponse> {
+    return this.request<NotificationDismissAllReadResponse>(
+      'DELETE',
+      '/notifications/dismiss_all_read'
+    );
+  }
+
+  // Health
+  async getHealth(): Promise<HealthReport> {
+    return this.request<HealthReport>('GET', '/health');
+  }
+
+  async cleanupProcesses(): Promise<HealthActionResponse> {
+    return this.request<HealthActionResponse>('POST', '/health/cleanup_processes');
+  }
+
+  async retrySessions(sessionIds?: number[]): Promise<HealthActionResponse> {
+    return this.request<HealthActionResponse>(
+      'POST',
+      '/health/retry_sessions',
+      sessionIds ? { session_ids: sessionIds } : undefined
+    );
+  }
+
+  async archiveOldSessions(days?: number): Promise<HealthActionResponse> {
+    return this.request<HealthActionResponse>(
+      'POST',
+      '/health/archive_old',
+      days ? { days } : undefined
+    );
+  }
+
+  // CLIs
+  async getCliStatus(): Promise<CliStatusResponse> {
+    return this.request<CliStatusResponse>('GET', '/clis/status');
+  }
+
+  async refreshCli(): Promise<CliActionResponse> {
+    return this.request<CliActionResponse>('POST', '/clis/refresh');
+  }
+
+  async clearCliCache(): Promise<CliActionResponse> {
+    return this.request<CliActionResponse>('POST', '/clis/clear_cache');
+  }
+
+  // Transcript Archive
+  async getTranscriptArchiveStatus(): Promise<TranscriptArchiveStatusResponse> {
+    return this.request<TranscriptArchiveStatusResponse>('GET', '/transcript_archive/status');
+  }
+
+  getTranscriptArchiveDownloadUrl(): { url: string; apiKey: string } {
+    return {
+      url: `${this.baseUrl}/api/v1/transcript_archive/download`,
+      apiKey: this.apiKey,
+    };
   }
 }

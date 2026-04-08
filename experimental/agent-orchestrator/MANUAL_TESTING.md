@@ -25,11 +25,7 @@ This file tracks the **most recent** manual test results for the agent-orchestra
    # Edit .env with your credentials
    ```
 
-3. **Start Agent Orchestrator** - The agent-orchestrator API must be running locally:
-   ```bash
-   # In the agent-orchestrator directory
-   bin/rails server
-   ```
+3. **Ensure Agent Orchestrator API is accessible** - Tests default to staging (`https://ao.staging.pulsemcp.com`). Override `AGENT_ORCHESTRATOR_BASE_URL` in `.env` to target a different instance (e.g., local or production).
 
 ### First-Time Setup (or after clean checkout)
 
@@ -65,47 +61,37 @@ The tests will:
 
 ## Latest Test Results
 
-**Test Date:** 2026-02-20
-**Branch:** tadasant/add-send-push-notification-tool
-**Commit:** 2207f0e
+**Test Date:** 2026-03-12
+**Branch:** tadasant/get-session-transcript-filepath
+**Commit:** 24d98ce
 **Tested By:** Claude Code (automated)
-**Environment:** Production (ao.pulsemcp.com) + CI unit/integration tests
+**Environment:** Production (https://ao.pulsemcp.com)
 
 ### Summary
 
-**Overall:** :white_check_mark: SUCCESS - All 21 manual tests pass against production, 61 functional tests pass, 14 integration tests pass
+**Overall:** :white_check_mark: SUCCESS - 56/56 manual tests pass, 152/152 functional tests pass.
 
-| Test Category                 | Status             | Tests |
-| ----------------------------- | ------------------ | ----- |
-| **Manual Tests (Production)** |                    |       |
-| Tool Registration             | :white_check_mark: | 1/1   |
-| search_sessions               | :white_check_mark: | 4/4   |
-| get_session                   | :white_check_mark: | 5/5   |
-| start_session                 | :white_check_mark: | 1/1   |
-| action_session                | :white_check_mark: | 5/5   |
-| get_configs                   | :white_check_mark: | 1/1   |
-| send_push_notification        | :white_check_mark: | 2/2   |
-| Resources                     | :white_check_mark: | 2/2   |
-| **Functional Tests (CI)**     |                    |       |
-| All functional tests          | :white_check_mark: | 61/61 |
-| **Integration Tests (CI)**    |                    |       |
-| All integration tests         | :white_check_mark: | 14/14 |
+Added transcript file path output to `get_session` when `include_transcript` is not set to true, with tips on efficiently reading specific sections via grep/tail.
+
+| Test Category                 | Status             | Tests   |
+| ----------------------------- | ------------------ | ------- |
+| tools.test.ts (functional)    | :white_check_mark: | 152/152 |
+| Manual tests (production API) | :white_check_mark: | 56/56   |
+| Build                         | :white_check_mark: | Clean   |
 
 ### Functionality Verified
 
-- :white_check_mark: **searchSessionsWorks** - List, filter, search sessions
-- :white_check_mark: **getSessionWorks** - Get detailed session info
-- :white_check_mark: **getSessionWithLogsWorks** - Get session with logs/transcripts
-- :white_check_mark: **startSessionWorks** - Create new sessions
-- :white_check_mark: **actionSessionWorks** - Archive/unarchive sessions
-- :white_check_mark: **changeMcpServersWorks** - Update MCP servers for a session
-- :white_check_mark: **getConfigsWorks** - Fetch all static configs (MCP servers, agent roots, stop conditions)
-- :white_check_mark: **configResourcesWork** - MCP resources for individual config types
-- :white_check_mark: **sendPushNotificationWorks** - Send push notifications about sessions needing attention
+- :white_check_mark: **All tool definitions** - 152 functional tests pass (3 new tests for transcript file path)
+- :white_check_mark: **Manual tests** - 56/56 pass against production API (search, get_session, actions, triggers, health, notifications, configs)
+- :white_check_mark: **Build succeeds** - TypeScript compilation clean
+- :white_check_mark: **Lint/format** - Clean on all changed files
 
-### Key Change in 0.2.3
+### Key Changes in This Version
 
-- Added `send_push_notification` tool for alerting users about sessions that need human attention via `POST /api/v1/notifications/push`
+- `get_session` returns transcript file path (`~/.claude/projects/*/{session_id}.jsonl`) when `include_transcript` is false
+- Updated `include_transcript` parameter description with warnings about large transcripts
+- Added tip about reading last ~100 lines and grepping for keywords
+- Added note about subagent transcripts being stored as siblings
 
 ---
 

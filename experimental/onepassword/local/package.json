@@ -1,6 +1,6 @@
 {
   "name": "onepassword-mcp-server",
-  "version": "0.1.1",
+  "version": "0.3.0",
   "description": "MCP server for interacting with 1Password via the CLI",
   "main": "build/index.js",
   "type": "module",
@@ -12,7 +12,12 @@
     "build/**/*.d.ts",
     "shared/**/*.js",
     "shared/**/*.d.ts",
+    "node_modules/@pulsemcp/mcp-elicitation/**/*.js",
+    "node_modules/@pulsemcp/mcp-elicitation/package.json",
     "README.md"
+  ],
+  "bundledDependencies": [
+    "@pulsemcp/mcp-elicitation"
   ],
   "scripts": {
     "build": "tsc && npm run build:integration",
@@ -30,6 +35,7 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.19.1",
+    "@pulsemcp/mcp-elicitation": "file:../../../libs/elicitation",
     "zod": "^3.24.1"
   },
   "devDependencies": {

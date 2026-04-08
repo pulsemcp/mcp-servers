@@ -25,6 +25,8 @@ This file tracks the **most recent** manual test results for the NAME MCP server
    # Edit .env with your credentials
    ```
 
+   **CRITICAL: If the `.env` file is missing or doesn't contain the required API keys, STOP and ask the user to provide them. Do NOT silently skip manual tests or proceed without credentials.**
+
 ### First-Time Setup (or after clean checkout)
 
 If you're running manual tests for the first time or in a fresh worktree:

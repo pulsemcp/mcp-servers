@@ -69,13 +69,32 @@ export interface IGmailClient {
   createDraft(options: {
     to: string;
     subject: string;
-    body: string;
+    plaintextBody?: string;
+    htmlBody?: string;
     cc?: string;
     bcc?: string;
     threadId?: string;
     inReplyTo?: string;
     references?: string;
   }): Promise<Draft>;
+
+  /**
+   * Update an existing draft email
+   */
+  updateDraft(
+    draftId: string,
+    options: {
+      to: string;
+      subject: string;
+      plaintextBody?: string;
+      htmlBody?: string;
+      cc?: string;
+      bcc?: string;
+      threadId?: string;
+      inReplyTo?: string;
+      references?: string;
+    }
+  ): Promise<Draft>;
 
   /**
    * Get a draft by ID
@@ -102,7 +121,8 @@ export interface IGmailClient {
   sendMessage(options: {
     to: string;
     subject: string;
-    body: string;
+    plaintextBody?: string;
+    htmlBody?: string;
     cc?: string;
     bcc?: string;
     threadId?: string;
@@ -239,7 +259,8 @@ abstract class BaseGmailClient implements IGmailClient {
   async createDraft(options: {
     to: string;
     subject: string;
-    body: string;
+    plaintextBody?: string;
+    htmlBody?: string;
     cc?: string;
     bcc?: string;
     threadId?: string;
@@ -250,6 +271,26 @@ abstract class BaseGmailClient implements IGmailClient {
     const senderEmail = await this.getSenderEmail();
     const { createDraft } = await import('./gmail-client/lib/drafts.js');
     return createDraft(this.baseUrl, headers, senderEmail, options);
+  }
+
+  async updateDraft(
+    draftId: string,
+    options: {
+      to: string;
+      subject: string;
+      plaintextBody?: string;
+      htmlBody?: string;
+      cc?: string;
+      bcc?: string;
+      threadId?: string;
+      inReplyTo?: string;
+      references?: string;
+    }
+  ): Promise<Draft> {
+    const headers = await this.getHeaders();
+    const senderEmail = await this.getSenderEmail();
+    const { updateDraft } = await import('./gmail-client/lib/drafts.js');
+    return updateDraft(this.baseUrl, headers, senderEmail, draftId, options);
   }
 
   async getDraft(draftId: string): Promise<Draft> {
@@ -277,7 +318,8 @@ abstract class BaseGmailClient implements IGmailClient {
   async sendMessage(options: {
     to: string;
     subject: string;
-    body: string;
+    plaintextBody?: string;
+    htmlBody?: string;
     cc?: string;
     bcc?: string;
     threadId?: string;

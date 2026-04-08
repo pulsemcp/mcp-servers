@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.0.5] - 2026-03-31
+
+### Changed
+
+- Improved startup log message format for consistency
+
+## [0.0.4] - 2026-03-11
+
+### Fixed
+
+- `latest_only=false` in `list_servers` now correctly omits the `version` query parameter, returning all server versions instead of excluding the latest
+
+## [0.0.3] - 2026-03-09
+
+### Changed
+
+- Updated `list_servers` tool description to clarify that only active and deprecated servers are returned by default (deleted servers are excluded)
+- Updated `updated_since` parameter description to note that results may include servers with any lifecycle status (including deleted) when this parameter is used, to support ETL sync workflows
+- Updated `get_server` tool description to clarify it returns information for active and deprecated servers
+
 ### Fixed
 
 - Documented default value for `SHOW_ADMIN_TOOLS` environment variable as `false` in README

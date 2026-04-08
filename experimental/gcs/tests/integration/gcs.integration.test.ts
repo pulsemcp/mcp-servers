@@ -169,6 +169,70 @@ async function createTestMCPClientWithMock(
   return client;
 }
 
+describe('Tool Group Filtering', () => {
+  let client: TestMCPClient | null = null;
+
+  afterEach(async () => {
+    if (client) {
+      await client.disconnect();
+      client = null;
+    }
+  });
+
+  it('should exclude delete tools when only readonly and readwrite groups are enabled', async () => {
+    client = await createTestMCPClientWithMock(
+      {},
+      { GCS_ENABLED_TOOLGROUPS: 'readonly,readwrite' }
+    );
+
+    const result = await client.listTools();
+    const toolNames = result.tools.map((t) => t.name);
+
+    // Readonly tools should be present
+    expect(toolNames).toContain('list_buckets');
+    expect(toolNames).toContain('list_objects');
+    expect(toolNames).toContain('get_object');
+    expect(toolNames).toContain('head_bucket');
+
+    // Readwrite tools should be present
+    expect(toolNames).toContain('put_object');
+    expect(toolNames).toContain('copy_object');
+    expect(toolNames).toContain('create_bucket');
+
+    // Delete tools should NOT be present
+    expect(toolNames).not.toContain('delete_object');
+    expect(toolNames).not.toContain('delete_bucket');
+  });
+
+  it('should include delete tools when delete group is enabled', async () => {
+    client = await createTestMCPClientWithMock(
+      {},
+      { GCS_ENABLED_TOOLGROUPS: 'readonly,readwrite,delete' }
+    );
+
+    const result = await client.listTools();
+    const toolNames = result.tools.map((t) => t.name);
+
+    // All tools should be present
+    expect(toolNames).toContain('list_buckets');
+    expect(toolNames).toContain('put_object');
+    expect(toolNames).toContain('delete_object');
+    expect(toolNames).toContain('delete_bucket');
+  });
+
+  it('should only include delete tools when only delete group is enabled', async () => {
+    client = await createTestMCPClientWithMock({}, { GCS_ENABLED_TOOLGROUPS: 'delete' });
+
+    const result = await client.listTools();
+    const toolNames = result.tools.map((t) => t.name);
+
+    // Only delete tools should be present
+    expect(toolNames).toContain('delete_object');
+    expect(toolNames).toContain('delete_bucket');
+    expect(toolNames).toHaveLength(2);
+  });
+});
+
 describe('GCS_BUCKET Constraint', () => {
   let client: TestMCPClient | null = null;
 
@@ -200,6 +264,31 @@ describe('GCS_BUCKET Constraint', () => {
     expect(toolNames).toContain('put_object');
     expect(toolNames).toContain('delete_object');
     expect(toolNames).toContain('copy_object');
+  });
+
+  it('should exclude delete_object when GCS_BUCKET is set and delete group is not enabled', async () => {
+    client = await createTestMCPClientWithMock(
+      { buckets: [{ name: 'test-bucket' }] },
+      { GCS_BUCKET: 'test-bucket', GCS_ENABLED_TOOLGROUPS: 'readonly,readwrite' }
+    );
+
+    const result = await client.listTools();
+    const toolNames = result.tools.map((t) => t.name);
+
+    // Bucket-level tools should be hidden (GCS_BUCKET constraint)
+    expect(toolNames).not.toContain('list_buckets');
+    expect(toolNames).not.toContain('create_bucket');
+    expect(toolNames).not.toContain('head_bucket');
+
+    // Readwrite object tools should be present
+    expect(toolNames).toContain('list_objects');
+    expect(toolNames).toContain('get_object');
+    expect(toolNames).toContain('put_object');
+    expect(toolNames).toContain('copy_object');
+
+    // Delete tools should NOT be present (delete group not enabled)
+    expect(toolNames).not.toContain('delete_object');
+    expect(toolNames).not.toContain('delete_bucket');
   });
 
   it('should automatically inject bucket param when GCS_BUCKET is set', async () => {

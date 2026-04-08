@@ -12,7 +12,17 @@
 npm run test:manual
 ```
 
+## Latest Test Results
+
+**Commit:** 304feb7
+**Result:** Manual tests not re-run — this is a dependency-only change that pins `fast-xml-parser` to `>=5.3.4 <5.5.0` to work around a broken upstream release. No server code was modified. All functional tests (24/24) and integration tests (16/16) pass.
+
 ## Test Results
+
+### 2026-02-28 - v0.1.1 (tool group change only, no API code changes)
+
+**Commit:** 5457e46
+**Result:** Manual tests not re-run — this change only moves `delete_object` and `delete_bucket` from the `readwrite` tool group to a new `delete` tool group. No API-calling code was modified. All functional tests (24/24) and integration tests (16/16) pass, including 3 new tool group filtering tests.
 
 ### 2026-02-10 - v0.1.0 Manual Testing
 

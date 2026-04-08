@@ -319,7 +319,7 @@ describe('mcp_servers Tools - Manual Tests with Real API', () => {
 
       if (text.includes('## Canonical URLs')) {
         // Should list URLs with scopes
-        expect(text).toMatch(/- \*\*(domain|subdomain|subfolder|url):\*\*/);
+        expect(text).toMatch(/- \*\*(domain|subdomain|url):\*\*/);
       }
 
       console.log('Canonical URLs extracted');
@@ -660,7 +660,7 @@ describe('mcp_servers Tools - Manual Tests with Real API', () => {
         canonical_urls: [
           {
             url: 'https://github.com/test/test-repo',
-            scope: 'subfolder',
+            scope: 'domain',
             note: 'Manual test canonical URL',
           },
         ],

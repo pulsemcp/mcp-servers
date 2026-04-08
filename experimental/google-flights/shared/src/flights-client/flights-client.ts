@@ -2,6 +2,7 @@ import protobuf from 'protobufjs';
 import type {
   FlightOffer,
   FlightSegment,
+  FlightExtensions,
   DateGridEntry,
   DateGridResult,
   SearchFlightsOptions,
@@ -254,51 +255,133 @@ function parseSegment(leg: any[]): FlightSegment | null {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
+function parseExtensions(raw: any): FlightExtensions {
+  // offer[4][6] contains baggage amenity flags: [carry_on_flag, checked_bag_flag]
+  // carry_on_flag: 0 = included
+  // checked_bag_flag: 0 = not included, 1 = one bag included, 2 = two bags included
+  const amenityFlags = raw?.[4]?.[6];
+  const carryOnIncluded = Array.isArray(amenityFlags) ? amenityFlags[0] === 0 : true;
+  const checkedBagsIncluded = Array.isArray(amenityFlags) ? amenityFlags[1] || 0 : 0;
+
+  return {
+    carry_on_included: carryOnIncluded,
+    checked_bags_included: checkedBagsIncluded,
+  };
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function parseFareBrand(raw: any): string | null {
+  // Google Flights does not include fare brand names (e.g. "Basic Economy", "Main Cabin")
+  // in the initial search results HTML. However, details[22][2] contains a numeric fare tier
+  // indicator that correlates with fare restrictions and amenity levels.
+  //
+  // Observed mapping from cross-referencing with amenity data and pricing patterns:
+  //   1 = Economy (lowest tier for the airline — often "Basic Economy" for US carriers)
+  //   2 = Economy+ / Standard (mid-tier with some extras like seat selection)
+  //   3 = Economy Flex / Full (higher tier with more flexibility, carry-on, etc.)
+  //
+  // This is a best-effort interpretation of undocumented numeric codes.
+  // Use the `extensions` field for concrete amenity details (carry-on, checked bags).
+  const fareTier = raw?.[0]?.[22]?.[2];
+  if (fareTier === undefined || fareTier === null) return null;
+
+  switch (fareTier) {
+    case 1:
+      return 'Economy';
+    case 2:
+      return 'Economy+';
+    case 3:
+      return 'Economy Flex';
+    default:
+      return null;
+  }
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function parseRawOffer(raw: any, currency: string): FlightOffer | null {
+  const details = raw[0];
+  const priceData = raw[1];
+  const rankData = raw[5]; // [is_best (1/0), ?, ?]
+
+  if (!details || !priceData) return null;
+
+  // Parse segments
+  const segments: FlightSegment[] = [];
+  const legs = details[2];
+  if (Array.isArray(legs)) {
+    for (const leg of legs) {
+      const segment = parseSegment(leg);
+      if (segment) segments.push(segment);
+    }
+  }
+
+  const price = priceData[0]?.[1];
+  if (price === undefined || price === null) return null;
+
+  return {
+    price,
+    currency,
+    airline: details[1]?.[0] || '',
+    airline_code: details[0] || '',
+    is_best: rankData?.[0] === 1,
+    fare_brand: parseFareBrand(raw),
+    departure: formatTime(details[5]),
+    arrival: formatTime(details[8]),
+    departure_date: formatDate(details[4]),
+    arrival_date: formatDate(details[7]),
+    duration_minutes: details[9] || 0,
+    stops: segments.length > 0 ? segments.length - 1 : 0,
+    segments,
+    extensions: parseExtensions(raw),
+    booking_token: priceData[1] || '',
+  };
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function parseFlightOffers(ds1: any, currency: string): FlightOffer[] {
   const offers: FlightOffer[] = [];
+  const seenTokens = new Set<string>();
 
-  if (!ds1?.[3]?.[0] || !Array.isArray(ds1[3][0])) return offers;
+  // Google Flights returns results in two sections:
+  // - ds1[2][0]: "Best flights" (featured/highlighted flights, typically 3)
+  // - ds1[3][0]: "Other flights" (the main results list)
+  // Both sections use the same offer structure. In practice flights are not
+  // duplicated between them, but we deduplicate by booking_token defensively
+  // since this is an undocumented scraped API that could change.
+  //
+  // The is_best flag comes from raw[5][0] (per-offer rankData), not from which
+  // section the offer appears in. Google sets this flag on all ds1[2][0] offers
+  // and sometimes on ds1[3][0] offers too.
 
-  const rawOffers = ds1[3][0];
-
-  for (const raw of rawOffers) {
-    try {
-      const details = raw[0];
-      const priceData = raw[1];
-      const rankData = raw[5]; // [is_best (1/0), ?, ?]
-
-      if (!details || !priceData) continue;
-
-      // Parse segments
-      const segments: FlightSegment[] = [];
-      const legs = details[2];
-      if (Array.isArray(legs)) {
-        for (const leg of legs) {
-          const segment = parseSegment(leg);
-          if (segment) segments.push(segment);
+  // Parse "best flights" from ds1[2][0]
+  const bestFlights = ds1?.[2]?.[0];
+  if (Array.isArray(bestFlights)) {
+    for (const raw of bestFlights) {
+      try {
+        const offer = parseRawOffer(raw, currency);
+        if (offer && !seenTokens.has(offer.booking_token)) {
+          seenTokens.add(offer.booking_token);
+          offers.push(offer);
         }
+      } catch (e) {
+        logDebug('parseFlightOffers', `Skipping malformed best offer: ${(e as Error).message}`);
       }
+    }
+  }
 
-      const price = priceData[0]?.[1];
-      if (price === undefined || price === null) continue;
-
-      offers.push({
-        price,
-        currency,
-        airline: details[1]?.[0] || '',
-        airline_code: details[0] || '',
-        is_best: rankData?.[0] === 1,
-        departure: formatTime(details[5]),
-        arrival: formatTime(details[8]),
-        departure_date: formatDate(details[4]),
-        arrival_date: formatDate(details[7]),
-        duration_minutes: details[9] || 0,
-        stops: segments.length > 0 ? segments.length - 1 : 0,
-        segments,
-        booking_token: priceData[1] || '',
-      });
-    } catch (e) {
-      logDebug('parseFlightOffers', `Skipping malformed offer: ${(e as Error).message}`);
+  // Parse "other flights" from ds1[3][0]
+  const otherFlights = ds1?.[3]?.[0];
+  if (Array.isArray(otherFlights)) {
+    for (const raw of otherFlights) {
+      try {
+        const offer = parseRawOffer(raw, currency);
+        if (offer && !seenTokens.has(offer.booking_token)) {
+          seenTokens.add(offer.booking_token);
+          offers.push(offer);
+        }
+      } catch (e) {
+        logDebug('parseFlightOffers', `Skipping malformed offer: ${(e as Error).message}`);
+      }
     }
   }
 
@@ -391,6 +474,11 @@ export async function searchFlights(options: SearchFlightsOptions): Promise<Sear
 
   // Apply client-side stop filter (supplements the protobuf filter)
   allOffers = filterByStops(allOffers, options.max_stops);
+
+  // Filter out basic economy fares (fare_brand "Economy" = tier 1, the lowest/basic tier)
+  if (options.exclude_basic_economy) {
+    allOffers = allOffers.filter((o) => o.fare_brand !== 'Economy');
+  }
 
   // Sort
   allOffers = sortOffers(allOffers, options.sort_by);

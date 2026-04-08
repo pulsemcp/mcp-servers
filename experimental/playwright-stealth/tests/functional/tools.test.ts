@@ -3,7 +3,7 @@ import { createFunctionalMockClient } from '../mocks/playwright-client.functiona
 import { createRegisterTools } from '../../shared/src/tools.js';
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import type { IPlaywrightClient, ScreenshotResult } from '../../shared/src/server.js';
-import { ScreenshotStorageFactory } from '../../shared/src/storage/index.js';
+import { ScreenshotStorageFactory, VideoStorageFactory } from '../../shared/src/storage/index.js';
 import { promises as fs } from 'fs';
 import os from 'os';
 import path from 'path';
@@ -12,6 +12,7 @@ describe('Playwright Stealth Tools', () => {
   let mockClient: IPlaywrightClient;
   let server: Server;
   let testStoragePath: string;
+  let testVideoStoragePath: string;
 
   // Type for handler functions
   type ToolsListHandler = (req: { method: string; params: unknown }) => Promise<{
@@ -36,12 +37,15 @@ describe('Playwright Stealth Tools', () => {
   beforeEach(async () => {
     mockClient = createFunctionalMockClient();
 
-    // Create a unique test storage directory
+    // Create unique test storage directories
     testStoragePath = path.join(os.tmpdir(), `playwright-test-${Date.now()}`);
+    testVideoStoragePath = path.join(os.tmpdir(), `playwright-video-test-${Date.now()}`);
     process.env.SCREENSHOT_STORAGE_PATH = testStoragePath;
+    process.env.VIDEO_STORAGE_PATH = testVideoStoragePath;
 
-    // Reset the storage factory to use the new path
+    // Reset the storage factories to use the new paths
     ScreenshotStorageFactory.reset();
+    VideoStorageFactory.reset();
 
     // Create a real Server instance
     server = new Server({ name: 'test', version: '1.0.0' }, { capabilities: { tools: {} } });
@@ -52,14 +56,21 @@ describe('Playwright Stealth Tools', () => {
   });
 
   afterEach(async () => {
-    // Clean up test storage directory
+    // Clean up test storage directories
     try {
       await fs.rm(testStoragePath, { recursive: true, force: true });
     } catch {
       // Ignore cleanup errors
     }
+    try {
+      await fs.rm(testVideoStoragePath, { recursive: true, force: true });
+    } catch {
+      // Ignore cleanup errors
+    }
     delete process.env.SCREENSHOT_STORAGE_PATH;
+    delete process.env.VIDEO_STORAGE_PATH;
     ScreenshotStorageFactory.reset();
+    VideoStorageFactory.reset();
   });
 
   // Helper to get handlers from server internals
@@ -80,13 +91,15 @@ describe('Playwright Stealth Tools', () => {
       const handler = getListToolsHandler();
       const result = await handler({ method: 'tools/list', params: {} });
 
-      expect(result.tools).toHaveLength(4);
+      expect(result.tools).toHaveLength(6);
 
       const toolNames = result.tools.map((t) => t.name);
       expect(toolNames).toContain('browser_execute');
       expect(toolNames).toContain('browser_screenshot');
       expect(toolNames).toContain('browser_get_state');
       expect(toolNames).toContain('browser_close');
+      expect(toolNames).toContain('browser_start_recording');
+      expect(toolNames).toContain('browser_stop_recording');
     });
   });
 
@@ -175,7 +188,11 @@ describe('Playwright Stealth Tools', () => {
       });
 
       expect(result.isError).toBeFalsy();
-      expect(mockClient.screenshot).toHaveBeenCalledWith({ fullPage: undefined });
+      expect(mockClient.screenshot).toHaveBeenCalledWith({
+        fullPage: undefined,
+        selector: undefined,
+        clip: undefined,
+      });
 
       // Should return both image and resource_link with saveAndReturn (default)
       expect(result.content).toHaveLength(2);
@@ -194,7 +211,136 @@ describe('Playwright Stealth Tools', () => {
         },
       });
 
-      expect(mockClient.screenshot).toHaveBeenCalledWith({ fullPage: true });
+      expect(mockClient.screenshot).toHaveBeenCalledWith({
+        fullPage: true,
+        selector: undefined,
+        clip: undefined,
+      });
+    });
+
+    it('should support selector parameter', async () => {
+      const handler = getCallToolHandler();
+      const result = await handler({
+        method: 'tools/call',
+        params: {
+          name: 'browser_screenshot',
+          arguments: { selector: '#main-content' },
+        },
+      });
+
+      expect(result.isError).toBeFalsy();
+      expect(mockClient.screenshot).toHaveBeenCalledWith({
+        fullPage: undefined,
+        selector: '#main-content',
+        clip: undefined,
+      });
+      // Should return image and resource_link (default saveAndReturn)
+      expect(result.content).toHaveLength(2);
+      expect(result.content[0].type).toBe('image');
+      expect(result.content[1].type).toBe('resource_link');
+    });
+
+    it('should support clip parameter', async () => {
+      const handler = getCallToolHandler();
+      const clip = { x: 10, y: 20, width: 300, height: 200 };
+      const result = await handler({
+        method: 'tools/call',
+        params: {
+          name: 'browser_screenshot',
+          arguments: { clip },
+        },
+      });
+
+      expect(result.isError).toBeFalsy();
+      expect(mockClient.screenshot).toHaveBeenCalledWith({
+        fullPage: undefined,
+        selector: undefined,
+        clip,
+      });
+    });
+
+    it('should reject mutually exclusive fullPage and selector', async () => {
+      const handler = getCallToolHandler();
+      const result = await handler({
+        method: 'tools/call',
+        params: {
+          name: 'browser_screenshot',
+          arguments: { fullPage: true, selector: '#main' },
+        },
+      });
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('Only one of');
+    });
+
+    it('should reject mutually exclusive fullPage and clip', async () => {
+      const handler = getCallToolHandler();
+      const result = await handler({
+        method: 'tools/call',
+        params: {
+          name: 'browser_screenshot',
+          arguments: { fullPage: true, clip: { x: 0, y: 0, width: 100, height: 100 } },
+        },
+      });
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('Only one of');
+    });
+
+    it('should reject mutually exclusive selector and clip', async () => {
+      const handler = getCallToolHandler();
+      const result = await handler({
+        method: 'tools/call',
+        params: {
+          name: 'browser_screenshot',
+          arguments: { selector: '#main', clip: { x: 0, y: 0, width: 100, height: 100 } },
+        },
+      });
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('Only one of');
+    });
+
+    it('should reject clip with zero width', async () => {
+      const handler = getCallToolHandler();
+      const result = await handler({
+        method: 'tools/call',
+        params: {
+          name: 'browser_screenshot',
+          arguments: { clip: { x: 0, y: 0, width: 0, height: 100 } },
+        },
+      });
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toBeDefined();
+    });
+
+    it('should reject clip with negative coordinates', async () => {
+      const handler = getCallToolHandler();
+      const result = await handler({
+        method: 'tools/call',
+        params: {
+          name: 'browser_screenshot',
+          arguments: { clip: { x: -10, y: 0, width: 100, height: 100 } },
+        },
+      });
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toBeDefined();
+    });
+
+    it('should handle element not found error', async () => {
+      const handler = getCallToolHandler();
+      const result = await handler({
+        method: 'tools/call',
+        params: {
+          name: 'browser_screenshot',
+          arguments: { selector: '.nonexistent' },
+        },
+      });
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('.nonexistent');
     });
 
     it('should support saveOnly resultHandling', async () => {
@@ -344,6 +490,165 @@ describe('Playwright Stealth Tools', () => {
       expect(result.isError).toBeFalsy();
       expect(mockClient.close).toHaveBeenCalled();
       expect(result.content[0].text).toContain('closed successfully');
+    });
+  });
+
+  describe('browser_start_recording', () => {
+    it('should start recording successfully', async () => {
+      const handler = getCallToolHandler();
+      const result = await handler({
+        method: 'tools/call',
+        params: {
+          name: 'browser_start_recording',
+          arguments: {},
+        },
+      });
+
+      expect(result.isError).toBeFalsy();
+      expect(mockClient.startRecording).toHaveBeenCalled();
+      expect(result.content[0].text).toContain('Recording started');
+      expect(result.content[0].text).toContain('https://example.com');
+      expect(result.content[0].text).toContain(
+        'Session state (cookies, localStorage) has been preserved'
+      );
+    });
+
+    it('should stop previous recording when already recording', async () => {
+      // Create a mock client that starts in recording state
+      mockClient = createFunctionalMockClient({ recording: true });
+
+      // We need a mock video file for the stop to copy from
+      await fs.mkdir(testVideoStoragePath, { recursive: true });
+      const mockVideoPath = '/tmp/playwright-videos/mock-video.webm';
+      await fs.mkdir(path.dirname(mockVideoPath), { recursive: true });
+      await fs.writeFile(mockVideoPath, 'mock-video-data');
+
+      // Re-register tools with the recording client
+      server = new Server({ name: 'test', version: '1.0.0' }, { capabilities: { tools: {} } });
+      const registerTools = createRegisterTools(() => mockClient);
+      registerTools(server);
+
+      const handler = getCallToolHandler();
+      const result = await handler({
+        method: 'tools/call',
+        params: {
+          name: 'browser_start_recording',
+          arguments: {},
+        },
+      });
+
+      expect(result.isError).toBeFalsy();
+      expect(mockClient.stopRecording).toHaveBeenCalled();
+      expect(mockClient.startRecording).toHaveBeenCalled();
+      expect(result.content[0].text).toContain('Recording started');
+      expect(result.content[0].text).toContain('Previous recording saved');
+
+      // Clean up mock video file
+      try {
+        await fs.unlink(mockVideoPath);
+      } catch {
+        // Ignore
+      }
+    });
+
+    it('should handle start recording errors', async () => {
+      vi.mocked(mockClient.startRecording).mockRejectedValueOnce(new Error('Browser not ready'));
+
+      const handler = getCallToolHandler();
+      const result = await handler({
+        method: 'tools/call',
+        params: {
+          name: 'browser_start_recording',
+          arguments: {},
+        },
+      });
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('Browser not ready');
+    });
+  });
+
+  describe('browser_stop_recording', () => {
+    it('should return error when not recording', async () => {
+      const handler = getCallToolHandler();
+      const result = await handler({
+        method: 'tools/call',
+        params: {
+          name: 'browser_stop_recording',
+          arguments: {},
+        },
+      });
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('Not currently recording');
+    });
+
+    it('should stop recording and return video resource link', async () => {
+      // Create a mock client in recording state
+      mockClient = createFunctionalMockClient({ recording: true });
+
+      // Create the mock video file that stopRecording returns
+      const mockVideoPath = '/tmp/playwright-videos/mock-video.webm';
+      await fs.mkdir(path.dirname(mockVideoPath), { recursive: true });
+      await fs.writeFile(mockVideoPath, 'mock-video-data');
+
+      // Re-register tools
+      server = new Server({ name: 'test', version: '1.0.0' }, { capabilities: { tools: {} } });
+      const registerTools = createRegisterTools(() => mockClient);
+      registerTools(server);
+
+      const handler = getCallToolHandler();
+      const result = await handler({
+        method: 'tools/call',
+        params: {
+          name: 'browser_stop_recording',
+          arguments: {},
+        },
+      });
+
+      expect(result.isError).toBeFalsy();
+      expect(mockClient.stopRecording).toHaveBeenCalled();
+
+      // Should have text confirmation and resource_link
+      expect(result.content).toHaveLength(2);
+      expect(result.content[0].type).toBe('text');
+      expect(result.content[0].text).toContain('Recording stopped and saved');
+      expect(result.content[0].text).toContain(
+        'Session state (cookies, localStorage) has been preserved'
+      );
+      expect(result.content[1].type).toBe('resource_link');
+      expect(result.content[1].uri).toMatch(/^file:\/\//);
+      expect(result.content[1].mimeType).toBe('video/webm');
+
+      // Clean up mock video file
+      try {
+        await fs.unlink(mockVideoPath);
+      } catch {
+        // Ignore
+      }
+    });
+
+    it('should handle stop recording errors', async () => {
+      // Create a mock client that's recording but stopRecording fails
+      mockClient = createFunctionalMockClient({ recording: true });
+      vi.mocked(mockClient.stopRecording).mockRejectedValueOnce(new Error('Video save failed'));
+
+      // Re-register tools
+      server = new Server({ name: 'test', version: '1.0.0' }, { capabilities: { tools: {} } });
+      const registerTools = createRegisterTools(() => mockClient);
+      registerTools(server);
+
+      const handler = getCallToolHandler();
+      const result = await handler({
+        method: 'tools/call',
+        params: {
+          name: 'browser_stop_recording',
+          arguments: {},
+        },
+      });
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('Video save failed');
     });
   });
 

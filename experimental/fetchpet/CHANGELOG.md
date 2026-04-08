@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.5] - 2026-03-08
+
+### Fixed
+
+- Fix `submit_claim` silently failing because the diagnosis field was empty. The autocomplete expects diagnosis/condition names (e.g. "Routine treatment", "Heartworm"), not medication names (e.g. "Nexgard Plus"). Now extracts individual keywords from the claim description and tries each as a search term, falling back to generic terms like "routine" and "treatment" (#391, #394)
+- Fix `submit_claim` button click not triggering React form submission. Replace `page.evaluate()` JS click with Playwright's `click({ force: true })` which dispatches proper mouse events that React's synthetic event system can detect (#391, #394)
+- Add `dismissOverlayDialogs()` to handle informational MuiDialog overlays that may appear on top of the claim form after invoice upload, preventing submit button from being blocked (#391, #394)
+
+## [0.1.4] - 2026-03-06
+
+### Fixed
+
+- Fix `submit_claim` reporting false success without actually creating a claim. The `button.filled-btn` selector matched the "Submit a claim" button behind the dialog (first in DOM order) instead of the "Submit" button inside the MuiDialog. Now scopes the selector to `.MuiDialog-root button.filled-btn` to target the correct button (#394)
+- Fix false-positive success detection in `submit_claim` fallback logic. The URL-based check (`currentUrl.includes('claims')`) always matched because the page was already on `/claims/active` before submission. Now requires both a claim POST network request and a genuine URL change to report success (#394)
+- Add network request monitoring to `submit_claim` to verify the claim submission POST actually fires, preventing silent failures when the form closes without submitting (#394)
+
+## [0.1.3] - 2026-03-05
+
+### Fixed
+
+- Fix `submit_claim` failing with 30-second timeout because the MuiDialog scroll container intercepts pointer events on the submit button. The claim form dialog content overflows the viewport (submit button at Y≈1308 vs viewport height 1080), and Playwright's `click()` cannot click through the `MuiDialog-container MuiDialog-scrollPaper` overlay. Now uses JavaScript `scrollIntoView()` + `click()` via `page.evaluate()` to bypass Playwright's actionability checks (#391)
+
 ## [0.1.2] - 2026-02-20
 
 ### Fixed

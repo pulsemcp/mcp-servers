@@ -137,7 +137,7 @@ const mockClient = createIntegrationMockOrchestratorClient({
 const client = await createTestMCPClientWithMock(mockClient);
 
 // Call the MCP tool (real MCP protocol communication)
-const result = await client.callTool('search_sessions', { status: 'running' });
+const result = await client.callTool('quick_search_sessions', { status: 'running' });
 
 // Verify the results
 expect(result.content[0].text).toContain('Test Session');
@@ -183,7 +183,8 @@ Manual tests are designed to test the MCP server against real external APIs. The
 1. Create a `.env` file in the server root:
 
    ```bash
-   AGENT_ORCHESTRATOR_BASE_URL=http://localhost:3000
+   # Tests default to staging. For production, use https://ao.pulsemcp.com
+   AGENT_ORCHESTRATOR_BASE_URL=https://ao.staging.pulsemcp.com
    AGENT_ORCHESTRATOR_API_KEY=your-actual-api-key
    ```
 
@@ -203,7 +204,7 @@ Manual tests report detailed outcomes:
 ### Example Output
 
 ```
-✅ search_sessions - list all sessions: SUCCESS
+✅ quick_search_sessions - list all sessions: SUCCESS
    Details: Found 15 sessions
 
 ⚠️ get_session - retrieve session with logs: WARNING

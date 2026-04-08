@@ -51,6 +51,8 @@ export interface RailsImplementation {
     downloads_estimate_last_30_days?: number;
     downloads_estimate_total?: number;
     mcp_server_remotes_count?: number;
+    recommended?: boolean;
+    verified_no_remote_canonicals?: boolean;
     tags?: MCPServerTag[];
     remotes?: MCPServerRemote[];
     created_at?: string;
@@ -130,6 +132,7 @@ export function mapToUnifiedServer(impl: RailsImplementation): UnifiedMCPServer 
 
     // Flags
     recommended: impl.recommended,
+    verified_no_remote_canonicals: mcpServer.verified_no_remote_canonicals,
 
     // Canonical URLs
     canonical_urls: impl.canonical,

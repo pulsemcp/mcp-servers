@@ -44,7 +44,7 @@ export function getServerTool(_server: Server, clientFactory: ClientFactory) {
   return {
     name: 'get_server',
     description:
-      'Get detailed information about a specific MCP server from the PulseMCP Sub-Registry. Returns the server\'s metadata, description, repository URL, and other available information. Use "latest" version (default) or specify a specific version number.',
+      'Get detailed information about a specific MCP server from the PulseMCP Sub-Registry. Returns the server\'s metadata, description, repository URL, and other available information for active and deprecated servers. Use "latest" version (default) or specify a specific version number.',
     inputSchema: {
       type: 'object' as const,
       properties: {

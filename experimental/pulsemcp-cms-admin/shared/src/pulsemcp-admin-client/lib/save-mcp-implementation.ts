@@ -96,6 +96,12 @@ export async function saveMCPImplementation(
   if (params.recommended !== undefined) {
     formData.append('mcp_implementation[recommended]', params.recommended.toString());
   }
+  if (params.verified_no_remote_canonicals !== undefined) {
+    formData.append(
+      'mcp_implementation[verified_no_remote_canonicals]',
+      params.verified_no_remote_canonicals.toString()
+    );
+  }
 
   // Date overrides
   if (params.created_on_override !== undefined) {

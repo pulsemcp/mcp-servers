@@ -28,6 +28,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version-file: '.nvmrc'
+          registry-url: 'https://registry.npmjs.org'
 
       - name: Get changed files
         id: changed-files
@@ -270,8 +271,24 @@ jobs:
               echo "❌ ERROR: Tests failed or no tests found"
               VERIFICATION_FAILED=true
             fi
-            
+
             cd - > /dev/null
+
+            # Simulate npm publish to catch prepublishOnly script failures
+            # This runs the same prepare-publish.js that runs during real publish
+            if [ "$VERSION_BUMPED" = true ] && [ -f "$LOCAL_DIR/package.json" ]; then
+              echo "Running npm publish --dry-run to verify publish pipeline..."
+              cd "$LOCAL_DIR"
+              if npm publish --dry-run 2>&1; then
+                echo "✅ Publish dry-run succeeded"
+              else
+                echo "❌ ERROR: Publish dry-run failed"
+                echo "   This means npm publish would fail on main after merge."
+                echo "   Check the prepublishOnly script (prepare-publish.js) and fix any build errors."
+                VERIFICATION_FAILED=true
+              fi
+              cd - > /dev/null
+            fi
             
             echo "---"
           done

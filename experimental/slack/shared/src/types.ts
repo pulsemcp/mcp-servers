@@ -43,6 +43,7 @@ export interface Message {
   reply_users?: string[];
   reactions?: Reaction[];
   attachments?: Attachment[];
+  files?: SlackFile[];
   blocks?: Block[];
   edited?: {
     user: string;
@@ -77,6 +78,29 @@ export interface Attachment {
   footer?: string;
   footer_icon?: string;
   ts?: number;
+  // Unfurled link fields
+  from_url?: string;
+  original_url?: string;
+  service_name?: string;
+  service_icon?: string;
+}
+
+export interface SlackFile {
+  id: string;
+  name?: string;
+  title?: string;
+  mimetype?: string;
+  filetype?: string;
+  size?: number;
+  url_private?: string;
+  url_private_download?: string;
+  permalink?: string;
+  permalink_public?: string;
+  thumb_360?: string;
+  thumb_480?: string;
+  thumb_720?: string;
+  thumb_800?: string;
+  thumb_1024?: string;
 }
 
 export interface Block {

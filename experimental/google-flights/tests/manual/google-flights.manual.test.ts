@@ -75,8 +75,22 @@ describe('Google Flights Manual Tests', () => {
       expect(flight).toHaveProperty('duration_minutes');
       expect(flight).toHaveProperty('stops');
       expect(flight).toHaveProperty('segments');
+      expect(flight).toHaveProperty('fare_brand');
+      expect(flight).toHaveProperty('extensions');
       expect(flight.price).toBeGreaterThan(0);
       expect(flight.segments.length).toBeGreaterThan(0);
+
+      // Validate fare_brand is a string or null
+      if (flight.fare_brand !== null) {
+        expect(typeof flight.fare_brand).toBe('string');
+        expect(['Economy', 'Economy+', 'Economy Flex']).toContain(flight.fare_brand);
+      }
+
+      // Validate extensions structure
+      expect(flight.extensions).toHaveProperty('carry_on_included');
+      expect(flight.extensions).toHaveProperty('checked_bags_included');
+      expect(typeof flight.extensions.carry_on_included).toBe('boolean');
+      expect(typeof flight.extensions.checked_bags_included).toBe('number');
 
       // Validate segment structure
       const segment = flight.segments[0];
@@ -86,6 +100,14 @@ describe('Google Flights Manual Tests', () => {
       expect(segment).toHaveProperty('destination');
       expect(segment).toHaveProperty('aircraft');
       expect(segment.origin).toBe('SFO');
+
+      // Log fare brand distribution
+      const fareBrands = data.flights.map((f: { fare_brand: string | null }) => f.fare_brand);
+      const brandCounts: Record<string, number> = {};
+      for (const brand of fareBrands) {
+        const key = brand || 'null';
+        brandCounts[key] = (brandCounts[key] || 0) + 1;
+      }
 
       reportOutcome(
         testName,
@@ -97,11 +119,18 @@ describe('Google Flights Manual Tests', () => {
         data.flights
           .slice(0, 5)
           .map(
-            (f: { airline: string; price: number; departure: string; stops: number }) =>
-              `${f.airline} $${f.price} dep:${f.departure} stops:${f.stops}`
+            (f: {
+              airline: string;
+              price: number;
+              departure: string;
+              stops: number;
+              fare_brand: string | null;
+            }) =>
+              `${f.airline} $${f.price} dep:${f.departure} stops:${f.stops} fare:${f.fare_brand || 'N/A'}`
           )
           .join(' | ')
       );
+      console.log('   Fare brand distribution:', JSON.stringify(brandCounts));
     }, 60000);
 
     it('should search international round-trip flights (JFK -> LHR)', async () => {
@@ -260,6 +289,115 @@ describe('Google Flights Manual Tests', () => {
         testName,
         'SUCCESS',
         `${data.flights.length} flights sorted by price: $${data.flights[0]?.price} to $${data.flights[data.flights.length - 1]?.price}`
+      );
+    }, 60000);
+
+    it('should exclude basic economy fares by default', async () => {
+      const testName = 'search_flights - exclude basic economy (default)';
+
+      const result = await client.callTool('search_flights', {
+        origin: 'SFO',
+        destination: 'LAX',
+        departure_date: '2026-04-15',
+        trip_type: 'one_way',
+        seat_class: 'economy',
+        max_results: 20,
+      });
+
+      expect(result.isError).toBeFalsy();
+
+      const text = (result.content[0] as { text: string }).text;
+      const data = JSON.parse(text);
+
+      expect(data.total_results).toBeGreaterThan(0);
+
+      // No flight should have fare_brand "Economy" (basic economy tier)
+      for (const flight of data.flights) {
+        expect(flight.fare_brand).not.toBe('Economy');
+      }
+
+      // Log fare brand distribution
+      const fareBrands = data.flights.map((f: { fare_brand: string | null }) => f.fare_brand);
+      const brandCounts: Record<string, number> = {};
+      for (const brand of fareBrands) {
+        const key = brand || 'null';
+        brandCounts[key] = (brandCounts[key] || 0) + 1;
+      }
+
+      reportOutcome(
+        testName,
+        'SUCCESS',
+        `Found ${data.total_results} flights (basic economy excluded). Fare brands: ${JSON.stringify(brandCounts)}`
+      );
+    }, 60000);
+
+    it('should include basic economy fares when exclude_basic_economy is false', async () => {
+      const testName = 'search_flights - include basic economy';
+
+      const result = await client.callTool('search_flights', {
+        origin: 'SFO',
+        destination: 'LAX',
+        departure_date: '2026-04-15',
+        trip_type: 'one_way',
+        seat_class: 'economy',
+        max_results: 50,
+        exclude_basic_economy: false,
+      });
+
+      expect(result.isError).toBeFalsy();
+
+      const text = (result.content[0] as { text: string }).text;
+      const data = JSON.parse(text);
+
+      expect(data.total_results).toBeGreaterThan(0);
+
+      // Log fare brand distribution - should include "Economy" (basic) fares
+      const fareBrands = data.flights.map((f: { fare_brand: string | null }) => f.fare_brand);
+      const brandCounts: Record<string, number> = {};
+      for (const brand of fareBrands) {
+        const key = brand || 'null';
+        brandCounts[key] = (brandCounts[key] || 0) + 1;
+      }
+
+      reportOutcome(
+        testName,
+        'SUCCESS',
+        `Found ${data.total_results} flights (all fares included). Fare brands: ${JSON.stringify(brandCounts)}`
+      );
+    }, 60000);
+
+    it('should include best flights (featured by Google) in results', async () => {
+      const testName = 'search_flights - best flights inclusion';
+
+      // Google Flights returns featured/best flights in a separate data section (ds1[2][0])
+      // from the main results list (ds1[3][0]). This test verifies both are merged.
+      const result = await client.callTool('search_flights', {
+        origin: 'SFO',
+        destination: 'ATL',
+        departure_date: '2026-05-10',
+        trip_type: 'one_way',
+        seat_class: 'economy',
+        max_results: 50,
+        exclude_basic_economy: false,
+      });
+
+      expect(result.isError).toBeFalsy();
+
+      const data = JSON.parse((result.content[0] as { text: string }).text);
+      expect(data.total_results).toBeGreaterThan(0);
+
+      // Should have some flights marked as best (Google typically features ~3)
+      const bestFlights = data.flights.filter((f: { is_best: boolean }) => f.is_best);
+      expect(bestFlights.length).toBeGreaterThan(0);
+
+      // Verify the total includes more flights than just one section would provide
+      // Best flights are a small subset; total should be significantly more
+      expect(data.total_results).toBeGreaterThan(3);
+
+      reportOutcome(
+        testName,
+        'SUCCESS',
+        `Found ${data.total_results} total flights, ${bestFlights.length} marked as best. Best: ${bestFlights.map((f: { segments: { flight_number: string }[] }) => f.segments[0]?.flight_number).join(', ') || 'none in page'}`
       );
     }, 60000);
 

@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeAll, afterEach } from 'vitest';
 import { getNewsletterPosts } from '../../shared/src/tools/get-newsletter-posts.js';
 import { getNewsletterPost } from '../../shared/src/tools/get-newsletter-post.js';
 import { draftNewsletterPost } from '../../shared/src/tools/draft-newsletter-post.js';
@@ -102,6 +102,18 @@ function createMockClient(overrides?: Partial<IPulseMCPAdminClient>): IPulseMCPA
     rescheduleGoodJob: vi.fn(),
     forceTriggerGoodJobCron: vi.fn(),
     cleanupGoodJobs: vi.fn(),
+    // Proctor methods
+    runExamForMirror: vi.fn(),
+    saveResultsForMirror: vi.fn(),
+    getProctorRuns: vi.fn(),
+    getProctorMetadata: vi.fn(),
+    // Discovered URL methods
+    getDiscoveredUrls: vi.fn(),
+    markDiscoveredUrlProcessed: vi.fn(),
+    getDiscoveredUrlStats: vi.fn(),
+    getMozMetrics: vi.fn(),
+    getMozBacklinks: vi.fn(),
+    getMozStoredMetrics: vi.fn(),
     ...overrides,
   };
 }
@@ -749,6 +761,11 @@ describe('Newsletter Tools', () => {
       expect(groups).toEqual(['newsletter', 'server_directory']);
     });
 
+    it('should accept proctor_readonly as a valid tool group', () => {
+      const groups = parseEnabledToolGroups('newsletter,proctor_readonly,proctor');
+      expect(groups).toEqual(['newsletter', 'proctor_readonly', 'proctor']);
+    });
+
     it('should return all base groups when empty string provided', () => {
       const groups = parseEnabledToolGroups('');
       expect(groups).toEqual([
@@ -762,6 +779,10 @@ describe('Newsletter Tools', () => {
         'mcp_servers',
         'redirects',
         'good_jobs',
+        'proctor',
+        'discovered_urls',
+        'moz',
+        'notifications',
       ]);
     });
 
@@ -778,6 +799,10 @@ describe('Newsletter Tools', () => {
         'mcp_servers',
         'redirects',
         'good_jobs',
+        'proctor',
+        'discovered_urls',
+        'moz',
+        'notifications',
       ]);
     });
 
@@ -808,21 +833,7 @@ describe('Newsletter Tools', () => {
   });
 
   describe('createRegisterTools with toolgroups filtering', () => {
-    const createMockClient2 = (): IPulseMCPAdminClient => ({
-      getPosts: vi.fn(),
-      getPost: vi.fn(),
-      createPost: vi.fn(),
-      updatePost: vi.fn(),
-      uploadImage: vi.fn(),
-      getAuthors: vi.fn(),
-      getAuthorBySlug: vi.fn(),
-      getAuthorById: vi.fn(),
-      getMCPServerBySlug: vi.fn(),
-      getMCPServerById: vi.fn(),
-      getMCPClientBySlug: vi.fn(),
-      getMCPClientById: vi.fn(),
-      searchMCPImplementations: vi.fn(),
-    });
+    const createMockClient2 = (): IPulseMCPAdminClient => createMockClient();
 
     it('should register only newsletter tools when newsletter group is enabled', async () => {
       const mockServer = new Server(
@@ -870,13 +881,21 @@ describe('Newsletter Tools', () => {
       const listToolsHandler = handlers.get('tools/list');
       const result = await listToolsHandler({ method: 'tools/list', params: {} });
 
-      expect(result.tools).toHaveLength(5);
+      // server_directory is a superset: 4 original + 7 official_queue + 5 unofficial_mirrors + 2 official_mirrors + 5 mcp_jsons + 3 mcp_servers = 26 tools
+      // (send_impl_posted_notif moved to separate 'notifications' group)
+      expect(result.tools).toHaveLength(26);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const toolNames = result.tools.map((t: any) => t.name);
       expect(toolNames).toContain('search_mcp_implementations');
       expect(toolNames).toContain('get_draft_mcp_implementations');
       expect(toolNames).toContain('save_mcp_implementation');
       expect(toolNames).toContain('find_providers');
+      // Also includes tools from overlapping groups
+      expect(toolNames).toContain('get_official_mirror_queue_items');
+      expect(toolNames).toContain('get_unofficial_mirrors');
+      expect(toolNames).toContain('get_official_mirrors');
+      expect(toolNames).toContain('get_mcp_jsons');
+      expect(toolNames).toContain('list_mcp_servers');
       expect(toolNames).not.toContain('get_newsletter_posts');
     });
 
@@ -898,7 +917,9 @@ describe('Newsletter Tools', () => {
       const listToolsHandler = handlers.get('tools/list');
       const result = await listToolsHandler({ method: 'tools/list', params: {} });
 
-      expect(result.tools).toHaveLength(18); // 6 newsletter + 5 server_directory + 7 official_queue
+      // 6 newsletter + 26 server_directory (superset, already includes official_queue tools) = 32
+      // (send_impl_posted_notif moved to separate 'notifications' group)
+      expect(result.tools).toHaveLength(32);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const toolNames = result.tools.map((t: any) => t.name);
       expect(toolNames).toContain('get_newsletter_posts');
@@ -924,8 +945,8 @@ describe('Newsletter Tools', () => {
       const listToolsHandler = handlers.get('tools/list');
       const result = await listToolsHandler({ method: 'tools/list', params: {} });
 
-      // 6 newsletter + 5 server_directory + 7 official_queue + 5 unofficial_mirrors + 2 official_mirrors + 2 tenants + 5 mcp_jsons + 3 mcp_servers + 5 redirects + 10 good_jobs = 50 tools
-      expect(result.tools).toHaveLength(50);
+      // 6 newsletter + 4 server_directory + 7 official_queue + 5 unofficial_mirrors + 2 official_mirrors + 2 tenants + 5 mcp_jsons + 3 mcp_servers + 5 redirects + 10 good_jobs + 5 proctor + 3 discovered_urls + 3 moz + 1 notifications = 61 tools
+      expect(result.tools).toHaveLength(61);
     });
 
     it('should register only read-only newsletter tools when newsletter_readonly group is enabled', async () => {
@@ -955,6 +976,32 @@ describe('Newsletter Tools', () => {
       expect(toolNames).not.toContain('upload_image');
     });
 
+    it('should register only get_exam_result when proctor_readonly group is enabled', async () => {
+      const mockServer = new Server(
+        { name: 'test', version: '1.0.0' },
+        { capabilities: { tools: {} } }
+      );
+      const clientFactory = () => createMockClient2();
+
+      const registerTools = createRegisterTools(clientFactory, 'proctor_readonly');
+      registerTools(mockServer);
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const handlers = (mockServer as any)._requestHandlers;
+      const listToolsHandler = handlers.get('tools/list');
+      const result = await listToolsHandler({ method: 'tools/list', params: {} });
+
+      expect(result.tools).toHaveLength(3); // Read-only proctor tools: get_exam_result + list_proctor_runs + get_proctor_metadata
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const toolNames = result.tools.map((t: any) => t.name);
+      expect(toolNames).toContain('get_exam_result');
+      expect(toolNames).toContain('list_proctor_runs');
+      expect(toolNames).toContain('get_proctor_metadata');
+      // Write tools should NOT be present
+      expect(toolNames).not.toContain('run_exam_for_mirror');
+      expect(toolNames).not.toContain('save_results_for_mirror');
+    });
+
     it('should register only read-only tools when all _readonly groups are enabled', async () => {
       const mockServer = new Server(
         { name: 'test', version: '1.0.0' },
@@ -973,14 +1020,19 @@ describe('Newsletter Tools', () => {
       const listToolsHandler = handlers.get('tools/list');
       const result = await listToolsHandler({ method: 'tools/list', params: {} });
 
-      // 3 newsletter read + 3 server_directory read + 2 official_queue read = 8 tools
-      expect(result.tools).toHaveLength(8);
+      // 3 newsletter read + 13 server_directory read (superset, already includes official_queue read) = 16 tools
+      expect(result.tools).toHaveLength(16);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const toolNames = result.tools.map((t: any) => t.name);
       // Read-only tools should be present
       expect(toolNames).toContain('get_newsletter_posts');
       expect(toolNames).toContain('search_mcp_implementations');
       expect(toolNames).toContain('get_official_mirror_queue_items');
+      // Tools from overlapping groups also available via server_directory_readonly
+      expect(toolNames).toContain('get_unofficial_mirrors');
+      expect(toolNames).toContain('get_official_mirrors');
+      expect(toolNames).toContain('get_mcp_jsons');
+      expect(toolNames).toContain('list_mcp_servers');
       // Write tools should NOT be present
       expect(toolNames).not.toContain('draft_newsletter_post');
       expect(toolNames).not.toContain('save_mcp_implementation');
@@ -1006,8 +1058,8 @@ describe('Newsletter Tools', () => {
       const listToolsHandler = handlers.get('tools/list');
       const result = await listToolsHandler({ method: 'tools/list', params: {} });
 
-      // 6 newsletter (all) + 3 server_directory read = 9 tools
-      expect(result.tools).toHaveLength(9);
+      // 6 newsletter (all) + 13 server_directory read (superset) = 19 tools
+      expect(result.tools).toHaveLength(19);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const toolNames = result.tools.map((t: any) => t.name);
       // Newsletter write tools should be present
@@ -1347,6 +1399,114 @@ describe('Newsletter Tools', () => {
       expect(text).toContain('- status');
       expect(text).toContain('- short_description');
       expect(text).toContain('- github_stars');
+    });
+
+    it('should include canonical URLs and remotes in update response', async () => {
+      const mockUpdatedImplementation = {
+        id: 100,
+        name: 'Test Server',
+        slug: 'test-server',
+        type: 'server' as const,
+        status: 'live' as const,
+        updated_at: '2024-01-20T16:30:00Z',
+        canonical: [
+          { url: 'https://github.com/org/repo', scope: 'url' as const },
+          { url: 'https://example.com', scope: 'domain' as const, note: 'main site' },
+        ],
+        mcp_server: {
+          id: 50,
+          slug: 'test-server',
+          remotes: [
+            {
+              id: 1,
+              display_name: 'Smithery',
+              url_direct: 'https://smithery.ai/server/test',
+              transport: 'sse',
+            },
+            { id: 2, url_direct: 'https://api.example.com/mcp' },
+          ],
+        },
+      };
+
+      const mockClient = createMockClient({
+        saveMCPImplementation: vi.fn().mockResolvedValue(mockUpdatedImplementation),
+      });
+
+      const tool = saveMCPImplementation(mockServer, () => mockClient);
+      const result = await tool.handler({
+        id: 100,
+        canonical: [
+          { url: 'https://github.com/org/repo', scope: 'url' },
+          { url: 'https://example.com', scope: 'domain', note: 'main site' },
+        ],
+        remote: [
+          {
+            url_direct: 'https://smithery.ai/server/test',
+            transport: 'sse',
+            display_name: 'Smithery',
+          },
+          { url_direct: 'https://api.example.com/mcp' },
+        ],
+      });
+
+      const text = result.content[0].text;
+      expect(text).toContain('Canonical URLs:** 2');
+      expect(text).toContain('https://github.com/org/repo (url)');
+      expect(text).toContain('https://example.com (domain)');
+      expect(text).toContain('Remote Endpoints:** 2');
+      expect(text).toContain('Smithery');
+      expect(text).toContain('https://api.example.com/mcp');
+    });
+
+    it('should include canonical URLs and remotes in create response', async () => {
+      const mockCreatedImplementation = {
+        id: 200,
+        name: 'New Server',
+        slug: 'new-server',
+        type: 'server' as const,
+        status: 'draft' as const,
+        created_at: '2024-01-20T16:30:00Z',
+        canonical: [{ url: 'https://github.com/org/new-server', scope: 'url' as const }],
+        mcp_server: {
+          id: 60,
+          slug: 'new-server',
+          remotes: [
+            {
+              id: 1,
+              display_name: 'Main Remote',
+              url_direct: 'https://api.example.com/mcp',
+              transport: 'sse',
+            },
+          ],
+        },
+      };
+
+      const mockClient = createMockClient({
+        createMCPImplementation: vi.fn().mockResolvedValue(mockCreatedImplementation),
+      });
+
+      const tool = saveMCPImplementation(mockServer, () => mockClient);
+      const result = await tool.handler({
+        name: 'New Server',
+        type: 'server',
+        canonical: [{ url: 'https://github.com/org/new-server', scope: 'url' }],
+        remote: [
+          {
+            url_direct: 'https://api.example.com/mcp',
+            transport: 'sse',
+            display_name: 'Main Remote',
+          },
+        ],
+      });
+
+      const text = result.content[0].text;
+      expect(text).toContain('Successfully created new MCP implementation!');
+      expect(text).toContain('Canonical URLs:** 1');
+      expect(text).toContain('https://github.com/org/new-server (url)');
+      expect(text).toContain('Remote Endpoints:** 1');
+      expect(text).toContain('Main Remote');
+      expect(text).toContain('get_mcp_server');
+      expect(text).toContain('new-server');
     });
 
     it('should require name and type when creating (no id)', async () => {
@@ -2445,6 +2605,858 @@ describe('Newsletter Tools', () => {
 
         expect(result.isError).toBe(true);
         expect(result.content[0].text).toContain('Error cleaning up good jobs: Permission denied');
+      });
+    });
+  });
+
+  describe('Proctor Tools', () => {
+    // Import the store so we can clear it between tests
+    let examResultStore: typeof import('../../shared/src/exam-result-store.js').examResultStore;
+
+    beforeAll(async () => {
+      const storeModule = await import('../../shared/src/exam-result-store.js');
+      examResultStore = storeModule.examResultStore;
+    });
+
+    afterEach(() => {
+      examResultStore.clear();
+    });
+
+    describe('ExamResultStore', () => {
+      it('should evict oldest entries when MAX_RESULTS (100) is exceeded', () => {
+        const ids: string[] = [];
+        for (let i = 0; i < 101; i++) {
+          ids.push(
+            examResultStore.store([i], 'runtime', 'test', [
+              { type: 'exam_result', mirror_id: i, exam_id: `test-${i}`, status: 'pass' },
+            ])
+          );
+        }
+
+        // Store should be capped at 100
+        expect(examResultStore.size).toBe(100);
+        // First entry should have been evicted
+        expect(examResultStore.get(ids[0])).toBeUndefined();
+        // Last entry should still exist
+        expect(examResultStore.get(ids[100])).toBeDefined();
+        // Second entry should still exist (only the first was evicted)
+        expect(examResultStore.get(ids[1])).toBeDefined();
+      });
+    });
+
+    describe('run_exam_for_mirror', () => {
+      it('should run exams, store results, and return truncated output with result_id', async () => {
+        const { runExamForMirror } = await import('../../shared/src/tools/run-exam-for-mirror.js');
+        const mockClient = createMockClient({
+          runExamForMirror: vi.fn().mockResolvedValue({
+            lines: [
+              { type: 'log', message: 'Starting exam for mirror 123' },
+              {
+                type: 'exam_result',
+                mirror_id: 123,
+                exam_id: 'auth-check',
+                status: 'pass',
+                data: { auth_type: 'none' },
+              },
+              { type: 'summary', total: 1, passed: 1, failed: 0, skipped: 0 },
+            ],
+          }),
+        });
+
+        const tool = runExamForMirror(mockServer, () => mockClient);
+        const result = await tool.handler({
+          mirror_ids: [123],
+          runtime_id: 'fly-machines-v1',
+          exam_type: 'auth-check',
+        });
+
+        expect(result.isError).toBeUndefined();
+        expect(result.content[0].text).toContain('Proctor Exam Results');
+        expect(result.content[0].text).toContain('Result ID:');
+        expect(result.content[0].text).toContain('123');
+        expect(result.content[0].text).toContain('[LOG] Starting exam for mirror 123');
+        expect(result.content[0].text).toContain('Exam Result');
+        expect(result.content[0].text).toContain('Status: pass');
+        expect(result.content[0].text).toContain('Summary');
+        expect(result.content[0].text).toContain('Passed: 1');
+        expect(result.content[0].text).toContain('get_exam_result');
+        expect(result.content[0].text).toContain('save_results_for_mirror');
+      });
+
+      it('should truncate large tool listings in exam result data', async () => {
+        const { runExamForMirror } = await import('../../shared/src/tools/run-exam-for-mirror.js');
+        const largeToolList = Array.from({ length: 21 }, (_, i) => ({
+          name: `tool_${i}`,
+          description: `Description for tool ${i}`,
+          inputSchema: { type: 'object', properties: { param: { type: 'string' } } },
+        }));
+
+        const mockClient = createMockClient({
+          runExamForMirror: vi.fn().mockResolvedValue({
+            lines: [
+              {
+                type: 'exam_result',
+                mirror_id: 123,
+                exam_id: 'init-tools-list',
+                status: 'pass',
+                data: { tools: largeToolList },
+              },
+            ],
+          }),
+        });
+
+        const tool = runExamForMirror(mockServer, () => mockClient);
+        const result = await tool.handler({
+          mirror_ids: [123],
+          runtime_id: 'fly-machines-v1',
+          exam_type: 'init-tools-list',
+        });
+
+        expect(result.content[0].text).toContain('tools_count');
+        expect(result.content[0].text).toContain('21');
+        expect(result.content[0].text).toContain('tools_truncated');
+        // inputSchema should not appear in truncated output
+        expect(result.content[0].text).not.toContain('inputSchema');
+      });
+
+      it('should store full results accessible via the store', async () => {
+        const { runExamForMirror } = await import('../../shared/src/tools/run-exam-for-mirror.js');
+        const examLines = [
+          {
+            type: 'exam_result' as const,
+            mirror_id: 123,
+            exam_id: 'init-tools-list',
+            status: 'pass',
+            data: { tools: [{ name: 'tool_1', inputSchema: { type: 'object' } }] },
+          },
+        ];
+
+        const mockClient = createMockClient({
+          runExamForMirror: vi.fn().mockResolvedValue({ lines: examLines }),
+        });
+
+        const tool = runExamForMirror(mockServer, () => mockClient);
+        const result = await tool.handler({
+          mirror_ids: [123],
+          runtime_id: 'fly-machines-v1',
+          exam_type: 'init-tools-list',
+        });
+
+        // Extract result_id from output
+        const match = result.content[0].text.match(/Result ID: ([0-9a-f-]{36})/);
+        expect(match).toBeTruthy();
+        const resultId = match![1];
+
+        // Full result should be in the store with untruncated data
+        const stored = examResultStore.get(resultId);
+        expect(stored).toBeDefined();
+        expect(stored!.lines).toEqual(examLines);
+        expect(stored!.mirror_ids).toEqual([123]);
+        expect(stored!.runtime_id).toBe('fly-machines-v1');
+        expect(stored!.exam_type).toBe('init-tools-list');
+      });
+
+      it('should extract exam_id from data payload when not at top level of stream line', async () => {
+        const { runExamForMirror } = await import('../../shared/src/tools/run-exam-for-mirror.js');
+        const mockClient = createMockClient({
+          runExamForMirror: vi.fn().mockResolvedValue({
+            lines: [
+              {
+                type: 'exam_result',
+                mirror_id: 123,
+                // No exam_id at top level — only inside data
+                data: {
+                  mirror_id: 123,
+                  exam_id: 'proctor-mcp-client-auth-check',
+                  status: 'pass',
+                },
+              },
+            ],
+          }),
+        });
+
+        const tool = runExamForMirror(mockServer, () => mockClient);
+        const result = await tool.handler({
+          mirror_ids: [123],
+          runtime_id: 'fly-machines-v1',
+          exam_type: 'auth-check',
+        });
+
+        // Should show the exam_id from data, not 'unknown'
+        expect(result.content[0].text).toContain('Exam: proctor-mcp-client-auth-check');
+        expect(result.content[0].text).not.toContain('Exam: unknown');
+      });
+
+      it('should format error lines from the stream', async () => {
+        const { runExamForMirror } = await import('../../shared/src/tools/run-exam-for-mirror.js');
+        const mockClient = createMockClient({
+          runExamForMirror: vi.fn().mockResolvedValue({
+            lines: [{ type: 'error', message: 'Mirror 456 has no mcp_json' }],
+          }),
+        });
+
+        const tool = runExamForMirror(mockServer, () => mockClient);
+        const result = await tool.handler({
+          mirror_ids: [456],
+          runtime_id: 'fly-machines-v1',
+          exam_type: 'both',
+        });
+
+        expect(result.content[0].text).toContain('**Error**: Mirror 456 has no mcp_json');
+      });
+
+      it('should handle API errors gracefully', async () => {
+        const { runExamForMirror } = await import('../../shared/src/tools/run-exam-for-mirror.js');
+        const mockClient = createMockClient({
+          runExamForMirror: vi.fn().mockRejectedValue(new Error('Invalid API key')),
+        });
+
+        const tool = runExamForMirror(mockServer, () => mockClient);
+        const result = await tool.handler({
+          mirror_ids: [123],
+          runtime_id: 'fly-machines-v1',
+          exam_type: 'auth-check',
+        });
+
+        expect(result.isError).toBe(true);
+        expect(result.content[0].text).toContain('Error running proctor exam: Invalid API key');
+      });
+
+      it('should extract status from data.result.status (real NDJSON structure)', async () => {
+        const { runExamForMirror } = await import('../../shared/src/tools/run-exam-for-mirror.js');
+        const mockClient = createMockClient({
+          runExamForMirror: vi.fn().mockResolvedValue({
+            lines: [
+              {
+                type: 'exam_result',
+                // mirror_id is inside data, NOT at top level
+                data: {
+                  mirror_id: 155,
+                  server_slug: 'pagerduty',
+                  exam_id: 'proctor-mcp-client-init-tools-list',
+                  result: {
+                    status: 'completed',
+                    exam_id: 'bbb3ca84-test',
+                    machine_id: 'abc123',
+                    result: {
+                      input: { mirror_id: 155 },
+                      output: { tools: [{ name: 'tool_a' }] },
+                    },
+                  },
+                },
+              },
+              {
+                type: 'summary',
+                data: { total_exams: 1, successful: 1, failed: 0, skipped: 0 },
+              },
+            ],
+          }),
+        });
+
+        const tool = runExamForMirror(mockServer, () => mockClient);
+        const result = await tool.handler({
+          mirror_ids: [155],
+          runtime_id: 'fly-machines-v1',
+          exam_type: 'init-tools-list',
+        });
+
+        expect(result.isError).toBeUndefined();
+        // Status should be extracted from data.result.status, not show 'unknown'
+        expect(result.content[0].text).toContain('Status: completed');
+        expect(result.content[0].text).not.toContain('Status: unknown');
+        // Mirror ID should be extracted from data.mirror_id
+        expect(result.content[0].text).toContain('Mirror: 155');
+        // Summary should use data.total_exams and data.successful
+        expect(result.content[0].text).toContain('Total: 1');
+        expect(result.content[0].text).toContain('Passed: 1');
+      });
+    });
+
+    describe('get_exam_result', () => {
+      it('should retrieve full stored result by result_id', async () => {
+        const { getExamResult } = await import('../../shared/src/tools/get-exam-result.js');
+        const lines = [
+          { type: 'log' as const, message: 'Starting exam' },
+          {
+            type: 'exam_result' as const,
+            mirror_id: 123,
+            exam_id: 'init-tools-list',
+            status: 'pass',
+            data: {
+              tools: [
+                {
+                  name: 'tool_1',
+                  inputSchema: { type: 'object', properties: { x: { type: 'string' } } },
+                },
+              ],
+            },
+          },
+          { type: 'summary' as const, total: 1, passed: 1, failed: 0, skipped: 0 },
+        ];
+
+        const resultId = examResultStore.store([123], 'fly-machines-v1', 'init-tools-list', lines);
+
+        const tool = getExamResult(mockServer, () => createMockClient());
+        const result = await tool.handler({ result_id: resultId });
+
+        expect(result.isError).toBeUndefined();
+        expect(result.content[0].text).toContain('Exam Result Details');
+        expect(result.content[0].text).toContain(resultId);
+        // Full data including inputSchema should be present
+        expect(result.content[0].text).toContain('inputSchema');
+        expect(result.content[0].text).toContain('tool_1');
+      });
+
+      it('should filter by section', async () => {
+        const { getExamResult } = await import('../../shared/src/tools/get-exam-result.js');
+        const lines = [
+          { type: 'log' as const, message: 'Starting exam' },
+          {
+            type: 'exam_result' as const,
+            mirror_id: 123,
+            exam_id: 'auth-check',
+            status: 'pass',
+          },
+          { type: 'summary' as const, total: 1, passed: 1, failed: 0, skipped: 0 },
+        ];
+
+        const resultId = examResultStore.store([123], 'fly-machines-v1', 'both', lines);
+
+        const tool = getExamResult(mockServer, () => createMockClient());
+        const result = await tool.handler({ result_id: resultId, section: 'exam_results' });
+
+        expect(result.content[0].text).toContain('Section Filter: exam_results');
+        expect(result.content[0].text).toContain('exam_result');
+        expect(result.content[0].text).not.toContain('"type": "log"');
+        expect(result.content[0].text).not.toContain('"type": "summary"');
+      });
+
+      it('should filter by mirror_id', async () => {
+        const { getExamResult } = await import('../../shared/src/tools/get-exam-result.js');
+        const lines = [
+          {
+            type: 'exam_result' as const,
+            mirror_id: 123,
+            exam_id: 'auth-check',
+            status: 'pass',
+          },
+          {
+            type: 'exam_result' as const,
+            mirror_id: 456,
+            exam_id: 'auth-check',
+            status: 'fail',
+          },
+        ];
+
+        const resultId = examResultStore.store([123, 456], 'fly-machines-v1', 'auth-check', lines);
+
+        const tool = getExamResult(mockServer, () => createMockClient());
+        const result = await tool.handler({ result_id: resultId, mirror_id: 123 });
+
+        expect(result.content[0].text).toContain('Mirror Filter: 123');
+        expect(result.content[0].text).toContain('"mirror_id": 123');
+        expect(result.content[0].text).not.toContain('"mirror_id": 456');
+      });
+
+      it('should filter by mirror_id inside data payload (real NDJSON structure)', async () => {
+        const { getExamResult } = await import('../../shared/src/tools/get-exam-result.js');
+        const lines = [
+          {
+            type: 'exam_result' as const,
+            // mirror_id only inside data, NOT at top level
+            data: {
+              mirror_id: 155,
+              exam_id: 'proctor-mcp-client-init-tools-list',
+              result: { status: 'completed' },
+            },
+          },
+          {
+            type: 'exam_result' as const,
+            data: {
+              mirror_id: 200,
+              exam_id: 'proctor-mcp-client-init-tools-list',
+              result: { status: 'completed' },
+            },
+          },
+        ];
+
+        const resultId = examResultStore.store(
+          [155, 200],
+          'fly-machines-v1',
+          'init-tools-list',
+          lines
+        );
+
+        const tool = getExamResult(mockServer, () => createMockClient());
+        const result = await tool.handler({ result_id: resultId, mirror_id: 155 });
+
+        expect(result.content[0].text).toContain('"mirror_id": 155');
+        expect(result.content[0].text).not.toContain('"mirror_id": 200');
+      });
+
+      it('should return error for unknown result_id', async () => {
+        const { getExamResult } = await import('../../shared/src/tools/get-exam-result.js');
+
+        const tool = getExamResult(mockServer, () => createMockClient());
+        const result = await tool.handler({
+          result_id: '00000000-0000-0000-0000-000000000000',
+        });
+
+        expect(result.isError).toBe(true);
+        expect(result.content[0].text).toContain('No stored result found');
+      });
+    });
+
+    describe('save_results_for_mirror', () => {
+      it('should save results using result_id from the store', async () => {
+        const { saveResultsForMirror } =
+          await import('../../shared/src/tools/save-results-for-mirror.js');
+
+        // First, store a result as if run_exam_for_mirror had been called
+        const lines = [
+          {
+            type: 'exam_result' as const,
+            mirror_id: 123,
+            exam_id: 'auth-check',
+            status: 'pass',
+            data: { auth_type: 'none' },
+          },
+          {
+            type: 'exam_result' as const,
+            mirror_id: 123,
+            exam_id: 'init-tools-list',
+            status: 'pass',
+            data: { tools_count: 5 },
+          },
+        ];
+        const resultId = examResultStore.store([123], 'fly-machines-v1', 'both', lines);
+
+        const saveFn = vi.fn().mockResolvedValue({
+          saved: [
+            { exam_id: 'auth-check', proctor_result_id: 201 },
+            { exam_id: 'init-tools-list', proctor_result_id: 202 },
+          ],
+          errors: [],
+        });
+        const mockClient = createMockClient({ saveResultsForMirror: saveFn });
+
+        const tool = saveResultsForMirror(mockServer, () => mockClient);
+        const result = await tool.handler({
+          mirror_id: 123,
+          result_id: resultId,
+        });
+
+        expect(result.isError).toBeUndefined();
+        expect(result.content[0].text).toContain('Proctor Results Saved');
+        expect(result.content[0].text).toContain(`Result ID: ${resultId}`);
+        expect(result.content[0].text).toContain('Successfully Saved (2)');
+
+        // Verify the client was called with the correct extracted results
+        expect(saveFn).toHaveBeenCalledWith({
+          mirror_id: 123,
+          runtime_id: 'fly-machines-v1',
+          results: [
+            { exam_id: 'auth-check', status: 'pass', data: { auth_type: 'none' } },
+            { exam_id: 'init-tools-list', status: 'pass', data: { tools_count: 5 } },
+          ],
+        });
+
+        // Store should be cleaned up after successful save (no errors)
+        expect(examResultStore.get(resultId)).toBeUndefined();
+      });
+
+      it('should extract exam_id from data payload when not at top level of stream line', async () => {
+        const { saveResultsForMirror } =
+          await import('../../shared/src/tools/save-results-for-mirror.js');
+
+        // Simulate the real-world bug: exam_id is inside line.data, NOT at line.exam_id
+        const lines = [
+          {
+            type: 'exam_result' as const,
+            mirror_id: 123,
+            // No exam_id or exam_type at top level!
+            status: 'pass',
+            data: {
+              mirror_id: 123,
+              exam_id: 'proctor-mcp-client-auth-check',
+              result: { status: 'pass' },
+            },
+          },
+          {
+            type: 'exam_result' as const,
+            mirror_id: 123,
+            // No exam_id at top level!
+            data: {
+              mirror_id: 123,
+              exam_id: 'proctor-mcp-client-init-tools-list',
+              status: 'pass',
+              result: { status: 'pass', tools_count: 5 },
+            },
+          },
+        ];
+        const resultId = examResultStore.store([123], 'fly-machines-v1', 'both', lines);
+
+        const saveFn = vi.fn().mockResolvedValue({
+          saved: [
+            { exam_id: 'proctor-mcp-client-auth-check', proctor_result_id: 301 },
+            { exam_id: 'proctor-mcp-client-init-tools-list', proctor_result_id: 302 },
+          ],
+          errors: [],
+        });
+        const mockClient = createMockClient({ saveResultsForMirror: saveFn });
+
+        const tool = saveResultsForMirror(mockServer, () => mockClient);
+        const result = await tool.handler({
+          mirror_id: 123,
+          result_id: resultId,
+        });
+
+        expect(result.isError).toBeUndefined();
+        expect(result.content[0].text).toContain('Successfully Saved (2)');
+
+        // Verify exam_id was extracted from data payload, NOT 'unknown'
+        expect(saveFn).toHaveBeenCalledWith(
+          expect.objectContaining({
+            results: expect.arrayContaining([
+              expect.objectContaining({ exam_id: 'proctor-mcp-client-auth-check' }),
+              expect.objectContaining({ exam_id: 'proctor-mcp-client-init-tools-list' }),
+            ]),
+          })
+        );
+
+        // Verify data uses the nested result object, not the full data wrapper
+        const calledResults = saveFn.mock.calls[0][0].results;
+        expect(calledResults[0].data).toEqual({ status: 'pass' });
+        expect(calledResults[1].data).toEqual({ status: 'pass', tools_count: 5 });
+      });
+
+      it('should preserve output data from nested result when saving via result_id', async () => {
+        const { saveResultsForMirror } =
+          await import('../../shared/src/tools/save-results-for-mirror.js');
+
+        // Simulate real proctor API response where output is inside line.data.result
+        // This is the exact structure that caused empty output in production (issue #374)
+        const lines = [
+          {
+            type: 'exam_result' as const,
+            mirror_id: 152,
+            data: {
+              mirror_id: 152,
+              exam_id: 'proctor-mcp-client-auth-check',
+              status: 'pass',
+              result: {
+                status: 'pass',
+                output: { remotes: [{ authTypes: ['none'] }] },
+                input: { mirror_id: 152 },
+                processedBy: 'fly-machines-v1',
+              },
+            },
+          },
+          {
+            type: 'exam_result' as const,
+            mirror_id: 152,
+            data: {
+              mirror_id: 152,
+              exam_id: 'proctor-mcp-client-init-tools-list',
+              status: 'pass',
+              result: {
+                status: 'pass',
+                output: { remotes: [{ tools: ['tool_a', 'tool_b'] }] },
+                input: { mirror_id: 152 },
+                processedBy: 'fly-machines-v1',
+              },
+            },
+          },
+        ];
+        const resultId = examResultStore.store([152], 'fly-machines-v1', 'both', lines);
+
+        const saveFn = vi.fn().mockResolvedValue({
+          saved: [
+            { exam_id: 'proctor-mcp-client-auth-check', proctor_result_id: 512 },
+            { exam_id: 'proctor-mcp-client-init-tools-list', proctor_result_id: 513 },
+          ],
+          errors: [],
+        });
+        const mockClient = createMockClient({ saveResultsForMirror: saveFn });
+
+        const tool = saveResultsForMirror(mockServer, () => mockClient);
+        const result = await tool.handler({
+          mirror_id: 152,
+          result_id: resultId,
+        });
+
+        expect(result.isError).toBeUndefined();
+        expect(result.content[0].text).toContain('Successfully Saved (2)');
+
+        // Verify data contains the nested result object (with output), NOT the
+        // full data wrapper (which would nest output too deeply)
+        const calledResults = saveFn.mock.calls[0][0].results;
+
+        // Auth-check result should have output with remotes/authTypes
+        expect(calledResults[0].data).toEqual({
+          status: 'pass',
+          output: { remotes: [{ authTypes: ['none'] }] },
+          input: { mirror_id: 152 },
+          processedBy: 'fly-machines-v1',
+        });
+
+        // Init-tools-list result should have output with remotes/tools
+        expect(calledResults[1].data).toEqual({
+          status: 'pass',
+          output: { remotes: [{ tools: ['tool_a', 'tool_b'] }] },
+          input: { mirror_id: 152 },
+          processedBy: 'fly-machines-v1',
+        });
+      });
+
+      it('should unwrap double-nested data.result.result from real proctor API structure (issue #376)', async () => {
+        const { saveResultsForMirror } =
+          await import('../../shared/src/tools/save-results-for-mirror.js');
+
+        // This is the EXACT structure from the real proctor API (per issue #376 comment).
+        // The payload is at data.result.result, not data.result.
+        const lines = [
+          {
+            type: 'exam_result' as const,
+            data: {
+              mirror_id: 152,
+              server_slug: 'canva',
+              exam_id: 'proctor-mcp-client-auth-check',
+              runtime_image: 'registry.fly.io/proctor-mcp-client:latest',
+              entry_key: 'remotes[0]',
+              mcp_json_id: 12,
+              result: {
+                exam_id: '5ce3bfea-1234-5678-9abc-def012345678',
+                machine_id: '9080409db04e48',
+                status: 'completed',
+                result: {
+                  input: {
+                    'mcp.json': {
+                      'remotes[0]': { url: 'https://example.com', type: 'streamable-http' },
+                    },
+                    'server.json': { name: 'canva', title: 'Canva' },
+                  },
+                  output: {
+                    'remotes[0]': { authType: 'oauth', detail: { scopes: ['read'] } },
+                  },
+                  processedBy: {
+                    exam: 'proctor-mcp-client-auth-check',
+                    runtime: 'proctor-mcp-client-0.0.21',
+                    datetime: '2026-03-01T12:00:00.000Z',
+                  },
+                },
+                error: null,
+                logs: [{ ts: '2026-03-01T12:00:00.000Z', msg: 'Starting exam' }],
+              },
+            },
+          },
+        ];
+        const resultId = examResultStore.store([152], 'fly-machines-v1', 'both', lines);
+
+        const saveFn = vi.fn().mockResolvedValue({
+          saved: [{ exam_id: 'proctor-mcp-client-auth-check', proctor_result_id: 520 }],
+          errors: [],
+        });
+        const mockClient = createMockClient({ saveResultsForMirror: saveFn });
+
+        const tool = saveResultsForMirror(mockServer, () => mockClient);
+        const result = await tool.handler({
+          mirror_id: 152,
+          result_id: resultId,
+        });
+
+        expect(result.isError).toBeUndefined();
+        expect(result.content[0].text).toContain('Successfully Saved (1)');
+
+        // The data sent to the API should be the innermost payload
+        // { input, output, processedBy } — NOT the envelope with
+        // exam_id, machine_id, logs, etc.
+        const calledResults = saveFn.mock.calls[0][0].results;
+        expect(calledResults[0].data).toEqual({
+          input: {
+            'mcp.json': { 'remotes[0]': { url: 'https://example.com', type: 'streamable-http' } },
+            'server.json': { name: 'canva', title: 'Canva' },
+          },
+          output: {
+            'remotes[0]': { authType: 'oauth', detail: { scopes: ['read'] } },
+          },
+          processedBy: {
+            exam: 'proctor-mcp-client-auth-check',
+            runtime: 'proctor-mcp-client-0.0.21',
+            datetime: '2026-03-01T12:00:00.000Z',
+          },
+        });
+
+        // Critically: no envelope fields like logs, machine_id, error
+        expect(calledResults[0].data).not.toHaveProperty('logs');
+        expect(calledResults[0].data).not.toHaveProperty('machine_id');
+        expect(calledResults[0].data).not.toHaveProperty('error');
+        // And output must be at the top level, not nested under result
+        expect(calledResults[0].data).toHaveProperty('output');
+        // Status should be extracted from data.result.status ('completed'),
+        // not 'unknown' — verifies extractStatus looks into nested result
+        expect(calledResults[0].status).toBe('completed');
+      });
+
+      it('should not clean up store when save has errors', async () => {
+        const { saveResultsForMirror } =
+          await import('../../shared/src/tools/save-results-for-mirror.js');
+
+        const lines = [
+          {
+            type: 'exam_result' as const,
+            mirror_id: 123,
+            exam_id: 'auth-check',
+            status: 'pass',
+            data: { auth_type: 'none' },
+          },
+        ];
+        const resultId = examResultStore.store([123], 'fly-machines-v1', 'both', lines);
+
+        const saveFn = vi.fn().mockResolvedValue({
+          saved: [],
+          errors: [{ exam_id: 'auth-check', error: 'Server error' }],
+        });
+        const mockClient = createMockClient({ saveResultsForMirror: saveFn });
+
+        const tool = saveResultsForMirror(mockServer, () => mockClient);
+        await tool.handler({
+          mirror_id: 123,
+          result_id: resultId,
+        });
+
+        // Store should NOT be cleaned up when there are errors (allow retry)
+        expect(examResultStore.get(resultId)).toBeDefined();
+      });
+
+      it('should require result_id parameter', async () => {
+        const { saveResultsForMirror } =
+          await import('../../shared/src/tools/save-results-for-mirror.js');
+
+        const tool = saveResultsForMirror(mockServer, () => createMockClient());
+        await expect(
+          tool.handler({
+            mirror_id: 123,
+          })
+        ).rejects.toThrow(/Required/);
+      });
+
+      it('should return error for unknown result_id', async () => {
+        const { saveResultsForMirror } =
+          await import('../../shared/src/tools/save-results-for-mirror.js');
+
+        const tool = saveResultsForMirror(mockServer, () => createMockClient());
+        const result = await tool.handler({
+          mirror_id: 123,
+          result_id: '00000000-0000-0000-0000-000000000000',
+        });
+
+        expect(result.isError).toBe(true);
+        expect(result.content[0].text).toContain('No stored result found');
+      });
+
+      it('should report partial failures', async () => {
+        const { saveResultsForMirror } =
+          await import('../../shared/src/tools/save-results-for-mirror.js');
+
+        const lines = [
+          {
+            type: 'exam_result' as const,
+            mirror_id: 123,
+            exam_id: 'auth-check',
+            status: 'pass',
+          },
+          {
+            type: 'exam_result' as const,
+            mirror_id: 123,
+            exam_id: 'init-tools-list',
+            status: 'pass',
+          },
+        ];
+        const resultId = examResultStore.store([123], 'fly-machines-v1', 'both', lines);
+
+        const mockClient = createMockClient({
+          saveResultsForMirror: vi.fn().mockResolvedValue({
+            saved: [{ exam_id: 'auth-check', proctor_result_id: 101 }],
+            errors: [{ exam_id: 'init-tools-list', error: 'Duplicate result' }],
+          }),
+        });
+
+        const tool = saveResultsForMirror(mockServer, () => mockClient);
+        const result = await tool.handler({
+          mirror_id: 123,
+          result_id: resultId,
+        });
+
+        expect(result.content[0].text).toContain('Successfully Saved (1)');
+        expect(result.content[0].text).toContain('Errors (1)');
+        expect(result.content[0].text).toContain('init-tools-list: Duplicate result');
+
+        // Store should NOT be cleaned up when there are errors
+        expect(examResultStore.get(resultId)).toBeDefined();
+      });
+
+      it('should handle API errors gracefully', async () => {
+        const { saveResultsForMirror } =
+          await import('../../shared/src/tools/save-results-for-mirror.js');
+
+        const lines = [
+          {
+            type: 'exam_result' as const,
+            mirror_id: 999,
+            exam_id: 'auth-check',
+            status: 'pass',
+          },
+        ];
+        const resultId = examResultStore.store([999], 'fly-machines-v1', 'both', lines);
+
+        const mockClient = createMockClient({
+          saveResultsForMirror: vi
+            .fn()
+            .mockRejectedValue(new Error('Mirror not found with ID: 999')),
+        });
+
+        const tool = saveResultsForMirror(mockServer, () => mockClient);
+        const result = await tool.handler({
+          mirror_id: 999,
+          result_id: resultId,
+        });
+
+        expect(result.isError).toBe(true);
+        expect(result.content[0].text).toContain(
+          'Error saving proctor results: Mirror not found with ID: 999'
+        );
+      });
+
+      it('should handle string error format from API', async () => {
+        const { saveResultsForMirror } =
+          await import('../../shared/src/tools/save-results-for-mirror.js');
+
+        const lines = [
+          {
+            type: 'exam_result' as const,
+            mirror_id: 123,
+            exam_id: 'auth-check',
+            status: 'pass',
+          },
+        ];
+        const resultId = examResultStore.store([123], 'fly-machines-v1', 'both', lines);
+
+        const mockClient = createMockClient({
+          saveResultsForMirror: vi.fn().mockResolvedValue({
+            saved: [],
+            errors: ['Missing exam_id or result data for entry'],
+          }),
+        });
+
+        const tool = saveResultsForMirror(mockServer, () => mockClient);
+        const result = await tool.handler({
+          mirror_id: 123,
+          result_id: resultId,
+        });
+
+        expect(result.content[0].text).toContain('Errors (1)');
+        expect(result.content[0].text).toContain('Missing exam_id or result data for entry');
       });
     });
   });

@@ -89,3 +89,82 @@ jobs:
           fi
 
           echo "✅ All critical publish files are present"
+
+      - name: Validate bundled file dependencies have copy steps
+        run: |
+          set -e
+
+          echo "Validating bundled file: dependencies are copied in prepare-publish.js..."
+          echo ""
+
+          ERRORS=""
+          SERVERS_CHECKED=0
+
+          for LOCAL_PKG in $(find experimental productionized -name "package.json" -path "*/local/package.json" 2>/dev/null); do
+            SERVER_DIR=$(dirname $(dirname "$LOCAL_PKG"))
+            SERVER_NAME=$(basename "$SERVER_DIR")
+            SERVERS_CHECKED=$((SERVERS_CHECKED + 1))
+
+            # Extract bundledDependencies array (if any)
+            BUNDLED_DEPS=$(node -e "
+              const pkg = require('./$LOCAL_PKG');
+              const deps = pkg.bundledDependencies || pkg.bundleDependencies || [];
+              deps.forEach(d => console.log(d));
+            " 2>/dev/null || true)
+
+            if [ -z "$BUNDLED_DEPS" ]; then
+              continue
+            fi
+
+            echo "Checking $SERVER_DIR..."
+
+            while IFS= read -r DEP; do
+              # Check if this bundled dep uses a file: reference
+              DEP_VERSION=$(node -e "
+                const pkg = require('./$LOCAL_PKG');
+                const v = (pkg.dependencies || {})['$DEP'] || '';
+                console.log(v);
+              " 2>/dev/null || true)
+
+              if echo "$DEP_VERSION" | grep -q "^file:"; then
+                echo "  Found bundled file: dependency: $DEP ($DEP_VERSION)"
+
+                # Check that prepare-publish.js exists and contains a reference to copying this package
+                PREPARE_SCRIPT="$SERVER_DIR/local/prepare-publish.js"
+                if [ ! -f "$PREPARE_SCRIPT" ]; then
+                  ERRORS="${ERRORS}ERROR: $SERVER_DIR has bundled file: dependency '$DEP' but no prepare-publish.js\n"
+                  echo "  ❌ No prepare-publish.js found"
+                elif ! grep -q "node_modules.*$(echo "$DEP" | sed 's/\//\\\//g')" "$PREPARE_SCRIPT"; then
+                  ERRORS="${ERRORS}ERROR: $SERVER_DIR/local/prepare-publish.js does not copy bundled file: dependency '$DEP' into node_modules/\n"
+                  ERRORS="${ERRORS}  bundledDependencies with file: references must be copied into local/node_modules/ during prepare-publish\n"
+                  ERRORS="${ERRORS}  so npm can include them in the published tarball. See experimental/onepassword/local/prepare-publish.js for an example.\n"
+                  echo "  ❌ prepare-publish.js missing copy step for $DEP"
+                else
+                  echo "  ✅ prepare-publish.js copies $DEP into node_modules"
+                fi
+              fi
+            done <<< "$BUNDLED_DEPS"
+
+            echo ""
+          done
+
+          echo "---"
+          echo "Checked $SERVERS_CHECKED MCP servers for bundled file: dependencies"
+          echo ""
+
+          if [ -n "$ERRORS" ]; then
+            echo "❌ VALIDATION FAILED"
+            echo ""
+            echo "The following bundled file: dependencies are missing copy steps in prepare-publish.js:"
+            echo ""
+            echo -e "$ERRORS"
+            echo ""
+            echo "When a dependency uses 'file:' in package.json and is listed in bundledDependencies,"
+            echo "it must be physically copied into local/node_modules/<package-name>/ during the"
+            echo "prepare-publish step. Otherwise npm pack/publish won't include it in the tarball,"
+            echo "causing ERR_MODULE_NOT_FOUND when users install the package."
+            echo ""
+            exit 1
+          fi
+
+          echo "✅ All bundled file: dependencies have copy steps"

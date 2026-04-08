@@ -102,6 +102,73 @@ describe('PointsYeah Tools', () => {
       expect(result.content[0].text).toContain('API request failed');
     });
 
+    it('should handle null routes in flight results without crashing', async () => {
+      const nullRoutesClient: IPointsYeahClient = {
+        searchFlights: vi.fn().mockResolvedValue({
+          total: 1,
+          results: [
+            {
+              program: 'ANA Mileage Club',
+              code: 'NH',
+              date: '2026-04-01',
+              departure: 'SFO',
+              arrival: 'NRT',
+              routes: null,
+            },
+          ],
+        }),
+        getSearchHistory: vi.fn(),
+      };
+      const tool = searchFlightsTool(mockServer, () => nullRoutesClient);
+      const result = await tool.handler({
+        departure: 'SFO',
+        arrival: 'NRT',
+        departDate: '2026-04-01',
+        tripType: '1',
+      });
+
+      expect(result.isError).toBeFalsy();
+      expect(result.content[0].text).toContain('ANA Mileage Club');
+    });
+
+    it('should handle null payment, segments, and transfer in routes without crashing', async () => {
+      const nullFieldsClient: IPointsYeahClient = {
+        searchFlights: vi.fn().mockResolvedValue({
+          total: 1,
+          results: [
+            {
+              program: 'Delta SkyMiles',
+              code: 'DL',
+              date: '2026-04-01',
+              departure: 'SFO',
+              arrival: 'JFK',
+              routes: [
+                {
+                  payment: null,
+                  segments: null,
+                  transfer: null,
+                },
+              ],
+            },
+          ],
+        }),
+        getSearchHistory: vi.fn(),
+      };
+      const tool = searchFlightsTool(mockServer, () => nullFieldsClient);
+      const result = await tool.handler({
+        departure: 'SFO',
+        arrival: 'JFK',
+        departDate: '2026-04-01',
+        tripType: '1',
+      });
+
+      expect(result.isError).toBeFalsy();
+      expect(result.content[0].text).toContain('Delta SkyMiles');
+      // Should not contain payment/segment/transfer info since all are null
+      expect(result.content[0].text).not.toContain('tax');
+      expect(result.content[0].text).not.toContain('Transfer:');
+    });
+
     it('should handle empty search results', async () => {
       const emptyClient: IPointsYeahClient = {
         searchFlights: vi.fn().mockResolvedValue({
