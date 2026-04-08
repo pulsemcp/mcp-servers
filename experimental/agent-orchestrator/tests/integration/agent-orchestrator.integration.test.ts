@@ -78,7 +78,10 @@ describe('Agent Orchestrator MCP Server Integration Tests', () => {
       });
       client = await createTestMCPClientWithMock(mockClient);
 
-      const result = await client.callTool<{ type: string; text: string }>('quick_search_sessions', {});
+      const result = await client.callTool<{ type: string; text: string }>(
+        'quick_search_sessions',
+        {}
+      );
 
       expect(result.content).toBeDefined();
       expect(result.content[0].type).toBe('text');
@@ -116,7 +119,9 @@ describe('Agent Orchestrator MCP Server Integration Tests', () => {
       });
       client = await createTestMCPClientWithMock(mockClient);
 
-      const result = await client.callTool<{ type: string; text: string }>('get_session', { id: 1 });
+      const result = await client.callTool<{ type: string; text: string }>('get_session', {
+        id: 1,
+      });
 
       expect(result.content).toBeDefined();
       expect(result.content[0].type).toBe('text');
@@ -232,7 +237,10 @@ describe('Agent Orchestrator MCP Server Integration Tests', () => {
       });
       client = await createTestMCPClientWithMock(mockClient);
 
-      const result = await client.callTool<{ type: string; text: string }>('get_session', { id: 1, include_logs: true });
+      const result = await client.callTool<{ type: string; text: string }>('get_session', {
+        id: 1,
+        include_logs: true,
+      });
 
       expect(result.content).toBeDefined();
       expect(result.content[0].type).toBe('text');
@@ -287,10 +295,13 @@ describe('Agent Orchestrator MCP Server Integration Tests', () => {
       });
       client = await createTestMCPClientWithMock(mockClient);
 
-      const result = await client.callTool<{ type: string; text: string }>('send_push_notification', {
-        session_id: 1,
-        message: 'Needs API key to proceed',
-      });
+      const result = await client.callTool<{ type: string; text: string }>(
+        'send_push_notification',
+        {
+          session_id: 1,
+          message: 'Needs API key to proceed',
+        }
+      );
 
       expect(result.content).toBeDefined();
       expect(result.content[0].type).toBe('text');
@@ -320,7 +331,9 @@ describe('Agent Orchestrator MCP Server Integration Tests', () => {
       const mockClient = createIntegrationMockOrchestratorClient({});
       client = await createTestMCPClientWithMock(mockClient);
 
-      const result = await client.readResource<{ uri: string; mimeType: string; text: string }>('agent-orchestrator://config');
+      const result = await client.readResource<{ uri: string; mimeType: string; text: string }>(
+        'agent-orchestrator://config'
+      );
       expect(result.contents[0]).toMatchObject({
         uri: 'agent-orchestrator://config',
         mimeType: 'application/json',
@@ -334,7 +347,9 @@ describe('Agent Orchestrator MCP Server Integration Tests', () => {
       const mockClient = createIntegrationMockOrchestratorClient({});
       client = await createTestMCPClientWithMock(mockClient);
 
-      const result = await client.readResource<{ uri: string; mimeType: string; text: string }>('agent-orchestrator://configs/mcp-servers');
+      const result = await client.readResource<{ uri: string; mimeType: string; text: string }>(
+        'agent-orchestrator://configs/mcp-servers'
+      );
       expect(result.contents[0]).toMatchObject({
         uri: 'agent-orchestrator://configs/mcp-servers',
         mimeType: 'application/json',
@@ -351,7 +366,9 @@ describe('Agent Orchestrator MCP Server Integration Tests', () => {
       const mockClient = createIntegrationMockOrchestratorClient({});
       client = await createTestMCPClientWithMock(mockClient);
 
-      const result = await client.readResource<{ uri: string; mimeType: string; text: string }>('agent-orchestrator://configs/agent-roots');
+      const result = await client.readResource<{ uri: string; mimeType: string; text: string }>(
+        'agent-orchestrator://configs/agent-roots'
+      );
       expect(result.contents[0]).toMatchObject({
         uri: 'agent-orchestrator://configs/agent-roots',
         mimeType: 'application/json',
@@ -368,7 +385,9 @@ describe('Agent Orchestrator MCP Server Integration Tests', () => {
       const mockClient = createIntegrationMockOrchestratorClient({});
       client = await createTestMCPClientWithMock(mockClient);
 
-      const result = await client.readResource<{ uri: string; mimeType: string; text: string }>('agent-orchestrator://configs/stop-conditions');
+      const result = await client.readResource<{ uri: string; mimeType: string; text: string }>(
+        'agent-orchestrator://configs/stop-conditions'
+      );
       expect(result.contents[0]).toMatchObject({
         uri: 'agent-orchestrator://configs/stop-conditions',
         mimeType: 'application/json',
