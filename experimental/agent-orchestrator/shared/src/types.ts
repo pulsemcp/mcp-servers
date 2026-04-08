@@ -33,6 +33,7 @@ export interface Session {
   execution_provider: string;
   stop_condition: string | null;
   mcp_servers: string[];
+  catalog_skills?: string[];
   config: Record<string, unknown>;
   metadata: Record<string, unknown>;
   custom_metadata: Record<string, unknown>;
@@ -146,6 +147,7 @@ export interface AgentRootInfo {
   default_stop_condition?: string;
   default_mcp_servers?: string[];
   default_skills?: string[];
+  default_model?: string;
 }
 
 // Stop Condition info (session completion criteria)

@@ -83,6 +83,9 @@ function formatSessionDetails(session: Session, includeTranscript: boolean): str
   if (session.mcp_servers && session.mcp_servers.length > 0) {
     lines.push(`- **MCP Servers:** ${session.mcp_servers.join(', ')}`);
   }
+  if (session.catalog_skills && session.catalog_skills.length > 0) {
+    lines.push(`- **Skills:** ${session.catalog_skills.join(', ')}`);
+  }
 
   if (session.prompt) {
     lines.push('');

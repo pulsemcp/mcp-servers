@@ -26,6 +26,7 @@ const defaultSession: Session = {
   execution_provider: 'local_filesystem',
   stop_condition: null,
   mcp_servers: [],
+  catalog_skills: [],
   config: {},
   metadata: {},
   custom_metadata: {},
@@ -215,6 +216,11 @@ export function createMockOrchestratorClient(): IAgentOrchestratorClient {
     changeMcpServers: vi.fn().mockResolvedValue({
       ...defaultSession,
       mcp_servers: ['server1', 'server2'],
+    }),
+
+    changeModel: vi.fn().mockResolvedValue({
+      ...defaultSession,
+      config: { model: 'sonnet' },
     }),
 
     listLogs: vi.fn().mockResolvedValue({

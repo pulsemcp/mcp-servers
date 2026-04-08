@@ -190,6 +190,9 @@ function formatAgentRoot(lines: string[], root: AgentRootInfo) {
   if (root.default_skills && root.default_skills.length > 0) {
     lines.push(`- **Default Skills:** ${root.default_skills.map((s) => `\`${s}\``).join(', ')}`);
   }
+  if (root.default_model) {
+    lines.push(`- **Default Model:** \`${root.default_model}\``);
+  }
   lines.push('');
 }
 

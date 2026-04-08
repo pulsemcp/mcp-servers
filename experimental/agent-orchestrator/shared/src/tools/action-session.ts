@@ -7,14 +7,17 @@ const PARAM_DESCRIPTIONS = {
   session_id:
     'Session ID (numeric) or slug (string). Required for most actions. Not required for "refresh_all" and "bulk_archive".',
   action:
-    'Action to perform: "follow_up", "pause", "restart", "archive", "unarchive", "change_mcp_servers", "fork", "refresh", "refresh_all", "update_notes", "toggle_favorite", "bulk_archive"',
+    'Action to perform: "follow_up", "pause", "restart", "archive", "unarchive", "change_mcp_servers", "change_model", "fork", "refresh", "refresh_all", "update_notes", "update_title", "toggle_favorite", "bulk_archive"',
   prompt:
     'Required for "follow_up" action. The prompt to send to the agent. Not used for other actions.',
   mcp_servers:
     'Required for "change_mcp_servers" action. Array of MCP server names to set for the session.',
+  model:
+    'Required for "change_model" action. The model identifier to use (e.g., "opus", "sonnet").',
   message_index: 'Required for "fork" action. The transcript message index to fork from.',
   session_notes: 'Required for "update_notes" action. The notes text to set on the session.',
   session_ids: 'Required for "bulk_archive" action. Array of session IDs to archive.',
+  title: 'Required for "update_title" action. The new title for the session.',
 } as const;
 
 const ACTION_ENUM = [
@@ -24,10 +27,12 @@ const ACTION_ENUM = [
   'archive',
   'unarchive',
   'change_mcp_servers',
+  'change_model',
   'fork',
   'refresh',
   'refresh_all',
   'update_notes',
+  'update_title',
   'toggle_favorite',
   'bulk_archive',
 ] as const;
@@ -37,9 +42,11 @@ export const ActionSessionSchema = z.object({
   action: z.enum(ACTION_ENUM).describe(PARAM_DESCRIPTIONS.action),
   prompt: z.string().optional().describe(PARAM_DESCRIPTIONS.prompt),
   mcp_servers: z.array(z.string()).optional().describe(PARAM_DESCRIPTIONS.mcp_servers),
+  model: z.string().optional().describe(PARAM_DESCRIPTIONS.model),
   message_index: z.number().optional().describe(PARAM_DESCRIPTIONS.message_index),
   session_notes: z.string().optional().describe(PARAM_DESCRIPTIONS.session_notes),
   session_ids: z.array(z.number()).optional().describe(PARAM_DESCRIPTIONS.session_ids),
+  title: z.string().optional().describe(PARAM_DESCRIPTIONS.title),
 });
 
 const TOOL_DESCRIPTION = `Perform an action on an agent session.
@@ -51,18 +58,21 @@ const TOOL_DESCRIPTION = `Perform an action on an agent session.
 - **archive**: Archive a session (marks as completed)
 - **unarchive**: Restore an archived session to idle "needs_input" status
 - **change_mcp_servers**: Update the MCP servers for a session (requires "mcp_servers" parameter)
+- **change_model**: Update the model for a session (requires "model" parameter, e.g., "opus", "sonnet")
 - **fork**: Fork a session from a specific transcript message (requires "message_index")
 - **refresh**: Refresh a single session's status from the execution provider
 - **refresh_all**: Refresh all active sessions (no session_id needed)
 - **update_notes**: Update the notes on a session (requires "session_notes")
+- **update_title**: Update the title of a session (requires "title")
 - **toggle_favorite**: Toggle favorite status on a session
 - **bulk_archive**: Archive multiple sessions at once (requires "session_ids", no session_id needed)
 
 **Use cases:**
 - Provide additional instructions to an agent
 - Control session lifecycle (pause, restart, fork, refresh)
-- Organize sessions (archive, unarchive, bulk_archive, toggle_favorite, update_notes)
-- Reconfigure session MCP server access`;
+- Organize sessions (archive, unarchive, bulk_archive, toggle_favorite, update_notes, update_title)
+- Reconfigure session MCP server access
+- Change the model used by a session`;
 
 export function actionSessionTool(_server: Server, clientFactory: () => IAgentOrchestratorClient) {
   return {
@@ -89,6 +99,10 @@ export function actionSessionTool(_server: Server, clientFactory: () => IAgentOr
           items: { type: 'string' },
           description: PARAM_DESCRIPTIONS.mcp_servers,
         },
+        model: {
+          type: 'string',
+          description: PARAM_DESCRIPTIONS.model,
+        },
         message_index: {
           type: 'number',
           description: PARAM_DESCRIPTIONS.message_index,
@@ -102,6 +116,10 @@ export function actionSessionTool(_server: Server, clientFactory: () => IAgentOr
           items: { type: 'number' },
           description: PARAM_DESCRIPTIONS.session_ids,
         },
+        title: {
+          type: 'string',
+          description: PARAM_DESCRIPTIONS.title,
+        },
       },
       required: ['action'],
     },
@@ -114,9 +132,11 @@ export function actionSessionTool(_server: Server, clientFactory: () => IAgentOr
           action,
           prompt,
           mcp_servers,
+          model,
           message_index,
           session_notes,
           session_ids,
+          title,
         } = validatedArgs;
 
         // Actions that require session_id
@@ -127,9 +147,11 @@ export function actionSessionTool(_server: Server, clientFactory: () => IAgentOr
           'archive',
           'unarchive',
           'change_mcp_servers',
+          'change_model',
           'fork',
           'refresh',
           'update_notes',
+          'update_title',
           'toggle_favorite',
         ];
         if (requiresSessionId.includes(action) && !session_id) {
@@ -170,6 +192,19 @@ export function actionSessionTool(_server: Server, clientFactory: () => IAgentOr
           };
         }
 
+        // Validate that model is provided for change_model action
+        if (action === 'change_model' && !model) {
+          return {
+            content: [
+              {
+                type: 'text',
+                text: 'Error: The "model" parameter is required for the "change_model" action.',
+              },
+            ],
+            isError: true,
+          };
+        }
+
         // Block change_mcp_servers when ALLOWED_AGENT_ROOTS is active
         if (action === 'change_mcp_servers' && parseAllowedAgentRoots() !== null) {
           return {
@@ -203,6 +238,19 @@ export function actionSessionTool(_server: Server, clientFactory: () => IAgentOr
               {
                 type: 'text',
                 text: 'Error: The "session_notes" parameter is required for the "update_notes" action.',
+              },
+            ],
+            isError: true,
+          };
+        }
+
+        // Validate update_title requires title
+        if (action === 'update_title' && !title) {
+          return {
+            content: [
+              {
+                type: 'text',
+                text: 'Error: The "title" parameter is required for the "update_title" action.',
               },
             ],
             isError: true,
@@ -319,6 +367,20 @@ export function actionSessionTool(_server: Server, clientFactory: () => IAgentOr
             break;
           }
 
+          case 'change_model': {
+            const session = await client.changeModel(session_id!, model!);
+            const sessionModel = (session.config as Record<string, unknown>)?.model as string;
+            const lines = [
+              `## Model Updated`,
+              '',
+              `- **Session ID:** ${session.id}`,
+              `- **Title:** ${session.title}`,
+              `- **Model:** ${sessionModel || '(default)'}`,
+            ];
+            result = lines.join('\n');
+            break;
+          }
+
           case 'fork': {
             const response = await client.forkSession(session_id!, message_index!);
             const lines = [
@@ -366,6 +428,18 @@ export function actionSessionTool(_server: Server, clientFactory: () => IAgentOr
             const session = await client.updateSessionNotes(session_id!, session_notes!);
             const lines = [
               `## Session Notes Updated`,
+              '',
+              `- **Session ID:** ${session.id}`,
+              `- **Title:** ${session.title}`,
+            ];
+            result = lines.join('\n');
+            break;
+          }
+
+          case 'update_title': {
+            const session = await client.updateSession(session_id!, { title: title! });
+            const lines = [
+              `## Session Title Updated`,
               '',
               `- **Session ID:** ${session.id}`,
               `- **Title:** ${session.title}`,
