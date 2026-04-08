@@ -416,6 +416,72 @@ describe('Tools', () => {
       const text = (result as { content: Array<{ text: string }> }).content[0].text;
       expect(text).not.toContain('### Transcript File');
     });
+
+    it('should display catalog_skills in session details', async () => {
+      mockClient.getSession = vi.fn().mockResolvedValue({
+        id: 1,
+        slug: 'test-session',
+        title: 'Test Session',
+        status: 'running',
+        agent_type: 'claude_code',
+        prompt: null,
+        git_root: null,
+        branch: null,
+        subdirectory: null,
+        execution_provider: 'local_filesystem',
+        stop_condition: null,
+        mcp_servers: [],
+        catalog_skills: ['discovery-classify', 'publish-and-pr'],
+        config: {},
+        metadata: {},
+        custom_metadata: {},
+        session_id: null,
+        job_id: null,
+        running_job_id: null,
+        archived_at: null,
+        created_at: '2025-01-15T14:30:00Z',
+        updated_at: '2025-01-15T14:35:00Z',
+      });
+      const tool = getSessionTool(mockServer, clientFactory);
+
+      const result = await tool.handler({ id: 1 });
+
+      const text = (result as { content: Array<{ text: string }> }).content[0].text;
+      expect(text).toContain('**Skills:** discovery-classify, publish-and-pr');
+    });
+
+    it('should not display skills line when catalog_skills is empty', async () => {
+      mockClient.getSession = vi.fn().mockResolvedValue({
+        id: 1,
+        slug: 'test-session',
+        title: 'Test Session',
+        status: 'running',
+        agent_type: 'claude_code',
+        prompt: null,
+        git_root: null,
+        branch: null,
+        subdirectory: null,
+        execution_provider: 'local_filesystem',
+        stop_condition: null,
+        mcp_servers: [],
+        catalog_skills: [],
+        config: {},
+        metadata: {},
+        custom_metadata: {},
+        session_id: null,
+        job_id: null,
+        running_job_id: null,
+        archived_at: null,
+        created_at: '2025-01-15T14:30:00Z',
+        updated_at: '2025-01-15T14:35:00Z',
+      });
+      const tool = getSessionTool(mockServer, clientFactory);
+
+      const result = await tool.handler({ id: 1 });
+
+      const text = (result as { content: Array<{ text: string }> }).content[0].text;
+      expect(text).not.toContain('**Skills:**');
+    });
   });
 
   describe('action_session', () => {
@@ -631,6 +697,34 @@ describe('Tools', () => {
         'Session Notes Updated'
       );
       expect(mockClient.updateSessionNotes).toHaveBeenCalledWith(1, 'Some notes');
+    });
+
+    it('should update session title', async () => {
+      const tool = actionSessionTool(mockServer, clientFactory);
+
+      const result = await tool.handler({
+        session_id: 1,
+        action: 'update_title',
+        title: 'New Title',
+      });
+
+      expect((result as { content: Array<{ text: string }> }).content[0].text).toContain(
+        'Session Title Updated'
+      );
+      expect(mockClient.updateSession).toHaveBeenCalledWith(1, { title: 'New Title' });
+    });
+
+    it('should require title for update_title action', async () => {
+      const tool = actionSessionTool(mockServer, clientFactory);
+
+      const result = await tool.handler({
+        session_id: 1,
+        action: 'update_title',
+        // Missing title
+      });
+
+      expect(result.isError).toBe(true);
+      expect((result as { content: Array<{ text: string }> }).content[0].text).toContain('title');
     });
 
     it('should toggle favorite', async () => {
@@ -1123,7 +1217,7 @@ describe('Tools', () => {
 
       const result = await tool.handler({});
 
-      expect(result.isError).toBe(true);
+      expect((result as { isError?: boolean }).isError).toBe(true);
       expect((result as { content: Array<{ text: string }> }).content[0].text).toContain(
         'API connection failed'
       );

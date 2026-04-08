@@ -47,7 +47,7 @@ try {
 }
 
 // Verify test-mcp-client is built
-const testClientPath = path.join(rootDir, '../../libs/test-mcp-client/build/index.js');
+const testClientPath = path.join(rootDir, '../../libs/test-mcp-client/src/index.js');
 if (!existsSync(testClientPath)) {
   console.error('❌ test-mcp-client not built!');
   console.log('   This should have been built by build:test');

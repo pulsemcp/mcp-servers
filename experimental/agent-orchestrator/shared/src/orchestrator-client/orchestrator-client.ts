@@ -75,6 +75,7 @@ export interface RawAgentRoot {
   default?: boolean;
   default_mcp_servers?: string[];
   default_skills?: string[];
+  default_model?: string;
 }
 
 /**
@@ -104,6 +105,7 @@ export function mapAgentRoot(raw: RawAgentRoot): AgentRootInfo {
     default_stop_condition: raw.default_stop_condition,
     default_mcp_servers: raw.default_mcp_servers,
     default_skills: raw.default_skills,
+    default_model: raw.default_model,
   };
 }
 
@@ -151,6 +153,8 @@ export interface IAgentOrchestratorClient {
   restartSession(id: string | number): Promise<SessionActionResponse>;
 
   changeMcpServers(id: string | number, mcp_servers: string[]): Promise<Session>;
+
+  changeModel(id: string | number, model: string): Promise<Session>;
 
   // Logs
   listLogs(
@@ -496,7 +500,10 @@ export class AgentOrchestratorClient implements IAgentOrchestratorClient {
   }
 
   async createSession(data: CreateSessionRequest): Promise<Session> {
-    const response = await this.request<SessionResponse>('POST', '/sessions', data);
+    // Remap `skills` to `catalog_skills` for the API (Rails strong params expects `catalog_skills`)
+    const { skills, ...rest } = data;
+    const body = skills !== undefined ? { ...rest, catalog_skills: skills } : rest;
+    const response = await this.request<SessionResponse>('POST', '/sessions', body);
     return response.session;
   }
 
@@ -534,6 +541,13 @@ export class AgentOrchestratorClient implements IAgentOrchestratorClient {
   async changeMcpServers(id: string | number, mcp_servers: string[]): Promise<Session> {
     const response = await this.request<SessionResponse>('PATCH', `/sessions/${id}`, {
       mcp_servers,
+    });
+    return response.session;
+  }
+
+  async changeModel(id: string | number, model: string): Promise<Session> {
+    const response = await this.request<SessionResponse>('PATCH', `/sessions/${id}/model`, {
+      model,
     });
     return response.session;
   }

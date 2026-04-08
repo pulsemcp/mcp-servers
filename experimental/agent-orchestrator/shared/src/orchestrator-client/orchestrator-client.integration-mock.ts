@@ -341,6 +341,16 @@ export function createIntegrationMockOrchestratorClient(
       return session;
     },
 
+    async changeModel(id: string | number, model: string): Promise<Session> {
+      const session = mockData.sessions?.find((s) => s.id === Number(id) || s.slug === String(id));
+      if (!session) {
+        throw new Error(`API Error (404): Session not found`);
+      }
+      session.config = { ...session.config, model };
+      session.updated_at = new Date().toISOString();
+      return session;
+    },
+
     async listLogs(
       sessionId: string | number,
       options?: {

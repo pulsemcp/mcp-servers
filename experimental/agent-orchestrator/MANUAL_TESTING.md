@@ -61,23 +61,22 @@ The tests will:
 
 ## Latest Test Results
 
-**Test Date:** 2026-03-12
-**Branch:** tadasant/get-session-transcript-filepath
-**Commit:** 24d98ce
+**Test Date:** 2026-04-08
+**Branch:** sync/agent-orchestrator-52807217
+**Commit:** 3642fae
 **Tested By:** Claude Code (automated)
-**Environment:** Production (https://ao.pulsemcp.com)
+**Environment:** Internal monorepo (functional tests only — packaging change)
 
 ### Summary
 
-**Overall:** :white_check_mark: SUCCESS - 56/56 manual tests pass, 152/152 functional tests pass.
+**Overall:** :white_check_mark: SUCCESS - 191/191 functional tests pass.
 
-Added transcript file path output to `get_session` when `include_transcript` is not set to true, with tips on efficiently reading specific sections via grep/tail.
+Version bump to 0.5.0 for npm publish. This is a packaging-only change — no new functionality was added in this sync, only version bump and CHANGELOG update. Manual API tests were not re-run as no tool logic changed.
 
-| Test Category                 | Status             | Tests   |
-| ----------------------------- | ------------------ | ------- |
-| tools.test.ts (functional)    | :white_check_mark: | 152/152 |
-| Manual tests (production API) | :white_check_mark: | 56/56   |
-| Build                         | :white_check_mark: | Clean   |
+| Test Category              | Status             | Tests   |
+| -------------------------- | ------------------ | ------- |
+| tools.test.ts (functional) | :white_check_mark: | 191/191 |
+| Build                      | :white_check_mark: | Clean   |
 
 ### Functionality Verified
 

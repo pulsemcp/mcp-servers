@@ -33,7 +33,7 @@ const PARAM_DESCRIPTIONS = {
   mcp_servers:
     'List of MCP server names to enable for this session. Example: ["github-development", "slack"]',
   skills:
-    'List of skill names to enable for this session. Example: ["discovery-classify", "publish-and-pr"]',
+    'List of skill names to enable for this session. Always include the agent root\'s default_skills from get_configs as the starting point — omitting skills means the session gets none. Add extras as needed; removing a default should be rare and intentional. Example: ["discovery-classify", "publish-and-pr"]',
   config: 'Additional configuration as a JSON object.',
   custom_metadata:
     'User-defined metadata as a JSON object. Useful for tracking tickets, projects, etc.',
@@ -68,7 +68,10 @@ const TOOL_DESCRIPTION = `Start a new agent session in the Agent Orchestrator.
 - If a prompt is provided, the agent job is automatically queued to start
 - If no prompt is provided, creates a clone-only session that can be started later with action_session
 
-**Defaults from Agent Roots:** When starting a session that matches a preconfigured agent root (from \`get_configs\`), the agent root defines \`default_mcp_servers\` and \`default_skills\`. In most cases, you should pass these defaults through — omitting them means the session won't have MCP servers or skills configured. You can reduce the set (e.g., drop an MCP server you don't need), but when \`ALLOWED_AGENT_ROOTS\` is active, you cannot add servers beyond the defaults. Skills are not constrained — you can augment with additional skills as needed. As a rule of thumb: always pass the defaults unless you have a specific reason to remove something.
+**Defaults from Agent Roots:** When starting a session that matches a preconfigured agent root (from \`get_configs\`), the agent root defines \`default_mcp_servers\`, \`default_skills\`, and optionally a \`default_stop_condition\`. Omitting \`mcp_servers\` or \`skills\` means the session gets NONE — there is no automatic fallback to defaults.
+
+- **MCP servers:** Start with \`default_mcp_servers\`. Drop servers the task doesn't need (least-privilege). Add extras when the task requires tools beyond the defaults. When \`ALLOWED_AGENT_ROOTS\` is active, you cannot add servers beyond the defaults.
+- **Skills:** Start with \`default_skills\`. You can freely add skills beyond the defaults. Removing a default skill should be rare and intentional — only when you have a specific reason, like replacing a skill with a more capable variant that covers the same ground. Skills are lightweight text files with no blast radius, so keeping all defaults costs nothing.
 
 **Use cases:**
 - Start a new agent task on a repository

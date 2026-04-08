@@ -7,6 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-04-08
+
+### Added
+
+- `update_title` action on `action_session` tool — update the title of a session. Requires the `title` parameter.
+- `updateSession` client method used for title updates (calls `PATCH /sessions/:id`)
+
+## [0.4.9] - 2026-04-07
+
+### Fixed
+
+- `start_session` tool's `skills` parameter was silently dropped by the Rails API because the orchestrator client sent `skills` but the API's strong params only permits `catalog_skills`. The client now remaps `skills` → `catalog_skills` before sending.
+
+### Added
+
+- `get_session` tool now displays `catalog_skills` (skills) in the Execution section of session details, alongside MCP Servers.
+- `catalog_skills` optional field on `Session` type to surface skills assigned to a session.
+
+## [0.4.8] - 2026-04-03
+
+### Added
+
+- `change_model` action on `action_session` tool — update the model (e.g., "opus-latest", "sonnet-latest") for an active session. Requires the `model` parameter.
+- `model` parameter on `action_session` tool schema for the `change_model` action
+- `changeModel` method on the orchestrator client, calling `PATCH /sessions/:id/model`
+- `default_model` field on `AgentRootInfo` type and `get_configs` output — shows the default model configured for each agent root
+
 ## [0.4.7] - 2026-03-12
 
 ### Changed
