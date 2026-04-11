@@ -34,6 +34,8 @@ const PARAM_DESCRIPTIONS = {
     'List of MCP server names to enable for this session. Example: ["github-development", "slack"]',
   skills:
     'List of skill names to enable for this session. Always include the agent root\'s default_skills from get_configs as the starting point — omitting skills means the session gets none. Add extras as needed; removing a default should be rare and intentional. Example: ["discovery-classify", "publish-and-pr"]',
+  plugins:
+    'List of plugin names to enable for this session. Plugins extend agent capabilities with additional integrations. Example: ["my-plugin"]',
   config: 'Additional configuration as a JSON object.',
   custom_metadata:
     'User-defined metadata as a JSON object. Useful for tracking tickets, projects, etc.',
@@ -54,6 +56,7 @@ export const StartSessionSchema = z.object({
     .describe(PARAM_DESCRIPTIONS.execution_provider),
   mcp_servers: z.array(z.string()).optional().describe(PARAM_DESCRIPTIONS.mcp_servers),
   skills: z.array(z.string()).optional().describe(PARAM_DESCRIPTIONS.skills),
+  plugins: z.array(z.string()).optional().describe(PARAM_DESCRIPTIONS.plugins),
   config: z.record(z.unknown()).optional().describe(PARAM_DESCRIPTIONS.config),
   custom_metadata: z.record(z.unknown()).optional().describe(PARAM_DESCRIPTIONS.custom_metadata),
 });
@@ -132,6 +135,11 @@ export function startSessionTool(_server: Server, clientFactory: () => IAgentOrc
           type: 'array',
           items: { type: 'string' },
           description: PARAM_DESCRIPTIONS.skills,
+        },
+        plugins: {
+          type: 'array',
+          items: { type: 'string' },
+          description: PARAM_DESCRIPTIONS.plugins,
         },
         config: {
           type: 'object',

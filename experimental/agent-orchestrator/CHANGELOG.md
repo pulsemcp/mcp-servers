@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.1] - 2026-04-11
+
+### Added
+
+- `plugins` parameter on `start_session` tool — an optional array of plugin name strings, remapped to `catalog_plugins` for the Rails API.
+- `get_session` tool displays `catalog_plugins` (plugins) in the Execution section of session details.
+- `catalog_plugins` optional field on `Session` type to surface plugins assigned to a session.
+
 ## [0.5.0] - 2026-04-08
 
 ### Added
