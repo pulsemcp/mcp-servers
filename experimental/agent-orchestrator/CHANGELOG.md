@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-04-11
+
+### Changed
+
+- **BREAKING:** Replaced `git_root`, `branch`, and `subdirectory` parameters on `start_session` tool with `agent_root`. The API resolves git_root, branch, subdirectory, default_model, and other defaults from the agent root configuration. This ensures sessions inherit the correct model and settings from the agent root.
+- Simplified `ALLOWED_AGENT_ROOTS` validation to match by agent root name instead of git_root/branch/subdirectory combination.
+
+### Removed
+
+- `git_root` parameter from `start_session` tool (use `agent_root` instead)
+- `branch` parameter from `start_session` tool (use `agent_root` instead)
+- `subdirectory` parameter from `start_session` tool (use `agent_root` instead)
+
+## [0.5.1] - 2026-04-11
+
+### Added
+
+- `plugins` parameter on `start_session` tool — an optional array of plugin name strings, remapped to `catalog_plugins` for the Rails API.
+- `get_session` tool displays `catalog_plugins` (plugins) in the Execution section of session details.
+- `catalog_plugins` optional field on `Session` type to surface plugins assigned to a session.
+
 ## [0.5.0] - 2026-04-08
 
 ### Added

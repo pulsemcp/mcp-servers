@@ -34,6 +34,7 @@ export interface Session {
   stop_condition: string | null;
   mcp_servers: string[];
   catalog_skills?: string[];
+  catalog_plugins?: string[];
   config: Record<string, unknown>;
   metadata: Record<string, unknown>;
   custom_metadata: Record<string, unknown>;
@@ -184,6 +185,8 @@ export interface CreateSessionRequest {
   execution_provider?: string;
   mcp_servers?: string[];
   skills?: string[];
+  plugins?: string[];
+  agent_root?: string;
   config?: Record<string, unknown>;
   custom_metadata?: Record<string, unknown>;
 }

@@ -86,6 +86,9 @@ function formatSessionDetails(session: Session, includeTranscript: boolean): str
   if (session.catalog_skills && session.catalog_skills.length > 0) {
     lines.push(`- **Skills:** ${session.catalog_skills.join(', ')}`);
   }
+  if (session.catalog_plugins && session.catalog_plugins.length > 0) {
+    lines.push(`- **Plugins:** ${session.catalog_plugins.join(', ')}`);
+  }
 
   if (session.prompt) {
     lines.push('');
