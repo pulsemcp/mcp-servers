@@ -500,9 +500,14 @@ export class AgentOrchestratorClient implements IAgentOrchestratorClient {
   }
 
   async createSession(data: CreateSessionRequest): Promise<Session> {
-    // Remap `skills` to `catalog_skills` for the API (Rails strong params expects `catalog_skills`)
-    const { skills, ...rest } = data;
-    const body = skills !== undefined ? { ...rest, catalog_skills: skills } : rest;
+    // Remap `skills` to `catalog_skills` and `plugins` to `catalog_plugins`
+    // for the API (Rails strong params expects `catalog_skills`/`catalog_plugins`)
+    const { skills, plugins, ...rest } = data;
+    const body: Record<string, unknown> = {
+      ...rest,
+      ...(skills !== undefined && { catalog_skills: skills }),
+      ...(plugins !== undefined && { catalog_plugins: plugins }),
+    };
     const response = await this.request<SessionResponse>('POST', '/sessions', body);
     return response.session;
   }

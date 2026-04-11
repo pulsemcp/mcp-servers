@@ -9,16 +9,8 @@ const PARAM_DESCRIPTIONS = {
     'Agent type for the session. Currently only "claude_code" is supported. Default: "claude_code"',
   prompt:
     'Initial prompt for the agent. If provided, the agent job is automatically queued. Omit for a clone-only session.',
-  git_root:
-    'Repository URL or local path. Examples: "https://github.com/example/repo.git", "/path/to/repo"',
-  branch: 'Git branch to work on. Default: "main"',
-  subdirectory:
-    'Subdirectory within the repository to use as the agent working directory. ' +
-    'This should match a preconfigured agent root default_subdirectory from get_configs — it defines ' +
-    'the root scope for the agent session. Do NOT use this to point at internal package directories ' +
-    '(e.g. "experimental/gcs" in a monorepo) as this blinds the agent to root-level configuration ' +
-    'like CLAUDE.md, build scripts, CI workflows, and monorepo tooling. If no agent root defines ' +
-    'a default_subdirectory, leave this unset.',
+  agent_root:
+    'Agent root name from get_configs. The API resolves git_root, branch, subdirectory, default_model, and other defaults from the agent root configuration. Always pass this so the session inherits the correct repository, model, and settings.',
   title:
     'STRONGLY RECOMMENDED: Always set a title — treat it as effectively required. ' +
     'The title appears in the AO web UI and push notifications, making sessions identifiable at a glance. ' +
@@ -34,6 +26,8 @@ const PARAM_DESCRIPTIONS = {
     'List of MCP server names to enable for this session. Example: ["github-development", "slack"]',
   skills:
     'List of skill names to enable for this session. Always include the agent root\'s default_skills from get_configs as the starting point — omitting skills means the session gets none. Add extras as needed; removing a default should be rare and intentional. Example: ["discovery-classify", "publish-and-pr"]',
+  plugins:
+    'List of plugin names to enable for this session. Plugins extend agent capabilities with additional integrations. Example: ["my-plugin"]',
   config: 'Additional configuration as a JSON object.',
   custom_metadata:
     'User-defined metadata as a JSON object. Useful for tracking tickets, projects, etc.',
@@ -42,9 +36,7 @@ const PARAM_DESCRIPTIONS = {
 export const StartSessionSchema = z.object({
   agent_type: z.string().optional().describe(PARAM_DESCRIPTIONS.agent_type),
   prompt: z.string().optional().describe(PARAM_DESCRIPTIONS.prompt),
-  git_root: z.string().optional().describe(PARAM_DESCRIPTIONS.git_root),
-  branch: z.string().optional().describe(PARAM_DESCRIPTIONS.branch),
-  subdirectory: z.string().optional().describe(PARAM_DESCRIPTIONS.subdirectory),
+  agent_root: z.string().optional().describe(PARAM_DESCRIPTIONS.agent_root),
   title: z.string().optional().describe(PARAM_DESCRIPTIONS.title),
   slug: z.string().optional().describe(PARAM_DESCRIPTIONS.slug),
   stop_condition: z.string().optional().describe(PARAM_DESCRIPTIONS.stop_condition),
@@ -54,13 +46,14 @@ export const StartSessionSchema = z.object({
     .describe(PARAM_DESCRIPTIONS.execution_provider),
   mcp_servers: z.array(z.string()).optional().describe(PARAM_DESCRIPTIONS.mcp_servers),
   skills: z.array(z.string()).optional().describe(PARAM_DESCRIPTIONS.skills),
+  plugins: z.array(z.string()).optional().describe(PARAM_DESCRIPTIONS.plugins),
   config: z.record(z.unknown()).optional().describe(PARAM_DESCRIPTIONS.config),
   custom_metadata: z.record(z.unknown()).optional().describe(PARAM_DESCRIPTIONS.custom_metadata),
 });
 
 const TOOL_DESCRIPTION = `Start a new agent session in the Agent Orchestrator.
 
-**IMPORTANT:** Before starting a session, call get_configs to discover available MCP servers, stop conditions, and preconfigured agent roots.
+**IMPORTANT:** Before starting a session, call get_configs to discover available agent roots, MCP servers, stop conditions, and their defaults.
 
 **Returns:** The created session with its ID, status, and configuration.
 
@@ -68,7 +61,9 @@ const TOOL_DESCRIPTION = `Start a new agent session in the Agent Orchestrator.
 - If a prompt is provided, the agent job is automatically queued to start
 - If no prompt is provided, creates a clone-only session that can be started later with action_session
 
-**Defaults from Agent Roots:** When starting a session that matches a preconfigured agent root (from \`get_configs\`), the agent root defines \`default_mcp_servers\`, \`default_skills\`, and optionally a \`default_stop_condition\`. Omitting \`mcp_servers\` or \`skills\` means the session gets NONE — there is no automatic fallback to defaults.
+**Agent Roots:** Use \`agent_root\` to specify which preconfigured agent root to use. The API resolves git_root, branch, subdirectory, default_model, and other defaults from the agent root configuration.
+
+**Defaults from Agent Roots:** The agent root defines \`default_mcp_servers\`, \`default_skills\`, and optionally a \`default_stop_condition\`. Omitting \`mcp_servers\` or \`skills\` means the session gets NONE — there is no automatic fallback to defaults.
 
 - **MCP servers:** Start with \`default_mcp_servers\`. Drop servers the task doesn't need (least-privilege). Add extras when the task requires tools beyond the defaults. When \`ALLOWED_AGENT_ROOTS\` is active, you cannot add servers beyond the defaults.
 - **Skills:** Start with \`default_skills\`. You can freely add skills beyond the defaults. Removing a default skill should be rare and intentional — only when you have a specific reason, like replacing a skill with a more capable variant that covers the same ground. Skills are lightweight text files with no blast radius, so keeping all defaults costs nothing.
@@ -94,17 +89,9 @@ export function startSessionTool(_server: Server, clientFactory: () => IAgentOrc
           type: 'string',
           description: PARAM_DESCRIPTIONS.prompt,
         },
-        git_root: {
+        agent_root: {
           type: 'string',
-          description: PARAM_DESCRIPTIONS.git_root,
-        },
-        branch: {
-          type: 'string',
-          description: PARAM_DESCRIPTIONS.branch,
-        },
-        subdirectory: {
-          type: 'string',
-          description: PARAM_DESCRIPTIONS.subdirectory,
+          description: PARAM_DESCRIPTIONS.agent_root,
         },
         title: {
           type: 'string',
@@ -132,6 +119,11 @@ export function startSessionTool(_server: Server, clientFactory: () => IAgentOrc
           type: 'array',
           items: { type: 'string' },
           description: PARAM_DESCRIPTIONS.skills,
+        },
+        plugins: {
+          type: 'array',
+          items: { type: 'string' },
+          description: PARAM_DESCRIPTIONS.plugins,
         },
         config: {
           type: 'object',
@@ -162,10 +154,8 @@ export function startSessionTool(_server: Server, clientFactory: () => IAgentOrc
           const validation = validateAgentRootConstraints(
             allowedRoots,
             configs.agent_roots,
-            validatedArgs.git_root,
-            validatedArgs.mcp_servers,
-            validatedArgs.branch,
-            validatedArgs.subdirectory
+            validatedArgs.agent_root,
+            validatedArgs.mcp_servers
           );
 
           if (!validation.valid) {

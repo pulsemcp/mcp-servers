@@ -1,6 +1,6 @@
 {
   "name": "agent-orchestrator-mcp-server",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "Local implementation of agent-orchestrator MCP server",
   "main": "build/index.js",
   "type": "module",
