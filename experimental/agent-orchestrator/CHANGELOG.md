@@ -7,6 +7,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.5] - 2026-04-11
+
+### Changed
+
+- Internal: verify automated distribution pipeline (argv fix)
+
+## [0.6.4] - 2026-04-11
+
+### Changed
+
+- Internal: verify automated distribution pipeline (with CI compatibility fixes)
+
+## [0.6.3] - 2026-04-11
+
+### Changed
+
+- Internal: verify automated distribution pipeline (retry with gh CLI fix)
+
+## [0.6.2] - 2026-04-11
+
+### Changed
+
+- Internal: verify automated distribution pipeline (retry with path fix)
+
+## [0.6.1] - 2026-04-11
+
+### Changed
+
+- Internal: verify automated distribution pipeline
+
 ## [0.6.0] - 2026-04-11
 
 ### Changed
