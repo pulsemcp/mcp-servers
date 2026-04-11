@@ -61,36 +61,38 @@ The tests will:
 
 ## Latest Test Results
 
-**Test Date:** 2026-04-08
-**Branch:** sync/agent-orchestrator-52807217
-**Commit:** 3642fae
+**Test Date:** 2026-04-11
+**Branch:** sync/agent-orchestrator-d4f7f26c
+**Commit:** 0a0744c
 **Tested By:** Claude Code (automated)
-**Environment:** Internal monorepo (functional tests only — packaging change)
+**Environment:** Internal monorepo (functional tests only — patch version bump)
 
 ### Summary
 
-**Overall:** :white_check_mark: SUCCESS - 191/191 functional tests pass.
+**Overall:** :white_check_mark: SUCCESS - 196/196 functional tests pass.
 
-Version bump to 0.5.0 for npm publish. This is a packaging-only change — no new functionality was added in this sync, only version bump and CHANGELOG update. Manual API tests were not re-run as no tool logic changed.
+Patch version bump to 0.5.1. Added `catalog_plugins` parameter support to `start_session` tool, mirroring the existing `catalog_skills` pattern. 5 new tests added for plugins remapping and display. Manual API tests were not re-run as this is a patch-level addition with no changes to existing tool logic.
 
-| Test Category              | Status             | Tests   |
-| -------------------------- | ------------------ | ------- |
-| tools.test.ts (functional) | :white_check_mark: | 191/191 |
-| Build                      | :white_check_mark: | Clean   |
+| Test Category                          | Status             | Tests   |
+| -------------------------------------- | ------------------ | ------- |
+| tools.test.ts (functional)             | :white_check_mark: | 156/156 |
+| orchestrator-client.test.ts            | :white_check_mark: | 7/7     |
+| health-check.test.ts                   | :white_check_mark: | 31/31   |
+| map-agent-root.test.ts                 | :white_check_mark: | 2/2     |
+| Build                                  | :white_check_mark: | Clean   |
 
 ### Functionality Verified
 
-- :white_check_mark: **All tool definitions** - 152 functional tests pass (3 new tests for transcript file path)
-- :white_check_mark: **Manual tests** - 56/56 pass against production API (search, get_session, actions, triggers, health, notifications, configs)
+- :white_check_mark: **All tool definitions** - 156 functional tests pass (2 new tests for catalog_plugins display)
+- :white_check_mark: **Orchestrator client** - 7 tests pass (3 new tests for plugins→catalog_plugins remapping)
 - :white_check_mark: **Build succeeds** - TypeScript compilation clean
 - :white_check_mark: **Lint/format** - Clean on all changed files
 
 ### Key Changes in This Version
 
-- `get_session` returns transcript file path (`~/.claude/projects/*/{session_id}.jsonl`) when `include_transcript` is false
-- Updated `include_transcript` parameter description with warnings about large transcripts
-- Added tip about reading last ~100 lines and grepping for keywords
-- Added note about subagent transcripts being stored as siblings
+- `plugins` parameter on `start_session` tool — remapped to `catalog_plugins` for the Rails API
+- `get_session` displays `catalog_plugins` (plugins) in the Execution section
+- `catalog_plugins` optional field on `Session` type
 
 ---
 
