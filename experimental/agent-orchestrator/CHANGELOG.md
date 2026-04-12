@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.9] - 2026-04-12
+
+### Added
+
+- `force_immediate` parameter for the `follow_up` action in `action_session` tool — interrupts a running session to deliver the prompt immediately instead of queuing it
+- Tool output distinguishes between immediate delivery and queued delivery based on API response
+
 ## [0.6.8] - 2026-04-12
 
 - Migration verification: no-op patch version bump to validate internal→public distribution pipeline

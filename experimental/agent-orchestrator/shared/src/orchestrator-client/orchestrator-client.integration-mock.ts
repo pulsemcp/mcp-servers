@@ -294,19 +294,32 @@ export function createIntegrationMockOrchestratorClient(
       return session;
     },
 
-    async followUp(id: string | number, prompt: string): Promise<SessionActionResponse> {
+    async followUp(
+      id: string | number,
+      prompt: string,
+      options?: { force_immediate?: boolean }
+    ): Promise<SessionActionResponse> {
       const session = mockData.sessions?.find((s) => s.id === Number(id) || s.slug === String(id));
       if (!session) {
         throw new Error(`API Error (404): Session not found`);
       }
-      if (session.status !== 'needs_input') {
+      if (options?.force_immediate) {
+        if (session.status === 'failed' || session.status === 'archived') {
+          throw new Error(
+            `API Error (422): Session cannot receive follow-up in ${session.status} status`
+          );
+        }
+      } else if (session.status !== 'needs_input') {
         throw new Error(`API Error (422): Session is not in needs_input status`);
       }
       session.prompt = prompt;
       session.status = 'running';
       session.running_job_id = `job_${Date.now()}`;
       session.updated_at = new Date().toISOString();
-      return { session, message: 'Follow-up prompt sent' };
+      const message = options?.force_immediate
+        ? 'Follow-up prompt sent immediately'
+        : 'Follow-up prompt sent';
+      return { session, message };
     },
 
     async pauseSession(id: string | number): Promise<SessionActionResponse> {

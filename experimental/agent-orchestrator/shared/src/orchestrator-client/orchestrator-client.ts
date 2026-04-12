@@ -146,7 +146,11 @@ export interface IAgentOrchestratorClient {
 
   unarchiveSession(id: string | number): Promise<Session>;
 
-  followUp(id: string | number, prompt: string): Promise<SessionActionResponse>;
+  followUp(
+    id: string | number,
+    prompt: string,
+    options?: { force_immediate?: boolean }
+  ): Promise<SessionActionResponse>;
 
   pauseSession(id: string | number): Promise<SessionActionResponse>;
 
@@ -531,8 +535,16 @@ export class AgentOrchestratorClient implements IAgentOrchestratorClient {
     return response.session;
   }
 
-  async followUp(id: string | number, prompt: string): Promise<SessionActionResponse> {
-    return this.request<SessionActionResponse>('POST', `/sessions/${id}/follow_up`, { prompt });
+  async followUp(
+    id: string | number,
+    prompt: string,
+    options?: { force_immediate?: boolean }
+  ): Promise<SessionActionResponse> {
+    const body: Record<string, unknown> = { prompt };
+    if (options?.force_immediate) {
+      body.force_immediate = true;
+    }
+    return this.request<SessionActionResponse>('POST', `/sessions/${id}/follow_up`, body);
   }
 
   async pauseSession(id: string | number): Promise<SessionActionResponse> {
