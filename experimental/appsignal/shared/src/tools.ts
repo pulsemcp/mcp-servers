@@ -98,6 +98,7 @@ export function createRegisterTools(clientFactory: ClientFactory) {
       schemaTool.name,
       schemaTool.description,
       schemaTool.inputSchema as Record<string, unknown>,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       schemaTool.handler as any
     );
 
@@ -106,6 +107,7 @@ export function createRegisterTools(clientFactory: ClientFactory) {
       schemaDetailsTool.name,
       schemaDetailsTool.description,
       schemaDetailsTool.inputSchema as Record<string, unknown>,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       schemaDetailsTool.handler as any
     );
 
@@ -115,7 +117,13 @@ export function createRegisterTools(clientFactory: ClientFactory) {
     // Register tools that are always available (unless locked)
     if (!locked) {
       const appsTool = getAppsTool(server, clientFactory);
-      server.tool(appsTool.name, appsTool.description, appsTool.inputSchema as Record<string, unknown>, appsTool.handler as any);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      server.tool(
+        appsTool.name,
+        appsTool.description,
+        appsTool.inputSchema as Record<string, unknown>,
+        appsTool.handler as any
+      );
 
       // Register both select and change tools, but only enable the appropriate one
       const selectToolDef = selectAppIdTool(
@@ -134,12 +142,14 @@ export function createRegisterTools(clientFactory: ClientFactory) {
         selectToolDef.name,
         selectToolDef.description,
         selectToolDef.inputSchema as Record<string, unknown>,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         selectToolDef.handler as any
       );
       changeAppTool = server.tool(
         changeToolDef.name,
         changeToolDef.description,
         changeToolDef.inputSchema as Record<string, unknown>,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         changeToolDef.handler as any
       );
     }
@@ -180,6 +190,7 @@ export function createRegisterTools(clientFactory: ClientFactory) {
         def.name,
         def.description,
         def.inputSchema as Record<string, unknown>,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         def.handler as any
       );
     });
