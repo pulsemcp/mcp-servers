@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.3] - 2026-04-12
+
+### Changed
+
+- No-op patch bump to verify bulk distribution pipeline
+
+## [0.1.2] - 2026-04-12
+
+### Changed
+
+- No-op patch bump to test bulk distribution pipeline
+
 ## [0.1.1] - 2026-04-12
 
 - Migration verification: no-op patch version bump to validate internal→public distribution pipeline
