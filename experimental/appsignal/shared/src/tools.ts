@@ -117,11 +117,11 @@ export function createRegisterTools(clientFactory: ClientFactory) {
     // Register tools that are always available (unless locked)
     if (!locked) {
       const appsTool = getAppsTool(server, clientFactory);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       server.tool(
         appsTool.name,
         appsTool.description,
         appsTool.inputSchema as Record<string, unknown>,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         appsTool.handler as any
       );
 
