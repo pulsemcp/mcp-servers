@@ -29,7 +29,11 @@ const TOOL_DESCRIPTION = `Create, update, delete, or toggle automation triggers.
 
 **Trigger types:**
 - **slack**: Triggered by Slack events (requires configuration with channel_id)
-- **schedule**: Triggered on a schedule (requires configuration with interval, unit, etc.)
+- **schedule**: Triggered on a recurring or one-time schedule
+
+**Schedule configuration:**
+- **Recurring**: \`{"interval": 2, "unit": "hours", "timezone": "UTC"}\` — fires every N units
+- **One-time**: \`{"scheduled_at": "2026-04-15T14:30:00", "timezone": "America/New_York"}\` — fires once at the specified datetime (ISO 8601), then auto-disables
 
 Use search_triggers first to see available triggers and Slack channels.`;
 

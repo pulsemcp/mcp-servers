@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-04-12
+
+### Added
+
+- New `wake_me_up_later` tool: schedule a session to be woken up at a specific time via one-time schedule trigger. Puts the session to sleep and creates a trigger that fires at the scheduled time to resume it.
+- One-time schedule trigger documentation in `action_trigger` tool description: agents can now pass `scheduled_at` in configuration to create triggers that fire once then auto-disable.
+- `sleepSession` client method for transitioning sessions from `needs_input` to `waiting` status.
+
+### Changed
+
+- Updated `action_trigger` tool description to document both recurring and one-time schedule configuration options.
+- Server now registers 15 tools (up from 14).
+
+## [0.6.9] - 2026-04-12
+
+### Added
+
+- `force_immediate` parameter for the `follow_up` action in `action_session` tool — interrupts a running session to deliver the prompt immediately instead of queuing it
+- Tool output distinguishes between immediate delivery and queued delivery based on API response
+
 ## [0.6.8] - 2026-04-12
 
 - Migration verification: no-op patch version bump to validate internal→public distribution pipeline

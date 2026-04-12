@@ -10,6 +10,8 @@ const PARAM_DESCRIPTIONS = {
     'Action to perform: "follow_up", "pause", "restart", "archive", "unarchive", "change_mcp_servers", "change_model", "fork", "refresh", "refresh_all", "update_notes", "update_title", "toggle_favorite", "bulk_archive"',
   prompt:
     'Required for "follow_up" action. The prompt to send to the agent. Not used for other actions.',
+  force_immediate:
+    'Optional for "follow_up" action. When true, interrupts a running session to deliver the prompt immediately instead of queuing it. Not used for other actions.',
   mcp_servers:
     'Required for "change_mcp_servers" action. Array of MCP server names to set for the session.',
   model:
@@ -41,6 +43,7 @@ export const ActionSessionSchema = z.object({
   session_id: z.union([z.string(), z.number()]).optional().describe(PARAM_DESCRIPTIONS.session_id),
   action: z.enum(ACTION_ENUM).describe(PARAM_DESCRIPTIONS.action),
   prompt: z.string().optional().describe(PARAM_DESCRIPTIONS.prompt),
+  force_immediate: z.boolean().optional().describe(PARAM_DESCRIPTIONS.force_immediate),
   mcp_servers: z.array(z.string()).optional().describe(PARAM_DESCRIPTIONS.mcp_servers),
   model: z.string().optional().describe(PARAM_DESCRIPTIONS.model),
   message_index: z.number().optional().describe(PARAM_DESCRIPTIONS.message_index),
@@ -52,7 +55,7 @@ export const ActionSessionSchema = z.object({
 const TOOL_DESCRIPTION = `Perform an action on an agent session.
 
 **Actions:**
-- **follow_up**: Send a follow-up prompt to an idle session (requires "prompt" parameter)
+- **follow_up**: Send a follow-up prompt to a session (requires "prompt"; optional "force_immediate" to interrupt a running session)
 - **pause**: Pause a running session, transitioning it to idle "needs_input" status
 - **restart**: Restart an idle or failed session without providing new input
 - **archive**: Archive a session (marks as completed)
@@ -94,6 +97,10 @@ export function actionSessionTool(_server: Server, clientFactory: () => IAgentOr
           type: 'string',
           description: PARAM_DESCRIPTIONS.prompt,
         },
+        force_immediate: {
+          type: 'boolean',
+          description: PARAM_DESCRIPTIONS.force_immediate,
+        },
         mcp_servers: {
           type: 'array',
           items: { type: 'string' },
@@ -131,6 +138,7 @@ export function actionSessionTool(_server: Server, clientFactory: () => IAgentOr
           session_id,
           action,
           prompt,
+          force_immediate,
           mcp_servers,
           model,
           message_index,
@@ -274,9 +282,13 @@ export function actionSessionTool(_server: Server, clientFactory: () => IAgentOr
 
         switch (action) {
           case 'follow_up': {
-            const response = await client.followUp(session_id!, prompt!);
+            const response = await client.followUp(session_id!, prompt!, {
+              force_immediate,
+            });
+            const immediate = response.message?.toLowerCase().includes('immediately');
+            const heading = immediate ? 'Follow-up Sent Immediately' : 'Follow-up Sent';
             const lines = [
-              `## Follow-up Sent`,
+              `## ${heading}`,
               '',
               `- **Session ID:** ${response.session.id}`,
               `- **Title:** ${response.session.title}`,
