@@ -17,21 +17,23 @@ export const ReportSpamSchema = z.object({
   email_id: z.string().min(1).describe(PARAM_DESCRIPTIONS.email_id),
 });
 
-const TOOL_DESCRIPTION = `Report an email as spam. This moves the email to the Spam folder by adding the SPAM label and removing it from INBOX.
+const TOOL_DESCRIPTION = `Move an email to the Spam folder. This adds the SPAM label and removes the INBOX label via the Gmail API.
 
 **Parameters:**
-- email_id: The unique identifier of the email to report as spam (required)
+- email_id: The unique identifier of the email to mark as spam (required)
 
 **Behavior:**
 - Adds the SPAM label to the email
 - Removes the INBOX label (if present)
 - The email will appear in Gmail's Spam folder
+- This action is reversible — the email can be moved back using change_email_conversation
+- Operates on a single message, not an entire thread
 
 **Use cases:**
-- Report unwanted or unsolicited emails as spam
-- Move phishing or suspicious emails out of the inbox
+- Move unwanted or unsolicited emails to the spam folder
+- Clean up phishing or suspicious emails from the inbox
 
-**Warning:** This action reports the email as spam to Gmail. Get the email_id from list_email_conversations or search_email_conversations first.`;
+**Note:** This uses Gmail's label modification API. Get the email_id from list_email_conversations or search_email_conversations first.`;
 
 export function reportSpamTool(server: Server, clientFactory: ClientFactory) {
   return {

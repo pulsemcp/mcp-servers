@@ -172,7 +172,7 @@ GMAIL_ENABLED_TOOLGROUPS=readwrite
 GMAIL_ENABLED_TOOLGROUPS=readwrite_external
 ```
 
-**Security Note:** The `send_email` tool is in a separate `readwrite_external` group because it can send emails externally, which carries higher risk than internal operations like modifying labels or creating drafts.
+**Security Note:** The `send_email` and `report_spam` tools are in a separate `readwrite_external` group because they have external consequences (sending emails, moving messages to spam), which carries higher risk than internal operations like modifying labels or creating drafts.
 
 ## Available Tools
 
@@ -367,7 +367,7 @@ Send an email directly or from an existing draft.
 
 ### report_spam
 
-Report an email as spam. Moves the email to the Spam folder by adding the SPAM label and removing it from INBOX.
+Move an email to the Spam folder by adding the SPAM label and removing it from INBOX. This action is reversible and operates on a single message (not an entire thread).
 
 **Parameters:**
 
