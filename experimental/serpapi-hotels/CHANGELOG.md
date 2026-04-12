@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.0.2] - 2026-04-12
+
+- Migration verification: no-op patch version bump to validate internal→public distribution pipeline
+
 ## [0.0.1] - 2026-02-16
 
 ### Added
