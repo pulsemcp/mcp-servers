@@ -1,6 +1,6 @@
 {
   "name": "@pulsemcp/pulse-fetch",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Local implementation of pulse-fetch MCP server",
   "mcpName": "com.pulsemcp.servers/pulse-fetch",
   "main": "build/index.js",

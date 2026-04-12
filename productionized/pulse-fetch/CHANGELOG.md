@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-04-12
+
+- Migration verification: no-op patch version bump to validate internal→public distribution pipeline
+
 ### Fixed
 
 - Fixed flaky `strategy-config-env` functional test caused by race condition with `default-config` test over shared `/tmp/pulse-fetch` directory
