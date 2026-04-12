@@ -41,6 +41,8 @@ jobs:
 
       - name: Lint all code
         run: npm run lint
+        env:
+          NODE_OPTIONS: '--max-old-space-size=8192'
 
       - name: Check formatting
         run: npm run format:check
