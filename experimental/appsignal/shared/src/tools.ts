@@ -97,8 +97,8 @@ export function createRegisterTools(clientFactory: ClientFactory) {
     server.tool(
       schemaTool.name,
       schemaTool.description,
-      schemaTool.inputSchema,
-      schemaTool.handler
+      schemaTool.inputSchema as Record<string, unknown>,
+      schemaTool.handler as any
     );
 
     const schemaDetailsTool = getGraphqlSchemaDetailsTool(server, clientFactory);
@@ -115,7 +115,7 @@ export function createRegisterTools(clientFactory: ClientFactory) {
     // Register tools that are always available (unless locked)
     if (!locked) {
       const appsTool = getAppsTool(server, clientFactory);
-      server.tool(appsTool.name, appsTool.description, appsTool.inputSchema, appsTool.handler);
+      server.tool(appsTool.name, appsTool.description, appsTool.inputSchema as Record<string, unknown>, appsTool.handler as any);
 
       // Register both select and change tools, but only enable the appropriate one
       const selectToolDef = selectAppIdTool(
@@ -133,14 +133,14 @@ export function createRegisterTools(clientFactory: ClientFactory) {
       selectAppTool = server.tool(
         selectToolDef.name,
         selectToolDef.description,
-        selectToolDef.inputSchema,
-        selectToolDef.handler
+        selectToolDef.inputSchema as Record<string, unknown>,
+        selectToolDef.handler as any
       );
       changeAppTool = server.tool(
         changeToolDef.name,
         changeToolDef.description,
-        changeToolDef.inputSchema,
-        changeToolDef.handler
+        changeToolDef.inputSchema as Record<string, unknown>,
+        changeToolDef.handler as any
       );
     }
 
