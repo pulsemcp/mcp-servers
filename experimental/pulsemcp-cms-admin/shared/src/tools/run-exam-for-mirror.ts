@@ -33,7 +33,6 @@ function truncateExamResultData(data: Record<string, unknown>): Record<string, u
 
   for (const [key, value] of Object.entries(data)) {
     if (key === 'tools' && Array.isArray(value)) {
-      // For tool listings, include only name and description, omit inputSchema
       truncated[key] = value.map((tool: Record<string, unknown>) => ({
         name: tool.name,
         ...(tool.description ? { description: String(tool.description).slice(0, 100) } : {}),
@@ -41,17 +40,17 @@ function truncateExamResultData(data: Record<string, unknown>): Record<string, u
       truncated['tools_count'] = value.length;
       truncated['tools_truncated'] = true;
     } else if (key === 'inputSchema' || key === 'input_schema') {
-      // Omit full input schemas
       truncated[key] = '(truncated — use get_exam_result to see full data)';
-    } else if (typeof value === 'string' && value.length > 500) {
-      truncated[key] = value.slice(0, 500) + '... (truncated)';
+    } else if (typeof value === 'string' && value.length > 2000) {
+      truncated[key] = value.slice(0, 2000) + '... (truncated)';
+    } else if (Array.isArray(value)) {
+      truncated[key] = value.map((item) =>
+        typeof item === 'object' && item !== null
+          ? truncateExamResultData(item as Record<string, unknown>)
+          : item
+      );
     } else if (typeof value === 'object' && value !== null) {
-      const serialized = JSON.stringify(value);
-      if (serialized.length > 1000) {
-        truncated[key] = '(truncated — use get_exam_result to see full data)';
-      } else {
-        truncated[key] = value;
-      }
+      truncated[key] = truncateExamResultData(value as Record<string, unknown>);
     } else {
       truncated[key] = value;
     }

@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [0.9.13] - 2026-04-12
+
+### Fixed
+
+- Fixed `run_exam_for_mirror` truncating OAuth bridge URLs in exam results — raised string truncation threshold from 500 to 2000 chars and changed nested object handling from wholesale replacement to recursive truncation, so URLs (800-1400 chars) nested inside result objects are preserved
+
 ## [0.9.12] - 2026-04-12
 
 - Migration verification: no-op patch version bump to validate internal→public distribution pipeline
