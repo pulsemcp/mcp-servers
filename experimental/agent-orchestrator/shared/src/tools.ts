@@ -14,6 +14,7 @@ import { getNotificationsTool } from './tools/get-notifications.js';
 import { actionNotificationTool } from './tools/action-notification.js';
 import { searchTriggersTool } from './tools/search-triggers.js';
 import { actionTriggerTool } from './tools/action-trigger.js';
+import { wakeMeUpLaterTool } from './tools/wake-me-up-later.js';
 import { getSystemHealthTool } from './tools/get-system-health.js';
 import { actionHealthTool } from './tools/action-health.js';
 import { getTranscriptArchiveTool } from './tools/get-transcript-archive.js';
@@ -139,7 +140,7 @@ interface ToolDefinition {
 /**
  * All available tools with their group assignments.
  *
- * 14 tools across 4 domains:
+ * 15 tools across 4 domains:
  * - quick_search_sessions: Quick title-based search/list/get sessions by ID (sessions, read)
  * - get_session: Get detailed session info with optional logs/transcripts (sessions, read)
  * - get_configs: Fetch all static configuration (sessions, read)
@@ -152,6 +153,7 @@ interface ToolDefinition {
  * - action_notification: Mark read, dismiss notifications (notifications, write)
  * - search_triggers: Search/list automation triggers (triggers, read)
  * - action_trigger: Create, update, delete, toggle triggers (triggers, write)
+ * - wake_me_up_later: Schedule a session to be woken up at a specific time (triggers, write)
  * - get_system_health: Get system health report and CLI status (health, read)
  * - action_health: System maintenance actions (health, write)
  */
@@ -179,6 +181,7 @@ const ALL_TOOLS: ToolDefinition[] = [
 
   // Trigger tools - write operations
   { factory: actionTriggerTool, group: 'triggers', isWriteOperation: true },
+  { factory: wakeMeUpLaterTool, group: 'triggers', isWriteOperation: true },
 
   // Health tools - read operations
   { factory: getSystemHealthTool, group: 'health', isWriteOperation: false },
