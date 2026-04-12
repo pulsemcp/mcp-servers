@@ -1,6 +1,6 @@
 {
   "name": "remote-filesystem-mcp-server",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "MCP server for remote filesystem operations on cloud storage (GCS, S3, etc.)",
   "main": "build/index.js",
   "type": "module",
