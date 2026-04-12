@@ -7,6 +7,7 @@ import { changeEmailConversationTool } from './tools/change-email-conversation.j
 import { upsertDraftEmailTool } from './tools/draft-email.js';
 import { listDraftEmailsTool } from './tools/list-draft-emails.js';
 import { sendEmailTool } from './tools/send-email.js';
+import { reportSpamTool } from './tools/report-spam.js';
 import { searchEmailConversationsTool } from './tools/search-email-conversations.js';
 import { downloadEmailAttachmentsTool } from './tools/download-email-attachments.js';
 
@@ -50,7 +51,7 @@ interface ToolDefinition {
  *
  * readonly: list_email_conversations, get_email_conversation, search_email_conversations, download_email_attachments, list_draft_emails
  * readwrite: all readonly tools + change_email_conversation, upsert_draft_email
- * readwrite_external: all readwrite tools + send_email (external communication)
+ * readwrite_external: all readwrite tools + send_email, report_spam (external communication)
  */
 const ALL_TOOLS: ToolDefinition[] = [
   // Read-only tools (available in all groups)
@@ -71,6 +72,7 @@ const ALL_TOOLS: ToolDefinition[] = [
   { factory: upsertDraftEmailTool, groups: ['readwrite', 'readwrite_external'] },
   // External communication tools (only in readwrite_external - most dangerous)
   { factory: sendEmailTool, groups: ['readwrite_external'] },
+  { factory: reportSpamTool, groups: ['readwrite_external'] },
 ];
 
 /**

@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.4.7] - 2026-04-12
+
+### Added
+
+- `report_spam` tool for marking emails as spam
+  - Moves the email to Gmail's Spam folder by adding the SPAM label and removing INBOX
+  - Gated behind the `readwrite_external` tool group (same permission tier as `send_email`)
+  - Uses elicitation to request user confirmation before reporting spam
+  - Follows fail-safe design: only explicit user acceptance proceeds with the action
+
 ## [0.4.6] - 2026-04-12
 
 - Migration verification: no-op patch version bump to validate internal→public distribution pipeline

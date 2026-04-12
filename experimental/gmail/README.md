@@ -10,6 +10,7 @@ An MCP (Model Context Protocol) server that provides Gmail integration for AI as
 - **Manage Emails**: Mark as read/unread, star/unstar, archive, apply labels
 - **Create Drafts**: Compose draft emails with reply support
 - **Send Emails**: Send new emails or replies, directly or from drafts
+- **Report Spam**: Mark emails as spam and move them out of inbox
 - **Two Auth Methods**: OAuth2 for personal accounts, Service Account for Google Workspace
 
 ## Installation
@@ -156,7 +157,7 @@ The server supports three tool groups for permission-based access control:
 | -------------------- | ------------------------------------------------------------------------------------------------------- | ---------- |
 | `readonly`           | `list_email_conversations`, `get_email_conversation`, `search_email_conversations`, `list_draft_emails` | Low        |
 | `readwrite`          | All readonly tools + `change_email_conversation`, `upsert_draft_email`                                  | Medium     |
-| `readwrite_external` | All readwrite tools + `send_email`                                                                      | High       |
+| `readwrite_external` | All readwrite tools + `send_email`, `report_spam`                                                       | High       |
 
 By default, all tool groups are enabled. To restrict access, set the `GMAIL_ENABLED_TOOLGROUPS` environment variable:
 
@@ -361,6 +362,22 @@ Send an email directly or from an existing draft.
 ```json
 {
   "from_draft_id": "r123456789"
+}
+```
+
+### report_spam
+
+Report an email as spam. Moves the email to the Spam folder by adding the SPAM label and removing it from INBOX.
+
+**Parameters:**
+
+- `email_id` (string, required): The unique identifier of the email to report as spam
+
+**Example:**
+
+```json
+{
+  "email_id": "18abc123def456"
 }
 ```
 
