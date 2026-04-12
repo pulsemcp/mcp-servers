@@ -18,7 +18,10 @@
     "lint:fix": "cd ../.. && npm run lint:fix",
     "format": "cd ../.. && npm run format",
     "format:check": "cd ../.. && npm run format:check",
-    "test": "echo \"Tests run in internal repo\""
+    "ci:install": "npm ci && cd shared && npm ci && cd ../local && npm ci",
+    "test": "echo \"Tests run in internal repo\"",
+    "test:run": "echo \"No functional tests in public repo\"",
+    "test:integration": "echo \"No integration tests in public repo\""
   },
   "repository": {
     "type": "git",
