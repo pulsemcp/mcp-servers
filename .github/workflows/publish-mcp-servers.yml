@@ -4,10 +4,21 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch:
+    inputs:
+      skip_ci_wait:
+        description: 'Skip CI wait (for manual re-triggers when CI is known-good)'
+        required: false
+        default: 'false'
+        type: choice
+        options:
+          - 'false'
+          - 'true'
 
 jobs:
   wait-for-ci:
     name: Wait for CI
+    if: github.event.inputs.skip_ci_wait != 'true'
     runs-on: self-hosted
     steps:
       - name: Wait for CI Build & Test Checks
@@ -35,16 +46,16 @@ jobs:
                 ref: sha,
                 per_page: 100
               });
-              
+
               console.log(`Found ${checkRuns.data.check_runs.length} check runs:`);
               for (const run of checkRuns.data.check_runs) {
                 console.log(`- ${run.name}: ${run.status} (${run.conclusion})`);
               }
-              
-              const ciCheck = checkRuns.data.check_runs.find(run => 
+
+              const ciCheck = checkRuns.data.check_runs.find(run =>
                 run.name === 'CI Build & Test Checks Passed'
               );
-              
+
               if (ciCheck) {
                 console.log(`Found CI check: ${ciCheck.name} - ${ciCheck.status} (${ciCheck.conclusion})`);
                 if (ciCheck.status === 'completed') {
@@ -59,7 +70,7 @@ jobs:
               } else {
                 console.log('❌ CI Build & Test Checks Passed check not found yet');
               }
-              
+
               console.log(`Waiting for CI checks... (${Math.round((Date.now() - startTime) / 1000)}s elapsed)`);
               await new Promise(resolve => setTimeout(resolve, checkInterval));
             }
@@ -68,6 +79,7 @@ jobs:
 
   detect-and-publish:
     needs: wait-for-ci
+    if: always() && (needs.wait-for-ci.result == 'success' || needs.wait-for-ci.result == 'skipped')
     runs-on: self-hosted
     permissions:
       contents: write
