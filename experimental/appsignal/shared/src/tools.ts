@@ -97,16 +97,16 @@ export function createRegisterTools(clientFactory: ClientFactory) {
     server.tool(
       schemaTool.name,
       schemaTool.description,
-      schemaTool.inputSchema as Record<string, unknown>,
-      schemaTool.handler as any
+      schemaTool.inputSchema,
+      schemaTool.handler
     );
 
     const schemaDetailsTool = getGraphqlSchemaDetailsTool(server, clientFactory);
     server.tool(
       schemaDetailsTool.name,
       schemaDetailsTool.description,
-      schemaDetailsTool.inputSchema as Record<string, unknown>,
-      schemaDetailsTool.handler as any
+      schemaDetailsTool.inputSchema,
+      schemaDetailsTool.handler
     );
 
     // Check if app ID is locked (configured via env var)
@@ -115,7 +115,7 @@ export function createRegisterTools(clientFactory: ClientFactory) {
     // Register tools that are always available (unless locked)
     if (!locked) {
       const appsTool = getAppsTool(server, clientFactory);
-      server.tool(appsTool.name, appsTool.description, appsTool.inputSchema as Record<string, unknown>, appsTool.handler as any);
+      server.tool(appsTool.name, appsTool.description, appsTool.inputSchema, appsTool.handler);
 
       // Register both select and change tools, but only enable the appropriate one
       const selectToolDef = selectAppIdTool(
@@ -133,14 +133,14 @@ export function createRegisterTools(clientFactory: ClientFactory) {
       selectAppTool = server.tool(
         selectToolDef.name,
         selectToolDef.description,
-        selectToolDef.inputSchema as Record<string, unknown>,
-        selectToolDef.handler as any
+        selectToolDef.inputSchema,
+        selectToolDef.handler
       );
       changeAppTool = server.tool(
         changeToolDef.name,
         changeToolDef.description,
-        changeToolDef.inputSchema as Record<string, unknown>,
-        changeToolDef.handler as any
+        changeToolDef.inputSchema,
+        changeToolDef.handler
       );
     }
 
@@ -179,8 +179,8 @@ export function createRegisterTools(clientFactory: ClientFactory) {
       mainTools[key as keyof typeof mainTools] = server.tool(
         def.name,
         def.description,
-        def.inputSchema as Record<string, unknown>,
-        def.handler as any
+        def.inputSchema,
+        def.handler
       );
     });
 
