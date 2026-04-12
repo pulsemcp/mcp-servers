@@ -17,5 +17,15 @@
     "@typescript-eslint/no-unused-vars": ["error", { "argsIgnorePattern": "^_" }],
     "@typescript-eslint/no-explicit-any": "error"
   },
-  "ignorePatterns": ["node_modules", "build", "*.js", "*.mjs", "*.cjs", "**/local/shared"]
+  "ignorePatterns": [
+    "node_modules",
+    "build",
+    "*.js",
+    "*.mjs",
+    "*.cjs",
+    "**/local/shared",
+    "**/index.integration-with-mock.ts",
+    "**/vitest.config.ts",
+    "**/vitest.config.*.ts"
+  ]
 }
