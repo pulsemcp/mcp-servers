@@ -1,6 +1,6 @@
 {
   "name": "gcs-mcp-server-shared",
-  "version": "0.0.0",
+  "version": "0.1.4",
   "description": "Shared code for GCS MCP server implementations",
   "main": "build/index.js",
   "type": "module",
