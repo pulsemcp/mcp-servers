@@ -105,8 +105,8 @@ export function createRegisterTools(clientFactory: ClientFactory) {
     server.tool(
       schemaDetailsTool.name,
       schemaDetailsTool.description,
-      schemaDetailsTool.inputSchema,
-      schemaDetailsTool.handler
+      schemaDetailsTool.inputSchema as Record<string, unknown>,
+      schemaDetailsTool.handler as any
     );
 
     // Check if app ID is locked (configured via env var)
@@ -179,8 +179,8 @@ export function createRegisterTools(clientFactory: ClientFactory) {
       mainTools[key as keyof typeof mainTools] = server.tool(
         def.name,
         def.description,
-        def.inputSchema,
-        def.handler
+        def.inputSchema as Record<string, unknown>,
+        def.handler as any
       );
     });
 
