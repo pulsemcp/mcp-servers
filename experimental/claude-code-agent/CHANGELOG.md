@@ -4,6 +4,10 @@ All notable changes to the Claude Code Agent MCP Server will be documented in th
 
 ## [Unreleased]
 
+## [0.0.7] - 2026-04-12
+
+- Migration verification: no-op patch version bump to validate internal→public distribution pipeline
+
 ### Changed
 
 - Updated README Claude Desktop section to use npx installation (package is now published)
