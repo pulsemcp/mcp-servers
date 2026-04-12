@@ -1,6 +1,6 @@
 {
   "name": "@pulsemcp/svg-tracer-mcp-server",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "MCP server for converting bitmap images to SVG vector graphics using potrace tracing",
   "mcpName": "com.pulsemcp.servers/svg-tracer",
   "main": "build/index.js",
