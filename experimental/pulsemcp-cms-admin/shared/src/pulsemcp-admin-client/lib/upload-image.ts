@@ -13,7 +13,7 @@ export async function uploadImage(
   const formData = new FormData();
 
   // Create a blob from the buffer
-  const blob = new Blob([fileData], { type: 'image/png' }); // Default to PNG, adjust as needed
+  const blob = new Blob([new Uint8Array(fileData)], { type: 'image/png' });
 
   // Add file to form data
   formData.append('file', blob, fileName);

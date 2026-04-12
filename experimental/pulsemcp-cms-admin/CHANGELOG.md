@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [0.9.12] - 2026-04-12
+
+- Migration verification: no-op patch version bump to validate internal→public distribution pipeline
+
 ## [0.9.11] - 2026-03-16
 
 ### Fixed
