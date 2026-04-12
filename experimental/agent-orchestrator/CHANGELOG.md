@@ -7,6 +7,44 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.2] - 2026-04-12
+
+### Added
+
+- New `self_session` composite tool group for auto-injected AO servers, providing curated self-management capabilities: `get_session`, `get_configs` (read), `action_session` (filtered: `update_notes`, `update_title`, `archive`), and `send_push_notification`
+- Composite group system: `compositeGroups` and `compositeGroupFactoryOverrides` fields on `ToolDefinition` enable cross-domain, curated tool sets with per-group factory overrides
+- `selfSessionActionSessionTool` factory: restricted version of `action_session` with its own Zod schema, limited to self-management actions
+- `getToolFactory()` function with clear precedence: domain base group > readonly group > composite group override > default factory
+
+## [0.7.1] - 2026-04-12
+
+### Added
+
+- `send_now` action on `manage_enqueued_messages` tool for one-step immediate message delivery to any session regardless of state
+- Updated tool description with "Quick guide" section distinguishing `send_now` (immediate) vs `create` (queued)
+- `stop_condition` support on `followUp` client method
+- Cross-reference from `action_session` follow_up description to `send_now`
+
+## [0.7.0] - 2026-04-12
+
+### Added
+
+- New `wake_me_up_later` tool: schedule a session to be woken up at a specific time via one-time schedule trigger. Puts the session to sleep and creates a trigger that fires at the scheduled time to resume it.
+- One-time schedule trigger documentation in `action_trigger` tool description: agents can now pass `scheduled_at` in configuration to create triggers that fire once then auto-disable.
+- `sleepSession` client method for transitioning sessions from `needs_input` to `waiting` status.
+
+### Changed
+
+- Updated `action_trigger` tool description to document both recurring and one-time schedule configuration options.
+- Server now registers 15 tools (up from 14).
+
+## [0.6.9] - 2026-04-12
+
+### Added
+
+- `force_immediate` parameter for the `follow_up` action in `action_session` tool — interrupts a running session to deliver the prompt immediately instead of queuing it
+- Tool output distinguishes between immediate delivery and queued delivery based on API response
+
 ## [0.6.8] - 2026-04-12
 
 - Migration verification: no-op patch version bump to validate internal→public distribution pipeline

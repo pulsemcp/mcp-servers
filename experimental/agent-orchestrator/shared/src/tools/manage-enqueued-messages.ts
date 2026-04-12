@@ -2,7 +2,16 @@ import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { z } from 'zod';
 import type { IAgentOrchestratorClient } from '../orchestrator-client/orchestrator-client.js';
 
-const ACTION_ENUM = ['list', 'get', 'create', 'update', 'delete', 'reorder', 'interrupt'] as const;
+const ACTION_ENUM = [
+  'list',
+  'get',
+  'create',
+  'update',
+  'delete',
+  'reorder',
+  'interrupt',
+  'send_now',
+] as const;
 
 export const ManageEnqueuedMessagesSchema = z.object({
   session_id: z.union([z.string(), z.number()]),
@@ -15,18 +24,23 @@ export const ManageEnqueuedMessagesSchema = z.object({
   per_page: z.number().min(1).max(100).optional(),
 });
 
-const TOOL_DESCRIPTION = `Manage the enqueued message queue for an agent session.
+const TOOL_DESCRIPTION = `Queue messages for later delivery or send messages immediately to an agent session.
 
-**Actions:**
-- **list**: List all enqueued messages for a session (supports pagination)
-- **get**: Get a specific enqueued message by ID
-- **create**: Add a new message to the queue (requires "content")
-- **update**: Update an existing message (requires "message_id")
+**Quick guide — two ways to send a message:**
+- **send_now**: Interrupt the session and deliver a message immediately, even if the session is running. One step — just provide "content".
+- **create**: Add a message to the queue for delivery when the session finishes its current work. Does NOT send immediately.
+
+Use "send_now" when you need the agent to act on something urgently. Use "create" when the message can wait until the session is idle.
+
+**All actions:**
+- **send_now**: Interrupt the session and deliver a message immediately (requires "content"). The session is paused, the message is sent, and the session resumes with this message. Works regardless of session state.
+- **create**: Add a new message to the end of the queue for later delivery (requires "content"). The message waits until the session becomes idle.
+- **list**: List all enqueued messages for a session (supports pagination with "page" and "per_page")
+- **get**: Get a specific enqueued message by ID (requires "message_id")
+- **update**: Update an existing queued message's content or stop condition (requires "message_id")
 - **delete**: Remove a message from the queue (requires "message_id")
 - **reorder**: Change a message's position in the queue (requires "message_id" and "position")
-- **interrupt**: Pause the session and send this message immediately (requires "message_id")
-
-Enqueued messages are follow-up prompts queued to be sent to the agent in order.`;
+- **interrupt**: Pause the session and send an existing queued message immediately (requires "message_id"). Prefer "send_now" for new messages — "interrupt" is for promoting an already-queued message.`;
 
 export function manageEnqueuedMessagesTool(
   _server: Server,
@@ -45,7 +59,8 @@ export function manageEnqueuedMessagesTool(
         action: {
           type: 'string',
           enum: ACTION_ENUM,
-          description: 'Action to perform on enqueued messages.',
+          description:
+            'Action to perform. Use "send_now" to interrupt and deliver immediately. Use "create" to queue for later.',
         },
         message_id: {
           type: 'number',
@@ -53,11 +68,12 @@ export function manageEnqueuedMessagesTool(
         },
         content: {
           type: 'string',
-          description: 'Message content. Required for create. Optional for update.',
+          description: 'Message content. Required for create and send_now. Optional for update.',
         },
         stop_condition: {
           type: 'string',
-          description: 'Stop condition for this message. Optional for create and update.',
+          description:
+            'Stop condition for this message. Optional for create, send_now, and update.',
         },
         position: {
           type: 'number',
@@ -154,7 +170,9 @@ export function manageEnqueuedMessagesTool(
               stop_condition: stop_condition || undefined,
             });
             result = [
-              '## Message Enqueued',
+              '## Message Queued',
+              '',
+              `Message added to queue — it will be delivered when the session becomes idle.`,
               '',
               `- **ID:** ${msg.id}`,
               `- **Position:** ${msg.position}`,
@@ -256,6 +274,34 @@ export function manageEnqueuedMessagesTool(
               `- **Session ID:** ${response.session.id}`,
               `- **Session Status:** ${response.session.status}`,
               `- **Message:** ${response.message}`,
+            ].join('\n');
+            break;
+          }
+
+          case 'send_now': {
+            if (!content) {
+              return {
+                content: [
+                  {
+                    type: 'text',
+                    text: 'Error: "content" is required for the "send_now" action.',
+                  },
+                ],
+                isError: true,
+              };
+            }
+            const response = await client.followUp(session_id, content, {
+              force_immediate: true,
+              stop_condition: stop_condition || undefined,
+            });
+            result = [
+              '## Message Sent Immediately',
+              '',
+              `The session was interrupted and the message was delivered.`,
+              '',
+              `- **Session ID:** ${response.session.id}`,
+              `- **Session Status:** ${response.session.status}`,
+              `- **Result:** ${response.message}`,
             ].join('\n');
             break;
           }
