@@ -1,6 +1,6 @@
 {
   "name": "agent-orchestrator-mcp-server",
-  "version": "0.6.8",
+  "version": "0.7.2",
   "description": "Local implementation of agent-orchestrator MCP server",
   "main": "build/index.js",
   "type": "module",
@@ -29,7 +29,7 @@
     "stage-publish": "npm version"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.19.1",
+    "@modelcontextprotocol/sdk": "^1.26.0",
     "zod": "^3.24.1"
   },
   "devDependencies": {

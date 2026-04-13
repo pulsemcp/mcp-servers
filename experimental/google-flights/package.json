@@ -18,7 +18,9 @@
     "lint:fix": "cd .. && npm run lint:fix",
     "format": "cd .. && npm run format",
     "format:check": "cd .. && npm run format:check",
-    "test": "echo \"Tests run in internal repo\""
+    "test": "echo \"Tests run in internal repo\"",
+    "ci:install": "echo \"Dependencies installed via root workspace\"",
+    "test:run": "echo \"Functional tests run in internal repo\""
   },
   "repository": {
     "type": "git",

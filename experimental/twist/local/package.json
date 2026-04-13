@@ -29,7 +29,7 @@
     "prepublishOnly": "node prepare-publish.js"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.19.1",
+    "@modelcontextprotocol/sdk": "^1.29.0",
     "zod": "^3.24.1"
   },
   "devDependencies": {

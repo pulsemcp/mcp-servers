@@ -2,11 +2,11 @@ import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { ListToolsRequestSchema, CallToolRequestSchema } from '@modelcontextprotocol/sdk/types.js';
 import { ClientFactory } from './server.js';
 
-// 13 tools across 4 domains
+// 15 tools across 4 domains + 1 composite group
 import { quickSearchSessionsTool } from './tools/search-sessions.js';
 import { startSessionTool } from './tools/start-session.js';
 import { getSessionTool } from './tools/get-session.js';
-import { actionSessionTool } from './tools/action-session.js';
+import { actionSessionTool, selfSessionActionSessionTool } from './tools/action-session.js';
 import { getConfigsTool } from './tools/get-configs.js';
 import { manageEnqueuedMessagesTool } from './tools/manage-enqueued-messages.js';
 import { sendPushNotificationTool } from './tools/send-push-notification.js';
@@ -14,6 +14,7 @@ import { getNotificationsTool } from './tools/get-notifications.js';
 import { actionNotificationTool } from './tools/action-notification.js';
 import { searchTriggersTool } from './tools/search-triggers.js';
 import { actionTriggerTool } from './tools/action-trigger.js';
+import { wakeMeUpLaterTool } from './tools/wake-me-up-later.js';
 import { getSystemHealthTool } from './tools/get-system-health.js';
 import { actionHealthTool } from './tools/action-health.js';
 import { getTranscriptArchiveTool } from './tools/get-transcript-archive.js';
@@ -28,20 +29,26 @@ import { getTranscriptArchiveTool } from './tools/get-transcript-archive.js';
 // Example: TOOL_GROUPS="sessions_readonly,notifications" (read-only sessions + notifications)
 // Default: All groups enabled when not specified
 //
-// Each group has two variants:
+// Domain groups come in two variants:
 // - Base group (e.g., 'sessions'): Includes all tools (read + write operations)
 // - Readonly group (e.g., 'sessions_readonly'): Includes only read operations
 //
-// Groups:
+// Domain groups:
 // - sessions / sessions_readonly: Session management tools (quick search, get, start, action, configs, enqueued messages)
 // - notifications / notifications_readonly: Notification tools (get, send, mark read, dismiss)
 // - triggers / triggers_readonly: Automation trigger management (search, create, update, delete, toggle)
 // - health / health_readonly: System health monitoring, CLI status, maintenance operations
+//
+// Composite groups (cross-domain, curated tool sets):
+// - self_session: Self-management tools for auto-injected AO servers. Includes get_session,
+//   get_configs (read), action_session (filtered: update_notes, update_title, archive),
+//   and send_push_notification.
 // =============================================================================
 
 /**
  * Available tool groups for agent-orchestrator.
- * Each domain has a base group (full access) and a _readonly variant (read-only).
+ * - Domain groups: each domain has a base group (full access) and a _readonly variant (read-only)
+ * - Composite groups: curated cross-domain tool sets (e.g., self_session)
  */
 export type ToolGroup =
   | 'sessions'
@@ -51,13 +58,14 @@ export type ToolGroup =
   | 'triggers'
   | 'triggers_readonly'
   | 'health'
-  | 'health_readonly';
+  | 'health_readonly'
+  | 'self_session';
 
 /** Base groups without _readonly suffix */
 type BaseToolGroup = 'sessions' | 'notifications' | 'triggers' | 'health';
 
 /**
- * All valid tool groups (base groups and their _readonly variants)
+ * All valid tool groups (domain groups, their _readonly variants, and composite groups)
  */
 const VALID_TOOL_GROUPS: ToolGroup[] = [
   'sessions',
@@ -68,6 +76,7 @@ const VALID_TOOL_GROUPS: ToolGroup[] = [
   'triggers_readonly',
   'health',
   'health_readonly',
+  'self_session',
 ];
 
 /**
@@ -134,51 +143,100 @@ interface ToolDefinition {
   group: BaseToolGroup;
   /** If true, this tool is excluded from _readonly groups */
   isWriteOperation: boolean;
+  /** Composite groups this tool also belongs to (beyond its primary domain group) */
+  compositeGroups?: ToolGroup[];
+  /** Alternative factory to use when included via a composite group (overrides default factory) */
+  compositeGroupFactoryOverrides?: Partial<Record<ToolGroup, ToolFactory>>;
 }
 
 /**
  * All available tools with their group assignments.
  *
- * 14 tools across 4 domains:
+ * 15 tools across 4 domains + 1 composite group:
  * - quick_search_sessions: Quick title-based search/list/get sessions by ID (sessions, read)
- * - get_session: Get detailed session info with optional logs/transcripts (sessions, read)
- * - get_configs: Fetch all static configuration (sessions, read)
+ * - get_session: Get detailed session info with optional logs/transcripts (sessions, read; self_session)
+ * - get_configs: Fetch all static configuration (sessions, read; self_session)
  * - get_transcript_archive: Get transcript archive download URL and metadata (sessions, read)
  * - start_session: Create a new session (sessions, write)
- * - action_session: Perform session actions (sessions, write)
+ * - action_session: Perform session actions (sessions, write; self_session: filtered to update_notes, update_title, archive)
  * - manage_enqueued_messages: Manage session message queue (sessions, write)
  * - get_notifications: Get/list notifications and badge count (notifications, read)
- * - send_push_notification: Send a push notification (notifications, write)
+ * - send_push_notification: Send a push notification (notifications, write; self_session)
  * - action_notification: Mark read, dismiss notifications (notifications, write)
  * - search_triggers: Search/list automation triggers (triggers, read)
  * - action_trigger: Create, update, delete, toggle triggers (triggers, write)
+ * - wake_me_up_later: Schedule a session to be woken up at a specific time (triggers, write)
  * - get_system_health: Get system health report and CLI status (health, read)
  * - action_health: System maintenance actions (health, write)
  */
 const ALL_TOOLS: ToolDefinition[] = [
   // Session tools - read operations
-  { factory: quickSearchSessionsTool, group: 'sessions', isWriteOperation: false },
-  { factory: getSessionTool, group: 'sessions', isWriteOperation: false },
-  { factory: getConfigsTool, group: 'sessions', isWriteOperation: false },
-  { factory: getTranscriptArchiveTool, group: 'sessions', isWriteOperation: false },
+  {
+    factory: quickSearchSessionsTool,
+    group: 'sessions',
+    isWriteOperation: false,
+  },
+  {
+    factory: getSessionTool,
+    group: 'sessions',
+    isWriteOperation: false,
+    compositeGroups: ['self_session'],
+  },
+  {
+    factory: getConfigsTool,
+    group: 'sessions',
+    isWriteOperation: false,
+    compositeGroups: ['self_session'],
+  },
+  {
+    factory: getTranscriptArchiveTool,
+    group: 'sessions',
+    isWriteOperation: false,
+  },
 
   // Session tools - write operations
   { factory: startSessionTool, group: 'sessions', isWriteOperation: true },
-  { factory: actionSessionTool, group: 'sessions', isWriteOperation: true },
-  { factory: manageEnqueuedMessagesTool, group: 'sessions', isWriteOperation: true },
+  {
+    factory: actionSessionTool,
+    group: 'sessions',
+    isWriteOperation: true,
+    compositeGroups: ['self_session'],
+    compositeGroupFactoryOverrides: {
+      self_session: selfSessionActionSessionTool,
+    },
+  },
+  {
+    factory: manageEnqueuedMessagesTool,
+    group: 'sessions',
+    isWriteOperation: true,
+  },
 
   // Notification tools - read operations
-  { factory: getNotificationsTool, group: 'notifications', isWriteOperation: false },
+  {
+    factory: getNotificationsTool,
+    group: 'notifications',
+    isWriteOperation: false,
+  },
 
   // Notification tools - write operations
-  { factory: sendPushNotificationTool, group: 'notifications', isWriteOperation: true },
-  { factory: actionNotificationTool, group: 'notifications', isWriteOperation: true },
+  {
+    factory: sendPushNotificationTool,
+    group: 'notifications',
+    isWriteOperation: true,
+    compositeGroups: ['self_session'],
+  },
+  {
+    factory: actionNotificationTool,
+    group: 'notifications',
+    isWriteOperation: true,
+  },
 
   // Trigger tools - read operations
   { factory: searchTriggersTool, group: 'triggers', isWriteOperation: false },
 
   // Trigger tools - write operations
   { factory: actionTriggerTool, group: 'triggers', isWriteOperation: true },
+  { factory: wakeMeUpLaterTool, group: 'triggers', isWriteOperation: true },
 
   // Health tools - read operations
   { factory: getSystemHealthTool, group: 'health', isWriteOperation: false },
@@ -207,7 +265,55 @@ function shouldIncludeTool(toolDef: ToolDefinition, enabledGroups: ToolGroup[]):
     return true;
   }
 
+  // Check if any composite group that includes this tool is enabled
+  if (toolDef.compositeGroups) {
+    for (const compositeGroup of toolDef.compositeGroups) {
+      if (enabledGroups.includes(compositeGroup)) {
+        return true;
+      }
+    }
+  }
+
   return false;
+}
+
+/**
+ * Determine which factory to use for a tool based on enabled groups.
+ * Domain groups (base/readonly) use the default factory. Composite groups
+ * may have factory overrides (e.g., restricted action_session for self_session).
+ * Domain base group takes precedence over composite group overrides.
+ *
+ * Priority: base group > readonly group > composite group override > default factory.
+ * A write operation with only the readonly group enabled is NOT covered by the
+ * domain group — it falls through to composite group override logic.
+ */
+function getToolFactory(toolDef: ToolDefinition, enabledGroups: ToolGroup[]): ToolFactory {
+  const baseGroup = toolDef.group;
+  const readonlyGroup = `${baseGroup}_readonly` as ToolGroup;
+
+  // If included via base group (full access), always use the default factory
+  if (enabledGroups.includes(baseGroup as ToolGroup)) {
+    return toolDef.factory;
+  }
+
+  // If included via readonly group AND this is a read operation, use the default factory
+  if (enabledGroups.includes(readonlyGroup) && !toolDef.isWriteOperation) {
+    return toolDef.factory;
+  }
+
+  // Otherwise, the tool is included via a composite group — check for factory overrides
+  if (toolDef.compositeGroupFactoryOverrides && toolDef.compositeGroups) {
+    for (const compositeGroup of toolDef.compositeGroups) {
+      if (
+        enabledGroups.includes(compositeGroup) &&
+        toolDef.compositeGroupFactoryOverrides[compositeGroup]
+      ) {
+        return toolDef.compositeGroupFactoryOverrides[compositeGroup]!;
+      }
+    }
+  }
+
+  return toolDef.factory;
 }
 
 /**
@@ -230,8 +336,11 @@ export function createRegisterTools(clientFactory: ClientFactory, enabledGroups?
       shouldIncludeTool(toolDef, enabledToolGroups)
     );
 
-    // Create tool instances
-    const tools = enabledTools.map((toolDef) => toolDef.factory(server, clientFactory));
+    // Create tool instances (using factory overrides for composite groups when applicable)
+    const tools = enabledTools.map((toolDef) => {
+      const factory = getToolFactory(toolDef, enabledToolGroups);
+      return factory(server, clientFactory);
+    });
 
     // List available tools
     server.setRequestHandler(ListToolsRequestSchema, async () => {

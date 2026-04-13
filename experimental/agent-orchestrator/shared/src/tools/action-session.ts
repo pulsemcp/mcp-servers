@@ -10,6 +10,8 @@ const PARAM_DESCRIPTIONS = {
     'Action to perform: "follow_up", "pause", "restart", "archive", "unarchive", "change_mcp_servers", "change_model", "fork", "refresh", "refresh_all", "update_notes", "update_title", "toggle_favorite", "bulk_archive"',
   prompt:
     'Required for "follow_up" action. The prompt to send to the agent. Not used for other actions.',
+  force_immediate:
+    'Optional for "follow_up" action. When true, interrupts a running session to deliver the prompt immediately instead of queuing it. Not used for other actions.',
   mcp_servers:
     'Required for "change_mcp_servers" action. Array of MCP server names to set for the session.',
   model:
@@ -41,6 +43,7 @@ export const ActionSessionSchema = z.object({
   session_id: z.union([z.string(), z.number()]).optional().describe(PARAM_DESCRIPTIONS.session_id),
   action: z.enum(ACTION_ENUM).describe(PARAM_DESCRIPTIONS.action),
   prompt: z.string().optional().describe(PARAM_DESCRIPTIONS.prompt),
+  force_immediate: z.boolean().optional().describe(PARAM_DESCRIPTIONS.force_immediate),
   mcp_servers: z.array(z.string()).optional().describe(PARAM_DESCRIPTIONS.mcp_servers),
   model: z.string().optional().describe(PARAM_DESCRIPTIONS.model),
   message_index: z.number().optional().describe(PARAM_DESCRIPTIONS.message_index),
@@ -52,7 +55,7 @@ export const ActionSessionSchema = z.object({
 const TOOL_DESCRIPTION = `Perform an action on an agent session.
 
 **Actions:**
-- **follow_up**: Send a follow-up prompt to an idle session (requires "prompt" parameter)
+- **follow_up**: Send a follow-up prompt to a session (requires "prompt"; optional "force_immediate" to interrupt a running session). Without "force_immediate", uses smart routing: sends immediately if idle, auto-queues if running. Alternative: use manage_enqueued_messages "send_now" for one-step immediate delivery with stop_condition support.
 - **pause**: Pause a running session, transitioning it to idle "needs_input" status
 - **restart**: Restart an idle or failed session without providing new input
 - **archive**: Archive a session (marks as completed)
@@ -94,6 +97,10 @@ export function actionSessionTool(_server: Server, clientFactory: () => IAgentOr
           type: 'string',
           description: PARAM_DESCRIPTIONS.prompt,
         },
+        force_immediate: {
+          type: 'boolean',
+          description: PARAM_DESCRIPTIONS.force_immediate,
+        },
         mcp_servers: {
           type: 'array',
           items: { type: 'string' },
@@ -131,6 +138,7 @@ export function actionSessionTool(_server: Server, clientFactory: () => IAgentOr
           session_id,
           action,
           prompt,
+          force_immediate,
           mcp_servers,
           model,
           message_index,
@@ -274,9 +282,13 @@ export function actionSessionTool(_server: Server, clientFactory: () => IAgentOr
 
         switch (action) {
           case 'follow_up': {
-            const response = await client.followUp(session_id!, prompt!);
+            const response = await client.followUp(session_id!, prompt!, {
+              force_immediate,
+            });
+            const immediate = response.message?.toLowerCase().includes('immediately');
+            const heading = immediate ? 'Follow-up Sent Immediately' : 'Follow-up Sent';
             const lines = [
-              `## Follow-up Sent`,
+              `## ${heading}`,
               '',
               `- **Session ID:** ${response.session.id}`,
               `- **Title:** ${response.session.title}`,
@@ -437,7 +449,9 @@ export function actionSessionTool(_server: Server, clientFactory: () => IAgentOr
           }
 
           case 'update_title': {
-            const session = await client.updateSession(session_id!, { title: title! });
+            const session = await client.updateSession(session_id!, {
+              title: title!,
+            });
             const lines = [
               `## Session Title Updated`,
               '',
@@ -480,6 +494,173 @@ export function actionSessionTool(_server: Server, clientFactory: () => IAgentOr
 
           default: {
             // This should never happen due to Zod validation
+            const _exhaustiveCheck: never = action;
+            return {
+              content: [
+                {
+                  type: 'text',
+                  text: `Error: Unknown action "${_exhaustiveCheck}"`,
+                },
+              ],
+              isError: true,
+            };
+          }
+        }
+
+        return {
+          content: [{ type: 'text', text: result }],
+        };
+      } catch (error) {
+        return {
+          content: [
+            {
+              type: 'text',
+              text: `Error performing action: ${error instanceof Error ? error.message : 'Unknown error'}`,
+            },
+          ],
+          isError: true,
+        };
+      }
+    },
+  };
+}
+
+// =============================================================================
+// SELF-SESSION VARIANT
+// =============================================================================
+// Restricted version of action_session for the self_session composite group.
+// Only allows self-management actions: update_notes, update_title, archive.
+// =============================================================================
+
+const SELF_SESSION_ACTION_ENUM = ['update_notes', 'update_title', 'archive'] as const;
+
+export const SelfSessionActionSessionSchema = z.object({
+  session_id: z.union([z.string(), z.number()]).describe(PARAM_DESCRIPTIONS.session_id),
+  action: z
+    .enum(SELF_SESSION_ACTION_ENUM)
+    .describe('Action to perform: "update_notes", "update_title", "archive"'),
+  session_notes: z.string().optional().describe(PARAM_DESCRIPTIONS.session_notes),
+  title: z.string().optional().describe(PARAM_DESCRIPTIONS.title),
+});
+
+const SELF_SESSION_TOOL_DESCRIPTION = `Perform a self-management action on a session.
+
+**Actions (limited to self-management):**
+- **update_notes**: Update the notes on a session (requires "session_notes")
+- **update_title**: Update the title of a session (requires "title")
+- **archive**: Archive a session (marks as completed)
+
+**Use cases:**
+- Update session notes to record progress or context
+- Set a meaningful session title
+- Archive the session when work is complete`;
+
+export function selfSessionActionSessionTool(
+  _server: Server,
+  clientFactory: () => IAgentOrchestratorClient
+) {
+  return {
+    name: 'action_session',
+    description: SELF_SESSION_TOOL_DESCRIPTION,
+    inputSchema: {
+      type: 'object' as const,
+      properties: {
+        session_id: {
+          oneOf: [{ type: 'string' }, { type: 'number' }],
+          description: PARAM_DESCRIPTIONS.session_id,
+        },
+        action: {
+          type: 'string',
+          enum: SELF_SESSION_ACTION_ENUM,
+          description: 'Action to perform: "update_notes", "update_title", "archive"',
+        },
+        session_notes: {
+          type: 'string',
+          description: PARAM_DESCRIPTIONS.session_notes,
+        },
+        title: {
+          type: 'string',
+          description: PARAM_DESCRIPTIONS.title,
+        },
+      },
+      required: ['session_id', 'action'],
+    },
+    handler: async (args: unknown) => {
+      try {
+        const validatedArgs = SelfSessionActionSessionSchema.parse(args);
+        const client = clientFactory();
+        const { session_id, action, session_notes, title } = validatedArgs;
+
+        // Validate update_notes requires session_notes
+        if (action === 'update_notes' && session_notes === undefined) {
+          return {
+            content: [
+              {
+                type: 'text',
+                text: 'Error: The "session_notes" parameter is required for the "update_notes" action.',
+              },
+            ],
+            isError: true,
+          };
+        }
+
+        // Validate update_title requires title
+        if (action === 'update_title' && !title) {
+          return {
+            content: [
+              {
+                type: 'text',
+                text: 'Error: The "title" parameter is required for the "update_title" action.',
+              },
+            ],
+            isError: true,
+          };
+        }
+
+        let result: string;
+
+        switch (action) {
+          case 'archive': {
+            const session = await client.archiveSession(session_id);
+            const lines = [
+              `## Session Archived`,
+              '',
+              `- **Session ID:** ${session.id}`,
+              `- **Title:** ${session.title}`,
+              `- **New Status:** ${session.status}`,
+              `- **Archived At:** ${session.archived_at}`,
+            ];
+            result = lines.join('\n');
+            break;
+          }
+
+          case 'update_notes': {
+            const session = await client.updateSessionNotes(session_id, session_notes!);
+            const lines = [
+              `## Session Notes Updated`,
+              '',
+              `- **Session ID:** ${session.id}`,
+              `- **Title:** ${session.title}`,
+            ];
+            result = lines.join('\n');
+            break;
+          }
+
+          case 'update_title': {
+            const session = await client.updateSession(session_id, {
+              title: title!,
+            });
+            const lines = [
+              `## Session Title Updated`,
+              '',
+              `- **Session ID:** ${session.id}`,
+              `- **Title:** ${session.title}`,
+            ];
+            result = lines.join('\n');
+            break;
+          }
+
+          default: {
             const _exhaustiveCheck: never = action;
             return {
               content: [

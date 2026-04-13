@@ -98,6 +98,8 @@ export function createRegisterResources(clientFactory: ClientFactory) {
             health:
               'All health tools (read + write): health report, CLI status, maintenance actions',
             health_readonly: 'Health tools (read only): get_system_health',
+            self_session:
+              'Self-management tools for auto-injected servers: get_session, get_configs (read), action_session (filtered: update_notes, update_title, archive), send_push_notification',
           },
         };
 
