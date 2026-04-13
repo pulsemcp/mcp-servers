@@ -44,6 +44,16 @@ After staging the publication, update the server's CHANGELOG.md file:
 4. Add the version number and date
 5. Follow the [Keep a Changelog](https://keepachangelog.com) format
 
+### 2a. Run Manual Tests (If Applicable)
+
+For servers with manual tests (that require real API credentials):
+
+1. **Check for credentials first**: Verify that the `.env` file exists in the MCP server's source root and contains the required API keys. **If the `.env` file is missing or doesn't have the required credentials, STOP and ask the user to provide them. Do NOT skip manual tests or proceed without credentials.**
+2. Run the manual tests (automatically builds and tests):
+   ```bash
+   npm run test:manual
+   ```
+
 Example:
 
 ```markdown
@@ -78,6 +88,7 @@ gh pr create --title "Publish appsignal-mcp-server@0.1.1" \
 - [x] Version bumped in package.json
 - [x] CHANGELOG.md updated
 - [x] All tests passing
+- [x] Manual tests run (if applicable)
 - [x] Git tag created"
 ```
 
@@ -141,6 +152,7 @@ Before creating a PR:
 - [ ] Version bumped using `npm run stage-publish`
 - [ ] CHANGELOG.md updated with new version section
 - [ ] All tests pass (`npm test`, `npm run test:integration`)
+- [ ] Manual tests run (if applicable — if `.env` credentials are missing, ask the user for them; do NOT skip)
 - [ ] Build succeeds (`npm run build`)
 - [ ] No sensitive information in code
 - [ ] Git tag created and pushed

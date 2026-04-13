@@ -146,6 +146,7 @@ npm run lint       # Check for linting issues
 npm run lint:fix   # Auto-fix linting issues
 npm run format     # Format code with Prettier
 npm test           # Run tests (functional and/or integration)
+npm run test:manual # Run manual tests (if available - hits real APIs)
 ```
 
 ### Linting Best Practices
@@ -180,7 +181,7 @@ cd experimental/twist && prettier --write .
 - **Core Dependencies**: `@modelcontextprotocol/sdk`, `zod`
 - **Build Tool**: TypeScript compiler (tsc)
 - **Dev Tool**: tsx for development mode
-- **Testing**: Vitest for unit and integration tests
+- **Testing**: Vitest for unit, integration, and manual tests
 
 ## Dependency Management
 
@@ -271,10 +272,17 @@ npm run build                         # Builds both shared and local
 
 Running full test suites locally is prone to failure. Instead, run only targeted tests for the files you changed, then commit to a PR and let CI run the complete test suite.
 
-MCP servers may include up to two types of tests:
+MCP servers may include up to three types of tests:
 
 1. **Functional Tests** - Unit tests with all dependencies mocked
 2. **Integration Tests** - Tests using TestMCPClient with mocked external APIs
+3. **Manual Tests** - Tests that hit real external APIs (not run in CI)
+
+Manual tests are particularly important when:
+
+- Modifying code that interacts with external APIs
+- Debugging issues that only appear with real API responses
+- Verifying that API integrations work correctly
 
 To run targeted tests locally:
 
@@ -289,7 +297,40 @@ cd experimental/twist && npx vitest run tests/specific.test.ts
 # Instead, commit to a PR and let CI run the full test suite
 ```
 
+To run manual tests (when available):
+
+```bash
+# IMPORTANT: Use .env files in the MCP server's source root for API keys
+cd /to/mcp-server
+less .env # Confirm it's there
+
+# Run manual tests
+npm run test:manual
+```
+
 **Note**: Always use `.env` files in the MCP server's source root to store API keys and credentials. Never commit these files to version control.
+
+**CRITICAL: Manual tests MUST run against staging, not production.** For servers that connect to PulseMCP APIs (like `pulsemcp-cms-admin`), always set `PULSEMCP_ADMIN_API_URL=https://admin.staging.pulsemcp.com` in the `.env` file. The default API URL is production — running manual tests without the staging URL will either fail with "Invalid API key" (if using a staging key) or mutate production data (if using a production key). Check each server's `.env.example` for the required variables.
+
+**CRITICAL: If the `.env` file is missing or doesn't contain the required API keys/credentials, STOP and ask the user to provide them.** Do NOT silently skip manual tests or proceed without credentials. Check for the `.env` file BEFORE attempting to run manual tests — if it's missing or looks incomplete, ask the user for the required credentials immediately.
+
+### CRITICAL: Manual Test Integrity Policy
+
+**Manual tests MUST actually test real functionality against real APIs. No exceptions.**
+
+- **NEVER** write manual tests that skip, bypass, or gracefully handle missing backend functionality
+- **NEVER** use patterns like `if (response.includes('404')) { return; }` to silently pass when an endpoint doesn't exist
+- **NEVER** implement client-side code for API endpoints that don't exist yet, then write "tests" that skip when the endpoint returns 404
+- If a backend API endpoint doesn't exist, **DO NOT** write the client code until the backend is ready
+- Manual tests exist to verify that real integrations work - a test that skips on failure defeats the entire purpose
+
+**If you find yourself writing a manual test that needs to "gracefully handle" a missing endpoint:**
+
+1. STOP - you are doing it wrong
+2. The backend endpoint must exist and be functional BEFORE you write client code for it
+3. Coordinate with the backend team first, get the endpoint deployed, THEN implement the client
+
+**Why this matters:** A merged PR with "passing" manual tests that actually skip broken functionality gives false confidence. It results in shipped code that doesn't work, discovered only when users try to use it.
 
 ## Versioning and Release Workflow
 
@@ -303,6 +344,18 @@ Patch version bumps are cheap and low-risk — ship them as soon as you have con
 - Update the CHANGELOG.md to move the change from "Unreleased" into the new version entry
 - Commit the version bump alongside your code changes in the same PR
 - Do NOT leave changes sitting in an "Unreleased" changelog section waiting for a separate release PR
+
+### Manual Testing for Significant Features (Minor+ Version Changes)
+
+**Whenever adding a significant feature — anything that warrants at least a minor version bump — you MUST run the manual testing suite before considering the task complete.**
+
+Manual tests often require secrets/credentials (API keys, tokens, etc.) that the agent won't have access to. When this happens:
+
+1. **Prompt the user for any required secrets/credentials** needed to run the manual tests. Check the server's `.env.example` or test files to identify what's needed, then ask the user to provide them
+2. **Actually run through the manual testing steps** (`npm run test:manual`) — do not skip this step
+3. **Do not skip manual testing just because it requires user interaction** — ask for what you need and wait for the user to provide it
+
+This applies to minor and major version bumps. For patch-level changes (small bug fixes, minor tweaks), manual testing is encouraged but not strictly required — use your judgment based on the risk of the change.
 
 ## Creating New Servers
 
@@ -403,8 +456,21 @@ Don't add: basic TypeScript fixes, standard npm troubleshooting, obvious file op
 - Breaking changes in tool parameters should be clearly marked in CHANGELOG.md with **BREAKING** prefix to alert users
 - When using `set -e` in shell scripts with npm commands, be aware that `npm view` returns exit code 1 when a package doesn't exist yet - use `|| true` to prevent premature script termination during npm registry propagation checks
 - **For `/publish-and-pr` skill**: This means "stage for publishing and update PR" - it does NOT mean actually publish to npm. The workflow is: bump version → update changelog → commit → push → update PR. NPM publishing happens automatically via CI when PR is merged
+- **Manual Testing Before Publishing**: Always run manual tests (with real API credentials) before staging a version bump to ensure the server works correctly with external APIs. If the `.env` file with credentials is missing, STOP and ask the user to provide them — do NOT skip manual tests
 - **Git Tag Format for Version Bumps**: When creating git tags for version bumps, use the format `package-name@version` (e.g., `appsignal-mcp-server@0.2.12`, `@pulsemcp/pulse-fetch@0.2.10`). The CI verify-publications workflow expects this exact format, not `server-name-vX.Y.Z`
 - **npm Package Files Field**: When specifying files to include in npm packages, use specific glob patterns (e.g., `"build/**/*.js"`) rather than entire directories (e.g., `"build/"`) to ensure proper file permissions and avoid including non-executable files. This prevents "Permission denied" errors when users run the package with npx
+
+### Manual Testing Infrastructure
+
+- Manual test files typically live in `tests/manual/` and use `.manual.test.ts` extension
+- **First-time setup for new worktrees**: Always run `npm run test:manual:setup` before running manual tests in a fresh checkout or new worktree. This ensures all dependencies are installed, the project is built, and test-mcp-client is available
+- **Always use `npm run test:manual` to run manual tests** - this script handles building, vitest configuration, and proper ESM support automatically. Don't try to run vitest directly or manually build the project first
+- To run manual tests with proper ESM support, create a `scripts/run-vitest.js` wrapper that imports vitest's CLI directly
+- When setting up manual tests for servers with workspace structures (local/shared), ensure dependencies are properly installed in all subdirectories before running tests
+- Manual tests should run against built code (not source) - create a `run-manual-built.js` script that builds the project first, then runs tests against the compiled JavaScript
+- **Manual test setup checklist**: Verify .env exists with real API keys, run `ci:install` to install all workspace dependencies, run `build:test` to build everything including test-mcp-client
+- **CRITICAL: Missing credentials policy**: If the `.env` file is missing or doesn't contain the required API keys/credentials for manual tests, STOP and ask the user to provide them. Do NOT silently skip manual tests or proceed without credentials. Agents must check for `.env` BEFORE running manual tests and prompt the user if it's missing or incomplete
+- **CRITICAL: Manual tests must actually pass against real APIs** - NEVER write tests that skip or gracefully handle missing backend endpoints. If an API endpoint doesn't exist, do not write client code for it. A "passing" test that silently skips on 404 is worse than no test at all because it provides false confidence
 
 ### Monorepo Dependency Management
 
@@ -434,7 +500,7 @@ Whenever you make any sort of code change to an MCP server, make sure to update 
 ### Test Infrastructure Patterns
 
 - **Memory Storage URI Collisions**: Memory storage implementations that generate URIs using timestamp-based schemes must account for rapid test execution. Using millisecond timestamps with stripped characters can cause collisions in fast CI environments - use 10ms+ delays between writes in tests
-- **External Service Timeouts**: When integration tests encounter external service timeouts (like Firecrawl API), prioritize testing core functionality (native strategies, content parsing) over external service reliability. Network timeouts don't indicate code problems
+- **External Service Timeouts**: When manual tests encounter external service timeouts (like Firecrawl API), prioritize testing core functionality (native strategies, content parsing) over external service reliability. Network timeouts don't indicate code problems
 
 ### Version Bump and Publication Workflow
 
