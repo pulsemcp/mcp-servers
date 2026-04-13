@@ -24,7 +24,7 @@ async function preparePublish() {
 
   // Step 4: Build local
   console.log('\n4. Building local module...');
-  execSync('npx tsc', { cwd: __dirname, stdio: 'inherit' });
+  execSync('npx --package typescript tsc', { cwd: __dirname, stdio: 'inherit' });
 
   // Step 5: Remove symlink and copy built shared files
   console.log('\n5. Preparing shared files for package...');

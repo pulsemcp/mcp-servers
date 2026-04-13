@@ -36,7 +36,7 @@ async function preparePublish() {
   execSync('node setup-dev.js', { cwd: __dirname, stdio: 'inherit' });
 
   console.log('Building local module...');
-  execSync('npx tsc', { cwd: __dirname, stdio: 'inherit' });
+  execSync('npx --package typescript tsc', { cwd: __dirname, stdio: 'inherit' });
 
   // Remove symlink and copy actual files
   const sharedPath = join(__dirname, 'shared');

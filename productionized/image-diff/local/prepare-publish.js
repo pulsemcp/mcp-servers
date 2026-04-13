@@ -37,7 +37,7 @@ async function prepare() {
 
   console.log('Building local package...');
   try {
-    execSync('npx tsc', { stdio: 'inherit' });
+    execSync('npx --package typescript tsc', { stdio: 'inherit' });
   } catch (e) {
     console.error('Failed to build local package:', e.message);
     process.exit(1);
