@@ -553,7 +553,12 @@ const SELF_SESSION_TOOL_DESCRIPTION = `Perform a self-management action on a ses
 **Use cases:**
 - Update session notes to record progress or context
 - Set a meaningful session title
-- Archive the session when work is complete`;
+- Archive the session when work is complete
+
+**Archive guidelines:**
+- Only self-archive when explicitly instructed to (e.g., a stop condition says "archive yourself")
+- Subagents that report results back to a parent agent via a tool call may self-archive, since no human needs to read the session output directly
+- Do NOT self-archive if a human user needs to read your output. Sessions in \`needs_input\` appear on the user's homepage — archiving removes them before the user can see your work. If your work product is a message the user should read, let the session stay in \`needs_input\``;
 
 export function selfSessionActionSessionTool(
   _server: Server,
