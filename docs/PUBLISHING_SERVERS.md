@@ -53,9 +53,6 @@ For servers with manual tests (that require real API credentials):
    ```bash
    npm run test:manual
    ```
-3. Update `MANUAL_TESTING.md` with the test results (overwrite previous results)
-4. Include commit hash, test date/time in PT, and results summary
-5. Use real API credentials from .env for proper testing
 
 Example:
 
@@ -91,7 +88,7 @@ gh pr create --title "Publish appsignal-mcp-server@0.1.1" \
 - [x] Version bumped in package.json
 - [x] CHANGELOG.md updated
 - [x] All tests passing
-- [x] Manual tests run and MANUAL_TESTING.md updated (if applicable)
+- [x] Manual tests run (if applicable)
 - [x] Git tag created"
 ```
 
@@ -155,7 +152,7 @@ Before creating a PR:
 - [ ] Version bumped using `npm run stage-publish`
 - [ ] CHANGELOG.md updated with new version section
 - [ ] All tests pass (`npm test`, `npm run test:integration`)
-- [ ] Manual tests run and results updated in MANUAL_TESTING.md (if applicable — if `.env` credentials are missing, ask the user for them; do NOT skip)
+- [ ] Manual tests run (if applicable — if `.env` credentials are missing, ask the user for them; do NOT skip)
 - [ ] Build succeeds (`npm run build`)
 - [ ] No sensitive information in code
 - [ ] Git tag created and pushed

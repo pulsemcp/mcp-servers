@@ -354,7 +354,6 @@ Manual tests often require secrets/credentials (API keys, tokens, etc.) that the
 1. **Prompt the user for any required secrets/credentials** needed to run the manual tests. Check the server's `.env.example` or test files to identify what's needed, then ask the user to provide them
 2. **Actually run through the manual testing steps** (`npm run test:manual`) — do not skip this step
 3. **Do not skip manual testing just because it requires user interaction** — ask for what you need and wait for the user to provide it
-4. Update `MANUAL_TESTING.md` with the results before staging the version bump
 
 This applies to minor and major version bumps. For patch-level changes (small bug fixes, minor tweaks), manual testing is encouraged but not strictly required — use your judgment based on the risk of the change.
 
@@ -459,20 +458,16 @@ Don't add: basic TypeScript fixes, standard npm troubleshooting, obvious file op
 - **For `/publish-and-pr` skill**: This means "stage for publishing and update PR" - it does NOT mean actually publish to npm. The workflow is: bump version → update changelog → commit → push → update PR. NPM publishing happens automatically via CI when PR is merged
 - **Manual Testing Before Publishing**: Always run manual tests (with real API credentials) before staging a version bump to ensure the server works correctly with external APIs. If the `.env` file with credentials is missing, STOP and ask the user to provide them — do NOT skip manual tests
 - **Git Tag Format for Version Bumps**: When creating git tags for version bumps, use the format `package-name@version` (e.g., `appsignal-mcp-server@0.2.12`, `@pulsemcp/pulse-fetch@0.2.10`). The CI verify-publications workflow expects this exact format, not `server-name-vX.Y.Z`
-- **Manual Testing and CI**: The verify-publications CI check requires that MANUAL_TESTING.md references a commit that's in the PR's history. If you make any commits after running manual tests (even just test fixes), the CI will fail. For test-only fixes, this is a known limitation that doesn't require re-running manual tests. When updating MANUAL_TESTING.md for packaging-only changes, ensure the commit hash matches a commit in the current PR branch
 - **npm Package Files Field**: When specifying files to include in npm packages, use specific glob patterns (e.g., `"build/**/*.js"`) rather than entire directories (e.g., `"build/"`) to ensure proper file permissions and avoid including non-executable files. This prevents "Permission denied" errors when users run the package with npx
 
 ### Manual Testing Infrastructure
 
-- All MCP servers should have a `MANUAL_TESTING.md` file to track manual test results
 - Manual test files typically live in `tests/manual/` and use `.manual.test.ts` extension
 - **First-time setup for new worktrees**: Always run `npm run test:manual:setup` before running manual tests in a fresh checkout or new worktree. This ensures all dependencies are installed, the project is built, and test-mcp-client is available
 - **Always use `npm run test:manual` to run manual tests** - this script handles building, vitest configuration, and proper ESM support automatically. Don't try to run vitest directly or manually build the project first
 - To run manual tests with proper ESM support, create a `scripts/run-vitest.js` wrapper that imports vitest's CLI directly
-- The CI workflow `verify-mcp-server-publication.yml` checks for manual test results when version bumps occur - it verifies tests were run on a commit in the PR's history and checks for passing results
 - When setting up manual tests for servers with workspace structures (local/shared), ensure dependencies are properly installed in all subdirectories before running tests
 - Manual tests should run against built code (not source) - create a `run-manual-built.js` script that builds the project first, then runs tests against the compiled JavaScript
-- CI should fail when MANUAL_TESTING.md isn't updated for the current PR, but NOT when tests fail (some failures might be expected due to API limitations)
 - **Manual test setup checklist**: Verify .env exists with real API keys, run `ci:install` to install all workspace dependencies, run `build:test` to build everything including test-mcp-client
 - **CRITICAL: Missing credentials policy**: If the `.env` file is missing or doesn't contain the required API keys/credentials for manual tests, STOP and ask the user to provide them. Do NOT silently skip manual tests or proceed without credentials. Agents must check for `.env` BEFORE running manual tests and prompt the user if it's missing or incomplete
 - **CRITICAL: Manual tests must actually pass against real APIs** - NEVER write tests that skip or gracefully handle missing backend endpoints. If an API endpoint doesn't exist, do not write client code for it. A "passing" test that silently skips on 404 is worse than no test at all because it provides false confidence
@@ -506,11 +501,10 @@ Whenever you make any sort of code change to an MCP server, make sure to update 
 
 - **Memory Storage URI Collisions**: Memory storage implementations that generate URIs using timestamp-based schemes must account for rapid test execution. Using millisecond timestamps with stripped characters can cause collisions in fast CI environments - use 10ms+ delays between writes in tests
 - **External Service Timeouts**: When manual tests encounter external service timeouts (like Firecrawl API), prioritize testing core functionality (native strategies, content parsing) over external service reliability. Network timeouts don't indicate code problems
-- **Manual Test Result Documentation**: Always update MANUAL_TESTING.md with specific test results including: commit hash, test percentages, key functionality verified, and known external service issues. This provides CI verification and historical context
 
 ### Version Bump and Publication Workflow
 
-- **File Staging for Version Bumps**: The `npm run stage-publish` command modifies multiple files that MUST be committed together: local/package.json, parent/package-lock.json, CHANGELOG.md, README.md, and MANUAL_TESTING.md. Never commit these files separately or CI will fail
+- **File Staging for Version Bumps**: The `npm run stage-publish` command modifies multiple files that MUST be committed together: local/package.json, parent/package-lock.json, CHANGELOG.md, and README.md. Never commit these files separately or CI will fail
 - **Changelog Language Precision**: Avoid language like "restored" or "fixed" in changelogs when describing functionality that was developed within the same PR. Use accurate language like "added" or "implemented" to reflect what actually happened
 - **Dependency Consistency in Monorepos**: When adding production dependencies, ensure they exist in both shared/package.json AND local/package.json for proper publishing. Dependencies only in the root package.json won't be available in published packages
 
@@ -523,4 +517,4 @@ Whenever you make any sort of code change to an MCP server, make sure to update 
 ### Pre-commit Hook and Version Bump Workflow
 
 - **Lint-staged Automatic Stash Behavior**: When pre-commit hooks fail, lint-staged automatically stashes your changes. These can be recovered using `git stash list` and looking for "lint-staged automatic backup" entries. Apply with `git stash apply stash@{n}`
-- **Version Bump Recovery**: If `npm run stage-publish` fails or gets interrupted, changes may be partially applied. Check all expected files (local/package.json, CHANGELOG.md, MANUAL_TESTING.md, README.md) and re-run the version bump with `npm version patch --no-git-tag-version` if needed
+- **Version Bump Recovery**: If `npm run stage-publish` fails or gets interrupted, changes may be partially applied. Check all expected files (local/package.json, CHANGELOG.md, README.md) and re-run the version bump with `npm version patch --no-git-tag-version` if needed
