@@ -41,7 +41,10 @@ async function prepare() {
   // Now build the local package
   console.log('Building local package...');
   try {
-    execSync('npx tsc && npx tsc -p tsconfig.integration.json', { stdio: 'inherit' });
+    execSync(
+      'npx --package typescript tsc && npx --package typescript tsc -p tsconfig.integration.json',
+      { stdio: 'inherit' }
+    );
   } catch (e) {
     console.error('Failed to build local package:', e.message);
     process.exit(1);

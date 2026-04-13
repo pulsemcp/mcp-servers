@@ -23,11 +23,9 @@ async function prepare() {
   console.log('Building shared directory...');
   try {
     execSync('npm install', { cwd: sharedDir, stdio: 'inherit' });
-    // Use npx to find tsc — npm workspace hoisting places binaries in the
-    // workspace root's node_modules/.bin/, not in shared/node_modules/.bin/,
-    // so bare `tsc` (via `npm run build`) fails. npx searches up the directory
-    // tree and finds the hoisted binary.
-    execSync('npx tsc', { cwd: sharedDir, stdio: 'inherit' });
+    // Use --package typescript to ensure npx resolves the real TypeScript
+    // compiler, not the unrelated `tsc` npm package.
+    execSync('npx --package typescript tsc', { cwd: sharedDir, stdio: 'inherit' });
   } catch (e) {
     console.error('Failed to build shared directory:', e.message);
     process.exit(1);
@@ -47,7 +45,10 @@ async function prepare() {
   // Now build the local package
   console.log('Building local package...');
   try {
-    execSync('npx tsc && npx tsc -p tsconfig.integration.json', { stdio: 'inherit' });
+    execSync(
+      'npx --package typescript tsc && npx --package typescript tsc -p tsconfig.integration.json',
+      { stdio: 'inherit' }
+    );
   } catch (e) {
     console.error('Failed to build local package:', e.message);
     process.exit(1);

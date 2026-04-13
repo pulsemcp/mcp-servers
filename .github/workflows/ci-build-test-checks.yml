@@ -56,10 +56,10 @@ jobs:
               });
               
               // Filter to only the checks we care about (exclude this workflow)
-              const relevantChecks = checkRuns.data.check_runs.filter(run => 
-                run.name !== 'CI Build & Test Checks Passed' && 
+              const relevantChecks = checkRuns.data.check_runs.filter(run =>
+                run.name !== 'CI Build & Test Checks Passed' &&
                 run.app.slug === 'github-actions' &&
-                (run.name.includes('MCP Server') || run.name === 'Lint & Type Check' || run.name === 'Validate Publish Files')
+                (run.name.includes('MCP Server') || run.name === 'Lint & Type Check' || run.name === 'Validate Publish Files' || run.name === 'verify-publications')
               );
               
               // Group by name and get latest run
@@ -116,10 +116,10 @@ jobs:
               per_page: 100
             });
 
-            const finalOtherChecks = finalCheckRuns.data.check_runs.filter(run => 
-              run.name !== 'CI Build & Test Checks Passed' && 
+            const finalOtherChecks = finalCheckRuns.data.check_runs.filter(run =>
+              run.name !== 'CI Build & Test Checks Passed' &&
               run.app.slug === 'github-actions' &&
-              (run.name.includes('MCP Server') || run.name === 'Lint & Type Check' || run.name === 'Validate Publish Files')
+              (run.name.includes('MCP Server') || run.name === 'Lint & Type Check' || run.name === 'Validate Publish Files' || run.name === 'verify-publications')
             );
 
             if (finalOtherChecks.length === 0) {
