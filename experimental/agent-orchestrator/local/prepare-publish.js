@@ -22,7 +22,12 @@ async function prepare() {
   const sharedDir = join(__dirname, '../shared');
   console.log('Building shared directory...');
   try {
-    execSync('npm install && npm run build', { cwd: sharedDir, stdio: 'inherit' });
+    execSync('npm install', { cwd: sharedDir, stdio: 'inherit' });
+    // Use npx to find tsc — npm workspace hoisting places binaries in the
+    // workspace root's node_modules/.bin/, not in shared/node_modules/.bin/,
+    // so bare `tsc` (via `npm run build`) fails. npx searches up the directory
+    // tree and finds the hoisted binary.
+    execSync('npx tsc', { cwd: sharedDir, stdio: 'inherit' });
   } catch (e) {
     console.error('Failed to build shared directory:', e.message);
     process.exit(1);
