@@ -13,7 +13,9 @@ on:
       - 'Slack MCP Server CI'
       - 'Twist MCP Server CI'
     types: [completed]
-    branches: [main]
+    branches:
+      - main
+      - 'sync/**'
 
 jobs:
   notify:
@@ -27,13 +29,14 @@ jobs:
         run: |
           WORKFLOW_NAME="${{ github.event.workflow_run.name }}"
           RUN_URL="${{ github.event.workflow_run.html_url }}"
+          BRANCH="${{ github.event.workflow_run.head_branch }}"
           CHANNEL_ID="C0A62DG97HD"
 
           if [ -n "$SLACK_BOT_TOKEN" ]; then
             curl -sf -X POST "https://slack.com/api/chat.postMessage" \
               -H "Authorization: Bearer ${SLACK_BOT_TOKEN}" \
               -H "Content-Type: application/json" \
-              -d "{\"channel\":\"${CHANNEL_ID}\",\"text\":\":red_circle: *CI failure on pulsemcp/mcp-servers (main)*\n\nWorkflow: ${WORKFLOW_NAME}\n<${RUN_URL}|View failed run>\n\nThis repo is a distribution surface — fixes should be applied to the internal source of truth in pulsemcp/pulsemcp under mcp-servers/.\"}" || true
+              -d "{\"channel\":\"${CHANNEL_ID}\",\"text\":\":red_circle: *CI failure on pulsemcp/mcp-servers (${BRANCH})*\n\nWorkflow: ${WORKFLOW_NAME}\n<${RUN_URL}|View failed run>\n\nThis repo is a distribution surface — fixes should be applied to the internal source of truth in pulsemcp/pulsemcp under mcp-servers/.\"}" || true
           else
             echo "SLACK_BOT_TOKEN not available — skipping notification"
           fi
