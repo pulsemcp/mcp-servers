@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Fixed `prepare-publish.js` using `npx tsc` for shared directory build, which caused CI publish dry-run failures when npx installed the wrong `tsc` package (deprecated `tsc@2.0.4` instead of TypeScript compiler). Now uses `npm run build` consistent with all other servers.
+
 ## [0.7.3] - 2026-04-13
 
 ### Changed

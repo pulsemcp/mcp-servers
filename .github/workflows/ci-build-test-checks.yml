@@ -1,7 +1,8 @@
 name: CI Build & Test Checks
 
-# This workflow waits for all MCP Server CI checks and the lint check to pass.
-# All MCP Server CI workflows should include "MCP Server" in their name.
+# This workflow waits for all relevant CI checks to pass.
+# Matched checks: those containing "MCP Server", plus Lint & Type Check,
+# Validate Publish Files, and verify-publications.
 
 on:
   push:
@@ -61,7 +62,7 @@ jobs:
                 run.app.slug === 'github-actions' &&
                 (run.name.includes('MCP Server') || run.name === 'Lint & Type Check' || run.name === 'Validate Publish Files' || run.name === 'verify-publications')
               );
-              
+
               // Group by name and get latest run
               const latestRuns = {};
               for (const run of relevantChecks) {
