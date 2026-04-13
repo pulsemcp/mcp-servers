@@ -10,12 +10,25 @@ export const WakeMeUpLaterSchema = z.object({
   prompt: z.string(),
 });
 
-const TOOL_DESCRIPTION = `Schedule this session to be woken up at a specific time. The session will be put to sleep (waiting status) and a one-time trigger will fire at the specified time to resume it with the given prompt. If the session is manually resumed before the scheduled time, the trigger will be silently dropped.
+function buildToolDescription(): string {
+  const now = new Date();
+  const utcNow = now.toISOString().replace(/\.\d{3}Z$/, 'Z');
+
+  return `Schedule this session to be woken up at a specific time. The session will be put to sleep (waiting status) and a one-time trigger will fire at the specified time to resume it with the given prompt. If the session is manually resumed before the scheduled time, the trigger will be silently dropped.
+
+**Current server time:** ${utcNow} (UTC). Use this as your reference point when calculating wake-up times.
+
+**Timezone handling:**
+- The \`wake_at\` parameter is interpreted in the timezone specified by \`timezone\` (default: "UTC").
+- To schedule "30 minutes from now": take the current UTC time above, add 30 minutes, and pass that as \`wake_at\` with timezone "UTC" (or omit timezone).
+- To schedule at a wall-clock time in a specific timezone (e.g., "9am Eastern"): pass \`wake_at\` as "2026-04-15T09:00:00" with timezone "America/New_York". The server converts to UTC internally.
+- Use IANA timezone names (e.g., "America/New_York", "Europe/London", "Asia/Tokyo"). Do NOT pass UTC offsets like "+05:00" in the timezone parameter.
+- If you omit timezone, wake_at is treated as UTC.
 
 **Parameters:**
 - **session_id**: The session to wake up (must be in needs_input state)
-- **wake_at**: ISO 8601 datetime for when to wake up (e.g., "2026-04-15T14:30:00")
-- **timezone**: Timezone for the wake_at datetime (default: "UTC", e.g., "America/New_York")
+- **wake_at**: ISO 8601 datetime without offset for when to wake up (e.g., "2026-04-15T14:30:00")
+- **timezone**: IANA timezone for interpreting wake_at (default: "UTC", e.g., "America/New_York")
 - **prompt**: The prompt to send when waking up the session
 
 **What happens:**
@@ -23,11 +36,12 @@ const TOOL_DESCRIPTION = `Schedule this session to be woken up at a specific tim
 2. Puts the session to sleep (waiting status)
 3. Creates a one-time schedule trigger that fires at the specified time
 4. The trigger resumes the session with the provided prompt`;
+}
 
 export function wakeMeUpLaterTool(_server: Server, clientFactory: () => IAgentOrchestratorClient) {
   return {
     name: 'wake_me_up_later',
-    description: TOOL_DESCRIPTION,
+    description: buildToolDescription(),
     inputSchema: {
       type: 'object' as const,
       properties: {

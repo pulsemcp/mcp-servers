@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.3] - 2026-04-13
+
+### Changed
+
+- Added `wake_me_up_later` to the `self_session` composite tool group, allowing sessions with self-session-only access to schedule their own wake-ups without needing full trigger management permissions
+- Improved `wake_me_up_later` tool description with dynamic current server time (UTC), clear timezone handling guidance, and IANA timezone examples so agents can confidently schedule wake-ups without second-guessing time math
+
 ## [0.7.2] - 2026-04-12
 
 ### Added
