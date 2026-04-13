@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [0.9.14] - 2026-04-13
+
+### Added
+
+- Added `recache_mcp_server` tool to the `mcp_servers` / `server_directory` groups — refreshes cache for a specific MCP server (show page, card fragments, canonical URLs, parent pages)
+- Added `create_tenant` tool to the `tenants` group — creates a new tenant for sub-registry provisioning
+- Added `create_api_key` tool to the `tenants` group — creates an API key for a specified tenant with configurable permission levels (read_only, read_and_upsert, full_access)
+- The `tenants` tool group now supports write operations (previously read-only)
+
 ## [0.9.13] - 2026-04-12
 
 ### Fixed
