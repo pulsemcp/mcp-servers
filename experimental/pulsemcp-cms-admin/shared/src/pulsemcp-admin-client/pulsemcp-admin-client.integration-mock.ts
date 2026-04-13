@@ -1263,5 +1263,38 @@ export function createMockPulseMCPAdminClient(mockData: MockData): IPulseMCPAdmi
         },
       };
     },
+
+    async createTenant(params: { slug: string }) {
+      return {
+        id: 99,
+        slug: params.slug,
+        is_admin: false,
+        enrichments: {},
+        created_at: '2024-01-01T00:00:00Z',
+        updated_at: '2024-01-01T00:00:00Z',
+      };
+    },
+
+    async createApiKey(params: { tenant_slug: string; name?: string; permission_level?: string }) {
+      return {
+        id: 99,
+        name: params.name,
+        tenant_id: 1,
+        tenant_slug: params.tenant_slug,
+        tenant_is_admin: false,
+        permission_level: (params.permission_level || 'full_access') as
+          | 'read_only'
+          | 'read_and_upsert'
+          | 'full_access',
+        key: '00000000-0000-0000-0000-000000000000',
+        created_at: '2024-01-01T00:00:00Z',
+      };
+    },
+
+    async recacheMCPServer(slug: string) {
+      return {
+        message: `Cache successfully refreshed for ${slug}.`,
+      };
+    },
   };
 }

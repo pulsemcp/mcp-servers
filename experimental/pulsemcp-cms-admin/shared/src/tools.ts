@@ -28,9 +28,11 @@ import { deleteUnofficialMirror } from './tools/delete-unofficial-mirror.js';
 // Official mirrors REST tools (read-only)
 import { getOfficialMirrors } from './tools/get-official-mirrors.js';
 import { getOfficialMirror } from './tools/get-official-mirror.js';
-// Tenant tools (read-only)
+// Tenant tools
 import { getTenants } from './tools/get-tenants.js';
 import { getTenant } from './tools/get-tenant.js';
+import { createTenant } from './tools/create-tenant.js';
+import { createApiKey } from './tools/create-api-key.js';
 // MCP JSON tools
 import { getMcpJsons } from './tools/get-mcp-jsons.js';
 import { getMcpJson } from './tools/get-mcp-json.js';
@@ -41,6 +43,7 @@ import { deleteMcpJson } from './tools/delete-mcp-json.js';
 import { listMCPServers } from './tools/list-mcp-servers.js';
 import { getMCPServer } from './tools/get-mcp-server.js';
 import { updateMCPServer } from './tools/update-mcp-server.js';
+import { recacheMCPServer } from './tools/recache-mcp-server.js';
 // Redirect tools
 import { getRedirects } from './tools/get-redirects.js';
 import { getRedirect } from './tools/get-redirect.js';
@@ -91,7 +94,7 @@ import { getMozStoredMetrics } from './tools/get-moz-stored-metrics.js';
  * - official_queue / official_queue_readonly: Official mirror queue tools (list, get, approve, reject, unlink)
  * - unofficial_mirrors / unofficial_mirrors_readonly: Unofficial mirror CRUD tools
  * - official_mirrors_readonly: Official mirrors read-only tools (REST API)
- * - tenants_readonly: Tenant read-only tools
+ * - tenants / tenants_readonly: Tenant management tools (CRUD + API key provisioning)
  * - mcp_jsons / mcp_jsons_readonly: MCP JSON configuration tools
  * - mcp_servers / mcp_servers_readonly: Unified MCP server tools (abstracted interface)
  * - redirects / redirects_readonly: URL redirect management tools
@@ -267,9 +270,11 @@ const ALL_TOOLS: ToolDefinition[] = [
     groups: ['official_mirrors', 'server_directory'],
     isWriteOperation: false,
   },
-  // Tenant tools (read-only)
+  // Tenant tools
   { factory: getTenants, groups: ['tenants'], isWriteOperation: false },
   { factory: getTenant, groups: ['tenants'], isWriteOperation: false },
+  { factory: createTenant, groups: ['tenants'], isWriteOperation: true },
+  { factory: createApiKey, groups: ['tenants'], isWriteOperation: true },
   // MCP JSON tools (CRUD) (also in server_directory)
   {
     factory: getMcpJsons,
@@ -309,6 +314,11 @@ const ALL_TOOLS: ToolDefinition[] = [
   },
   {
     factory: updateMCPServer,
+    groups: ['mcp_servers', 'server_directory'],
+    isWriteOperation: true,
+  },
+  {
+    factory: recacheMCPServer,
     groups: ['mcp_servers', 'server_directory'],
     isWriteOperation: true,
   },
@@ -482,6 +492,7 @@ function shouldIncludeTool(toolDef: ToolDefinition, enabledGroups: ToolGroup[]):
  * - unofficial_mirrors: Unofficial mirror CRUD tools (read + write)
  * - unofficial_mirrors_readonly: Unofficial mirror tools (read only)
  * - official_mirrors_readonly: Official mirrors REST API tools (read only)
+ * - tenants: Tenant management tools including API key provisioning (read + write)
  * - tenants_readonly: Tenant tools (read only)
  * - mcp_jsons: MCP JSON configuration tools (read + write)
  * - mcp_jsons_readonly: MCP JSON tools (read only)
