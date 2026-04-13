@@ -61,7 +61,7 @@ jobs:
                 run.app.slug === 'github-actions' &&
                 (run.name.includes('MCP Server') || run.name === 'Lint & Type Check' || run.name === 'Validate Publish Files' || run.name === 'verify-publications')
               );
-              
+
               // Group by name and get latest run
               const latestRuns = {};
               for (const run of relevantChecks) {

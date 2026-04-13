@@ -22,10 +22,7 @@ async function prepare() {
   const sharedDir = join(__dirname, '../shared');
   console.log('Building shared directory...');
   try {
-    execSync('npm install', { cwd: sharedDir, stdio: 'inherit' });
-    // Use --package typescript to ensure npx resolves the real TypeScript
-    // compiler, not the unrelated `tsc` npm package.
-    execSync('npx --package typescript tsc', { cwd: sharedDir, stdio: 'inherit' });
+    execSync('npm install && npm run build', { cwd: sharedDir, stdio: 'inherit' });
   } catch (e) {
     console.error('Failed to build shared directory:', e.message);
     process.exit(1);
