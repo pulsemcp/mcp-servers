@@ -16,6 +16,13 @@ function buildToolDescription(): string {
 
   return `Schedule this session to be woken up at a specific time. The session will be put to sleep (waiting status) and a one-time trigger will fire at the specified time to resume it with the given prompt. If the session is manually resumed before the scheduled time, the trigger will be silently dropped.
 
+**IMPORTANT — Use this tool instead of workarounds.** When this tool is available, it is the correct way to schedule a delayed wake-up in an Agent Orchestrator context. Do NOT use these alternatives:
+- **Bash \`sleep\`**: Blocks the process and wastes compute resources for the entire sleep duration. The session remains "running" and cannot be reclaimed.
+- **Claude Code \`ScheduleWakeup\` tool**: Does not integrate with AO's session lifecycle — it won't transition the session to sleeping/waiting state or create an AO trigger, so AO cannot track or manage the wake-up.
+- **Claude Code \`Monitor\` tool**: Same problem — it operates outside AO's session state management.
+
+This tool does both: it properly transitions the session to sleeping (waiting) state so AO can reclaim resources, AND creates a one-time AO trigger to resume the session at the specified time.
+
 **Current server time:** ${utcNow} (UTC). Use this as your reference point when calculating wake-up times.
 
 **Timezone handling:**

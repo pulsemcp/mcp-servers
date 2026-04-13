@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.4] - 2026-04-13
+
+### Changed
+
+- Enhanced `wake_me_up_later` tool description with prominent guidance directing agents to use this tool instead of workarounds (Bash `sleep`, Claude Code `ScheduleWakeup`, `Monitor`) in Agent Orchestrator contexts, explaining why each alternative is incorrect
+
 ## [0.7.3] - 2026-04-13
 
 ### Changed
