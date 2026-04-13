@@ -42,7 +42,7 @@ import { getTranscriptArchiveTool } from './tools/get-transcript-archive.js';
 // Composite groups (cross-domain, curated tool sets):
 // - self_session: Self-management tools for auto-injected AO servers. Includes get_session,
 //   get_configs (read), action_session (filtered: update_notes, update_title, archive),
-//   and send_push_notification.
+//   send_push_notification, and wake_me_up_later.
 // =============================================================================
 
 /**
@@ -165,7 +165,7 @@ interface ToolDefinition {
  * - action_notification: Mark read, dismiss notifications (notifications, write)
  * - search_triggers: Search/list automation triggers (triggers, read)
  * - action_trigger: Create, update, delete, toggle triggers (triggers, write)
- * - wake_me_up_later: Schedule a session to be woken up at a specific time (triggers, write)
+ * - wake_me_up_later: Schedule a session to be woken up at a specific time (triggers, write; self_session)
  * - get_system_health: Get system health report and CLI status (health, read)
  * - action_health: System maintenance actions (health, write)
  */
@@ -236,7 +236,12 @@ const ALL_TOOLS: ToolDefinition[] = [
 
   // Trigger tools - write operations
   { factory: actionTriggerTool, group: 'triggers', isWriteOperation: true },
-  { factory: wakeMeUpLaterTool, group: 'triggers', isWriteOperation: true },
+  {
+    factory: wakeMeUpLaterTool,
+    group: 'triggers',
+    isWriteOperation: true,
+    compositeGroups: ['self_session'],
+  },
 
   // Health tools - read operations
   { factory: getSystemHealthTool, group: 'health', isWriteOperation: false },
