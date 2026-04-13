@@ -86,8 +86,8 @@ jobs:
                 for (const checkName of checkNames) {
                   const run = latestRuns[checkName];
                   if (run.status === 'completed') {
-                    if (run.conclusion === 'success' || run.conclusion === 'skipped') {
-                      statusMessage += `✅ **${checkName}**: ${run.conclusion === 'skipped' ? 'Skipped' : 'Passed'}\n`;
+                    if (run.conclusion === 'success') {
+                      statusMessage += `✅ **${checkName}**: Passed\n`;
                     } else {
                       statusMessage += `❌ **${checkName}**: ${run.conclusion}\n`;
                       allChecksPassed = false;

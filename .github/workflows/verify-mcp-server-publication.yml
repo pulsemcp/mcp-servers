@@ -10,7 +10,6 @@ on:
 
 jobs:
   verify-publications:
-    if: ${{ !startsWith(github.head_ref, 'sync/') }}
     runs-on: self-hosted
 
     steps:
