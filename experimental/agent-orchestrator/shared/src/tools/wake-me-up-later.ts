@@ -16,6 +16,13 @@ function buildToolDescription(): string {
 
   return `Schedule this session to be woken up at a specific time. The session will be put to sleep (waiting status) and a one-time trigger will fire at the specified time to resume it with the given prompt. If the session is manually resumed before the scheduled time, the trigger will be silently dropped.
 
+**IMPORTANT — Use this tool instead of workarounds.** When this tool is available, it is the correct way to schedule a delayed wake-up in an Agent Orchestrator context. Do NOT use these alternatives:
+- **Bash \`sleep\`**: Blocks the process and wastes compute resources for the entire sleep duration. The session remains "running" and cannot be reclaimed.
+- **Claude Code \`ScheduleWakeup\` tool**: Does not integrate with AO's session lifecycle — it won't transition the session to sleeping/waiting state or create an AO trigger, so AO cannot track or manage the wake-up.
+- **Claude Code \`Monitor\` tool**: Same problem — it operates outside AO's session state management.
+
+This tool does both: it properly transitions the session to sleeping (waiting) state so AO can reclaim resources, AND creates a one-time AO trigger to resume the session at the specified time.
+
 **Current server time:** ${utcNow} (UTC). Use this as your reference point when calculating wake-up times.
 
 **Timezone handling:**
@@ -132,7 +139,7 @@ export function wakeMeUpLaterTool(_server: Server, clientFactory: () => IAgentOr
         });
 
         const lines = [
-          '## Session Scheduled for Wake-Up',
+          '## Wake-Up Scheduled Successfully',
           '',
           `- **Session ID:** ${sleepingSession.id}`,
           `- **Session Status:** ${sleepingSession.status}`,
@@ -140,7 +147,9 @@ export function wakeMeUpLaterTool(_server: Server, clientFactory: () => IAgentOr
           `- **Trigger ID:** ${trigger.id}`,
           `- **Trigger Name:** ${trigger.name}`,
           '',
-          'The session is now sleeping. It will be automatically resumed at the scheduled time with the provided prompt.',
+          '**You must end your conversation turn now.** The session is sleeping and will be automatically resumed at the scheduled time with the provided prompt.',
+          '',
+          '⚠️ **Warning:** If you do not end your conversation turn, the session may still be running when the scheduled wake-up fires. A wake-up cannot be delivered to a session that is not in a wakeable (sleeping/waiting) state — it will be silently dropped, and you will never receive it.',
         ];
 
         return { content: [{ type: 'text', text: lines.join('\n') }] };
