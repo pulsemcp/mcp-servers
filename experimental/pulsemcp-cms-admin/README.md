@@ -66,6 +66,8 @@ This server is built and tested on macOS with Claude Desktop. It should work wit
 | `get_official_mirror`                  | official_mirrors   | read       | Get detailed official mirror info by ID or name.                                                           |
 | `get_tenants`                          | tenants            | read       | List tenants with search and admin status filtering.                                                       |
 | `get_tenant`                           | tenants            | read       | Get detailed tenant info by ID or slug.                                                                    |
+| `create_tenant`                        | tenants            | write      | Create a new tenant for sub-registry provisioning.                                                         |
+| `create_api_key`                       | tenants            | write      | Create an API key for a tenant. Returns the raw key (only available at creation time).                     |
 | `get_mcp_jsons`                        | mcp_jsons          | read       | List MCP JSON configs with mirror and server filtering.                                                    |
 | `get_mcp_json`                         | mcp_jsons          | read       | Get a single MCP JSON configuration by ID.                                                                 |
 | `create_mcp_json`                      | mcp_jsons          | write      | Create a new MCP JSON configuration for an unofficial mirror.                                              |
@@ -74,6 +76,7 @@ This server is built and tested on macOS with Claude Desktop. It should work wit
 | `list_mcp_servers`                     | mcp_servers        | read       | List/search MCP servers with filtering by status, classification, pagination.                              |
 | `get_mcp_server`                       | mcp_servers        | read       | Get detailed MCP server info by slug (unified view of all admin UI fields).                                |
 | `update_mcp_server`                    | mcp_servers        | write      | Update an MCP server's fields (all admin UI fields supported).                                             |
+| `recache_mcp_server`                   | mcp_servers        | write      | Refresh the cache for a specific MCP server (show page, cards, canonicals, parent pages).                  |
 | `get_redirects`                        | redirects          | read       | List URL redirects with search, status filtering, and pagination.                                          |
 | `get_redirect`                         | redirects          | read       | Get detailed redirect info by ID.                                                                          |
 | `create_redirect`                      | redirects          | write      | Create a new URL redirect entry.                                                                           |
@@ -122,11 +125,11 @@ This server organizes tools into groups that can be selectively enabled or disab
 | `unofficial_mirrors_readonly` | 2     | Unofficial mirrors read-only                                                                                                                                                |
 | `official_mirrors`            | 2     | Official mirrors REST API (read-only)                                                                                                                                       |
 | `official_mirrors_readonly`   | 2     | Official mirrors read-only (alias)                                                                                                                                          |
-| `tenants`                     | 2     | Tenants REST API (read-only)                                                                                                                                                |
-| `tenants_readonly`            | 2     | Tenants read-only (alias)                                                                                                                                                   |
+| `tenants`                     | 4     | Tenant management including API key provisioning (read + write)                                                                                                             |
+| `tenants_readonly`            | 2     | Tenants read-only (list, get)                                                                                                                                               |
 | `mcp_jsons`                   | 5     | Full MCP JSON configurations (read + write)                                                                                                                                 |
 | `mcp_jsons_readonly`          | 2     | MCP JSON configurations read-only                                                                                                                                           |
-| `mcp_servers`                 | 3     | Full MCP servers management (read + write)                                                                                                                                  |
+| `mcp_servers`                 | 4     | Full MCP servers management (read + write)                                                                                                                                  |
 | `mcp_servers_readonly`        | 2     | MCP servers read-only (list, get)                                                                                                                                           |
 | `redirects`                   | 5     | Full URL redirect management (read + write)                                                                                                                                 |
 | `redirects_readonly`          | 2     | URL redirects read-only (list, get)                                                                                                                                         |
@@ -146,7 +149,7 @@ This server organizes tools into groups that can be selectively enabled or disab
   - Write: `draft_newsletter_post`, `update_newsletter_post`, `upload_image`
 - **server_directory** / **server_directory_readonly** (superset — includes tools from mcp_servers, unofficial_mirrors, official_mirrors, official_queue, and mcp_jsons):
   - Read-only: `search_mcp_implementations`, `get_draft_mcp_implementations`, `find_providers`, `list_mcp_servers`, `get_mcp_server`, `get_unofficial_mirrors`, `get_unofficial_mirror`, `get_official_mirrors`, `get_official_mirror`, `get_official_mirror_queue_items`, `get_official_mirror_queue_item`, `get_mcp_jsons`, `get_mcp_json`
-  - Write: `save_mcp_implementation`, `send_impl_posted_notif`, `update_mcp_server`, `create_unofficial_mirror`, `update_unofficial_mirror`, `delete_unofficial_mirror`, `approve_official_mirror_queue_item`, `approve_mirror_no_modify`, `reject_official_mirror_queue_item`, `add_official_mirror_to_regular_queue`, `unlink_official_mirror_queue_item`, `create_mcp_json`, `update_mcp_json`, `delete_mcp_json`
+  - Write: `save_mcp_implementation`, `send_impl_posted_notif`, `update_mcp_server`, `recache_mcp_server`, `create_unofficial_mirror`, `update_unofficial_mirror`, `delete_unofficial_mirror`, `approve_official_mirror_queue_item`, `approve_mirror_no_modify`, `reject_official_mirror_queue_item`, `add_official_mirror_to_regular_queue`, `unlink_official_mirror_queue_item`, `create_mcp_json`, `update_mcp_json`, `delete_mcp_json`
 - **official_queue** / **official_queue_readonly**:
   - Read-only: `get_official_mirror_queue_items`, `get_official_mirror_queue_item`
   - Write: `approve_official_mirror_queue_item`, `approve_mirror_no_modify`, `reject_official_mirror_queue_item`, `add_official_mirror_to_regular_queue`, `unlink_official_mirror_queue_item`
@@ -157,12 +160,13 @@ This server organizes tools into groups that can be selectively enabled or disab
   - Read-only: `get_official_mirrors`, `get_official_mirror`
 - **tenants** / **tenants_readonly**:
   - Read-only: `get_tenants`, `get_tenant`
+  - Write: `create_tenant`, `create_api_key`
 - **mcp_jsons** / **mcp_jsons_readonly**:
   - Read-only: `get_mcp_jsons`, `get_mcp_json`
   - Write: `create_mcp_json`, `update_mcp_json`, `delete_mcp_json`
 - **mcp_servers** / **mcp_servers_readonly**:
   - Read-only: `list_mcp_servers`, `get_mcp_server`
-  - Write: `update_mcp_server`
+  - Write: `update_mcp_server`, `recache_mcp_server`
 - **redirects** / **redirects_readonly**:
   - Read-only: `get_redirects`, `get_redirect`
   - Write: `create_redirect`, `update_redirect`, `delete_redirect`
