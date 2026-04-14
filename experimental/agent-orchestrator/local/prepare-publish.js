@@ -18,12 +18,15 @@ async function prepare() {
     process.exit(1);
   }
 
+  // Resolve tsc from local node_modules — avoids npx, which has cache issues on CI runners
+  const tsc = join(__dirname, 'node_modules', '.bin', 'tsc');
+
   // Build shared directory first
   const sharedDir = join(__dirname, '../shared');
   console.log('Building shared directory...');
   try {
     execSync('npm install', { cwd: sharedDir, stdio: 'inherit' });
-    execSync('npx --package typescript tsc', { cwd: sharedDir, stdio: 'inherit' });
+    execSync(`"${tsc}"`, { cwd: sharedDir, stdio: 'inherit' });
   } catch (e) {
     console.error('Failed to build shared directory:', e.message);
     process.exit(1);
@@ -43,10 +46,7 @@ async function prepare() {
   // Now build the local package
   console.log('Building local package...');
   try {
-    execSync(
-      'npx --package typescript tsc && npx --package typescript tsc -p tsconfig.integration.json',
-      { stdio: 'inherit' }
-    );
+    execSync(`"${tsc}" && "${tsc}" -p tsconfig.integration.json`, { stdio: 'inherit' });
   } catch (e) {
     console.error('Failed to build local package:', e.message);
     process.exit(1);
