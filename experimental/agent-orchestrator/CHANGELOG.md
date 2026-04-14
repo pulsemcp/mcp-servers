@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Fixed `prepare-publish.js` using bare `npx tsc` which downloads the wrong `tsc@2.0.4` package in CI instead of TypeScript compiler — now uses `npx --package typescript tsc`
+
 ## [0.7.6] - 2026-04-13
 
 ### Changed
