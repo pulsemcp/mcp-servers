@@ -9,7 +9,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Fixed `prepare-publish.js` using `npx tsc` for shared directory build, which caused CI publish dry-run failures when npx installed the wrong `tsc` package (deprecated `tsc@2.0.4` instead of TypeScript compiler). Now uses `npm run build` consistent with all other servers.
+- Fixed CI `verify-publications` failures: changed `ci:install` from no-op to `npm install` so dependencies are actually installed, and replaced `npx tsc` in `prepare-publish.js` with `createRequire`-resolved path to avoid npx cache issues on CI runners
+
+## [0.7.6] - 2026-04-13
+
+### Changed
+
+- Improved `action_session` archive guidance in self-session tool description to prevent premature self-archiving that kills output before users can read it
+
+## [0.7.4] - 2026-04-13
+
+### Changed
+
+- Enhanced `wake_me_up_later` tool description with prominent guidance directing agents to use this tool instead of workarounds (Bash `sleep`, Claude Code `ScheduleWakeup`, `Monitor`) in Agent Orchestrator contexts, explaining why each alternative is incorrect
 
 ## [0.7.3] - 2026-04-13
 

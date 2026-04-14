@@ -3,6 +3,7 @@ import { cp, rm } from 'fs/promises';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { execSync } from 'child_process';
+import { createRequire } from 'module';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -18,11 +19,17 @@ async function prepare() {
     process.exit(1);
   }
 
+  // Resolve tsc via Node's module resolution (walks up to workspace root node_modules).
+  // This avoids npx (broken cache on CI runners) and hardcoded paths.
+  const require = createRequire(import.meta.url);
+  const tsc = require.resolve('typescript/bin/tsc');
+
   // Build shared directory first
   const sharedDir = join(__dirname, '../shared');
   console.log('Building shared directory...');
   try {
-    execSync('npm install && npm run build', { cwd: sharedDir, stdio: 'inherit' });
+    execSync('npm install', { cwd: sharedDir, stdio: 'inherit' });
+    execSync(`node "${tsc}"`, { cwd: sharedDir, stdio: 'inherit' });
   } catch (e) {
     console.error('Failed to build shared directory:', e.message);
     process.exit(1);
@@ -42,10 +49,9 @@ async function prepare() {
   // Now build the local package
   console.log('Building local package...');
   try {
-    execSync(
-      'npx --package typescript tsc && npx --package typescript tsc -p tsconfig.integration.json',
-      { stdio: 'inherit' }
-    );
+    execSync(`node "${tsc}" && node "${tsc}" -p tsconfig.integration.json`, {
+      stdio: 'inherit',
+    });
   } catch (e) {
     console.error('Failed to build local package:', e.message);
     process.exit(1);
