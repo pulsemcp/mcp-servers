@@ -69,6 +69,12 @@ import type {
   MozMetricsResponse,
   MozBacklinksResponse,
   MozStoredMetricsResponse,
+  // Tenant provisioning types
+  CreateTenantParams,
+  ApiKey,
+  CreateApiKeyParams,
+  // Cache management types
+  RecacheMCPServerResponse,
 } from './types.js';
 
 // Static imports for all API client functions (replaces dynamic imports
@@ -142,6 +148,9 @@ import { getDiscoveredUrlStats } from './pulsemcp-admin-client/lib/get-discovere
 import { getMozMetrics } from './pulsemcp-admin-client/lib/get-moz-metrics.js';
 import { getMozBacklinks } from './pulsemcp-admin-client/lib/get-moz-backlinks.js';
 import { getMozStoredMetrics } from './pulsemcp-admin-client/lib/get-moz-stored-metrics.js';
+import { recacheMCPServer } from './pulsemcp-admin-client/lib/recache-mcp-server.js';
+import { createTenant } from './pulsemcp-admin-client/lib/create-tenant.js';
+import { createApiKey } from './pulsemcp-admin-client/lib/create-api-key.js';
 
 // PulseMCP Admin API client interface
 export interface IPulseMCPAdminClient {
@@ -281,7 +290,7 @@ export interface IPulseMCPAdminClient {
 
   getOfficialMirror(id: number): Promise<OfficialMirrorRest>;
 
-  // Tenant REST API methods (read-only)
+  // Tenant REST API methods
   getTenants(params?: {
     q?: string;
     is_admin?: boolean;
@@ -290,6 +299,10 @@ export interface IPulseMCPAdminClient {
   }): Promise<TenantsResponse>;
 
   getTenant(idOrSlug: number | string): Promise<Tenant>;
+
+  createTenant(params: CreateTenantParams): Promise<Tenant>;
+
+  createApiKey(params: CreateApiKeyParams): Promise<ApiKey>;
 
   // MCP JSON REST API methods
   getMcpJsons(params?: {
@@ -322,6 +335,8 @@ export interface IPulseMCPAdminClient {
     implementationId: number,
     params: UpdateUnifiedMCPServerParams
   ): Promise<UnifiedMCPServer>;
+
+  recacheMCPServer(slug: string): Promise<RecacheMCPServerResponse>;
 
   // Redirect REST API methods
   getRedirects(params?: {
@@ -632,7 +647,7 @@ export class PulseMCPAdminClient implements IPulseMCPAdminClient {
     return getOfficialMirror(this.apiKey, this.baseUrl, id);
   }
 
-  // Tenant REST API methods (read-only)
+  // Tenant REST API methods
   async getTenants(params?: {
     q?: string;
     is_admin?: boolean;
@@ -644,6 +659,14 @@ export class PulseMCPAdminClient implements IPulseMCPAdminClient {
 
   async getTenant(idOrSlug: number | string): Promise<Tenant> {
     return getTenant(this.apiKey, this.baseUrl, idOrSlug);
+  }
+
+  async createTenant(params: CreateTenantParams): Promise<Tenant> {
+    return createTenant(this.apiKey, this.baseUrl, params);
+  }
+
+  async createApiKey(params: CreateApiKeyParams): Promise<ApiKey> {
+    return createApiKey(this.apiKey, this.baseUrl, params);
   }
 
   // MCP JSON REST API methods
@@ -692,6 +715,10 @@ export class PulseMCPAdminClient implements IPulseMCPAdminClient {
     params: UpdateUnifiedMCPServerParams
   ): Promise<UnifiedMCPServer> {
     return updateUnifiedMCPServer(this.apiKey, this.baseUrl, implementationId, params);
+  }
+
+  async recacheMCPServer(slug: string): Promise<RecacheMCPServerResponse> {
+    return recacheMCPServer(this.apiKey, this.baseUrl, slug);
   }
 
   // Redirect REST API methods

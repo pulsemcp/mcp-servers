@@ -7,10 +7,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Fixed
-
-- Fixed CI `verify-publications` failures: changed `ci:install` from no-op to `npm install` so dependencies are actually installed, and replaced `npx tsc` in `prepare-publish.js` with `createRequire`-resolved path to avoid npx cache issues on CI runners
-
 ## [0.7.6] - 2026-04-13
 
 ### Changed
