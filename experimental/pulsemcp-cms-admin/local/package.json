@@ -1,6 +1,6 @@
 {
   "name": "pulsemcp-cms-admin-mcp-server",
-  "version": "0.9.13",
+  "version": "0.9.14",
   "description": "Local implementation of PulseMCP CMS Admin MCP server",
   "mcpName": "com.pulsemcp.servers/pulsemcp-cms-admin",
   "main": "build/index.js",
@@ -30,7 +30,7 @@
     "stage-publish": "npm version"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.26.0",
+    "@modelcontextprotocol/sdk": "^1.29.0",
     "zod": "^3.24.1"
   },
   "devDependencies": {

@@ -1017,6 +1017,42 @@ export interface DiscoveredUrlStats {
 }
 
 // ============================================================
+// Tenant Provisioning Types
+// For creating tenants and API keys via the admin API
+// ============================================================
+
+export interface CreateTenantParams {
+  slug: string;
+}
+
+export type ApiKeyPermissionLevel = 'read_only' | 'read_and_upsert' | 'full_access';
+
+export interface ApiKey {
+  id: number;
+  name?: string;
+  tenant_id: number;
+  tenant_slug: string;
+  tenant_is_admin: boolean;
+  permission_level: ApiKeyPermissionLevel;
+  key: string;
+  created_at: string;
+}
+
+export interface CreateApiKeyParams {
+  tenant_slug: string;
+  name?: string;
+  permission_level?: ApiKeyPermissionLevel;
+}
+
+// ============================================================
+// Cache Management Types
+// ============================================================
+
+export interface RecacheMCPServerResponse {
+  message: string;
+}
+
+// ============================================================
 // MOZ Types
 // MOZ URL metrics, backlinks, and stored historical data
 // ============================================================
