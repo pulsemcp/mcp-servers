@@ -7,9 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.7] - 2026-04-17
+
 ### Fixed
 
-- Fixed CI `verify-publications` failures: changed `ci:install` from no-op to `npm install` so dependencies are actually installed, and replaced `npx tsc` in `prepare-publish.js` with `createRequire`-resolved path to avoid npx cache issues on CI runners
+- `wake_me_up_later` now works from `running` sessions. Removed the stale client-side guard that rejected any session not in `needs_input`, which prevented an agent from scheduling its own wake-up (the most common use case). The Rails API accepts both `needs_input` and `running` as of PR #2752 and is the single source of truth for valid states — duplicating the check in the MCP tool kept the two out of sync. Tool description strings now correctly indicate both states are allowed and explain that when called from a running session, the sleep transition takes effect after the current turn ends.
 
 ## [0.7.6] - 2026-04-13
 

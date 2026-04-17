@@ -33,16 +33,15 @@ This tool does both: it properly transitions the session to sleeping (waiting) s
 - If you omit timezone, wake_at is treated as UTC.
 
 **Parameters:**
-- **session_id**: The session to wake up (must be in needs_input state)
+- **session_id**: The session to wake up. Works from either \`needs_input\` or \`running\` state — if you call this tool from within your own currently-running session, the sleep transition is recorded and takes effect after the current turn ends.
 - **wake_at**: ISO 8601 datetime without offset for when to wake up (e.g., "2026-04-15T14:30:00")
 - **timezone**: IANA timezone for interpreting wake_at (default: "UTC", e.g., "America/New_York")
 - **prompt**: The prompt to send when waking up the session
 
 **What happens:**
-1. Validates the session is in needs_input state
-2. Puts the session to sleep (waiting status)
-3. Creates a one-time schedule trigger that fires at the specified time
-4. The trigger resumes the session with the provided prompt`;
+1. Puts the session to sleep (waiting status). When called from a \`running\` session, the transition is scheduled and takes effect after the current turn ends; from \`needs_input\`, it takes effect immediately.
+2. Creates a one-time schedule trigger that fires at the specified time
+3. The trigger resumes the session with the provided prompt`;
 }
 
 export function wakeMeUpLaterTool(_server: Server, clientFactory: () => IAgentOrchestratorClient) {
@@ -54,7 +53,8 @@ export function wakeMeUpLaterTool(_server: Server, clientFactory: () => IAgentOr
       properties: {
         session_id: {
           oneOf: [{ type: 'string' }, { type: 'number' }],
-          description: 'Session ID (numeric) or slug (string). Must be in needs_input state.',
+          description:
+            'Session ID (numeric) or slug (string). Accepts sessions in needs_input or running state — from a running session, the sleep takes effect after the current turn ends.',
         },
         wake_at: {
           type: 'string',
@@ -91,18 +91,6 @@ export function wakeMeUpLaterTool(_server: Server, clientFactory: () => IAgentOr
         }
 
         const session = await client.getSession(session_id);
-
-        if (session.status !== 'needs_input') {
-          return {
-            content: [
-              {
-                type: 'text',
-                text: `Error: Session must be in "needs_input" state to sleep (current: "${session.status}"). Only idle sessions can be scheduled for a delayed wake-up.`,
-              },
-            ],
-            isError: true,
-          };
-        }
 
         const sleepingSession = await client.sleepSession(session_id);
 
