@@ -338,8 +338,10 @@ export function createIntegrationMockOrchestratorClient(
       if (!session) {
         throw new Error(`API Error (404): Session not found`);
       }
-      if (session.status !== 'needs_input') {
-        throw new Error(`API Error (422): Session must be in needs_input state to sleep`);
+      if (session.status !== 'needs_input' && session.status !== 'running') {
+        throw new Error(
+          `API Error (422): Session must be in needs_input or running state to sleep (current: ${session.status})`
+        );
       }
       session.status = 'waiting';
       session.updated_at = new Date().toISOString();
