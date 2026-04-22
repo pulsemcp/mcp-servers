@@ -12,8 +12,6 @@ on:
       - 'Pulse Fetch MCP Server CI'
       - 'Slack MCP Server CI'
       - 'Twist MCP Server CI'
-      - 'Verify MCP Server Publication Staged'
-      - 'Validate MCP Server Publish Files'
     types: [completed]
     branches:
       - main

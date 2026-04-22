@@ -21,7 +21,7 @@ function buildToolDescription(): string {
 - **Claude Code \`ScheduleWakeup\` tool**: Does not integrate with AO's session lifecycle — it won't transition the session to sleeping/waiting state or create an AO trigger, so AO cannot track or manage the wake-up.
 - **Claude Code \`Monitor\` tool**: Same problem — it operates outside AO's session state management.
 
-This tool does both: it properly transitions the session to sleeping (waiting) state so AO can reclaim resources, AND creates a one-time AO trigger to resume the session at the specified time.
+This tool creates a one-time AO wake-up trigger bound to the target session. The AO API atomically transitions the session to sleeping (waiting) state as part of creating the trigger, so AO can reclaim resources and the trigger is guaranteed to resume the correct session at the specified time.
 
 **Current server time:** ${utcNow} (UTC). Use this as your reference point when calculating wake-up times.
 
@@ -33,16 +33,15 @@ This tool does both: it properly transitions the session to sleeping (waiting) s
 - If you omit timezone, wake_at is treated as UTC.
 
 **Parameters:**
-- **session_id**: The session to wake up (must be in needs_input state)
+- **session_id**: The session to wake up. Works from either \`needs_input\` or \`running\` state — if you call this tool from within your own currently-running session, the sleep transition is recorded and takes effect after the current turn ends.
 - **wake_at**: ISO 8601 datetime without offset for when to wake up (e.g., "2026-04-15T14:30:00")
 - **timezone**: IANA timezone for interpreting wake_at (default: "UTC", e.g., "America/New_York")
 - **prompt**: The prompt to send when waking up the session
 
 **What happens:**
-1. Validates the session is in needs_input state
-2. Puts the session to sleep (waiting status)
-3. Creates a one-time schedule trigger that fires at the specified time
-4. The trigger resumes the session with the provided prompt`;
+1. Creates a one-time schedule trigger bound to this session that fires at the specified time.
+2. As a side effect of creating the trigger, the AO API transitions the session to sleeping (waiting) status — immediately if currently \`needs_input\`, or after the current turn ends if currently \`running\`.
+3. At the scheduled time, the trigger resumes the session with the provided prompt.`;
 }
 
 export function wakeMeUpLaterTool(_server: Server, clientFactory: () => IAgentOrchestratorClient) {
@@ -54,7 +53,8 @@ export function wakeMeUpLaterTool(_server: Server, clientFactory: () => IAgentOr
       properties: {
         session_id: {
           oneOf: [{ type: 'string' }, { type: 'number' }],
-          description: 'Session ID (numeric) or slug (string). Must be in needs_input state.',
+          description:
+            'Session ID (numeric) or slug (string). Accepts sessions in needs_input or running state — from a running session, the sleep takes effect after the current turn ends.',
         },
         wake_at: {
           type: 'string',
@@ -92,62 +92,74 @@ export function wakeMeUpLaterTool(_server: Server, clientFactory: () => IAgentOr
 
         const session = await client.getSession(session_id);
 
-        if (session.status !== 'needs_input') {
+        // Reject states the Rails API can't auto-sleep from. `needs_input` →
+        // immediate sleep; `running` → deferred sleep via pending_sleep metadata;
+        // `waiting` → already dormant, trigger fires normally. Anything else
+        // (failed, archived) would silently no-op the auto-sleep and leave the
+        // caller with a trigger targeting a session that can't be woken.
+        const WAKEABLE_STATUSES = ['needs_input', 'running', 'waiting'];
+        if (!WAKEABLE_STATUSES.includes(session.status)) {
           return {
             content: [
               {
                 type: 'text',
-                text: `Error: Session must be in "needs_input" state to sleep (current: "${session.status}"). Only idle sessions can be scheduled for a delayed wake-up.`,
+                text: `Error: Session ${session.id} is in "${session.status}" state and cannot be scheduled for wake-up. Only sessions in ${WAKEABLE_STATUSES.join(', ')} can be woken up.`,
               },
             ],
             isError: true,
           };
         }
 
-        const sleepingSession = await client.sleepSession(session_id);
+        // The Rails Trigger model requires agent_root_name, but for per-session
+        // wake-up triggers (reuse_session + last_session_id + one-time schedule)
+        // the value is never used to spawn a session — the target session is
+        // always reused. Prefer the canonical metadata value. The agent_type
+        // fallback is a best-effort for pre-migration sessions without an
+        // agent_root_key; if agent_type isn't a registered agent root, the
+        // createTrigger call will fail loudly with a 422 rather than proceed
+        // with a bad value — which is what we want.
+        const agentRootName =
+          (session.metadata?.agent_root_key as string | undefined) || session.agent_type;
 
         let trigger;
         try {
           trigger = await client.createTrigger({
-            name: `Wake session #${sleepingSession.id} at ${wake_at}`,
-            trigger_type: 'schedule',
-            agent_root_name: session.agent_type,
+            name: `Wake session #${session.id} at ${wake_at}`,
+            agent_root_name: agentRootName,
             prompt_template: prompt,
             reuse_session: true,
-            configuration: {
-              scheduled_at: wake_at,
-              timezone,
-            },
+            last_session_id: session.id,
+            trigger_conditions_attributes: [
+              {
+                condition_type: 'schedule',
+                configuration: {
+                  scheduled_at: wake_at,
+                  timezone,
+                },
+              },
+            ],
           });
         } catch (triggerError) {
           return {
             content: [
               {
                 type: 'text',
-                text: `Error: Session ${sleepingSession.id} was put to sleep (waiting status) but trigger creation failed: ${triggerError instanceof Error ? triggerError.message : 'Unknown error'}. The session is now in "waiting" state and needs manual intervention (use action_session with "restart" or "follow_up" to recover).`,
+                text: `Error: Trigger creation failed: ${triggerError instanceof Error ? triggerError.message : 'Unknown error'}. The session is still in its original state — no changes were made.`,
               },
             ],
             isError: true,
           };
         }
 
-        await client.updateSession(session_id, {
-          custom_metadata: {
-            ...session.custom_metadata,
-            wake_trigger_id: trigger.id,
-          },
-        });
-
         const lines = [
           '## Wake-Up Scheduled Successfully',
           '',
-          `- **Session ID:** ${sleepingSession.id}`,
-          `- **Session Status:** ${sleepingSession.status}`,
+          `- **Session ID:** ${session.id}`,
           `- **Wake At:** ${wake_at} (${timezone})`,
           `- **Trigger ID:** ${trigger.id}`,
           `- **Trigger Name:** ${trigger.name}`,
           '',
-          '**You must end your conversation turn now.** The session is sleeping and will be automatically resumed at the scheduled time with the provided prompt.',
+          '**You must end your conversation turn now.** The session will be automatically transitioned to waiting (immediately if currently needs_input; after the current turn ends if currently running) and resumed at the scheduled time with the provided prompt.',
           '',
           '⚠️ **Warning:** If you do not end your conversation turn, the session may still be running when the scheduled wake-up fires. A wake-up cannot be delivered to a session that is not in a wakeable (sleeping/waiting) state — it will be silently dropped, and you will never receive it.',
         ];
