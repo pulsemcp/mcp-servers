@@ -319,9 +319,14 @@ export interface TriggerChannelsResponse {
   }>;
 }
 
+export interface TriggerConditionAttributes {
+  condition_type: 'slack' | 'schedule' | 'ao_event';
+  configuration: Record<string, unknown>;
+}
+
 export interface CreateTriggerRequest {
   name: string;
-  trigger_type: TriggerType;
+  trigger_type?: TriggerType;
   agent_root_name: string;
   prompt_template: string;
   status?: TriggerStatus;
@@ -329,6 +334,8 @@ export interface CreateTriggerRequest {
   reuse_session?: boolean;
   mcp_servers?: string[];
   configuration?: Record<string, unknown>;
+  last_session_id?: number;
+  trigger_conditions_attributes?: TriggerConditionAttributes[];
 }
 
 export interface UpdateTriggerRequest {
