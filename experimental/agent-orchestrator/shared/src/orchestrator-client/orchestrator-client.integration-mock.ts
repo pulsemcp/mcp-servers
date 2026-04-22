@@ -338,8 +338,10 @@ export function createIntegrationMockOrchestratorClient(
       if (!session) {
         throw new Error(`API Error (404): Session not found`);
       }
-      if (session.status !== 'needs_input') {
-        throw new Error(`API Error (422): Session must be in needs_input state to sleep`);
+      if (session.status !== 'needs_input' && session.status !== 'running') {
+        throw new Error(
+          `API Error (422): Session must be in needs_input or running state to sleep (current: ${session.status})`
+        );
       }
       session.status = 'waiting';
       session.updated_at = new Date().toISOString();
@@ -840,7 +842,7 @@ export function createIntegrationMockOrchestratorClient(
       return {
         id: 1,
         name: data.name,
-        trigger_type: data.trigger_type,
+        trigger_type: data.trigger_type || 'schedule',
         status: data.status || 'enabled',
         agent_root_name: data.agent_root_name,
         prompt_template: data.prompt_template,
@@ -849,7 +851,7 @@ export function createIntegrationMockOrchestratorClient(
         mcp_servers: data.mcp_servers || [],
         configuration: data.configuration || {},
         schedule_description: null,
-        last_session_id: null,
+        last_session_id: data.last_session_id ?? null,
         last_triggered_at: null,
         last_polled_at: null,
         sessions_created_count: 0,
