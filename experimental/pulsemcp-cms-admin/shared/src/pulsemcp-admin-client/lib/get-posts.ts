@@ -1,4 +1,5 @@
 import type { PostsResponse } from '../../types.js';
+import { adminFetch } from './admin-fetch.js';
 
 interface RailsPostsResponse {
   data: Array<{
@@ -48,7 +49,7 @@ export async function getPosts(
     url.searchParams.append('page', params.page.toString());
   }
 
-  const response = await fetch(url.toString(), {
+  const response = await adminFetch(url.toString(), {
     method: 'GET',
     headers: {
       'X-API-Key': apiKey,

@@ -1,4 +1,5 @@
 import type { McpJson, UpdateMcpJsonParams } from '../../types.js';
+import { adminFetch } from './admin-fetch.js';
 
 interface RailsMcpJson {
   id: number;
@@ -36,7 +37,7 @@ export async function updateMcpJson(
     body.description = params.description;
   }
 
-  const response = await fetch(url.toString(), {
+  const response = await adminFetch(url.toString(), {
     method: 'PUT',
     headers: {
       'X-API-Key': apiKey,

@@ -1,3 +1,5 @@
+import { adminFetch } from './admin-fetch.js';
+
 export async function deleteUnofficialMirror(
   apiKey: string,
   baseUrl: string,
@@ -5,7 +7,7 @@ export async function deleteUnofficialMirror(
 ): Promise<{ success: boolean; message: string }> {
   const url = new URL(`/api/unofficial_mirrors/${id}`, baseUrl);
 
-  const response = await fetch(url.toString(), {
+  const response = await adminFetch(url.toString(), {
     method: 'DELETE',
     headers: {
       'X-API-Key': apiKey,

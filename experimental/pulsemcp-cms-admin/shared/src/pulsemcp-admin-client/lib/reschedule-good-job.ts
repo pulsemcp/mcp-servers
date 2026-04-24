@@ -1,4 +1,5 @@
 import type { GoodJobActionResponse } from '../../types.js';
+import { adminFetch } from './admin-fetch.js';
 
 export async function rescheduleGoodJob(
   apiKey: string,
@@ -8,7 +9,7 @@ export async function rescheduleGoodJob(
 ): Promise<GoodJobActionResponse> {
   const url = new URL(`/api/good_jobs/${id}/reschedule`, baseUrl);
 
-  const response = await fetch(url.toString(), {
+  const response = await adminFetch(url.toString(), {
     method: 'POST',
     headers: {
       'X-API-Key': apiKey,

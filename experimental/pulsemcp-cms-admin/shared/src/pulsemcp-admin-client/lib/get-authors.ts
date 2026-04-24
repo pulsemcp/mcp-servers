@@ -1,4 +1,5 @@
 import type { Author, AuthorsResponse } from '../../types.js';
+import { adminFetch } from './admin-fetch.js';
 
 interface RailsAuthorsResponse {
   data: Author[];
@@ -29,7 +30,7 @@ export async function getAuthors(
     url.searchParams.append('page', params.page.toString());
   }
 
-  const response = await fetch(url.toString(), {
+  const response = await adminFetch(url.toString(), {
     method: 'GET',
     headers: {
       'X-API-Key': apiKey,

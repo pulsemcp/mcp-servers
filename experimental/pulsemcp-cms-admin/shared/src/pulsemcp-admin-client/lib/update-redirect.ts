@@ -1,4 +1,5 @@
 import type { Redirect, UpdateRedirectParams, RedirectStatus } from '../../types.js';
+import { adminFetch } from './admin-fetch.js';
 
 interface RailsRedirect {
   id: number;
@@ -29,7 +30,7 @@ export async function updateRedirect(
     body.status = params.status;
   }
 
-  const response = await fetch(url.toString(), {
+  const response = await adminFetch(url.toString(), {
     method: 'PUT',
     headers: {
       'X-API-Key': apiKey,

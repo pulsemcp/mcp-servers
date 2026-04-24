@@ -1,4 +1,5 @@
 import type { GoodJob, GoodJobsResponse, GoodJobStatus } from '../../types.js';
+import { adminFetch } from './admin-fetch.js';
 
 interface RailsGoodJob {
   id: string;
@@ -78,7 +79,7 @@ export async function getGoodJobs(
     url.searchParams.append('offset', params.offset.toString());
   }
 
-  const response = await fetch(url.toString(), {
+  const response = await adminFetch(url.toString(), {
     method: 'GET',
     headers: {
       'X-API-Key': apiKey,

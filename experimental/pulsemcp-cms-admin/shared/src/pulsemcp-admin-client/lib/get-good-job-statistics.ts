@@ -1,4 +1,5 @@
 import type { GoodJobStatistics } from '../../types.js';
+import { adminFetch } from './admin-fetch.js';
 
 interface RailsStatisticsResponse {
   total: number;
@@ -19,7 +20,7 @@ export async function getGoodJobStatistics(
 ): Promise<GoodJobStatistics> {
   const url = new URL('/api/good_jobs/statistics', baseUrl);
 
-  const response = await fetch(url.toString(), {
+  const response = await adminFetch(url.toString(), {
     method: 'GET',
     headers: {
       'X-API-Key': apiKey,

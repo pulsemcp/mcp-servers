@@ -1,4 +1,5 @@
 import type { GoodJobCronSchedule } from '../../types.js';
+import { adminFetch } from './admin-fetch.js';
 
 interface RailsCronSchedule {
   cron_key: string;
@@ -15,7 +16,7 @@ export async function getGoodJobCronSchedules(
 ): Promise<GoodJobCronSchedule[]> {
   const url = new URL('/api/good_jobs/cron_schedules', baseUrl);
 
-  const response = await fetch(url.toString(), {
+  const response = await adminFetch(url.toString(), {
     method: 'GET',
     headers: {
       'X-API-Key': apiKey,

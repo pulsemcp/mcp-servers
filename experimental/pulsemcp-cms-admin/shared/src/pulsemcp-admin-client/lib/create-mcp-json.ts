@@ -1,4 +1,5 @@
 import type { McpJson, CreateMcpJsonParams } from '../../types.js';
+import { adminFetch } from './admin-fetch.js';
 
 interface RailsMcpJson {
   id: number;
@@ -30,7 +31,7 @@ export async function createMcpJson(
     body.description = params.description;
   }
 
-  const response = await fetch(url.toString(), {
+  const response = await adminFetch(url.toString(), {
     method: 'POST',
     headers: {
       'X-API-Key': apiKey,
