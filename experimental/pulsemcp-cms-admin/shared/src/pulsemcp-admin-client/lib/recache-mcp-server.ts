@@ -1,12 +1,12 @@
-import type { GoodJobActionResponse } from '../../types.js';
+import type { RecacheMCPServerResponse } from '../../types.js';
 import { adminFetch } from './admin-fetch.js';
 
-export async function discardGoodJob(
+export async function recacheMCPServer(
   apiKey: string,
   baseUrl: string,
-  id: string
-): Promise<GoodJobActionResponse> {
-  const url = new URL(`/api/good_jobs/${id}/discard`, baseUrl);
+  slug: string
+): Promise<RecacheMCPServerResponse> {
+  const url = new URL(`/api/mcp_servers/${encodeURIComponent(slug)}/recache`, baseUrl);
 
   const response = await adminFetch(url.toString(), {
     method: 'POST',
@@ -24,11 +24,10 @@ export async function discardGoodJob(
       throw new Error('User lacks write privileges');
     }
     if (response.status === 404) {
-      throw new Error(`GoodJob with ID ${id} not found`);
+      throw new Error(`MCP server not found: ${slug}`);
     }
-    throw new Error(`Failed to discard good job: ${response.status} ${response.statusText}`);
+    throw new Error(`Failed to recache MCP server: ${response.status} ${response.statusText}`);
   }
 
-  const data = (await response.json()) as GoodJobActionResponse;
-  return data;
+  return (await response.json()) as RecacheMCPServerResponse;
 }

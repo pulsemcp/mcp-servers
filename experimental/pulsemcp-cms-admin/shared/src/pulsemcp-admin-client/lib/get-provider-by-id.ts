@@ -1,4 +1,5 @@
 import type { Provider } from '../../types.js';
+import { adminFetch } from './admin-fetch.js';
 
 export async function getProviderById(
   apiKey: string,
@@ -7,7 +8,7 @@ export async function getProviderById(
 ): Promise<Provider | null> {
   const url = new URL(`/api/providers/${id}`, baseUrl);
 
-  const response = await fetch(url.toString(), {
+  const response = await adminFetch(url.toString(), {
     method: 'GET',
     headers: {
       'X-API-Key': apiKey,

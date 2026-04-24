@@ -1,4 +1,5 @@
 import type { DiscoveredUrlStats } from '../../types.js';
+import { adminFetch } from './admin-fetch.js';
 
 export async function getDiscoveredUrlStats(
   apiKey: string,
@@ -6,7 +7,7 @@ export async function getDiscoveredUrlStats(
 ): Promise<DiscoveredUrlStats> {
   const url = new URL('/api/discovered_urls/stats', baseUrl);
 
-  const response = await fetch(url.toString(), {
+  const response = await adminFetch(url.toString(), {
     method: 'GET',
     headers: {
       'X-API-Key': apiKey,

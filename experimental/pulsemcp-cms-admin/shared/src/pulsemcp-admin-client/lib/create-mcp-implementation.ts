@@ -1,4 +1,5 @@
 import type { MCPImplementation, CreateMCPImplementationParams } from '../../types.js';
+import { adminFetch } from './admin-fetch.js';
 
 export async function createMCPImplementation(
   apiKey: string,
@@ -198,7 +199,7 @@ export async function createMCPImplementation(
     }
   }
 
-  const response = await fetch(url.toString(), {
+  const response = await adminFetch(url.toString(), {
     method: 'POST',
     headers: {
       'X-API-Key': apiKey,

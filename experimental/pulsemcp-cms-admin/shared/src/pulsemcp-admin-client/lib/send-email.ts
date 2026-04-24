@@ -1,3 +1,5 @@
+import { adminFetch } from './admin-fetch.js';
+
 export interface EmailResponse {
   id: number;
   sender_provider: string;
@@ -38,7 +40,7 @@ export async function sendEmail(
   formData.append('email[subject]', params.subject);
   formData.append('email[content]', params.content);
 
-  const response = await fetch(url.toString(), {
+  const response = await adminFetch(url.toString(), {
     method: 'POST',
     headers: {
       'X-API-Key': apiKey,

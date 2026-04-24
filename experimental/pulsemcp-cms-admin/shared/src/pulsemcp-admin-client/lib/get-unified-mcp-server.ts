@@ -1,5 +1,6 @@
 import type { UnifiedMCPServer, MCPServerTag, MCPServerRemote } from '../../types.js';
 import { mapToUnifiedServer, type RailsImplementation } from './unified-mcp-server-mapper.js';
+import { adminFetch } from './admin-fetch.js';
 
 // Rails API response structure for MCPServer detail endpoint
 interface RailsMCPServer {
@@ -35,7 +36,7 @@ export async function getUnifiedMCPServer(
   // First, get the MCPServer to get its ID
   const serverUrl = new URL(`/supervisor/mcp_servers/${slug}`, baseUrl);
 
-  const serverResponse = await fetch(serverUrl.toString(), {
+  const serverResponse = await adminFetch(serverUrl.toString(), {
     method: 'GET',
     headers: {
       'X-API-Key': apiKey,
@@ -68,7 +69,7 @@ export async function getUnifiedMCPServer(
   searchUrl.searchParams.append('type', 'server');
   searchUrl.searchParams.append('limit', '50');
 
-  const searchResponse = await fetch(searchUrl.toString(), {
+  const searchResponse = await adminFetch(searchUrl.toString(), {
     method: 'GET',
     headers: {
       'X-API-Key': apiKey,

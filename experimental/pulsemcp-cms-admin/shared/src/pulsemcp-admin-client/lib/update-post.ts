@@ -1,4 +1,5 @@
 import type { Post, UpdatePostParams } from '../../types.js';
+import { adminFetch } from './admin-fetch.js';
 
 export async function updatePost(
   apiKey: string,
@@ -52,7 +53,7 @@ export async function updatePost(
     });
   }
 
-  const response = await fetch(url.toString(), {
+  const response = await adminFetch(url.toString(), {
     method: 'PUT',
     headers: {
       'X-API-Key': apiKey,

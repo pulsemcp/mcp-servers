@@ -1,4 +1,5 @@
 import type { GoodJobActionResponse } from '../../types.js';
+import { adminFetch } from './admin-fetch.js';
 
 export async function retryGoodJob(
   apiKey: string,
@@ -7,7 +8,7 @@ export async function retryGoodJob(
 ): Promise<GoodJobActionResponse> {
   const url = new URL(`/api/good_jobs/${id}/retry`, baseUrl);
 
-  const response = await fetch(url.toString(), {
+  const response = await adminFetch(url.toString(), {
     method: 'POST',
     headers: {
       'X-API-Key': apiKey,

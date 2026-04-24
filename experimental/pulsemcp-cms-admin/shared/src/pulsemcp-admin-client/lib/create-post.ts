@@ -1,4 +1,5 @@
 import type { Post, CreatePostParams } from '../../types.js';
+import { adminFetch } from './admin-fetch.js';
 
 export async function createPost(
   apiKey: string,
@@ -51,7 +52,7 @@ export async function createPost(
     });
   }
 
-  const response = await fetch(url.toString(), {
+  const response = await adminFetch(url.toString(), {
     method: 'POST',
     headers: {
       'X-API-Key': apiKey,

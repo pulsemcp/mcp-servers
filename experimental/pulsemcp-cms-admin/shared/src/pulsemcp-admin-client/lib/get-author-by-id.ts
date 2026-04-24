@@ -1,4 +1,5 @@
 import type { Author } from '../../types.js';
+import { adminFetch } from './admin-fetch.js';
 
 // Simple in-memory cache for authors with TTL
 let authorsCache: Map<number, Author> | null = null;
@@ -8,7 +9,7 @@ const CACHE_TTL_MS = 60000; // 1 minute cache
 async function fetchAndCacheAuthors(apiKey: string, baseUrl: string): Promise<Map<number, Author>> {
   const url = new URL('/supervisor/authors', baseUrl);
 
-  const response = await fetch(url.toString(), {
+  const response = await adminFetch(url.toString(), {
     method: 'GET',
     headers: {
       'X-API-Key': apiKey,

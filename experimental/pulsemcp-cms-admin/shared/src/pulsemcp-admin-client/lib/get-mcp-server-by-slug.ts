@@ -1,4 +1,5 @@
 import type { MCPServer } from '../../types.js';
+import { adminFetch } from './admin-fetch.js';
 
 export async function getMCPServerBySlug(
   apiKey: string,
@@ -8,7 +9,7 @@ export async function getMCPServerBySlug(
   // Use the supervisor endpoint which supports JSON
   const url = new URL(`/supervisor/mcp_servers/${slug}`, baseUrl);
 
-  const response = await fetch(url.toString(), {
+  const response = await adminFetch(url.toString(), {
     method: 'GET',
     headers: {
       'X-API-Key': apiKey,

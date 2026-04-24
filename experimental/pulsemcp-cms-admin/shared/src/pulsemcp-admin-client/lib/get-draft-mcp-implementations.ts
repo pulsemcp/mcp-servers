@@ -5,6 +5,7 @@ import type {
   MCPServerTag,
   MCPServerRemote,
 } from '../../types.js';
+import { adminFetch } from './admin-fetch.js';
 
 interface RailsServerTag {
   id: number;
@@ -163,7 +164,7 @@ export async function getDraftMCPImplementations(
     url.searchParams.append('search', params.search);
   }
 
-  const response = await fetch(url.toString(), {
+  const response = await adminFetch(url.toString(), {
     method: 'GET',
     headers: {
       'X-API-Key': apiKey,

@@ -1,4 +1,5 @@
 import type { MozBacklinksResponse } from '../../types.js';
+import { adminFetch } from './admin-fetch.js';
 
 export async function getMozBacklinks(
   apiKey: string,
@@ -19,7 +20,7 @@ export async function getMozBacklinks(
     apiUrl.searchParams.append('limit', params.limit.toString());
   }
 
-  const response = await fetch(apiUrl.toString(), {
+  const response = await adminFetch(apiUrl.toString(), {
     method: 'GET',
     headers: {
       'X-API-Key': apiKey,

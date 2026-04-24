@@ -1,4 +1,5 @@
 import type { ImageUploadResponse } from '../../types.js';
+import { adminFetch } from './admin-fetch.js';
 
 export async function uploadImage(
   apiKey: string,
@@ -22,7 +23,7 @@ export async function uploadImage(
   formData.append('folder', `posts/${postSlug}`);
   formData.append('filepath', fileName);
 
-  const response = await fetch(url.toString(), {
+  const response = await adminFetch(url.toString(), {
     method: 'POST',
     headers: {
       'X-API-Key': apiKey,

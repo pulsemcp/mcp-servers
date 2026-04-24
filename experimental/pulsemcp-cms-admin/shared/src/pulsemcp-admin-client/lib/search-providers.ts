@@ -1,4 +1,5 @@
 import type { Provider, ProvidersResponse } from '../../types.js';
+import { adminFetch } from './admin-fetch.js';
 
 interface RailsProvidersResponse {
   data: Provider[];
@@ -35,7 +36,7 @@ export async function searchProviders(
     url.searchParams.append('offset', params.offset.toString());
   }
 
-  const response = await fetch(url.toString(), {
+  const response = await adminFetch(url.toString(), {
     method: 'GET',
     headers: {
       'X-API-Key': apiKey,

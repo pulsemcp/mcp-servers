@@ -1,4 +1,5 @@
 import type { MCPServer } from '../../types.js';
+import { adminFetch } from './admin-fetch.js';
 
 export async function getMCPServerById(
   apiKey: string,
@@ -9,7 +10,7 @@ export async function getMCPServerById(
   // so we need to fetch all servers and find the one with matching ID
   const url = new URL('/supervisor/mcp_servers', baseUrl);
 
-  const response = await fetch(url.toString(), {
+  const response = await adminFetch(url.toString(), {
     method: 'GET',
     headers: {
       'X-API-Key': apiKey,

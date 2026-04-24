@@ -1,4 +1,5 @@
 import type { MCPClient } from '../../types.js';
+import { adminFetch } from './admin-fetch.js';
 
 export async function getMCPClientById(
   apiKey: string,
@@ -9,7 +10,7 @@ export async function getMCPClientById(
   // so we need to fetch all clients and find the one with matching ID
   const url = new URL('/supervisor/mcp_clients', baseUrl);
 
-  const response = await fetch(url.toString(), {
+  const response = await adminFetch(url.toString(), {
     method: 'GET',
     headers: {
       'X-API-Key': apiKey,

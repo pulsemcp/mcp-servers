@@ -1,4 +1,4 @@
-import type { Tenant } from '../../types.js';
+import type { Tenant, CreateTenantParams } from '../../types.js';
 import { adminFetch } from './admin-fetch.js';
 
 interface RailsTenant {
@@ -10,19 +10,21 @@ interface RailsTenant {
   updated_at?: string;
 }
 
-export async function getTenant(
+export async function createTenant(
   apiKey: string,
   baseUrl: string,
-  idOrSlug: number | string
+  params: CreateTenantParams
 ): Promise<Tenant> {
-  const url = new URL(`/api/tenants/${idOrSlug}`, baseUrl);
+  const url = new URL('/api/tenants', baseUrl);
 
   const response = await adminFetch(url.toString(), {
-    method: 'GET',
+    method: 'POST',
     headers: {
       'X-API-Key': apiKey,
+      'Content-Type': 'application/json',
       Accept: 'application/json',
     },
+    body: JSON.stringify({ slug: params.slug }),
   });
 
   if (!response.ok) {
@@ -30,12 +32,13 @@ export async function getTenant(
       throw new Error('Invalid API key');
     }
     if (response.status === 403) {
-      throw new Error('User lacks admin privileges');
+      throw new Error('User lacks write privileges');
     }
-    if (response.status === 404) {
-      throw new Error(`Tenant with ID/slug ${idOrSlug} not found`);
+    if (response.status === 422) {
+      const errorData = (await response.json()) as { errors?: string[] };
+      throw new Error(`Validation failed: ${errorData.errors?.join(', ') || 'Unknown error'}`);
     }
-    throw new Error(`Failed to fetch tenant: ${response.status} ${response.statusText}`);
+    throw new Error(`Failed to create tenant: ${response.status} ${response.statusText}`);
   }
 
   const tenant = (await response.json()) as RailsTenant;
