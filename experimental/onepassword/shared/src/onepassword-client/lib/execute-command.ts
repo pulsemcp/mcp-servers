@@ -88,6 +88,75 @@ export async function executeCommand<T>(serviceAccountToken: string, args: strin
   });
 }
 
+/**
+ * Execute a 1Password CLI command and return raw stdout text.
+ *
+ * Unlike `executeCommand`, this does not add `--format json` automatically
+ * and does not attempt to parse output as JSON. Use for commands whose
+ * output format is caller-controlled (e.g. `op item share` with or without
+ * `--format json`).
+ */
+export async function executeCommandText(
+  serviceAccountToken: string,
+  args: string[]
+): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const env = {
+      ...process.env,
+      OP_SERVICE_ACCOUNT_TOKEN: serviceAccountToken,
+    };
+
+    const proc = spawn('op', args, {
+      env,
+      stdio: ['pipe', 'pipe', 'pipe'],
+    });
+
+    proc.stdin.end();
+
+    let stdout = '';
+    let stderr = '';
+
+    proc.stdout.on('data', (data) => {
+      stdout += data.toString();
+    });
+
+    proc.stderr.on('data', (data) => {
+      stderr += data.toString();
+    });
+
+    const timeout = setTimeout(() => {
+      proc.kill('SIGTERM');
+      reject(new OnePasswordCommandError(`Command timed out after ${CLI_TIMEOUT}ms`, -1));
+    }, CLI_TIMEOUT);
+
+    proc.on('error', (error) => {
+      clearTimeout(timeout);
+      if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
+        reject(
+          new OnePasswordCommandError(
+            '1Password CLI (op) not found. Please ensure it is installed and available in PATH.',
+            -1
+          )
+        );
+      } else {
+        reject(new OnePasswordCommandError(`Failed to execute command: ${error.message}`, -1));
+      }
+    });
+
+    proc.on('close', (code) => {
+      clearTimeout(timeout);
+
+      if (code !== 0) {
+        const errorMessage = stderr.trim();
+        handleError(errorMessage, code || 1, reject);
+        return;
+      }
+
+      resolve(stdout);
+    });
+  });
+}
+
 function handleError(errorMessage: string, exitCode: number, reject: (error: Error) => void): void {
   const lowerError = errorMessage.toLowerCase();
 

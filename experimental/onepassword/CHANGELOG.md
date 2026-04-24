@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.3] - 2026-04-24
+
+### Changed
+
+- No-op patch bump to retrigger npm publish (previous version did not reach npm)
+
+## [0.3.2] - 2026-04-24
+
+### Added
+
+- `onepassword_share_item` — wraps `op item share` to mint a time-limited share URL for an existing item (write group, gated by `OP_ELICITATION_WRITE`). Supports `expires_in` (e.g., `"2h"`, `"7d"`), recipient `emails`, and `view_once` flag (mutually exclusive with `emails`).
+- `onepassword_create_api_credential` — wraps `op item create --category 'API Credential'` to create API Credential items with fields `credential`, `username`, `hostname`, `valid from`, `expires`, and `notesPlain` (write group, gated by `OP_ELICITATION_WRITE`). Date fields validated against `YYYY-MM-DD`.
+
 ## [0.3.1] - 2026-04-12
 
 - Migration verification: no-op patch version bump to validate internal→public distribution pipeline
