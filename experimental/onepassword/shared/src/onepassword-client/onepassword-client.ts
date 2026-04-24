@@ -3,6 +3,7 @@ import {
   OnePasswordVault,
   OnePasswordItem,
   OnePasswordItemDetails,
+  OnePasswordShareResult,
 } from '../types.js';
 import { getVaults } from './lib/get-vaults.js';
 import { getItem } from './lib/get-item.js';
@@ -10,6 +11,8 @@ import { listItems } from './lib/list-items.js';
 import { listItemsByTag } from './lib/list-items-by-tag.js';
 import { createLogin } from './lib/create-login.js';
 import { createSecureNote } from './lib/create-secure-note.js';
+import { shareItem } from './lib/share-item.js';
+import { createApiCredential } from './lib/create-api-credential.js';
 
 /**
  * 1Password CLI client implementation.
@@ -58,5 +61,33 @@ export class OnePasswordClient implements IOnePasswordClient {
     tags?: string[]
   ): Promise<OnePasswordItemDetails> {
     return createSecureNote(this.serviceAccountToken, vaultId, title, content, tags);
+  }
+
+  async shareItem(
+    item: string,
+    vaultId?: string,
+    options?: {
+      expiresIn?: string;
+      emails?: string[];
+      viewOnce?: boolean;
+    }
+  ): Promise<OnePasswordShareResult> {
+    return shareItem(this.serviceAccountToken, item, vaultId, options);
+  }
+
+  async createApiCredential(
+    vaultId: string,
+    title: string,
+    credential: string,
+    options?: {
+      username?: string;
+      hostname?: string;
+      expires?: string;
+      validFrom?: string;
+      notes?: string;
+      tags?: string[];
+    }
+  ): Promise<OnePasswordItemDetails> {
+    return createApiCredential(this.serviceAccountToken, vaultId, title, credential, options);
   }
 }

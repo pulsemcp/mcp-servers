@@ -3,6 +3,7 @@ import type {
   OnePasswordVault,
   OnePasswordItem,
   OnePasswordItemDetails,
+  OnePasswordShareResult,
 } from '../types.js';
 
 /**
@@ -215,6 +216,116 @@ export function createIntegrationMockOnePasswordClient(
         items[vaultId] = [];
       }
       items[vaultId].push({ id, title, category: 'SECURE_NOTE', tags });
+
+      return newItem;
+    },
+
+    async shareItem(
+      item: string,
+      vaultId?: string,
+      options?: {
+        expiresIn?: string;
+        emails?: string[];
+        viewOnce?: boolean;
+      }
+    ): Promise<OnePasswordShareResult> {
+      // Look the item up to simulate a NotFound error for unknown titles/IDs,
+      // so integration tests can exercise the error path.
+      let found: OnePasswordItemDetails | undefined = itemDetails[item];
+      if (!found) {
+        found = Object.values(itemDetails).find((i) => i.title === item);
+      }
+      if (!found) {
+        const error = new Error(`Item "${item}" not found`) as Error & { name: string };
+        error.name = 'OnePasswordNotFoundError';
+        throw error;
+      }
+      if (vaultId && found.vault.id !== vaultId && found.vault.name !== vaultId) {
+        const error = new Error(`Item "${item}" not found in vault "${vaultId}"`) as Error & {
+          name: string;
+        };
+        error.name = 'OnePasswordNotFoundError';
+        throw error;
+      }
+
+      const suffix = [
+        options?.expiresIn ? `expires=${options.expiresIn}` : '',
+        options?.emails?.length ? `emails=${options.emails.join(',')}` : '',
+        options?.viewOnce ? 'view=once' : '',
+      ]
+        .filter(Boolean)
+        .join('&');
+
+      return {
+        share_url: `https://share.1password.com/mock/${found.id}${suffix ? `?${suffix}` : ''}`,
+        expires_at: options?.expiresIn ? `mock-expires-${options.expiresIn}` : undefined,
+        created_at: '2026-04-24T00:00:00Z',
+      };
+    },
+
+    async createApiCredential(
+      vaultId: string,
+      title: string,
+      credential: string,
+      options?: {
+        username?: string;
+        hostname?: string;
+        expires?: string;
+        validFrom?: string;
+        notes?: string;
+        tags?: string[];
+      }
+    ): Promise<OnePasswordItemDetails> {
+      const id = `item-${++createdItemCounter}`;
+      const vault = vaults.find((v) => v.id === vaultId);
+      if (!vault) {
+        throw new Error(`Vault "${vaultId}" not found`);
+      }
+
+      const fields: OnePasswordItemDetails['fields'] = [
+        { id: 'credential', type: 'CONCEALED', label: 'credential', value: credential },
+      ];
+      if (options?.username) {
+        fields.push({ id: 'username', type: 'STRING', label: 'username', value: options.username });
+      }
+      if (options?.hostname) {
+        fields.push({ id: 'hostname', type: 'STRING', label: 'hostname', value: options.hostname });
+      }
+      if (options?.validFrom) {
+        fields.push({
+          id: 'validFrom',
+          type: 'DATE',
+          label: 'valid from',
+          value: options.validFrom,
+        });
+      }
+      if (options?.expires) {
+        fields.push({ id: 'expires', type: 'DATE', label: 'expires', value: options.expires });
+      }
+      if (options?.notes) {
+        fields.push({
+          id: 'notesPlain',
+          type: 'STRING',
+          purpose: 'NOTES',
+          label: 'notesPlain',
+          value: options.notes,
+        });
+      }
+
+      const newItem: OnePasswordItemDetails = {
+        id,
+        title,
+        category: 'API_CREDENTIAL',
+        vault: { id: vaultId, name: vault.name },
+        tags: options?.tags,
+        fields,
+      };
+
+      itemDetails[id] = newItem;
+      if (!items[vaultId]) {
+        items[vaultId] = [];
+      }
+      items[vaultId].push({ id, title, category: 'API_CREDENTIAL', tags: options?.tags });
 
       return newItem;
     },
