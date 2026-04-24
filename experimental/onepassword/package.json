@@ -19,7 +19,7 @@
     "format": "cd .. && npm run format",
     "format:check": "cd .. && npm run format:check",
     "test": "echo \"Tests run in internal repo\"",
-    "ci:install": "echo \"Dependencies installed via root workspace\"",
+    "ci:install": "npm install",
     "test:run": "echo \"Functional tests run in internal repo\"",
     "test:integration": "echo \"Integration tests run in internal repo\""
   },

@@ -24,14 +24,16 @@ MCP server for interacting with 1Password via the CLI. Enables AI assistants to 
 
 ### Tools
 
-| Tool                             | Group    | Description                                               |
-| -------------------------------- | -------- | --------------------------------------------------------- |
-| `onepassword_list_vaults`        | readonly | List all accessible vaults                                |
-| `onepassword_list_items`         | readonly | List items in a specific vault                            |
-| `onepassword_get_item`           | readonly | Get item details (credentials require approval to reveal) |
-| `onepassword_list_items_by_tag`  | readonly | Find items by tag                                         |
-| `onepassword_create_login`       | write    | Create a new login credential (requires approval)         |
-| `onepassword_create_secure_note` | write    | Create a new secure note (requires approval)              |
+| Tool                                | Group    | Description                                               |
+| ----------------------------------- | -------- | --------------------------------------------------------- |
+| `onepassword_list_vaults`           | readonly | List all accessible vaults                                |
+| `onepassword_list_items`            | readonly | List items in a specific vault                            |
+| `onepassword_get_item`              | readonly | Get item details (credentials require approval to reveal) |
+| `onepassword_list_items_by_tag`     | readonly | Find items by tag                                         |
+| `onepassword_create_login`          | write    | Create a new login credential (requires approval)         |
+| `onepassword_create_secure_note`    | write    | Create a new secure note (requires approval)              |
+| `onepassword_share_item`            | write    | Mint a share URL for an existing item (requires approval) |
+| `onepassword_create_api_credential` | write    | Create a new API Credential item (requires approval)      |
 
 ### Resources
 
