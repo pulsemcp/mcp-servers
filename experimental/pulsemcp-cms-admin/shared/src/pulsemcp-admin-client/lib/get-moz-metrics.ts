@@ -1,4 +1,5 @@
 import type { MozMetricsResponse } from '../../types.js';
+import { adminFetch } from './admin-fetch.js';
 
 export async function getMozMetrics(
   apiKey: string,
@@ -15,7 +16,7 @@ export async function getMozMetrics(
     apiUrl.searchParams.append('scope', params.scope);
   }
 
-  const response = await fetch(apiUrl.toString(), {
+  const response = await adminFetch(apiUrl.toString(), {
     method: 'GET',
     headers: {
       'X-API-Key': apiKey,

@@ -1,4 +1,5 @@
 import type { MCPImplementation, MCPImplementationsResponse } from '../../types.js';
+import { adminFetch } from './admin-fetch.js';
 
 interface RailsMCPImplementationsResponse {
   data: MCPImplementation[];
@@ -45,7 +46,7 @@ export async function searchMCPImplementations(
     url.searchParams.append('offset', params.offset.toString());
   }
 
-  const response = await fetch(url.toString(), {
+  const response = await adminFetch(url.toString(), {
     method: 'GET',
     headers: {
       'X-API-Key': apiKey,

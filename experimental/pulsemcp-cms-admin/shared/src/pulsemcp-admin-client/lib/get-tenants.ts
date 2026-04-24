@@ -1,4 +1,5 @@
 import type { Tenant, TenantsResponse } from '../../types.js';
+import { adminFetch } from './admin-fetch.js';
 
 interface RailsTenant {
   id: number;
@@ -56,7 +57,7 @@ export async function getTenants(
     url.searchParams.append('offset', params.offset.toString());
   }
 
-  const response = await fetch(url.toString(), {
+  const response = await adminFetch(url.toString(), {
     method: 'GET',
     headers: {
       'X-API-Key': apiKey,

@@ -1,4 +1,5 @@
 import type { UnofficialMirror, UnofficialMirrorsResponse } from '../../types.js';
+import { adminFetch } from './admin-fetch.js';
 
 interface RailsUnofficialMirror {
   id: number;
@@ -70,7 +71,7 @@ export async function getUnofficialMirrors(
     url.searchParams.append('offset', params.offset.toString());
   }
 
-  const response = await fetch(url.toString(), {
+  const response = await adminFetch(url.toString(), {
     method: 'GET',
     headers: {
       'X-API-Key': apiKey,

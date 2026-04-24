@@ -1,4 +1,5 @@
 import type { MCPClient } from '../../types.js';
+import { adminFetch } from './admin-fetch.js';
 
 export async function getMCPClientBySlug(
   apiKey: string,
@@ -8,7 +9,7 @@ export async function getMCPClientBySlug(
   // Use the supervisor endpoint which supports JSON
   const url = new URL(`/supervisor/mcp_clients/${slug}`, baseUrl);
 
-  const response = await fetch(url.toString(), {
+  const response = await adminFetch(url.toString(), {
     method: 'GET',
     headers: {
       'X-API-Key': apiKey,

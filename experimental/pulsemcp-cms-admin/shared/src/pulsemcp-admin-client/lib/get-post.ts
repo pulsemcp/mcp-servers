@@ -1,10 +1,11 @@
 import type { Post } from '../../types.js';
+import { adminFetch } from './admin-fetch.js';
 
 export async function getPost(apiKey: string, baseUrl: string, slug: string): Promise<Post> {
   // Use the supervisor endpoint which supports JSON and returns full post data including body
   const url = new URL(`/supervisor/posts/${slug}`, baseUrl);
 
-  const response = await fetch(url.toString(), {
+  const response = await adminFetch(url.toString(), {
     method: 'GET',
     headers: {
       'X-API-Key': apiKey,

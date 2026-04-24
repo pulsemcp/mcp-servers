@@ -3,6 +3,7 @@ import type {
   ProctorRunExamParams,
   ProctorRunExamResponse,
 } from '../../types.js';
+import { adminFetch } from './admin-fetch.js';
 
 export async function runExamForMirror(
   apiKey: string,
@@ -21,7 +22,7 @@ export async function runExamForMirror(
     body.max_retries = params.max_retries;
   }
 
-  const response = await fetch(url.toString(), {
+  const response = await adminFetch(url.toString(), {
     method: 'POST',
     headers: {
       'X-API-Key': apiKey,

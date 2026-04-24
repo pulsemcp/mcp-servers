@@ -1,5 +1,6 @@
 import type { UnifiedMCPServer, UnifiedMCPServersResponse } from '../../types.js';
 import { mapToUnifiedServer, type RailsSearchResponse } from './unified-mcp-server-mapper.js';
+import { adminFetch } from './admin-fetch.js';
 
 export async function getUnifiedMCPServers(
   apiKey: string,
@@ -32,7 +33,7 @@ export async function getUnifiedMCPServers(
     url.searchParams.append('offset', params.offset.toString());
   }
 
-  const response = await fetch(url.toString(), {
+  const response = await adminFetch(url.toString(), {
     method: 'GET',
     headers: {
       'X-API-Key': apiKey,

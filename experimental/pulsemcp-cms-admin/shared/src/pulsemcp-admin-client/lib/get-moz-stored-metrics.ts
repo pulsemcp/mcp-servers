@@ -1,4 +1,5 @@
 import type { MozStoredMetricsResponse } from '../../types.js';
+import { adminFetch } from './admin-fetch.js';
 
 export async function getMozStoredMetrics(
   apiKey: string,
@@ -23,7 +24,7 @@ export async function getMozStoredMetrics(
     apiUrl.searchParams.append('offset', params.offset.toString());
   }
 
-  const response = await fetch(apiUrl.toString(), {
+  const response = await adminFetch(apiUrl.toString(), {
     method: 'GET',
     headers: {
       'X-API-Key': apiKey,
