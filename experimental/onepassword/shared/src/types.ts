@@ -118,6 +118,15 @@ export interface OnePasswordSafeItemDetails {
 }
 
 /**
+ * Result of sharing a 1Password item
+ */
+export interface OnePasswordShareResult {
+  share_url: string;
+  expires_at?: string;
+  created_at?: string;
+}
+
+/**
  * Interface for the 1Password client
  */
 export interface IOnePasswordClient {
@@ -176,6 +185,46 @@ export interface IOnePasswordClient {
     title: string,
     content: string,
     tags?: string[]
+  ): Promise<OnePasswordItemDetails>;
+
+  /**
+   * Share a 1Password item and receive a shareable URL.
+   * @param item - Item title or ID
+   * @param vaultId - Optional vault name or ID to narrow the lookup
+   * @param options - Optional share controls
+   *   - expiresIn: duration string accepted by `op` (e.g. "7d", "1h"); defaults to `op`'s own default (7d)
+   *   - emails: restrict access to these recipient emails
+   *   - viewOnce: if true, the link can only be opened once
+   */
+  shareItem(
+    item: string,
+    vaultId?: string,
+    options?: {
+      expiresIn?: string;
+      emails?: string[];
+      viewOnce?: boolean;
+    }
+  ): Promise<OnePasswordShareResult>;
+
+  /**
+   * Create a new API Credential item.
+   * @param vaultId - The vault ID to create the item in
+   * @param title - The title/name for the API credential item
+   * @param credential - The raw credential/key value
+   * @param options - Optional fields for the API Credential template
+   */
+  createApiCredential(
+    vaultId: string,
+    title: string,
+    credential: string,
+    options?: {
+      username?: string;
+      hostname?: string;
+      expires?: string;
+      validFrom?: string;
+      notes?: string;
+      tags?: string[];
+    }
   ): Promise<OnePasswordItemDetails>;
 }
 

@@ -7,6 +7,8 @@ import { getItemTool } from './tools/get-item-tool.js';
 import { listItemsByTagTool } from './tools/list-items-by-tag-tool.js';
 import { createLoginTool } from './tools/create-login-tool.js';
 import { createSecureNoteTool } from './tools/create-secure-note-tool.js';
+import { shareItemTool } from './tools/share-item-tool.js';
+import { createApiCredentialTool } from './tools/create-api-credential-tool.js';
 
 // =============================================================================
 // TOOL GROUPING SYSTEM
@@ -103,6 +105,8 @@ const ALL_TOOLS: ToolDefinition[] = [
   // Write-only tools - only available when 'write' group is enabled
   { factory: createLoginTool, groups: ['write'] },
   { factory: createSecureNoteTool, groups: ['write'] },
+  { factory: shareItemTool, groups: ['write'] },
+  { factory: createApiCredentialTool, groups: ['write'] },
 ];
 
 /**
