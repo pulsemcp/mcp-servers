@@ -1,4 +1,5 @@
 import type { OfficialMirrorRest } from '../../types.js';
+import { adminFetch } from './admin-fetch.js';
 
 interface RailsOfficialMirror {
   id: number;
@@ -24,7 +25,7 @@ export async function getOfficialMirror(
 ): Promise<OfficialMirrorRest> {
   const url = new URL(`/api/official_mirrors/${id}`, baseUrl);
 
-  const response = await fetch(url.toString(), {
+  const response = await adminFetch(url.toString(), {
     method: 'GET',
     headers: {
       'X-API-Key': apiKey,

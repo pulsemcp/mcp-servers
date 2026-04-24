@@ -1,4 +1,5 @@
 import type { OfficialMirrorQueueActionResponse, OfficialMirrorQueueItem } from '../../types.js';
+import { adminFetch } from './admin-fetch.js';
 
 interface RailsActionResponse {
   success: boolean;
@@ -59,7 +60,7 @@ export async function approveOfficialMirrorQueueItem(
   const formData = new URLSearchParams();
   formData.append('mcp_server_slug', mcpServerSlug);
 
-  const response = await fetch(url.toString(), {
+  const response = await adminFetch(url.toString(), {
     method: 'POST',
     headers: {
       'X-API-Key': apiKey,

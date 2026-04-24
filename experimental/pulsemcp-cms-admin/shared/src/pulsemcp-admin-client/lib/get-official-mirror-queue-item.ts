@@ -4,6 +4,7 @@ import type {
   OfficialMirror,
   LinkedServer,
 } from '../../types.js';
+import { adminFetch } from './admin-fetch.js';
 
 interface RailsMirror {
   id: number;
@@ -89,7 +90,7 @@ export async function getOfficialMirrorQueueItem(
 ): Promise<OfficialMirrorQueueItemDetail> {
   const url = new URL(`/api/official_mirror_queues/${id}`, baseUrl);
 
-  const response = await fetch(url.toString(), {
+  const response = await adminFetch(url.toString(), {
     method: 'GET',
     headers: {
       'X-API-Key': apiKey,

@@ -1,4 +1,5 @@
 import type { GoodJobCleanupResponse, GoodJobStatus } from '../../types.js';
+import { adminFetch } from './admin-fetch.js';
 
 export async function cleanupGoodJobs(
   apiKey: string,
@@ -18,7 +19,7 @@ export async function cleanupGoodJobs(
     body.status = params.status;
   }
 
-  const response = await fetch(url.toString(), {
+  const response = await adminFetch(url.toString(), {
     method: 'DELETE',
     headers: {
       'X-API-Key': apiKey,

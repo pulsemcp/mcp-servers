@@ -1,4 +1,5 @@
 import type { DiscoveredUrl, DiscoveredUrlsResponse } from '../../types.js';
+import { adminFetch } from './admin-fetch.js';
 
 interface RailsDiscoveredUrl {
   id: number;
@@ -50,7 +51,7 @@ export async function getDiscoveredUrls(
     url.searchParams.append('per_page', params.per_page.toString());
   }
 
-  const response = await fetch(url.toString(), {
+  const response = await adminFetch(url.toString(), {
     method: 'GET',
     headers: {
       'X-API-Key': apiKey,

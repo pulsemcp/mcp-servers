@@ -1,4 +1,5 @@
 import type { Redirect, RedirectsResponse, RedirectStatus } from '../../types.js';
+import { adminFetch } from './admin-fetch.js';
 
 interface RailsRedirect {
   id: number;
@@ -56,7 +57,7 @@ export async function getRedirects(
     url.searchParams.append('offset', params.offset.toString());
   }
 
-  const response = await fetch(url.toString(), {
+  const response = await adminFetch(url.toString(), {
     method: 'GET',
     headers: {
       'X-API-Key': apiKey,

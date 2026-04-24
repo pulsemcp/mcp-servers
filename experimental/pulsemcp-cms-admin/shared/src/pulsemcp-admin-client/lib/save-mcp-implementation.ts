@@ -1,4 +1,5 @@
 import type { MCPImplementation, SaveMCPImplementationParams } from '../../types.js';
+import { adminFetch } from './admin-fetch.js';
 
 export async function saveMCPImplementation(
   apiKey: string,
@@ -227,7 +228,7 @@ export async function saveMCPImplementation(
     }
   }
 
-  const response = await fetch(url.toString(), {
+  const response = await adminFetch(url.toString(), {
     method: 'PUT',
     headers: {
       'X-API-Key': apiKey,

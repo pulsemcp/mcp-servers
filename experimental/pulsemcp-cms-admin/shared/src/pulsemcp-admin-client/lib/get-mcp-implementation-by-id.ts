@@ -1,4 +1,5 @@
 import type { MCPImplementation } from '../../types.js';
+import { adminFetch } from './admin-fetch.js';
 
 export async function getMCPImplementationById(
   apiKey: string,
@@ -7,7 +8,7 @@ export async function getMCPImplementationById(
 ): Promise<MCPImplementation | null> {
   const url = new URL(`/api/implementations/${id}`, baseUrl);
 
-  const response = await fetch(url.toString(), {
+  const response = await adminFetch(url.toString(), {
     method: 'GET',
     headers: {
       'X-API-Key': apiKey,

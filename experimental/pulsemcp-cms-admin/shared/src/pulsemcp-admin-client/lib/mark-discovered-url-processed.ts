@@ -2,6 +2,7 @@ import type {
   MarkDiscoveredUrlProcessedParams,
   MarkDiscoveredUrlProcessedResponse,
 } from '../../types.js';
+import { adminFetch } from './admin-fetch.js';
 
 export async function markDiscoveredUrlProcessed(
   apiKey: string,
@@ -20,7 +21,7 @@ export async function markDiscoveredUrlProcessed(
     body.mcp_implementation_id = params.mcp_implementation_id;
   }
 
-  const response = await fetch(url.toString(), {
+  const response = await adminFetch(url.toString(), {
     method: 'POST',
     headers: {
       'X-API-Key': apiKey,

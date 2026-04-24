@@ -4,6 +4,7 @@ import type {
   OfficialMirrorQueueItem,
   OfficialMirrorSummary,
 } from '../../types.js';
+import { adminFetch } from './admin-fetch.js';
 
 interface RailsMirrorSummary {
   id: number;
@@ -91,7 +92,7 @@ export async function getOfficialMirrorQueueItems(
     url.searchParams.append('offset', params.offset.toString());
   }
 
-  const response = await fetch(url.toString(), {
+  const response = await adminFetch(url.toString(), {
     method: 'GET',
     headers: {
       'X-API-Key': apiKey,

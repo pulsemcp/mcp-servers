@@ -1,4 +1,5 @@
 import type { ProctorMetadataResponse } from '../../types.js';
+import { adminFetch } from './admin-fetch.js';
 
 /**
  * Get available runtimes and exams from the Proctor API
@@ -9,7 +10,7 @@ export async function getProctorMetadata(
 ): Promise<ProctorMetadataResponse> {
   const url = new URL('/api/proctor/metadata', baseUrl);
 
-  const response = await fetch(url.toString(), {
+  const response = await adminFetch(url.toString(), {
     method: 'GET',
     headers: {
       'X-API-Key': apiKey,

@@ -7,9 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.9] - 2026-04-22
+
 ### Fixed
 
-- Fixed CI `verify-publications` failures: changed `ci:install` from no-op to `npm install` so dependencies are actually installed, and replaced `npx tsc` in `prepare-publish.js` with `createRequire`-resolved path to avoid npx cache issues on CI runners
+- `prepare-publish.js` no longer fetches typescript from the npm registry at publish time. The script previously invoked `npx --package typescript tsc`, which forces a fresh registry fetch of typescript@latest on every run and was consistently hitting npx cache ENOENTs (`/home/runner/.npm/_npx/<hash>/package.json: no such file or directory`) on the monorepo distribute CI runner — causing 10+ consecutive distribute failures after #2791. The script now resolves the hoisted typescript via `require.resolve('typescript/bin/tsc')` and invokes it directly with `node`, so it reuses the typescript already installed on disk by the preceding `npm install` steps.
+
+## [0.7.8] - 2026-04-22
+
+### Fixed
+
+- `wake_me_up_later` now correctly sets `agent_root_name` on the trigger it creates. The previous implementation passed `session.agent_type` (e.g. `"claude_code"` — the execution provider), which is not a valid agent root name. It now reads `session.metadata.agent_root_key` with `session.agent_type` as a legacy fallback. While fixing this, the tool was simplified to rely on the Rails API's per-session auto-sleep (PR #2880): it now sends `last_session_id` + `reuse_session: true` + a single `schedule` trigger condition via `trigger_conditions_attributes`, removing the duplicate client-side `sleep_session` + `create_trigger` + `update_session` orchestration. The old top-level `trigger_type`/`configuration` payload is also replaced with the nested `trigger_conditions_attributes` format that the Rails strong params actually permit. Fixes #2881.
+
+## [0.7.7] - 2026-04-17
+
+### Fixed
+
+- `wake_me_up_later` now works from `running` sessions. Removed the stale client-side guard that rejected any session not in `needs_input`, which prevented an agent from scheduling its own wake-up (the most common use case). The Rails API accepts both `needs_input` and `running` as of PR #2752 and is the single source of truth for valid states — duplicating the check in the MCP tool kept the two out of sync. Tool description strings now correctly indicate both states are allowed and explain that when called from a running session, the sleep transition takes effect after the current turn ends.
 
 ## [0.7.6] - 2026-04-13
 

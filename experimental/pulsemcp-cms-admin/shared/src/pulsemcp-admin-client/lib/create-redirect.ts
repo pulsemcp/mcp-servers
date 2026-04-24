@@ -1,4 +1,5 @@
 import type { Redirect, CreateRedirectParams, RedirectStatus } from '../../types.js';
+import { adminFetch } from './admin-fetch.js';
 
 interface RailsRedirect {
   id: number;
@@ -25,7 +26,7 @@ export async function createRedirect(
     body.status = params.status;
   }
 
-  const response = await fetch(url.toString(), {
+  const response = await adminFetch(url.toString(), {
     method: 'POST',
     headers: {
       'X-API-Key': apiKey,

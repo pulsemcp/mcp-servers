@@ -1,4 +1,5 @@
 import type { Author } from '../../types.js';
+import { adminFetch } from './admin-fetch.js';
 
 export async function getAuthorBySlug(
   apiKey: string,
@@ -8,7 +9,7 @@ export async function getAuthorBySlug(
   // Use the supervisor endpoint which supports JSON
   const url = new URL(`/supervisor/authors/${slug}`, baseUrl);
 
-  const response = await fetch(url.toString(), {
+  const response = await adminFetch(url.toString(), {
     method: 'GET',
     headers: {
       'X-API-Key': apiKey,
