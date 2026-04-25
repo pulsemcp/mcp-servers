@@ -113,6 +113,14 @@ This tool creates a one-time AO wake-up trigger bound to the target session. The
 - Use IANA timezone names (e.g., "America/New_York", "Europe/London", "Asia/Tokyo"). Do NOT pass UTC offsets like "+05:00" in the timezone parameter.
 - If you omit timezone, wake_at is treated as UTC.
 
+**Choosing wake_at — adaptive scheduling for unknown durations:**
+When monitoring downstream work whose duration you can't predict (e.g., a subagent or pipeline phase), do NOT guess a long interval up front. Default to a short first wake (~5 minutes), observe progress, then extend if needed:
+- If the work is nearly done (~80%+): schedule a short follow-up (a few more minutes).
+- If barely started (<20%): schedule a longer follow-up (e.g., 30–45 minutes), since the underlying work clearly needs more time.
+- In between: pick proportional to remaining work.
+
+This keeps you from sleeping through work that finishes early. It does NOT apply when waking at a known wall-clock time (e.g., "9am tomorrow") — use the calculated time directly.
+
 **Parameters:**
 - **session_id**: The session to wake up. Works from either \`needs_input\` or \`running\` state — if you call this tool from within your own currently-running session, the sleep transition is recorded and takes effect after the current turn ends.
 - **wake_at**: ISO 8601 datetime without offset for when to wake up (e.g., "2026-04-15T14:30:00")

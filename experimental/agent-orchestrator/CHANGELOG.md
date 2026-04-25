@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.11] - 2026-04-25
+
+### Changed
+
+- `wake_me_up_later` tool description now includes adaptive-scheduling guidance for unknown-duration work. When monitoring a downstream subagent or pipeline phase, callers should default to a short first wake (~5 minutes), observe progress, then extend or shorten the next wake based on what they see — rather than guessing a long interval up front. Motivated by user feedback after a multi-phase pipeline slept ~35 minutes longer than necessary because the orchestrator scheduled a 45-minute wake-up for work that finished in 5–10 minutes. Description-only change; no schema, handler, or behavior changes.
+
 ## [0.7.10] - 2026-04-25
 
 ### Fixed
