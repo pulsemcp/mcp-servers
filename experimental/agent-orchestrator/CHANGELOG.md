@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.12] - 2026-04-25
+
+### Changed
+
+- `wake_me_up_later` tool description now enforces a hard cap of ~5 minutes on the **first** wake when monitoring unknown-duration work, defers any tier-based duration choices to the second-and-later poll (after the agent has actually observed progress), and surfaces an explicit "prefer over-polling to under-polling" bias. The previous copy described `~5 minutes` as a soft default and listed a `30–45 minute` tier alongside it without gating that tier to later polls — agents read the longer number as endorsement and reached for it on the first wake. Motivated by an incident on session #3983 where the agent scheduled a 26-minute first wake to monitor a ~3-minute downstream check. Description-only change; no schema, handler, or behavior changes.
+
 ## [0.7.11] - 2026-04-25
 
 ### Changed
