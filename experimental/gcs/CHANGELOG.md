@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.7] - 2026-04-25
+
+### Changed
+
+- No-op patch bump to retrigger npm publish. The 0.1.6 publish was blocked because the prior bulk sync's GCS functional-tests job in the public-repo CI hung at `npm ci` for 6 hours (transient self-hosted runner issue, traced to orphan `npm ci` process at job termination), which caused the publish workflow to time out for all four bundled servers (dynamodb, fly-io, gcs, onepassword). Bumping gcs on its own to trigger an isolated sync.
+
 ## [0.1.6] - 2026-04-24
 
 ### Changed
