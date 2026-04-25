@@ -10,6 +10,87 @@ export const WakeMeUpLaterSchema = z.object({
   prompt: z.string(),
 });
 
+// Reject wake-ups that resolve to ≤30 seconds in the future. Anything inside
+// this window is effectively "now" given network latency between this tool
+// call and the trigger being scheduled — and the past-dated case (the bug
+// this guards against) silently fires-and-drops, leaving the session
+// permanently asleep.
+const WAKE_AT_GRACE_WINDOW_MS = 30 * 1000;
+
+function getTimezoneOffsetMs(date: Date, timeZone: string): number {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false,
+  }).formatToParts(date);
+  const filled: Record<string, string> = {};
+  for (const part of parts) {
+    if (part.type !== 'literal') filled[part.type] = part.value;
+  }
+  // hour12: false can emit "24" at midnight in some locales — normalize.
+  const hour = parseInt(filled.hour, 10) % 24;
+  const asIfUtc = Date.UTC(
+    parseInt(filled.year, 10),
+    parseInt(filled.month, 10) - 1,
+    parseInt(filled.day, 10),
+    hour,
+    parseInt(filled.minute, 10),
+    parseInt(filled.second, 10)
+  );
+  // Sub-second precision is dropped by Date.UTC, so the offset can be off by
+  // up to ~1s when the input has fractional seconds. That's well inside the
+  // 30s grace window, so it doesn't affect validation.
+  return asIfUtc - date.getTime();
+}
+
+// Reject inputs that don't look like a calendar+time: bare dates ("2026-04-15"),
+// trailing offsets ("...+05:00"), and `Z` paired with a non-UTC IANA timezone
+// (ambiguous — we'd have to pick one to honor and the other to ignore).
+const NAIVE_DATETIME_REGEX = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2}(\.\d+)?)?Z?$/;
+const EXPLICIT_OFFSET_REGEX = /[+-]\d{2}:?\d{2}$/;
+
+// Convert a naive ISO-8601 wall-clock string in `timezone` to a UTC epoch ms.
+// Iterates twice so DST-boundary inputs converge on the correct offset.
+export function parseWakeAtToUtcMs(wakeAt: string, timezone: string): number {
+  if (EXPLICIT_OFFSET_REGEX.test(wakeAt)) {
+    throw new Error(
+      `wake_at must not include a UTC offset (e.g., "+05:00"); pass the wall-clock time and an IANA timezone name (e.g., "America/New_York")`
+    );
+  }
+  if (!NAIVE_DATETIME_REGEX.test(wakeAt)) {
+    throw new Error(
+      `wake_at must be an ISO-8601 datetime like "2026-04-15T14:30:00" (date-only and other formats are not accepted)`
+    );
+  }
+  const hasZ = wakeAt.endsWith('Z');
+  const isUtc = timezone === 'UTC' || timezone === 'Etc/UTC';
+  if (hasZ && !isUtc) {
+    throw new Error(
+      `wake_at ends with "Z" (UTC) but timezone is "${timezone}". Either drop the trailing "Z" or set timezone to "UTC"`
+    );
+  }
+  const naive = hasZ ? wakeAt.slice(0, -1) : wakeAt;
+  const naiveAsUtc = new Date(naive + 'Z').getTime();
+  if (Number.isNaN(naiveAsUtc)) {
+    throw new Error(`Invalid wake_at value: "${wakeAt}"`);
+  }
+  if (isUtc) {
+    return naiveAsUtc;
+  }
+  let utcGuess = naiveAsUtc - getTimezoneOffsetMs(new Date(naiveAsUtc), timezone);
+  utcGuess = naiveAsUtc - getTimezoneOffsetMs(new Date(utcGuess), timezone);
+  return utcGuess;
+}
+
+function formatUtcInstant(ms: number): string {
+  return new Date(ms).toISOString().replace(/\.\d{3}Z$/, 'Z');
+}
+
 function buildToolDescription(): string {
   const now = new Date();
   const utcNow = now.toISOString().replace(/\.\d{3}Z$/, 'Z');
@@ -74,9 +155,44 @@ export function wakeMeUpLaterTool(_server: Server, clientFactory: () => IAgentOr
     handler: async (args: unknown) => {
       try {
         const validated = WakeMeUpLaterSchema.parse(args);
-        const client = clientFactory();
         const { session_id, wake_at, prompt } = validated;
         const timezone = validated.timezone || 'UTC';
+
+        // Cheapest validation runs first (no DB/API calls). Past-dated
+        // wake_at values silently fire-and-drop in the scheduler and leave
+        // the session permanently asleep, so reject up front before any
+        // state change.
+        let wakeAtUtcMs: number;
+        try {
+          wakeAtUtcMs = parseWakeAtToUtcMs(wake_at, timezone);
+        } catch (parseError) {
+          return {
+            content: [
+              {
+                type: 'text',
+                text: `Error: Could not parse wake_at "${wake_at}" with timezone "${timezone}": ${parseError instanceof Error ? parseError.message : 'Unknown error'}. No trigger was created and no session state was changed.`,
+              },
+            ],
+            isError: true,
+          };
+        }
+
+        const nowMs = Date.now();
+        if (wakeAtUtcMs - nowMs <= WAKE_AT_GRACE_WINDOW_MS) {
+          const wakeAtUtcStr = formatUtcInstant(wakeAtUtcMs);
+          const nowUtcStr = formatUtcInstant(nowMs);
+          return {
+            content: [
+              {
+                type: 'text',
+                text: `Error: wake_at "${wake_at}" (timezone: ${timezone}) resolves to ${wakeAtUtcStr} UTC, which is in the past or within 30 seconds of the current server time (${nowUtcStr} UTC). No trigger was created and no session state was changed. Recompute relative to the current server time shown in the tool description and call again — wake_at must be more than 30 seconds in the future.`,
+              },
+            ],
+            isError: true,
+          };
+        }
+
+        const client = clientFactory();
 
         if (parseAllowedAgentRoots() !== null) {
           return {
