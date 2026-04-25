@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.4] - 2026-04-25
+
+### Changed
+
+- No-op patch bump to retrigger npm publish. The 0.3.3 publish was blocked because the prior bulk sync also bundled the GCS server, and the GCS functional-tests job hung in the public-repo CI for 6 hours, causing the publish workflow to time out for all four bundled servers. Bumping onepassword on its own to trigger an isolated sync.
+
 ## [0.3.3] - 2026-04-24
 
 ### Changed
