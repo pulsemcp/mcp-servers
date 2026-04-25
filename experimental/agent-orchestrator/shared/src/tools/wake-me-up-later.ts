@@ -114,12 +114,17 @@ This tool creates a one-time AO wake-up trigger bound to the target session. The
 - If you omit timezone, wake_at is treated as UTC.
 
 **Choosing wake_at — adaptive scheduling for unknown durations:**
-When monitoring downstream work whose duration you can't predict (e.g., a subagent or pipeline phase), do NOT guess a long interval up front. Default to a short first wake (~5 minutes), observe progress, then extend if needed:
-- If the work is nearly done (~80%+): schedule a short follow-up (a few more minutes).
-- If barely started (<20%): schedule a longer follow-up (e.g., 30–45 minutes), since the underlying work clearly needs more time.
-- In between: pick proportional to remaining work.
+When monitoring downstream work whose duration you can't predict (e.g., a subagent or pipeline phase), the bias is **prefer over-polling to under-polling**. A too-frequent poll wastes a few seconds of compute; a too-long sleep wastes minutes of user-facing wall-clock time and erodes trust. When in doubt, go shorter.
 
-This keeps you from sleeping through work that finishes early. It does NOT apply when waking at a known wall-clock time (e.g., "9am tomorrow") — use the calculated time directly.
+**Rules:**
+- **First wake: MUST be ≤5 minutes from now.** Use less if you have any reason to think the work could already be done (e.g., a 30-second task — pick 1–2 minutes). This is a hard cap, not a default. Do NOT pick a longer first wake just because the work "might take a while" — you have not observed anything yet, so you cannot know.
+- **Second and later wakes:** Now that you've actually observed progress, you may scale the next wake to what you saw:
+  - If the work is nearly done (~80%+): a few more minutes.
+  - In between: proportional to remaining work, capped at ~15 minutes.
+  - If barely started (<20%) AND you have already polled at least twice and confirmed the work is genuinely long-running: you may extend up to ~30 minutes. Do NOT use this tier on the first or second poll.
+- **Never** pick a wake interval ≥10× the expected total task duration. If a downstream task should take ~3 minutes, a 25-minute wake is wrong even on the first poll — pick 2–3 minutes instead.
+
+This guidance does NOT apply when waking at a known wall-clock time (e.g., "9am tomorrow") — use the calculated time directly.
 
 **Parameters:**
 - **session_id**: The session to wake up. Works from either \`needs_input\` or \`running\` state — if you call this tool from within your own currently-running session, the sleep transition is recorded and takes effect after the current turn ends.
