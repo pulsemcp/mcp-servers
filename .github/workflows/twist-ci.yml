@@ -16,6 +16,7 @@ jobs:
   functional-tests:
     name: Twist MCP Server Functional Tests
     runs-on: self-hosted
+    timeout-minutes: 15
 
     defaults:
       run:
@@ -49,6 +50,7 @@ jobs:
   integration-tests:
     name: Twist MCP Server Integration Tests
     runs-on: self-hosted
+    timeout-minutes: 15
 
     defaults:
       run:
