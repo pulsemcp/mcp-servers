@@ -1,83 +1,43 @@
 name: Publish Updated MCP Servers
 
+# Reconciles every server's local/package.json against npm and publishes any
+# whose local version is ahead of (or absent from) the registry.
+#
+# This makes publishing idempotent and self-healing for bundled merges:
+# a missed publish can be retried by re-running the workflow (workflow_dispatch)
+# without any source changes.
+
 on:
   push:
     branches:
       - main
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Detect candidates and CI status, but do not publish to npm or create GitHub releases'
+        type: boolean
+        default: false
 
 jobs:
-  wait-for-ci:
-    name: Wait for CI
-    runs-on: self-hosted
-    steps:
-      - name: Wait for CI Build & Test Checks
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const owner = context.repo.owner;
-            const repo = context.repo.repo;
-            const sha = context.sha;
-
-            console.log(`Waiting for CI Build & Test Checks on SHA: ${sha}`);
-
-            // Wait a bit for the CI workflow to start
-            console.log('Waiting 30 seconds for CI workflow to start...');
-            await new Promise(resolve => setTimeout(resolve, 30000));
-
-            const maxWaitTime = 10 * 60 * 1000; // 10 minutes
-            const checkInterval = 10 * 1000; // 10 seconds
-            const startTime = Date.now();
-
-            while (Date.now() - startTime < maxWaitTime) {
-              const checkRuns = await github.rest.checks.listForRef({
-                owner,
-                repo,
-                ref: sha,
-                per_page: 100
-              });
-
-              console.log(`Found ${checkRuns.data.check_runs.length} check runs:`);
-              for (const run of checkRuns.data.check_runs) {
-                console.log(`- ${run.name}: ${run.status} (${run.conclusion})`);
-              }
-
-              const ciCheck = checkRuns.data.check_runs.find(run =>
-                run.name === 'CI Build & Test Checks Passed'
-              );
-
-              if (ciCheck) {
-                console.log(`Found CI check: ${ciCheck.name} - ${ciCheck.status} (${ciCheck.conclusion})`);
-                if (ciCheck.status === 'completed') {
-                  if (ciCheck.conclusion === 'success') {
-                    console.log('✅ CI Build & Test Checks passed');
-                    return;
-                  } else {
-                    core.setFailed(`CI Build & Test Checks failed with conclusion: ${ciCheck.conclusion}`);
-                    return;
-                  }
-                }
-              } else {
-                console.log('❌ CI Build & Test Checks Passed check not found yet');
-              }
-
-              console.log(`Waiting for CI checks... (${Math.round((Date.now() - startTime) / 1000)}s elapsed)`);
-              await new Promise(resolve => setTimeout(resolve, checkInterval));
-            }
-
-            core.setFailed('Timeout waiting for CI Build & Test Checks');
-
   detect-and-publish:
-    needs: wait-for-ci
+    name: Detect & Publish
     runs-on: self-hosted
     permissions:
       contents: write
       packages: write
+      checks: read
+
+    env:
+      CANDIDATES_FILE: ${{ runner.temp }}/candidates.json
+      READY_FILE: ${{ runner.temp }}/ready.json
+      SKIPPED_FILE: ${{ runner.temp }}/skipped.json
+      PUBLISHED_FILE: ${{ runner.temp }}/published.json
+      FAILED_FILE: ${{ runner.temp }}/failed.json
+      DRY_RUN: ${{ inputs.dry_run && 'true' || 'false' }}
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 2 # Need to compare with previous commit
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -85,183 +45,319 @@ jobs:
           node-version-file: '.nvmrc'
           registry-url: 'https://registry.npmjs.org'
 
-      - name: Detect version changes
-        id: detect-changes
+      - name: Sweep for unpublished versions
+        id: sweep
         run: |
-          echo "Detecting version changes..."
+          set -euo pipefail
+          echo "Sweeping for servers where local/package.json version is ahead of npm..."
+          echo "[]" > "$CANDIDATES_FILE"
 
-          # Initialize arrays to track servers to publish
-          SERVERS_TO_PUBLISH=""
+          PKG_FILES=""
+          for d in experimental productionized; do
+            if [ -d "$d" ]; then
+              for f in "$d"/*/local/package.json; do
+                [ -e "$f" ] && PKG_FILES="$PKG_FILES $f"
+              done
+            fi
+          done
 
-          # Get list of changed package.json files
-          CHANGED_FILES=$(git diff --name-only HEAD~1 HEAD | grep -E "(experimental|productionized|^[^/]+)/[^/]+/local/package\.json$" || true)
-
-          if [ -z "$CHANGED_FILES" ]; then
-            echo "No package.json files changed"
-            echo "publish_needed=false" >> $GITHUB_OUTPUT
+          if [ -z "$PKG_FILES" ]; then
+            echo "No candidate package.json files found"
+            echo "count=0" >> $GITHUB_OUTPUT
             exit 0
           fi
 
-          echo "Changed files:"
-          echo "$CHANGED_FILES"
+          for file in $PKG_FILES; do
+            NAME=$(node -p "try { require('./$file').name || '' } catch (e) { '' }")
+            VERSION=$(node -p "try { require('./$file').version || '' } catch (e) { '' }")
+            PRIVATE=$(node -p "try { require('./$file').private ? 'true' : 'false' } catch (e) { 'false' }")
 
-          for file in $CHANGED_FILES; do
-            echo "Checking $file..."
-            
-            # Get server directory
-            SERVER_DIR=$(dirname $(dirname "$file"))
-            LOCAL_DIR="$SERVER_DIR/local"
-            
-            # Check if file exists (might have been deleted)
-            if [ ! -f "$file" ]; then
-              echo "File deleted, skipping: $file"
+            if [ -z "$NAME" ] || [ -z "$VERSION" ]; then
+              echo "⚠️  $file: missing name or version, skipping"
               continue
             fi
-            
-            # Get current version
-            CURRENT_VERSION=$(node -e "console.log(require('./$file').version)")
-            PACKAGE_NAME=$(node -e "console.log(require('./$file').name)")
-            
-            # Get previous version
-            PREV_VERSION=$(git show HEAD~1:$file 2>/dev/null | node -e "
-              try {
-                const pkg = JSON.parse(require('fs').readFileSync(0, 'utf8'));
-                console.log(pkg.version);
-              } catch (e) {
-                console.log('0.0.0');
-              }
-            ")
-            
-            echo "Package: $PACKAGE_NAME"
-            echo "Previous version: $PREV_VERSION"
-            echo "Current version: $CURRENT_VERSION"
-            
-            # Check if version was bumped
-            if [ "$CURRENT_VERSION" != "$PREV_VERSION" ]; then
-              echo "Version bumped! Adding to publish list..."
-              SERVERS_TO_PUBLISH="$SERVERS_TO_PUBLISH $LOCAL_DIR"
-            else
-              echo "Version unchanged, skipping"
+            if [ "$PRIVATE" = "true" ]; then
+              echo "⏭  $file: private package, skipping"
+              continue
             fi
-            
-            echo "---"
+
+            PUBLISHED=$(npm view "$NAME" version 2>/dev/null || true)
+
+            if [ -z "$PUBLISHED" ]; then
+              echo "📦 $NAME@$VERSION: never published — enqueue"
+            elif [ "$PUBLISHED" = "$VERSION" ]; then
+              echo "✅ $NAME@$VERSION: already on npm — skip"
+              continue
+            else
+              echo "🆙 $NAME: local=$VERSION, npm=$PUBLISHED — enqueue"
+            fi
+
+            DIR=$(dirname "$file")
+            SERVER_DIR=$(dirname "$DIR")
+            BASE=$(basename "$SERVER_DIR")
+
+            EXPECTED='[]'
+            WORKFLOW_FILE=".github/workflows/${BASE}-ci.yml"
+            if [ -f "$WORKFLOW_FILE" ]; then
+              EXPECTED=$(awk '
+                BEGIN { in_jobs = 0 }
+                /^jobs:[ \t]*$/ { in_jobs = 1; next }
+                in_jobs && /^    name: / {
+                  sub(/^    name: /, "")
+                  print
+                }
+              ' "$WORKFLOW_FILE" | node -e '
+                const lines = require("fs").readFileSync(0, "utf8").trim().split("\n").filter(Boolean);
+                console.log(JSON.stringify(lines));
+              ')
+            fi
+
+            FILE="$file" SERVER_DIR="$SERVER_DIR" LOCAL_DIR="$DIR" \
+            PKG_NAME="$NAME" PKG_VERSION="$VERSION" PUBLISHED="$PUBLISHED" \
+            EXPECTED_JSON="$EXPECTED" \
+            node -e '
+              const fs = require("fs");
+              const f = process.env.CANDIDATES_FILE;
+              const arr = JSON.parse(fs.readFileSync(f, "utf8"));
+              arr.push({
+                file: process.env.FILE,
+                serverDir: process.env.SERVER_DIR,
+                localDir: process.env.LOCAL_DIR,
+                name: process.env.PKG_NAME,
+                version: process.env.PKG_VERSION,
+                published: process.env.PUBLISHED,
+                expectedChecks: JSON.parse(process.env.EXPECTED_JSON)
+              });
+              fs.writeFileSync(f, JSON.stringify(arr));
+            '
           done
 
-          if [ -z "$SERVERS_TO_PUBLISH" ]; then
-            echo "No servers need publishing"
-            echo "publish_needed=false" >> $GITHUB_OUTPUT
-          else
-            echo "Servers to publish: $SERVERS_TO_PUBLISH"
-            echo "publish_needed=true" >> $GITHUB_OUTPUT
-            echo "servers=$SERVERS_TO_PUBLISH" >> $GITHUB_OUTPUT
-          fi
+          echo ""
+          echo "=== Candidates ==="
+          node -e '
+            const arr = JSON.parse(require("fs").readFileSync(process.env.CANDIDATES_FILE, "utf8"));
+            for (const c of arr) {
+              const checks = c.expectedChecks.length > 0
+                ? c.expectedChecks.join(", ")
+                : "(no per-server CI; will gate on Lint & Type Check)";
+              console.log(`- ${c.name}@${c.version} (was ${c.published || "unpublished"}); checks: ${checks}`);
+            }
+            console.log(`Total: ${arr.length}`);
+          '
 
-      - name: Publish servers
-        if: steps.detect-changes.outputs.publish_needed == 'true'
+          COUNT=$(node -p "JSON.parse(require('fs').readFileSync(process.env.CANDIDATES_FILE,'utf8')).length")
+          echo "count=$COUNT" >> $GITHUB_OUTPUT
+
+      - name: Per-server CI gate
+        if: steps.sweep.outputs.count != '0'
+        uses: actions/github-script@v7
+        env:
+          PER_SERVER_BUDGET_MS: '900000' # 15 minutes
+        with:
+          script: |
+            const fs = require('fs');
+
+            const candidatesFile = process.env.CANDIDATES_FILE;
+            const readyFile = process.env.READY_FILE;
+            const skippedFile = process.env.SKIPPED_FILE;
+            const budgetMs = parseInt(process.env.PER_SERVER_BUDGET_MS, 10);
+            const pollIntervalMs = 10 * 1000;
+            const startupGraceMs = 30 * 1000;
+
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const sha = context.sha;
+
+            const candidates = JSON.parse(fs.readFileSync(candidatesFile, 'utf8'));
+            console.log(`Gating ${candidates.length} candidate(s) on per-server CI checks (SHA: ${sha})`);
+
+            console.log(`Waiting ${startupGraceMs / 1000}s for CI checks to register...`);
+            await new Promise(r => setTimeout(r, startupGraceMs));
+
+            const ready = [];
+            const skipped = [];
+            const remaining = candidates.map(c => ({ ...c, _started: Date.now() }));
+
+            while (remaining.length > 0) {
+              const checkRuns = await github.paginate(github.rest.checks.listForRef, {
+                owner,
+                repo,
+                ref: sha,
+                per_page: 100,
+              });
+
+              const lintCheck = checkRuns.find(c => c.name === 'Lint & Type Check');
+
+              for (let i = remaining.length - 1; i >= 0; i--) {
+                const server = remaining[i];
+                const elapsed = Date.now() - server._started;
+
+                let gates;
+                if (server.expectedChecks.length > 0) {
+                  gates = server.expectedChecks.map(name => ({
+                    name,
+                    run: checkRuns.find(c => c.name === name),
+                  }));
+                } else {
+                  gates = [{ name: 'Lint & Type Check', run: lintCheck }];
+                }
+
+                const missing = gates.filter(g => !g.run);
+                const pending = gates.filter(g => g.run && g.run.status !== 'completed');
+
+                if (missing.length > 0 || pending.length > 0) {
+                  if (elapsed >= budgetMs) {
+                    const reason =
+                      missing.length > 0
+                        ? `Timed out (15m) waiting for checks to register: ${missing.map(g => g.name).join(', ')}`
+                        : `Timed out (15m) waiting for checks to complete: ${pending
+                            .map(g => `${g.name}=${g.run.status}`)
+                            .join(', ')}`;
+                    console.log(`⏰ ${server.name}: ${reason}`);
+                    skipped.push({ ...server, reason });
+                    remaining.splice(i, 1);
+                  }
+                  continue;
+                }
+
+                const failed = gates.filter(g => g.run.conclusion !== 'success');
+                if (failed.length === 0) {
+                  console.log(
+                    `✅ ${server.name}: gates passed (${gates.map(g => g.name).join(', ')})`
+                  );
+                  ready.push(server);
+                } else {
+                  const reason = `CI checks not green: ${failed
+                    .map(g => `${g.name}=${g.run.conclusion}`)
+                    .join(', ')}`;
+                  console.log(`❌ ${server.name}: ${reason}`);
+                  skipped.push({ ...server, reason });
+                }
+                remaining.splice(i, 1);
+              }
+
+              if (remaining.length === 0) break;
+
+              const status = remaining
+                .map(s => `${s.name} (${Math.round((Date.now() - s._started) / 1000)}s)`)
+                .join(', ');
+              console.log(`Still waiting on ${remaining.length} server(s): ${status}`);
+              await new Promise(r => setTimeout(r, pollIntervalMs));
+            }
+
+            console.log(`\n=== CI Gating Result ===`);
+            console.log(`Ready: ${ready.length}; Skipped: ${skipped.length}`);
+            for (const s of skipped) {
+              console.log(`  - ${s.name}@${s.version}: ${s.reason}`);
+            }
+
+            fs.writeFileSync(readyFile, JSON.stringify(ready));
+            fs.writeFileSync(skippedFile, JSON.stringify(skipped));
+
+      - name: Publish ready servers
+        id: publish
+        if: steps.sweep.outputs.count != '0'
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NODE_OPTIONS: '--max-old-space-size=8192'
         run: |
-          set -e
+          set +e
+          echo "[]" > "$PUBLISHED_FILE"
+          echo "[]" > "$FAILED_FILE"
 
-          echo "Publishing MCP servers..."
+          if [ ! -f "$READY_FILE" ]; then
+            echo "No ready file (gate step did not run)"
+            exit 0
+          fi
 
-          SERVERS="${{ steps.detect-changes.outputs.servers }}"
-          PUBLISHED_SERVERS=""
-          FAILED_SERVERS=""
+          if [ "$DRY_RUN" = "true" ]; then
+            echo "🧪 Dry run: would publish the following servers (no npm publish, no GitHub release):"
+            node -e '
+              const arr = JSON.parse(require("fs").readFileSync(process.env.READY_FILE, "utf8"));
+              for (const s of arr) console.log(`  - ${s.name}@${s.version} (${s.localDir})`);
+            '
+            exit 0
+          fi
 
-          for LOCAL_DIR in $SERVERS; do
-            echo "Processing $LOCAL_DIR..."
-            
-            cd "$LOCAL_DIR"
-            
-            # Get package info
-            PACKAGE_NAME=$(node -e "console.log(require('./package.json').name)")
-            PACKAGE_VERSION=$(node -e "console.log(require('./package.json').version)")
-            
-            echo "Publishing $PACKAGE_NAME@$PACKAGE_VERSION..."
-            
-            # Install dependencies - use ci:install if available
-            echo "Installing dependencies..."
-            if npm run --silent ci:install 2>/dev/null; then
-              echo "Dependencies installed with ci:install"
-            else
-              echo "No ci:install script found, using npm install"
-              npm install
-            fi
-            
-            # Check if version already exists on npm
-            if npm view "$PACKAGE_NAME@$PACKAGE_VERSION" version 2>/dev/null; then
-              echo "Version $PACKAGE_VERSION already published, skipping"
-              cd - > /dev/null
-              continue
-            fi
-            
-            # Publish to npm
-            if npm publish --access public; then
-              echo "✅ Successfully published $PACKAGE_NAME@$PACKAGE_VERSION to npm"
-              
-              # Validate the published package is available on npm
-              echo "🔍 Validating published package availability..."
-              VALIDATION_FAILED=false
-              
-              # Wait for npm registry propagation and verify package metadata
-              echo "Waiting for npm registry propagation..."
-              # Timeout of 10 minutes (60 iterations × 10 seconds)
-              # npm CDN propagation can take 5+ minutes for new scoped packages
-              for i in {1..60}; do
-                PUBLISHED_VERSION=$(npm view "$PACKAGE_NAME@$PACKAGE_VERSION" version 2>/dev/null || true)
-                if [ "$PUBLISHED_VERSION" = "$PACKAGE_VERSION" ]; then
-                  echo "✅ Package $PACKAGE_NAME@$PACKAGE_VERSION available on npm registry"
+          READY_TSV=$(node -e '
+            const arr = JSON.parse(require("fs").readFileSync(process.env.READY_FILE, "utf8"));
+            for (const s of arr) {
+              console.log([s.name, s.version, s.localDir].join("\t"));
+            }
+          ')
 
-                  # Additional validation: check package has required metadata
-                  MAIN_FIELD=$(npm view "$PACKAGE_NAME@$PACKAGE_VERSION" main 2>/dev/null || true)
-                  FILES_FIELD=$(npm view "$PACKAGE_NAME@$PACKAGE_VERSION" files 2>/dev/null || true)
+          if [ -z "$READY_TSV" ]; then
+            echo "No servers ready to publish"
+            exit 0
+          fi
 
-                  if [ -z "$MAIN_FIELD" ]; then
-                    echo "⚠️  Warning: Package missing 'main' field in package.json"
-                  else
-                    echo "✅ Package has main field: $MAIN_FIELD"
-                  fi
+          while IFS=$'\t' read -r PACKAGE_NAME PACKAGE_VERSION LOCAL_DIR; do
+            [ -z "$PACKAGE_NAME" ] && continue
+            echo ""
+            echo "=== Publishing $PACKAGE_NAME@$PACKAGE_VERSION (from $LOCAL_DIR) ==="
 
-                  if [ -z "$FILES_FIELD" ]; then
-                    echo "⚠️  Warning: Package missing 'files' field - may include unintended files"
-                  else
-                    echo "✅ Package has files field configured"
-                  fi
+            (
+              set -e
+              cd "$LOCAL_DIR"
 
-                  break
-                fi
-                if [ $i -eq 60 ]; then
-                  echo "❌ Package not available after 600 seconds - registry propagation failed"
-                  VALIDATION_FAILED=true
-                fi
-                echo "Waiting for registry propagation... ($i/60)"
-                sleep 10
-              done
-              
-              # Check validation results
-              if [ "$VALIDATION_FAILED" = true ]; then
-                echo "❌ Package validation failed for $PACKAGE_NAME@$PACKAGE_VERSION"
-                FAILED_SERVERS="$FAILED_SERVERS\n- $PACKAGE_NAME@$PACKAGE_VERSION (published but validation failed)"
+              echo "Installing dependencies..."
+              if npm run --silent ci:install 2>/dev/null; then
+                echo "Dependencies installed via ci:install"
               else
-                echo "✅ Package validation successful for $PACKAGE_NAME@$PACKAGE_VERSION"
-                PUBLISHED_SERVERS="$PUBLISHED_SERVERS\n- $PACKAGE_NAME@$PACKAGE_VERSION"
-                
-                # Create GitHub release
-                TAG_NAME="${PACKAGE_NAME}@${PACKAGE_VERSION}"
-                SERVER_DIR=$(dirname "$LOCAL_DIR")
-                SERVER_NAME=$(basename "$SERVER_DIR")
-                
-                # Extract changelog entry for this version
-                # Since we're in the local directory, we need to go up one level to find CHANGELOG.md
+                echo "No ci:install script in local/; falling back to npm install"
+                npm install
+              fi
+
+              # Idempotency: if version already exists on npm, skip publish but still ensure the GitHub release exists.
+              if npm view "$PACKAGE_NAME@$PACKAGE_VERSION" version >/dev/null 2>&1; then
+                echo "Version $PACKAGE_VERSION already on npm; will only ensure GitHub release exists"
+              else
+                if ! npm publish --access public; then
+                  echo "❌ npm publish failed for $PACKAGE_NAME@$PACKAGE_VERSION"
+                  exit 1
+                fi
+                echo "✅ Published $PACKAGE_NAME@$PACKAGE_VERSION to npm"
+
+                echo "Waiting for npm registry propagation..."
+                PROPAGATED=false
+                for i in {1..60}; do
+                  PUBLISHED_VERSION=$(npm view "$PACKAGE_NAME@$PACKAGE_VERSION" version 2>/dev/null || true)
+                  if [ "$PUBLISHED_VERSION" = "$PACKAGE_VERSION" ]; then
+                    echo "✅ Available on npm registry"
+                    MAIN_FIELD=$(npm view "$PACKAGE_NAME@$PACKAGE_VERSION" main 2>/dev/null || true)
+                    FILES_FIELD=$(npm view "$PACKAGE_NAME@$PACKAGE_VERSION" files 2>/dev/null || true)
+                    if [ -z "$MAIN_FIELD" ]; then
+                      echo "⚠️  Package missing 'main' field"
+                    else
+                      echo "main: $MAIN_FIELD"
+                    fi
+                    if [ -z "$FILES_FIELD" ]; then
+                      echo "⚠️  Package missing 'files' field"
+                    else
+                      echo "files: configured"
+                    fi
+                    PROPAGATED=true
+                    break
+                  fi
+                  echo "Waiting for registry propagation... ($i/60)"
+                  sleep 10
+                done
+
+                if [ "$PROPAGATED" = false ]; then
+                  echo "❌ Package not available after 600s — registry propagation failed"
+                  exit 1
+                fi
+              fi
+
+              # GitHub release (idempotent — skip if it already exists)
+              TAG_NAME="${PACKAGE_NAME}@${PACKAGE_VERSION}"
+              if gh release view "$TAG_NAME" >/dev/null 2>&1; then
+                echo "GitHub release $TAG_NAME already exists; skipping"
+              else
                 CHANGELOG_FILE="../CHANGELOG.md"
                 if [ -f "$CHANGELOG_FILE" ]; then
-                  # Extract the changelog section for this version
-                  # Look for version with or without 'v' prefix and handle both formats
-                  CHANGELOG_ENTRY=$(awk "/## \[v?$PACKAGE_VERSION\]/{flag=1; next} /## \[/{flag=0} flag" "$CHANGELOG_FILE" | sed '/^$/d')
-                  
+                  CHANGELOG_ENTRY=$(awk "/## \\[v?$PACKAGE_VERSION\\]/{flag=1; next} /## \\[/{flag=0} flag" "$CHANGELOG_FILE" | sed '/^$/d')
                   if [ -z "$CHANGELOG_ENTRY" ]; then
                     echo "Warning: No changelog entry found for version $PACKAGE_VERSION"
                     RELEASE_NOTES="Published to npm: https://www.npmjs.com/package/$PACKAGE_NAME"
@@ -271,51 +367,113 @@ jobs:
                 else
                   RELEASE_NOTES="Published to npm: https://www.npmjs.com/package/$PACKAGE_NAME"
                 fi
-                
-                # Create release using GitHub CLI
-                echo "Creating GitHub release for $TAG_NAME..."
+
                 if echo "$RELEASE_NOTES" | gh release create "$TAG_NAME" \
                   --title "$PACKAGE_NAME v$PACKAGE_VERSION" \
                   --notes-file - \
                   --target main \
                   --latest=false; then
-                  echo "✅ GitHub release created successfully"
+                  echo "✅ GitHub release created"
                 else
-                  echo "❌ Failed to create GitHub release"
-                  echo "Attempting to check if tag exists..."
-                  if ! git rev-parse "$TAG_NAME" >/dev/null 2>&1; then
-                    echo "Tag $TAG_NAME does not exist. The tag should have been created during 'npm version' command."
-                    echo "Check if the version bump process created the tag correctly."
-                  else
-                    echo "Tag exists but release creation failed. Check GitHub permissions."
-                  fi
+                  echo "⚠️  Failed to create GitHub release for $TAG_NAME (continuing)"
                 fi
               fi
+            )
+            STATUS=$?
+
+            if [ $STATUS -eq 0 ]; then
+              PACKAGE_NAME="$PACKAGE_NAME" PACKAGE_VERSION="$PACKAGE_VERSION" \
+              node -e '
+                const fs = require("fs");
+                const f = process.env.PUBLISHED_FILE;
+                const arr = JSON.parse(fs.readFileSync(f, "utf8"));
+                arr.push({ name: process.env.PACKAGE_NAME, version: process.env.PACKAGE_VERSION });
+                fs.writeFileSync(f, JSON.stringify(arr));
+              '
             else
-              echo "❌ Failed to publish $PACKAGE_NAME@$PACKAGE_VERSION"
-              FAILED_SERVERS="$FAILED_SERVERS\n- $PACKAGE_NAME@$PACKAGE_VERSION"
+              PACKAGE_NAME="$PACKAGE_NAME" PACKAGE_VERSION="$PACKAGE_VERSION" \
+              node -e '
+                const fs = require("fs");
+                const f = process.env.FAILED_FILE;
+                const arr = JSON.parse(fs.readFileSync(f, "utf8"));
+                arr.push({ name: process.env.PACKAGE_NAME, version: process.env.PACKAGE_VERSION });
+                fs.writeFileSync(f, JSON.stringify(arr));
+              '
             fi
-            
-            cd - > /dev/null
-            echo "---"
-          done
+          done <<< "$READY_TSV"
 
-          # Summary
-          echo "## Publishing Summary" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
+      - name: Write summary and set exit code
+        if: always()
+        run: |
+          set +e
 
-          if [ -n "$PUBLISHED_SERVERS" ]; then
-            echo "### ✅ Successfully Published:" >> $GITHUB_STEP_SUMMARY
-            echo -e "$PUBLISHED_SERVERS" >> $GITHUB_STEP_SUMMARY
+          {
+            echo "## Publishing Sweep Summary"
+            echo ""
+            if [ "$DRY_RUN" = "true" ]; then
+              echo "🧪 **Dry run** — no npm publishes or GitHub releases were created."
+              echo ""
+            fi
+          } >> $GITHUB_STEP_SUMMARY
+
+          if [ -f "$CANDIDATES_FILE" ]; then
+            COUNT=$(node -p "JSON.parse(require('fs').readFileSync(process.env.CANDIDATES_FILE,'utf8')).length")
+            echo "**Candidates detected:** $COUNT" >> $GITHUB_STEP_SUMMARY
+            if [ "$COUNT" != "0" ]; then
+              echo "" >> $GITHUB_STEP_SUMMARY
+              node -e '
+                const arr = JSON.parse(require("fs").readFileSync(process.env.CANDIDATES_FILE,"utf8"));
+                for (const c of arr) console.log(`- ${c.name}@${c.version} (was ${c.published || "unpublished"})`);
+              ' >> $GITHUB_STEP_SUMMARY
+            fi
+          else
+            echo "**Candidates detected:** 0" >> $GITHUB_STEP_SUMMARY
           fi
 
-          if [ -n "$FAILED_SERVERS" ]; then
-            echo "### ❌ Failed to Publish:" >> $GITHUB_STEP_SUMMARY
-            echo -e "$FAILED_SERVERS" >> $GITHUB_STEP_SUMMARY
+          if [ -f "$PUBLISHED_FILE" ]; then
+            COUNT=$(node -p "JSON.parse(require('fs').readFileSync(process.env.PUBLISHED_FILE,'utf8')).length")
+            if [ "$COUNT" != "0" ]; then
+              {
+                echo ""
+                echo "### ✅ Successfully Published"
+                node -e '
+                  const arr = JSON.parse(require("fs").readFileSync(process.env.PUBLISHED_FILE,"utf8"));
+                  for (const c of arr) console.log(`- ${c.name}@${c.version}`);
+                '
+              } >> $GITHUB_STEP_SUMMARY
+            fi
+          fi
+
+          if [ -f "$SKIPPED_FILE" ]; then
+            COUNT=$(node -p "JSON.parse(require('fs').readFileSync(process.env.SKIPPED_FILE,'utf8')).length")
+            if [ "$COUNT" != "0" ]; then
+              {
+                echo ""
+                echo "### ⏭ Skipped (CI gate not green; will retry on next sweep)"
+                node -e '
+                  const arr = JSON.parse(require("fs").readFileSync(process.env.SKIPPED_FILE,"utf8"));
+                  for (const c of arr) console.log(`- ${c.name}@${c.version} — ${c.reason}`);
+                '
+              } >> $GITHUB_STEP_SUMMARY
+            fi
+          fi
+
+          FAILED_COUNT=0
+          if [ -f "$FAILED_FILE" ]; then
+            FAILED_COUNT=$(node -p "JSON.parse(require('fs').readFileSync(process.env.FAILED_FILE,'utf8')).length")
+            if [ "$FAILED_COUNT" != "0" ]; then
+              {
+                echo ""
+                echo "### ❌ Publish Failures"
+                node -e '
+                  const arr = JSON.parse(require("fs").readFileSync(process.env.FAILED_FILE,"utf8"));
+                  for (const c of arr) console.log(`- ${c.name}@${c.version}`);
+                '
+              } >> $GITHUB_STEP_SUMMARY
+            fi
+          fi
+
+          if [ "$FAILED_COUNT" != "0" ]; then
+            echo "::error::$FAILED_COUNT server(s) failed to publish"
             exit 1
           fi
-
-      - name: No servers to publish
-        if: steps.detect-changes.outputs.publish_needed == 'false'
-        run: |
-          echo "No MCP servers require publishing" >> $GITHUB_STEP_SUMMARY
