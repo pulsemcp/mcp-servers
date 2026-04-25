@@ -18,6 +18,14 @@ on:
         type: boolean
         default: false
 
+# Serialize publish runs so a push-triggered run and a workflow_dispatch run
+# can never race on the same package version. cancel-in-progress is false
+# because killing a run mid-publish could leave npm and GitHub release state
+# out of sync.
+concurrency:
+  group: publish-mcp-servers
+  cancel-in-progress: false
+
 jobs:
   detect-and-publish:
     name: Detect & Publish
@@ -51,6 +59,13 @@ jobs:
           set -euo pipefail
           echo "Sweeping for servers where local/package.json version is ahead of npm..."
           echo "[]" > "$CANDIDATES_FILE"
+
+          # Sanity-check npm reachability before the sweep so a transient registry
+          # outage doesn't get misread as "every package is unpublished".
+          if ! npm ping >/dev/null 2>&1; then
+            echo "❌ npm registry unreachable (npm ping failed). Aborting sweep so we don't misclassify packages."
+            exit 1
+          fi
 
           PKG_FILES=""
           for d in experimental productionized; do
@@ -89,6 +104,10 @@ jobs:
               echo "✅ $NAME@$VERSION: already on npm — skip"
               continue
             else
+              # Note: we don't compare semver locally — npm itself rejects same-version and
+              # downgrade republishes, and writing a correct semver comparator (prereleases,
+              # build metadata) here is risky. If local is behind npm, the publish step will
+              # see "version already exists" or a publish error and surface that as a failure.
               echo "🆙 $NAME: local=$VERSION, npm=$PUBLISHED — enqueue"
             fi
 
@@ -371,7 +390,7 @@ jobs:
                 if echo "$RELEASE_NOTES" | gh release create "$TAG_NAME" \
                   --title "$PACKAGE_NAME v$PACKAGE_VERSION" \
                   --notes-file - \
-                  --target main \
+                  --target "$GITHUB_SHA" \
                   --latest=false; then
                   echo "✅ GitHub release created"
                 else
