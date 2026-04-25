@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.10] - 2026-04-25
+
+### Fixed
+
+- `wake_me_up_later` now rejects past-dated `wake_at` (and other malformed inputs: bare dates, explicit UTC offsets, `Z` paired with a non-UTC IANA timezone) up front, before any session state change. The validation parses `wake_at` + `timezone` into a UTC instant and short-circuits with `isError: true` plus both timestamps when the value resolves to the past or within a 30-second grace window. Runs before `parseAllowedAgentRoots()` and `getSession()`, so rejection has zero side effects. Motivated by a production incident where a session hung in `waiting` for ~3 hours after the agent computed a past-dated wake-up: the trigger was created, fired immediately or was silently dropped, and left the session permanently asleep with no future wake-up scheduled.
+
 ## [0.7.9] - 2026-04-22
 
 ### Fixed
