@@ -35,17 +35,25 @@ jobs:
       packages: write
       checks: read
 
+    # Note: don't reference `runner.*` or `inputs.*` here. `runner` is disallowed in
+    # jobs.<id>.env, and `inputs` is undefined on push triggers — both surface as
+    # "Unrecognized named-value" startup failures (no jobs scheduled). runner.temp
+    # paths are exported in a setup step using $RUNNER_TEMP; the dry-run flag uses
+    # github.event.inputs, which is null-safe across all triggers.
     env:
-      CANDIDATES_FILE: ${{ runner.temp }}/candidates.json
-      READY_FILE: ${{ runner.temp }}/ready.json
-      SKIPPED_FILE: ${{ runner.temp }}/skipped.json
-      PUBLISHED_FILE: ${{ runner.temp }}/published.json
-      FAILED_FILE: ${{ runner.temp }}/failed.json
-      DRY_RUN: ${{ inputs.dry_run && 'true' || 'false' }}
+      DRY_RUN: ${{ github.event.inputs.dry_run == 'true' }}
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Export temp file paths
+        run: |
+          echo "CANDIDATES_FILE=$RUNNER_TEMP/candidates.json" >> "$GITHUB_ENV"
+          echo "READY_FILE=$RUNNER_TEMP/ready.json" >> "$GITHUB_ENV"
+          echo "SKIPPED_FILE=$RUNNER_TEMP/skipped.json" >> "$GITHUB_ENV"
+          echo "PUBLISHED_FILE=$RUNNER_TEMP/published.json" >> "$GITHUB_ENV"
+          echo "FAILED_FILE=$RUNNER_TEMP/failed.json" >> "$GITHUB_ENV"
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
