@@ -1,6 +1,7 @@
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { z } from 'zod';
 import type { ClientFactory } from '../server.js';
+import { recacheReminderForParentServer } from '../recache-reminder.js';
 
 const PARAM_DESCRIPTIONS = {
   id: 'The ID of the unofficial mirror to delete',
@@ -31,13 +32,27 @@ Use cases:
       const client = clientFactory();
 
       try {
+        // Capture parent slug before deletion so we can emit a recache reminder
+        // if the parent server is live. If the lookup fails, fall back to no
+        // reminder rather than blocking the delete.
+        let parentSlug: string | null | undefined;
+        try {
+          const mirror = await client.getUnofficialMirror(validatedArgs.id);
+          parentSlug = mirror.mcp_server_slug;
+        } catch {
+          parentSlug = null;
+        }
+
         const result = await client.deleteUnofficialMirror(validatedArgs.id);
+
+        let text = `Successfully deleted unofficial mirror (ID: ${validatedArgs.id}).\n\n${result.message}`;
+        text += await recacheReminderForParentServer(client, parentSlug);
 
         return {
           content: [
             {
               type: 'text',
-              text: `Successfully deleted unofficial mirror (ID: ${validatedArgs.id}).\n\n${result.message}`,
+              text,
             },
           ],
         };

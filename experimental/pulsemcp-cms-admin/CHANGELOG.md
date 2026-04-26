@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [0.9.16] - 2026-04-25
+
+### Added
+
+- Tool-level recache reminders for write tools that mutate live `pulsemcp.com/servers/{slug}` listings. After a successful write, the response now appends `⚠️ This edit will not appear on pulsemcp.com/servers/{slug} until you call recache_mcp_server with this slug. Recache before declaring the work done.` so callers cannot miss the post-write recache step. Closes #3037 — addresses the failure mode that caused [session #4378](https://ao.pulsemcp.com/sessions/4378) to render `github.com/null/null` on `distro-media-distroverse` after a write succeeded but the recache was forgotten.
+  - Tools updated: `update_mcp_server`, `save_mcp_implementation` (UPDATE branch, server type only), `create_unofficial_mirror`, `update_unofficial_mirror`, `delete_unofficial_mirror`, `create_mcp_json`, `update_mcp_json`, `delete_mcp_json`.
+  - Reminder fires only when the affected listing's status is `live` — brand-new and archived rows are skipped because they have no public surface to invalidate.
+
 ## [0.9.15] - 2026-04-24
 
 ### Changed
