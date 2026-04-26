@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [0.9.17] - 2026-04-26
+
+### Removed
+
+- Reverted recache-reminder hook from all catalog write tools (`update_mcp_server`, `save_mcp_implementation`, `create_unofficial_mirror`, `update_unofficial_mirror`, `delete_unofficial_mirror`, `create_mcp_json`, `update_mcp_json`, `delete_mcp_json`) that was added in v0.9.16. The broad post-write nudges contributed to a production self-DoS on 2026-04-26 — synchronous recache calls saturated Puma workers and cascaded into ~10 minutes of slow `GET /servers/*` and `GET /` requests. Recache guidance is being narrowed to the one workflow where it's actually load-bearing (PulseMCP Inbox change-request email drafting). See #3057.
+
 ## [0.9.16] - 2026-04-25
 
 ### Added

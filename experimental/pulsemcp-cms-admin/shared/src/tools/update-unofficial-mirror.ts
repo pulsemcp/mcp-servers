@@ -1,7 +1,6 @@
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { z } from 'zod';
 import type { ClientFactory } from '../server.js';
-import { recacheReminderForParentServer } from '../recache-reminder.js';
 
 const PARAM_DESCRIPTIONS = {
   id: 'The ID of the unofficial mirror to update',
@@ -121,8 +120,6 @@ Use cases:
         Object.keys(params).forEach((field) => {
           content += `- ${field}\n`;
         });
-
-        content += await recacheReminderForParentServer(client, mirror.mcp_server_slug);
 
         return { content: [{ type: 'text', text: content }] };
       } catch (error) {

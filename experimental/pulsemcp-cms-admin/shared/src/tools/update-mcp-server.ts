@@ -1,7 +1,6 @@
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { z } from 'zod';
 import type { ClientFactory } from '../server.js';
-import { recacheReminderIfLive } from '../recache-reminder.js';
 
 const PARAM_DESCRIPTIONS = {
   implementation_id:
@@ -370,8 +369,6 @@ Create new provider:
         Object.keys(updateParams).forEach((field) => {
           content += `- ${field}\n`;
         });
-
-        content += recacheReminderIfLive(server.status, server.slug);
 
         return { content: [{ type: 'text', text: content }] };
       } catch (error) {
