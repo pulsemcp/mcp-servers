@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.5] - 2026-04-26
+
+### Changed
+
+- Bundled `@pulsemcp/mcp-elicitation` upgraded to `1.1.0`, which adds the opt-in `ELICITATION_PREFER_HTTP_FALLBACK` env var. When set to `"true"` and HTTP fallback URLs are configured, the library uses the HTTP fallback even if the connected client advertises native elicitation. This fixes confirmation prompts silently auto-cancelling under headless agent runtimes (e.g., Claude Code under Agent Orchestrator) that falsely advertise the `elicitation` capability. Default behavior is unchanged.
+
 ## [0.3.4] - 2026-04-25
 
 ### Changed

@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.4.7] - 2026-04-26
+
+### Changed
+
+- Bundled `@pulsemcp/mcp-elicitation` upgraded to `1.1.0`, which adds the opt-in `ELICITATION_PREFER_HTTP_FALLBACK` env var. When set to `"true"` and HTTP fallback URLs are configured, the library uses the HTTP fallback even if the connected client advertises native elicitation. This fixes send-email confirmation prompts silently auto-cancelling under headless agent runtimes (e.g., Claude Code under Agent Orchestrator) that falsely advertise the `elicitation` capability. Default behavior is unchanged.
+
 ## [0.4.6] - 2026-04-12
 
 - Migration verification: no-op patch version bump to validate internal→public distribution pipeline
