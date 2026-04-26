@@ -147,13 +147,46 @@ async function pollElicitationStatus(
 }
 
 /**
+ * Runs the HTTP fallback flow: POST a request, then poll until resolved or expired.
+ */
+async function httpFallbackElicit(
+  cfg: ElicitationConfig,
+  options: RequestConfirmationOptions
+): Promise<ElicitationResult> {
+  const clientRequestId = randomUUID();
+  const expiresAt = Date.now() + cfg.ttlMs;
+
+  const meta: ElicitationMeta = {
+    'com.pulsemcp/request-id': clientRequestId,
+    'com.pulsemcp/expires-at': new Date(expiresAt).toISOString(),
+    ...(cfg.sessionId && { 'com.pulsemcp/session-id': cfg.sessionId }),
+    ...options.meta,
+  };
+
+  const postResponse = await postElicitationRequest(
+    cfg,
+    options.message,
+    options.requestedSchema,
+    meta
+  );
+  // Use the server-provided requestId if available, otherwise fall back to the client-generated one
+  const requestId = postResponse.requestId || clientRequestId;
+  return pollElicitationStatus(cfg, requestId, expiresAt);
+}
+
+/**
  * Requests user confirmation through the best available mechanism.
  *
- * Decision tree:
+ * Decision tree (default):
  * 1. If elicitation is disabled (`ELICITATION_ENABLED=false`), returns `accept` immediately.
  * 2. If the client supports native elicitation, uses `server.elicitInput()`.
  * 3. If HTTP fallback URLs are configured, posts to the external endpoint and polls.
  * 4. Otherwise, throws an error indicating no elicitation mechanism is available.
+ *
+ * When `cfg.preferHttpFallback` is true (set via `ELICITATION_PREFER_HTTP_FALLBACK=true`)
+ * AND both fallback URLs are configured, tier 3 runs before tier 2. This is intended for
+ * headless agent runtimes that falsely advertise elicitation capability but cannot actually
+ * surface the prompt to a user.
  *
  * @param options - Configuration for the confirmation request.
  * @param config - Elicitation config (defaults to reading from env vars).
@@ -170,32 +203,21 @@ export async function requestConfirmation(
     return { action: 'accept' };
   }
 
+  const httpFallbackAvailable = Boolean(cfg.requestUrl && cfg.pollUrl);
+
+  // Opt-in: prefer HTTP fallback over native elicitation when both are available.
+  if (cfg.preferHttpFallback && httpFallbackAvailable) {
+    return httpFallbackElicit(cfg, options);
+  }
+
   // Tier 2: Native elicitation
   if (clientSupportsElicitation(options.server)) {
     return nativeElicit(options.server, options.message, options.requestedSchema);
   }
 
   // Tier 3: HTTP fallback
-  if (cfg.requestUrl && cfg.pollUrl) {
-    const clientRequestId = randomUUID();
-    const expiresAt = Date.now() + cfg.ttlMs;
-
-    const meta: ElicitationMeta = {
-      'com.pulsemcp/request-id': clientRequestId,
-      'com.pulsemcp/expires-at': new Date(expiresAt).toISOString(),
-      ...(cfg.sessionId && { 'com.pulsemcp/session-id': cfg.sessionId }),
-      ...options.meta,
-    };
-
-    const postResponse = await postElicitationRequest(
-      cfg,
-      options.message,
-      options.requestedSchema,
-      meta
-    );
-    // Use the server-provided requestId if available, otherwise fall back to the client-generated one
-    const requestId = postResponse.requestId || clientRequestId;
-    return pollElicitationStatus(cfg, requestId, expiresAt);
+  if (httpFallbackAvailable) {
+    return httpFallbackElicit(cfg, options);
   }
 
   // Tier 4: No mechanism available

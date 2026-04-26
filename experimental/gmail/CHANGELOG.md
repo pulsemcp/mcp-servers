@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.4.8] - 2026-04-26
+
+### Fixed
+
+- Bundle now ships `@pulsemcp/mcp-elicitation@1.1.0` as intended. The 0.4.7 tarball silently shipped a stale `1.0.1` bundle because the public `pulsemcp/mcp-servers` repo holds its own copy of `libs/elicitation/` that was never synced from the internal monorepo, so the public repo's `prepublishOnly` rebuilt from stale 1.0.1 source. The internal `distribute.sh`/`distribute-bulk.sh` now sync `libs/` to the public repo on every server distribute, and `prepare-publish.js` now wipes `build/` for a clean rebuild and asserts the bundled lib version matches the source — so this kind of drift fails the publish loudly instead of silently. Net effect: the `ELICITATION_PREFER_HTTP_FALLBACK` opt-in introduced in `1.1.0` actually works end-to-end now (it never did under 0.4.7).
+
 ## [0.4.7] - 2026-04-26
 
 ### Changed

@@ -32,6 +32,12 @@ Tier 4: throw Error('no mechanism available')
 
 **Tier 4** throws if elicitation is enabled but no mechanism is available. This ensures the server doesn't silently skip confirmation for destructive actions.
 
+### Tier-order opt-in: `ELICITATION_PREFER_HTTP_FALLBACK`
+
+Some headless agent runtimes (e.g., Claude Code running under Agent Orchestrator) advertise the `elicitation` client capability even though there is no real interactive user. In that situation the native call returns `cancel`/`decline` immediately and the user never sees the prompt.
+
+Setting `ELICITATION_PREFER_HTTP_FALLBACK=true` swaps the order so Tier 3 runs before Tier 2 when both are available. Native elicitation is then never attempted in that environment. The default (`false`) preserves the original tier order for clients that have a real interactive user (Claude Desktop, Cursor, etc.).
+
 ## Quick Start
 
 ### 1. Add the dependency
@@ -180,6 +186,7 @@ interface ElicitationConfig {
   ttlMs: number; // from ELICITATION_TTL_MS (default: 300000 = 5 min)
   pollIntervalMs: number; // from ELICITATION_POLL_INTERVAL_MS (default: 5000, min: 1000)
   sessionId?: string; // from ELICITATION_SESSION_ID
+  preferHttpFallback?: boolean; // from ELICITATION_PREFER_HTTP_FALLBACK (default: false)
 }
 ```
 
@@ -187,14 +194,15 @@ Invalid numeric values (NaN, negative) fall back to defaults silently. Poll inte
 
 ## Environment Variables
 
-| Variable                       | Default  | Description                                                                                                                                                                          |
-| ------------------------------ | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `ELICITATION_ENABLED`          | `true`   | Set to `"false"` to disable all elicitation (Tier 1 bypass)                                                                                                                          |
-| `ELICITATION_REQUEST_URL`      | (none)   | POST endpoint for HTTP fallback approval requests                                                                                                                                    |
-| `ELICITATION_POLL_URL`         | (none)   | GET base URL for polling approval status (`{pollUrl}/{requestId}`)                                                                                                                   |
-| `ELICITATION_TTL_MS`           | `300000` | TTL for HTTP fallback requests in milliseconds (5 minutes)                                                                                                                           |
-| `ELICITATION_POLL_INTERVAL_MS` | `5000`   | Poll interval in milliseconds (minimum: 1000)                                                                                                                                        |
-| `ELICITATION_SESSION_ID`       | (none)   | Session identifier included as `com.pulsemcp/session-id` in `_meta` of HTTP fallback requests. Set by the orchestrator to link elicitation requests back to the originating session. |
+| Variable                           | Default  | Description                                                                                                                                                                                                                                                             |
+| ---------------------------------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ELICITATION_ENABLED`              | `true`   | Set to `"false"` to disable all elicitation (Tier 1 bypass)                                                                                                                                                                                                             |
+| `ELICITATION_REQUEST_URL`          | (none)   | POST endpoint for HTTP fallback approval requests                                                                                                                                                                                                                       |
+| `ELICITATION_POLL_URL`             | (none)   | GET base URL for polling approval status (`{pollUrl}/{requestId}`)                                                                                                                                                                                                      |
+| `ELICITATION_TTL_MS`               | `300000` | TTL for HTTP fallback requests in milliseconds (5 minutes)                                                                                                                                                                                                              |
+| `ELICITATION_POLL_INTERVAL_MS`     | `5000`   | Poll interval in milliseconds (minimum: 1000)                                                                                                                                                                                                                           |
+| `ELICITATION_SESSION_ID`           | (none)   | Session identifier included as `com.pulsemcp/session-id` in `_meta` of HTTP fallback requests. Set by the orchestrator to link elicitation requests back to the originating session.                                                                                    |
+| `ELICITATION_PREFER_HTTP_FALLBACK` | `false`  | When `"true"`, forces HTTP fallback (Tier 3) over native elicitation (Tier 2) whenever both URLs are configured. Use this in headless agent runtimes that falsely advertise elicitation capability so prompts reach an external approval UI instead of auto-cancelling. |
 
 ## HTTP Fallback Protocol
 
