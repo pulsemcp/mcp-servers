@@ -1,6 +1,7 @@
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { z } from 'zod';
 import type { ClientFactory } from '../server.js';
+import { recacheReminderForMirrorParent } from '../recache-reminder.js';
 
 const PARAM_DESCRIPTIONS = {
   mcp_servers_unofficial_mirror_id: 'The ID of the unofficial mirror this MCP JSON belongs to',
@@ -82,6 +83,11 @@ Use cases:
         if (mcpJson.created_at) {
           content += `**Created:** ${mcpJson.created_at}\n`;
         }
+
+        content += await recacheReminderForMirrorParent(
+          client,
+          mcpJson.mcp_servers_unofficial_mirror_id
+        );
 
         return { content: [{ type: 'text', text: content }] };
       } catch (error) {

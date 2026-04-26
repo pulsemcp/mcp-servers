@@ -1,6 +1,7 @@
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { z } from 'zod';
 import type { ClientFactory } from '../server.js';
+import { recacheReminderForParentServer } from '../recache-reminder.js';
 
 const PARAM_DESCRIPTIONS = {
   name: 'The name of the unofficial mirror (e.g., "@modelcontextprotocol/server-filesystem")',
@@ -92,6 +93,8 @@ Use cases:
         if (mirror.created_at) {
           content += `**Created:** ${mirror.created_at}\n`;
         }
+
+        content += await recacheReminderForParentServer(client, mirror.mcp_server_slug);
 
         return { content: [{ type: 'text', text: content }] };
       } catch (error) {
