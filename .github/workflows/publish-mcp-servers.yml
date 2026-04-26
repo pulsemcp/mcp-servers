@@ -35,10 +35,11 @@ jobs:
       packages: write
       checks: read
 
-    # Note: neither `runner` nor `inputs` is allowed in jobs.<id>.env — both cause
-    # "Unrecognized named-value" startup failures. runner.temp paths are exported
-    # below in a setup step (RUNNER_TEMP is set by the runner); the dry-run flag
-    # uses github.event.inputs (null-safe across all triggers).
+    # Note: don't reference `runner.*` or `inputs.*` here. `runner` is disallowed in
+    # jobs.<id>.env, and `inputs` is undefined on push triggers — both surface as
+    # "Unrecognized named-value" startup failures (no jobs scheduled). runner.temp
+    # paths are exported in a setup step using $RUNNER_TEMP; the dry-run flag uses
+    # github.event.inputs, which is null-safe across all triggers.
     env:
       DRY_RUN: ${{ github.event.inputs.dry_run == 'true' }}
 
