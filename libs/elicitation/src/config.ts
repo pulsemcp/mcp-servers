@@ -17,18 +17,24 @@ function parsePositiveInt(value: string | undefined, defaultValue: number): numb
  * Reads elicitation configuration from environment variables.
  *
  * Environment variables:
- *   ELICITATION_ENABLED       - "true" (default) or "false"
- *   ELICITATION_REQUEST_URL   - POST endpoint for HTTP fallback
- *   ELICITATION_POLL_URL      - GET endpoint for HTTP fallback polling
- *   ELICITATION_TTL_MS        - Request TTL in milliseconds (default: 300000)
- *   ELICITATION_POLL_INTERVAL_MS - Poll interval in milliseconds (default: 5000, min: 1000)
- *   ELICITATION_SESSION_ID      - Session identifier for HTTP fallback `_meta`
+ *   ELICITATION_ENABLED              - "true" (default) or "false"
+ *   ELICITATION_REQUEST_URL          - POST endpoint for HTTP fallback
+ *   ELICITATION_POLL_URL             - GET endpoint for HTTP fallback polling
+ *   ELICITATION_TTL_MS               - Request TTL in milliseconds (default: 300000)
+ *   ELICITATION_POLL_INTERVAL_MS     - Poll interval in milliseconds (default: 5000, min: 1000)
+ *   ELICITATION_SESSION_ID           - Session identifier for HTTP fallback `_meta`
+ *   ELICITATION_PREFER_HTTP_FALLBACK - "true" forces HTTP fallback over native elicitation
+ *                                      when both are available. Default: "false".
  */
 export function readElicitationConfig(
   env: Record<string, string | undefined> = process.env
 ): ElicitationConfig {
   const enabledRaw = env.ELICITATION_ENABLED;
   const enabled = enabledRaw === undefined ? true : enabledRaw.toLowerCase() !== 'false';
+
+  const preferHttpFallbackRaw = env.ELICITATION_PREFER_HTTP_FALLBACK;
+  const preferHttpFallback =
+    preferHttpFallbackRaw !== undefined && preferHttpFallbackRaw.toLowerCase() === 'true';
 
   const pollIntervalMs = Math.max(
     MIN_POLL_INTERVAL_MS,
@@ -42,5 +48,6 @@ export function readElicitationConfig(
     ttlMs: parsePositiveInt(env.ELICITATION_TTL_MS, DEFAULT_TTL_MS),
     pollIntervalMs,
     sessionId: env.ELICITATION_SESSION_ID,
+    preferHttpFallback,
   };
 }
