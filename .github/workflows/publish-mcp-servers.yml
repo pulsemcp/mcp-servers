@@ -41,7 +41,9 @@ jobs:
       SKIPPED_FILE: ${{ runner.temp }}/skipped.json
       PUBLISHED_FILE: ${{ runner.temp }}/published.json
       FAILED_FILE: ${{ runner.temp }}/failed.json
-      DRY_RUN: ${{ inputs.dry_run && 'true' || 'false' }}
+      # Don't use `inputs.dry_run` — the inputs context is unavailable on push events
+      # and causes a startup failure (0s, no jobs scheduled). github.event.inputs is null-safe.
+      DRY_RUN: ${{ github.event.inputs.dry_run == 'true' }}
 
     steps:
       - name: Checkout code
