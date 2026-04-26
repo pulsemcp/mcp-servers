@@ -1,7 +1,6 @@
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { z } from 'zod';
 import type { ClientFactory } from '../server.js';
-import { recacheReminderForMirrorParent } from '../recache-reminder.js';
 
 const PARAM_DESCRIPTIONS = {
   id: 'The ID of the MCP JSON to update',
@@ -106,11 +105,6 @@ Use cases:
         Object.keys(params).forEach((field) => {
           content += `- ${field}\n`;
         });
-
-        content += await recacheReminderForMirrorParent(
-          client,
-          mcpJson.mcp_servers_unofficial_mirror_id
-        );
 
         return { content: [{ type: 'text', text: content }] };
       } catch (error) {

@@ -1,7 +1,6 @@
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { z } from 'zod';
 import type { ClientFactory } from '../server.js';
-import { recacheReminderForMirrorParent } from '../recache-reminder.js';
 
 const PARAM_DESCRIPTIONS = {
   id: 'The ID of the MCP JSON to delete',
@@ -32,27 +31,13 @@ Use cases:
       const client = clientFactory();
 
       try {
-        // Capture parent mirror id before deletion so we can emit a recache
-        // reminder if the parent server is live. If the lookup fails, fall
-        // back to no reminder rather than blocking the delete.
-        let mirrorId: number | null | undefined;
-        try {
-          const mcpJson = await client.getMcpJson(validatedArgs.id);
-          mirrorId = mcpJson.mcp_servers_unofficial_mirror_id;
-        } catch {
-          mirrorId = null;
-        }
-
         const result = await client.deleteMcpJson(validatedArgs.id);
-
-        let text = `Successfully deleted MCP JSON (ID: ${validatedArgs.id}).\n\n${result.message}`;
-        text += await recacheReminderForMirrorParent(client, mirrorId);
 
         return {
           content: [
             {
               type: 'text',
-              text,
+              text: `Successfully deleted MCP JSON (ID: ${validatedArgs.id}).\n\n${result.message}`,
             },
           ],
         };

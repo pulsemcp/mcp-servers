@@ -2,7 +2,6 @@ import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { z } from 'zod';
 import type { ClientFactory } from '../server.js';
 import type { SaveMCPImplementationParams, CreateMCPImplementationParams } from '../types.js';
-import { recacheReminderIfLive } from '../recache-reminder.js';
 
 // Parameter descriptions - single source of truth
 const PARAM_DESCRIPTIONS = {
@@ -522,12 +521,6 @@ Important notes:
             .forEach((field) => {
               content += `- ${field}\n`;
             });
-
-          // Only servers have a public listing at /servers/{slug} that needs
-          // recaching; client implementations are not surfaced there.
-          if (implementation.type === 'server') {
-            content += recacheReminderIfLive(implementation.status, implementation.slug);
-          }
 
           return {
             content: [
