@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.13] - 2026-04-26
+
+### Added
+
+- New `wake_me_up_when_session_changes_state` tool — the state-based analog of `wake_me_up_later`. Schedules the requester to be woken up when a watched session transitions to `needs_input` or `failed`, via a one-time `ao_event` trigger introduced by Rails-side PR #3049. Use this when you know _what_ event to wake on but not _when_ it will happen (e.g., a subagent you spawned will eventually need input or might fail) — replaces poll loops of `get_session` and time-guess workarounds with `wake_me_up_later`. The watched session can be any session, not just one the requester spawned. Trigger auto-deletes after firing (one-shot). Registered in the `triggers` group and `self_session` composite group; blocked when `ALLOWED_AGENT_ROOTS` is set, mirroring `wake_me_up_later`.
+
 ## [0.7.12] - 2026-04-25
 
 ### Changed
