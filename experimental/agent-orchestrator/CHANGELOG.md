@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.14] - 2026-04-27
+
+### Added
+
+- `start_session` tool now accepts an optional `auto_compact_window` integer parameter, mirroring the `auto_compact_window` field added to `POST /api/v1/sessions` in PulseMCP PR #3112. When omitted (the common case), the field is not sent and the API default of 200,000 tokens applies. The parameter description steers callers toward the default and reserves the override for the rare case of compaction thrashing in a spawned session, where retrying with `1000000` (1 million tokens) gives the session more space to work. Default and validation rules live on the API, not the client — so this is a thin pass-through with no client-side reimplementation.
+
 ## [0.7.13] - 2026-04-26
 
 ### Added

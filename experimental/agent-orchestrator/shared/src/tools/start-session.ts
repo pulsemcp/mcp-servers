@@ -31,6 +31,12 @@ const PARAM_DESCRIPTIONS = {
   config: 'Additional configuration as a JSON object.',
   custom_metadata:
     'User-defined metadata as a JSON object. Useful for tracking tickets, projects, etc.',
+  auto_compact_window:
+    'Optional per-session auto-compact (context) window override, in tokens. ' +
+    '**You should generally rely on the default of 200,000** — omit this parameter and the API default applies. ' +
+    'Only override in the rare situation where the spawned session is suffering from compaction thrashing because it ' +
+    "doesn't have enough space to work — in that case, retry with `1000000` (1 million tokens). " +
+    'Compaction thrashing is currently the only known reason to set this preemptively.',
 } as const;
 
 export const StartSessionSchema = z.object({
@@ -49,6 +55,7 @@ export const StartSessionSchema = z.object({
   plugins: z.array(z.string()).optional().describe(PARAM_DESCRIPTIONS.plugins),
   config: z.record(z.unknown()).optional().describe(PARAM_DESCRIPTIONS.config),
   custom_metadata: z.record(z.unknown()).optional().describe(PARAM_DESCRIPTIONS.custom_metadata),
+  auto_compact_window: z.number().int().optional().describe(PARAM_DESCRIPTIONS.auto_compact_window),
 });
 
 const TOOL_DESCRIPTION = `Start a new agent session in the Agent Orchestrator.
@@ -132,6 +139,10 @@ export function startSessionTool(_server: Server, clientFactory: () => IAgentOrc
         custom_metadata: {
           type: 'object',
           description: PARAM_DESCRIPTIONS.custom_metadata,
+        },
+        auto_compact_window: {
+          type: 'integer',
+          description: PARAM_DESCRIPTIONS.auto_compact_window,
         },
       },
       required: [],
