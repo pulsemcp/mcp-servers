@@ -189,6 +189,7 @@ export interface CreateSessionRequest {
   agent_root?: string;
   config?: Record<string, unknown>;
   custom_metadata?: Record<string, unknown>;
+  auto_compact_window?: number;
 }
 
 // Update session request
