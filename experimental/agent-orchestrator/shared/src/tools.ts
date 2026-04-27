@@ -2,7 +2,7 @@ import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { ListToolsRequestSchema, CallToolRequestSchema } from '@modelcontextprotocol/sdk/types.js';
 import { ClientFactory } from './server.js';
 
-// 15 tools across 4 domains + 1 composite group
+// 16 tools across 4 domains + 1 composite group
 import { quickSearchSessionsTool } from './tools/search-sessions.js';
 import { startSessionTool } from './tools/start-session.js';
 import { getSessionTool } from './tools/get-session.js';
@@ -15,6 +15,7 @@ import { actionNotificationTool } from './tools/action-notification.js';
 import { searchTriggersTool } from './tools/search-triggers.js';
 import { actionTriggerTool } from './tools/action-trigger.js';
 import { wakeMeUpLaterTool } from './tools/wake-me-up-later.js';
+import { wakeMeUpWhenSessionChangesStateTool } from './tools/wake-me-up-when-session-changes-state.js';
 import { getSystemHealthTool } from './tools/get-system-health.js';
 import { actionHealthTool } from './tools/action-health.js';
 import { getTranscriptArchiveTool } from './tools/get-transcript-archive.js';
@@ -152,7 +153,7 @@ interface ToolDefinition {
 /**
  * All available tools with their group assignments.
  *
- * 15 tools across 4 domains + 1 composite group:
+ * 16 tools across 4 domains + 1 composite group:
  * - quick_search_sessions: Quick title-based search/list/get sessions by ID (sessions, read)
  * - get_session: Get detailed session info with optional logs/transcripts (sessions, read; self_session)
  * - get_configs: Fetch all static configuration (sessions, read; self_session)
@@ -166,6 +167,7 @@ interface ToolDefinition {
  * - search_triggers: Search/list automation triggers (triggers, read)
  * - action_trigger: Create, update, delete, toggle triggers (triggers, write)
  * - wake_me_up_later: Schedule a session to be woken up at a specific time (triggers, write; self_session)
+ * - wake_me_up_when_session_changes_state: Schedule a session to be woken up when another session enters needs_input or failed (triggers, write; self_session)
  * - get_system_health: Get system health report and CLI status (health, read)
  * - action_health: System maintenance actions (health, write)
  */
@@ -238,6 +240,12 @@ const ALL_TOOLS: ToolDefinition[] = [
   { factory: actionTriggerTool, group: 'triggers', isWriteOperation: true },
   {
     factory: wakeMeUpLaterTool,
+    group: 'triggers',
+    isWriteOperation: true,
+    compositeGroups: ['self_session'],
+  },
+  {
+    factory: wakeMeUpWhenSessionChangesStateTool,
     group: 'triggers',
     isWriteOperation: true,
     compositeGroups: ['self_session'],
