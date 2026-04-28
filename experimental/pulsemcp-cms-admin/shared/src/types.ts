@@ -1044,6 +1044,21 @@ export interface CreateApiKeyParams {
   permission_level?: ApiKeyPermissionLevel;
 }
 
+export interface DeleteTenantParams {
+  id_or_slug: number | string;
+  force?: boolean;
+}
+
+export interface DeleteTenantResponse {
+  success: boolean;
+  message: string;
+}
+
+export interface DeleteApiKeyResponse {
+  success: boolean;
+  message: string;
+}
+
 // ============================================================
 // Cache Management Types
 // ============================================================

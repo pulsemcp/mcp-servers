@@ -1291,6 +1291,14 @@ export function createMockPulseMCPAdminClient(mockData: MockData): IPulseMCPAdmi
       };
     },
 
+    async deleteTenant() {
+      return { success: true, message: 'Tenant deleted' };
+    },
+
+    async deleteApiKey() {
+      return { success: true, message: 'API key revoked' };
+    },
+
     async recacheMCPServer(slug: string) {
       return {
         message: `Cache successfully refreshed for ${slug}.`,
