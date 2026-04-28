@@ -37,72 +37,74 @@ This is an MCP ([Model Context Protocol](https://modelcontextprotocol.io/)) Serv
 
 This server is built and tested on macOS with Claude Desktop. It should work with other MCP clients as well.
 
-| Tool Name                              | Tool Group         | Read/Write | Description                                                                                                |
-| -------------------------------------- | ------------------ | ---------- | ---------------------------------------------------------------------------------------------------------- |
-| `get_newsletter_posts`                 | newsletter         | read       | List newsletter posts with search, sorting, and pagination options.                                        |
-| `get_newsletter_post`                  | newsletter         | read       | Retrieve a specific newsletter post by its unique slug.                                                    |
-| `draft_newsletter_post`                | newsletter         | write      | Create a new draft newsletter post with title, body, and metadata.                                         |
-| `update_newsletter_post`               | newsletter         | write      | Update an existing newsletter post's content and metadata (except status).                                 |
-| `upload_image`                         | newsletter         | write      | Upload an image and attach it to a specific newsletter post.                                               |
-| `get_authors`                          | newsletter         | read       | Get a list of authors with optional search and pagination.                                                 |
-| `search_mcp_implementations`           | server_directory   | read       | Search for MCP servers and clients in the PulseMCP registry.                                               |
-| `get_draft_mcp_implementations`        | server_directory   | read       | Retrieve paginated list of draft MCP implementations needing review.                                       |
-| `find_providers`                       | server_directory   | read       | Search for providers by ID, name, URL, or slug.                                                            |
-| `save_mcp_implementation`              | server_directory   | write      | Update an MCP implementation (replicates Admin panel "Save Changes" button).                               |
-| `send_impl_posted_notif`               | server_directory   | write      | Send email notification when MCP implementation goes live.                                                 |
-| `get_official_mirror_queue_items`      | official_queue     | read       | List and filter official mirror queue entries with pagination and search.                                  |
-| `get_official_mirror_queue_item`       | official_queue     | read       | Get detailed information about a single official mirror queue entry.                                       |
-| `approve_official_mirror_queue_item`   | official_queue     | write      | Approve a queue entry and link it to an existing MCP server (async).                                       |
-| `approve_mirror_no_modify`             | official_queue     | write      | Approve without updating the linked server.                                                                |
-| `reject_official_mirror_queue_item`    | official_queue     | write      | Reject a queue entry (async operation).                                                                    |
-| `add_official_mirror_to_regular_queue` | official_queue     | write      | Convert a queue entry to a draft MCP implementation (async).                                               |
-| `unlink_official_mirror_queue_item`    | official_queue     | write      | Unlink a queue entry from its linked MCP server.                                                           |
-| `get_unofficial_mirrors`               | unofficial_mirrors | read       | List unofficial mirrors with search, pagination, and MCP server filtering.                                 |
-| `get_unofficial_mirror`                | unofficial_mirrors | read       | Get detailed unofficial mirror info by ID or name.                                                         |
-| `create_unofficial_mirror`             | unofficial_mirrors | write      | Create a new unofficial mirror entry with JSON data.                                                       |
-| `update_unofficial_mirror`             | unofficial_mirrors | write      | Update an existing unofficial mirror by ID.                                                                |
-| `delete_unofficial_mirror`             | unofficial_mirrors | write      | Delete an unofficial mirror by ID (irreversible).                                                          |
-| `get_official_mirrors`                 | official_mirrors   | read       | List official mirrors with search, status, and processing filters.                                         |
-| `get_official_mirror`                  | official_mirrors   | read       | Get detailed official mirror info by ID or name.                                                           |
-| `get_tenants`                          | tenants            | read       | List tenants with search and admin status filtering.                                                       |
-| `get_tenant`                           | tenants            | read       | Get detailed tenant info by ID or slug.                                                                    |
-| `create_tenant`                        | tenants            | write      | Create a new tenant for sub-registry provisioning.                                                         |
-| `create_api_key`                       | tenants            | write      | Create an API key for a tenant. Returns the raw key (only available at creation time).                     |
-| `get_mcp_jsons`                        | mcp_jsons          | read       | List MCP JSON configs with mirror and server filtering.                                                    |
-| `get_mcp_json`                         | mcp_jsons          | read       | Get a single MCP JSON configuration by ID.                                                                 |
-| `create_mcp_json`                      | mcp_jsons          | write      | Create a new MCP JSON configuration for an unofficial mirror.                                              |
-| `update_mcp_json`                      | mcp_jsons          | write      | Update an existing MCP JSON configuration by ID.                                                           |
-| `delete_mcp_json`                      | mcp_jsons          | write      | Delete an MCP JSON configuration by ID (irreversible).                                                     |
-| `list_mcp_servers`                     | mcp_servers        | read       | List/search MCP servers with filtering by status, classification, pagination.                              |
-| `get_mcp_server`                       | mcp_servers        | read       | Get detailed MCP server info by slug (unified view of all admin UI fields).                                |
-| `update_mcp_server`                    | mcp_servers        | write      | Update an MCP server's fields (all admin UI fields supported).                                             |
-| `recache_mcp_server`                   | mcp_servers        | write      | Refresh the cache for a specific MCP server (show page, cards, canonicals, parent pages).                  |
-| `get_redirects`                        | redirects          | read       | List URL redirects with search, status filtering, and pagination.                                          |
-| `get_redirect`                         | redirects          | read       | Get detailed redirect info by ID.                                                                          |
-| `create_redirect`                      | redirects          | write      | Create a new URL redirect entry.                                                                           |
-| `update_redirect`                      | redirects          | write      | Update an existing URL redirect by ID.                                                                     |
-| `delete_redirect`                      | redirects          | write      | Delete a URL redirect by ID (irreversible).                                                                |
-| `list_good_jobs`                       | good_jobs          | read       | List and filter background jobs by queue, status, job class, and date range.                               |
-| `get_good_job`                         | good_jobs          | read       | Get detailed information about a specific background job.                                                  |
-| `list_good_job_cron_schedules`         | good_jobs          | read       | List all configured cron schedules.                                                                        |
-| `list_good_job_processes`              | good_jobs          | read       | List active worker processes.                                                                              |
-| `get_good_job_queue_statistics`        | good_jobs          | read       | Get aggregate job statistics by status.                                                                    |
-| `retry_good_job`                       | good_jobs          | write      | Retry a failed or discarded background job.                                                                |
-| `discard_good_job`                     | good_jobs          | write      | Discard a background job to prevent retries.                                                               |
-| `reschedule_good_job`                  | good_jobs          | write      | Reschedule a background job to a new time.                                                                 |
-| `force_trigger_good_job_cron`          | good_jobs          | write      | Force trigger a cron schedule immediately.                                                                 |
-| `cleanup_good_jobs`                    | good_jobs          | write      | Clean up old background jobs by status and age.                                                            |
-| `run_exam_for_mirror`                  | proctor            | write      | Run proctor exams against unofficial mirrors via Fly Machines. Returns truncated summary with `result_id`. |
-| `get_exam_result`                      | proctor            | read       | Retrieve full untruncated exam results by `result_id`, with optional section/mirror filtering.             |
-| `save_results_for_mirror`              | proctor            | write      | Save proctor exam results via `result_id` from `run_exam_for_mirror`.                                      |
-| `list_proctor_runs`                    | proctor            | read       | List proctor runs with filtering by name, recommended status, and tenant IDs.                              |
-| `get_proctor_metadata`                 | proctor            | read       | Get available proctor runtimes and exam types.                                                             |
-| `list_discovered_urls`                 | discovered_urls    | read       | List discovered URLs with status filtering and pagination.                                                 |
-| `mark_discovered_url_processed`        | discovered_urls    | write      | Mark a discovered URL as processed with a result status.                                                   |
-| `get_discovered_url_stats`             | discovered_urls    | read       | Get summary statistics for discovered URLs pipeline.                                                       |
-| `get_moz_metrics`                      | moz                | read       | Fetch live URL metrics from the MOZ API (page authority, domain authority, spam score, link counts).       |
-| `get_moz_backlinks`                    | moz                | read       | Fetch live backlink data from the MOZ API (source pages, anchor text, domain authority).                   |
-| `get_moz_stored_metrics`               | moz                | read       | List stored/historical MOZ data for a server's canonicals with pagination.                                 |
+| Tool Name                              | Tool Group          | Read/Write | Description                                                                                                |
+| -------------------------------------- | ------------------- | ---------- | ---------------------------------------------------------------------------------------------------------- |
+| `get_newsletter_posts`                 | newsletter          | read       | List newsletter posts with search, sorting, and pagination options.                                        |
+| `get_newsletter_post`                  | newsletter          | read       | Retrieve a specific newsletter post by its unique slug.                                                    |
+| `draft_newsletter_post`                | newsletter          | write      | Create a new draft newsletter post with title, body, and metadata.                                         |
+| `update_newsletter_post`               | newsletter          | write      | Update an existing newsletter post's content and metadata (except status).                                 |
+| `upload_image`                         | newsletter          | write      | Upload an image and attach it to a specific newsletter post.                                               |
+| `get_authors`                          | newsletter          | read       | Get a list of authors with optional search and pagination.                                                 |
+| `search_mcp_implementations`           | server_directory    | read       | Search for MCP servers and clients in the PulseMCP registry.                                               |
+| `get_draft_mcp_implementations`        | server_directory    | read       | Retrieve paginated list of draft MCP implementations needing review.                                       |
+| `find_providers`                       | server_directory    | read       | Search for providers by ID, name, URL, or slug.                                                            |
+| `save_mcp_implementation`              | server_directory    | write      | Update an MCP implementation (replicates Admin panel "Save Changes" button).                               |
+| `send_impl_posted_notif`               | server_directory    | write      | Send email notification when MCP implementation goes live.                                                 |
+| `get_official_mirror_queue_items`      | official_queue      | read       | List and filter official mirror queue entries with pagination and search.                                  |
+| `get_official_mirror_queue_item`       | official_queue      | read       | Get detailed information about a single official mirror queue entry.                                       |
+| `approve_official_mirror_queue_item`   | official_queue      | write      | Approve a queue entry and link it to an existing MCP server (async).                                       |
+| `approve_mirror_no_modify`             | official_queue      | write      | Approve without updating the linked server.                                                                |
+| `reject_official_mirror_queue_item`    | official_queue      | write      | Reject a queue entry (async operation).                                                                    |
+| `add_official_mirror_to_regular_queue` | official_queue      | write      | Convert a queue entry to a draft MCP implementation (async).                                               |
+| `unlink_official_mirror_queue_item`    | official_queue      | write      | Unlink a queue entry from its linked MCP server.                                                           |
+| `get_unofficial_mirrors`               | unofficial_mirrors  | read       | List unofficial mirrors with search, pagination, and MCP server filtering.                                 |
+| `get_unofficial_mirror`                | unofficial_mirrors  | read       | Get detailed unofficial mirror info by ID or name.                                                         |
+| `create_unofficial_mirror`             | unofficial_mirrors  | write      | Create a new unofficial mirror entry with JSON data.                                                       |
+| `update_unofficial_mirror`             | unofficial_mirrors  | write      | Update an existing unofficial mirror by ID.                                                                |
+| `delete_unofficial_mirror`             | unofficial_mirrors  | write      | Delete an unofficial mirror by ID (irreversible).                                                          |
+| `get_official_mirrors`                 | official_mirrors    | read       | List official mirrors with search, status, and processing filters.                                         |
+| `get_official_mirror`                  | official_mirrors    | read       | Get detailed official mirror info by ID or name.                                                           |
+| `get_tenants`                          | tenants             | read       | List tenants with search and admin status filtering.                                                       |
+| `get_tenant`                           | tenants             | read       | Get detailed tenant info by ID or slug.                                                                    |
+| `create_tenant`                        | tenants             | write      | Create a new tenant for sub-registry provisioning.                                                         |
+| `create_api_key`                       | tenants             | write      | Create an API key for a tenant. Returns the raw key (only available at creation time).                     |
+| `delete_tenant`                        | tenants_destructive | write      | Permanently delete a tenant. Requires elicitation approval. With `force: true`, cascades to dependents.    |
+| `delete_api_key`                       | tenants_destructive | write      | Permanently revoke (delete) an API key. Idempotent. Requires elicitation approval.                         |
+| `get_mcp_jsons`                        | mcp_jsons           | read       | List MCP JSON configs with mirror and server filtering.                                                    |
+| `get_mcp_json`                         | mcp_jsons           | read       | Get a single MCP JSON configuration by ID.                                                                 |
+| `create_mcp_json`                      | mcp_jsons           | write      | Create a new MCP JSON configuration for an unofficial mirror.                                              |
+| `update_mcp_json`                      | mcp_jsons           | write      | Update an existing MCP JSON configuration by ID.                                                           |
+| `delete_mcp_json`                      | mcp_jsons           | write      | Delete an MCP JSON configuration by ID (irreversible).                                                     |
+| `list_mcp_servers`                     | mcp_servers         | read       | List/search MCP servers with filtering by status, classification, pagination.                              |
+| `get_mcp_server`                       | mcp_servers         | read       | Get detailed MCP server info by slug (unified view of all admin UI fields).                                |
+| `update_mcp_server`                    | mcp_servers         | write      | Update an MCP server's fields (all admin UI fields supported).                                             |
+| `recache_mcp_server`                   | mcp_servers         | write      | Refresh the cache for a specific MCP server (show page, cards, canonicals, parent pages).                  |
+| `get_redirects`                        | redirects           | read       | List URL redirects with search, status filtering, and pagination.                                          |
+| `get_redirect`                         | redirects           | read       | Get detailed redirect info by ID.                                                                          |
+| `create_redirect`                      | redirects           | write      | Create a new URL redirect entry.                                                                           |
+| `update_redirect`                      | redirects           | write      | Update an existing URL redirect by ID.                                                                     |
+| `delete_redirect`                      | redirects           | write      | Delete a URL redirect by ID (irreversible).                                                                |
+| `list_good_jobs`                       | good_jobs           | read       | List and filter background jobs by queue, status, job class, and date range.                               |
+| `get_good_job`                         | good_jobs           | read       | Get detailed information about a specific background job.                                                  |
+| `list_good_job_cron_schedules`         | good_jobs           | read       | List all configured cron schedules.                                                                        |
+| `list_good_job_processes`              | good_jobs           | read       | List active worker processes.                                                                              |
+| `get_good_job_queue_statistics`        | good_jobs           | read       | Get aggregate job statistics by status.                                                                    |
+| `retry_good_job`                       | good_jobs           | write      | Retry a failed or discarded background job.                                                                |
+| `discard_good_job`                     | good_jobs           | write      | Discard a background job to prevent retries.                                                               |
+| `reschedule_good_job`                  | good_jobs           | write      | Reschedule a background job to a new time.                                                                 |
+| `force_trigger_good_job_cron`          | good_jobs           | write      | Force trigger a cron schedule immediately.                                                                 |
+| `cleanup_good_jobs`                    | good_jobs           | write      | Clean up old background jobs by status and age.                                                            |
+| `run_exam_for_mirror`                  | proctor             | write      | Run proctor exams against unofficial mirrors via Fly Machines. Returns truncated summary with `result_id`. |
+| `get_exam_result`                      | proctor             | read       | Retrieve full untruncated exam results by `result_id`, with optional section/mirror filtering.             |
+| `save_results_for_mirror`              | proctor             | write      | Save proctor exam results via `result_id` from `run_exam_for_mirror`.                                      |
+| `list_proctor_runs`                    | proctor             | read       | List proctor runs with filtering by name, recommended status, and tenant IDs.                              |
+| `get_proctor_metadata`                 | proctor             | read       | Get available proctor runtimes and exam types.                                                             |
+| `list_discovered_urls`                 | discovered_urls     | read       | List discovered URLs with status filtering and pagination.                                                 |
+| `mark_discovered_url_processed`        | discovered_urls     | write      | Mark a discovered URL as processed with a result status.                                                   |
+| `get_discovered_url_stats`             | discovered_urls     | read       | Get summary statistics for discovered URLs pipeline.                                                       |
+| `get_moz_metrics`                      | moz                 | read       | Fetch live URL metrics from the MOZ API (page authority, domain authority, spam score, link counts).       |
+| `get_moz_backlinks`                    | moz                 | read       | Fetch live backlink data from the MOZ API (source pages, anchor text, domain authority).                   |
+| `get_moz_stored_metrics`               | moz                 | read       | List stored/historical MOZ data for a server's canonicals with pagination.                                 |
 
 # Tool Groups
 
@@ -127,6 +129,7 @@ This server organizes tools into groups that can be selectively enabled or disab
 | `official_mirrors_readonly`   | 2     | Official mirrors read-only (alias)                                                                                                                                          |
 | `tenants`                     | 4     | Tenant management including API key provisioning (read + write)                                                                                                             |
 | `tenants_readonly`            | 2     | Tenants read-only (list, get)                                                                                                                                               |
+| `tenants_destructive`         | 2     | **Opt-in only** (NOT in default groups). Destructive tenant tools — `delete_tenant`, `delete_api_key`. Requires MCP elicitation approval per call.                          |
 | `mcp_jsons`                   | 5     | Full MCP JSON configurations (read + write)                                                                                                                                 |
 | `mcp_jsons_readonly`          | 2     | MCP JSON configurations read-only                                                                                                                                           |
 | `mcp_servers`                 | 4     | Full MCP servers management (read + write)                                                                                                                                  |
@@ -161,6 +164,8 @@ This server organizes tools into groups that can be selectively enabled or disab
 - **tenants** / **tenants_readonly**:
   - Read-only: `get_tenants`, `get_tenant`
   - Write: `create_tenant`, `create_api_key`
+- **tenants_destructive** (opt-in only — NOT enabled by default; not part of `tenants` or `tenants_readonly`):
+  - Write: `delete_tenant`, `delete_api_key` — both require MCP elicitation approval before each call
 - **mcp_jsons** / **mcp_jsons_readonly**:
   - Read-only: `get_mcp_jsons`, `get_mcp_json`
   - Write: `create_mcp_json`, `update_mcp_json`, `delete_mcp_json`
@@ -184,12 +189,25 @@ This server organizes tools into groups that can be selectively enabled or disab
 
 ## Environment Variables
 
-| Variable                         | Description                                                                                                                                                                                                                                                                                                                 | Default                                                                                                                                                                          |
-| -------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `PULSEMCP_ADMIN_API_KEY`         | API key sent as `X-API-Key` for admin-API authentication. Required.                                                                                                                                                                                                                                                         | —                                                                                                                                                                                |
-| `PULSEMCP_ADMIN_API_URL`         | Base URL for the admin API.                                                                                                                                                                                                                                                                                                 | `https://admin.pulsemcp.com`                                                                                                                                                     |
-| `PULSEMCP_ADMIN_INTERNAL_SECRET` | Optional shared secret sent as the `X-PulseMCP-Internal` header. A Cloudflare custom rule uses it to route trusted internal traffic past the WAF and rate limiter in front of `admin.pulsemcp.com`. Needed in production to avoid spurious 403s; leave unset locally and against staging (staging is grey-clouded, no WAF). | unset                                                                                                                                                                            |
-| `TOOL_GROUPS`                    | Comma-separated list of enabled tool groups                                                                                                                                                                                                                                                                                 | `newsletter,server_directory,official_queue,unofficial_mirrors,official_mirrors,tenants,mcp_jsons,mcp_servers,redirects,good_jobs,proctor,discovered_urls,moz` (all base groups) |
+| Variable                                           | Description                                                                                                                                                                                                                                                                                                                 | Default                                                                                                                                                                          |
+| -------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `PULSEMCP_ADMIN_API_KEY`                           | API key sent as `X-API-Key` for admin-API authentication. Required.                                                                                                                                                                                                                                                         | —                                                                                                                                                                                |
+| `PULSEMCP_ADMIN_API_URL`                           | Base URL for the admin API.                                                                                                                                                                                                                                                                                                 | `https://admin.pulsemcp.com`                                                                                                                                                     |
+| `PULSEMCP_ADMIN_INTERNAL_SECRET`                   | Optional shared secret sent as the `X-PulseMCP-Internal` header. A Cloudflare custom rule uses it to route trusted internal traffic past the WAF and rate limiter in front of `admin.pulsemcp.com`. Needed in production to avoid spurious 403s; leave unset locally and against staging (staging is grey-clouded, no WAF). | unset                                                                                                                                                                            |
+| `TOOL_GROUPS`                                      | Comma-separated list of enabled tool groups. `tenants_destructive` is **NOT** included in the default; opt in explicitly.                                                                                                                                                                                                   | `newsletter,server_directory,official_queue,unofficial_mirrors,official_mirrors,tenants,mcp_jsons,mcp_servers,redirects,good_jobs,proctor,discovered_urls,moz` (all base groups) |
+| `DANGEROUSLY_SKIP_ELICITATIONS`                    | When set to `true`, skips elicitation prompts for destructive tools (`delete_tenant`, `delete_api_key`). Use only when running in trusted automation that already has its own approval gate.                                                                                                                                | unset (false)                                                                                                                                                                    |
+| `PULSEMCP_CMS_ADMIN_ELICITATION_DESTRUCTIVE`       | Per-action override. Set to `false` to skip elicitation for destructive tools while leaving other elicitation behavior unchanged. Implied false when `DANGEROUSLY_SKIP_ELICITATIONS=true`.                                                                                                                                  | `true`                                                                                                                                                                           |
+| `ELICITATION_REQUEST_URL` / `ELICITATION_POLL_URL` | HTTP fallback elicitation endpoints (used when the MCP client doesn't support native elicitation). Both must be set together. Required at startup if `tenants_destructive` is enabled and `DANGEROUSLY_SKIP_ELICITATIONS` is not set.                                                                                       | unset                                                                                                                                                                            |
+
+### Destructive tools and elicitation
+
+When `tenants_destructive` is enabled, the server validates at startup that elicitation is reachable. It will refuse to start with a remediation message unless one of the following is true:
+
+- The MCP client supports native elicitation (use `ELICITATION_REQUEST_URL`/`ELICITATION_POLL_URL` HTTP fallback to make this check pass at startup), **or**
+- `ELICITATION_REQUEST_URL` and `ELICITATION_POLL_URL` are both set, **or**
+- `DANGEROUSLY_SKIP_ELICITATIONS=true` is set (operator opts out — at their own risk).
+
+By default (`PULSEMCP_CMS_ADMIN_ELICITATION_DESTRUCTIVE=true`), each call to `delete_tenant` or `delete_api_key` requires the user to explicitly confirm via the [MCP elicitation protocol](https://modelcontextprotocol.io/specification/draft/client/elicitation) before the request is sent.
 
 ## Examples
 

@@ -4,7 +4,15 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
-## [Unreleased]
+## [0.9.18] - 2026-04-28
+
+### Added
+
+- New `tenants_destructive` tool group containing two destructive write tools — `delete_tenant` and `delete_api_key`. The group is **NOT** part of the default tool set; operators must opt in explicitly via `TOOL_GROUPS=...,tenants_destructive`.
+  - `delete_tenant` — calls `DELETE /api/tenants/:id_or_slug`. Accepts `force: true` to cascade-delete dependents (API keys, enrichments). Without `force`, the admin API returns 422 if dependents exist.
+  - `delete_api_key` — calls `DELETE /api/api_keys/:id`. Idempotent: deleting a non-existent or already-deleted key returns success.
+  - Both tools require explicit user approval via [MCP elicitation](https://modelcontextprotocol.io/specification/draft/client/elicitation) before each call. Operators can override per-action with `PULSEMCP_CMS_ADMIN_ELICITATION_DESTRUCTIVE=false`, or globally with `DANGEROUSLY_SKIP_ELICITATIONS=true`.
+  - When `tenants_destructive` is enabled, the server validates at startup that elicitation is reachable (native MCP elicitation OR `ELICITATION_REQUEST_URL`/`ELICITATION_POLL_URL` HTTP fallback OR explicit `DANGEROUSLY_SKIP_ELICITATIONS=true`). If neither is configured, the server refuses to start with a remediation message.
 
 ## [0.9.17] - 2026-04-26
 

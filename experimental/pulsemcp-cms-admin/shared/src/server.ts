@@ -73,6 +73,9 @@ import type {
   CreateTenantParams,
   ApiKey,
   CreateApiKeyParams,
+  DeleteTenantParams,
+  DeleteTenantResponse,
+  DeleteApiKeyResponse,
   // Cache management types
   RecacheMCPServerResponse,
 } from './types.js';
@@ -151,6 +154,8 @@ import { getMozStoredMetrics } from './pulsemcp-admin-client/lib/get-moz-stored-
 import { recacheMCPServer } from './pulsemcp-admin-client/lib/recache-mcp-server.js';
 import { createTenant } from './pulsemcp-admin-client/lib/create-tenant.js';
 import { createApiKey } from './pulsemcp-admin-client/lib/create-api-key.js';
+import { deleteTenant } from './pulsemcp-admin-client/lib/delete-tenant.js';
+import { deleteApiKey } from './pulsemcp-admin-client/lib/delete-api-key.js';
 
 // PulseMCP Admin API client interface
 export interface IPulseMCPAdminClient {
@@ -303,6 +308,10 @@ export interface IPulseMCPAdminClient {
   createTenant(params: CreateTenantParams): Promise<Tenant>;
 
   createApiKey(params: CreateApiKeyParams): Promise<ApiKey>;
+
+  deleteTenant(params: DeleteTenantParams): Promise<DeleteTenantResponse>;
+
+  deleteApiKey(id: number): Promise<DeleteApiKeyResponse>;
 
   // MCP JSON REST API methods
   getMcpJsons(params?: {
@@ -667,6 +676,14 @@ export class PulseMCPAdminClient implements IPulseMCPAdminClient {
 
   async createApiKey(params: CreateApiKeyParams): Promise<ApiKey> {
     return createApiKey(this.apiKey, this.baseUrl, params);
+  }
+
+  async deleteTenant(params: DeleteTenantParams): Promise<DeleteTenantResponse> {
+    return deleteTenant(this.apiKey, this.baseUrl, params);
+  }
+
+  async deleteApiKey(id: number): Promise<DeleteApiKeyResponse> {
+    return deleteApiKey(this.apiKey, this.baseUrl, id);
   }
 
   // MCP JSON REST API methods

@@ -33,6 +33,8 @@ import { getTenants } from './tools/get-tenants.js';
 import { getTenant } from './tools/get-tenant.js';
 import { createTenant } from './tools/create-tenant.js';
 import { createApiKey } from './tools/create-api-key.js';
+import { deleteTenant } from './tools/delete-tenant.js';
+import { deleteApiKey } from './tools/delete-api-key.js';
 // MCP JSON tools
 import { getMcpJsons } from './tools/get-mcp-jsons.js';
 import { getMcpJson } from './tools/get-mcp-json.js';
@@ -95,6 +97,7 @@ import { getMozStoredMetrics } from './tools/get-moz-stored-metrics.js';
  * - unofficial_mirrors / unofficial_mirrors_readonly: Unofficial mirror CRUD tools
  * - official_mirrors_readonly: Official mirrors read-only tools (REST API)
  * - tenants / tenants_readonly: Tenant management tools (CRUD + API key provisioning)
+ * - tenants_destructive: Destructive tenant tools (delete_tenant, delete_api_key). NOT enabled by default — operators must opt in via TOOL_GROUPS. Each tool requires MCP elicitation user approval before execution.
  * - mcp_jsons / mcp_jsons_readonly: MCP JSON configuration tools
  * - mcp_servers / mcp_servers_readonly: Unified MCP server tools (abstracted interface)
  * - redirects / redirects_readonly: URL redirect management tools
@@ -117,6 +120,7 @@ export type ToolGroup =
   | 'official_mirrors_readonly'
   | 'tenants'
   | 'tenants_readonly'
+  | 'tenants_destructive'
   | 'mcp_jsons'
   | 'mcp_jsons_readonly'
   | 'mcp_servers'
@@ -141,6 +145,7 @@ type BaseToolGroup =
   | 'unofficial_mirrors'
   | 'official_mirrors'
   | 'tenants'
+  | 'tenants_destructive'
   | 'mcp_jsons'
   | 'mcp_servers'
   | 'redirects'
@@ -275,6 +280,9 @@ const ALL_TOOLS: ToolDefinition[] = [
   { factory: getTenant, groups: ['tenants'], isWriteOperation: false },
   { factory: createTenant, groups: ['tenants'], isWriteOperation: true },
   { factory: createApiKey, groups: ['tenants'], isWriteOperation: true },
+  // Destructive tenant tools — opt-in only, NOT in BASE_TOOL_GROUPS
+  { factory: deleteTenant, groups: ['tenants_destructive'], isWriteOperation: true },
+  { factory: deleteApiKey, groups: ['tenants_destructive'], isWriteOperation: true },
   // MCP JSON tools (CRUD) (also in server_directory)
   {
     factory: getMcpJsons,
@@ -375,6 +383,7 @@ const VALID_TOOL_GROUPS: ToolGroup[] = [
   'official_mirrors_readonly',
   'tenants',
   'tenants_readonly',
+  'tenants_destructive',
   'mcp_jsons',
   'mcp_jsons_readonly',
   'mcp_servers',
@@ -494,6 +503,7 @@ function shouldIncludeTool(toolDef: ToolDefinition, enabledGroups: ToolGroup[]):
  * - official_mirrors_readonly: Official mirrors REST API tools (read only)
  * - tenants: Tenant management tools including API key provisioning (read + write)
  * - tenants_readonly: Tenant tools (read only)
+ * - tenants_destructive: Destructive tenant tools (delete_tenant, delete_api_key). NOT enabled by default; operators must opt in via TOOL_GROUPS. Each tool requires MCP elicitation user approval before execution.
  * - mcp_jsons: MCP JSON configuration tools (read + write)
  * - mcp_jsons_readonly: MCP JSON tools (read only)
  * - mcp_servers: Unified MCP server tools with abstracted interface (read + write)
