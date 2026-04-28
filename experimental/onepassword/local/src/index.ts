@@ -50,8 +50,8 @@ function validateEnvironment(): void {
     },
     {
       name: 'OP_ELICITATION_WRITE',
-      description: 'Prompt before creating items (true/false)',
-      defaultValue: 'true',
+      description: 'Prompt before creating/sharing items (true/false)',
+      defaultValue: 'false',
     },
     {
       name: 'OP_WHITELISTED_ITEMS',

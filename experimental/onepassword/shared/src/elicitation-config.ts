@@ -70,8 +70,12 @@ export function hasHttpElicitationFallback(
  *
  * Environment variables:
  *   DANGEROUSLY_SKIP_ELICITATIONS - Must be explicitly "true" to bypass all elicitation.
- *   OP_ELICITATION_READ           - Override for read operations (default: follows elicitation enabled state)
- *   OP_ELICITATION_WRITE          - Override for write operations (default: follows elicitation enabled state)
+ *   OP_ELICITATION_READ           - Override for read operations (default: true when elicitation is enabled).
+ *                                   Reads expose existing secrets, so prompting is on by default.
+ *   OP_ELICITATION_WRITE          - Override for write operations (default: false even when elicitation is enabled).
+ *                                   Writes only create new items or mint share URLs for existing ones —
+ *                                   they do not overwrite or delete existing data — so the friction of a
+ *                                   confirmation prompt is not justified by default.
  *   OP_WHITELISTED_ITEMS          - Comma-separated list of item titles or item IDs that bypass read elicitation
  *                                   (e.g., "Stripe Key,AWS Credentials,abc123def456")
  *
@@ -89,12 +93,17 @@ export function readOnePasswordElicitationConfig(
     ELICITATION_ENABLED: dangerouslySkip ? 'false' : 'true',
   });
 
-  // Per-action overrides default to the base enabled state
+  // Per-action defaults differ:
+  //   - reads default to ON  (revealing existing secrets is the risky operation worth confirming)
+  //   - writes default to OFF (writes only create new items or mint share URLs for existing ones —
+  //     they can't overwrite or delete existing data via these tools — so the prompt friction
+  //     isn't justified)
+  // Either default can be overridden via the corresponding env var.
   const readElicitationEnabled = base.enabled
     ? parseBooleanEnv(env.OP_ELICITATION_READ, true)
     : false;
   const writeElicitationEnabled = base.enabled
-    ? parseBooleanEnv(env.OP_ELICITATION_WRITE, true)
+    ? parseBooleanEnv(env.OP_ELICITATION_WRITE, false)
     : false;
 
   const whitelistedItems = parseWhitelistedItems(env.OP_WHITELISTED_ITEMS);
