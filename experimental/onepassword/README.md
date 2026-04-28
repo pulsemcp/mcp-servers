@@ -104,13 +104,14 @@ Restart Claude Desktop and you should be ready to go!
 | `SKIP_HEALTH_CHECKS`            | No       | Skip credential validation on start                                    | `false`                        |
 | `DANGEROUSLY_SKIP_ELICITATIONS` | No       | Set to `true` to bypass ALL confirmation prompts (exposes all secrets) | not set (elicitation required) |
 | `OP_ELICITATION_READ`           | No       | Prompt before revealing credentials                                    | `true`                         |
-| `OP_ELICITATION_WRITE`          | No       | Prompt before creating items                                           | `true`                         |
+| `OP_ELICITATION_WRITE`          | No       | Prompt before creating/sharing items                                   | `false`                        |
 | `OP_WHITELISTED_ITEMS`          | No       | Comma-separated item titles or IDs that bypass read elicitation        | none                           |
 
 ## Security Considerations
 
 - **Startup safety check**: The server refuses to start unless elicitation is configured (HTTP fallback URLs) or explicitly opted out via `DANGEROUSLY_SKIP_ELICITATIONS=true`. This prevents accidental carte blanche access to all secrets.
-- **Elicitation-based approval**: By default, `get_item` prompts the user for confirmation before revealing sensitive credentials. Write operations also require approval.
+- **Elicitation-based approval (reads)**: By default, `get_item` prompts the user for confirmation before revealing sensitive credentials. Reads expose existing secrets, so the prompt is on by default.
+- **No elicitation on writes by default**: Write operations (`create_login`, `create_secure_note`, `create_api_credential`, `share_item`) do NOT prompt by default. Writes only create new items or mint share URLs for existing ones — they cannot overwrite or delete existing data via these tools — so the friction of a prompt isn't justified. Set `OP_ELICITATION_WRITE=true` to opt in to write confirmations.
 - **Service Account Token**: Passed via environment variable, never logged
 - **CLI Arguments**: Passwords for create operations are passed as CLI arguments (briefly visible in process list)
 - **Recommendation**: Use `readonly` tool group unless write access is specifically needed
@@ -137,6 +138,15 @@ ELICITATION_REQUEST_URL="https://your-endpoint/request"
 ELICITATION_POLL_URL="https://your-endpoint/poll"
 OP_ELICITATION_READ=false
 OP_ELICITATION_WRITE=true
+```
+
+**Default behavior** (prompt on reads, silent writes — recommended for most agent use cases):
+
+```bash
+ELICITATION_REQUEST_URL="https://your-endpoint/request"
+ELICITATION_POLL_URL="https://your-endpoint/poll"
+# OP_ELICITATION_READ defaults to true
+# OP_ELICITATION_WRITE defaults to false
 ```
 
 **Whitelist specific items by title or ID** (always auto-approve these):

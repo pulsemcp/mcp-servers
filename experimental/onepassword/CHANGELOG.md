@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-04-27
+
+### Changed
+
+- **BREAKING**: Default for `OP_ELICITATION_WRITE` is now `false` (was `true`). Write operations (`onepassword_create_login`, `onepassword_create_secure_note`, `onepassword_create_api_credential`, `onepassword_share_item`) no longer prompt for confirmation by default. Rationale: writes only create new items or mint share URLs for existing ones — they cannot overwrite or delete existing data via these tools — so the friction of a confirmation prompt isn't justified for writes the way it is for reads (which expose existing secrets). To restore the prior behavior, set `OP_ELICITATION_WRITE=true`. Read elicitation (`OP_ELICITATION_READ`) still defaults to `true`.
+
 ## [0.3.6] - 2026-04-26
 
 ### Fixed

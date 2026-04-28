@@ -50,7 +50,7 @@ export function registerResources(server: Server) {
           DANGEROUSLY_SKIP_ELICITATIONS:
             process.env.DANGEROUSLY_SKIP_ELICITATIONS || 'not set (elicitation required)',
           OP_ELICITATION_READ: process.env.OP_ELICITATION_READ || 'true (default)',
-          OP_ELICITATION_WRITE: process.env.OP_ELICITATION_WRITE || 'true (default)',
+          OP_ELICITATION_WRITE: process.env.OP_ELICITATION_WRITE || 'false (default)',
           OP_WHITELISTED_ITEMS: process.env.OP_WHITELISTED_ITEMS || 'none',
         },
         capabilities: {
