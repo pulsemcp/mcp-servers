@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.16] - 2026-04-29
+
+### Fixed
+
+- `change_mcp_servers` action on the `action_session` tool was hitting the wrong HTTP endpoint and silently dropping the `mcp_servers` parameter. The client called `PATCH /sessions/{id}` (the generic Rails update action), whose strong params permit only `:title, :slug, :stop_condition, :is_autonomous, custom_metadata: {}` — `mcp_servers` was discarded server-side. Rails returned 200 with the session unchanged and the tool printed `## MCP Servers Updated` over the original (unchanged) server list, leading orchestrator agents to falsely believe the change had been applied. Caught on session 3983 where two `change_mcp_servers` calls reported success while `hatchbox-pulsemcp-staging` was never actually attached. The dedicated endpoint at `PATCH /sessions/{id}/mcp_servers` (which kicks off `.mcp.json` regeneration and other side effects) was already correct on the Rails side; only the TypeScript client was wrong. Fix: route `changeMcpServers` to `/sessions/{id}/mcp_servers` (matching the pattern `changeModel` already uses for `/sessions/{id}/model`).
+
+### Added
+
+- Defensive divergence check in the `change_mcp_servers` response formatter: after the API call, the tool now compares the returned `session.mcp_servers` to the requested list and surfaces a clear `## MCP Servers Update FAILED — server list unchanged` error (with both `Requested:` and `Actual:` lines) instead of silently rendering a misleading success block. This catches future regressions in the same class — wrong endpoint, dropped strong params, partial backend failures — before they can mislead a downstream agent.
+
 ## [0.7.15] - 2026-04-28
 
 ### Fixed

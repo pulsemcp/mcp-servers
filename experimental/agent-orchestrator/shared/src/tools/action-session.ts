@@ -368,6 +368,31 @@ export function actionSessionTool(_server: Server, clientFactory: () => IAgentOr
 
           case 'change_mcp_servers': {
             const session = await client.changeMcpServers(session_id!, mcp_servers!);
+            const requested = [...mcp_servers!].sort();
+            const actual = [...(session.mcp_servers ?? [])].sort();
+            const diverged =
+              requested.length !== actual.length || requested.some((name, i) => name !== actual[i]);
+            if (diverged) {
+              const formatList = (list: string[]) => (list.length > 0 ? list.join(', ') : '(none)');
+              return {
+                content: [
+                  {
+                    type: 'text',
+                    text: [
+                      `## MCP Servers Update FAILED — server list unchanged`,
+                      '',
+                      `The API accepted the request but the session's MCP servers do not match what was requested. This usually indicates the request hit a backend endpoint that silently dropped the parameter.`,
+                      '',
+                      `- **Session ID:** ${session.id}`,
+                      `- **Title:** ${session.title}`,
+                      `- **Requested:** ${formatList(mcp_servers!)}`,
+                      `- **Actual:** ${formatList(session.mcp_servers ?? [])}`,
+                    ].join('\n'),
+                  },
+                ],
+                isError: true,
+              };
+            }
             const lines = [
               `## MCP Servers Updated`,
               '',
