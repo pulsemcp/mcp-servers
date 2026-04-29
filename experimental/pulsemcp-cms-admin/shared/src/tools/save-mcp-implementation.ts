@@ -3,6 +3,32 @@ import { z } from 'zod';
 import type { ClientFactory } from '../server.js';
 import type { SaveMCPImplementationParams, CreateMCPImplementationParams } from '../types.js';
 
+// Hosts that must never appear as canonical URLs. Source-code hosts belong in
+// `source_code_location`; aggregators are not authoritative. Mirrors the rule
+// in agents/skills/server-discovery/identify-remote-canonical-url/SKILL.md.
+export const BLOCKLISTED_CANONICAL_HOSTS = [
+  'github.com',
+  'gitlab.com',
+  'bitbucket.org',
+  'smithery.ai',
+  'glama.ai',
+] as const;
+
+export function findBlocklistedCanonicalHost(url: string): string | null {
+  let host: string;
+  try {
+    host = new URL(url).hostname.toLowerCase();
+  } catch {
+    return null;
+  }
+  for (const blocked of BLOCKLISTED_CANONICAL_HOSTS) {
+    if (host === blocked || host.endsWith(`.${blocked}`)) {
+      return host;
+    }
+  }
+  return null;
+}
+
 // Parameter descriptions - single source of truth
 const PARAM_DESCRIPTIONS = {
   id: 'The ID of the MCP implementation to update. Omit this field to CREATE a new implementation instead of updating an existing one.',
@@ -42,7 +68,7 @@ const PARAM_DESCRIPTIONS = {
     'Array of remote endpoint configurations for MCP servers. Providing this replaces ALL existing remotes. Omitting leaves them unchanged. Pass an empty array to delete all. Each remote can have: id (existing remote ID or blank for new), url_direct, url_setup, transport (e.g., "sse"), host_platform (e.g., "smithery"), host_infrastructure (e.g., "cloudflare"), authentication_method (e.g., "open"), cost (e.g., "free"), status (defaults to "live"), display_name, and internal_notes.',
   // Canonical URLs
   canonical:
-    'Array of canonical URL configurations. Providing this replaces ALL existing canonical URLs. Omitting leaves them unchanged. Pass an empty array to delete all. Each entry must have: url (the canonical URL), scope (one of "domain", "subdomain", or "url"), and optional note for additional context.',
+    'Array of canonical URL configurations. Providing this replaces ALL existing canonical URLs. Omitting leaves them unchanged. Pass an empty array to delete all. Each entry must have: url (the canonical URL), scope (one of "domain", "subdomain", or "url"), and optional note for additional context. The host must NOT be one of: github.com, gitlab.com, bitbucket.org, smithery.ai, glama.ai (or any subdomain of those) — source-code repos belong in `source_code_location`, and aggregator listings are not authoritative. Calls with blocklisted canonical hosts are rejected with `CANONICAL_BLOCKLISTED_HOST`.',
   // Flags
   verified_no_remote_canonicals:
     'Mark that this server has been verified to have no remote canonical URLs (true = verified no remote canonicals exist, false = reset/canonicals found)',
@@ -342,6 +368,24 @@ Important notes:
     },
     handler: async (args: unknown) => {
       const validatedArgs = SaveMCPImplementationSchema.parse(args);
+
+      if (validatedArgs.canonical) {
+        for (const entry of validatedArgs.canonical) {
+          const blockedHost = findBlocklistedCanonicalHost(entry.url);
+          if (blockedHost) {
+            return {
+              content: [
+                {
+                  type: 'text',
+                  text: `CANONICAL_BLOCKLISTED_HOST: ${blockedHost} is not a valid canonical URL host. Use the actual project homepage instead.`,
+                },
+              ],
+              isError: true,
+            };
+          }
+        }
+      }
+
       const client = clientFactory();
 
       try {
