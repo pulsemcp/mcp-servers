@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [0.9.19] - 2026-04-29
+
+### Fixed
+
+- `get_mcp_server` now always renders the `## Canonical URLs` and `## Remote Endpoints` sections in its Markdown output, rendering `(none)` when the underlying field is empty or absent. Previously the renderer omitted these sections entirely when the data was empty, which made it impossible for callers to distinguish "field is empty" from "field is missing." That ambiguity led an onboarding agent (Mint batch, 2026-04-27) to incorrectly conclude `ahrefs` and `semrush` had no remotes and try to re-create them, triggering unique-constraint validation errors. The structured JSON response is unchanged — only the Markdown text rendering. Closes #3127.
+
 ## [0.9.18] - 2026-04-28
 
 ### Added

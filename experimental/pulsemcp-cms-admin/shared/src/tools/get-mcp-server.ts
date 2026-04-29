@@ -164,22 +164,26 @@ Example response:
           }
         }
 
-        // Canonical URLs
-        if (server.canonical_urls && server.canonical_urls.length > 0) {
-          content += `\n## Canonical URLs\n`;
-          for (const canonical of server.canonical_urls) {
+        // Canonical URLs — always rendered so callers can see the field is empty vs. missing
+        const canonicalUrls = server.canonical_urls ?? [];
+        if (canonicalUrls.length > 0) {
+          content += `\n## Canonical URLs (${canonicalUrls.length})\n`;
+          for (const canonical of canonicalUrls) {
             content += `- **${canonical.scope}:** ${canonical.url}`;
             if (canonical.note) {
               content += ` (${canonical.note})`;
             }
             content += '\n';
           }
+        } else {
+          content += `\n## Canonical URLs\n(none)\n`;
         }
 
-        // Remote endpoints
-        if (server.remotes && server.remotes.length > 0) {
-          content += `\n## Remote Endpoints (${server.remotes.length})\n`;
-          for (const [idx, remote] of server.remotes.entries()) {
+        // Remote endpoints — always rendered so callers can see the field is empty vs. missing
+        const remotes = server.remotes ?? [];
+        if (remotes.length > 0) {
+          content += `\n## Remote Endpoints (${remotes.length})\n`;
+          for (const [idx, remote] of remotes.entries()) {
             content += `\n### ${idx + 1}. ${remote.display_name || 'Endpoint'}`;
             if (remote.id) {
               content += ` (ID: ${remote.id})`;
@@ -211,6 +215,8 @@ Example response:
               content += `- **Status:** ${remote.status}\n`;
             }
           }
+        } else {
+          content += `\n## Remote Endpoints\n(none)\n`;
         }
 
         // Tags
