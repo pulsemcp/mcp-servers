@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [0.9.20] - 2026-04-29
+
+### Added
+
+- New `revoke_api_key` tool in the regular `tenants` tool group — calls `DELETE /api/api_keys/:id` to immediately invalidate an API key. Idempotent: revoking a non-existent or already-revoked key returns success without error. Requires explicit MCP-elicitation confirmation per call (override with `PULSEMCP_CMS_ADMIN_ELICITATION_DESTRUCTIVE=false` or `DANGEROUSLY_SKIP_ELICITATIONS=true`). Distinct from the `tenants_destructive` `delete_api_key` tool: `revoke_api_key` ships in the default `tenants` group so deployments like `pulse-tenants-rw` can roll keys without opting into the broader destructive group. Closes #2967.
+
 ## [0.9.19] - 2026-04-29
 
 ### Fixed
