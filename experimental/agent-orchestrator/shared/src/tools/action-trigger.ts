@@ -119,12 +119,15 @@ export function actionTriggerTool(_server: Server, clientFactory: () => IAgentOr
               mcp_servers: validated.mcp_servers,
               configuration: validated.configuration,
             });
+            const conditionTypes = (trigger.conditions ?? []).map((c) => c.condition_type);
+            const typeSummary =
+              conditionTypes.length > 0 ? Array.from(new Set(conditionTypes)).join(', ') : '(none)';
             result = [
               '## Trigger Created',
               '',
               `- **ID:** ${trigger.id}`,
               `- **Name:** ${trigger.name}`,
-              `- **Type:** ${trigger.trigger_type}`,
+              `- **Conditions:** ${typeSummary}`,
               `- **Status:** ${trigger.status}`,
               `- **Agent Root:** ${trigger.agent_root_name}`,
             ].join('\n');
