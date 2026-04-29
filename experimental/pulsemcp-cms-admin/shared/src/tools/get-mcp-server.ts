@@ -112,6 +112,15 @@ Example response:
         if (server.verified_no_remote_canonicals !== undefined) {
           content += `**Verified No Remote Canonicals:** ${server.verified_no_remote_canonicals ? 'Yes' : 'No'}\n`;
         }
+        if (server.owner_tenant_slug || server.owner_tenant_id) {
+          content += `**Owner Tenant:** ${server.owner_tenant_slug ?? '(no slug)'}`;
+          if (server.owner_tenant_id) {
+            content += ` (id: ${server.owner_tenant_id})`;
+          }
+          content += '\n';
+        } else {
+          content += `**Owner Tenant:** (none)\n`;
+        }
 
         if (server.short_description) {
           content += `\n**Short Description:**\n${server.short_description}\n`;

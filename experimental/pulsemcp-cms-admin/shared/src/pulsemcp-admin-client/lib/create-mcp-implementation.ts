@@ -107,6 +107,20 @@ export async function createMCPImplementation(
     formData.append('mcp_implementation[internal_notes]', params.internal_notes);
   }
 
+  // Owner tenant linking. Slug wins over id on the Rails side when both are sent.
+  if (params.owner_tenant_slug !== undefined) {
+    formData.append(
+      'mcp_implementation[owner_tenant_slug]',
+      params.owner_tenant_slug === null ? '' : params.owner_tenant_slug
+    );
+  }
+  if (params.owner_tenant_id !== undefined) {
+    formData.append(
+      'mcp_implementation[owner_tenant_id]',
+      params.owner_tenant_id === null ? '' : params.owner_tenant_id.toString()
+    );
+  }
+
   // Remote endpoints
   // Rails expects nested attributes to use the _attributes suffix for has_many associations
   if (params.remote !== undefined) {

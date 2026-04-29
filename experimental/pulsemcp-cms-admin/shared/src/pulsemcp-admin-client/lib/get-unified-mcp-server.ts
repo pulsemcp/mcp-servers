@@ -128,8 +128,12 @@ export async function getUnifiedMCPServer(
     };
   }
 
-  // Merge MCPServer data with implementation data for complete picture
+  // Merge MCPServer data with implementation data for complete picture.
+  // Spread the search-response mcp_server first so fields only present there
+  // (e.g. owner_tenant_id/owner_tenant_slug) are preserved when the supervisor
+  // endpoint omits them. Supervisor data wins for the fields it does provide.
   matchingImpl.mcp_server = {
+    ...matchingImpl.mcp_server,
     ...mcpServerData,
     remotes: mcpServerData.remotes,
     tags: mcpServerData.tags,

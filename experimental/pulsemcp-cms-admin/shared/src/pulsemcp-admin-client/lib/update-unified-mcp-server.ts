@@ -59,6 +59,19 @@ export async function updateUnifiedMCPServer(
   if (params.created_on_override !== undefined)
     implParams.created_on_override = params.created_on_override;
 
+  // Owner tenant: route to slug or id depending on the value type.
+  // String → slug, number → id, null → clear (sent as empty owner_tenant_id).
+  if (params.owner_tenant !== undefined) {
+    if (typeof params.owner_tenant === 'string') {
+      implParams.owner_tenant_slug = params.owner_tenant;
+    } else if (typeof params.owner_tenant === 'number') {
+      implParams.owner_tenant_id = params.owner_tenant;
+    } else {
+      // null — clear the link
+      implParams.owner_tenant_id = null;
+    }
+  }
+
   // Tags
   if (params.tags !== undefined) implParams.tags = params.tags;
 

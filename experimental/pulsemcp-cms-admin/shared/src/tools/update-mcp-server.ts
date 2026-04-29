@@ -31,6 +31,8 @@ const PARAM_DESCRIPTIONS = {
   remotes:
     'Remote endpoints for the server. Providing this replaces ALL existing remotes. Omitting leaves them unchanged. Pass an empty array to delete all.',
   internal_notes: 'Admin-only internal notes',
+  owner_tenant:
+    'Owner tenant of this server. Pass a tenant slug (e.g. "gram-recommended") or numeric tenant ID to link, or null to clear the link. Omit to leave unchanged. Slugs are preferred for readability; the Rails backend resolves them to a tenant ID. An unknown slug returns a validation error.',
 } as const;
 
 const CanonicalUrlSchema = z.object({
@@ -108,6 +110,10 @@ const UpdateMCPServerSchema = z.object({
     .describe(PARAM_DESCRIPTIONS.canonical_urls),
   remotes: z.array(RemoteEndpointSchema).optional().describe(PARAM_DESCRIPTIONS.remotes),
   internal_notes: z.string().optional().describe(PARAM_DESCRIPTIONS.internal_notes),
+  owner_tenant: z
+    .union([z.string(), z.number(), z.null()])
+    .optional()
+    .describe(PARAM_DESCRIPTIONS.owner_tenant),
 });
 
 export function updateMCPServer(_server: Server, clientFactory: ClientFactory) {
@@ -298,6 +304,10 @@ Create new provider:
           description: PARAM_DESCRIPTIONS.remotes,
         },
         internal_notes: { type: 'string', description: PARAM_DESCRIPTIONS.internal_notes },
+        owner_tenant: {
+          oneOf: [{ type: 'string' }, { type: 'number' }, { type: 'null' }],
+          description: PARAM_DESCRIPTIONS.owner_tenant,
+        },
       },
       required: ['implementation_id'],
     },
@@ -359,6 +369,16 @@ Create new provider:
 
         if (server.verified_no_remote_canonicals !== undefined) {
           content += `**Verified No Remote Canonicals:** ${server.verified_no_remote_canonicals ? 'Yes' : 'No'}\n`;
+        }
+
+        if (server.owner_tenant_slug || server.owner_tenant_id) {
+          content += `**Owner Tenant:** ${server.owner_tenant_slug ?? '(no slug)'}`;
+          if (server.owner_tenant_id) {
+            content += ` (id: ${server.owner_tenant_id})`;
+          }
+          content += '\n';
+        } else if (server.owner_tenant_id === null && server.owner_tenant_slug === null) {
+          content += `**Owner Tenant:** (none)\n`;
         }
 
         if (server.updated_at) {
