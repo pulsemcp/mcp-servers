@@ -567,7 +567,7 @@ export class AgentOrchestratorClient implements IAgentOrchestratorClient {
   }
 
   async changeMcpServers(id: string | number, mcp_servers: string[]): Promise<Session> {
-    const response = await this.request<SessionResponse>('PATCH', `/sessions/${id}`, {
+    const response = await this.request<SessionResponse>('PATCH', `/sessions/${id}/mcp_servers`, {
       mcp_servers,
     });
     return response.session;
