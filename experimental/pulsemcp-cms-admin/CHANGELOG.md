@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [0.9.21] - 2026-04-29
+
+### Added
+
+- `save_mcp_implementation` now rejects `canonical` entries whose host (or any subdomain of it) matches a server-side blocklist: `github.com`, `gitlab.com`, `bitbucket.org`, `smithery.ai`, `glama.ai`. The whole call is rejected with `CANONICAL_BLOCKLISTED_HOST: <host> is not a valid canonical URL host. Use the actual project homepage instead.` so callers self-correct on the spot. Source-code repos belong in `source_code_location`; aggregator listings (Smithery, Glama) are not authoritative. Mirrors the rule already documented in the `identify-remote-canonical-url` skill — Phase 10 audits had been auto-repairing blocklisted canonicals after the fact, and this gate moves the enforcement to the write path. Closes #3148.
+
 ## [0.9.20] - 2026-04-29
 
 ### Added
