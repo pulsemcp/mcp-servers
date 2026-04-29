@@ -262,6 +262,10 @@ export interface IAgentOrchestratorClient {
   ): Promise<EnqueuedMessageInterruptResponse>;
 
   // Triggers
+  // Filter by condition type — values match TriggerConditionType
+  // ('slack' | 'schedule' | 'ao_event'). The API parameter is `condition_type`;
+  // accepting `trigger_type` here for callsite ergonomics, and the
+  // implementation forwards it as `condition_type`.
   listTriggers(options?: {
     trigger_type?: TriggerType;
     status?: TriggerStatus;
@@ -838,7 +842,11 @@ export class AgentOrchestratorClient implements IAgentOrchestratorClient {
     page?: number;
     per_page?: number;
   }): Promise<TriggersResponse> {
-    return this.request<TriggersResponse>('GET', '/triggers', undefined, options);
+    const { trigger_type, ...rest } = options ?? {};
+    return this.request<TriggersResponse>('GET', '/triggers', undefined, {
+      ...rest,
+      ...(trigger_type !== undefined && { condition_type: trigger_type }),
+    });
   }
 
   async getTrigger(id: number): Promise<TriggerResponse> {

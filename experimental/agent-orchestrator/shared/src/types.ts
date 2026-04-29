@@ -278,24 +278,37 @@ export interface EnqueuedMessageInterruptResponse {
 // Triggers
 // =============================================================================
 
-export type TriggerType = 'slack' | 'schedule';
+// Condition types live on TriggerCondition rows. A trigger with ANY condition
+// of a given type matches a filter for that type (OR semantics).
+export type TriggerConditionType = 'slack' | 'schedule' | 'ao_event';
+// Retained for backwards compatibility with callers that imported the old name;
+// the underlying values are condition types in the v1 API.
+export type TriggerType = TriggerConditionType;
 export type TriggerStatus = 'enabled' | 'disabled';
+
+export interface TriggerCondition {
+  id: number;
+  condition_type: TriggerConditionType;
+  configuration: Record<string, unknown>;
+  description: string;
+  last_triggered_at: string | null;
+  last_polled_at: string | null;
+}
 
 export interface Trigger {
   id: number;
   name: string;
-  trigger_type: TriggerType;
   status: TriggerStatus;
   agent_root_name: string;
   prompt_template: string;
   stop_condition: string | null;
   reuse_session: boolean;
+  enqueue_messages?: boolean;
+  resuscitate_archived?: boolean;
   mcp_servers: string[];
-  configuration: Record<string, unknown>;
-  schedule_description: string | null;
+  conditions: TriggerCondition[];
   last_session_id: number | null;
   last_triggered_at: string | null;
-  last_polled_at: string | null;
   sessions_created_count: number;
   created_at: string;
   updated_at: string;
@@ -321,33 +334,39 @@ export interface TriggerChannelsResponse {
 }
 
 export interface TriggerConditionAttributes {
-  condition_type: 'slack' | 'schedule' | 'ao_event';
+  condition_type: TriggerConditionType;
   configuration: Record<string, unknown>;
 }
 
 export interface CreateTriggerRequest {
   name: string;
-  trigger_type?: TriggerType;
   agent_root_name: string;
   prompt_template: string;
   status?: TriggerStatus;
   stop_condition?: string;
   reuse_session?: boolean;
   mcp_servers?: string[];
-  configuration?: Record<string, unknown>;
   last_session_id?: number;
   trigger_conditions_attributes?: TriggerConditionAttributes[];
+  // Legacy fields below are accepted for compatibility with callers that
+  // pre-date the v1 API's trigger_conditions model. They are not permitted by
+  // the Rails strong params and will be silently ignored — use
+  // trigger_conditions_attributes for new code.
+  trigger_type?: TriggerConditionType;
+  configuration?: Record<string, unknown>;
 }
 
 export interface UpdateTriggerRequest {
   name?: string;
-  trigger_type?: TriggerType;
   agent_root_name?: string;
   prompt_template?: string;
   status?: TriggerStatus;
   stop_condition?: string;
   reuse_session?: boolean;
   mcp_servers?: string[];
+  trigger_conditions_attributes?: TriggerConditionAttributes[];
+  // Legacy fields — see note on CreateTriggerRequest.
+  trigger_type?: TriggerConditionType;
   configuration?: Record<string, unknown>;
 }
 

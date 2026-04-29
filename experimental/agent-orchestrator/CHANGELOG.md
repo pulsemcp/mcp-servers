@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.15] - 2026-04-28
+
+### Fixed
+
+- `search_triggers` tool now accepts `ao_event` as a `trigger_type` filter value, alongside `slack` and `schedule`. The previous Zod enum and JSON Schema only allowed the two original types, so router agents trying to enumerate `ao_event` triggers (created by `wake_me_up_when_session_changes_state`) hit a validation error before the request reached the API. The filter now correctly maps to the API's `condition_type` query parameter, which has supported `ao_event` since the wake-on-state-change feature shipped in v0.7.13. Fixes #3116.
+- `search_triggers` and `action_trigger` now read condition metadata from the `conditions[]` array on the API response instead of legacy flat fields (`trigger_type`, `schedule_description`) that were never returned by the v1 `/triggers` endpoint. The display previously rendered `Type: undefined` for every trigger because it dereferenced fields that don't exist in the response — this surfaces real condition types (with dedupe across multi-condition triggers) and per-condition descriptions instead. Internal `Trigger` / `TriggerCondition` TypeScript types updated to mirror the actual API shape.
+
 ## [0.7.14] - 2026-04-27
 
 ### Added
