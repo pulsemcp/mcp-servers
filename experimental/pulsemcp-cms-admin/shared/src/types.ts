@@ -139,6 +139,8 @@ export interface MCPServer {
   mcp_server_remotes_count?: number;
   recommended?: boolean;
   verified_no_remote_canonicals?: boolean;
+  owner_tenant_id?: number | null;
+  owner_tenant_slug?: string | null;
   tags?: MCPServerTag[];
   remotes?: MCPServerRemote[];
 }
@@ -220,6 +222,11 @@ export interface SaveMCPImplementationParams {
   implementation_language?: string;
   mcp_server_id?: number | null;
   mcp_client_id?: number | null;
+
+  // Owner tenant linking. Pass owner_tenant_slug (preferred) or owner_tenant_id.
+  // Slug wins if both are sent. Empty string clears the link.
+  owner_tenant_id?: number | null;
+  owner_tenant_slug?: string | null;
 
   // Provider creation/linking fields
   provider_id?: string | number; // "new" to create, or numeric ID to link existing
@@ -313,6 +320,10 @@ export interface CreateMCPImplementationParams {
 
   // Other fields
   internal_notes?: string; // Admin-only notes
+
+  // Owner tenant linking. Pass owner_tenant_slug (preferred) or owner_tenant_id.
+  owner_tenant_id?: number | null;
+  owner_tenant_slug?: string | null;
 }
 
 export interface Provider {
@@ -661,6 +672,10 @@ export interface UnifiedMCPServer {
   // Internal notes
   internal_notes?: string;
 
+  // Owner tenant (the tenant that owns this server, if any)
+  owner_tenant_id?: number | null;
+  owner_tenant_slug?: string | null;
+
   // Timestamps
   created_at?: string;
   updated_at?: string;
@@ -729,6 +744,9 @@ export interface UpdateUnifiedMCPServerParams {
 
   // Internal notes
   internal_notes?: string;
+
+  // Owner tenant. Pass a slug (string) or numeric tenant id, or null to clear.
+  owner_tenant?: string | number | null;
 }
 
 // ============================================================

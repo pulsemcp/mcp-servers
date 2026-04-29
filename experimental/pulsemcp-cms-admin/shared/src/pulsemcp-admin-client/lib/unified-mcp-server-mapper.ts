@@ -53,6 +53,8 @@ export interface RailsImplementation {
     mcp_server_remotes_count?: number;
     recommended?: boolean;
     verified_no_remote_canonicals?: boolean;
+    owner_tenant_id?: number | null;
+    owner_tenant_slug?: string | null;
     tags?: MCPServerTag[];
     remotes?: MCPServerRemote[];
     created_at?: string;
@@ -164,6 +166,10 @@ export function mapToUnifiedServer(impl: RailsImplementation): UnifiedMCPServer 
 
     // Internal notes
     internal_notes: impl.internal_notes,
+
+    // Owner tenant
+    owner_tenant_id: mcpServer.owner_tenant_id,
+    owner_tenant_slug: mcpServer.owner_tenant_slug,
 
     // Timestamps (use implementation timestamps as they're more relevant)
     created_at: impl.created_at,

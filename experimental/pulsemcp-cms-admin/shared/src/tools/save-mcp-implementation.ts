@@ -75,6 +75,8 @@ const PARAM_DESCRIPTIONS = {
   // Other fields
   internal_notes:
     'Admin-only notes. Not displayed publicly. Used for tracking submission sources, reviewer comments, etc.',
+  owner_tenant:
+    'Owner tenant of this server. Pass a tenant slug (e.g. "gram-recommended") or numeric tenant ID to link, or null to clear the link. Omit to leave unchanged. Slugs are preferred for readability; the Rails backend resolves them to a tenant ID. An unknown slug returns a validation error.',
 } as const;
 
 const SaveMCPImplementationSchema = z.object({
@@ -146,6 +148,10 @@ const SaveMCPImplementationSchema = z.object({
     .describe(PARAM_DESCRIPTIONS.verified_no_remote_canonicals),
   // Other fields
   internal_notes: z.string().optional().describe(PARAM_DESCRIPTIONS.internal_notes),
+  owner_tenant: z
+    .union([z.string(), z.number(), z.null()])
+    .optional()
+    .describe(PARAM_DESCRIPTIONS.owner_tenant),
 });
 
 export function saveMCPImplementation(_server: Server, clientFactory: ClientFactory) {
@@ -364,6 +370,11 @@ Important notes:
           type: 'string',
           description: PARAM_DESCRIPTIONS.internal_notes,
         },
+        // Owner tenant
+        owner_tenant: {
+          oneOf: [{ type: 'string' }, { type: 'number' }, { type: 'null' }],
+          description: PARAM_DESCRIPTIONS.owner_tenant,
+        },
       },
     },
     handler: async (args: unknown) => {
@@ -389,7 +400,20 @@ Important notes:
       const client = clientFactory();
 
       try {
-        const { id, type, ...restParams } = validatedArgs;
+        const { id, type, owner_tenant, ...restParams } = validatedArgs;
+
+        // Translate owner_tenant (string slug | number id | null clear) into the
+        // explicit owner_tenant_slug / owner_tenant_id fields the admin client
+        // forwards to Rails.
+        if (owner_tenant !== undefined) {
+          if (typeof owner_tenant === 'string') {
+            (restParams as SaveMCPImplementationParams).owner_tenant_slug = owner_tenant;
+          } else if (typeof owner_tenant === 'number') {
+            (restParams as SaveMCPImplementationParams).owner_tenant_id = owner_tenant;
+          } else {
+            (restParams as SaveMCPImplementationParams).owner_tenant_id = null;
+          }
+        }
 
         // Determine if this is a create or update operation
         const isCreate = id === undefined;
@@ -464,6 +488,16 @@ Important notes:
             remotes.forEach((r) => {
               content += `  - ${r.display_name || r.url_direct || `ID ${r.id}`}\n`;
             });
+          }
+
+          const createOwnerSlug = implementation.mcp_server?.owner_tenant_slug;
+          const createOwnerId = implementation.mcp_server?.owner_tenant_id;
+          if (createOwnerSlug || createOwnerId) {
+            content += `**Owner Tenant:** ${createOwnerSlug ?? '(no slug)'}`;
+            if (createOwnerId) {
+              content += ` (id: ${createOwnerId})`;
+            }
+            content += '\n';
           }
 
           if (implementation.created_at) {
@@ -553,6 +587,21 @@ Important notes:
             updateRemotes.forEach((r) => {
               content += `  - ${r.display_name || r.url_direct || `ID ${r.id}`}\n`;
             });
+          }
+
+          const updateOwnerSlug = implementation.mcp_server?.owner_tenant_slug;
+          const updateOwnerId = implementation.mcp_server?.owner_tenant_id;
+          if (updateOwnerSlug || updateOwnerId) {
+            content += `**Owner Tenant:** ${updateOwnerSlug ?? '(no slug)'}`;
+            if (updateOwnerId) {
+              content += ` (id: ${updateOwnerId})`;
+            }
+            content += '\n';
+          } else if (
+            implementation.mcp_server?.owner_tenant_id === null &&
+            implementation.mcp_server?.owner_tenant_slug === null
+          ) {
+            content += `**Owner Tenant:** (none)\n`;
           }
 
           if (implementation.updated_at) {

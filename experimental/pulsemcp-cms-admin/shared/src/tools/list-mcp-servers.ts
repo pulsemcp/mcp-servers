@@ -135,6 +135,10 @@ Use cases:
             content += `   Remote endpoints: ${server.remotes.length}\n`;
           }
 
+          if (server.owner_tenant_slug || server.owner_tenant_id) {
+            content += `   Owner Tenant: ${server.owner_tenant_slug ?? `id ${server.owner_tenant_id}`}\n`;
+          }
+
           if (server.downloads_estimate_total) {
             content += `   Downloads (total): ${server.downloads_estimate_total.toLocaleString()}\n`;
           }

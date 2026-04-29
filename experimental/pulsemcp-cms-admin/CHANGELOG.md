@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [0.9.22] - 2026-04-29
+
+### Added
+
+- `update_mcp_server` and `save_mcp_implementation` now accept an optional `owner_tenant` parameter that links an MCP server to its owning tenant. Accepts a string slug (e.g. `"gram-recommended"`), a numeric tenant ID, or `null` to clear the link. Omitting the parameter leaves the existing owner unchanged. Tool layer translates string → `owner_tenant_slug`, number → `owner_tenant_id`, null → cleared (Rails `.presence` semantics). On `save_mcp_implementation`, the parameter applies on both create and update branches.
+- `get_mcp_server` and `list_mcp_servers` now surface the owner tenant in their response output. `get_mcp_server` renders `**Owner Tenant:** <slug> (id: <id>)` (or `(none)` when unset). `list_mcp_servers` emits an `Owner Tenant: <slug>` line per server when set.
+- Tools require the Rails-side strong-params support shipped in pulsemcp/pulsemcp#3209 — older Rails revisions silently drop the `owner_tenant_*` params.
+
+### Fixed
+
+- `getUnifiedMCPServer` no longer drops `owner_tenant_id` / `owner_tenant_slug` when merging the search-endpoint payload with the per-server lookup. The previous merge order overwrote the search-side fields with the supervisor response (which doesn't carry them); the fix preserves any owner-tenant data already present on the matching implementation.
+
 ## [0.9.21] - 2026-04-29
 
 ### Added
