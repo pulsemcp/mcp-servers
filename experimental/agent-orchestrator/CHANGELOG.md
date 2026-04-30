@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.17] - 2026-04-30
+
+### Added
+
+- `wake_me_up_when_session_changes_state` tool now accepts `session_archived` as a third valid `event_name` (alongside `session_needs_input` and `session_failed`). The Rails-side AO API was extended in parallel to fire the `session_archived` ao_event when a watched session transitions into the archived state. Closes a wake-up gap for downstream sessions that complete via self-archive — the common pattern for closed-loop tasks like "open a PR and self-archive when CI is green," which transition `running` → `archived` directly without ever hitting `needs_input`. Observed live on router session #4788 → downstream #4794: the parent's only state-change trigger watched `session_needs_input`, never fired, and the `wake_me_up_later` deadline backstop became the only thing that resumed the parent. The handler also adds a symmetric guard rejecting already-archived watched sessions when `event_name === "session_archived"`, mirroring the existing already-failed + `session_failed` guard so the requester never sleeps on a trigger that can't fire.
+
+### Changed
+
+- `wake_me_up_when_session_changes_state` tool description rewritten to steer callers toward the **triple-wake pattern** as the default. When you spawn a downstream session and want to wake on its outcome, you now typically schedule THREE state-change triggers (`session_archived`, `session_needs_input`, `session_failed`) plus ONE `wake_me_up_later` deadline backstop — the first to fire wins; the others are silently consumed. Picking only one of the three is now explicitly called out as a footgun (which is what bit the production case above). The `event_name` enum doc and inputSchema description list all three values with one-line guidance, and the "fires on transitions, not on current state" paragraph notes that `archived` is also terminal under typical flow. Description-only change beyond the new event addition; no breaking changes to existing callers using the two original event names.
+
 ## [0.7.16] - 2026-04-29
 
 ### Fixed

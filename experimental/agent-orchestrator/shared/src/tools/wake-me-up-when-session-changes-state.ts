@@ -3,7 +3,7 @@ import { z } from 'zod';
 import type { IAgentOrchestratorClient } from '../orchestrator-client/orchestrator-client.js';
 import { parseAllowedAgentRoots } from '../allowed-agent-roots.js';
 
-const AO_EVENT_NAMES = ['session_needs_input', 'session_failed'] as const;
+const AO_EVENT_NAMES = ['session_needs_input', 'session_failed', 'session_archived'] as const;
 type AoEventName = (typeof AO_EVENT_NAMES)[number];
 
 export const WakeMeUpWhenSessionChangesStateSchema = z.object({
@@ -13,39 +13,47 @@ export const WakeMeUpWhenSessionChangesStateSchema = z.object({
   prompt: z.string(),
 });
 
-const TOOL_DESCRIPTION = `Schedule this session to be woken up when another session transitions to \`needs_input\` or \`failed\`. The requester session is put to sleep (waiting status) and a one-time trigger fires when the watched session enters the matching state. If the requester is manually resumed before the watched session transitions, the trigger is silently consumed and won't re-fire.
+const TOOL_DESCRIPTION = `Schedule this session to be woken up when another session transitions to \`needs_input\`, \`failed\`, or \`archived\`. The requester session is put to sleep (waiting status) and a one-time trigger fires when the watched session enters the matching state. If the requester is manually resumed before the watched session transitions, the trigger is silently consumed and won't re-fire.
 
-This is the **state-based analog of \`wake_me_up_later\`**. Use \`wake_me_up_later\` when you know *when* to wake up (a clock time). Use this tool when you know *what event* to wake up on but not when it will happen — e.g., a subagent session you spawned will eventually need input or might fail, and you want to be the first to handle it without polling.
+This is the **state-based analog of \`wake_me_up_later\`**. Use \`wake_me_up_later\` when you know *when* to wake up (a clock time). Use this tool when you know *what event* to wake up on but not when it will happen — e.g., a subagent session you spawned will eventually finish (self-archive), pause for input, or crash, and you want to be the first to handle it without polling.
+
+**Triple-wake pattern (typical use).** When you spawn a downstream session and want to wake up on whatever outcome it produces, you'll TYPICALLY want to schedule THREE state-change triggers — one for each terminal/idle event — so you wake on whichever happens first:
+- \`session_archived\` — the watched session self-archived on success (common for closed-loop tasks like "open a PR and self-archive when CI is green"). A downstream session that self-archives goes \`running\` → \`archived\` directly, skipping \`needs_input\`, so a trigger on \`session_needs_input\` alone would NEVER fire for these tasks.
+- \`session_needs_input\` — the watched session paused for user input or finished a turn awaiting follow-up.
+- \`session_failed\` — the watched session crashed.
+
+Pair these three triggers with ONE \`wake_me_up_later\` deadline backstop so a hung watched session can't keep you sleeping forever. The first trigger to fire wins; the others are silently consumed when the requester resumes. **Picking only ONE of the three is a footgun** — if you only schedule \`session_needs_input\` and the downstream session self-archives directly, the only thing that wakes you is the deadline (long, wasteful). Schedule all three unless you have a specific reason to wake only on one outcome.
 
 **IMPORTANT — Use this tool instead of polling.** When this tool is available, it is the correct way to wait on another session's state. Do NOT use these alternatives:
 - **Repeated \`get_session\` calls in a poll loop**: wastes compute, racks up tool-call overhead, and either polls too often (waste) or too rarely (latency). The trigger fires immediately on transition with no polling latency.
-- **\`wake_me_up_later\` with a guessed duration**: time-based wake-ups are wrong here — you don't know when the watched session will transition, and a guess is either too short (you wake up early and have to re-sleep) or too long (the watched session has been sitting in \`needs_input\` while you sleep).
+- **\`wake_me_up_later\` with a guessed duration**: time-based wake-ups are wrong as the *primary* signal here — you don't know when the watched session will transition, and a guess is either too short (you wake up early and have to re-sleep) or too long (the watched session has been sitting in \`needs_input\` / archived while you sleep). Use \`wake_me_up_later\` only as a deadline backstop alongside the state-change triggers.
 
 **The watched session can be ANY session**, not just one the requester spawned. You can watch a peer session, a session a different agent created, or even a session run by a different user — as long as the requester knows the watched session's id.
 
-**One-shot semantics.** The trigger auto-disables after firing. If the watched session transitions, the requester wakes up exactly once, then the trigger is gone. To wake on the next transition too, schedule another trigger from the woken-up turn.
+**One-shot semantics.** Each trigger auto-disables after firing. If the watched session transitions, the requester wakes up exactly once and only the first-firing trigger's prompt is delivered; any companion triggers (the other two state events plus the deadline backstop) are silently consumed and gone. To wake on a future transition too, schedule another trigger from the woken-up turn.
 
-**Important — fires on transitions, not on current state.** The trigger fires when the watched session *moves into* the target state, not when it is *already in* it. If the watched session is already \`needs_input\` when you create the trigger, the trigger waits for the next transition out and back in (which only happens if someone resumes the watched session). For \`session_failed\` on a session that is already \`failed\`, the trigger never fires — \`failed\` is terminal. This tool rejects those terminal/no-fire-possible cases up front (already-failed watched session, archived watched session, self-watch). For non-terminal "already in target state" cases, the call succeeds but is a no-op until the watched session is resumed.
+**Important — fires on transitions, not on current state.** The trigger fires when the watched session *moves into* the target state, not when it is *already in* it. \`failed\` and \`archived\` are both terminal under typical flow — a session that is already \`failed\` will not transition to \`failed\` again, and a session that is already \`archived\` will not transition to \`archived\` again unless someone unarchives it and re-archives it (rare and surprising). \`needs_input\` is non-terminal: if the watched session is already \`needs_input\` when you create the trigger, it waits for the next transition out and back in. This tool rejects up front any case where the trigger could never fire — already-failed and already-archived watched sessions (terminal states), plus the self-watch case (requester == watched) — so the requester doesn't sleep on a trigger that can never fire.
 
-**Deadline backstop pattern.** If you need to wake on the watched session's transition *or* after a max wait time (whichever comes first), create a second \`wake_me_up_later\` trigger alongside this one. First trigger to fire wins; the AO firing path resumes the requester once and the other trigger is silently dropped.
+**Deadline backstop pattern.** Always pair the state-change triggers with one \`wake_me_up_later\` trigger so the requester eventually wakes even if the watched session hangs. First trigger to fire wins; the AO firing path resumes the requester once and the others are silently dropped.
 
 **Parameters:**
 - **session_id**: The session to wake up (the requester). Works from either \`needs_input\` or \`running\` state — if you call this tool from within your own currently-running session, the sleep transition is recorded and takes effect after the current turn ends.
 - **watched_session_id**: The session to watch. Must be a positive integer. The Rails API rejects unknown ids with a clear 422.
 - **event_name**: Which transition to wake on:
-  - \`session_needs_input\`: watched session moves to \`needs_input\` (typically: it finished a turn and is waiting for the user, OR it asked a clarifying question)
-  - \`session_failed\`: watched session moves to \`failed\` (a hard error — the session crashed or was killed)
+  - \`session_needs_input\`: watched session moves to \`needs_input\` (typically: it finished a turn, or it asked a clarifying question).
+  - \`session_failed\`: watched session moves to \`failed\` (a hard error — the session crashed or was killed).
+  - \`session_archived\`: watched session moves to \`archived\` (typically: it self-archived after completing closed-loop work, OR a user manually archived it).
 
-  Pick the one that matches what you're actually waiting for. If you want to wake on either, create two triggers (one per event) — the first to fire wins, and the other is silently dropped on the requester's resume.
-- **prompt**: The prompt to send when waking up the session. Include enough context that the woken-up turn knows what to do (e.g., "session #N you were watching just transitioned — check its output and decide next steps").
+  When in doubt, schedule all three (see the triple-wake pattern above) — the first to fire wins.
+- **prompt**: The prompt to send when waking up the session. Include enough context that the woken-up turn knows what to do (e.g., "session #N you were watching just transitioned — check its output and decide next steps"). If you scheduled multiple triggers (the typical case), each trigger's prompt should make clear which event fired so the woken-up turn knows the outcome without re-checking.
 
 **What happens:**
 1. Creates a one-time \`ao_event\` trigger bound to the requester (\`reuse_session: true\`, \`last_session_id: session_id\`) with a single condition scoped to \`watched_session_id\` and \`event_name\`.
 2. As a side effect of creating the trigger, the AO API transitions the requester to sleeping (waiting) status — immediately if currently \`needs_input\`, or after the current turn ends if currently \`running\`.
 3. When the watched session transitions to the matching state, the trigger fires and resumes the requester with the provided prompt. The trigger then auto-deletes (one-shot).
-4. If the requester is manually resumed first, the pending trigger is consumed (won't fire). If the watched session is archived without ever transitioning, the trigger is cleaned up.
+4. If the requester is manually resumed first, the pending trigger is consumed (won't fire). If the watched session is archived without ever transitioning to the matching state (e.g., you only scheduled \`session_needs_input\` and it went straight to \`archived\`), the trigger is cleaned up — and you'll only wake when your deadline backstop fires.
 
-**You must end your conversation turn after calling this tool** so the auto-sleep can take effect. If your turn keeps running, the requester will not be in a wakeable state when the watched session transitions, and the wake-up will be silently dropped.`;
+**You must end your conversation turn after calling this tool** so the auto-sleep can take effect. If your turn keeps running, the requester will not be in a wakeable state when the watched session transitions, and the wake-up will be silently dropped. When scheduling multiple triggers (the typical triple-wake + deadline pattern), call this tool repeatedly within the same turn — the auto-sleep is idempotent and only takes effect once the turn ends.`;
 
 export function wakeMeUpWhenSessionChangesStateTool(
   _server: Server,
@@ -71,7 +79,7 @@ export function wakeMeUpWhenSessionChangesStateTool(
           type: 'string',
           enum: [...AO_EVENT_NAMES],
           description:
-            'Which transition to wake on: "session_needs_input" (watched session is waiting for input) or "session_failed" (watched session crashed).',
+            'Which transition to wake on: "session_needs_input" (watched session is waiting for input), "session_failed" (watched session crashed), or "session_archived" (watched session self-archived or was archived by a user). Typically schedule all three (plus a wake_me_up_later deadline backstop) for a downstream session you spawned — see the triple-wake pattern in the tool description.',
         },
         prompt: {
           type: 'string',
@@ -188,6 +196,17 @@ export function wakeMeUpWhenSessionChangesStateTool(
               {
                 type: 'text',
                 text: `Error: Watched session ${watched_session_id} is already in "failed" state. The trigger fires on transitions only — a session that is already failed will not transition to failed again, so the requester would sleep forever. Inspect the failed session directly instead of waiting on it.`,
+              },
+            ],
+            isError: true,
+          };
+        }
+        if (event_name === 'session_archived' && watchedSession.status === 'archived') {
+          return {
+            content: [
+              {
+                type: 'text',
+                text: `Error: Watched session ${watched_session_id} is already in "archived" state. The trigger fires on transitions only — a session that is already archived will not transition to archived again (barring an unarchive + re-archive, which is rare), so the requester would sleep forever. Pass an active session id, or inspect the archived session directly.`,
               },
             ],
             isError: true,
