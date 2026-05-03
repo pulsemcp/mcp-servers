@@ -1,0 +1,25 @@
+{
+  "name": "monarch-money-mcp-server-shared",
+  "version": "0.0.6",
+  "description": "Shared code for the Monarch Money MCP Server",
+  "main": "build/index.js",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "lint": "eslint . --ext .ts,.tsx",
+    "lint:fix": "eslint . --ext .ts,.tsx --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.6",
+    "typescript": "^5.8.3"
+  },
+  "keywords": [],
+  "author": "PulseMCP",
+  "license": "MIT"
+}
