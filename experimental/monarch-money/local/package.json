@@ -1,0 +1,44 @@
+{
+  "name": "monarch-money-mcp-server",
+  "version": "0.0.6",
+  "description": "MCP server for Monarch Money personal finance integration",
+  "mcpName": "com.pulsemcp.servers/monarch-money",
+  "main": "build/index.js",
+  "type": "module",
+  "bin": {
+    "monarch-money-mcp-server": "./build/index.js"
+  },
+  "files": [
+    "build/**/*.js",
+    "shared/**/*.js",
+    "shared/**/*.d.ts",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc && npm run build:integration",
+    "build:integration": "tsc -p tsconfig.integration.json",
+    "start": "node build/index.js",
+    "dev": "tsx src/index.ts",
+    "predev": "cd ../shared && npm run build && cd ../local && node setup-dev.js",
+    "prebuild": "cd ../shared && npm run build && cd ../local && node setup-dev.js",
+    "login": "tsx ../scripts/login.ts",
+    "lint": "eslint . --ext .ts,.tsx",
+    "lint:fix": "eslint . --ext .ts,.tsx --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "stage-publish": "npm version",
+    "prepublishOnly": "node prepare-publish.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.6",
+    "tsx": "^4.19.4",
+    "typescript": "^5.7.3"
+  },
+  "keywords": [],
+  "author": "PulseMCP",
+  "license": "MIT"
+}
