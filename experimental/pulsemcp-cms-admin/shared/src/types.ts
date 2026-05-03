@@ -532,6 +532,75 @@ export interface TenantsResponse {
   };
 }
 
+// Tenant -> MCP server association (TenantsMcpServer row)
+export interface TenantServer {
+  id: number;
+  tenant_id: number;
+  mcp_server_id: number;
+  mcp_server_slug: string;
+  status: 'active' | 'deleted';
+  server_json_selection: string;
+  first_touched_at?: string | null;
+  touched: boolean;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface ListTenantServersResponse {
+  data: TenantServer[];
+  pagination: {
+    current_page: number;
+    total_pages: number;
+    total_count: number;
+    has_next: boolean;
+    limit: number;
+  };
+}
+
+export interface BulkUpdateTenantServersParams {
+  add_server_identifiers?: Array<number | string>;
+  remove_server_identifiers?: Array<number | string>;
+  restore_association_ids?: number[];
+}
+
+export interface BulkUpdateAddedItem {
+  mcp_server_id: number;
+  mcp_server_slug: string;
+  association_id: number;
+  outcome: 'created' | 'restored_from_deleted';
+}
+
+export interface BulkUpdateRemovedItem {
+  mcp_server_id: number;
+  mcp_server_slug: string;
+  // Only populated for soft_deleted (the row still exists). Null for hard_deleted.
+  association_id: number | null;
+  outcome: 'hard_deleted' | 'soft_deleted';
+}
+
+export interface BulkUpdateRestoredItem {
+  mcp_server_id: number;
+  mcp_server_slug: string;
+  association_id: number;
+}
+
+export interface BulkUpdateSkippedItem {
+  mcp_server_id?: number;
+  mcp_server_slug?: string;
+  association_id?: number;
+  reason: 'no_unofficial_mirror' | 'already_active' | string;
+}
+
+export interface BulkUpdateTenantServersResponse {
+  status: 'success';
+  tenant: { id: number; slug: string };
+  added: BulkUpdateAddedItem[];
+  removed: BulkUpdateRemovedItem[];
+  restored: BulkUpdateRestoredItem[];
+  skipped: BulkUpdateSkippedItem[];
+  unresolved_identifiers: Array<number | string>;
+}
+
 // MCP JSON Types
 export interface McpJson {
   id: number;

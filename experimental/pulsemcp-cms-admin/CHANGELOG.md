@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [0.9.23] - 2026-05-03
+
+### Added
+
+- Three new MCP tools in the `tenants` group for managing a tenant's recommended-MCP-server list (closes #3360):
+  - `list_tenant_servers` — read-only; lists `TenantsMcpServer` association rows for a tenant. Filterable by `status` (`active` default, `deleted`, or `all`), with pagination. Each row includes the association id (used for `restore_association_ids`), `mcp_server_id`/`mcp_server_slug`, status, `server_json_selection`, and touched/first_touched_at. Available in `tenants_readonly`.
+  - `add_servers_to_tenant` — accepts `tenant` plus any combination of `add_server_identifiers` (slugs or ids), `remove_server_identifiers`, and `restore_association_ids`. Adds always pin `server_json_selection: "unofficial"`; servers without an unofficial mirror are reported in `skipped` with reason `no_unofficial_mirror` rather than failing. Untouched removals are hard-deleted; touched (customized) removals are soft-deleted. Combined add/remove/restore runs as a single transactional admin-API call.
+  - `remove_servers_from_tenant` — convenience inverse of the remove path on `add_servers_to_tenant`; takes only `tenant` and `mcp_servers` (slugs or ids). Same hard/soft-delete outcome semantics.
+- Tools wrap two new admin-API endpoints (`GET /api/tenants/:id/servers`, `POST /api/tenants/:id/servers/bulk_update`) which reuse the existing HTML controller's bulk-update logic. The underlying public MCP server listings are NOT affected — only the tenant's recommendation list (`TenantsMcpServer` rows) is changed.
+
 ## [0.9.22] - 2026-04-29
 
 ### Added

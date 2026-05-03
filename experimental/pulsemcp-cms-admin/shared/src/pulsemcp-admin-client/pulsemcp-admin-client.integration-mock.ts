@@ -1299,6 +1299,31 @@ export function createMockPulseMCPAdminClient(mockData: MockData): IPulseMCPAdmi
       return { success: true, message: 'API key revoked' };
     },
 
+    async listTenantServers() {
+      return {
+        data: [],
+        pagination: {
+          current_page: 1,
+          total_pages: 0,
+          total_count: 0,
+          has_next: false,
+          limit: 30,
+        },
+      };
+    },
+
+    async bulkUpdateTenantServers(idOrSlug: number | string) {
+      return {
+        status: 'success' as const,
+        tenant: { id: typeof idOrSlug === 'number' ? idOrSlug : 1, slug: String(idOrSlug) },
+        added: [],
+        removed: [],
+        restored: [],
+        skipped: [],
+        unresolved_identifiers: [],
+      };
+    },
+
     async recacheMCPServer(slug: string) {
       return {
         message: `Cache successfully refreshed for ${slug}.`,
