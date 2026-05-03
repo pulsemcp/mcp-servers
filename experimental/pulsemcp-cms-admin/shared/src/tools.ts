@@ -36,6 +36,9 @@ import { createApiKey } from './tools/create-api-key.js';
 import { revokeApiKey } from './tools/revoke-api-key.js';
 import { deleteTenant } from './tools/delete-tenant.js';
 import { deleteApiKey } from './tools/delete-api-key.js';
+import { listTenantServers } from './tools/list-tenant-servers.js';
+import { addServersToTenant } from './tools/add-servers-to-tenant.js';
+import { removeServersFromTenant } from './tools/remove-servers-from-tenant.js';
 // MCP JSON tools
 import { getMcpJsons } from './tools/get-mcp-jsons.js';
 import { getMcpJson } from './tools/get-mcp-json.js';
@@ -290,6 +293,10 @@ const ALL_TOOLS: ToolDefinition[] = [
   // Destructive tenant tools — opt-in only, NOT in BASE_TOOL_GROUPS
   { factory: deleteTenant, groups: ['tenants_destructive'], isWriteOperation: true },
   { factory: deleteApiKey, groups: ['tenants_destructive'], isWriteOperation: true },
+  // Tenant -> recommended MCP server association tools
+  { factory: listTenantServers, groups: ['tenants'], isWriteOperation: false },
+  { factory: addServersToTenant, groups: ['tenants'], isWriteOperation: true },
+  { factory: removeServersFromTenant, groups: ['tenants'], isWriteOperation: true },
   // MCP JSON tools (CRUD) (also in server_directory)
   {
     factory: getMcpJsons,

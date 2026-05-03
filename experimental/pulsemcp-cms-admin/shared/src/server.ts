@@ -29,6 +29,9 @@ import type {
   OfficialMirrorsResponse,
   Tenant,
   TenantsResponse,
+  ListTenantServersResponse,
+  BulkUpdateTenantServersParams,
+  BulkUpdateTenantServersResponse,
   McpJson,
   McpJsonsResponse,
   CreateMcpJsonParams,
@@ -156,6 +159,8 @@ import { createTenant } from './pulsemcp-admin-client/lib/create-tenant.js';
 import { createApiKey } from './pulsemcp-admin-client/lib/create-api-key.js';
 import { deleteTenant } from './pulsemcp-admin-client/lib/delete-tenant.js';
 import { deleteApiKey } from './pulsemcp-admin-client/lib/delete-api-key.js';
+import { listTenantServers } from './pulsemcp-admin-client/lib/list-tenant-servers.js';
+import { bulkUpdateTenantServers } from './pulsemcp-admin-client/lib/bulk-update-tenant-servers.js';
 
 // PulseMCP Admin API client interface
 export interface IPulseMCPAdminClient {
@@ -312,6 +317,17 @@ export interface IPulseMCPAdminClient {
   deleteTenant(params: DeleteTenantParams): Promise<DeleteTenantResponse>;
 
   deleteApiKey(id: number): Promise<DeleteApiKeyResponse>;
+
+  // Tenant -> recommended MCP server association methods
+  listTenantServers(
+    idOrSlug: number | string,
+    params?: { status?: 'active' | 'deleted' | 'all'; limit?: number; offset?: number }
+  ): Promise<ListTenantServersResponse>;
+
+  bulkUpdateTenantServers(
+    idOrSlug: number | string,
+    params: BulkUpdateTenantServersParams
+  ): Promise<BulkUpdateTenantServersResponse>;
 
   // MCP JSON REST API methods
   getMcpJsons(params?: {
@@ -684,6 +700,20 @@ export class PulseMCPAdminClient implements IPulseMCPAdminClient {
 
   async deleteApiKey(id: number): Promise<DeleteApiKeyResponse> {
     return deleteApiKey(this.apiKey, this.baseUrl, id);
+  }
+
+  async listTenantServers(
+    idOrSlug: number | string,
+    params?: { status?: 'active' | 'deleted' | 'all'; limit?: number; offset?: number }
+  ): Promise<ListTenantServersResponse> {
+    return listTenantServers(this.apiKey, this.baseUrl, idOrSlug, params);
+  }
+
+  async bulkUpdateTenantServers(
+    idOrSlug: number | string,
+    params: BulkUpdateTenantServersParams
+  ): Promise<BulkUpdateTenantServersResponse> {
+    return bulkUpdateTenantServers(this.apiKey, this.baseUrl, idOrSlug, params);
   }
 
   // MCP JSON REST API methods
