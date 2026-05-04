@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.1] - 2026-05-04
+
+### Fixed
+
+- `wake_me_up_later` and `wake_me_up_when_session_changes_state` no longer reject every call when `ALLOWED_AGENT_ROOTS` is set. The previous blanket rejection was overscoped: `ALLOWED_AGENT_ROOTS` is meant to scope which agent roots a server can spawn or operate on, but neither wake tool spawns sessions — they schedule one-time triggers on the requester (and, for the state-change variant, watch an existing session). The blanket rejection broke router/orchestrator sessions that legitimately need event-driven waits on their child sessions: any agent root using `default_subagent_roots` (which auto-injects this MCP server with `ALLOWED_AGENT_ROOTS` set) was forced into tight polling loops instead of the documented triple-wake + deadline-backstop pattern. Observed live on the daily MCP server discovery pipeline orchestrator (AO session 5278) where every wake call returned the rejection error and the orchestrator fell back to polling. Fix: drop the rejection from `wake_me_up_later` entirely (the tool only schedules a wake on the requester's own session — no cross-root concern), and replace the rejection in `wake_me_up_when_session_changes_state` with a targeted check that the watched session's `metadata.agent_root_key` is in the allowed list. The watched-session check preserves the security property that a server cannot schedule wakes on sessions outside its allowed-roots scope, while letting the typical orchestrator pattern (where the watched child session was itself spawned on an allowed root) work as designed.
+
 ## [0.8.0] - 2026-05-03
 
 ### Breaking

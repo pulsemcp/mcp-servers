@@ -121,18 +121,6 @@ export function wakeMeUpWhenSessionChangesStateTool(
 
         const { session_id, watched_session_id, event_name, prompt } = validated;
 
-        if (parseAllowedAgentRoots() !== null) {
-          return {
-            content: [
-              {
-                type: 'text',
-                text: 'Error: wake_me_up_when_session_changes_state is not allowed when ALLOWED_AGENT_ROOTS is set. Triggers cannot be created because sessions are restricted to specific preconfigured agent roots.',
-              },
-            ],
-            isError: true,
-          };
-        }
-
         const client = clientFactory();
         const session = await client.getSession(session_id);
 
@@ -190,6 +178,31 @@ export function wakeMeUpWhenSessionChangesStateTool(
             isError: true,
           };
         }
+
+        // ALLOWED_AGENT_ROOTS scopes which agent roots this server is permitted
+        // to operate on. The constraint prevents an agent on a restricted server
+        // from scheduling wakes on sessions that belong to roots outside its
+        // scope. The requester is, by definition, already on an allowed root
+        // (it is the calling agent's session); we only need to validate the
+        // watched session belongs to the same scope.
+        const allowedRoots = parseAllowedAgentRoots();
+        if (allowedRoots !== null) {
+          const watchedAgentRoot =
+            (watchedSession.metadata?.agent_root_key as string | undefined) ?? null;
+          if (watchedAgentRoot === null || !allowedRoots.includes(watchedAgentRoot)) {
+            const watchedAgentRootStr = watchedAgentRoot ?? '(unknown)';
+            return {
+              content: [
+                {
+                  type: 'text',
+                  text: `Error: ALLOWED_AGENT_ROOTS is set — watched session ${watched_session_id} belongs to agent root "${watchedAgentRootStr}", which is not in the allowed list [${allowedRoots.join(', ')}]. The trigger would let this server schedule wakes on a session outside its permitted scope. Pass a watched_session_id whose agent root is in the allowed list, or run this tool from a server without ALLOWED_AGENT_ROOTS restrictions.`,
+                },
+              ],
+              isError: true,
+            };
+          }
+        }
+
         if (event_name === 'session_failed' && watchedSession.status === 'failed') {
           return {
             content: [
