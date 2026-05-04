@@ -134,7 +134,13 @@ This guidance does NOT apply when waking at a known wall-clock time (e.g., "9am 
 **What happens:**
 1. Creates a one-time schedule trigger bound to this session that fires at the specified time.
 2. As a side effect of creating the trigger, the AO API transitions the session to sleeping (waiting) status — immediately if currently \`needs_input\`, or after the current turn ends if currently \`running\`.
-3. At the scheduled time, the trigger resumes the session with the provided prompt.`;
+3. At the scheduled time, the trigger resumes the session with the provided prompt.
+
+**⚠️ Sibling-destroy semantics when paired with state-change wakes.** If this \`wake_me_up_later\` trigger is acting as a deadline backstop alongside \`wake_me_up_when_session_changes_state\` triggers (the recommended triple-wake + deadline pattern), the AO firing path destroys ALL of the requester's other one-time wakes whenever any one of them fires — and that cuts both ways:
+- If a state-change trigger fires first, this deadline backstop is destroyed (not pending in the background).
+- If THIS deadline fires first (e.g., a hung watched session never transitioned), all the companion state-change watchers are destroyed.
+
+In either case, the woken-up turn starts with zero remaining scheduled wakes. If the woken-up turn decides to keep waiting (e.g., the wake fired prematurely on a transient flap, or the deadline hit but the watched session is still progressing), it MUST re-register the wakes it still needs — both the state-change watchers and a fresh deadline — before going back to sleep. The originals are gone.`;
 }
 
 export function wakeMeUpLaterTool(_server: Server, clientFactory: () => IAgentOrchestratorClient) {
@@ -278,6 +284,8 @@ export function wakeMeUpLaterTool(_server: Server, clientFactory: () => IAgentOr
           '**You must end your conversation turn now.** The session will be automatically transitioned to waiting (immediately if currently needs_input; after the current turn ends if currently running) and resumed at the scheduled time with the provided prompt.',
           '',
           '⚠️ **Warning:** If you do not end your conversation turn, the session may still be running when the scheduled wake-up fires. A wake-up cannot be delivered to a session that is not in a wakeable (sleeping/waiting) state — it will be silently dropped, and you will never receive it.',
+          '',
+          '**Sibling-destroy reminder:** if this trigger is paired with `wake_me_up_when_session_changes_state` triggers (the triple-wake + deadline pattern), whichever wake fires first destroys ALL the others belonging to this requester. If this deadline fires while the watched session is still progressing, the woken-up turn must re-register the state-change watchers AND a new deadline before going back to sleep — the originals are gone.',
         ];
 
         return { content: [{ type: 'text', text: lines.join('\n') }] };
