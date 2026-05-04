@@ -1,7 +1,7 @@
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { z } from 'zod';
 import type { IAgentOrchestratorClient } from '../orchestrator-client/orchestrator-client.js';
-import type { ConfigsResponse, AgentRootInfo, StopConditionInfo, MCPServerInfo } from '../types.js';
+import type { ConfigsResponse, AgentRootInfo, GoalInfo, MCPServerInfo } from '../types.js';
 import { getConfigsCache, setConfigsCache } from '../cache/configs-cache.js';
 import { parseAllowedAgentRoots, filterAgentRoots } from '../allowed-agent-roots.js';
 
@@ -16,8 +16,8 @@ const TOOL_DESCRIPTION = `Fetches all static configuration data in a single call
 
 Returns:
 - **MCP servers**: Available servers for use with start_session (name, title, description)
-- **Agent roots**: Preconfigured repository settings with defaults (git_root, branch, mcp_servers, skills, stop_condition)
-- **Stop conditions**: Available session completion criteria (id, name, description)
+- **Agent roots**: Preconfigured repository settings with defaults (git_root, branch, mcp_servers, skills, goal)
+- **Goals**: Available session completion criteria (id, name, description)
 
 **Use this tool** to get all configuration options before calling start_session.
 
@@ -117,20 +117,18 @@ function formatResponse(configs: ConfigsResponse, fromCache: boolean) {
     }
   }
 
-  // Stop Conditions section
+  // Goals section
   lines.push('---');
   lines.push('');
-  lines.push('## Stop Conditions');
+  lines.push('## Goals');
   lines.push('');
-  if (configs.stop_conditions.length === 0) {
-    lines.push('*No stop conditions defined.*');
+  if (configs.goals.length === 0) {
+    lines.push('*No goals defined.*');
   } else {
-    lines.push(
-      `Found ${configs.stop_conditions.length} stop condition${configs.stop_conditions.length === 1 ? '' : 's'}:`
-    );
+    lines.push(`Found ${configs.goals.length} goal${configs.goals.length === 1 ? '' : 's'}:`);
     lines.push('');
-    for (const condition of configs.stop_conditions) {
-      formatStopCondition(lines, condition);
+    for (const goal of configs.goals) {
+      formatGoal(lines, goal);
     }
   }
 
@@ -147,9 +145,7 @@ function formatResponse(configs: ConfigsResponse, fromCache: boolean) {
   lines.push(
     "- Pass `default_skills` from **Agent Roots** in the `skills` parameter of `start_session` — sessions won't have skills loaded unless you explicitly pass them"
   );
-  lines.push(
-    '- Use `id` values from **Stop Conditions** in `start_session` `stop_condition` parameter'
-  );
+  lines.push('- Use `id` values from **Goals** in `start_session` `goal` parameter');
 
   if (fromCache) {
     lines.push('');
@@ -184,8 +180,8 @@ function formatAgentRoot(lines: string[], root: AgentRootInfo) {
       `- **Default MCP Servers:** ${root.default_mcp_servers.map((s) => `\`${s}\``).join(', ')}`
     );
   }
-  if (root.default_stop_condition) {
-    lines.push(`- **Default Stop Condition:** \`${root.default_stop_condition}\``);
+  if (root.default_goal) {
+    lines.push(`- **Default Goal:** \`${root.default_goal}\``);
   }
   if (root.default_skills && root.default_skills.length > 0) {
     lines.push(`- **Default Skills:** ${root.default_skills.map((s) => `\`${s}\``).join(', ')}`);
@@ -196,9 +192,9 @@ function formatAgentRoot(lines: string[], root: AgentRootInfo) {
   lines.push('');
 }
 
-function formatStopCondition(lines: string[], condition: StopConditionInfo) {
-  lines.push(`### ${condition.name}`);
-  lines.push(`- **ID:** \`${condition.id}\``);
-  lines.push(`- **Description:** ${condition.description}`);
+function formatGoal(lines: string[], goal: GoalInfo) {
+  lines.push(`### ${goal.name}`);
+  lines.push(`- **ID:** \`${goal.id}\``);
+  lines.push(`- **Description:** ${goal.description}`);
   lines.push('');
 }

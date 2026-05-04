@@ -28,7 +28,7 @@ import type {
   MCPServerInfo,
   MCPServersResponse,
   AgentRootInfo,
-  StopConditionInfo,
+  GoalInfo,
   ConfigsResponse,
   SendPushNotificationResponse,
   EnqueuedMessage,
@@ -71,7 +71,7 @@ export interface RawAgentRoot {
   default_branch?: string;
   subdirectory?: string;
   custom?: boolean;
-  default_stop_condition?: string;
+  default_goal?: string;
   default?: boolean;
   default_mcp_servers?: string[];
   default_skills?: string[];
@@ -80,13 +80,13 @@ export interface RawAgentRoot {
 
 /**
  * Raw configs response shape as returned by the Rails API.
- * Note: mcp_servers and stop_conditions field names match our TypeScript
+ * Note: mcp_servers and goals field names match our TypeScript
  * interfaces directly. Only agent_roots fields diverge from the API naming.
  */
 interface RawConfigsResponse {
   mcp_servers: MCPServerInfo[];
   agent_roots: RawAgentRoot[];
-  stop_conditions: StopConditionInfo[];
+  goals: GoalInfo[];
 }
 
 /**
@@ -102,7 +102,7 @@ export function mapAgentRoot(raw: RawAgentRoot): AgentRootInfo {
     git_root: raw.url,
     default_branch: raw.default_branch,
     default_subdirectory: raw.subdirectory,
-    default_stop_condition: raw.default_stop_condition,
+    default_goal: raw.default_goal,
     default_mcp_servers: raw.default_mcp_servers,
     default_skills: raw.default_skills,
     default_model: raw.default_model,
@@ -149,7 +149,7 @@ export interface IAgentOrchestratorClient {
   followUp(
     id: string | number,
     prompt: string,
-    options?: { force_immediate?: boolean; stop_condition?: string }
+    options?: { force_immediate?: boolean; goal?: string }
   ): Promise<SessionActionResponse>;
 
   pauseSession(id: string | number): Promise<SessionActionResponse>;
@@ -243,12 +243,12 @@ export interface IAgentOrchestratorClient {
   getEnqueuedMessage(sessionId: string | number, messageId: number): Promise<EnqueuedMessage>;
   createEnqueuedMessage(
     sessionId: string | number,
-    data: { content: string; stop_condition?: string }
+    data: { content: string; goal?: string }
   ): Promise<EnqueuedMessage>;
   updateEnqueuedMessage(
     sessionId: string | number,
     messageId: number,
-    data: { content?: string; stop_condition?: string }
+    data: { content?: string; goal?: string }
   ): Promise<EnqueuedMessage>;
   deleteEnqueuedMessage(sessionId: string | number, messageId: number): Promise<void>;
   reorderEnqueuedMessage(
@@ -544,12 +544,12 @@ export class AgentOrchestratorClient implements IAgentOrchestratorClient {
   async followUp(
     id: string | number,
     prompt: string,
-    options?: { force_immediate?: boolean; stop_condition?: string }
+    options?: { force_immediate?: boolean; goal?: string }
   ): Promise<SessionActionResponse> {
     return this.request<SessionActionResponse>('POST', `/sessions/${id}/follow_up`, {
       prompt,
       ...(options?.force_immediate && { force_immediate: true }),
-      ...(options?.stop_condition && { stop_condition: options.stop_condition }),
+      ...(options?.goal && { goal: options.goal }),
     });
   }
 
@@ -691,7 +691,7 @@ export class AgentOrchestratorClient implements IAgentOrchestratorClient {
     return {
       mcp_servers: raw.mcp_servers,
       agent_roots: raw.agent_roots.map(mapAgentRoot),
-      stop_conditions: raw.stop_conditions,
+      goals: raw.goals,
     };
   }
 
@@ -785,7 +785,7 @@ export class AgentOrchestratorClient implements IAgentOrchestratorClient {
 
   async createEnqueuedMessage(
     sessionId: string | number,
-    data: { content: string; stop_condition?: string }
+    data: { content: string; goal?: string }
   ): Promise<EnqueuedMessage> {
     const response = await this.request<EnqueuedMessageResponse>(
       'POST',
@@ -798,7 +798,7 @@ export class AgentOrchestratorClient implements IAgentOrchestratorClient {
   async updateEnqueuedMessage(
     sessionId: string | number,
     messageId: number,
-    data: { content?: string; stop_condition?: string }
+    data: { content?: string; goal?: string }
   ): Promise<EnqueuedMessage> {
     const response = await this.request<EnqueuedMessageResponse>(
       'PATCH',

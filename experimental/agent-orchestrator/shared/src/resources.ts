@@ -12,7 +12,7 @@ import { getConfigsCache, setConfigsCache } from './cache/configs-cache.js';
 // Resources expose data that can be read by MCP clients.
 // For agent-orchestrator, we expose:
 // - Server configuration for debugging
-// - Static configs (MCP servers, agent roots, stop conditions) from the API
+// - Static configs (MCP servers, agent roots, goals) from the API
 // =============================================================================
 
 export type ClientFactory = () => IAgentOrchestratorClient;
@@ -45,12 +45,12 @@ export function createRegisterResources(clientFactory: ClientFactory) {
             uri: 'agent-orchestrator://configs/agent-roots',
             name: 'Agent Roots',
             description:
-              'Preconfigured repository settings with default branch, MCP servers, and stop conditions.',
+              'Preconfigured repository settings with default branch, MCP servers, and goals.',
             mimeType: 'application/json',
           },
           {
-            uri: 'agent-orchestrator://configs/stop-conditions',
-            name: 'Stop Conditions',
+            uri: 'agent-orchestrator://configs/goals',
+            name: 'Goals',
             description: 'Available session completion criteria for use with start_session.',
             mimeType: 'application/json',
           },
@@ -160,7 +160,7 @@ export function createRegisterResources(clientFactory: ClientFactory) {
           };
         }
 
-        if (uri === 'agent-orchestrator://configs/stop-conditions') {
+        if (uri === 'agent-orchestrator://configs/goals') {
           return {
             contents: [
               {
@@ -168,8 +168,8 @@ export function createRegisterResources(clientFactory: ClientFactory) {
                 mimeType: 'application/json',
                 text: JSON.stringify(
                   {
-                    stop_conditions: configs.stop_conditions,
-                    _usage: 'Use the "id" field when specifying stop_condition in start_session',
+                    goals: configs.goals,
+                    _usage: 'Use the "id" field when specifying goal in start_session',
                   },
                   null,
                   2

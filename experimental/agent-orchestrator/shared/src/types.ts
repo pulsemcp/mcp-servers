@@ -31,7 +31,7 @@ export interface Session {
   branch: string | null;
   subdirectory: string | null;
   execution_provider: string;
-  stop_condition: string | null;
+  goal: string | null;
   mcp_servers: string[];
   catalog_skills?: string[];
   catalog_plugins?: string[];
@@ -145,14 +145,14 @@ export interface AgentRootInfo {
   git_root: string;
   default_branch?: string;
   default_subdirectory?: string;
-  default_stop_condition?: string;
+  default_goal?: string;
   default_mcp_servers?: string[];
   default_skills?: string[];
   default_model?: string;
 }
 
-// Stop Condition info (session completion criteria)
-export interface StopConditionInfo {
+// Goal info (session completion criteria)
+export interface GoalInfo {
   id: string;
   name: string;
   description: string;
@@ -162,7 +162,7 @@ export interface StopConditionInfo {
 export interface ConfigsResponse {
   mcp_servers: MCPServerInfo[];
   agent_roots: AgentRootInfo[];
-  stop_conditions: StopConditionInfo[];
+  goals: GoalInfo[];
 }
 
 // Push notification response (from POST /api/v1/notifications/push)
@@ -181,7 +181,7 @@ export interface CreateSessionRequest {
   subdirectory?: string;
   title?: string;
   slug?: string;
-  stop_condition?: string;
+  goal?: string;
   execution_provider?: string;
   mcp_servers?: string[];
   skills?: string[];
@@ -196,7 +196,7 @@ export interface CreateSessionRequest {
 export interface UpdateSessionRequest {
   title?: string;
   slug?: string;
-  stop_condition?: string;
+  goal?: string;
   mcp_servers?: string[];
   custom_metadata?: Record<string, unknown>;
 }
@@ -253,7 +253,7 @@ export interface EnqueuedMessage {
   id: number;
   session_id: number;
   content: string;
-  stop_condition: string | null;
+  goal: string | null;
   position: number;
   status: EnqueuedMessageStatus;
   created_at: string;
@@ -301,7 +301,7 @@ export interface Trigger {
   status: TriggerStatus;
   agent_root_name: string;
   prompt_template: string;
-  stop_condition: string | null;
+  goal: string | null;
   reuse_session: boolean;
   enqueue_messages?: boolean;
   resuscitate_archived?: boolean;
@@ -343,7 +343,7 @@ export interface CreateTriggerRequest {
   agent_root_name: string;
   prompt_template: string;
   status?: TriggerStatus;
-  stop_condition?: string;
+  goal?: string;
   reuse_session?: boolean;
   mcp_servers?: string[];
   last_session_id?: number;
@@ -361,7 +361,7 @@ export interface UpdateTriggerRequest {
   agent_root_name?: string;
   prompt_template?: string;
   status?: TriggerStatus;
-  stop_condition?: string;
+  goal?: string;
   reuse_session?: boolean;
   mcp_servers?: string[];
   trigger_conditions_attributes?: TriggerConditionAttributes[];

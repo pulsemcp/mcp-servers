@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-05-03
+
+### Breaking
+
+- Renamed `stop_condition` → `goal` across all tool inputs and outputs to align with the AO web UI terminology that surfaced in pulsemcp/pulsemcp#3377. Affects `start_session` (`stop_condition` parameter), `manage_enqueued_messages` (create/update/send_now `stop_condition` field), `action_trigger` (create/update `stop_condition` field), and the `Session` / `EnqueuedMessage` / `Trigger` response shapes returned by `get_session`, `search_triggers`, and the configs resources. Tool input schemas now reject the old `stop_condition` key — there is no backwards-compatibility shim. The MCP resource `agent-orchestrator://configs/stop-conditions` is renamed to `agent-orchestrator://configs/goals`, and the configs response field `stop_conditions` is renamed to `goals` (with element type `GoalInfo` replacing `StopConditionInfo`). Agent-root response field `default_stop_condition` is renamed to `default_goal`. Downstream consumers must update wire-format and TypeScript references in lockstep with this release. See pulsemcp/pulsemcp#3384 for tracking.
+
 ## [0.7.17] - 2026-04-30
 
 ### Added

@@ -22,7 +22,7 @@ MCP server for PulseMCP's agent-orchestrator: a Claude Code + MCP-powered agent-
 | -------------------------- | ------------- | ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `quick_search_sessions`    | sessions      | read       | Quick title-based search/list sessions with optional ID lookup, title query, and status filter                                                                                          |
 | `get_session`              | sessions      | read       | Get detailed session info with optional logs, transcripts, and transcript format (text/json)                                                                                            |
-| `get_configs`              | sessions      | read       | Fetch all static configuration (MCP servers, agent roots, stop conditions)                                                                                                              |
+| `get_configs`              | sessions      | read       | Fetch all static configuration (MCP servers, agent roots, goals)                                                                                                                        |
 | `get_transcript_archive`   | sessions      | read       | Get download URL and metadata for the transcript archive zip file                                                                                                                       |
 | `start_session`            | sessions      | write      | Create and start a new agent session                                                                                                                                                    |
 | `action_session`           | sessions      | write      | Perform actions: follow_up, pause, restart, archive, unarchive, change_mcp_servers, change_model, fork, refresh, refresh_all, update_notes, update_title, toggle_favorite, bulk_archive |
@@ -37,12 +37,12 @@ MCP server for PulseMCP's agent-orchestrator: a Claude Code + MCP-powered agent-
 
 ### Resources
 
-| Resource                                       | Description                                     |
-| ---------------------------------------------- | ----------------------------------------------- |
-| `agent-orchestrator://config`                  | Server configuration and status (for debugging) |
-| `agent-orchestrator://configs/mcp-servers`     | List of available MCP servers for sessions      |
-| `agent-orchestrator://configs/agent-roots`     | Preconfigured repository settings with defaults |
-| `agent-orchestrator://configs/stop-conditions` | Session completion criteria definitions         |
+| Resource                                   | Description                                     |
+| ------------------------------------------ | ----------------------------------------------- |
+| `agent-orchestrator://config`              | Server configuration and status (for debugging) |
+| `agent-orchestrator://configs/mcp-servers` | List of available MCP servers for sessions      |
+| `agent-orchestrator://configs/agent-roots` | Preconfigured repository settings with defaults |
+| `agent-orchestrator://configs/goals`       | Session completion criteria definitions         |
 
 ### Tool Groups
 

@@ -80,7 +80,7 @@ export function createIntegrationMockOrchestratorClient(
         branch: 'main',
         subdirectory: null,
         execution_provider: 'local_filesystem',
-        stop_condition: null,
+        goal: null,
         mcp_servers: ['github-development'],
         config: {},
         metadata: { clone_path: 'repo-main-123' },
@@ -232,7 +232,7 @@ export function createIntegrationMockOrchestratorClient(
         branch: data.branch || 'main',
         subdirectory: data.subdirectory || null,
         execution_provider: data.execution_provider || 'local_filesystem',
-        stop_condition: data.stop_condition || null,
+        goal: data.goal || null,
         mcp_servers: data.mcp_servers || [],
         config: data.config || {},
         metadata: {},
@@ -255,7 +255,7 @@ export function createIntegrationMockOrchestratorClient(
       }
       if (data.title !== undefined) session.title = data.title;
       if (data.slug !== undefined) session.slug = data.slug;
-      if (data.stop_condition !== undefined) session.stop_condition = data.stop_condition;
+      if (data.goal !== undefined) session.goal = data.goal;
       if (data.mcp_servers !== undefined) session.mcp_servers = data.mcp_servers;
       if (data.custom_metadata !== undefined) session.custom_metadata = data.custom_metadata;
       session.updated_at = new Date().toISOString();
@@ -297,7 +297,7 @@ export function createIntegrationMockOrchestratorClient(
     async followUp(
       id: string | number,
       prompt: string,
-      options?: { force_immediate?: boolean; stop_condition?: string }
+      options?: { force_immediate?: boolean; goal?: string }
     ): Promise<SessionActionResponse> {
       const session = mockData.sessions?.find((s) => s.id === Number(id) || s.slug === String(id));
       if (!session) {
@@ -608,7 +608,7 @@ export function createIntegrationMockOrchestratorClient(
             default_skills: ['discovery-classify', 'discovery-validate'],
           },
         ],
-        stop_conditions: [
+        goals: [
           {
             id: 'pr_merged',
             name: 'PR Merged',
@@ -727,7 +727,7 @@ export function createIntegrationMockOrchestratorClient(
         id: messageId,
         session_id: 1,
         content: 'Test message',
-        stop_condition: null,
+        goal: null,
         position: 1,
         status: 'pending',
         created_at: new Date().toISOString(),
@@ -737,13 +737,13 @@ export function createIntegrationMockOrchestratorClient(
 
     async createEnqueuedMessage(
       sessionId: string | number,
-      data: { content: string; stop_condition?: string }
+      data: { content: string; goal?: string }
     ): Promise<EnqueuedMessage> {
       return {
         id: 1,
         session_id: Number(sessionId),
         content: data.content,
-        stop_condition: data.stop_condition || null,
+        goal: data.goal || null,
         position: 1,
         status: 'pending',
         created_at: new Date().toISOString(),
@@ -754,13 +754,13 @@ export function createIntegrationMockOrchestratorClient(
     async updateEnqueuedMessage(
       _sessionId: string | number,
       messageId: number,
-      data: { content?: string; stop_condition?: string }
+      data: { content?: string; goal?: string }
     ): Promise<EnqueuedMessage> {
       return {
         id: messageId,
         session_id: 1,
         content: data.content || 'Updated message',
-        stop_condition: data.stop_condition || null,
+        goal: data.goal || null,
         position: 1,
         status: 'pending',
         created_at: new Date().toISOString(),
@@ -781,7 +781,7 @@ export function createIntegrationMockOrchestratorClient(
         id: messageId,
         session_id: 1,
         content: 'Test message',
-        stop_condition: null,
+        goal: null,
         position,
         status: 'pending',
         created_at: new Date().toISOString(),
@@ -822,7 +822,7 @@ export function createIntegrationMockOrchestratorClient(
         status: 'enabled',
         agent_root_name: 'mcp-servers',
         prompt_template: 'Test prompt',
-        stop_condition: null,
+        goal: null,
         reuse_session: false,
         mcp_servers: [],
         conditions: [
@@ -859,7 +859,7 @@ export function createIntegrationMockOrchestratorClient(
         status: data.status || 'enabled',
         agent_root_name: data.agent_root_name,
         prompt_template: data.prompt_template,
-        stop_condition: data.stop_condition || null,
+        goal: data.goal || null,
         reuse_session: data.reuse_session || false,
         mcp_servers: data.mcp_servers || [],
         conditions,
@@ -886,7 +886,7 @@ export function createIntegrationMockOrchestratorClient(
         status: data.status || 'enabled',
         agent_root_name: data.agent_root_name || 'mcp-servers',
         prompt_template: data.prompt_template || 'Test prompt',
-        stop_condition: data.stop_condition || null,
+        goal: data.goal || null,
         reuse_session: data.reuse_session || false,
         mcp_servers: data.mcp_servers || [],
         conditions,
@@ -909,7 +909,7 @@ export function createIntegrationMockOrchestratorClient(
         status: 'disabled',
         agent_root_name: 'mcp-servers',
         prompt_template: 'Test prompt',
-        stop_condition: null,
+        goal: null,
         reuse_session: false,
         mcp_servers: [],
         conditions: [],
