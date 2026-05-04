@@ -1,7 +1,6 @@
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { z } from 'zod';
 import type { IAgentOrchestratorClient } from '../orchestrator-client/orchestrator-client.js';
-import { parseAllowedAgentRoots } from '../allowed-agent-roots.js';
 
 export const WakeMeUpLaterSchema = z.object({
   session_id: z.union([z.string(), z.number()]),
@@ -206,18 +205,6 @@ export function wakeMeUpLaterTool(_server: Server, clientFactory: () => IAgentOr
         }
 
         const client = clientFactory();
-
-        if (parseAllowedAgentRoots() !== null) {
-          return {
-            content: [
-              {
-                type: 'text',
-                text: 'Error: wake_me_up_later is not allowed when ALLOWED_AGENT_ROOTS is set. Triggers cannot be created because sessions are restricted to specific preconfigured agent roots.',
-              },
-            ],
-            isError: true,
-          };
-        }
 
         const session = await client.getSession(session_id);
 
