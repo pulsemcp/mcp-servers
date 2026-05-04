@@ -18,7 +18,7 @@ export const ManageEnqueuedMessagesSchema = z.object({
   action: z.enum(ACTION_ENUM),
   message_id: z.number().optional(),
   content: z.string().optional(),
-  stop_condition: z.string().optional(),
+  goal: z.string().optional(),
   position: z.number().min(1).optional(),
   page: z.number().min(1).optional(),
   per_page: z.number().min(1).max(100).optional(),
@@ -37,7 +37,7 @@ Use "send_now" when you need the agent to act on something urgently. Use "create
 - **create**: Add a new message to the end of the queue for later delivery (requires "content"). The message waits until the session becomes idle.
 - **list**: List all enqueued messages for a session (supports pagination with "page" and "per_page")
 - **get**: Get a specific enqueued message by ID (requires "message_id")
-- **update**: Update an existing queued message's content or stop condition (requires "message_id")
+- **update**: Update an existing queued message's content or goal (requires "message_id")
 - **delete**: Remove a message from the queue (requires "message_id")
 - **reorder**: Change a message's position in the queue (requires "message_id" and "position")
 - **interrupt**: Pause the session and send an existing queued message immediately (requires "message_id"). Prefer "send_now" for new messages — "interrupt" is for promoting an already-queued message.`;
@@ -70,10 +70,9 @@ export function manageEnqueuedMessagesTool(
           type: 'string',
           description: 'Message content. Required for create and send_now. Optional for update.',
         },
-        stop_condition: {
+        goal: {
           type: 'string',
-          description:
-            'Stop condition for this message. Optional for create, send_now, and update.',
+          description: 'Goal for this message. Optional for create, send_now, and update.',
         },
         position: {
           type: 'number',
@@ -94,16 +93,8 @@ export function manageEnqueuedMessagesTool(
       try {
         const validated = ManageEnqueuedMessagesSchema.parse(args);
         const client = clientFactory();
-        const {
-          session_id,
-          action,
-          message_id,
-          content,
-          stop_condition,
-          position,
-          page,
-          per_page,
-        } = validated;
+        const { session_id, action, message_id, content, goal, position, page, per_page } =
+          validated;
 
         let result: string;
 
@@ -123,7 +114,7 @@ export function manageEnqueuedMessagesTool(
                 lines.push(
                   `- **Content:** ${msg.content.substring(0, 200)}${msg.content.length > 200 ? '...' : ''}`
                 );
-                if (msg.stop_condition) lines.push(`- **Stop Condition:** ${msg.stop_condition}`);
+                if (msg.goal) lines.push(`- **Goal:** ${msg.goal}`);
                 lines.push('');
               });
               result = lines.join('\n');
@@ -148,7 +139,7 @@ export function manageEnqueuedMessagesTool(
               `- **Position:** ${msg.position}`,
               `- **Status:** ${msg.status}`,
               `- **Content:** ${msg.content}`,
-              msg.stop_condition ? `- **Stop Condition:** ${msg.stop_condition}` : '',
+              msg.goal ? `- **Goal:** ${msg.goal}` : '',
               `- **Created:** ${msg.created_at}`,
             ]
               .filter(Boolean)
@@ -167,7 +158,7 @@ export function manageEnqueuedMessagesTool(
             }
             const msg = await client.createEnqueuedMessage(session_id, {
               content,
-              stop_condition: stop_condition || undefined,
+              goal: goal || undefined,
             });
             result = [
               '## Message Queued',
@@ -196,7 +187,7 @@ export function manageEnqueuedMessagesTool(
             }
             const msg = await client.updateEnqueuedMessage(session_id, message_id, {
               content: content || undefined,
-              stop_condition: stop_condition || undefined,
+              goal: goal || undefined,
             });
             result = [
               '## Message Updated',
@@ -292,7 +283,7 @@ export function manageEnqueuedMessagesTool(
             }
             const response = await client.followUp(session_id, content, {
               force_immediate: true,
-              stop_condition: stop_condition || undefined,
+              goal: goal || undefined,
             });
             result = [
               '## Message Sent Immediately',

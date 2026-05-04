@@ -18,8 +18,7 @@ const PARAM_DESCRIPTIONS = {
     '(e.g. "Fix login redirect loop on mobile Safari", "Add dark mode toggle to settings page"). ' +
     'Only omit if you truly have zero context about the session purpose, which should be extremely rare.',
   slug: 'URL-friendly identifier for the session. Must be unique.',
-  stop_condition:
-    'Stop condition ID from get_configs (e.g. "pr_merged"). The description is automatically resolved and passed to the agent as context.',
+  goal: 'Goal ID from get_configs (e.g. "pr_merged"). The description is automatically resolved and passed to the agent as context.',
   execution_provider:
     'Execution environment. Options: "local_filesystem" (runs locally), "remote_sandbox" (runs in isolated sandbox). Default: "local_filesystem"',
   mcp_servers:
@@ -45,7 +44,7 @@ export const StartSessionSchema = z.object({
   agent_root: z.string().optional().describe(PARAM_DESCRIPTIONS.agent_root),
   title: z.string().optional().describe(PARAM_DESCRIPTIONS.title),
   slug: z.string().optional().describe(PARAM_DESCRIPTIONS.slug),
-  stop_condition: z.string().optional().describe(PARAM_DESCRIPTIONS.stop_condition),
+  goal: z.string().optional().describe(PARAM_DESCRIPTIONS.goal),
   execution_provider: z
     .enum(['local_filesystem', 'remote_sandbox'])
     .optional()
@@ -60,7 +59,7 @@ export const StartSessionSchema = z.object({
 
 const TOOL_DESCRIPTION = `Start a new agent session in the Agent Orchestrator.
 
-**IMPORTANT:** Before starting a session, call get_configs to discover available agent roots, MCP servers, stop conditions, and their defaults.
+**IMPORTANT:** Before starting a session, call get_configs to discover available agent roots, MCP servers, goals, and their defaults.
 
 **Returns:** The created session with its ID, status, and configuration.
 
@@ -70,7 +69,7 @@ const TOOL_DESCRIPTION = `Start a new agent session in the Agent Orchestrator.
 
 **Agent Roots:** Use \`agent_root\` to specify which preconfigured agent root to use. The API resolves git_root, branch, subdirectory, default_model, and other defaults from the agent root configuration.
 
-**Defaults from Agent Roots:** The agent root defines \`default_mcp_servers\`, \`default_skills\`, and optionally a \`default_stop_condition\`. Omitting \`mcp_servers\` or \`skills\` means the session gets NONE — there is no automatic fallback to defaults.
+**Defaults from Agent Roots:** The agent root defines \`default_mcp_servers\`, \`default_skills\`, and optionally a \`default_goal\`. Omitting \`mcp_servers\` or \`skills\` means the session gets NONE — there is no automatic fallback to defaults.
 
 - **MCP servers:** Start with \`default_mcp_servers\`. Drop servers the task doesn't need (least-privilege). Add extras when the task requires tools beyond the defaults. When \`ALLOWED_AGENT_ROOTS\` is active, you cannot add servers beyond the defaults.
 - **Skills:** Start with \`default_skills\`. You can freely add skills beyond the defaults. Removing a default skill should be rare and intentional — only when you have a specific reason, like replacing a skill with a more capable variant that covers the same ground. Skills are lightweight text files with no blast radius, so keeping all defaults costs nothing.
@@ -108,9 +107,9 @@ export function startSessionTool(_server: Server, clientFactory: () => IAgentOrc
           type: 'string',
           description: PARAM_DESCRIPTIONS.slug,
         },
-        stop_condition: {
+        goal: {
           type: 'string',
-          description: PARAM_DESCRIPTIONS.stop_condition,
+          description: PARAM_DESCRIPTIONS.goal,
         },
         execution_provider: {
           type: 'string',
@@ -177,20 +176,18 @@ export function startSessionTool(_server: Server, clientFactory: () => IAgentOrc
           }
         }
 
-        // Resolve stop_condition ID to its description so the agent receives
+        // Resolve goal ID to its description so the agent receives
         // meaningful context about when to stop, not just an opaque identifier.
         let createArgs = validatedArgs;
-        if (validatedArgs.stop_condition) {
+        if (validatedArgs.goal) {
           let configs = getConfigsCache();
           if (!configs) {
             configs = await client.getConfigs();
             setConfigsCache(configs);
           }
-          const match = configs.stop_conditions.find(
-            (sc) => sc.id === validatedArgs.stop_condition
-          );
+          const match = configs.goals.find((sc) => sc.id === validatedArgs.goal);
           if (match) {
-            createArgs = { ...validatedArgs, stop_condition: match.description };
+            createArgs = { ...validatedArgs, goal: match.description };
           }
         }
 

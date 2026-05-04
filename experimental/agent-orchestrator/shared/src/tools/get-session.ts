@@ -79,7 +79,7 @@ function formatSessionDetails(session: Session, includeTranscript: boolean): str
   lines.push('');
   lines.push('### Execution');
   lines.push(`- **Execution Provider:** ${session.execution_provider}`);
-  if (session.stop_condition) lines.push(`- **Stop Condition:** ${session.stop_condition}`);
+  if (session.goal) lines.push(`- **Goal:** ${session.goal}`);
   if (session.mcp_servers && session.mcp_servers.length > 0) {
     lines.push(`- **MCP Servers:** ${session.mcp_servers.join(', ')}`);
   }

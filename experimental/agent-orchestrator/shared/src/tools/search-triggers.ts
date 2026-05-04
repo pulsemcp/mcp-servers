@@ -102,7 +102,7 @@ export function searchTriggersTool(_server: Server, clientFactory: () => IAgentO
             `- **Reuse Session:** ${t.reuse_session ? 'Yes' : 'No'}`,
             `- **MCP Servers:** ${t.mcp_servers && t.mcp_servers.length > 0 ? t.mcp_servers.join(', ') : '(none)'}`,
           ];
-          if (t.stop_condition) lines.push(`- **Stop Condition:** ${t.stop_condition}`);
+          if (t.goal) lines.push(`- **Goal:** ${t.goal}`);
           lines.push(`- **Sessions Created:** ${t.sessions_created_count}`);
           if (t.last_triggered_at) lines.push(`- **Last Triggered:** ${t.last_triggered_at}`);
           lines.push('', '### Prompt Template', '```', t.prompt_template, '```');
