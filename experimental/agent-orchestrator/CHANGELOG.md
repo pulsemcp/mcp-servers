@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.2] - 2026-05-04
+
+### Changed
+
+- `wake_me_up_when_session_changes_state` and `wake_me_up_later` tool descriptions rewritten to accurately document the **sibling-destroy semantics** of AO's one-time wake firing path. Previous descriptions framed companion wakes as "silently consumed" / "first to fire wins; others silently consumed" when one fires — that was misleading. The Rails firing path (`Trigger#destroy_sibling_wakes!`, called from `AoEventTriggerJob` and `ScheduleTriggerJob`) actually **destroys** all of the requester's other one-time-reuse triggers as a side effect of any one of them firing — the others are deleted from the database, not left pending. This applies across event names _and_ across tool types: a fired `session_needs_input` watcher destroys the `session_archived` and `session_failed` watchers AND the `wake_me_up_later` deadline backstop. After any wake fires, the requester has zero remaining scheduled wakes. The descriptions now spell this out and explicitly instruct woken-up turns to **re-register** any wakes they still need before going back to sleep — relevant when a wake fires prematurely (e.g., a transient `running → needs_input → running` flap during the watched session's startup) or when the deadline backstop fires while the watched session is still progressing. Observed live on AO session 5278 (https://ao.pulsemcp.com/sessions/5278): a transient `needs_input` flap on its child session 5298 fired the requester's `session_needs_input` watcher, and the destroy-siblings cleanup wiped out the `session_archived`/`session_failed`/deadline triggers as collateral — when 5298 actually self-archived later, no wake fired and 5278 was stranded in `waiting`. The triple-wake + deadline-backstop pattern is still recommended; the description fix is purely about being honest about how the cleanup works so callers know to re-register from a woken-up turn that wants to keep waiting.
+
 ## [0.8.1] - 2026-05-04
 
 ### Fixed

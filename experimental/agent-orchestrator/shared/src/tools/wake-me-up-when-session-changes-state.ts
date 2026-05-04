@@ -22,7 +22,16 @@ This is the **state-based analog of \`wake_me_up_later\`**. Use \`wake_me_up_lat
 - \`session_needs_input\` — the watched session paused for user input or finished a turn awaiting follow-up.
 - \`session_failed\` — the watched session crashed.
 
-Pair these three triggers with ONE \`wake_me_up_later\` deadline backstop so a hung watched session can't keep you sleeping forever. The first trigger to fire wins; the others are silently consumed when the requester resumes. **Picking only ONE of the three is a footgun** — if you only schedule \`session_needs_input\` and the downstream session self-archives directly, the only thing that wakes you is the deadline (long, wasteful). Schedule all three unless you have a specific reason to wake only on one outcome.
+Pair these three triggers with ONE \`wake_me_up_later\` deadline backstop so a hung watched session can't keep you sleeping forever. The first trigger to fire wakes the requester. **Picking only ONE of the three is a footgun** — if you only schedule \`session_needs_input\` and the downstream session self-archives directly, the only thing that wakes you is the deadline (long, wasteful). Schedule all three unless you have a specific reason to wake only on one outcome.
+
+**⚠️ Sibling-destroy semantics (read carefully — this is a footgun).** When ANY one of the registered wake-ups fires for the requester (any of the three state-change triggers OR the \`wake_me_up_later\` deadline backstop), the AO firing path **destroys all of the requester's other one-time wake-up triggers as a side effect** — they are not just "consumed," they are deleted from the database. This applies across event names *and* across tool types: a fired \`session_needs_input\` watcher destroys the \`session_archived\` watcher, the \`session_failed\` watcher, and the \`wake_me_up_later\` deadline. After any wake fires, the requester has zero remaining scheduled wakes.
+
+This matters when a wake fires *prematurely* — for example, a watched session that flaps \`running → needs_input → running\` during startup will fire your \`session_needs_input\` watcher even though the session is still in flight. Your woken-up turn will look at the watched session, see it's still working, and want to go back to sleep. **You must re-register the wakes you still need before going back to sleep** (the other two state events plus a fresh deadline backstop) — the originals are gone. The same applies if your deadline backstop fires while the watched session is still progressing: re-register the state-change watchers and a new deadline if you want to keep waiting.
+
+Concretely, in a woken-up turn that determines the watched session has not actually reached its terminal/idle state:
+1. Inspect the watched session's current state and decide whether to keep waiting.
+2. If keeping waiting: call \`wake_me_up_when_session_changes_state\` again for each of the state events you care about (typically all three), and call \`wake_me_up_later\` again for a fresh deadline. Then end the turn.
+3. The originals are NOT still pending in the background — assume nothing remains.
 
 **IMPORTANT — Use this tool instead of polling.** When this tool is available, it is the correct way to wait on another session's state. Do NOT use these alternatives:
 - **Repeated \`get_session\` calls in a poll loop**: wastes compute, racks up tool-call overhead, and either polls too often (waste) or too rarely (latency). The trigger fires immediately on transition with no polling latency.
@@ -30,11 +39,11 @@ Pair these three triggers with ONE \`wake_me_up_later\` deadline backstop so a h
 
 **The watched session can be ANY session**, not just one the requester spawned. You can watch a peer session, a session a different agent created, or even a session run by a different user — as long as the requester knows the watched session's id.
 
-**One-shot semantics.** Each trigger auto-disables after firing. If the watched session transitions, the requester wakes up exactly once and only the first-firing trigger's prompt is delivered; any companion triggers (the other two state events plus the deadline backstop) are silently consumed and gone. To wake on a future transition too, schedule another trigger from the woken-up turn.
+**One-shot semantics.** Each trigger auto-disables after firing. If the watched session transitions, the requester wakes up exactly once and only the first-firing trigger's prompt is delivered; any companion triggers (the other two state events plus the deadline backstop) are destroyed as a side effect of the fire — see the sibling-destroy semantics above. To wake on a future transition too, schedule another trigger from the woken-up turn.
 
 **Important — fires on transitions, not on current state.** The trigger fires when the watched session *moves into* the target state, not when it is *already in* it. \`failed\` and \`archived\` are both terminal under typical flow — a session that is already \`failed\` will not transition to \`failed\` again, and a session that is already \`archived\` will not transition to \`archived\` again unless someone unarchives it and re-archives it (rare and surprising). \`needs_input\` is non-terminal: if the watched session is already \`needs_input\` when you create the trigger, it waits for the next transition out and back in. This tool rejects up front any case where the trigger could never fire — already-failed and already-archived watched sessions (terminal states), plus the self-watch case (requester == watched) — so the requester doesn't sleep on a trigger that can never fire.
 
-**Deadline backstop pattern.** Always pair the state-change triggers with one \`wake_me_up_later\` trigger so the requester eventually wakes even if the watched session hangs. First trigger to fire wins; the AO firing path resumes the requester once and the others are silently dropped.
+**Deadline backstop pattern.** Always pair the state-change triggers with one \`wake_me_up_later\` trigger so the requester eventually wakes even if the watched session hangs. First trigger to fire wins; firing destroys the requester's other one-time wake-ups (see sibling-destroy semantics above), so a woken-up turn that wants to keep waiting must re-register the wakes it still needs.
 
 **Parameters:**
 - **session_id**: The session to wake up (the requester). Works from either \`needs_input\` or \`running\` state — if you call this tool from within your own currently-running session, the sleep transition is recorded and takes effect after the current turn ends.
@@ -289,6 +298,8 @@ export function wakeMeUpWhenSessionChangesStateTool(
           '⚠️ **Warning:** If you do not end your conversation turn, the requester may still be running when the watched session transitions. A wake-up cannot be delivered to a session that is not in a wakeable (sleeping/waiting) state — it will be silently dropped, and you will never receive it.',
           '',
           '**One-shot:** the trigger auto-deletes after firing. If you want to wake on the next transition too, schedule another trigger from the woken-up turn.',
+          '',
+          "**Sibling-destroy reminder:** when ANY of this requester's one-time wakes fires (this trigger, a companion state-change trigger, or a `wake_me_up_later` deadline), the AO firing path destroys all the others. If the woken-up turn determines the watched session is still in flight (e.g., a transient `needs_input` flap during startup), you MUST re-register the wakes you still need before going back to sleep — they are gone, not pending.",
         ];
 
         return { content: [{ type: 'text', text: lines.join('\n') }] };
