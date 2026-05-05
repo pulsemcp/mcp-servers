@@ -12,6 +12,7 @@ on:
       - 'Pulse Fetch MCP Server CI'
       - 'Slack MCP Server CI'
       - 'Twist MCP Server CI'
+      - 'Publish Updated MCP Servers'
     types: [completed]
     branches:
       - main
