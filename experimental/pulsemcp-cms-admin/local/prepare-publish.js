@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { cp, rm } from 'fs/promises';
+import { cp, mkdir, readFile, rm } from 'fs/promises';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { execSync } from 'child_process';
@@ -18,7 +18,24 @@ async function prepare() {
     process.exit(1);
   }
 
-  // Build shared directory first
+  // Build the elicitation library first (shared depends on it via file: link).
+  // Wipe build/ before invoking tsc so the resulting bundle is a deterministic
+  // function of the current source — no risk of stale incremental output
+  // surviving a version bump.
+  const elicitationDir = join(__dirname, '../../../libs/elicitation');
+  console.log('Building elicitation library (clean rebuild)...');
+  try {
+    await rm(join(elicitationDir, 'build'), { recursive: true, force: true });
+    execSync('npm install --ignore-scripts && npm run build', {
+      cwd: elicitationDir,
+      stdio: 'inherit',
+    });
+  } catch (e) {
+    console.error('Failed to build elicitation library:', e.message);
+    process.exit(1);
+  }
+
+  // Build shared directory
   const sharedDir = join(__dirname, '../shared');
   console.log('Building shared directory...');
   try {
@@ -62,6 +79,48 @@ async function prepare() {
   await cp(join(__dirname, '../shared/build'), join(__dirname, 'shared'), { recursive: true });
 
   console.log('Copied shared files to local package');
+
+  // Copy the built elicitation library into node_modules so bundledDependencies can find it.
+  // The file: link in package.json points to the monorepo source, which doesn't exist when
+  // the package is installed via npx. bundledDependencies requires the package to physically
+  // exist in node_modules/ at publish time so npm can include it in the tarball.
+  const elicitationNodeModulesDir = join(__dirname, 'node_modules/@pulsemcp/mcp-elicitation');
+  console.log('Copying elicitation library into node_modules for bundling...');
+  try {
+    await rm(elicitationNodeModulesDir, { recursive: true, force: true });
+    await mkdir(elicitationNodeModulesDir, { recursive: true });
+    await cp(join(elicitationDir, 'build'), join(elicitationNodeModulesDir, 'build'), {
+      recursive: true,
+    });
+    await cp(join(elicitationDir, 'package.json'), join(elicitationNodeModulesDir, 'package.json'));
+  } catch (e) {
+    console.error('Failed to copy elicitation library for bundling:', e.message);
+    process.exit(1);
+  }
+
+  // Tripwire: the bundled lib's package.json must match the source's. If they
+  // diverge, the bundle is stale (e.g. drift between internal monorepo and
+  // public repo libs/elicitation/) and shipping it would silently regress
+  // every consumer. Fail the publish loudly — see fix in 2026-04 where
+  // onepassword 0.3.5 / gmail 0.4.7 shipped stale @pulsemcp/mcp-elicitation@1.0.1.
+  const sourceVersion = JSON.parse(
+    await readFile(join(elicitationDir, 'package.json'), 'utf8')
+  ).version;
+  const bundledVersion = JSON.parse(
+    await readFile(join(elicitationNodeModulesDir, 'package.json'), 'utf8')
+  ).version;
+  if (sourceVersion !== bundledVersion) {
+    console.error(
+      `Elicitation lib version mismatch: source=${sourceVersion} bundled=${bundledVersion}.\n` +
+        `The bundle would ship a stale lib. Investigate libs/elicitation/ drift before publishing.`
+    );
+    process.exit(1);
+  }
+
+  console.log(`Elicitation library bundled for publishing (version ${bundledVersion})`);
 }
 
-prepare().catch(console.error);
+prepare().catch((error) => {
+  console.error('Prepare publish failed:', error);
+  process.exit(1);
+});

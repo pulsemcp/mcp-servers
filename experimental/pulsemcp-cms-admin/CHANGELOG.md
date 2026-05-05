@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [0.9.24] - 2026-05-05
+
+### Fixed
+
+- **Publish pipeline silent failure** — `local/prepare-publish.js` now builds `libs/elicitation` first and copies its `build/` and `package.json` into `local/node_modules/@pulsemcp/mcp-elicitation/`, and `local/package.json` declares `bundledDependencies: ["@pulsemcp/mcp-elicitation"]` plus the lib in `dependencies` and `files`. Without this, `tsc` in `shared/` could not resolve `@pulsemcp/mcp-elicitation` in the public repo (whose `sync-libs.sh` excludes `build/`), causing the publish to fail. Six version bumps merged to `main` since 2026-04-26 (0.9.18 through 0.9.23) had not landed on npm — `@latest` was stuck at 0.9.17. Mirrors `servers/onepassword/local/prepare-publish.js`. Also added a tripwire that fails the publish if the bundled lib's version drifts from the source's. See the new "Publish Runbook" section in `CLAUDE.md` for the full publish chain.
+
 ## [0.9.23] - 2026-05-03
 
 ### Added
