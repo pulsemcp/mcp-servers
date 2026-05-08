@@ -1154,6 +1154,13 @@ export interface RecacheMCPServerResponse {
   message: string;
 }
 
+export interface SetKnownMissingInitToolsListResponse {
+  id: number;
+  slug: string;
+  known_missing_init_tools_list: boolean;
+  known_missing_init_tools_list_filter_to: string | null;
+}
+
 // ============================================================
 // MOZ Types
 // MOZ URL metrics, backlinks, and stored historical data
