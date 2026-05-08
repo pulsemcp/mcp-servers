@@ -81,6 +81,7 @@ import type {
   DeleteApiKeyResponse,
   // Cache management types
   RecacheMCPServerResponse,
+  SetKnownMissingInitToolsListResponse,
 } from './types.js';
 
 // Static imports for all API client functions (replaces dynamic imports
@@ -155,6 +156,7 @@ import { getMozMetrics } from './pulsemcp-admin-client/lib/get-moz-metrics.js';
 import { getMozBacklinks } from './pulsemcp-admin-client/lib/get-moz-backlinks.js';
 import { getMozStoredMetrics } from './pulsemcp-admin-client/lib/get-moz-stored-metrics.js';
 import { recacheMCPServer } from './pulsemcp-admin-client/lib/recache-mcp-server.js';
+import { setKnownMissingInitToolsList } from './pulsemcp-admin-client/lib/set-known-missing-init-tools-list.js';
 import { createTenant } from './pulsemcp-admin-client/lib/create-tenant.js';
 import { createApiKey } from './pulsemcp-admin-client/lib/create-api-key.js';
 import { deleteTenant } from './pulsemcp-admin-client/lib/delete-tenant.js';
@@ -362,6 +364,12 @@ export interface IPulseMCPAdminClient {
   ): Promise<UnifiedMCPServer>;
 
   recacheMCPServer(slug: string): Promise<RecacheMCPServerResponse>;
+
+  setKnownMissingInitToolsList(
+    id: number,
+    knownMissingInitToolsList: boolean,
+    knownMissingInitToolsListFilterTo?: string | null
+  ): Promise<SetKnownMissingInitToolsListResponse>;
 
   // Redirect REST API methods
   getRedirects(params?: {
@@ -766,6 +774,20 @@ export class PulseMCPAdminClient implements IPulseMCPAdminClient {
 
   async recacheMCPServer(slug: string): Promise<RecacheMCPServerResponse> {
     return recacheMCPServer(this.apiKey, this.baseUrl, slug);
+  }
+
+  async setKnownMissingInitToolsList(
+    id: number,
+    knownMissingInitToolsList: boolean,
+    knownMissingInitToolsListFilterTo?: string | null
+  ): Promise<SetKnownMissingInitToolsListResponse> {
+    return setKnownMissingInitToolsList(
+      this.apiKey,
+      this.baseUrl,
+      id,
+      knownMissingInitToolsList,
+      knownMissingInitToolsListFilterTo
+    );
   }
 
   // Redirect REST API methods

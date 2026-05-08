@@ -1329,5 +1329,21 @@ export function createMockPulseMCPAdminClient(mockData: MockData): IPulseMCPAdmi
         message: `Cache successfully refreshed for ${slug}.`,
       };
     },
+
+    async setKnownMissingInitToolsList(
+      id: number,
+      knownMissingInitToolsList: boolean,
+      knownMissingInitToolsListFilterTo?: string | null
+    ) {
+      return {
+        id,
+        slug: `mock-server-${id}`,
+        known_missing_init_tools_list: knownMissingInitToolsList,
+        known_missing_init_tools_list_filter_to:
+          knownMissingInitToolsListFilterTo === undefined
+            ? null
+            : (knownMissingInitToolsListFilterTo ?? null),
+      };
+    },
   };
 }

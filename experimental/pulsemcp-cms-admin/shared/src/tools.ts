@@ -72,6 +72,7 @@ import { runExamForMirror } from './tools/run-exam-for-mirror.js';
 import { getExamResult } from './tools/get-exam-result.js';
 import { saveResultsForMirror } from './tools/save-results-for-mirror.js';
 import { listProctorRuns } from './tools/list-proctor-runs.js';
+import { setKnownMissingInitToolsList } from './tools/set-known-missing-init-tools-list.js';
 import { getProctorMetadata } from './tools/get-proctor-metadata.js';
 // Discovered URLs tools
 import { listDiscoveredUrls } from './tools/list-discovered-urls.js';
@@ -367,6 +368,13 @@ const ALL_TOOLS: ToolDefinition[] = [
   { factory: saveResultsForMirror, groups: ['proctor'], isWriteOperation: true },
   { factory: listProctorRuns, groups: ['proctor'], isWriteOperation: false },
   { factory: getProctorMetadata, groups: ['proctor'], isWriteOperation: false },
+  // setKnownMissingInitToolsList flips a flag on `mcp_server` records, so it lives in
+  // the mcp_servers / server_directory groups (alongside recacheMCPServer), not proctor.
+  {
+    factory: setKnownMissingInitToolsList,
+    groups: ['mcp_servers', 'server_directory'],
+    isWriteOperation: true,
+  },
   // Discovered URLs tools
   { factory: listDiscoveredUrls, groups: ['discovered_urls'], isWriteOperation: false },
   {

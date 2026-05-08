@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [0.9.26] - 2026-05-06
+
+### Changed
+
+- `set_known_missing_init_tools_list` now lives in the `mcp_servers` and `server_directory` tool groups (alongside `recache_mcp_server`) instead of `proctor`. The tool flips a flag on `mcp_server` records, so it belongs with the server-directory tools rather than with proctor-execution tools. Still a write operation, still excluded from any `_readonly` variant.
+
+## [0.9.25] - 2026-05-06
+
+### Added
+
+- New MCP tool `set_known_missing_init_tools_list` (write operation; not exposed in any `_readonly` variant). Wraps a new admin-API endpoint `POST /api/mcp_servers/:id/known_missing_init_tools_list` that updates the `known_missing_init_tools_list` boolean on an `mcp_server` record. Optionally also updates the `known_missing_init_tools_list_filter_to` scoping string (omit to leave the existing value untouched, or pass an empty string / null to clear). Identifies the server by integer id (the "mirror id" used elsewhere in the proctor flow).
+
 ## [0.9.24] - 2026-05-05
 
 ### Fixed
