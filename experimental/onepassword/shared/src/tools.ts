@@ -4,6 +4,7 @@ import { ClientFactory } from './server.js';
 import { listVaultsTool } from './tools/list-vaults-tool.js';
 import { listItemsTool } from './tools/list-items-tool.js';
 import { getItemTool } from './tools/get-item-tool.js';
+import { getItemMetadataTool } from './tools/get-item-metadata-tool.js';
 import { listItemsByTagTool } from './tools/list-items-by-tag-tool.js';
 import { createLoginTool } from './tools/create-login-tool.js';
 import { createSecureNoteTool } from './tools/create-secure-note-tool.js';
@@ -101,6 +102,7 @@ const ALL_TOOLS: ToolDefinition[] = [
   { factory: listVaultsTool, groups: ['readonly', 'write'] },
   { factory: listItemsTool, groups: ['readonly', 'write'] },
   { factory: getItemTool, groups: ['readonly', 'write'] },
+  { factory: getItemMetadataTool, groups: ['readonly', 'write'] },
   { factory: listItemsByTagTool, groups: ['readonly', 'write'] },
   // Write-only tools - only available when 'write' group is enabled
   { factory: createLoginTool, groups: ['write'] },

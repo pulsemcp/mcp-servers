@@ -12,32 +12,61 @@ const PARAM_DESCRIPTIONS = {
   tags: 'Optional array of tags to organize the item.',
 } as const;
 
-export const CreateSecureNoteSchema = z.object({
+const SecureNoteItemSchema = z.object({
   vaultId: z.string().min(1).describe(PARAM_DESCRIPTIONS.vaultId),
   title: z.string().min(1).describe(PARAM_DESCRIPTIONS.title),
   content: z.string().min(1).describe(PARAM_DESCRIPTIONS.content),
   tags: z.array(z.string()).optional().describe(PARAM_DESCRIPTIONS.tags),
 });
 
-const TOOL_DESCRIPTION = `Create a new secure note in 1Password.
+export const CreateSecureNoteSchema = z.object({
+  items: z
+    .array(SecureNoteItemSchema)
+    .min(1, { message: 'items must contain at least one secure note to create' })
+    .describe(
+      'Array of secure notes to create. Provide all notes for the batch in a single call so the user only has to approve once.'
+    ),
+});
+
+const TOOL_DESCRIPTION = `Create one or more secure notes in 1Password in a single call. Bulk calls require only one user approval, so prefer bulk whenever you anticipate creating multiple notes in a session.
+
+When you know in advance that you'll need multiple notes (e.g., storing several configuration secrets at once), bundle them into one \`items\` array instead of firing sequential per-note calls — sequential calls force a separate approval prompt for each item.
 
 Stores arbitrary text content securely. Useful for API keys, tokens, certificates, or any secret that doesn't fit the login format.
 
 **Returns:**
-- The created item with its details (title, category, vault name)
+- A \`results\` array (one entry per input item, in input order) reporting per-item \`status\`
+  (\`success\`, \`error\`, \`declined\`, or \`expired\`) and either the created item or an error message.
+- Partial failures are surfaced per item — a single bad item does not abort the batch.
 
 **Security Note:** Item IDs are intentionally omitted from the response.
 
 **Use cases:**
-- Store API keys and tokens
+- Store API keys and tokens (one or many at once)
 - Save configuration secrets
 - Keep certificates or private keys
 - Store any sensitive text information
 
-**Note:** The content is passed as a CLI argument which may briefly appear in process lists.`;
+**Note:** Note contents are passed as CLI arguments which may briefly appear in process lists.`;
+
+interface SecureNoteResult {
+  index: number;
+  status: 'success' | 'error' | 'declined' | 'expired';
+  item?: ReturnType<typeof sanitizeItemDetails>;
+  error?: string;
+}
+
+function summarizeSecureNoteItem(
+  item: z.infer<typeof SecureNoteItemSchema>,
+  index: number
+): string {
+  const lines: string[] = [`  ${index + 1}. ${item.title} (vault: ${item.vaultId})`];
+  if (item.tags?.length) lines.push(`     Tags: ${item.tags.join(', ')}`);
+  return lines.join('\n');
+}
 
 /**
- * Tool for creating secure notes
+ * Tool for creating secure notes in bulk.
  */
 export function createSecureNoteTool(server: Server, clientFactory: () => IOnePasswordClient) {
   return {
@@ -46,45 +75,46 @@ export function createSecureNoteTool(server: Server, clientFactory: () => IOnePa
     inputSchema: {
       type: 'object' as const,
       properties: {
-        vaultId: {
-          type: 'string',
-          description: PARAM_DESCRIPTIONS.vaultId,
-        },
-        title: {
-          type: 'string',
-          description: PARAM_DESCRIPTIONS.title,
-        },
-        content: {
-          type: 'string',
-          description: PARAM_DESCRIPTIONS.content,
-        },
-        tags: {
+        items: {
           type: 'array',
-          items: { type: 'string' },
-          description: PARAM_DESCRIPTIONS.tags,
+          minItems: 1,
+          description:
+            'Array of secure notes to create. Provide all notes for the batch in a single call so the user only has to approve once.',
+          items: {
+            type: 'object',
+            properties: {
+              vaultId: { type: 'string', description: PARAM_DESCRIPTIONS.vaultId },
+              title: { type: 'string', description: PARAM_DESCRIPTIONS.title },
+              content: { type: 'string', description: PARAM_DESCRIPTIONS.content },
+              tags: {
+                type: 'array',
+                items: { type: 'string' },
+                description: PARAM_DESCRIPTIONS.tags,
+              },
+            },
+            required: ['vaultId', 'title', 'content'],
+          },
         },
       },
-      required: ['vaultId', 'title', 'content'],
+      required: ['items'],
     },
     handler: async (args: unknown) => {
       try {
-        const validatedArgs = CreateSecureNoteSchema.parse(args);
+        const { items } = CreateSecureNoteSchema.parse(args);
 
-        // Check if write elicitation is enabled
         const elicitConfig = readOnePasswordElicitationConfig();
         if (elicitConfig.writeElicitationEnabled) {
-          const confirmMessage =
-            `About to create a secure note in 1Password:\n` +
-            `  Title: ${validatedArgs.title}\n` +
-            (validatedArgs.tags ? `  Tags: ${validatedArgs.tags.join(', ')}\n` : '');
-
+          const summary = items.map((it, i) => summarizeSecureNoteItem(it, i)).join('\n');
+          const noun = items.length === 1 ? 'secure note' : `${items.length} secure notes`;
           const confirmation = await requestConfirmation(
             {
               server,
-              message: confirmMessage,
+              message: `About to create ${noun} in 1Password:\n${summary}\n`,
               requestedSchema: createConfirmationSchema(
-                'Create this secure note?',
-                'Confirm that you want to create this secure note in 1Password.'
+                items.length === 1
+                  ? 'Create this secure note?'
+                  : `Create all ${items.length} secure notes?`,
+                'Confirm that you want to create these secure notes in 1Password. Approving covers the entire batch.'
               ),
               meta: {
                 'com.pulsemcp/tool-name': 'onepassword_create_secure_note',
@@ -94,70 +124,60 @@ export function createSecureNoteTool(server: Server, clientFactory: () => IOnePa
           );
 
           if (confirmation.action !== 'accept') {
-            if (confirmation.action === 'expired') {
-              return {
-                content: [
-                  {
-                    type: 'text',
-                    text: 'Secure note creation confirmation expired. Please try again.',
-                  },
-                ],
-                isError: true,
-              };
-            }
+            const status: 'declined' | 'expired' =
+              confirmation.action === 'expired' ? 'expired' : 'declined';
+            const results: SecureNoteResult[] = items.map((_, index) => ({ index, status }));
             return {
-              content: [
-                {
-                  type: 'text',
-                  text: 'Secure note creation was cancelled by the user.',
-                },
-              ],
+              content: [{ type: 'text', text: JSON.stringify({ results }, null, 2) }],
+              isError: status === 'expired',
             };
           }
 
-          // Defense-in-depth: some MCP clients may return action='accept' without the
-          // user explicitly checking the confirmation checkbox. Guard against this edge case.
           if (
             confirmation.content &&
             'confirm' in confirmation.content &&
             confirmation.content.confirm === false
           ) {
+            const results: SecureNoteResult[] = items.map((_, index) => ({
+              index,
+              status: 'declined',
+            }));
             return {
-              content: [
-                {
-                  type: 'text',
-                  text: 'Secure note creation was not confirmed.',
-                },
-              ],
+              content: [{ type: 'text', text: JSON.stringify({ results }, null, 2) }],
             };
           }
         }
 
         const client = clientFactory();
-        const item = await client.createSecureNote(
-          validatedArgs.vaultId,
-          validatedArgs.title,
-          validatedArgs.content,
-          validatedArgs.tags
-        );
-
-        // Sanitize response to remove IDs
-        const sanitizedItem = sanitizeItemDetails(item);
+        const results: SecureNoteResult[] = [];
+        for (let index = 0; index < items.length; index++) {
+          const it = items[index];
+          try {
+            const created = await client.createSecureNote(
+              it.vaultId,
+              it.title,
+              it.content,
+              it.tags
+            );
+            results.push({ index, status: 'success', item: sanitizeItemDetails(created) });
+          } catch (error) {
+            results.push({
+              index,
+              status: 'error',
+              error: error instanceof Error ? error.message : 'Unknown error',
+            });
+          }
+        }
 
         return {
-          content: [
-            {
-              type: 'text',
-              text: JSON.stringify(sanitizedItem, null, 2),
-            },
-          ],
+          content: [{ type: 'text', text: JSON.stringify({ results }, null, 2) }],
         };
       } catch (error) {
         return {
           content: [
             {
               type: 'text',
-              text: `Error creating secure note: ${error instanceof Error ? error.message : 'Unknown error'}`,
+              text: `Error creating secure notes: ${error instanceof Error ? error.message : 'Unknown error'}`,
             },
           ],
           isError: true,

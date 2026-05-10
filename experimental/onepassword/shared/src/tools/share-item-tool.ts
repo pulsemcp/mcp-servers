@@ -15,7 +15,7 @@ const PARAM_DESCRIPTIONS = {
     'Optional; when true, the share link expires after being opened once. Cannot be combined with `emails` (1Password requires a specific recipient for view-once links to work).',
 } as const;
 
-export const ShareItemSchema = z
+const ShareItemItemSchema = z
   .object({
     item: z.string().min(1).describe(PARAM_DESCRIPTIONS.item),
     vault: z.string().min(1).optional().describe(PARAM_DESCRIPTIONS.vault),
@@ -37,23 +37,57 @@ export const ShareItemSchema = z
     path: ['view_once'],
   });
 
-const TOOL_DESCRIPTION = `Create a shareable link for a 1Password item.
+export const ShareItemSchema = z.object({
+  items: z
+    .array(ShareItemItemSchema)
+    .min(1, { message: 'items must contain at least one item to share' })
+    .describe(
+      'Array of items to share. Provide all share requests for the batch in a single call so the user only has to approve once.'
+    ),
+});
+
+const TOOL_DESCRIPTION = `Create one or more shareable links for 1Password items in a single call. Bulk calls require only one user approval, so prefer bulk whenever you anticipate sharing multiple items in a session.
+
+When you know in advance that you'll need to share multiple items (e.g., handing several credentials to a customer at once), bundle them into one \`items\` array instead of firing sequential per-share calls — sequential calls force a separate approval prompt for each item.
 
 Wraps \`op item share\` to mint a URL anyone with the link can open, unless \`emails\`
 is set (in which case only those recipients can open it). Useful for handing a
 one-time credential to a customer without giving them a full 1Password account.
 
 **Returns:**
-- \`share_url\`: The URL to distribute to the recipient
-- \`expires_at\`: Optional — when the link stops working
-- \`created_at\`: Optional — when the link was minted
+- A \`results\` array (one entry per input item, in input order) reporting per-item \`status\`
+  (\`success\`, \`error\`, \`declined\`, or \`expired\`) and either the share payload
+  (\`share_url\`, \`expires_at\`, \`created_at\`) or an error message.
+- Partial failures are surfaced per item — a single bad item does not abort the batch.
 
 **Security Note:** Share links expose the item's contents to anyone who opens the URL
-(subject to the \`emails\` and \`view_once\` controls). Treat the returned URL as
+(subject to the \`emails\` and \`view_once\` controls). Treat the returned URLs as
 sensitive material.`;
 
+interface ShareItemPayload {
+  share_url?: string;
+  expires_at?: string;
+  created_at?: string;
+}
+
+interface ShareItemResult {
+  index: number;
+  status: 'success' | 'error' | 'declined' | 'expired';
+  share?: ShareItemPayload;
+  error?: string;
+}
+
+function summarizeShareItem(item: z.infer<typeof ShareItemItemSchema>, index: number): string {
+  const lines: string[] = [`  ${index + 1}. ${item.item}`];
+  if (item.vault) lines.push(`     Vault: ${item.vault}`);
+  if (item.expires_in) lines.push(`     Expires in: ${item.expires_in}`);
+  if (item.emails?.length) lines.push(`     Emails: ${item.emails.join(', ')}`);
+  if (item.view_once) lines.push(`     View once: yes`);
+  return lines.join('\n');
+}
+
 /**
- * Tool for sharing a 1Password item.
+ * Tool for sharing 1Password items in bulk.
  */
 export function shareItemTool(server: Server, clientFactory: () => IOnePasswordClient) {
   return {
@@ -62,60 +96,47 @@ export function shareItemTool(server: Server, clientFactory: () => IOnePasswordC
     inputSchema: {
       type: 'object' as const,
       properties: {
-        item: {
-          type: 'string',
-          description: PARAM_DESCRIPTIONS.item,
-        },
-        vault: {
-          type: 'string',
-          description: PARAM_DESCRIPTIONS.vault,
-        },
-        expires_in: {
-          type: 'string',
-          description: PARAM_DESCRIPTIONS.expires_in,
-        },
-        emails: {
+        items: {
           type: 'array',
-          items: { type: 'string' },
-          description: PARAM_DESCRIPTIONS.emails,
-        },
-        view_once: {
-          type: 'boolean',
-          description: PARAM_DESCRIPTIONS.view_once,
+          minItems: 1,
+          description:
+            'Array of items to share. Provide all share requests for the batch in a single call so the user only has to approve once.',
+          items: {
+            type: 'object',
+            properties: {
+              item: { type: 'string', description: PARAM_DESCRIPTIONS.item },
+              vault: { type: 'string', description: PARAM_DESCRIPTIONS.vault },
+              expires_in: { type: 'string', description: PARAM_DESCRIPTIONS.expires_in },
+              emails: {
+                type: 'array',
+                items: { type: 'string' },
+                description: PARAM_DESCRIPTIONS.emails,
+              },
+              view_once: { type: 'boolean', description: PARAM_DESCRIPTIONS.view_once },
+            },
+            required: ['item'],
+          },
         },
       },
-      required: ['item'],
+      required: ['items'],
     },
     handler: async (args: unknown) => {
       try {
-        const validatedArgs = ShareItemSchema.parse(args);
+        const { items } = ShareItemSchema.parse(args);
 
         const elicitConfig = readOnePasswordElicitationConfig();
         if (elicitConfig.writeElicitationEnabled) {
-          const lines: string[] = [
-            `About to create a share link for a 1Password item:`,
-            `  Item: ${validatedArgs.item}`,
-          ];
-          if (validatedArgs.vault) {
-            lines.push(`  Vault: ${validatedArgs.vault}`);
-          }
-          if (validatedArgs.expires_in) {
-            lines.push(`  Expires in: ${validatedArgs.expires_in}`);
-          }
-          if (validatedArgs.emails && validatedArgs.emails.length > 0) {
-            lines.push(`  Emails: ${validatedArgs.emails.join(', ')}`);
-          }
-          if (validatedArgs.view_once) {
-            lines.push(`  View once: yes`);
-          }
-
+          const summary = items.map((it, i) => summarizeShareItem(it, i)).join('\n');
+          const noun = items.length === 1 ? 'share link' : `${items.length} share links`;
           const confirmation = await requestConfirmation(
             {
               server,
-              message: lines.join('\n') + '\n',
+              message: `About to create ${noun} for 1Password items:\n${summary}\n`,
               requestedSchema: createConfirmationSchema(
-                'Create this share link?',
-                'Confirm that you want to mint a 1Password share URL for this item.'
+                items.length === 1
+                  ? 'Create this share link?'
+                  : `Create all ${items.length} share links?`,
+                'Confirm that you want to mint 1Password share URLs for these items. Approving covers the entire batch.'
               ),
               meta: {
                 'com.pulsemcp/tool-name': 'onepassword_share_item',
@@ -125,66 +146,59 @@ export function shareItemTool(server: Server, clientFactory: () => IOnePasswordC
           );
 
           if (confirmation.action !== 'accept') {
-            if (confirmation.action === 'expired') {
-              return {
-                content: [
-                  {
-                    type: 'text',
-                    text: 'Share link confirmation expired. Please try again.',
-                  },
-                ],
-                isError: true,
-              };
-            }
+            const status: 'declined' | 'expired' =
+              confirmation.action === 'expired' ? 'expired' : 'declined';
+            const results: ShareItemResult[] = items.map((_, index) => ({ index, status }));
             return {
-              content: [
-                {
-                  type: 'text',
-                  text: 'Share link creation was cancelled by the user.',
-                },
-              ],
+              content: [{ type: 'text', text: JSON.stringify({ results }, null, 2) }],
+              isError: status === 'expired',
             };
           }
 
-          // Defense-in-depth: some MCP clients may return action='accept' without the
-          // user explicitly checking the confirmation checkbox.
           if (
             confirmation.content &&
             'confirm' in confirmation.content &&
             confirmation.content.confirm === false
           ) {
+            const results: ShareItemResult[] = items.map((_, index) => ({
+              index,
+              status: 'declined',
+            }));
             return {
-              content: [
-                {
-                  type: 'text',
-                  text: 'Share link creation was not confirmed.',
-                },
-              ],
+              content: [{ type: 'text', text: JSON.stringify({ results }, null, 2) }],
             };
           }
         }
 
         const client = clientFactory();
-        const result = await client.shareItem(validatedArgs.item, validatedArgs.vault, {
-          expiresIn: validatedArgs.expires_in,
-          emails: validatedArgs.emails,
-          viewOnce: validatedArgs.view_once,
-        });
+        const results: ShareItemResult[] = [];
+        for (let index = 0; index < items.length; index++) {
+          const it = items[index];
+          try {
+            const share = await client.shareItem(it.item, it.vault, {
+              expiresIn: it.expires_in,
+              emails: it.emails,
+              viewOnce: it.view_once,
+            });
+            results.push({ index, status: 'success', share });
+          } catch (error) {
+            results.push({
+              index,
+              status: 'error',
+              error: error instanceof Error ? error.message : 'Unknown error',
+            });
+          }
+        }
 
         return {
-          content: [
-            {
-              type: 'text',
-              text: JSON.stringify(result, null, 2),
-            },
-          ],
+          content: [{ type: 'text', text: JSON.stringify({ results }, null, 2) }],
         };
       } catch (error) {
         return {
           content: [
             {
               type: 'text',
-              text: `Error creating share link: ${error instanceof Error ? error.message : 'Unknown error'}`,
+              text: `Error creating share links: ${error instanceof Error ? error.message : 'Unknown error'}`,
             },
           ],
           isError: true,

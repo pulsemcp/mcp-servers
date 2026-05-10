@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.1] - 2026-05-07
+
+### Added
+
+- `onepassword_get_item_metadata` — a new read-only tool that returns the same item shape as `onepassword_get_item` (title, category, vault, tags, field labels/types, URLs, dates, plus non-sensitive field values) **without ever triggering an elicitation prompt**. Sensitive field values (CONCEALED, PASSWORD, SECRET, CREDIT*CARD*\*, or labels matching password/secret/token/key/credential/cvv/pin) are stripped entirely — not even a `[REDACTED]` placeholder is returned. Use this when you only need to check whether an item exists or inspect its field structure (e.g., "is there already a 1Password entry for customer X before I mint a new credential?"); reach for `onepassword_get_item` only when you actually need to read a credential value. The motivation: a sister agent recently spent 36 minutes waiting on an elicitation approval just to confirm an item existed — this tool eliminates that friction for the existence-check case.
+
+### Changed
+
+- Tool description for `onepassword_get_item` now points agents at `onepassword_get_item_metadata` for existence and structure checks, so the elicitation prompt is only paid when an actual credential value is needed.
+
+## [0.5.0] - 2026-05-03
+
+### Changed
+
+- **BREAKING**: All elicitation-gated tools now accept a bulk `{ items: [...] }` array instead of a flat single-item object. A single user approval covers the entire batch, eliminating per-credential elicitation friction when an agent provisions multiple credentials in one session.
+  - Affected tools: `onepassword_create_login`, `onepassword_create_secure_note`, `onepassword_create_api_credential`, `onepassword_share_item`, `onepassword_get_item`.
+  - Affected tools (no elicitation, but extended for batch convenience): `onepassword_list_items`, `onepassword_list_items_by_tag`.
+  - `onepassword_list_vaults` is unchanged (no inputs).
+  - All affected tools now return a `results` array with one entry per input item, surfacing partial failures per-item without aborting the batch. Per-item `status` is `success` | `error`, plus `declined` | `expired` for write tools when the batch confirmation is declined or times out.
+  - For `onepassword_get_item`, sensitive-field reveal is gated by a single batch elicitation listing every item; on accept, all items in the batch reveal credentials. Non-sensitive items, whitelisted items, and disabled-elicitation modes always reveal.
+  - Tool descriptions now explicitly nudge agents to bundle anticipated work into a single bulk call.
+
 ## [0.4.0] - 2026-04-27
 
 ### Changed
