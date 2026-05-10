@@ -20,34 +20,50 @@ const PARAM_DESCRIPTIONS = {
     'Optional vault ID to narrow the search. Recommended for precision when titles may overlap.',
 } as const;
 
-export const GetItemSchema = z.object({
+const GetItemItemSchema = z.object({
   itemId: z.string().min(1).describe(PARAM_DESCRIPTIONS.itemId),
   vaultId: z.string().optional().describe(PARAM_DESCRIPTIONS.vaultId),
 });
 
-const TOOL_DESCRIPTION = `Get the details of a specific 1Password item.
+export const GetItemSchema = z.object({
+  items: z
+    .array(GetItemItemSchema)
+    .min(1, { message: 'items must contain at least one item to fetch' })
+    .describe(
+      'Array of items to fetch. Provide all lookups in a single call so a single approval prompt covers any sensitive-field reveals across the batch.'
+    ),
+});
+
+const TOOL_DESCRIPTION = `Get the details of one or more 1Password items in a single call. Bulk calls require only one user approval to reveal sensitive fields, so prefer bulk whenever you anticipate looking up multiple items in a session.
+
+**Only use this tool when you actually need to read a credential value.** If you only need to check whether an item exists or inspect its field structure (titles, vault, tags, field labels, types, URLs), call \`onepassword_get_item_metadata\` instead — that path returns the same metadata without triggering an approval prompt.
+
+When you know in advance that you'll need details for multiple items, bundle them into one \`items\` array instead of firing sequential per-item calls — sequential calls force a separate approval prompt for each item with sensitive fields.
 
 Retrieves item information including metadata and fields. For security, **sensitive credential fields require approval before being revealed**.
 
 **Approval behavior (configurable via environment variables):**
-- If elicitation is enabled (default), you will be asked to confirm before credentials are shown
+- If elicitation is enabled (default), you will be asked to confirm before credentials are shown — approving once covers every item in the batch with sensitive fields
 - Whitelisted items (via OP_WHITELISTED_ITEMS, matched by title or item ID) bypass the confirmation prompt
 - If elicitation is disabled, credentials are returned directly
 
 **Returns:**
-- Item metadata (title, category, vault, tags, timestamps)
-- Field names and types
-- For APPROVED items: actual credential values
-- For DENIED items: field values show "[REDACTED]"
+- A \`results\` array (one entry per input item, in input order) reporting per-item \`status\`
+  (\`success\` or \`error\`) and either the item details or an error message.
+- Each successful result includes:
+  - Item metadata (title, category, vault, tags, timestamps)
+  - Field names and types
+  - For APPROVED items: actual credential values
+  - For DENIED items: field values show "[REDACTED]"
+  - A \`_credentialsRevealed\` boolean noting whether sensitive fields were revealed for that item
 
 **Security Note:** Item IDs are intentionally omitted from the response.
 
 **Use cases:**
-- View item metadata and structure
+- View item metadata and structure (one or many at once)
 - Retrieve credentials after approval
-- Discover what fields an item contains`;
+- Discover what fields items contain`;
 
-// Field types that contain sensitive data and should be redacted
 const SENSITIVE_FIELD_TYPES = new Set([
   'CONCEALED',
   'PASSWORD',
@@ -56,7 +72,6 @@ const SENSITIVE_FIELD_TYPES = new Set([
   'CREDIT_CARD_CVV',
 ]);
 
-// Field IDs/labels that typically contain sensitive data
 const SENSITIVE_FIELD_PATTERNS = [
   /password/i,
   /secret/i,
@@ -67,23 +82,14 @@ const SENSITIVE_FIELD_PATTERNS = [
   /pin/i,
 ];
 
-/**
- * Check if a field contains sensitive data that should be redacted
- */
 function isSensitiveField(field: OnePasswordField | OnePasswordSafeField): boolean {
-  // Check by type
-  if (field.type && SENSITIVE_FIELD_TYPES.has(field.type)) {
+  if (field.type && SENSITIVE_FIELD_TYPES.has(field.type.toUpperCase())) {
     return true;
   }
-
-  // Check by field label patterns (id may not be present in safe fields)
   const fieldIdentifier = (('id' in field ? field.id : '') || field.label || '').toLowerCase();
   return SENSITIVE_FIELD_PATTERNS.some((pattern) => pattern.test(fieldIdentifier));
 }
 
-/**
- * Redact sensitive fields from an item
- */
 function redactSensitiveFields(item: OnePasswordSafeItemDetails): OnePasswordSafeItemDetails {
   const redactedItem = { ...item };
 
@@ -102,37 +108,49 @@ function redactSensitiveFields(item: OnePasswordSafeItemDetails): OnePasswordSaf
   return redactedItem;
 }
 
+interface FetchedItem {
+  index: number;
+  itemTitle: string;
+  itemId: string;
+  sanitized: OnePasswordSafeItemDetails;
+  hasSensitiveFields: boolean;
+  whitelisted: boolean;
+}
+
+interface GetItemResult {
+  index: number;
+  status: 'success' | 'error';
+  item?: OnePasswordSafeItemDetails & { _credentialsRevealed: boolean };
+  error?: string;
+}
+
 /**
- * Determine whether to show credentials for this item based on elicitation config.
- * Returns true if credentials should be revealed, false if they should be redacted.
+ * Decide whether to reveal sensitive fields for the gated subset of items via a single
+ * batched elicitation prompt.
  */
-async function shouldRevealCredentials(
+async function batchShouldReveal(
   server: Server,
-  itemTitle: string,
-  itemId: string,
+  gated: FetchedItem[],
   elicitConfig: OnePasswordElicitationConfig
-): Promise<{ reveal: boolean }> {
-  // If read elicitation is disabled, allow by default
-  if (!elicitConfig.readElicitationEnabled) {
-    return { reveal: true };
+): Promise<boolean> {
+  if (gated.length === 0) {
+    return true;
   }
 
-  // Check whitelist - bypass elicitation for pre-approved items (matches title or ID)
-  if (isItemWhitelisted(elicitConfig, itemTitle, itemId)) {
-    return { reveal: true };
-  }
+  const summary = gated.map((g, i) => `  ${i + 1}. ${g.itemTitle}`).join('\n');
 
-  // Request confirmation via elicitation
   const confirmation = await requestConfirmation(
     {
       server,
       message:
-        `1Password credential access requested:\n` +
-        `  Item: ${itemTitle}\n\n` +
-        `Approve to reveal sensitive fields (passwords, secrets, tokens, etc.).`,
+        `1Password credential access requested for the following items:\n${summary}\n\n` +
+        `Approve to reveal sensitive fields (passwords, secrets, tokens, etc.) on every item above. ` +
+        `Approving covers the entire batch.`,
       requestedSchema: createConfirmationSchema(
-        'Reveal credentials?',
-        `Allow access to sensitive fields in "${itemTitle}".`
+        gated.length === 1
+          ? 'Reveal credentials?'
+          : `Reveal credentials for ${gated.length} items?`,
+        'Allow access to sensitive fields on these items.'
       ),
       meta: {
         'com.pulsemcp/tool-name': 'onepassword_get_item',
@@ -141,26 +159,25 @@ async function shouldRevealCredentials(
     elicitConfig.base
   );
 
-  // Fail-safe: only proceed on explicit 'accept'
   if (confirmation.action !== 'accept') {
-    return { reveal: false };
+    return false;
   }
 
   // Defense-in-depth: some MCP clients may return action='accept' without the
-  // user explicitly checking the confirmation checkbox. Guard against this edge case.
+  // user explicitly checking the confirmation checkbox.
   if (
     confirmation.content &&
     'confirm' in confirmation.content &&
     confirmation.content.confirm === false
   ) {
-    return { reveal: false };
+    return false;
   }
 
-  return { reveal: true };
+  return true;
 }
 
 /**
- * Tool for getting item details
+ * Tool for getting item details in bulk.
  */
 export function getItemTool(server: Server, clientFactory: () => IOnePasswordClient) {
   return {
@@ -169,68 +186,88 @@ export function getItemTool(server: Server, clientFactory: () => IOnePasswordCli
     inputSchema: {
       type: 'object' as const,
       properties: {
-        itemId: {
-          type: 'string',
-          description: PARAM_DESCRIPTIONS.itemId,
-        },
-        vaultId: {
-          type: 'string',
-          description: PARAM_DESCRIPTIONS.vaultId,
+        items: {
+          type: 'array',
+          minItems: 1,
+          description:
+            'Array of items to fetch. Provide all lookups in a single call so a single approval prompt covers any sensitive-field reveals across the batch.',
+          items: {
+            type: 'object',
+            properties: {
+              itemId: { type: 'string', description: PARAM_DESCRIPTIONS.itemId },
+              vaultId: { type: 'string', description: PARAM_DESCRIPTIONS.vaultId },
+            },
+            required: ['itemId'],
+          },
         },
       },
-      required: ['itemId'],
+      required: ['items'],
     },
     handler: async (args: unknown) => {
       try {
-        const validatedArgs = GetItemSchema.parse(args);
+        const { items } = GetItemSchema.parse(args);
         const client = clientFactory();
-        const item = await client.getItem(validatedArgs.itemId, validatedArgs.vaultId);
+        const elicitConfig = readOnePasswordElicitationConfig();
 
-        // Sanitize item to remove all IDs before responding
-        const sanitizedItem = sanitizeItemDetails(item);
-
-        // Check if item has any sensitive fields worth gating
-        const hasSensitiveFields = sanitizedItem.fields?.some(
-          (f) => isSensitiveField(f) && f.value
-        );
-
-        let credentialsRevealed = true;
-
-        if (hasSensitiveFields) {
-          const elicitConfig = readOnePasswordElicitationConfig();
-          const { reveal } = await shouldRevealCredentials(
-            server,
-            item.title,
-            item.id,
-            elicitConfig
-          );
-          credentialsRevealed = reveal;
+        // Phase 1 — fetch every item, recording per-index errors.
+        const results: GetItemResult[] = new Array(items.length);
+        const fetched: FetchedItem[] = [];
+        for (let index = 0; index < items.length; index++) {
+          const it = items[index];
+          try {
+            const raw = await client.getItem(it.itemId, it.vaultId);
+            const sanitized = sanitizeItemDetails(raw);
+            const hasSensitiveFields = !!sanitized.fields?.some(
+              (f) => isSensitiveField(f) && f.value
+            );
+            const whitelisted = isItemWhitelisted(elicitConfig, raw.title, raw.id);
+            fetched.push({
+              index,
+              itemTitle: raw.title,
+              itemId: raw.id,
+              sanitized,
+              hasSensitiveFields,
+              whitelisted,
+            });
+          } catch (error) {
+            results[index] = {
+              index,
+              status: 'error',
+              error: error instanceof Error ? error.message : 'Unknown error',
+            };
+          }
         }
 
-        // Redact sensitive fields if not approved
-        const responseItem = credentialsRevealed
-          ? sanitizedItem
-          : redactSensitiveFields(sanitizedItem);
+        // Phase 2 — decide which items need approval to reveal sensitive fields.
+        const readGated = elicitConfig.readElicitationEnabled;
+        const itemsNeedingApproval = fetched.filter(
+          (f) => readGated && f.hasSensitiveFields && !f.whitelisted
+        );
+        const reveal =
+          itemsNeedingApproval.length === 0
+            ? true
+            : await batchShouldReveal(server, itemsNeedingApproval, elicitConfig);
 
-        const response = {
-          ...responseItem,
-          _credentialsRevealed: credentialsRevealed,
-        };
+        // Phase 3 — assemble per-item results.
+        for (const f of fetched) {
+          const shouldReveal = !readGated || !f.hasSensitiveFields || f.whitelisted || reveal;
+          const responseItem = shouldReveal ? f.sanitized : redactSensitiveFields(f.sanitized);
+          results[f.index] = {
+            index: f.index,
+            status: 'success',
+            item: { ...responseItem, _credentialsRevealed: shouldReveal },
+          };
+        }
 
         return {
-          content: [
-            {
-              type: 'text',
-              text: JSON.stringify(response, null, 2),
-            },
-          ],
+          content: [{ type: 'text', text: JSON.stringify({ results }, null, 2) }],
         };
       } catch (error) {
         return {
           content: [
             {
               type: 'text',
-              text: `Error getting item: ${error instanceof Error ? error.message : 'Unknown error'}`,
+              text: `Error getting items: ${error instanceof Error ? error.message : 'Unknown error'}`,
             },
           ],
           isError: true,

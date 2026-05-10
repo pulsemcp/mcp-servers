@@ -24,16 +24,17 @@ MCP server for interacting with 1Password via the CLI. Enables AI assistants to 
 
 ### Tools
 
-| Tool                                | Group    | Description                                               |
-| ----------------------------------- | -------- | --------------------------------------------------------- |
-| `onepassword_list_vaults`           | readonly | List all accessible vaults                                |
-| `onepassword_list_items`            | readonly | List items in a specific vault                            |
-| `onepassword_get_item`              | readonly | Get item details (credentials require approval to reveal) |
-| `onepassword_list_items_by_tag`     | readonly | Find items by tag                                         |
-| `onepassword_create_login`          | write    | Create a new login credential (requires approval)         |
-| `onepassword_create_secure_note`    | write    | Create a new secure note (requires approval)              |
-| `onepassword_share_item`            | write    | Mint a share URL for an existing item (requires approval) |
-| `onepassword_create_api_credential` | write    | Create a new API Credential item (requires approval)      |
+| Tool                                | Group    | Description                                                                                |
+| ----------------------------------- | -------- | ------------------------------------------------------------------------------------------ |
+| `onepassword_list_vaults`           | readonly | List all accessible vaults                                                                 |
+| `onepassword_list_items`            | readonly | List items in a specific vault                                                             |
+| `onepassword_get_item`              | readonly | Get item details (credentials require approval to reveal)                                  |
+| `onepassword_get_item_metadata`     | readonly | Get item metadata (titles, fields, vault, tags) without secret values — no approval prompt |
+| `onepassword_list_items_by_tag`     | readonly | Find items by tag                                                                          |
+| `onepassword_create_login`          | write    | Create a new login credential (requires approval)                                          |
+| `onepassword_create_secure_note`    | write    | Create a new secure note (requires approval)                                               |
+| `onepassword_share_item`            | write    | Mint a share URL for an existing item (requires approval)                                  |
+| `onepassword_create_api_credential` | write    | Create a new API Credential item (requires approval)                                       |
 
 ### Resources
 
@@ -122,6 +123,10 @@ Restart Claude Desktop and you should be ready to go!
 2. The server prompts the user to approve credential access via elicitation
 3. Once approved, the full credentials are returned for that request
 4. Whitelisted items (via `OP_WHITELISTED_ITEMS`, matched by title or item ID) bypass the approval prompt entirely
+
+### Checking Existence Without Approval
+
+`onepassword_get_item_metadata` is a metadata-only sibling of `onepassword_get_item`. It returns the same item shape (title, category, vault, tags, field labels, types, URLs, dates, plus non-sensitive field values) but **strips the values of sensitive fields entirely** — no `[REDACTED]` placeholder, no leak — and **never triggers an approval prompt**. Reach for it when you only need to answer "does an item with title X exist in vault Y?" or "which fields does this item have?". Call `onepassword_get_item` only when you actually need to read a credential value.
 
 ### Configuration Examples
 

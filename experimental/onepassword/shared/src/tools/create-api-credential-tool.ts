@@ -19,7 +19,7 @@ const PARAM_DESCRIPTIONS = {
 
 const DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
 
-export const CreateApiCredentialSchema = z.object({
+const ApiCredentialItemSchema = z.object({
   vaultId: z.string().min(1).describe(PARAM_DESCRIPTIONS.vaultId),
   title: z.string().min(1).describe(PARAM_DESCRIPTIONS.title),
   credential: z.string().min(1).describe(PARAM_DESCRIPTIONS.credential),
@@ -39,7 +39,18 @@ export const CreateApiCredentialSchema = z.object({
   notes: z.string().min(1).optional().describe(PARAM_DESCRIPTIONS.notes),
 });
 
-const TOOL_DESCRIPTION = `Create a new API Credential item in 1Password.
+export const CreateApiCredentialSchema = z.object({
+  items: z
+    .array(ApiCredentialItemSchema)
+    .min(1, { message: 'items must contain at least one credential to create' })
+    .describe(
+      'Array of API credentials to create. Provide all credentials for the batch in a single call so the user only has to approve once.'
+    ),
+});
+
+const TOOL_DESCRIPTION = `Create one or more API Credential items in 1Password in a single call. Bulk calls require only one user approval, so prefer bulk whenever you anticipate provisioning multiple credentials in a session.
+
+When you know in advance that you'll need multiple API credentials (e.g., onboarding several accounts or environments at once), bundle them into one \`items\` array instead of firing sequential per-credential calls — sequential calls force a separate approval prompt for each item.
 
 Stores API keys, tokens, or other machine credentials in 1Password's built-in
 "API Credential" category — which is preferable to a Secure Note because
@@ -47,15 +58,36 @@ consumers (humans and tooling) can recognize it as a credential and surface
 fields like \`username\`, \`hostname\`, \`expires\`, and \`valid from\` correctly.
 
 **Returns:**
-- The created item with its details (title, category, vault name)
+- A \`results\` array (one entry per input item, in input order) reporting per-item \`status\`
+  (\`success\`, \`error\`, \`declined\`, or \`expired\`) and either the created item or an error message.
+- Partial failures are surfaced per item — a single bad item does not abort the batch.
 
 **Security Note:** Item IDs are intentionally omitted from the response.
 
-**Note:** The credential value is passed as a CLI argument which may briefly
-appear in process lists.`;
+**Note:** Credential values are passed as CLI arguments which may briefly appear in process lists.`;
+
+interface ApiCredentialResult {
+  index: number;
+  status: 'success' | 'error' | 'declined' | 'expired';
+  item?: ReturnType<typeof sanitizeItemDetails>;
+  error?: string;
+}
+
+function summarizeApiCredentialItem(
+  item: z.infer<typeof ApiCredentialItemSchema>,
+  index: number
+): string {
+  const lines: string[] = [`  ${index + 1}. ${item.title} (vault: ${item.vaultId})`];
+  if (item.username) lines.push(`     Username: ${item.username}`);
+  if (item.hostname) lines.push(`     Hostname: ${item.hostname}`);
+  if (item.valid_from) lines.push(`     Valid from: ${item.valid_from}`);
+  if (item.expires) lines.push(`     Expires: ${item.expires}`);
+  if (item.tags?.length) lines.push(`     Tags: ${item.tags.join(', ')}`);
+  return lines.join('\n');
+}
 
 /**
- * Tool for creating API Credential items.
+ * Tool for creating API Credential items in bulk.
  */
 export function createApiCredentialTool(server: Server, clientFactory: () => IOnePasswordClient) {
   return {
@@ -64,79 +96,52 @@ export function createApiCredentialTool(server: Server, clientFactory: () => IOn
     inputSchema: {
       type: 'object' as const,
       properties: {
-        vaultId: {
-          type: 'string',
-          description: PARAM_DESCRIPTIONS.vaultId,
-        },
-        title: {
-          type: 'string',
-          description: PARAM_DESCRIPTIONS.title,
-        },
-        credential: {
-          type: 'string',
-          description: PARAM_DESCRIPTIONS.credential,
-        },
-        username: {
-          type: 'string',
-          description: PARAM_DESCRIPTIONS.username,
-        },
-        hostname: {
-          type: 'string',
-          description: PARAM_DESCRIPTIONS.hostname,
-        },
-        expires: {
-          type: 'string',
-          description: PARAM_DESCRIPTIONS.expires,
-        },
-        valid_from: {
-          type: 'string',
-          description: PARAM_DESCRIPTIONS.valid_from,
-        },
-        tags: {
+        items: {
           type: 'array',
-          items: { type: 'string' },
-          description: PARAM_DESCRIPTIONS.tags,
-        },
-        notes: {
-          type: 'string',
-          description: PARAM_DESCRIPTIONS.notes,
+          minItems: 1,
+          description:
+            'Array of API credentials to create. Provide all credentials for the batch in a single call so the user only has to approve once.',
+          items: {
+            type: 'object',
+            properties: {
+              vaultId: { type: 'string', description: PARAM_DESCRIPTIONS.vaultId },
+              title: { type: 'string', description: PARAM_DESCRIPTIONS.title },
+              credential: { type: 'string', description: PARAM_DESCRIPTIONS.credential },
+              username: { type: 'string', description: PARAM_DESCRIPTIONS.username },
+              hostname: { type: 'string', description: PARAM_DESCRIPTIONS.hostname },
+              expires: { type: 'string', description: PARAM_DESCRIPTIONS.expires },
+              valid_from: { type: 'string', description: PARAM_DESCRIPTIONS.valid_from },
+              tags: {
+                type: 'array',
+                items: { type: 'string' },
+                description: PARAM_DESCRIPTIONS.tags,
+              },
+              notes: { type: 'string', description: PARAM_DESCRIPTIONS.notes },
+            },
+            required: ['vaultId', 'title', 'credential'],
+          },
         },
       },
-      required: ['vaultId', 'title', 'credential'],
+      required: ['items'],
     },
     handler: async (args: unknown) => {
       try {
-        const validatedArgs = CreateApiCredentialSchema.parse(args);
+        const { items } = CreateApiCredentialSchema.parse(args);
 
         const elicitConfig = readOnePasswordElicitationConfig();
         if (elicitConfig.writeElicitationEnabled) {
-          const lines: string[] = [
-            `About to create an API Credential item in 1Password:`,
-            `  Title: ${validatedArgs.title}`,
-          ];
-          if (validatedArgs.username) {
-            lines.push(`  Username: ${validatedArgs.username}`);
-          }
-          if (validatedArgs.hostname) {
-            lines.push(`  Hostname: ${validatedArgs.hostname}`);
-          }
-          if (validatedArgs.valid_from) {
-            lines.push(`  Valid from: ${validatedArgs.valid_from}`);
-          }
-          if (validatedArgs.expires) {
-            lines.push(`  Expires: ${validatedArgs.expires}`);
-          }
-          if (validatedArgs.tags) {
-            lines.push(`  Tags: ${validatedArgs.tags.join(', ')}`);
-          }
-
+          const summary = items.map((it, i) => summarizeApiCredentialItem(it, i)).join('\n');
+          const noun =
+            items.length === 1 ? 'API Credential item' : `${items.length} API Credential items`;
           const confirmation = await requestConfirmation(
             {
               server,
-              message: lines.join('\n') + '\n',
+              message: `About to create ${noun} in 1Password:\n${summary}\n`,
               requestedSchema: createConfirmationSchema(
-                'Create this API credential?',
-                'Confirm that you want to create this API Credential item in 1Password.'
+                items.length === 1
+                  ? 'Create this API credential?'
+                  : `Create all ${items.length} API credentials?`,
+                'Confirm that you want to create these API Credential items in 1Password. Approving covers the entire batch.'
               ),
               meta: {
                 'com.pulsemcp/tool-name': 'onepassword_create_api_credential',
@@ -146,24 +151,17 @@ export function createApiCredentialTool(server: Server, clientFactory: () => IOn
           );
 
           if (confirmation.action !== 'accept') {
-            if (confirmation.action === 'expired') {
-              return {
-                content: [
-                  {
-                    type: 'text',
-                    text: 'API credential creation confirmation expired. Please try again.',
-                  },
-                ],
-                isError: true,
-              };
-            }
+            const status: 'declined' | 'expired' =
+              confirmation.action === 'expired' ? 'expired' : 'declined';
+            const results: ApiCredentialResult[] = items.map((_, index) => ({ index, status }));
             return {
               content: [
                 {
                   type: 'text',
-                  text: 'API credential creation was cancelled by the user.',
+                  text: JSON.stringify({ results }, null, 2),
                 },
               ],
+              isError: status === 'expired',
             };
           }
 
@@ -174,11 +172,15 @@ export function createApiCredentialTool(server: Server, clientFactory: () => IOn
             'confirm' in confirmation.content &&
             confirmation.content.confirm === false
           ) {
+            const results: ApiCredentialResult[] = items.map((_, index) => ({
+              index,
+              status: 'declined',
+            }));
             return {
               content: [
                 {
                   type: 'text',
-                  text: 'API credential creation was not confirmed.',
+                  text: JSON.stringify({ results }, null, 2),
                 },
               ],
             };
@@ -186,27 +188,33 @@ export function createApiCredentialTool(server: Server, clientFactory: () => IOn
         }
 
         const client = clientFactory();
-        const item = await client.createApiCredential(
-          validatedArgs.vaultId,
-          validatedArgs.title,
-          validatedArgs.credential,
-          {
-            username: validatedArgs.username,
-            hostname: validatedArgs.hostname,
-            expires: validatedArgs.expires,
-            validFrom: validatedArgs.valid_from,
-            notes: validatedArgs.notes,
-            tags: validatedArgs.tags,
+        const results: ApiCredentialResult[] = [];
+        for (let index = 0; index < items.length; index++) {
+          const it = items[index];
+          try {
+            const created = await client.createApiCredential(it.vaultId, it.title, it.credential, {
+              username: it.username,
+              hostname: it.hostname,
+              expires: it.expires,
+              validFrom: it.valid_from,
+              notes: it.notes,
+              tags: it.tags,
+            });
+            results.push({ index, status: 'success', item: sanitizeItemDetails(created) });
+          } catch (error) {
+            results.push({
+              index,
+              status: 'error',
+              error: error instanceof Error ? error.message : 'Unknown error',
+            });
           }
-        );
-
-        const sanitizedItem = sanitizeItemDetails(item);
+        }
 
         return {
           content: [
             {
               type: 'text',
-              text: JSON.stringify(sanitizedItem, null, 2),
+              text: JSON.stringify({ results }, null, 2),
             },
           ],
         };
@@ -215,7 +223,7 @@ export function createApiCredentialTool(server: Server, clientFactory: () => IOn
           content: [
             {
               type: 'text',
-              text: `Error creating API credential: ${error instanceof Error ? error.message : 'Unknown error'}`,
+              text: `Error creating API credentials: ${error instanceof Error ? error.message : 'Unknown error'}`,
             },
           ],
           isError: true,

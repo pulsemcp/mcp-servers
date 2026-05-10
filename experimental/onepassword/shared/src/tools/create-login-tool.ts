@@ -14,7 +14,7 @@ const PARAM_DESCRIPTIONS = {
   tags: 'Optional array of tags to organize the item.',
 } as const;
 
-export const CreateLoginSchema = z.object({
+const LoginItemSchema = z.object({
   vaultId: z.string().min(1).describe(PARAM_DESCRIPTIONS.vaultId),
   title: z.string().min(1).describe(PARAM_DESCRIPTIONS.title),
   username: z.string().min(1).describe(PARAM_DESCRIPTIONS.username),
@@ -23,24 +23,54 @@ export const CreateLoginSchema = z.object({
   tags: z.array(z.string()).optional().describe(PARAM_DESCRIPTIONS.tags),
 });
 
-const TOOL_DESCRIPTION = `Create a new login item in 1Password.
+export const CreateLoginSchema = z.object({
+  items: z
+    .array(LoginItemSchema)
+    .min(1, { message: 'items must contain at least one login to create' })
+    .describe(
+      'Array of login items to create. Provide all logins for the batch in a single call so the user only has to approve once.'
+    ),
+});
 
-Stores username/password credentials in the specified vault. Optionally include a URL and tags for organization.
+const TOOL_DESCRIPTION = `Create one or more login items in 1Password in a single call. Bulk calls require only one user approval, so prefer bulk whenever you anticipate provisioning multiple logins in a session.
+
+When you know in advance that you'll need multiple logins (e.g., onboarding several accounts at once), bundle them into one \`items\` array instead of firing sequential per-login calls — sequential calls force a separate approval prompt for each item.
+
+Stores username/password credentials in the specified vaults. Optionally include URLs and tags for organization.
 
 **Returns:**
-- The created item with its details (title, category, vault name)
+- A \`results\` array (one entry per input item, in input order) reporting per-item \`status\`
+  (\`success\`, \`error\`, \`declined\`, or \`expired\`) and either the created item or an error message.
+- Partial failures are surfaced per item — a single bad item does not abort the batch.
 
 **Security Note:** Item IDs are intentionally omitted from the response.
 
 **Use cases:**
-- Store new login credentials
+- Store new login credentials (one or many at once)
 - Save generated passwords with their associated accounts
 - Create credentials for new services or accounts
 
-**Note:** The password is passed as a CLI argument which may briefly appear in process lists.`;
+**Note:** Passwords are passed as CLI arguments which may briefly appear in process lists.`;
+
+interface LoginResult {
+  index: number;
+  status: 'success' | 'error' | 'declined' | 'expired';
+  item?: ReturnType<typeof sanitizeItemDetails>;
+  error?: string;
+}
+
+function summarizeLoginItem(item: z.infer<typeof LoginItemSchema>, index: number): string {
+  const lines: string[] = [
+    `  ${index + 1}. ${item.title} (vault: ${item.vaultId})`,
+    `     Username: ${item.username}`,
+  ];
+  if (item.url) lines.push(`     URL: ${item.url}`);
+  if (item.tags?.length) lines.push(`     Tags: ${item.tags.join(', ')}`);
+  return lines.join('\n');
+}
 
 /**
- * Tool for creating login items
+ * Tool for creating login items in bulk.
  */
 export function createLoginTool(server: Server, clientFactory: () => IOnePasswordClient) {
   return {
@@ -49,55 +79,46 @@ export function createLoginTool(server: Server, clientFactory: () => IOnePasswor
     inputSchema: {
       type: 'object' as const,
       properties: {
-        vaultId: {
-          type: 'string',
-          description: PARAM_DESCRIPTIONS.vaultId,
-        },
-        title: {
-          type: 'string',
-          description: PARAM_DESCRIPTIONS.title,
-        },
-        username: {
-          type: 'string',
-          description: PARAM_DESCRIPTIONS.username,
-        },
-        password: {
-          type: 'string',
-          description: PARAM_DESCRIPTIONS.password,
-        },
-        url: {
-          type: 'string',
-          description: PARAM_DESCRIPTIONS.url,
-        },
-        tags: {
+        items: {
           type: 'array',
-          items: { type: 'string' },
-          description: PARAM_DESCRIPTIONS.tags,
+          minItems: 1,
+          description:
+            'Array of login items to create. Provide all logins for the batch in a single call so the user only has to approve once.',
+          items: {
+            type: 'object',
+            properties: {
+              vaultId: { type: 'string', description: PARAM_DESCRIPTIONS.vaultId },
+              title: { type: 'string', description: PARAM_DESCRIPTIONS.title },
+              username: { type: 'string', description: PARAM_DESCRIPTIONS.username },
+              password: { type: 'string', description: PARAM_DESCRIPTIONS.password },
+              url: { type: 'string', description: PARAM_DESCRIPTIONS.url },
+              tags: {
+                type: 'array',
+                items: { type: 'string' },
+                description: PARAM_DESCRIPTIONS.tags,
+              },
+            },
+            required: ['vaultId', 'title', 'username', 'password'],
+          },
         },
       },
-      required: ['vaultId', 'title', 'username', 'password'],
+      required: ['items'],
     },
     handler: async (args: unknown) => {
       try {
-        const validatedArgs = CreateLoginSchema.parse(args);
+        const { items } = CreateLoginSchema.parse(args);
 
-        // Check if write elicitation is enabled
         const elicitConfig = readOnePasswordElicitationConfig();
         if (elicitConfig.writeElicitationEnabled) {
-          const confirmMessage =
-            `About to create a login item in 1Password:\n` +
-            `  Title: ${validatedArgs.title}\n` +
-            `  Username: ${validatedArgs.username}\n` +
-            (validatedArgs.url ? `  URL: ${validatedArgs.url}\n` : '') +
-            (validatedArgs.tags ? `  Tags: ${validatedArgs.tags.join(', ')}\n` : '');
-
+          const summary = items.map((it, i) => summarizeLoginItem(it, i)).join('\n');
+          const noun = items.length === 1 ? 'login item' : `${items.length} login items`;
           const confirmation = await requestConfirmation(
             {
               server,
-              message: confirmMessage,
+              message: `About to create ${noun} in 1Password:\n${summary}\n`,
               requestedSchema: createConfirmationSchema(
-                'Create this login?',
-                'Confirm that you want to create this login item in 1Password.'
+                items.length === 1 ? 'Create this login?' : `Create all ${items.length} logins?`,
+                'Confirm that you want to create these login items in 1Password. Approving covers the entire batch.'
               ),
               meta: {
                 'com.pulsemcp/tool-name': 'onepassword_create_login',
@@ -107,72 +128,61 @@ export function createLoginTool(server: Server, clientFactory: () => IOnePasswor
           );
 
           if (confirmation.action !== 'accept') {
-            if (confirmation.action === 'expired') {
-              return {
-                content: [
-                  {
-                    type: 'text',
-                    text: 'Login creation confirmation expired. Please try again.',
-                  },
-                ],
-                isError: true,
-              };
-            }
+            const status: 'declined' | 'expired' =
+              confirmation.action === 'expired' ? 'expired' : 'declined';
+            const results: LoginResult[] = items.map((_, index) => ({ index, status }));
             return {
-              content: [
-                {
-                  type: 'text',
-                  text: 'Login creation was cancelled by the user.',
-                },
-              ],
+              content: [{ type: 'text', text: JSON.stringify({ results }, null, 2) }],
+              isError: status === 'expired',
             };
           }
 
           // Defense-in-depth: some MCP clients may return action='accept' without the
-          // user explicitly checking the confirmation checkbox. Guard against this edge case.
+          // user explicitly checking the confirmation checkbox.
           if (
             confirmation.content &&
             'confirm' in confirmation.content &&
             confirmation.content.confirm === false
           ) {
+            const results: LoginResult[] = items.map((_, index) => ({ index, status: 'declined' }));
             return {
-              content: [
-                {
-                  type: 'text',
-                  text: 'Login creation was not confirmed.',
-                },
-              ],
+              content: [{ type: 'text', text: JSON.stringify({ results }, null, 2) }],
             };
           }
         }
 
         const client = clientFactory();
-        const item = await client.createLogin(
-          validatedArgs.vaultId,
-          validatedArgs.title,
-          validatedArgs.username,
-          validatedArgs.password,
-          validatedArgs.url,
-          validatedArgs.tags
-        );
-
-        // Sanitize response to remove IDs
-        const sanitizedItem = sanitizeItemDetails(item);
+        const results: LoginResult[] = [];
+        for (let index = 0; index < items.length; index++) {
+          const it = items[index];
+          try {
+            const created = await client.createLogin(
+              it.vaultId,
+              it.title,
+              it.username,
+              it.password,
+              it.url,
+              it.tags
+            );
+            results.push({ index, status: 'success', item: sanitizeItemDetails(created) });
+          } catch (error) {
+            results.push({
+              index,
+              status: 'error',
+              error: error instanceof Error ? error.message : 'Unknown error',
+            });
+          }
+        }
 
         return {
-          content: [
-            {
-              type: 'text',
-              text: JSON.stringify(sanitizedItem, null, 2),
-            },
-          ],
+          content: [{ type: 'text', text: JSON.stringify({ results }, null, 2) }],
         };
       } catch (error) {
         return {
           content: [
             {
               type: 'text',
-              text: `Error creating login: ${error instanceof Error ? error.message : 'Unknown error'}`,
+              text: `Error creating logins: ${error instanceof Error ? error.message : 'Unknown error'}`,
             },
           ],
           isError: true,

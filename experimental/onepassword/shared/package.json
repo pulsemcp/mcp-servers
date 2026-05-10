@@ -1,6 +1,6 @@
 {
   "name": "onepassword-mcp-server-shared",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Shared code for 1Password MCP server implementations",
   "main": "build/index.js",
   "type": "module",
