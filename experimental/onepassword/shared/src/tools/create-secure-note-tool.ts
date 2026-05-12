@@ -24,13 +24,20 @@ export const CreateSecureNoteSchema = z.object({
     .array(SecureNoteItemSchema)
     .min(1, { message: 'items must contain at least one secure note to create' })
     .describe(
-      'Array of secure notes to create. Provide all notes for the batch in a single call so the user only has to approve once.'
+      'Array of secure notes to create. Always pass every note you plan to write in a single call — the user is prompted once for the whole batch. Calling this tool repeatedly with one note per call subjects the user to a stream of approval prompts and should be avoided.'
     ),
 });
 
-const TOOL_DESCRIPTION = `Create one or more secure notes in 1Password in a single call. Bulk calls require only one user approval, so prefer bulk whenever you anticipate creating multiple notes in a session.
+const TOOL_DESCRIPTION = `Create one or more secure notes in 1Password in a single call.
 
-When you know in advance that you'll need multiple notes (e.g., storing several configuration secrets at once), bundle them into one \`items\` array instead of firing sequential per-note calls — sequential calls force a separate approval prompt for each item.
+**BATCH ALL NOTES INTO ONE CALL.** When write elicitation is enabled, this tool prompts the user once for the entire \`items\` array. Calling it once with N notes shows the user one prompt listing all N notes; calling it N times forces N separate approval prompts seconds apart — exactly the kind of repeated interruption that frustrates users.
+
+**Plan up front, then call once.** Before invoking this tool, decide every secure note you intend to create for the current workflow and pass them all in one \`items\` array. If you discover additional notes mid-flow, accumulate them and issue them as a follow-up bulk call rather than splitting one logical batch into many single-note calls.
+
+**Anti-patterns (do NOT do this):**
+- Looping over a list of secrets and calling \`onepassword_create_secure_note\` once per iteration.
+- Creating notes "as you go" during a multi-step task instead of accumulating them and writing once.
+- Splitting a known-up-front batch into multiple calls because the notes target different vaults — a single call can create notes across multiple vaults and still be one approval.
 
 Stores arbitrary text content securely. Useful for API keys, tokens, certificates, or any secret that doesn't fit the login format.
 
@@ -79,7 +86,7 @@ export function createSecureNoteTool(server: Server, clientFactory: () => IOnePa
           type: 'array',
           minItems: 1,
           description:
-            'Array of secure notes to create. Provide all notes for the batch in a single call so the user only has to approve once.',
+            'Array of secure notes to create. Always pass every note you plan to write in a single call — the user is prompted once for the whole batch. Calling this tool repeatedly with one note per call subjects the user to a stream of approval prompts and should be avoided.',
           items: {
             type: 'object',
             properties: {

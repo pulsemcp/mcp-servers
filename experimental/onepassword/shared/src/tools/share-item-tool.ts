@@ -42,13 +42,20 @@ export const ShareItemSchema = z.object({
     .array(ShareItemItemSchema)
     .min(1, { message: 'items must contain at least one item to share' })
     .describe(
-      'Array of items to share. Provide all share requests for the batch in a single call so the user only has to approve once.'
+      'Array of items to share. Always pass every share you plan to mint in a single call — the user is prompted once for the whole batch. Calling this tool repeatedly with one item per call subjects the user to a stream of approval prompts and should be avoided.'
     ),
 });
 
-const TOOL_DESCRIPTION = `Create one or more shareable links for 1Password items in a single call. Bulk calls require only one user approval, so prefer bulk whenever you anticipate sharing multiple items in a session.
+const TOOL_DESCRIPTION = `Create one or more shareable links for 1Password items in a single call.
 
-When you know in advance that you'll need to share multiple items (e.g., handing several credentials to a customer at once), bundle them into one \`items\` array instead of firing sequential per-share calls — sequential calls force a separate approval prompt for each item.
+**BATCH ALL SHARES INTO ONE CALL.** This tool is gated by a single user approval that covers the entire \`items\` array. Calling it once with N items shows the user one prompt listing all N share requests; calling it N times forces N separate approval prompts seconds apart, which is annoying and error-prone for the user.
+
+**Plan up front, then call once.** Before invoking this tool, decide every share you intend to mint for the current workflow and pass them all in one \`items\` array. Even if it feels natural to share items "as you go" during a multi-step task (e.g., share one credential, do other work, share the next), pause and accumulate the list — issue a single bulk call near the end of the planning phase rather than peppering the user with mid-task confirmations.
+
+**Anti-patterns (do NOT do this):**
+- Looping over a list of items and calling \`onepassword_share_item\` once per iteration.
+- Asking the user for one share, then later "while we're at it" asking for another.
+- Splitting a known-up-front batch into multiple calls because the items came from different sources.
 
 Wraps \`op item share\` to mint a URL anyone with the link can open, unless \`emails\`
 is set (in which case only those recipients can open it). Useful for handing a
@@ -100,7 +107,7 @@ export function shareItemTool(server: Server, clientFactory: () => IOnePasswordC
           type: 'array',
           minItems: 1,
           description:
-            'Array of items to share. Provide all share requests for the batch in a single call so the user only has to approve once.',
+            'Array of items to share. Always pass every share you plan to mint in a single call — the user is prompted once for the whole batch. Calling this tool repeatedly with one item per call subjects the user to a stream of approval prompts and should be avoided.',
           items: {
             type: 'object',
             properties: {

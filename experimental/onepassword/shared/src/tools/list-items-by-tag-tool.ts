@@ -17,11 +17,19 @@ export const ListItemsByTagSchema = z.object({
     .array(ListItemsByTagItemSchema)
     .min(1, { message: 'items must contain at least one tag query to run' })
     .describe(
-      'Array of tag queries. Provide all tag/vault pairs for the batch in a single call when you need to filter by multiple tags or scope across multiple vaults.'
+      'Array of tag queries. Pass every tag/vault pair you need to query in a single call rather than calling this tool once per tag. Use this tool up front for discovery so downstream onepassword_get_item / onepassword_share_item / etc. calls can be made as a single bulk batch.'
     ),
 });
 
-const TOOL_DESCRIPTION = `List 1Password items matching one or more tag queries in a single call. Prefer bulk whenever you anticipate filtering by multiple tags or vaults in a session — it returns all results in one round-trip.
+const TOOL_DESCRIPTION = `List 1Password items matching one or more tag queries in a single call.
+
+**BATCH ALL TAG QUERIES INTO ONE CALL.** When you need to filter by multiple tags or scope across multiple vaults, pass every \`tag\` (and optional \`vaultId\`) in a single \`items\` array — one round-trip. Calling this tool once per tag is wasteful and slow.
+
+**Use this tool for discovery to avoid get_item loops.** This tool returns titles, categories, and tags without triggering any sensitive-field elicitation. When you need to find candidate items by tag for downstream work (e.g., retrieving full details with \`onepassword_get_item\` or sharing several items with \`onepassword_share_item\`), call this tool ONCE up front and use the results to assemble a single bulk follow-up — instead of fanning out individual \`onepassword_get_item\` lookups, each of which would prompt the user.
+
+**Anti-patterns (do NOT do this):**
+- Calling \`onepassword_list_items_by_tag\` once per tag when you need items for several tags — pass all tag/vault pairs in one call.
+- Skipping the list step and calling \`onepassword_get_item\` repeatedly to "search" by tag — \`get_item\` reveals sensitive fields and prompts the user; this tool does not.
 
 Filters items across vaults (or within a specific vault) by tag. Useful for organizing and finding related items.
 
@@ -66,7 +74,7 @@ export function listItemsByTagTool(_server: Server, clientFactory: () => IOnePas
           type: 'array',
           minItems: 1,
           description:
-            'Array of tag queries. Provide all tag/vault pairs for the batch in a single call when you need to filter by multiple tags or scope across multiple vaults.',
+            'Array of tag queries. Pass every tag/vault pair you need to query in a single call rather than calling this tool once per tag. Use this tool up front for discovery so downstream onepassword_get_item / onepassword_share_item / etc. calls can be made as a single bulk batch.',
           items: {
             type: 'object',
             properties: {

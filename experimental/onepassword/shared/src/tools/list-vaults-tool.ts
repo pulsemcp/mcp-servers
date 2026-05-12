@@ -3,6 +3,8 @@ import { IOnePasswordClient } from '../types.js';
 
 const TOOL_DESCRIPTION = `List all 1Password vaults accessible by the service account.
 
+This is the one-shot discovery starting point — call it once up front (it takes no inputs) and feed the resulting vault IDs into a single bulk call to \`onepassword_list_items\` (which accepts an array of vault IDs in one request). Avoid alternating \`list_vaults\` → \`list_items\` → \`list_vaults\` workflows; gather all vault IDs first, then issue one batched \`list_items\` call.
+
 Returns a list of vaults with their IDs and names. Use vault IDs when calling other tools that require a vault parameter.
 
 **Returns:**
