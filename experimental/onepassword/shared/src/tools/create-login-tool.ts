@@ -28,13 +28,20 @@ export const CreateLoginSchema = z.object({
     .array(LoginItemSchema)
     .min(1, { message: 'items must contain at least one login to create' })
     .describe(
-      'Array of login items to create. Provide all logins for the batch in a single call so the user only has to approve once.'
+      'Array of login items to create. Always pass every login you plan to write in a single call — the user is prompted once for the whole batch. Calling this tool repeatedly with one login per call subjects the user to a stream of approval prompts and should be avoided.'
     ),
 });
 
-const TOOL_DESCRIPTION = `Create one or more login items in 1Password in a single call. Bulk calls require only one user approval, so prefer bulk whenever you anticipate provisioning multiple logins in a session.
+const TOOL_DESCRIPTION = `Create one or more login items in 1Password in a single call.
 
-When you know in advance that you'll need multiple logins (e.g., onboarding several accounts at once), bundle them into one \`items\` array instead of firing sequential per-login calls — sequential calls force a separate approval prompt for each item.
+**BATCH ALL LOGINS INTO ONE CALL.** When write elicitation is enabled, this tool prompts the user once for the entire \`items\` array. Calling it once with N logins shows the user one prompt listing all N logins; calling it N times forces N separate approval prompts seconds apart — exactly the kind of repeated interruption that frustrates users.
+
+**Plan up front, then call once.** Before invoking this tool, decide every login you intend to create for the current workflow and pass them all in one \`items\` array. A single call can create logins across multiple vaults — different vaults are not a reason to split into multiple calls.
+
+**Anti-patterns (do NOT do this):**
+- Looping over a list of accounts and calling \`onepassword_create_login\` once per iteration.
+- Creating logins "as you go" during a multi-step onboarding task instead of accumulating them and writing once.
+- Splitting a known-up-front batch into multiple calls because the logins target different vaults or services.
 
 Stores username/password credentials in the specified vaults. Optionally include URLs and tags for organization.
 
@@ -83,7 +90,7 @@ export function createLoginTool(server: Server, clientFactory: () => IOnePasswor
           type: 'array',
           minItems: 1,
           description:
-            'Array of login items to create. Provide all logins for the batch in a single call so the user only has to approve once.',
+            'Array of login items to create. Always pass every login you plan to write in a single call — the user is prompted once for the whole batch. Calling this tool repeatedly with one login per call subjects the user to a stream of approval prompts and should be avoided.',
           items: {
             type: 'object',
             properties: {

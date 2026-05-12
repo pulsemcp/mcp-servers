@@ -44,13 +44,20 @@ export const CreateApiCredentialSchema = z.object({
     .array(ApiCredentialItemSchema)
     .min(1, { message: 'items must contain at least one credential to create' })
     .describe(
-      'Array of API credentials to create. Provide all credentials for the batch in a single call so the user only has to approve once.'
+      'Array of API credentials to create. Always pass every credential you plan to write in a single call — the user is prompted once for the whole batch. Calling this tool repeatedly with one credential per call subjects the user to a stream of approval prompts and should be avoided.'
     ),
 });
 
-const TOOL_DESCRIPTION = `Create one or more API Credential items in 1Password in a single call. Bulk calls require only one user approval, so prefer bulk whenever you anticipate provisioning multiple credentials in a session.
+const TOOL_DESCRIPTION = `Create one or more API Credential items in 1Password in a single call.
 
-When you know in advance that you'll need multiple API credentials (e.g., onboarding several accounts or environments at once), bundle them into one \`items\` array instead of firing sequential per-credential calls — sequential calls force a separate approval prompt for each item.
+**BATCH ALL CREDENTIALS INTO ONE CALL.** When write elicitation is enabled, this tool prompts the user once for the entire \`items\` array. Calling it once with N credentials shows the user one prompt listing all N credentials; calling it N times forces N separate approval prompts seconds apart — exactly the kind of repeated interruption that frustrates users.
+
+**Plan up front, then call once.** Before invoking this tool, decide every API credential you intend to create for the current workflow (e.g., across all environments, services, or tenants) and pass them all in one \`items\` array. A single call can create credentials across multiple vaults and is still one approval — different vaults are not a reason to split into multiple calls.
+
+**Anti-patterns (do NOT do this):**
+- Looping over a list of services or environments and calling \`onepassword_create_api_credential\` once per iteration.
+- Creating credentials "as you go" during a multi-step provisioning task instead of accumulating them and writing once.
+- Splitting a known-up-front batch into multiple calls because the credentials differ in metadata (\`hostname\`, \`expires\`, etc.) — per-item metadata is fine inside a single batch.
 
 Stores API keys, tokens, or other machine credentials in 1Password's built-in
 "API Credential" category — which is preferable to a Secure Note because
@@ -100,7 +107,7 @@ export function createApiCredentialTool(server: Server, clientFactory: () => IOn
           type: 'array',
           minItems: 1,
           description:
-            'Array of API credentials to create. Provide all credentials for the batch in a single call so the user only has to approve once.',
+            'Array of API credentials to create. Always pass every credential you plan to write in a single call — the user is prompted once for the whole batch. Calling this tool repeatedly with one credential per call subjects the user to a stream of approval prompts and should be avoided.',
           items: {
             type: 'object',
             properties: {

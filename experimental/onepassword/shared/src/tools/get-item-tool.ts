@@ -30,15 +30,29 @@ export const GetItemSchema = z.object({
     .array(GetItemItemSchema)
     .min(1, { message: 'items must contain at least one item to fetch' })
     .describe(
-      'Array of items to fetch. Provide all lookups in a single call so a single approval prompt covers any sensitive-field reveals across the batch.'
+      'Array of items to fetch. Always pass every lookup you plan to perform in a single call — one approval prompt covers sensitive-field reveals across the entire batch. Calling this tool repeatedly with one item per call subjects the user to a stream of approval prompts and should be avoided. For discovery, prefer onepassword_list_items / onepassword_list_items_by_tag (no sensitive-field approval) over a fan-out of single-item lookups.'
     ),
 });
 
-const TOOL_DESCRIPTION = `Get the details of one or more 1Password items in a single call. Bulk calls require only one user approval to reveal sensitive fields, so prefer bulk whenever you anticipate looking up multiple items in a session.
+const TOOL_DESCRIPTION = `Get the details of one or more 1Password items in a single call.
 
 **Only use this tool when you actually need to read a credential value.** If you only need to check whether an item exists or inspect its field structure (titles, vault, tags, field labels, types, URLs), call \`onepassword_get_item_metadata\` instead — that path returns the same metadata without triggering an approval prompt.
 
-When you know in advance that you'll need details for multiple items, bundle them into one \`items\` array instead of firing sequential per-item calls — sequential calls force a separate approval prompt for each item with sensitive fields.
+**BATCH ALL LOOKUPS INTO ONE CALL.** Sensitive-field reveal is gated by a single user approval that covers the entire \`items\` array. Calling this tool once with N items shows the user one prompt listing all N items; calling it N times forces N separate approval prompts seconds apart — exactly the kind of repeated interruption that frustrates users.
+
+**Plan up front, then call once.** Before invoking this tool, identify every item whose details you'll need for the current workflow (e.g., from \`onepassword_list_items\` or \`onepassword_list_items_by_tag\` results, or from a known list the user provided) and pass them all in one \`items\` array.
+
+**For discovery, use bulk listing first.** If you don't yet know which items you need, do NOT loop \`onepassword_get_item\` over a guess-list. Instead:
+- Call \`onepassword_list_vaults\` once (no approval) to discover vaults.
+- Call \`onepassword_list_items\` (single call, multi-vault) or \`onepassword_list_items_by_tag\` (single call, multi-query) to enumerate candidates without triggering any sensitive-field approval.
+- If you only need metadata (not the credential value), call \`onepassword_get_item_metadata\` — it accepts a bulk array and never elicits.
+- Then call this tool ONCE with the consolidated list of items whose full credential details you actually need.
+
+**Anti-patterns (do NOT do this):**
+- Looping over titles and calling \`onepassword_get_item\` once per item.
+- Calling \`onepassword_get_item\` to "browse" or "search" for an item — use the list tools for that; they return titles, categories, and tags without sensitive-field elicitation.
+- Calling \`onepassword_get_item\` just to confirm an item exists or inspect its field structure — use \`onepassword_get_item_metadata\`, which never elicits.
+- Splitting a known-up-front lookup batch into multiple calls because the items live in different vaults — a single call can fetch items across multiple vaults and is still one approval.
 
 Retrieves item information including metadata and fields. For security, **sensitive credential fields require approval before being revealed**.
 
@@ -190,7 +204,7 @@ export function getItemTool(server: Server, clientFactory: () => IOnePasswordCli
           type: 'array',
           minItems: 1,
           description:
-            'Array of items to fetch. Provide all lookups in a single call so a single approval prompt covers any sensitive-field reveals across the batch.',
+            'Array of items to fetch. Always pass every lookup you plan to perform in a single call — one approval prompt covers sensitive-field reveals across the entire batch. Calling this tool repeatedly with one item per call subjects the user to a stream of approval prompts and should be avoided. For discovery, prefer onepassword_list_items / onepassword_list_items_by_tag (no sensitive-field approval) over a fan-out of single-item lookups.',
           items: {
             type: 'object',
             properties: {

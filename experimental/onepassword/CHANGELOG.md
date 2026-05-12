@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.2] - 2026-05-10
+
+### Changed
+
+- Strengthen tool descriptions across the server to make batching the unmistakable default. Each tool now leads with an explicit "**BATCH ALL ... INTO ONE CALL**" imperative, calls out concrete anti-patterns (looping, "as you go" creation, splitting batches by vault), and points downstream tools at the right discovery primitive (`onepassword_list_items` / `onepassword_list_items_by_tag` for candidate enumeration; `onepassword_get_item_metadata` for existence/structure checks) instead of a fan-out of `onepassword_get_item` lookups. Motivation: agents were still issuing sequential per-item calls and forcing the user to field a stream of approval elicitations every few seconds. Affected tools: `onepassword_list_vaults`, `onepassword_list_items`, `onepassword_list_items_by_tag`, `onepassword_get_item`, `onepassword_create_login`, `onepassword_create_secure_note`, `onepassword_create_api_credential`, `onepassword_share_item`. No behavior change — descriptions and `items` parameter blurbs only.
+
 ## [0.5.1] - 2026-05-07
 
 ### Added
