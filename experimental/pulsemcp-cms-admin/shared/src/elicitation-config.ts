@@ -9,14 +9,14 @@ import { readElicitationConfig, type ElicitationConfig } from '@pulsemcp/mcp-eli
  * 3. Per-action override: PULSEMCP_CMS_ADMIN_ELICITATION_DESTRUCTIVE
  *
  * Destructive elicitation gates the `tenants_destructive` tool group only
- * (delete_tenant, delete_api_key). All other write tools in the server are
- * not gated by elicitation.
+ * (delete_tenant, delete_api_key, revoke_api_key). All other write tools in
+ * the server are not gated by elicitation.
  */
 
 export interface CmsAdminElicitationConfig {
   /** Base elicitation config from the shared library */
   base: ElicitationConfig;
-  /** Whether to elicit confirmation for destructive operations (delete_tenant, delete_api_key) */
+  /** Whether to elicit confirmation for destructive operations (delete_tenant, delete_api_key, revoke_api_key) */
   destructiveElicitationEnabled: boolean;
 }
 

@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [0.9.27] - 2026-05-10
+
+### Changed
+
+- `revoke_api_key` moved from the `tenants` group to `tenants_destructive`. The Rails admin API gates `DELETE /api/api_keys/:id` (which both `revoke_api_key` and `delete_api_key` call) behind `permission_level=all` (full_access). The standard `read_and_upsert` admin credential cannot DELETE, so exposing `revoke_api_key` in the regular `tenants` group surfaced confusing 403s on workflows like sub-registry credential re-issuance. With this change, both tools live behind the same opt-in elicitation-gated group, matching their actual permission requirements. **Behavior change for callers:** any consumer that enabled only `tenants` will lose access to `revoke_api_key` — they must add `tenants_destructive` to their `TOOL_GROUPS` to keep using it (and supply an elicitation channel, since destructive tools require confirmation).
+
+### Fixed
+
+- 403 responses from the Rails admin API now surface the actual server error body instead of the legacy hardcoded "User lacks write privileges" message. This made permission failures opaque — when a `read_and_upsert` credential tried to call a `full_access`-only endpoint, the real error (`"Insufficient permissions for this operation"`) was discarded and replaced with a misleading "User lacks write privileges" string. The fix parses the JSON body and prefers `errors[]` then `error` then a fallback. Applied to `delete-api-key`, `delete-tenant`, and `create-api-key` admin-client helpers.
+
 ## [0.9.26] - 2026-05-06
 
 ### Changed

@@ -45,7 +45,13 @@ export async function createApiKey(
       throw new Error('Invalid API key');
     }
     if (response.status === 403) {
-      throw new Error('User lacks write privileges');
+      const errorData = (await response.json().catch(() => ({}))) as {
+        error?: string;
+        errors?: string[];
+      };
+      const message =
+        errorData.errors?.join(', ') || errorData.error || `Forbidden: ${response.status}`;
+      throw new Error(message);
     }
     if (response.status === 404) {
       const errorData = (await response.json()) as { error?: string };

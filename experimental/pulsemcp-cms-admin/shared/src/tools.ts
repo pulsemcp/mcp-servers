@@ -101,8 +101,8 @@ import { getMozStoredMetrics } from './tools/get-moz-stored-metrics.js';
  * - official_queue / official_queue_readonly: Official mirror queue tools (list, get, approve, reject, unlink)
  * - unofficial_mirrors / unofficial_mirrors_readonly: Unofficial mirror CRUD tools
  * - official_mirrors_readonly: Official mirrors read-only tools (REST API)
- * - tenants / tenants_readonly: Tenant management tools (CRUD + API key provisioning, including revoke_api_key for rolling keys after re-issuance)
- * - tenants_destructive: Destructive tenant tools (delete_tenant, delete_api_key). NOT enabled by default — operators must opt in via TOOL_GROUPS. Each tool requires MCP elicitation user approval before execution.
+ * - tenants / tenants_readonly: Tenant management tools (CRUD + API key provisioning)
+ * - tenants_destructive: Destructive tenant tools (delete_tenant, delete_api_key, revoke_api_key). NOT enabled by default — operators must opt in via TOOL_GROUPS. Each tool requires MCP elicitation user approval before execution. revoke_api_key lives here (not in `tenants`) because it calls the same DELETE /api/api_keys/:id endpoint as delete_api_key, which the Rails admin API gates behind permission_level=all.
  * - mcp_jsons / mcp_jsons_readonly: MCP JSON configuration tools
  * - mcp_servers / mcp_servers_readonly: Unified MCP server tools (abstracted interface)
  * - redirects / redirects_readonly: URL redirect management tools
@@ -285,13 +285,14 @@ const ALL_TOOLS: ToolDefinition[] = [
   { factory: getTenant, groups: ['tenants'], isWriteOperation: false },
   { factory: createTenant, groups: ['tenants'], isWriteOperation: true },
   { factory: createApiKey, groups: ['tenants'], isWriteOperation: true },
-  // revoke_api_key lives in the regular `tenants` group (not `tenants_destructive`) so
-  // it's exposed to read-write tenant management workflows like sub-registry credential
-  // re-issuance. The tool gates each call with MCP elicitation; if the connected client
-  // supports neither native elicitation nor an HTTP fallback, the elicitation library
-  // throws at runtime rather than silently destroying the key.
-  { factory: revokeApiKey, groups: ['tenants'], isWriteOperation: true },
-  // Destructive tenant tools — opt-in only, NOT in BASE_TOOL_GROUPS
+  // Destructive tenant tools — opt-in only, NOT in BASE_TOOL_GROUPS.
+  // revoke_api_key lives here (not in `tenants`) because it calls the same
+  // DELETE /api/api_keys/:id endpoint as delete_api_key and the Rails admin
+  // API gates that endpoint behind permission_level=all (full_access). The
+  // standard read-write admin credential cannot DELETE, so exposing
+  // revoke_api_key in the regular tenants group surfaced confusing 403s on
+  // workflows like sub-registry credential re-issuance.
+  { factory: revokeApiKey, groups: ['tenants_destructive'], isWriteOperation: true },
   { factory: deleteTenant, groups: ['tenants_destructive'], isWriteOperation: true },
   { factory: deleteApiKey, groups: ['tenants_destructive'], isWriteOperation: true },
   // Tenant -> recommended MCP server association tools
@@ -523,9 +524,9 @@ function shouldIncludeTool(toolDef: ToolDefinition, enabledGroups: ToolGroup[]):
  * - unofficial_mirrors: Unofficial mirror CRUD tools (read + write)
  * - unofficial_mirrors_readonly: Unofficial mirror tools (read only)
  * - official_mirrors_readonly: Official mirrors REST API tools (read only)
- * - tenants: Tenant management tools including API key provisioning + revoke_api_key (read + write). revoke_api_key is gated by MCP elicitation user approval before execution.
+ * - tenants: Tenant management tools including API key provisioning (read + write).
  * - tenants_readonly: Tenant tools (read only)
- * - tenants_destructive: Destructive tenant tools (delete_tenant, delete_api_key). NOT enabled by default; operators must opt in via TOOL_GROUPS. Each tool requires MCP elicitation user approval before execution.
+ * - tenants_destructive: Destructive tenant tools (delete_tenant, delete_api_key, revoke_api_key). NOT enabled by default; operators must opt in via TOOL_GROUPS. Each tool requires MCP elicitation user approval before execution.
  * - mcp_jsons: MCP JSON configuration tools (read + write)
  * - mcp_jsons_readonly: MCP JSON tools (read only)
  * - mcp_servers: Unified MCP server tools with abstracted interface (read + write)
