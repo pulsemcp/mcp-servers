@@ -4,6 +4,12 @@ All notable changes to the Google Flights MCP Server will be documented in this 
 
 ## [Unreleased]
 
+## [0.2.3] - 2026-05-13
+
+### Security
+
+- Bump `protobufjs` from 7.5.5 → 7.5.8 to pick up upstream parser/input hardening fixes (protobufjs PRs #2173, #2236, #2245). Google Flights uses `protobufjs` only to encode internal request parameters with a programmatic schema (no `.proto` file parsing or decoding of untrusted input), so the operational impact is low; bump is taken as defense-in-depth so consumers of `google-flights-mcp-server` receive the patched library.
+
 ## [0.2.2] - 2026-04-12
 
 - Migration verification: no-op patch version bump to validate internal→public distribution pipeline
