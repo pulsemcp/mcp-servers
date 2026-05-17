@@ -139,6 +139,14 @@ export interface IGmailClient {
    * Get attachment data by message ID and attachment ID
    */
   getAttachment(messageId: string, attachmentId: string): Promise<{ data: string; size: number }>;
+
+  /**
+   * Get the email address of the Gmail account this client reads from.
+   * Used to construct account-scoped Gmail web URLs so that links open in
+   * the correct mailbox regardless of which accounts the reader happens to
+   * be signed into in their browser.
+   */
+  getAccountEmail(): Promise<string>;
 }
 
 /**
@@ -345,6 +353,10 @@ abstract class BaseGmailClient implements IGmailClient {
     const headers = await this.getHeaders();
     const { getAttachment } = await import('./gmail-client/lib/get-attachment.js');
     return getAttachment(this.baseUrl, headers, messageId, attachmentId);
+  }
+
+  async getAccountEmail(): Promise<string> {
+    return this.getSenderEmail();
   }
 }
 

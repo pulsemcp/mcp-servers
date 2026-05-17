@@ -2,7 +2,7 @@ import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { z } from 'zod';
 import type { ClientFactory } from '../server.js';
 import type { Email, EmailPart } from '../types.js';
-import { getHeader } from '../utils/email-helpers.js';
+import { buildGmailUrl, getHeader } from '../utils/email-helpers.js';
 
 const PARAM_DESCRIPTIONS = {
   email_id:
@@ -33,6 +33,7 @@ Full email details including:
 - Raw HTML body (when include_html is true and HTML content is available)
 - List of attachments (if any)
 - Labels assigned to the email
+- Account-scoped Gmail web URL (resolves to the correct mailbox regardless of the reader's browser session)
 
 **Use cases:**
 - Read the full content of an email after listing conversations
@@ -155,7 +156,10 @@ function getAttachments(
 /**
  * Formats an email for display
  */
-function formatFullEmail(email: Email, options?: { includeHtml?: boolean }): string {
+function formatFullEmail(
+  email: Email,
+  options?: { includeHtml?: boolean; accountEmail?: string }
+): string {
   const subject = getHeader(email, 'Subject') || '(No Subject)';
   const from = getHeader(email, 'From') || 'Unknown';
   const to = getHeader(email, 'To') || 'Unknown';
@@ -169,7 +173,13 @@ function formatFullEmail(email: Email, options?: { includeHtml?: boolean }): str
   let output = `# Email Details
 
 **ID:** ${email.id}
-**Thread ID:** ${email.threadId}
+**Thread ID:** ${email.threadId}`;
+
+  if (options?.accountEmail) {
+    output += `\n**Gmail URL:** ${buildGmailUrl(options.accountEmail, email.id)}`;
+  }
+
+  output += `
 
 ## Headers
 **Subject:** ${subject}
@@ -242,12 +252,16 @@ export function getEmailConversationTool(server: Server, clientFactory: ClientFa
         const parsed = GetEmailConversationSchema.parse(args ?? {});
         const client = clientFactory();
 
-        const email = await client.getMessage(parsed.email_id, {
-          format: 'full',
-        });
+        const [email, accountEmail] = await Promise.all([
+          client.getMessage(parsed.email_id, {
+            format: 'full',
+          }),
+          client.getAccountEmail(),
+        ]);
 
         const formattedEmail = formatFullEmail(email, {
           includeHtml: parsed.include_html,
+          accountEmail,
         });
 
         return {

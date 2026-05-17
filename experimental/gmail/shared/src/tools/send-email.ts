@@ -1,7 +1,7 @@
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { z } from 'zod';
 import type { ClientFactory } from '../server.js';
-import { getHeader } from '../utils/email-helpers.js';
+import { buildGmailUrl, getHeader } from '../utils/email-helpers.js';
 import {
   requestConfirmation,
   createConfirmationSchema,
@@ -211,12 +211,17 @@ export function sendEmailTool(server: Server, clientFactory: ClientFactory) {
         // Option 2: Send a draft
         if (parsed.from_draft_id) {
           const sentEmail = await client.sendDraft(parsed.from_draft_id);
+          const accountEmail = await client.getAccountEmail();
 
           return {
             content: [
               {
                 type: 'text',
-                text: `Draft sent successfully!\n\n**Message ID:** ${sentEmail.id}\n**Thread ID:** ${sentEmail.threadId}\n\nThe draft has been sent and removed from Drafts.`,
+                text:
+                  `Draft sent successfully!\n\n**Message ID:** ${sentEmail.id}\n` +
+                  `**Thread ID:** ${sentEmail.threadId}\n` +
+                  `**Gmail URL:** ${buildGmailUrl(accountEmail, sentEmail.id)}\n\n` +
+                  `The draft has been sent and removed from Drafts.`,
               },
             ],
           };
@@ -259,7 +264,11 @@ export function sendEmailTool(server: Server, clientFactory: ClientFactory) {
           references,
         });
 
-        let responseText = `Email sent successfully!\n\n**Message ID:** ${sentEmail.id}\n**Thread ID:** ${sentEmail.threadId}`;
+        const accountEmail = await client.getAccountEmail();
+        let responseText =
+          `Email sent successfully!\n\n**Message ID:** ${sentEmail.id}\n` +
+          `**Thread ID:** ${sentEmail.threadId}\n` +
+          `**Gmail URL:** ${buildGmailUrl(accountEmail, sentEmail.id)}`;
 
         if (parsed.thread_id) {
           responseText += '\n\nThis email was sent as a reply in an existing conversation.';

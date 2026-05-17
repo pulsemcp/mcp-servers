@@ -46,6 +46,7 @@ A formatted list of email conversations with:
 - Sender (From)
 - Date received
 - Snippet preview
+- Account-scoped Gmail web URL (resolves to the correct mailbox regardless of the reader's browser session)
 
 **Use cases:**
 - Check recent inbox activity
@@ -128,15 +129,19 @@ export function listEmailConversationsTool(server: Server, clientFactory: Client
           };
         }
 
-        // Fetch full details for each message
-        const emailDetails = await Promise.all(
-          messages.map((msg) =>
-            client.getMessage(msg.id, {
-              format: 'metadata',
-              metadataHeaders: ['Subject', 'From', 'Date'],
-            })
-          )
-        );
+        // Fetch full details for each message, plus the account email for
+        // building account-scoped Gmail URLs.
+        const [emailDetails, accountEmail] = await Promise.all([
+          Promise.all(
+            messages.map((msg) =>
+              client.getMessage(msg.id, {
+                format: 'metadata',
+                metadataHeaders: ['Subject', 'From', 'Date'],
+              })
+            )
+          ),
+          client.getAccountEmail(),
+        ]);
 
         // Sort based on sort_by parameter
         const sortedEmails = [...emailDetails].sort((a, b) => {
@@ -145,7 +150,9 @@ export function listEmailConversationsTool(server: Server, clientFactory: Client
           return parsed.sort_by === 'recent' ? dateB - dateA : dateA - dateB;
         });
 
-        const formattedEmails = sortedEmails.map(formatEmail).join('\n\n---\n\n');
+        const formattedEmails = sortedEmails
+          .map((email) => formatEmail(email, accountEmail))
+          .join('\n\n---\n\n');
 
         return {
           content: [
