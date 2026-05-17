@@ -1,0 +1,48 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-09-29/server.schema.json",
+  "name": "com.pulsemcp/pulse-subregistry",
+  "description": "MCP server providing access to the PulseMCP Sub-Registry for browsing and discovering MCP servers.",
+  "version": "0.0.6",
+  "repository": {
+    "url": "https://github.com/pulsemcp/mcp-servers",
+    "source": "github",
+    "subfolder": "productionized/pulse-subregistry"
+  },
+  "packages": [
+    {
+      "registryType": "npm",
+      "registryBaseUrl": "https://registry.npmjs.org",
+      "identifier": "@pulsemcp/pulse-subregistry",
+      "version": "0.0.6",
+      "runtimeHint": "npx",
+      "transport": {
+        "type": "stdio"
+      },
+      "runtimeArguments": [
+        {
+          "type": "positional",
+          "value": "-y"
+        }
+      ],
+      "environmentVariables": [
+        {
+          "name": "PULSEMCP_SUBREGISTRY_API_KEY",
+          "description": "PulseMCP API key for authentication.",
+          "isRequired": true,
+          "isSecret": true
+        },
+        {
+          "name": "PULSEMCP_SUBREGISTRY_TENANT_ID",
+          "description": "Tenant identifier for multi-tenant use.",
+          "isRequired": false
+        },
+        {
+          "name": "SHOW_ADMIN_TOOLS",
+          "description": "Enable admin tools including switch_tenant_id.",
+          "default": "false",
+          "isRequired": false
+        }
+      ]
+    }
+  ]
+}

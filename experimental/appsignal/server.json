@@ -1,0 +1,42 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-09-29/server.schema.json",
+  "name": "com.pulsemcp/appsignal",
+  "description": "MCP server for AppSignal — get alert details, search logs, and retrieve logs within time ranges.",
+  "version": "0.5.2",
+  "repository": {
+    "url": "https://github.com/pulsemcp/mcp-servers",
+    "source": "github",
+    "subfolder": "experimental/appsignal"
+  },
+  "packages": [
+    {
+      "registryType": "npm",
+      "registryBaseUrl": "https://registry.npmjs.org",
+      "identifier": "appsignal-mcp-server",
+      "version": "0.5.2",
+      "runtimeHint": "npx",
+      "transport": {
+        "type": "stdio"
+      },
+      "runtimeArguments": [
+        {
+          "type": "positional",
+          "value": "-y"
+        }
+      ],
+      "environmentVariables": [
+        {
+          "name": "APPSIGNAL_API_KEY",
+          "description": "Your AppSignal API key for authentication.",
+          "isRequired": true,
+          "isSecret": true
+        },
+        {
+          "name": "APPSIGNAL_APP_ID",
+          "description": "Your AppSignal application ID (optional; can be selected dynamically).",
+          "isRequired": false
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,70 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-09-29/server.schema.json",
+  "name": "com.pulsemcp/google-docs",
+  "description": "MCP server for Google Docs integration with OAuth2 and service account support.",
+  "version": "0.1.1",
+  "repository": {
+    "url": "https://github.com/pulsemcp/mcp-servers",
+    "source": "github",
+    "subfolder": "experimental/google-docs"
+  },
+  "packages": [
+    {
+      "registryType": "npm",
+      "registryBaseUrl": "https://registry.npmjs.org",
+      "identifier": "google-docs-workspace-mcp-server",
+      "version": "0.1.1",
+      "runtimeHint": "npx",
+      "transport": {
+        "type": "stdio"
+      },
+      "runtimeArguments": [
+        {
+          "type": "positional",
+          "value": "-y"
+        }
+      ],
+      "environmentVariables": [
+        {
+          "name": "GOOGLE_DOCS_OAUTH_CLIENT_ID",
+          "description": "OAuth2 client ID from Google Cloud Console.",
+          "isRequired": false,
+          "isSecret": true
+        },
+        {
+          "name": "GOOGLE_DOCS_OAUTH_CLIENT_SECRET",
+          "description": "OAuth2 client secret from Google Cloud Console.",
+          "isRequired": false,
+          "isSecret": true
+        },
+        {
+          "name": "GOOGLE_DOCS_OAUTH_REFRESH_TOKEN",
+          "description": "Long-lived refresh token obtained from the oauth-setup command.",
+          "isRequired": false,
+          "isSecret": true
+        },
+        {
+          "name": "GOOGLE_DOCS_SERVICE_ACCOUNT_CLIENT_EMAIL",
+          "description": "Service account email address for domain-wide delegation.",
+          "isRequired": false
+        },
+        {
+          "name": "GOOGLE_DOCS_SERVICE_ACCOUNT_PRIVATE_KEY",
+          "description": "Service account private key in PEM format.",
+          "isRequired": false,
+          "isSecret": true
+        },
+        {
+          "name": "GOOGLE_DOCS_IMPERSONATE_EMAIL",
+          "description": "Email address to impersonate in Google Workspace.",
+          "isRequired": false
+        },
+        {
+          "name": "GOOGLE_DOCS_ENABLED_TOOLGROUPS",
+          "description": "Comma-separated list of tool groups to enable (readonly, readwrite, readwrite_external).",
+          "isRequired": false
+        }
+      ]
+    }
+  ]
+}

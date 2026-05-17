@@ -1,0 +1,92 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-09-29/server.schema.json",
+  "name": "com.pulsemcp/ssh",
+  "description": "MCP server for SSH remote server management with SSH agent authentication support.",
+  "version": "0.1.3",
+  "repository": {
+    "url": "https://github.com/pulsemcp/mcp-servers",
+    "source": "github",
+    "subfolder": "experimental/ssh"
+  },
+  "packages": [
+    {
+      "registryType": "npm",
+      "registryBaseUrl": "https://registry.npmjs.org",
+      "identifier": "ssh-agent-mcp-server",
+      "version": "0.1.3",
+      "runtimeHint": "npx",
+      "transport": {
+        "type": "stdio"
+      },
+      "runtimeArguments": [
+        {
+          "type": "positional",
+          "value": "-y"
+        }
+      ],
+      "environmentVariables": [
+        {
+          "name": "SSH_HOST",
+          "description": "Hostname or IP address of the SSH server.",
+          "isRequired": true
+        },
+        {
+          "name": "SSH_USERNAME",
+          "description": "Username for SSH authentication.",
+          "isRequired": true
+        },
+        {
+          "name": "SSH_PORT",
+          "description": "SSH port number.",
+          "default": "22",
+          "isRequired": false
+        },
+        {
+          "name": "SSH_AUTH_SOCK",
+          "description": "Path to SSH agent socket for agent-based authentication.",
+          "isRequired": false
+        },
+        {
+          "name": "SSH_PRIVATE_KEY_PATH",
+          "description": "Path to private key file for direct key authentication.",
+          "isRequired": false
+        },
+        {
+          "name": "SSH_PASSPHRASE",
+          "description": "Passphrase for encrypted private key.",
+          "isRequired": false,
+          "isSecret": true
+        },
+        {
+          "name": "SSH_TIMEOUT",
+          "description": "Connection timeout in milliseconds.",
+          "default": "30000",
+          "isRequired": false
+        },
+        {
+          "name": "SSH_COMMAND_TIMEOUT",
+          "description": "Default command activity timeout in milliseconds.",
+          "default": "60000",
+          "isRequired": false
+        },
+        {
+          "name": "ENABLED_TOOLGROUPS",
+          "description": "Comma-separated list of tool groups to enable (readonly, write, admin).",
+          "isRequired": false
+        },
+        {
+          "name": "SKIP_HEALTH_CHECKS",
+          "description": "Skip SSH connection health check on startup.",
+          "default": "false",
+          "isRequired": false
+        },
+        {
+          "name": "HEALTH_CHECK_TIMEOUT",
+          "description": "Health check timeout in milliseconds.",
+          "default": "10000",
+          "isRequired": false
+        }
+      ]
+    }
+  ]
+}

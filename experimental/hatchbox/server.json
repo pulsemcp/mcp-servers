@@ -1,0 +1,81 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-09-29/server.schema.json",
+  "name": "com.pulsemcp/hatchbox",
+  "description": "MCP server for Hatchbox Rails hosting — env var inspection, deploys, and process monitoring.",
+  "version": "0.1.1",
+  "repository": {
+    "url": "https://github.com/pulsemcp/mcp-servers",
+    "source": "github",
+    "subfolder": "experimental/hatchbox"
+  },
+  "packages": [
+    {
+      "registryType": "npm",
+      "registryBaseUrl": "https://registry.npmjs.org",
+      "identifier": "hatchbox-mcp-server",
+      "version": "0.1.1",
+      "runtimeHint": "npx",
+      "transport": {
+        "type": "stdio"
+      },
+      "runtimeArguments": [
+        {
+          "type": "positional",
+          "value": "-y"
+        }
+      ],
+      "environmentVariables": [
+        {
+          "name": "HATCHBOX_API_KEY",
+          "description": "API key for authentication with Hatchbox.",
+          "isRequired": true,
+          "isSecret": true
+        },
+        {
+          "name": "HATCHBOX_ACCOUNT_ID",
+          "description": "Hatchbox account ID visible in the dashboard URL.",
+          "isRequired": true
+        },
+        {
+          "name": "HATCHBOX_APP_ID",
+          "description": "Hatchbox application ID visible in the dashboard URL.",
+          "isRequired": true
+        },
+        {
+          "name": "HATCHBOX_DEPLOY_KEY",
+          "description": "Deployment webhook key for triggering deployments.",
+          "isRequired": true,
+          "isSecret": true
+        },
+        {
+          "name": "WEB_SERVER_IP_ADDRESS",
+          "description": "IP address of Hatchbox server for SSH access to read environment variables.",
+          "isRequired": false
+        },
+        {
+          "name": "SSH_KEY_PATH",
+          "description": "Path to SSH private key for server access.",
+          "default": "~/.ssh/id_rsa",
+          "isRequired": false
+        },
+        {
+          "name": "HATCHBOX_APP_NAME",
+          "description": "App name to filter processes if multiple apps run on the same server.",
+          "isRequired": false
+        },
+        {
+          "name": "READONLY",
+          "description": "Set to false to enable write operations for environment variables.",
+          "default": "true",
+          "isRequired": false
+        },
+        {
+          "name": "ALLOW_DEPLOYS",
+          "description": "Set to false to disable deployment operations.",
+          "default": "true",
+          "isRequired": false
+        }
+      ]
+    }
+  ]
+}

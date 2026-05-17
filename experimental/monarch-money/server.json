@@ -1,0 +1,87 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-09-29/server.schema.json",
+  "name": "com.pulsemcp/monarch-money",
+  "description": "MCP server for Monarch Money — account, transaction, and budget management.",
+  "version": "0.0.6",
+  "repository": {
+    "url": "https://github.com/pulsemcp/mcp-servers",
+    "source": "github",
+    "subfolder": "experimental/monarch-money"
+  },
+  "packages": [
+    {
+      "registryType": "npm",
+      "registryBaseUrl": "https://registry.npmjs.org",
+      "identifier": "monarch-money-mcp-server",
+      "version": "0.0.6",
+      "runtimeHint": "npx",
+      "transport": {
+        "type": "stdio"
+      },
+      "runtimeArguments": [
+        {
+          "type": "positional",
+          "value": "-y"
+        }
+      ],
+      "environmentVariables": [
+        {
+          "name": "MONARCH_SESSION_TOKEN",
+          "description": "Pre-obtained session token for authentication (recommended over email/password).",
+          "isRequired": false,
+          "isSecret": true
+        },
+        {
+          "name": "MONARCH_EMAIL",
+          "description": "Email address for email/password authentication.",
+          "isRequired": false
+        },
+        {
+          "name": "MONARCH_PASSWORD",
+          "description": "Password for email/password authentication.",
+          "isRequired": false,
+          "isSecret": true
+        },
+        {
+          "name": "MONARCH_TOTP",
+          "description": "TOTP code if 2FA is enabled on the account.",
+          "isRequired": false,
+          "isSecret": true
+        },
+        {
+          "name": "MONARCH_EMAIL_OTP",
+          "description": "Email OTP code required only on first login from a new install.",
+          "isRequired": false,
+          "isSecret": true
+        },
+        {
+          "name": "MONARCH_SESSION_PASSPHRASE",
+          "description": "Override passphrase for encrypting the on-disk session file.",
+          "isRequired": false,
+          "isSecret": true
+        },
+        {
+          "name": "MONARCH_STATE_DIR",
+          "description": "Directory where session.enc file is stored.",
+          "default": "~/.monarch-money-mcp",
+          "isRequired": false
+        },
+        {
+          "name": "MONARCH_ENABLED_TOOL_GROUPS",
+          "description": "Comma-separated list of tool groups to enable (readonly, manage).",
+          "isRequired": false
+        },
+        {
+          "name": "MONARCH_ENABLED_TOOLS",
+          "description": "Comma-separated whitelist of specific tool names to enable.",
+          "isRequired": false
+        },
+        {
+          "name": "MONARCH_DISABLED_TOOLS",
+          "description": "Comma-separated blacklist of specific tool names to disable.",
+          "isRequired": false
+        }
+      ]
+    }
+  ]
+}

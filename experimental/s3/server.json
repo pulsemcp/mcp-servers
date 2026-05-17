@@ -1,0 +1,86 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-09-29/server.schema.json",
+  "name": "com.pulsemcp/s3",
+  "description": "MCP server for AWS S3 with fine-grained tool control and S3-compatible endpoint support.",
+  "version": "0.0.3",
+  "repository": {
+    "url": "https://github.com/pulsemcp/mcp-servers",
+    "source": "github",
+    "subfolder": "experimental/s3"
+  },
+  "packages": [
+    {
+      "registryType": "npm",
+      "registryBaseUrl": "https://registry.npmjs.org",
+      "identifier": "s3-aws-mcp-server",
+      "version": "0.0.3",
+      "runtimeHint": "npx",
+      "transport": {
+        "type": "stdio"
+      },
+      "runtimeArguments": [
+        {
+          "type": "positional",
+          "value": "-y"
+        }
+      ],
+      "environmentVariables": [
+        {
+          "name": "AWS_ACCESS_KEY_ID",
+          "description": "AWS access key ID for authentication.",
+          "isRequired": true,
+          "isSecret": true
+        },
+        {
+          "name": "AWS_SECRET_ACCESS_KEY",
+          "description": "AWS secret access key for authentication.",
+          "isRequired": true,
+          "isSecret": true
+        },
+        {
+          "name": "AWS_REGION",
+          "description": "AWS region for S3 operations.",
+          "default": "us-east-1",
+          "isRequired": false
+        },
+        {
+          "name": "AWS_ENDPOINT_URL",
+          "description": "Custom S3 endpoint URL for MinIO or S3-compatible services.",
+          "isRequired": false
+        },
+        {
+          "name": "S3_FORCE_PATH_STYLE",
+          "description": "Use path-style addressing instead of virtual-hosted-style.",
+          "default": "false",
+          "isRequired": false
+        },
+        {
+          "name": "S3_BUCKET",
+          "description": "Constrain all operations to a single bucket.",
+          "isRequired": false
+        },
+        {
+          "name": "S3_ENABLED_TOOLGROUPS",
+          "description": "Comma-separated tool groups: readonly or readwrite.",
+          "isRequired": false
+        },
+        {
+          "name": "S3_ENABLED_TOOLS",
+          "description": "Whitelist specific tools by name.",
+          "isRequired": false
+        },
+        {
+          "name": "S3_DISABLED_TOOLS",
+          "description": "Blacklist specific tools by name.",
+          "isRequired": false
+        },
+        {
+          "name": "SKIP_HEALTH_CHECKS",
+          "description": "Skip AWS credential validation health checks at startup.",
+          "default": "false",
+          "isRequired": false
+        }
+      ]
+    }
+  ]
+}

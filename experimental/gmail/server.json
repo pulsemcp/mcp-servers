@@ -1,0 +1,70 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-09-29/server.schema.json",
+  "name": "com.pulsemcp/gmail",
+  "description": "MCP server for Gmail with OAuth2 (personal) and service account (Workspace) support.",
+  "version": "0.4.8",
+  "repository": {
+    "url": "https://github.com/pulsemcp/mcp-servers",
+    "source": "github",
+    "subfolder": "experimental/gmail"
+  },
+  "packages": [
+    {
+      "registryType": "npm",
+      "registryBaseUrl": "https://registry.npmjs.org",
+      "identifier": "gmail-workspace-mcp-server",
+      "version": "0.4.8",
+      "runtimeHint": "npx",
+      "transport": {
+        "type": "stdio"
+      },
+      "runtimeArguments": [
+        {
+          "type": "positional",
+          "value": "-y"
+        }
+      ],
+      "environmentVariables": [
+        {
+          "name": "GMAIL_OAUTH_CLIENT_ID",
+          "description": "OAuth2 client ID from Google Cloud Console (for personal Gmail accounts).",
+          "isRequired": false,
+          "isSecret": true
+        },
+        {
+          "name": "GMAIL_OAUTH_CLIENT_SECRET",
+          "description": "OAuth2 client secret from Google Cloud Console.",
+          "isRequired": false,
+          "isSecret": true
+        },
+        {
+          "name": "GMAIL_OAUTH_REFRESH_TOKEN",
+          "description": "Refresh token from the OAuth2 setup script.",
+          "isRequired": false,
+          "isSecret": true
+        },
+        {
+          "name": "GMAIL_SERVICE_ACCOUNT_CLIENT_EMAIL",
+          "description": "Service account email address (for Google Workspace).",
+          "isRequired": false
+        },
+        {
+          "name": "GMAIL_SERVICE_ACCOUNT_PRIVATE_KEY",
+          "description": "Service account private key in PEM format (for Google Workspace).",
+          "isRequired": false,
+          "isSecret": true
+        },
+        {
+          "name": "GMAIL_IMPERSONATE_EMAIL",
+          "description": "Email address to impersonate (required for service account mode).",
+          "isRequired": false
+        },
+        {
+          "name": "GMAIL_ENABLED_TOOLGROUPS",
+          "description": "Comma-separated list of tool groups to enable (readonly, readwrite, readwrite_external).",
+          "isRequired": false
+        }
+      ]
+    }
+  ]
+}

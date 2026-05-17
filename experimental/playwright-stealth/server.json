@@ -1,0 +1,117 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-09-29/server.schema.json",
+  "name": "com.pulsemcp/playwright-stealth",
+  "description": "Browser automation using Playwright with optional stealth mode to bypass anti-bot protection.",
+  "version": "0.2.1",
+  "repository": {
+    "url": "https://github.com/pulsemcp/mcp-servers",
+    "source": "github",
+    "subfolder": "experimental/playwright-stealth"
+  },
+  "packages": [
+    {
+      "registryType": "npm",
+      "registryBaseUrl": "https://registry.npmjs.org",
+      "identifier": "playwright-stealth-mcp-server",
+      "version": "0.2.1",
+      "runtimeHint": "npx",
+      "transport": {
+        "type": "stdio"
+      },
+      "runtimeArguments": [
+        {
+          "type": "positional",
+          "value": "-y"
+        }
+      ],
+      "environmentVariables": [
+        {
+          "name": "STEALTH_MODE",
+          "description": "Enable stealth mode with anti-detection measures.",
+          "default": "false",
+          "isRequired": false
+        },
+        {
+          "name": "STEALTH_USER_AGENT",
+          "description": "Custom User-Agent string for stealth mode.",
+          "isRequired": false
+        },
+        {
+          "name": "STEALTH_MASK_LINUX",
+          "description": "Mask Linux in User-Agent as Windows to avoid fingerprint mismatch.",
+          "default": "true",
+          "isRequired": false
+        },
+        {
+          "name": "STEALTH_LOCALE",
+          "description": "Custom locale for Accept-Language header in stealth mode.",
+          "default": "en-US,en",
+          "isRequired": false
+        },
+        {
+          "name": "HEADLESS",
+          "description": "Run browser in headless mode.",
+          "default": "true",
+          "isRequired": false
+        },
+        {
+          "name": "TIMEOUT",
+          "description": "Default timeout for Playwright actions in milliseconds.",
+          "default": "30000",
+          "isRequired": false
+        },
+        {
+          "name": "NAVIGATION_TIMEOUT",
+          "description": "Default timeout for page navigation in milliseconds.",
+          "default": "60000",
+          "isRequired": false
+        },
+        {
+          "name": "SCREENSHOT_STORAGE_PATH",
+          "description": "Directory for storing screenshots.",
+          "default": "/tmp/playwright-screenshots",
+          "isRequired": false
+        },
+        {
+          "name": "VIDEO_STORAGE_PATH",
+          "description": "Directory for storing video recordings.",
+          "default": "/tmp/playwright-videos",
+          "isRequired": false
+        },
+        {
+          "name": "PROXY_URL",
+          "description": "Proxy server URL for connections.",
+          "isRequired": false
+        },
+        {
+          "name": "PROXY_USERNAME",
+          "description": "Proxy authentication username.",
+          "isRequired": false,
+          "isSecret": true
+        },
+        {
+          "name": "PROXY_PASSWORD",
+          "description": "Proxy authentication password.",
+          "isRequired": false,
+          "isSecret": true
+        },
+        {
+          "name": "PROXY_BYPASS",
+          "description": "Comma-separated list of hosts to bypass proxy.",
+          "isRequired": false
+        },
+        {
+          "name": "BROWSER_PERMISSIONS",
+          "description": "Comma-separated list of browser permissions to grant.",
+          "isRequired": false
+        },
+        {
+          "name": "IGNORE_HTTPS_ERRORS",
+          "description": "Ignore HTTPS certificate errors.",
+          "default": "true",
+          "isRequired": false
+        }
+      ]
+    }
+  ]
+}
