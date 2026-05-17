@@ -54,7 +54,7 @@ class MockCalendarClient implements ICalendarClient {
           timeZone: 'America/New_York',
         },
         status: 'confirmed',
-        htmlLink: 'https://calendar.google.com/event?eid=event1',
+        htmlLink: 'https://www.google.com/calendar/event?eid=ZXZlbnQxX2VpZA',
         attendees: [
           {
             email: 'user1@example.com',
@@ -76,7 +76,7 @@ class MockCalendarClient implements ICalendarClient {
           date: '2024-01-17',
         },
         status: 'confirmed',
-        htmlLink: 'https://calendar.google.com/event?eid=event2',
+        htmlLink: 'https://www.google.com/calendar/event?eid=ZXZlbnQyX2VpZA',
       },
     ];
 
@@ -111,7 +111,7 @@ class MockCalendarClient implements ICalendarClient {
           timeZone: 'America/New_York',
         },
         status: 'confirmed',
-        htmlLink: 'https://calendar.google.com/event?eid=event1',
+        htmlLink: 'https://www.google.com/calendar/event?eid=ZXZlbnQxX2VpZA',
         created: '2024-01-01T00:00:00Z',
         updated: '2024-01-01T00:00:00Z',
         creator: {
@@ -158,7 +158,7 @@ class MockCalendarClient implements ICalendarClient {
       start: event.start || { dateTime: '2024-01-20T10:00:00-05:00' },
       end: event.end || { dateTime: '2024-01-20T11:00:00-05:00' },
       status: 'confirmed',
-      htmlLink: 'https://calendar.google.com/event?eid=new-event-id',
+      htmlLink: 'https://www.google.com/calendar/event?eid=bmV3X2V2ZW50X2VpZA',
       created: new Date().toISOString(),
       updated: new Date().toISOString(),
       attendees: event.attendees,
@@ -183,7 +183,7 @@ class MockCalendarClient implements ICalendarClient {
       start: event.start || { dateTime: '2024-01-20T10:00:00-05:00' },
       end: event.end || { dateTime: '2024-01-20T11:00:00-05:00' },
       status: 'confirmed',
-      htmlLink: `https://calendar.google.com/event?eid=${eventId}`,
+      htmlLink: `https://www.google.com/calendar/event?eid=dXBkYXRlZF8${eventId}`,
       created: '2024-01-01T00:00:00Z',
       updated: new Date().toISOString(),
       attendees: event.attendees,
@@ -235,6 +235,10 @@ class MockCalendarClient implements ICalendarClient {
         },
       ],
     };
+  }
+
+  async getAccountEmail(): Promise<string> {
+    return 'me@example.com';
   }
 
   async queryFreebusy(request: FreeBusyRequest): Promise<FreeBusyResponse> {

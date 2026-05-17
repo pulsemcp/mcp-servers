@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.0.9] - 2026-05-17
+
+### Fixed
+
+- Event links now open in the correct Google account when the user is signed into multiple accounts
+  - Previously, event URLs returned by `list_calendar_events`, `get_calendar_event`, `create_calendar_event`, and `update_calendar_event` used the raw `htmlLink` from Google's API, which does not encode the account context — users signed into multiple Google accounts often got a 404
+  - URLs now use the account-scoped form `https://calendar.google.com/calendar/u/<email>/r/eventedit/<eid>`, where `<eid>` is the base64 event identifier extracted from `htmlLink`
+  - Mirrors the fix shipped for the Gmail server in v0.4.9
+
 ## [0.0.8] - 2026-04-12
 
 - Migration verification: no-op patch version bump to validate internal→public distribution pipeline

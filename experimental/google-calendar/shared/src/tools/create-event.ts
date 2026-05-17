@@ -2,6 +2,7 @@ import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { z } from 'zod';
 import type { ClientFactory } from '../server.js';
 import { logError } from '../logging.js';
+import { buildCalendarEventUrl } from '../utils/calendar-helpers.js';
 
 export const CreateEventSchema = z.object({
   calendar_id: z
@@ -192,11 +193,14 @@ export function createEventTool(server: Server, clientFactory: ClientFactory) {
 
         // Determine if we need supportsAttachments parameter
         const hasAttachments = parsed.attachments && parsed.attachments.length > 0;
-        const result = await client.createEvent(
-          parsed.calendar_id,
-          event,
-          hasAttachments ? { supportsAttachments: true } : undefined
-        );
+        const [result, accountEmail] = await Promise.all([
+          client.createEvent(
+            parsed.calendar_id,
+            event,
+            hasAttachments ? { supportsAttachments: true } : undefined
+          ),
+          client.getAccountEmail(),
+        ]);
 
         let output = `# Event Created Successfully\n\n`;
         output += `## ${result.summary || '(No title)'}\n\n`;
@@ -249,9 +253,10 @@ export function createEventTool(server: Server, clientFactory: ClientFactory) {
           }
         }
 
-        // Link
-        if (result.htmlLink) {
-          output += `\n**Event Link:** ${result.htmlLink}\n`;
+        // Link — account-scoped so it opens in the correct mailbox/calendar.
+        const eventUrl = buildCalendarEventUrl(accountEmail, result.htmlLink);
+        if (eventUrl) {
+          output += `\n**Event Link:** ${eventUrl}\n`;
         }
 
         return {
