@@ -1,0 +1,75 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-09-29/server.schema.json",
+  "name": "com.pulsemcp/pulsemcp-cms-admin",
+  "description": "MCP server for managing PulseMCP's CMS — newsletter and MCP server directory.",
+  "version": "0.9.27",
+  "repository": {
+    "url": "https://github.com/pulsemcp/mcp-servers",
+    "source": "github",
+    "subfolder": "experimental/pulsemcp-cms-admin"
+  },
+  "packages": [
+    {
+      "registryType": "npm",
+      "registryBaseUrl": "https://registry.npmjs.org",
+      "identifier": "pulsemcp-cms-admin-mcp-server",
+      "version": "0.9.27",
+      "runtimeHint": "npx",
+      "transport": {
+        "type": "stdio"
+      },
+      "runtimeArguments": [
+        {
+          "type": "positional",
+          "value": "-y"
+        }
+      ],
+      "environmentVariables": [
+        {
+          "name": "PULSEMCP_ADMIN_API_KEY",
+          "description": "API key sent as X-API-Key for admin API authentication.",
+          "isRequired": true,
+          "isSecret": true
+        },
+        {
+          "name": "PULSEMCP_ADMIN_API_URL",
+          "description": "Base URL for the admin API.",
+          "default": "https://admin.pulsemcp.com",
+          "isRequired": false
+        },
+        {
+          "name": "PULSEMCP_ADMIN_INTERNAL_SECRET",
+          "description": "Shared secret sent as X-PulseMCP-Internal header for Cloudflare WAF bypass.",
+          "isRequired": false,
+          "isSecret": true
+        },
+        {
+          "name": "TOOL_GROUPS",
+          "description": "Comma-separated list of enabled tool groups.",
+          "isRequired": false
+        },
+        {
+          "name": "DANGEROUSLY_SKIP_ELICITATIONS",
+          "description": "Skip elicitation prompts for destructive tools.",
+          "isRequired": false
+        },
+        {
+          "name": "PULSEMCP_CMS_ADMIN_ELICITATION_DESTRUCTIVE",
+          "description": "Override elicitation behavior for destructive tools.",
+          "default": "true",
+          "isRequired": false
+        },
+        {
+          "name": "ELICITATION_REQUEST_URL",
+          "description": "HTTP fallback elicitation request endpoint.",
+          "isRequired": false
+        },
+        {
+          "name": "ELICITATION_POLL_URL",
+          "description": "HTTP fallback elicitation polling endpoint.",
+          "isRequired": false
+        }
+      ]
+    }
+  ]
+}

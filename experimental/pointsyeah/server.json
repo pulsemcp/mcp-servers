@@ -1,0 +1,42 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-09-29/server.schema.json",
+  "name": "com.pulsemcp/pointsyeah",
+  "description": "MCP server for searching award flights and travel deals via PointsYeah.",
+  "version": "0.2.7",
+  "repository": {
+    "url": "https://github.com/pulsemcp/mcp-servers",
+    "source": "github",
+    "subfolder": "experimental/pointsyeah"
+  },
+  "packages": [
+    {
+      "registryType": "npm",
+      "registryBaseUrl": "https://registry.npmjs.org",
+      "identifier": "pointsyeah-mcp-server",
+      "version": "0.2.7",
+      "runtimeHint": "npx",
+      "transport": {
+        "type": "stdio"
+      },
+      "runtimeArguments": [
+        {
+          "type": "positional",
+          "value": "-y"
+        }
+      ],
+      "environmentVariables": [
+        {
+          "name": "POINTSYEAH_REFRESH_TOKEN",
+          "description": "AWS Cognito refresh token from PointsYeah for authentication.",
+          "isRequired": false,
+          "isSecret": true
+        },
+        {
+          "name": "ENABLED_TOOLGROUPS",
+          "description": "Comma-separated tool groups to enable.",
+          "isRequired": false
+        }
+      ]
+    }
+  ]
+}

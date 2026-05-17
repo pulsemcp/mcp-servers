@@ -1,0 +1,52 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-09-29/server.schema.json",
+  "name": "com.pulsemcp/vercel",
+  "description": "MCP server for Vercel — manage deployments and view build and runtime application logs.",
+  "version": "0.1.1",
+  "repository": {
+    "url": "https://github.com/pulsemcp/mcp-servers",
+    "source": "github",
+    "subfolder": "experimental/vercel"
+  },
+  "packages": [
+    {
+      "registryType": "npm",
+      "registryBaseUrl": "https://registry.npmjs.org",
+      "identifier": "vercel-platform-mcp-server",
+      "version": "0.1.1",
+      "runtimeHint": "npx",
+      "transport": {
+        "type": "stdio"
+      },
+      "runtimeArguments": [
+        {
+          "type": "positional",
+          "value": "-y"
+        }
+      ],
+      "environmentVariables": [
+        {
+          "name": "VERCEL_TOKEN",
+          "description": "Vercel API token for authentication.",
+          "isRequired": true,
+          "isSecret": true
+        },
+        {
+          "name": "VERCEL_TEAM_ID",
+          "description": "Team ID for team-scoped operations.",
+          "isRequired": false
+        },
+        {
+          "name": "VERCEL_TEAM_SLUG",
+          "description": "Team URL slug for team-scoped operations.",
+          "isRequired": false
+        },
+        {
+          "name": "VERCEL_ENABLED_TOOLGROUPS",
+          "description": "Comma-separated list of tool groups to enable (readonly, readwrite).",
+          "isRequired": false
+        }
+      ]
+    }
+  ]
+}

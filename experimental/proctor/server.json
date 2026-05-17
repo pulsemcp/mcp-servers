@@ -1,0 +1,49 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-09-29/server.schema.json",
+  "name": "com.pulsemcp/proctor",
+  "description": "MCP server for running Proctor exams against MCP servers with exam execution and result management.",
+  "version": "0.1.7",
+  "repository": {
+    "url": "https://github.com/pulsemcp/mcp-servers",
+    "source": "github",
+    "subfolder": "experimental/proctor"
+  },
+  "packages": [
+    {
+      "registryType": "npm",
+      "registryBaseUrl": "https://registry.npmjs.org",
+      "identifier": "proctor-mcp-server",
+      "version": "0.1.7",
+      "runtimeHint": "npx",
+      "transport": {
+        "type": "stdio"
+      },
+      "runtimeArguments": [
+        {
+          "type": "positional",
+          "value": "-y"
+        }
+      ],
+      "environmentVariables": [
+        {
+          "name": "PROCTOR_API_KEY",
+          "description": "API key for PulseMCP Proctor API authentication.",
+          "isRequired": true,
+          "isSecret": true
+        },
+        {
+          "name": "PROCTOR_API_URL",
+          "description": "Base URL for Proctor API.",
+          "default": "https://admin.pulsemcp.com",
+          "isRequired": false
+        },
+        {
+          "name": "TOOL_GROUPS",
+          "description": "Comma-separated list of enabled tool groups.",
+          "default": "exams,machines",
+          "isRequired": false
+        }
+      ]
+    }
+  ]
+}

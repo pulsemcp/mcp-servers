@@ -1,0 +1,79 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-09-29/server.schema.json",
+  "name": "com.pulsemcp/dynamodb",
+  "description": "MCP server for AWS DynamoDB with fine-grained tool control and configurable access levels.",
+  "version": "0.2.5",
+  "repository": {
+    "url": "https://github.com/pulsemcp/mcp-servers",
+    "source": "github",
+    "subfolder": "experimental/dynamodb"
+  },
+  "packages": [
+    {
+      "registryType": "npm",
+      "registryBaseUrl": "https://registry.npmjs.org",
+      "identifier": "aws-dynamodb-mcp-server",
+      "version": "0.2.5",
+      "runtimeHint": "npx",
+      "transport": {
+        "type": "stdio"
+      },
+      "runtimeArguments": [
+        {
+          "type": "positional",
+          "value": "-y"
+        }
+      ],
+      "environmentVariables": [
+        {
+          "name": "AWS_REGION",
+          "description": "AWS region for DynamoDB (or use AWS_DEFAULT_REGION).",
+          "isRequired": true
+        },
+        {
+          "name": "AWS_ACCESS_KEY_ID",
+          "description": "AWS access key ID (uses AWS credential chain if not set).",
+          "isRequired": false,
+          "isSecret": true
+        },
+        {
+          "name": "AWS_SECRET_ACCESS_KEY",
+          "description": "AWS secret access key (uses AWS credential chain if not set).",
+          "isRequired": false,
+          "isSecret": true
+        },
+        {
+          "name": "DYNAMODB_ENDPOINT",
+          "description": "Custom endpoint for local DynamoDB or LocalStack.",
+          "isRequired": false
+        },
+        {
+          "name": "DYNAMODB_ENABLED_TOOL_GROUPS",
+          "description": "Comma-separated tool groups to enable (readonly, readwrite, admin).",
+          "isRequired": false
+        },
+        {
+          "name": "DYNAMODB_ENABLED_TOOLS",
+          "description": "Comma-separated whitelist of specific tools to enable.",
+          "isRequired": false
+        },
+        {
+          "name": "DYNAMODB_DISABLED_TOOLS",
+          "description": "Comma-separated blacklist of specific tools to disable.",
+          "isRequired": false
+        },
+        {
+          "name": "DYNAMODB_ALLOWED_TABLES",
+          "description": "Restrict operations to specific tables (comma-separated); all tables accessible if not set.",
+          "isRequired": false
+        },
+        {
+          "name": "SKIP_HEALTH_CHECKS",
+          "description": "Skip startup health checks.",
+          "default": "false",
+          "isRequired": false
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,70 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-09-29/server.schema.json",
+  "name": "com.pulsemcp/onepassword",
+  "description": "MCP server for interacting with 1Password via the CLI to read and manage credentials.",
+  "version": "0.5.2",
+  "repository": {
+    "url": "https://github.com/pulsemcp/mcp-servers",
+    "source": "github",
+    "subfolder": "experimental/onepassword"
+  },
+  "packages": [
+    {
+      "registryType": "npm",
+      "registryBaseUrl": "https://registry.npmjs.org",
+      "identifier": "onepassword-mcp-server",
+      "version": "0.5.2",
+      "runtimeHint": "npx",
+      "transport": {
+        "type": "stdio"
+      },
+      "runtimeArguments": [
+        {
+          "type": "positional",
+          "value": "-y"
+        }
+      ],
+      "environmentVariables": [
+        {
+          "name": "OP_SERVICE_ACCOUNT_TOKEN",
+          "description": "Service account token for authentication with 1Password CLI.",
+          "isRequired": true,
+          "isSecret": true
+        },
+        {
+          "name": "ENABLED_TOOLGROUPS",
+          "description": "Comma-separated tool groups to enable (readonly, write).",
+          "isRequired": false
+        },
+        {
+          "name": "SKIP_HEALTH_CHECKS",
+          "description": "Skip credential validation on server startup.",
+          "default": "false",
+          "isRequired": false
+        },
+        {
+          "name": "DANGEROUSLY_SKIP_ELICITATIONS",
+          "description": "Bypass all credential approval prompts (exposes all secrets).",
+          "isRequired": false
+        },
+        {
+          "name": "OP_ELICITATION_READ",
+          "description": "Prompt for approval before revealing credentials.",
+          "default": "true",
+          "isRequired": false
+        },
+        {
+          "name": "OP_ELICITATION_WRITE",
+          "description": "Prompt for approval before creating or sharing items.",
+          "default": "false",
+          "isRequired": false
+        },
+        {
+          "name": "OP_WHITELISTED_ITEMS",
+          "description": "Comma-separated item titles or IDs that bypass read elicitation.",
+          "isRequired": false
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,42 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-09-29/server.schema.json",
+  "name": "com.pulsemcp/slack",
+  "description": "MCP server for Slack — read/write messages, manage threads, and react to messages.",
+  "version": "0.0.5",
+  "repository": {
+    "url": "https://github.com/pulsemcp/mcp-servers",
+    "source": "github",
+    "subfolder": "experimental/slack"
+  },
+  "packages": [
+    {
+      "registryType": "npm",
+      "registryBaseUrl": "https://registry.npmjs.org",
+      "identifier": "slack-workspace-mcp-server",
+      "version": "0.0.5",
+      "runtimeHint": "npx",
+      "transport": {
+        "type": "stdio"
+      },
+      "runtimeArguments": [
+        {
+          "type": "positional",
+          "value": "-y"
+        }
+      ],
+      "environmentVariables": [
+        {
+          "name": "SLACK_BOT_TOKEN",
+          "description": "Slack Bot User OAuth Token starting with xoxb-.",
+          "isRequired": true,
+          "isSecret": true
+        },
+        {
+          "name": "ENABLED_TOOLGROUPS",
+          "description": "Comma-separated list of tool groups to enable (readonly, write).",
+          "isRequired": false
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,61 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-09-29/server.schema.json",
+  "name": "com.pulsemcp/fetchpet",
+  "description": "MCP server for Fetch Pet insurance claims management using Playwright automation.",
+  "version": "0.1.6",
+  "repository": {
+    "url": "https://github.com/pulsemcp/mcp-servers",
+    "source": "github",
+    "subfolder": "experimental/fetchpet"
+  },
+  "packages": [
+    {
+      "registryType": "npm",
+      "registryBaseUrl": "https://registry.npmjs.org",
+      "identifier": "fetchpet-mcp-server",
+      "version": "0.1.6",
+      "runtimeHint": "npx",
+      "transport": {
+        "type": "stdio"
+      },
+      "runtimeArguments": [
+        {
+          "type": "positional",
+          "value": "-y"
+        }
+      ],
+      "environmentVariables": [
+        {
+          "name": "FETCHPET_USERNAME",
+          "description": "Your Fetch Pet account email address.",
+          "isRequired": true,
+          "isSecret": true
+        },
+        {
+          "name": "FETCHPET_PASSWORD",
+          "description": "Your Fetch Pet account password.",
+          "isRequired": true,
+          "isSecret": true
+        },
+        {
+          "name": "HEADLESS",
+          "description": "Run browser in headless mode (true/false).",
+          "default": "true",
+          "isRequired": false
+        },
+        {
+          "name": "TIMEOUT",
+          "description": "Browser operation timeout in milliseconds.",
+          "default": "30000",
+          "isRequired": false
+        },
+        {
+          "name": "FETCHPET_DOWNLOAD_DIR",
+          "description": "Directory to save downloaded documents (EOB, invoices).",
+          "default": "/tmp/fetchpet-downloads",
+          "isRequired": false
+        }
+      ]
+    }
+  ]
+}

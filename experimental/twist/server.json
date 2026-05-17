@@ -1,0 +1,42 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-09-29/server.schema.json",
+  "name": "com.pulsemcp/twist",
+  "description": "MCP server for Twist team messaging — manage channels, threads, and messages.",
+  "version": "0.2.1",
+  "repository": {
+    "url": "https://github.com/pulsemcp/mcp-servers",
+    "source": "github",
+    "subfolder": "experimental/twist"
+  },
+  "packages": [
+    {
+      "registryType": "npm",
+      "registryBaseUrl": "https://registry.npmjs.org",
+      "identifier": "twist-mcp-server",
+      "version": "0.2.1",
+      "runtimeHint": "npx",
+      "transport": {
+        "type": "stdio"
+      },
+      "runtimeArguments": [
+        {
+          "type": "positional",
+          "value": "-y"
+        }
+      ],
+      "environmentVariables": [
+        {
+          "name": "TWIST_BEARER_TOKEN",
+          "description": "Twist API bearer token for authentication.",
+          "isRequired": true,
+          "isSecret": true
+        },
+        {
+          "name": "TWIST_WORKSPACE_ID",
+          "description": "Twist workspace ID to operate within.",
+          "isRequired": true
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,59 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-09-29/server.schema.json",
+  "name": "com.pulsemcp/fly-io",
+  "description": "MCP server for managing Fly.io machines, apps, logs, and Docker images.",
+  "version": "0.1.5",
+  "repository": {
+    "url": "https://github.com/pulsemcp/mcp-servers",
+    "source": "github",
+    "subfolder": "experimental/fly-io"
+  },
+  "packages": [
+    {
+      "registryType": "npm",
+      "registryBaseUrl": "https://registry.npmjs.org",
+      "identifier": "fly-io-mcp-server",
+      "version": "0.1.5",
+      "runtimeHint": "npx",
+      "transport": {
+        "type": "stdio"
+      },
+      "runtimeArguments": [
+        {
+          "type": "positional",
+          "value": "-y"
+        }
+      ],
+      "environmentVariables": [
+        {
+          "name": "FLY_IO_API_TOKEN",
+          "description": "API token for Fly.io authentication.",
+          "isRequired": true,
+          "isSecret": true
+        },
+        {
+          "name": "FLY_IO_APP_NAME",
+          "description": "Scope server to a single app (disables app management tools).",
+          "isRequired": false
+        },
+        {
+          "name": "ENABLED_TOOLGROUPS",
+          "description": "Comma-separated tool groups to enable (readonly, write, admin, apps, machines, logs, ssh, images, registry).",
+          "isRequired": false
+        },
+        {
+          "name": "SKIP_HEALTH_CHECKS",
+          "description": "Skip API validation at startup.",
+          "default": "false",
+          "isRequired": false
+        },
+        {
+          "name": "DISABLE_DOCKER_CLI_TOOLS",
+          "description": "Disable Docker-based registry tools.",
+          "default": "false",
+          "isRequired": false
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,64 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-09-29/server.schema.json",
+  "name": "com.pulsemcp/agent-orchestrator",
+  "description": "MCP server for PulseMCP's Agent Orchestrator — manage agent sessions, notifications, and triggers.",
+  "version": "0.8.2",
+  "repository": {
+    "url": "https://github.com/pulsemcp/mcp-servers",
+    "source": "github",
+    "subfolder": "experimental/agent-orchestrator"
+  },
+  "packages": [
+    {
+      "registryType": "npm",
+      "registryBaseUrl": "https://registry.npmjs.org",
+      "identifier": "agent-orchestrator-mcp-server",
+      "version": "0.8.2",
+      "runtimeHint": "npx",
+      "transport": {
+        "type": "stdio"
+      },
+      "runtimeArguments": [
+        {
+          "type": "positional",
+          "value": "-y"
+        }
+      ],
+      "environmentVariables": [
+        {
+          "name": "AGENT_ORCHESTRATOR_BASE_URL",
+          "description": "Base URL for the Agent Orchestrator API.",
+          "isRequired": true
+        },
+        {
+          "name": "AGENT_ORCHESTRATOR_API_KEY",
+          "description": "API key for authenticating with Agent Orchestrator.",
+          "isRequired": true,
+          "isSecret": true
+        },
+        {
+          "name": "TOOL_GROUPS",
+          "description": "Comma-separated list of enabled tool groups (sessions, sessions_readonly, notifications, notifications_readonly, triggers, triggers_readonly, health, health_readonly, self_session).",
+          "isRequired": false
+        },
+        {
+          "name": "ALLOWED_AGENT_ROOTS",
+          "description": "Comma-separated list of allowed agent root names; constrains sessions to specific agent roots.",
+          "isRequired": false
+        },
+        {
+          "name": "SKIP_HEALTH_CHECKS",
+          "description": "Skip API connectivity check at startup.",
+          "default": "false",
+          "isRequired": false
+        },
+        {
+          "name": "HEALTH_CHECK_TIMEOUT",
+          "description": "Health check timeout in milliseconds.",
+          "default": "10000",
+          "isRequired": false
+        }
+      ]
+    }
+  ]
+}

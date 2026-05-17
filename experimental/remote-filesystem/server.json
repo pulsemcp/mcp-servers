@@ -1,0 +1,73 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-09-29/server.schema.json",
+  "name": "com.pulsemcp/remote-filesystem",
+  "description": "MCP server for remote filesystem operations on cloud storage (Google Cloud Storage).",
+  "version": "0.1.1",
+  "repository": {
+    "url": "https://github.com/pulsemcp/mcp-servers",
+    "source": "github",
+    "subfolder": "experimental/remote-filesystem"
+  },
+  "packages": [
+    {
+      "registryType": "npm",
+      "registryBaseUrl": "https://registry.npmjs.org",
+      "identifier": "remote-filesystem-mcp-server",
+      "version": "0.1.1",
+      "runtimeHint": "npx",
+      "transport": {
+        "type": "stdio"
+      },
+      "runtimeArguments": [
+        {
+          "type": "positional",
+          "value": "-y"
+        }
+      ],
+      "environmentVariables": [
+        {
+          "name": "GCS_BUCKET",
+          "description": "Google Cloud Storage bucket name.",
+          "isRequired": true
+        },
+        {
+          "name": "GCS_PROJECT_ID",
+          "description": "Google Cloud project ID.",
+          "isRequired": false
+        },
+        {
+          "name": "GCS_CLIENT_EMAIL",
+          "description": "Service account email for inline credentials.",
+          "isRequired": false
+        },
+        {
+          "name": "GCS_PRIVATE_KEY",
+          "description": "Service account private key for inline credentials.",
+          "isRequired": false,
+          "isSecret": true
+        },
+        {
+          "name": "GOOGLE_APPLICATION_CREDENTIALS",
+          "description": "Path to Google Cloud service account key file.",
+          "isRequired": false
+        },
+        {
+          "name": "GCS_ROOT_PATH",
+          "description": "Root path prefix to restrict access within bucket.",
+          "isRequired": false
+        },
+        {
+          "name": "GCS_MAKE_PUBLIC",
+          "description": "Make uploaded files publicly accessible.",
+          "default": "false",
+          "isRequired": false
+        },
+        {
+          "name": "ENABLED_TOOLGROUPS",
+          "description": "Comma-separated tool groups: readonly or readwrite.",
+          "isRequired": false
+        }
+      ]
+    }
+  ]
+}
