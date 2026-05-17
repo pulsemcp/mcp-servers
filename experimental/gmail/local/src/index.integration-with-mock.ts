@@ -356,6 +356,10 @@ function createMockClient(): IGmailClient {
         labelIds: ['SENT'],
       };
     },
+
+    async getAccountEmail() {
+      return 'me@example.com';
+    },
   };
 }
 

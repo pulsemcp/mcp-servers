@@ -44,7 +44,7 @@ const TOOL_DESCRIPTION = `Search email conversations using Gmail's powerful sear
 - Use - to exclude: "subject:meeting -subject:canceled"
 
 **Returns:**
-A formatted list of matching emails with ID, Thread ID, Subject, From, Date, and snippet.
+A formatted list of matching emails with ID, Thread ID, Subject, From, Date, snippet, and an account-scoped Gmail web URL (resolves to the correct mailbox regardless of the reader's browser session).
 
 **Note:** Use get_email_conversation with an email ID to retrieve full message content.`;
 
@@ -89,17 +89,23 @@ export function searchEmailConversationsTool(server: Server, clientFactory: Clie
           };
         }
 
-        // Fetch full details for each message
-        const emailDetails = await Promise.all(
-          messages.map((msg) =>
-            client.getMessage(msg.id, {
-              format: 'metadata',
-              metadataHeaders: ['Subject', 'From', 'Date'],
-            })
-          )
-        );
+        // Fetch full details for each message, plus the account email for
+        // building account-scoped Gmail URLs.
+        const [emailDetails, accountEmail] = await Promise.all([
+          Promise.all(
+            messages.map((msg) =>
+              client.getMessage(msg.id, {
+                format: 'metadata',
+                metadataHeaders: ['Subject', 'From', 'Date'],
+              })
+            )
+          ),
+          client.getAccountEmail(),
+        ]);
 
-        const formattedEmails = emailDetails.map(formatEmail).join('\n\n---\n\n');
+        const formattedEmails = emailDetails
+          .map((email) => formatEmail(email, accountEmail))
+          .join('\n\n---\n\n');
 
         return {
           content: [

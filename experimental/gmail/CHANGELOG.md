@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.4.9] - 2026-05-16
+
+### Fixed
+
+- Email URLs emitted by `list_email_conversations`, `search_email_conversations`, `get_email_conversation`, and `send_email` now use the account-email path form (`https://mail.google.com/mail/u/<account-email>/#inbox/<id>`) instead of `https://mail.google.com/mail/u/0/#inbox/<id>`. The `/u/0/` form opens whichever Gmail account is at index 0 in the reader's browser session, which is almost never the impersonated/OAuth account the server reads from — so users following a link would land in the wrong mailbox and see a "Conversation not found" error. The account-email path resolves to the correct mailbox regardless of browser session ordering.
+
 ## [0.4.8] - 2026-04-26
 
 ### Fixed
