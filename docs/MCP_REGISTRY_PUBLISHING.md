@@ -62,9 +62,12 @@ held in this repo's secrets.
 | Public key (TXT record)                  | Cloudflare DNS, `pulsemcp.com` apex                | `v=MCPv1; k=ed25519; p=<base64-public-key>`                      |
 | Private key (`MCP_REGISTRY_PRIVATE_KEY`) | GitHub repository secret on `pulsemcp/mcp-servers` | Ed25519 private key, hex-encoded (no `0x` prefix, no whitespace) |
 
-> **Note:** A second TXT record on `servers.pulsemcp.com` exists for the
-> legacy `com.pulsemcp.servers/*` namespace (used by `com.pulsemcp.servers/pulse-fetch`).
-> Leave it in place — removing it would prevent updates to that legacy entry.
+> **Note:** The legacy `com.pulsemcp.servers/*` namespace previously had its
+> own TXT record on `servers.pulsemcp.com`. The only entry there
+> (`com.pulsemcp.servers/pulse-fetch@0.2.14`) has been formally deprecated on
+> the registry with a `statusMessage` pointing users to `com.pulsemcp/pulse-fetch`,
+> and the TXT record has been removed. We don't intend to publish anything
+> else under `com.pulsemcp.servers/*`.
 
 ### Rotating the key
 
