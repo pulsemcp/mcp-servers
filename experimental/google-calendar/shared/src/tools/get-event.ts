@@ -2,6 +2,7 @@ import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { z } from 'zod';
 import type { ClientFactory } from '../server.js';
 import { logError } from '../logging.js';
+import { buildCalendarEventUrl } from '../utils/calendar-helpers.js';
 
 export const GetEventSchema = z.object({
   calendar_id: z
@@ -38,7 +39,10 @@ export function getEventTool(server: Server, clientFactory: ClientFactory) {
         const parsed = GetEventSchema.parse(args);
         const client = clientFactory();
 
-        const event = await client.getEvent(parsed.calendar_id, parsed.event_id);
+        const [event, accountEmail] = await Promise.all([
+          client.getEvent(parsed.calendar_id, parsed.event_id),
+          client.getAccountEmail(),
+        ]);
 
         let output = `# Event Details\n\n`;
         output += `## ${event.summary || '(No title)'}\n\n`;
@@ -145,9 +149,10 @@ export function getEventTool(server: Server, clientFactory: ClientFactory) {
           output += `**Updated:** ${new Date(event.updated).toLocaleString()}\n`;
         }
 
-        // Link
-        if (event.htmlLink) {
-          output += `\n**Event Link:** ${event.htmlLink}\n`;
+        // Link — account-scoped so it opens in the correct mailbox/calendar.
+        const eventUrl = buildCalendarEventUrl(accountEmail, event.htmlLink);
+        if (eventUrl) {
+          output += `\n**Event Link:** ${eventUrl}\n`;
         }
 
         return {

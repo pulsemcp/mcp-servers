@@ -2,6 +2,7 @@ import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { z } from 'zod';
 import type { ClientFactory } from '../server.js';
 import { logError } from '../logging.js';
+import { buildCalendarEventUrl } from '../utils/calendar-helpers.js';
 
 export const ListEventsSchema = z.object({
   calendar_id: z
@@ -91,14 +92,17 @@ export function listEventsTool(server: Server, clientFactory: ClientFactory) {
         const parsed = ListEventsSchema.parse(args);
         const client = clientFactory();
 
-        const result = await client.listEvents(parsed.calendar_id, {
-          timeMin: parsed.time_min,
-          timeMax: parsed.time_max,
-          maxResults: parsed.max_results,
-          q: parsed.query,
-          singleEvents: parsed.single_events,
-          orderBy: parsed.order_by,
-        });
+        const [result, accountEmail] = await Promise.all([
+          client.listEvents(parsed.calendar_id, {
+            timeMin: parsed.time_min,
+            timeMax: parsed.time_max,
+            maxResults: parsed.max_results,
+            q: parsed.query,
+            singleEvents: parsed.single_events,
+            orderBy: parsed.order_by,
+          }),
+          client.getAccountEmail(),
+        ]);
 
         const events = result.items || [];
 
@@ -181,9 +185,10 @@ export function listEventsTool(server: Server, clientFactory: ClientFactory) {
             output += `**Description:** ${truncated}\n`;
           }
 
-          // Link
-          if (event.htmlLink) {
-            output += `**Link:** ${event.htmlLink}\n`;
+          // Link — account-scoped so it opens in the correct mailbox/calendar.
+          const eventUrl = buildCalendarEventUrl(accountEmail, event.htmlLink);
+          if (eventUrl) {
+            output += `**Link:** ${eventUrl}\n`;
           }
 
           output += '\n---\n\n';
