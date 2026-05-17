@@ -82,6 +82,11 @@ jobs:
                 console.log(`**Skipped:** ${r.skipped.length}`);
                 for (const s of r.skipped) console.log(`- ${s.name}@${s.version}: ${s.reason}`);
               }
+              if (r.warnings && r.warnings.length) {
+                console.log("");
+                console.log(`**Warnings (skipped, did not block the run):** ${r.warnings.length}`);
+                for (const w of r.warnings) console.log(`- ${w.dir}: ${w.reason}`);
+              }
               if (r.errors.length) {
                 console.log("");
                 console.log(`**Errors:** ${r.errors.length}`);

@@ -31,6 +31,18 @@ The workflow is idempotent — if a publish fails or a step needs to be retried,
 re-running the workflow on the same SHA is safe. Candidates whose version
 already matches the registry are simply skipped.
 
+### Hard errors vs. warnings
+
+The scan script distinguishes two kinds of problems:
+
+- **Hard errors** (fail the workflow): missing or invalid "MCP Registry"
+  column in the README. This is a config safety check — we never want to
+  publish-or-skip a server by accident, so add an explicit `Yes` or `No`.
+- **Warnings** (skipped, do not fail the workflow): a malformed
+  `server.json`, a missing `name`/`version`, or a transient registry
+  lookup failure. These show up in the job summary so you can fix them
+  upstream, but they don't block publishing the rest of the batch.
+
 ## Adding a new server
 
 A new `server.json` is published the first time it appears on `main` and the

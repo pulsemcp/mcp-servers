@@ -45,6 +45,16 @@ function parsePublishColumn(readme) {
       continue;
     }
     if (!seenSeparator) {
+      // Markdown separator rows are made of dashes, colons, pipes, and whitespace
+      // only. Anything else means the table is malformed (separator missing),
+      // and skipping this row as if it were one would silently drop the first
+      // real data row — bail on the table instead.
+      if (!/^[\s|:-]+$/.test(line)) {
+        headers = null;
+        publishColIdx = -1;
+        nameColIdx = -1;
+        continue;
+      }
       seenSeparator = true;
       continue;
     }
@@ -75,7 +85,13 @@ async function main() {
 
   const candidates = [];
   const skipped = [];
+  // Hard errors fail the workflow (config-level problems we don't want to
+  // silently paper over): missing or invalid "MCP Registry" column entries.
+  // Soft errors warn but don't fail the workflow: a broken server.json
+  // shouldn't block every other server's publish. They surface in the job
+  // summary so we can fix them in the upstream monorepo.
   const errors = [];
+  const warnings = [];
 
   for (const root of ['experimental', 'productionized']) {
     if (!fs.existsSync(root)) continue;
@@ -88,14 +104,14 @@ async function main() {
       try {
         manifest = JSON.parse(fs.readFileSync(sjPath, 'utf8'));
       } catch (e) {
-        errors.push({ dir: serverDir, reason: `Invalid JSON: ${e.message}` });
+        warnings.push({ dir: serverDir, reason: `Invalid JSON: ${e.message}` });
         continue;
       }
 
       const name = manifest.name;
       const version = manifest.version;
       if (!name || !version) {
-        errors.push({ dir: serverDir, reason: 'Missing name or version in server.json' });
+        warnings.push({ dir: serverDir, reason: 'Missing name or version in server.json' });
         continue;
       }
 
@@ -125,7 +141,7 @@ async function main() {
       try {
         registryVersion = await getRegistryVersion(name);
       } catch (e) {
-        errors.push({ dir: serverDir, reason: e.message });
+        warnings.push({ dir: serverDir, reason: e.message });
         continue;
       }
 
@@ -146,13 +162,17 @@ async function main() {
     }
   }
 
+  if (warnings.length > 0) {
+    log('\n=== Warnings (skipped, did not block the run) ===');
+    for (const w of warnings) log(`  ${w.dir}: ${w.reason}`);
+  }
   if (errors.length > 0) {
     log('\n=== Errors ===');
     for (const e of errors) log(`  ${e.dir}: ${e.reason}`);
     process.exitCode = 1;
   }
 
-  const result = { candidates, skipped, errors };
+  const result = { candidates, skipped, errors, warnings };
   process.stdout.write(JSON.stringify(result, null, 2) + '\n');
 }
 
