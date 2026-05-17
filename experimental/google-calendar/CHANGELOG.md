@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.0.10] - 2026-05-17
+
+### Fixed
+
+- Event links now work for readers who are not signed into the impersonated Google account — reverts the v0.0.9 approach
+  - v0.0.9 emitted `https://calendar.google.com/calendar/u/<email>/r/eventedit/<eid>`, which only resolves when the reader is signed into Google as `<email>`. For cross-account readers (the most common real-world case — e.g., the session reporter clicking through links for a calendar belonging to a different user), every link 404'd
+  - URLs now use the universal form `https://calendar.google.com/calendar/event?eid=<eid>`. The `eid` itself base64-decodes to `<event-id> <calendar-id>`, so the calendar context travels with the URL — Google Calendar can route the click correctly regardless of which accounts the reader is signed into
+  - The `accountEmail` parameter on `buildCalendarEventUrl` and the `getAccountEmail()` method on `ICalendarClient` are removed; they are no longer needed for URL construction
+
 ## [0.0.9] - 2026-05-17
 
 ### Fixed

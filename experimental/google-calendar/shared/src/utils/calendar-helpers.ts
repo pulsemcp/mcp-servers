@@ -1,24 +1,21 @@
 /**
- * Builds an account-scoped Google Calendar event URL.
+ * Builds a universal Google Calendar event URL on `calendar.google.com`.
  *
- * Uses the `/calendar/u/<account-email>/r/eventedit/<eid>` path form so the
- * link opens in the correct account regardless of which Google accounts the
- * reader is signed into in their browser. The default `htmlLink` returned by
- * the Calendar API (`https://www.google.com/calendar/event?eid=...`) carries
- * no account context, so Google's web UI guesses based on the reader's
- * browser session and 404s when the guess is wrong.
+ * The eid embedded in `htmlLink` already encodes the calendar context — it
+ * base64-decodes to `<event-id> <calendar-id>`, so `calendar.google.com`
+ * can route the click to the correct calendar regardless of which Google
+ * accounts the reader is signed into.
  *
- * The `<eid>` segment is the opaque base64-style identifier from the
- * `?eid=...` query parameter on `htmlLink` — NOT the raw `event.id`. Using
- * the raw event id (e.g. `p1qvrkvfpl6d3a4rr6careb3bk`) yields a 500 page.
+ * The raw `htmlLink` from Google's API uses `www.google.com` and redirects
+ * through Google's general router, which can guess wrong when the reader
+ * is signed into multiple accounts. Pointing directly at `calendar.google.com`
+ * with the same eid bypasses that redirect.
  *
- * Falls back to the original `htmlLink` if the input cannot be parsed (e.g.
- * the API response omitted `htmlLink` or it lacks an `eid` parameter).
+ * Falls back to the original `htmlLink` if it cannot be parsed (e.g. the
+ * API response omitted `htmlLink` or it lacks an `eid` parameter), and
+ * returns `undefined` if `htmlLink` is missing entirely.
  */
-export function buildCalendarEventUrl(
-  accountEmail: string,
-  htmlLink: string | undefined
-): string | undefined {
+export function buildCalendarEventUrl(htmlLink: string | undefined): string | undefined {
   if (!htmlLink) {
     return undefined;
   }
@@ -28,7 +25,7 @@ export function buildCalendarEventUrl(
     return htmlLink;
   }
 
-  return `https://calendar.google.com/calendar/u/${encodeURIComponent(accountEmail)}/r/eventedit/${eid}`;
+  return `https://calendar.google.com/calendar/event?eid=${eid}`;
 }
 
 function extractEid(htmlLink: string): string | undefined {
