@@ -72,14 +72,6 @@ export interface ICalendarClient {
    * Query free/busy information
    */
   queryFreebusy(request: FreeBusyRequest): Promise<FreeBusyResponse>;
-
-  /**
-   * Get the email address of the Google account this client reads from.
-   * Used to construct account-scoped Calendar web URLs so that event links
-   * open in the correct account regardless of which accounts the reader
-   * happens to be signed into in their browser.
-   */
-  getAccountEmail(): Promise<string>;
 }
 
 /**
@@ -108,10 +100,7 @@ export class ServiceAccountCalendarClient implements ICalendarClient {
   private tokenExpiry: number = 0;
   private refreshPromise: Promise<void> | null = null;
 
-  constructor(
-    credentials: ServiceAccountCredentials,
-    private impersonateEmail: string
-  ) {
+  constructor(credentials: ServiceAccountCredentials, impersonateEmail: string) {
     this.jwtClient = new JWT({
       email: credentials.client_email,
       key: credentials.private_key,
@@ -221,10 +210,6 @@ export class ServiceAccountCalendarClient implements ICalendarClient {
     const headers = await this.getHeaders();
     const { queryFreebusy } = await import('./calendar-client/lib/query-freebusy.js');
     return queryFreebusy(this.baseUrl, headers, request);
-  }
-
-  async getAccountEmail(): Promise<string> {
-    return this.impersonateEmail;
   }
 }
 

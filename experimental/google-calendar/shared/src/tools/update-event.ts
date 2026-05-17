@@ -225,15 +225,12 @@ export function updateEventTool(server: Server, clientFactory: ClientFactory) {
           options.supportsAttachments = true;
         }
 
-        const [result, accountEmail] = await Promise.all([
-          client.updateEvent(
-            parsed.calendar_id,
-            parsed.event_id,
-            eventUpdate,
-            Object.keys(options).length > 0 ? options : undefined
-          ),
-          client.getAccountEmail(),
-        ]);
+        const result = await client.updateEvent(
+          parsed.calendar_id,
+          parsed.event_id,
+          eventUpdate,
+          Object.keys(options).length > 0 ? options : undefined
+        );
 
         let output = `# Event Updated Successfully\n\n`;
         output += `## ${result.summary || '(No title)'}\n\n`;
@@ -286,8 +283,8 @@ export function updateEventTool(server: Server, clientFactory: ClientFactory) {
           }
         }
 
-        // Link — account-scoped so it opens in the correct mailbox/calendar.
-        const eventUrl = buildCalendarEventUrl(accountEmail, result.htmlLink);
+        // Link — universal calendar.google.com form (eid embeds calendar context).
+        const eventUrl = buildCalendarEventUrl(result.htmlLink);
         if (eventUrl) {
           output += `\n**Event Link:** ${eventUrl}\n`;
         }

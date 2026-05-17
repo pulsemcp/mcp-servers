@@ -39,10 +39,7 @@ export function getEventTool(server: Server, clientFactory: ClientFactory) {
         const parsed = GetEventSchema.parse(args);
         const client = clientFactory();
 
-        const [event, accountEmail] = await Promise.all([
-          client.getEvent(parsed.calendar_id, parsed.event_id),
-          client.getAccountEmail(),
-        ]);
+        const event = await client.getEvent(parsed.calendar_id, parsed.event_id);
 
         let output = `# Event Details\n\n`;
         output += `## ${event.summary || '(No title)'}\n\n`;
@@ -149,8 +146,8 @@ export function getEventTool(server: Server, clientFactory: ClientFactory) {
           output += `**Updated:** ${new Date(event.updated).toLocaleString()}\n`;
         }
 
-        // Link — account-scoped so it opens in the correct mailbox/calendar.
-        const eventUrl = buildCalendarEventUrl(accountEmail, event.htmlLink);
+        // Link — universal calendar.google.com form (eid embeds calendar context).
+        const eventUrl = buildCalendarEventUrl(event.htmlLink);
         if (eventUrl) {
           output += `\n**Event Link:** ${eventUrl}\n`;
         }

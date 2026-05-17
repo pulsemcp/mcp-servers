@@ -237,10 +237,6 @@ class MockCalendarClient implements ICalendarClient {
     };
   }
 
-  async getAccountEmail(): Promise<string> {
-    return 'me@example.com';
-  }
-
   async queryFreebusy(request: FreeBusyRequest): Promise<FreeBusyResponse> {
     return {
       kind: 'calendar#freeBusy',
