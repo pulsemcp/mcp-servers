@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.4.10] - 2026-05-17
+
+### Fixed
+
+- Set `mcpName` in `local/package.json` to `com.pulsemcp/<server>` so the MCP Registry can validate npm-package ownership and successfully publish this server.
+
 ## [0.4.9] - 2026-05-16
 
 ### Fixed

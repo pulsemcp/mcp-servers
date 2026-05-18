@@ -1,7 +1,8 @@
 {
   "name": "aws-dynamodb-mcp-server",
-  "version": "0.2.5",
+  "version": "0.2.6",
   "description": "MCP server for AWS DynamoDB with fine-grained tool control",
+  "mcpName": "com.pulsemcp/dynamodb",
   "main": "build/index.js",
   "type": "module",
   "bin": {

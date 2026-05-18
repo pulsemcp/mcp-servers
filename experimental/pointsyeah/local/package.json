@@ -1,8 +1,8 @@
 {
   "name": "pointsyeah-mcp-server",
-  "version": "0.2.7",
+  "version": "0.2.8",
   "description": "Local implementation of PointsYeah MCP server",
-  "mcpName": "com.pulsemcp.servers/pointsyeah",
+  "mcpName": "com.pulsemcp/pointsyeah",
   "main": "build/index.js",
   "type": "module",
   "bin": {

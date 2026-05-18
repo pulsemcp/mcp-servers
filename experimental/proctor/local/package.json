@@ -1,7 +1,8 @@
 {
   "name": "proctor-mcp-server",
-  "version": "0.1.7",
+  "version": "0.1.8",
   "description": "Local implementation of Proctor MCP server",
+  "mcpName": "com.pulsemcp/proctor",
   "main": "build/index.js",
   "type": "module",
   "bin": {
