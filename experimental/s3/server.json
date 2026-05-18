@@ -2,7 +2,7 @@
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-09-29/server.schema.json",
   "name": "com.pulsemcp/s3",
   "description": "MCP server for AWS S3 with fine-grained tool control and S3-compatible endpoint support.",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "repository": {
     "url": "https://github.com/pulsemcp/mcp-servers",
     "source": "github",
@@ -13,7 +13,7 @@
       "registryType": "npm",
       "registryBaseUrl": "https://registry.npmjs.org",
       "identifier": "s3-aws-mcp-server",
-      "version": "0.0.3",
+      "version": "0.0.4",
       "runtimeHint": "npx",
       "transport": {
         "type": "stdio"
