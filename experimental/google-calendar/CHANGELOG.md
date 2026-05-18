@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.0.12] - 2026-05-18
+
+### Fixed
+
+- Event links now work for multi-account readers whose default Google account isn't the calendar owner
+  - v0.0.10 emitted the bare `https://calendar.google.com/calendar/event?eid=<eid>` form. That works for single-account readers, but Google Calendar still routes the click against the reader's default Google account, so multi-account readers whose default isn't the calendar owner get 404s (failing session: https://ao.pulsemcp.com/sessions/6318)
+  - URLs now use the form `https://calendar.google.com/calendar/event?eid=<eid>&authuser=<accountEmail>`. The `authuser` query parameter forces Google Calendar to evaluate the link against the named account regardless of which Google account is the browser's default
+  - Re-introduces the `accountEmail` parameter on `buildCalendarEventUrl` and the `getAccountEmail()` method on `ICalendarClient` (both were removed in v0.0.10). `ServiceAccountCalendarClient.getAccountEmail()` returns the `GCAL_IMPERSONATE_EMAIL` env var
+  - Falls back to the bare `?eid=<eid>` form when `accountEmail` is empty/unresolved, so single-account readers continue to work and resolution failures degrade gracefully
+  - **Explicitly does NOT use the `/calendar/u/<email>/r/eventedit/<eid>` path-based form from v0.0.9** — that form 404s for any reader not currently signed in as `<email>`. A new regression-guard test asserts `/u/` and `/r/eventedit/` are NEVER emitted, since this bug has now shipped three times (v0.0.8 → v0.0.9 → v0.0.10 → v0.0.12)
+  - Companion fix to the four calendar-event SKILL.md files, which were independently hardcoding the v0.0.9-style broken URL. See GitHub issue #3702
+
 ## [0.0.11] - 2026-05-17
 
 ### Fixed

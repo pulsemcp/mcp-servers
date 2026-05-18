@@ -92,14 +92,17 @@ export function listEventsTool(server: Server, clientFactory: ClientFactory) {
         const parsed = ListEventsSchema.parse(args);
         const client = clientFactory();
 
-        const result = await client.listEvents(parsed.calendar_id, {
-          timeMin: parsed.time_min,
-          timeMax: parsed.time_max,
-          maxResults: parsed.max_results,
-          q: parsed.query,
-          singleEvents: parsed.single_events,
-          orderBy: parsed.order_by,
-        });
+        const [result, accountEmail] = await Promise.all([
+          client.listEvents(parsed.calendar_id, {
+            timeMin: parsed.time_min,
+            timeMax: parsed.time_max,
+            maxResults: parsed.max_results,
+            q: parsed.query,
+            singleEvents: parsed.single_events,
+            orderBy: parsed.order_by,
+          }),
+          client.getAccountEmail(),
+        ]);
 
         const events = result.items || [];
 
@@ -182,8 +185,8 @@ export function listEventsTool(server: Server, clientFactory: ClientFactory) {
             output += `**Description:** ${truncated}\n`;
           }
 
-          // Link — universal calendar.google.com form (eid embeds calendar context).
-          const eventUrl = buildCalendarEventUrl(event.htmlLink);
+          // Link — `?eid=&authuser=<email>` form so multi-account readers don't 404.
+          const eventUrl = buildCalendarEventUrl(event.htmlLink, accountEmail);
           if (eventUrl) {
             output += `**Link:** ${eventUrl}\n`;
           }

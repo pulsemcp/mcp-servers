@@ -193,11 +193,14 @@ export function createEventTool(server: Server, clientFactory: ClientFactory) {
 
         // Determine if we need supportsAttachments parameter
         const hasAttachments = parsed.attachments && parsed.attachments.length > 0;
-        const result = await client.createEvent(
-          parsed.calendar_id,
-          event,
-          hasAttachments ? { supportsAttachments: true } : undefined
-        );
+        const [result, accountEmail] = await Promise.all([
+          client.createEvent(
+            parsed.calendar_id,
+            event,
+            hasAttachments ? { supportsAttachments: true } : undefined
+          ),
+          client.getAccountEmail(),
+        ]);
 
         let output = `# Event Created Successfully\n\n`;
         output += `## ${result.summary || '(No title)'}\n\n`;
@@ -250,8 +253,8 @@ export function createEventTool(server: Server, clientFactory: ClientFactory) {
           }
         }
 
-        // Link — universal calendar.google.com form (eid embeds calendar context).
-        const eventUrl = buildCalendarEventUrl(result.htmlLink);
+        // Link — `?eid=&authuser=<email>` form so multi-account readers don't 404.
+        const eventUrl = buildCalendarEventUrl(result.htmlLink, accountEmail);
         if (eventUrl) {
           output += `\n**Event Link:** ${eventUrl}\n`;
         }
