@@ -1,7 +1,8 @@
 {
   "name": "google-flights-mcp-server",
-  "version": "0.2.3",
+  "version": "0.2.4",
   "description": "MCP server for searching Google Flights — flight search, date grid pricing, and airport lookup",
+  "mcpName": "com.pulsemcp/google-flights",
   "main": "build/index.js",
   "type": "module",
   "bin": {

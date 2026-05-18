@@ -1,8 +1,8 @@
 {
   "name": "hatchbox-mcp-server",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Local implementation of Hatchbox MCP server",
-  "mcpName": "com.pulsemcp.servers/hatchbox",
+  "mcpName": "com.pulsemcp/hatchbox",
   "main": "build/index.js",
   "type": "module",
   "bin": {

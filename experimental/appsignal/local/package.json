@@ -1,8 +1,8 @@
 {
   "name": "appsignal-mcp-server",
-  "version": "0.5.2",
+  "version": "0.5.3",
   "description": "Local implementation of AppSignal MCP server",
-  "mcpName": "com.pulsemcp.servers/appsignal",
+  "mcpName": "com.pulsemcp/appsignal",
   "main": "build/index.js",
   "type": "module",
   "bin": {

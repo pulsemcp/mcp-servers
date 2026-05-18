@@ -4,6 +4,12 @@ All notable changes to the Google Flights MCP Server will be documented in this 
 
 ## [Unreleased]
 
+## [0.2.4] - 2026-05-17
+
+### Fixed
+
+- Set `mcpName` in `local/package.json` to `com.pulsemcp/<server>` so the MCP Registry can validate npm-package ownership and successfully publish this server.
+
 ## [0.2.3] - 2026-05-13
 
 ### Security

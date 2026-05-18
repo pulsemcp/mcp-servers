@@ -1,7 +1,8 @@
 {
   "name": "good-eggs-mcp-server",
-  "version": "0.1.8",
+  "version": "0.1.9",
   "description": "MCP server for Good Eggs grocery shopping with Playwright automation",
+  "mcpName": "com.pulsemcp/good-eggs",
   "main": "build/index.js",
   "type": "module",
   "bin": {

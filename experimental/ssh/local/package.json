@@ -1,7 +1,8 @@
 {
   "name": "ssh-agent-mcp-server",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "description": "MCP server for SSH remote server management with SSH agent authentication support",
+  "mcpName": "com.pulsemcp/ssh",
   "main": "build/index.js",
   "type": "module",
   "bin": {

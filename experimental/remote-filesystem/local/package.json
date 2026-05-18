@@ -1,7 +1,8 @@
 {
   "name": "remote-filesystem-mcp-server",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "MCP server for remote filesystem operations on cloud storage (GCS, S3, etc.)",
+  "mcpName": "com.pulsemcp/remote-filesystem",
   "main": "build/index.js",
   "type": "module",
   "bin": {

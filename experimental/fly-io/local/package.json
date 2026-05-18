@@ -1,7 +1,8 @@
 {
   "name": "fly-io-mcp-server",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "description": "Local implementation of Fly.io MCP server",
+  "mcpName": "com.pulsemcp/fly-io",
   "main": "build/index.js",
   "type": "module",
   "bin": {
