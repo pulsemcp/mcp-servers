@@ -225,12 +225,15 @@ export function updateEventTool(server: Server, clientFactory: ClientFactory) {
           options.supportsAttachments = true;
         }
 
-        const result = await client.updateEvent(
-          parsed.calendar_id,
-          parsed.event_id,
-          eventUpdate,
-          Object.keys(options).length > 0 ? options : undefined
-        );
+        const [result, accountEmail] = await Promise.all([
+          client.updateEvent(
+            parsed.calendar_id,
+            parsed.event_id,
+            eventUpdate,
+            Object.keys(options).length > 0 ? options : undefined
+          ),
+          client.getAccountEmail(),
+        ]);
 
         let output = `# Event Updated Successfully\n\n`;
         output += `## ${result.summary || '(No title)'}\n\n`;
@@ -283,8 +286,8 @@ export function updateEventTool(server: Server, clientFactory: ClientFactory) {
           }
         }
 
-        // Link — universal calendar.google.com form (eid embeds calendar context).
-        const eventUrl = buildCalendarEventUrl(result.htmlLink);
+        // Link — `?eid=&authuser=<email>` form so multi-account readers don't 404.
+        const eventUrl = buildCalendarEventUrl(result.htmlLink, accountEmail);
         if (eventUrl) {
           output += `\n**Event Link:** ${eventUrl}\n`;
         }
