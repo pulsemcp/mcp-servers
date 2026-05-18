@@ -5,6 +5,9 @@ on:
     workflows:
       - 'Lint and Format Check'
       - 'CI Build & Test Checks'
+      - 'Publish Updated MCP Servers'
+      - 'Validate MCP Server Publish Files'
+      - 'Verify MCP Server Publication Staged'
       - 'AppSignal MCP Server CI'
       - 'Claude Code Agent MCP Server CI'
       - 'GCS MCP Server CI'
@@ -12,7 +15,7 @@ on:
       - 'Pulse Fetch MCP Server CI'
       - 'Slack MCP Server CI'
       - 'Twist MCP Server CI'
-      - 'Publish Updated MCP Servers'
+      - 'Zoom MCP Server CI'
     types: [completed]
     branches:
       - main
