@@ -136,6 +136,14 @@ This guidance does NOT apply when waking at a known wall-clock time (e.g., "9am 
 2. As a side effect of creating the trigger, the AO API transitions the session to sleeping (waiting) status — immediately if currently \`needs_input\`, or after the current turn ends if currently \`running\`.
 3. At the scheduled time, the trigger resumes the session with the provided prompt.
 
+**End your conversation turn after scheduling.** Two mechanisms together make wake delivery durable:
+1. **Auto-sleep** — ending your turn transitions the requester from \`running\` to \`waiting\`, where the trigger resumes it directly at the scheduled time.
+2. **Cross-turn queuing** — if the scheduled time arrives while the requester is still in \`running\` (the turn hadn't ended yet), the wake-up prompt is durably queued onto the requester via \`enqueued_messages\` and picked up at the next turn boundary by AO's pre-pause handoff. It is NOT silently dropped.
+
+You should still end your turn promptly — queuing is the safety net, not a substitute for ending the turn.
+
+**Wake-ups override \`enqueue_messages: false\`.** For ordinary triggers (Slack, recurring schedules), \`enqueue_messages: false\` means "don't barge a busy session." Wake-ups are one-shot signals, not recurring drumbeats, so they queue onto a running requester regardless of that flag.
+
 **⚠️ Sibling-destroy semantics when paired with state-change wakes.** If this \`wake_me_up_later\` trigger is acting as a deadline backstop alongside \`wake_me_up_when_session_changes_state\` triggers (the recommended triple-wake + deadline pattern), the AO firing path destroys ALL of the requester's other one-time wakes whenever any one of them fires — and that cuts both ways:
 - If a state-change trigger fires first, this deadline backstop is destroyed (not pending in the background).
 - If THIS deadline fires first (e.g., a hung watched session never transitioned), all the companion state-change watchers are destroyed.
@@ -283,7 +291,7 @@ export function wakeMeUpLaterTool(_server: Server, clientFactory: () => IAgentOr
           '',
           '**You must end your conversation turn now.** The session will be automatically transitioned to waiting (immediately if currently needs_input; after the current turn ends if currently running) and resumed at the scheduled time with the provided prompt.',
           '',
-          '⚠️ **Warning:** If you do not end your conversation turn, the session may still be running when the scheduled wake-up fires. A wake-up cannot be delivered to a session that is not in a wakeable (sleeping/waiting) state — it will be silently dropped, and you will never receive it.',
+          "ℹ️ **Cross-turn safety net:** If the scheduled wake-up fires before you end this turn, the wake-up prompt is durably queued onto the session via `enqueued_messages` and processed at the next turn boundary by AO's pre-pause handoff — it is NOT silently dropped. Still end your turn promptly; queuing is the safety net, not a substitute for ending the turn.",
           '',
           '**Sibling-destroy reminder:** if this trigger is paired with `wake_me_up_when_session_changes_state` triggers (the triple-wake + deadline pattern), whichever wake fires first destroys ALL the others belonging to this requester. If this deadline fires while the watched session is still progressing, the woken-up turn must re-register the state-change watchers AND a new deadline before going back to sleep — the originals are gone.',
         ];

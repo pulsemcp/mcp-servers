@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.3] - 2026-05-12
+
+### Changed
+
+- `wake_me_up_when_session_changes_state` and `wake_me_up_later` tool descriptions updated to document the **durable cross-turn wake delivery** semantics shipped in the Rails-side fix in pulsemcp/pulsemcp#3602. Previously the descriptions warned that wake-ups firing while the requester was still in `running` would be "silently dropped" — that was both factually accurate (`Trigger#follow_up_session!` set `enqueue_messages: false` for wake-up triggers, and the firing job still unconditionally destroyed sibling wakes) and a footgun, since the requester could lose every wake it had scheduled when its turn happened to overrun the watched event. The Rails fix makes wake-up triggers durably queue the prompt onto a running requester via `enqueued_messages` (the queued message is picked up by AO's pre-pause handoff in `AgentSessionJob` without the session ever sleeping), and gates sibling-destroy on `Trigger#last_follow_up_dropped?` as defense-in-depth. The tool descriptions now spell out the two-mechanism delivery story (auto-sleep for the idle case + cross-turn queuing for the race window), explicitly note that wake-ups override the trigger's `enqueue_messages: false` default (since wake-ups are one-shot signals, not the recurring drumbeats that flag exists to guard against), and update the success-message footers to reflect the new "safety net" framing — agents are still steered to end their turn promptly, but no longer told the wake will be lost if they don't. Concretely fixes the failure mode that left production session 3843 (https://ao.pulsemcp.com/sessions/3843) permanently stuck. Description-only change — no behavioral change to the MCP tool handlers themselves.
+
 ## [0.8.2] - 2026-05-04
 
 ### Changed
