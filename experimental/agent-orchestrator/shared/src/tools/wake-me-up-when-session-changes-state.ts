@@ -62,7 +62,13 @@ Concretely, in a woken-up turn that determines the watched session has not actua
 3. When the watched session transitions to the matching state, the trigger fires and resumes the requester with the provided prompt. The trigger then auto-deletes (one-shot).
 4. If the requester is manually resumed first, the pending trigger is consumed (won't fire). If the watched session is archived without ever transitioning to the matching state (e.g., you only scheduled \`session_needs_input\` and it went straight to \`archived\`), the trigger is cleaned up — and you'll only wake when your deadline backstop fires.
 
-**You must end your conversation turn after calling this tool** so the auto-sleep can take effect. If your turn keeps running, the requester will not be in a wakeable state when the watched session transitions, and the wake-up will be silently dropped. When scheduling multiple triggers (the typical triple-wake + deadline pattern), call this tool repeatedly within the same turn — the auto-sleep is idempotent and only takes effect once the turn ends.`;
+**End your conversation turn after scheduling.** Two mechanisms together make wake delivery durable:
+1. **Auto-sleep** — ending your turn transitions the requester from \`running\` to \`waiting\`, where the trigger resumes it directly when the watched event fires.
+2. **Cross-turn queuing** — if the watched event fires while the requester is still in \`running\` (the turn hadn't ended yet when the watched event happened), the wake-up prompt is durably queued onto the requester via \`enqueued_messages\` and picked up at the next turn boundary by AO's pre-pause handoff. It is NOT silently dropped.
+
+You should still end your turn promptly — queuing is the safety net, not a substitute for ending the turn. When scheduling multiple triggers (the typical triple-wake + deadline pattern), call this tool repeatedly within the same turn before ending it.
+
+**Wake-ups override \`enqueue_messages: false\`.** For ordinary triggers (Slack, recurring schedules), \`enqueue_messages: false\` means "don't barge a busy session." Wake-ups are one-shot signals, not recurring drumbeats, so they queue onto a running requester regardless of that flag.`;
 
 export function wakeMeUpWhenSessionChangesStateTool(
   _server: Server,
@@ -295,7 +301,7 @@ export function wakeMeUpWhenSessionChangesStateTool(
           '',
           '**You must end your conversation turn now.** The requester session will be automatically transitioned to waiting (immediately if currently needs_input; after the current turn ends if currently running) and resumed when the watched session transitions to the matching state.',
           '',
-          '⚠️ **Warning:** If you do not end your conversation turn, the requester may still be running when the watched session transitions. A wake-up cannot be delivered to a session that is not in a wakeable (sleeping/waiting) state — it will be silently dropped, and you will never receive it.',
+          "ℹ️ **Cross-turn safety net:** If the watched session transitions before you end this turn, the wake-up prompt is durably queued onto the requester via `enqueued_messages` and processed at the next turn boundary by AO's pre-pause handoff — it is NOT silently dropped. Still end your turn promptly; queuing is the safety net, not a substitute for ending the turn.",
           '',
           '**One-shot:** the trigger auto-deletes after firing. If you want to wake on the next transition too, schedule another trigger from the woken-up turn.',
           '',
