@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.4] - 2026-05-29
+
+### Changed
+
+- Renamed `agent_type` → `agent_runtime` everywhere this server taps the AO REST API contract, following the breaking rename in the Rails-side AO API (Phase 1 of the "add OpenAI Codex CLI as a second agent runtime" project, pulsemcp/pulsemcp#3766). The `start_session` tool now exposes an `agent_runtime` input parameter instead of `agent_type` (description updated to "Agent runtime for the session"; `claude_code` remains the only currently-supported value and the default). The `quick_search_sessions` filter parameter is likewise renamed `agent_type` → `agent_runtime`. The `Session` response shape and `CreateSessionRequest` now use `agent_runtime` (the AO API returns `agent_runtime` and no longer returns `agent_type`), and `get_session` / `quick_search_sessions` display the field as **Agent Runtime**. The `wake_me_up_later` / `wake_me_up_when_session_changes_state` legacy `agent_root_name` fallback now reads `session.agent_runtime`. No backwards-compatibility shim — the tool input schemas reject the old `agent_type` key. In practice this is a no-op for callers: the AO API silently ignores an unknown `agent_type` request param and defaults the session to `claude_code` (the only valid runtime today), so existing callers were already getting the default. See pulsemcp/pulsemcp#3766 for tracking.
+
 ## [0.8.3] - 2026-05-12
 
 ### Changed

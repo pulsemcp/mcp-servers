@@ -5,8 +5,8 @@ import { parseAllowedAgentRoots, validateAgentRootConstraints } from '../allowed
 import { getConfigsCache, setConfigsCache } from '../cache/configs-cache.js';
 
 const PARAM_DESCRIPTIONS = {
-  agent_type:
-    'Agent type for the session. Currently only "claude_code" is supported. Default: "claude_code"',
+  agent_runtime:
+    'Agent runtime for the session. Currently only "claude_code" is supported. Default: "claude_code"',
   prompt:
     'Initial prompt for the agent. If provided, the agent job is automatically queued. Omit for a clone-only session.',
   agent_root:
@@ -39,7 +39,7 @@ const PARAM_DESCRIPTIONS = {
 } as const;
 
 export const StartSessionSchema = z.object({
-  agent_type: z.string().optional().describe(PARAM_DESCRIPTIONS.agent_type),
+  agent_runtime: z.string().optional().describe(PARAM_DESCRIPTIONS.agent_runtime),
   prompt: z.string().optional().describe(PARAM_DESCRIPTIONS.prompt),
   agent_root: z.string().optional().describe(PARAM_DESCRIPTIONS.agent_root),
   title: z.string().optional().describe(PARAM_DESCRIPTIONS.title),
@@ -87,9 +87,9 @@ export function startSessionTool(_server: Server, clientFactory: () => IAgentOrc
     inputSchema: {
       type: 'object' as const,
       properties: {
-        agent_type: {
+        agent_runtime: {
           type: 'string',
-          description: PARAM_DESCRIPTIONS.agent_type,
+          description: PARAM_DESCRIPTIONS.agent_runtime,
         },
         prompt: {
           type: 'string',

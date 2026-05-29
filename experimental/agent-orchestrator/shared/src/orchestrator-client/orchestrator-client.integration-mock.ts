@@ -74,7 +74,7 @@ export function createIntegrationMockOrchestratorClient(
         slug: 'test-session-1',
         title: 'Test Session 1',
         status: 'running',
-        agent_type: 'claude_code',
+        agent_runtime: 'claude_code',
         prompt: 'Test prompt',
         git_root: 'https://github.com/example/repo.git',
         branch: 'main',
@@ -135,7 +135,7 @@ export function createIntegrationMockOrchestratorClient(
 
     async listSessions(options?: {
       status?: SessionStatus;
-      agent_type?: string;
+      agent_runtime?: string;
       show_archived?: boolean;
       page?: number;
       per_page?: number;
@@ -145,8 +145,8 @@ export function createIntegrationMockOrchestratorClient(
       if (options?.status) {
         sessions = sessions.filter((s) => s.status === options.status);
       }
-      if (options?.agent_type) {
-        sessions = sessions.filter((s) => s.agent_type === options.agent_type);
+      if (options?.agent_runtime) {
+        sessions = sessions.filter((s) => s.agent_runtime === options.agent_runtime);
       }
       if (!options?.show_archived) {
         sessions = sessions.filter((s) => s.status !== 'archived');
@@ -172,7 +172,7 @@ export function createIntegrationMockOrchestratorClient(
       query: string,
       options?: {
         status?: SessionStatus;
-        agent_type?: string;
+        agent_runtime?: string;
         show_archived?: boolean;
         page?: number;
         per_page?: number;
@@ -226,7 +226,7 @@ export function createIntegrationMockOrchestratorClient(
         slug: data.slug || null,
         title: data.title || 'New Session',
         status: 'waiting',
-        agent_type: data.agent_type || 'claude_code',
+        agent_runtime: data.agent_runtime || 'claude_code',
         prompt: data.prompt || null,
         git_root: data.git_root || null,
         branch: data.branch || 'main',

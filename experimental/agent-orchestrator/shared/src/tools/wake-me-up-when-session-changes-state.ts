@@ -255,10 +255,10 @@ export function wakeMeUpWhenSessionChangesStateTool(
         // The Rails Trigger model requires agent_root_name, but for per-session
         // wake-up triggers (reuse_session + last_session_id + one-time event)
         // the value is never used to spawn a session — the target session is
-        // always reused. Prefer the canonical metadata value with agent_type as
+        // always reused. Prefer the canonical metadata value with agent_runtime as
         // a legacy fallback (matches wake_me_up_later behavior).
         const agentRootName =
-          (session.metadata?.agent_root_key as string | undefined) || session.agent_type;
+          (session.metadata?.agent_root_key as string | undefined) || session.agent_runtime;
 
         let trigger;
         try {
