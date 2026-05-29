@@ -4,6 +4,19 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [0.10.0] - 2026-05-29
+
+### Changed
+
+- **BREAKING — coordinated public-API change.** Newsletter post authorship now uses the ordered author contract exclusively, matching the web-app supervisor API which **removes the singular `author`/`author_id` fields entirely** ([pulsemcp#3883](https://github.com/pulsemcp/pulsemcp/pull/3883)). This server must ship concurrently with that web-app change; it will not interoperate with an API that still exposes only `author_id`. Specifically:
+  - **Reads (show):** `get_newsletter_post` reads the ordered `authors` array (`[{ id, name }, ...]`, index 0 = primary) from `GET /supervisor/posts/:slug` as the sole source of truth. It renders **all** authors in order — resolving each author's slug individually — with an `**Authors:**`/`**Author:**` label depending on count. The `author`/`author_id` fallbacks are gone.
+  - **Reads (list):** `get_newsletter_posts` reads the ordered `author_ids` integer array from `GET /posts` (the list endpoint returns ids only, no names) and resolves each id to a name in order.
+  - **Writes:** `draft_newsletter_post` and the `createPost`/`updatePost` client methods send `post[author_ids][]` — one ordered entry per author id (index 0 is the primary author). Rails strong-params permit **only** the array form; the old `post[author_id]` would be silently dropped and the post created/updated with zero authors. `draft_newsletter_post` resolves its single `author_slug` to a one-element `author_ids` array.
+
+### Fixed
+
+- Repaired the long-dead integration test harness (`local/src/index.integration-with-mock.ts`), which crashed on startup with `ENOENT` because it read `package.json` at a fixed relative depth that the nested integration build layout (`build/local/src/`) no longer matched. The version lookup now walks up from the module directory to find the nearest `package.json`. This re-enabled the full MCP-protocol integration suite, which in turn surfaced (and this change corrects) a batch of stale assertions: `save_mcp_implementation`'s "updated" success message and several tool-group counts that had drifted as tools were added.
+
 ## [0.9.28] - 2026-05-17
 
 ### Fixed

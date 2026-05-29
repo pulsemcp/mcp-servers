@@ -88,16 +88,24 @@ Use cases:
           content += `${index + 1}. **${post.title}** (${post.slug})\n`;
           content += `   Status: ${post.status} | Category: ${post.category}\n`;
 
-          // Fetch author details if we have an author_id
-          if (post.author_id) {
-            try {
-              const author = await client.getAuthorById(post.author_id);
-              if (author) {
-                content += `   Author: ${author.name} (${author.slug}, ID: ${author.id})\n`;
+          // The list endpoint returns ordered author ids (no names); resolve each
+          // to a name, preserving order so the primary author renders first.
+          if (post.author_ids && post.author_ids.length > 0) {
+            const authorInfo: string[] = [];
+            for (const authorId of post.author_ids) {
+              try {
+                const author = await client.getAuthorById(authorId);
+                if (author) {
+                  authorInfo.push(`${author.name} (${author.slug}, ID: ${author.id})`);
+                }
+              } catch (error) {
+                // Skip showing this author if we can't fetch it
+                console.error(`Failed to fetch author ${authorId}:`, error);
               }
-            } catch (error) {
-              // Skip showing author if we can't fetch it
-              console.error(`Failed to fetch author ${post.author_id}:`, error);
+            }
+            if (authorInfo.length > 0) {
+              const label = authorInfo.length > 1 ? 'Authors' : 'Author';
+              content += `   ${label}: ${authorInfo.join(', ')}\n`;
             }
           }
 

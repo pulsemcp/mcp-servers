@@ -69,15 +69,18 @@ export function createMockPulseMCPAdminClient(mockData: MockData): IPulseMCPAdmi
     title: 'Test Post',
     body: '<p>Test content</p>',
     slug: 'test-post',
-    author_id: 1,
     status: 'draft',
     category: 'newsletter',
     created_at: '2024-01-01T00:00:00Z',
     updated_at: '2024-01-01T00:00:00Z',
-    author: {
-      id: 1,
-      name: 'Test Author',
-    },
+    // Ordered author ids from the list endpoint (no names).
+    author_ids: [1, 2],
+    // Ordered authors array (id + name) from the show endpoint; source of truth
+    // for reads.
+    authors: [
+      { id: 1, name: 'Test Author' },
+      { id: 2, name: 'Second Author' },
+    ],
   };
 
   return {

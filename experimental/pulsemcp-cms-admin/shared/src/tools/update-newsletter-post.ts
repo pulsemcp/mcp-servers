@@ -206,8 +206,11 @@ Use cases:
         content += `**Status:** ${post.status}\n`;
         content += `**Category:** ${post.category}\n`;
 
-        if (post.author) {
-          content += `**Author:** ${post.author.name}\n`;
+        // The ordered `authors` array is the source of truth for authorship.
+        const responseAuthors = post.authors ?? [];
+        if (responseAuthors.length > 0) {
+          const label = responseAuthors.length > 1 ? 'Authors' : 'Author';
+          content += `**${label}:** ${responseAuthors.map((a) => a.name).join(', ')}\n`;
         }
 
         content += `**Updated:** ${new Date(post.updated_at).toLocaleDateString()}\n\n`;
