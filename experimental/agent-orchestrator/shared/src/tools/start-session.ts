@@ -6,7 +6,7 @@ import { getConfigsCache, setConfigsCache } from '../cache/configs-cache.js';
 
 const PARAM_DESCRIPTIONS = {
   agent_runtime:
-    'Agent runtime for the session. Currently only "claude_code" is supported. Default: "claude_code"',
+    'Per-spawn agent runtime override. When omitted, the session adopts the agent_root\'s default_runtime, falling back to "claude_code". Currently only "claude_code" is registered.',
   prompt:
     'Initial prompt for the agent. If provided, the agent job is automatically queued. Omit for a clone-only session.',
   agent_root:
