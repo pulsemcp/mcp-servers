@@ -188,10 +188,11 @@ Use cases:
         // Look up author by slug
         const author = await client.getAuthorBySlug(author_slug);
 
-        // Always create as draft
+        // Always create as draft. author_ids is an ordered array; this tool sets
+        // a single primary author (length 1).
         const createParams: CreatePostParams = {
           ...otherParams,
-          author_id: author.id,
+          author_ids: [author.id],
           status: 'draft' as const,
         };
 
@@ -223,8 +224,11 @@ Use cases:
         content += `**Status:** ${post.status}\n`;
         content += `**Category:** ${post.category}\n`;
 
-        if (post.author) {
-          content += `**Author:** ${post.author.name}\n`;
+        // The ordered `authors` array is the source of truth for authorship.
+        const responseAuthors = post.authors ?? [];
+        if (responseAuthors.length > 0) {
+          const label = responseAuthors.length > 1 ? 'Authors' : 'Author';
+          content += `**${label}:** ${responseAuthors.map((a) => a.name).join(', ')}\n`;
         }
 
         content += `**Created:** ${new Date(post.created_at).toLocaleDateString()}\n\n`;

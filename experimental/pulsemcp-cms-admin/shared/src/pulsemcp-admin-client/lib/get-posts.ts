@@ -10,7 +10,9 @@ interface RailsPostsResponse {
     short_description?: string;
     category: string;
     status: string;
-    author_id: number;
+    // Ordered author ids (index 0 is the primary author); names are not included
+    // by the list endpoint.
+    author_ids: number[];
     created_at: string;
     updated_at: string;
     last_updated?: string;
@@ -81,7 +83,7 @@ export async function getPosts(
         short_description: post.short_description,
         category: post.category,
         status: post.status,
-        author_id: post.author_id,
+        author_ids: post.author_ids,
         created_at: post.created_at,
         updated_at: post.updated_at,
         last_updated: post.last_updated,

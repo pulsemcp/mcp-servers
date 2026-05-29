@@ -16,8 +16,13 @@ export async function updatePost(
   if (params.title !== undefined) formData.append('post[title]', params.title);
   if (params.body !== undefined) formData.append('post[body]', params.body);
   if (params.slug !== undefined) formData.append('post[slug]', params.slug);
-  if (params.author_id !== undefined)
-    formData.append('post[author_id]', params.author_id.toString());
+  // Rails permits only post[author_ids][] — send one entry per author id, in
+  // order (index 0 is the primary author).
+  if (params.author_ids !== undefined) {
+    params.author_ids.forEach((id) => {
+      formData.append('post[author_ids][]', id.toString());
+    });
+  }
   if (params.status !== undefined) formData.append('post[status]', params.status);
   if (params.category !== undefined) formData.append('post[category]', params.category);
   if (params.image_url !== undefined) formData.append('post[image_url]', params.image_url);

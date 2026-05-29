@@ -4,7 +4,10 @@ export interface Post {
   title: string;
   body?: string; // Optional because list endpoint doesn't return it
   slug: string;
-  author_id: number;
+  // Ordered author ids provided by the list endpoint (GET /posts). Index 0 is
+  // the primary author. The list endpoint returns ids only (no names); use the
+  // show endpoint's `authors` array when names are needed.
+  author_ids?: number[];
   status: 'draft' | 'live' | string; // Allow string for flexibility
   category: 'newsletter' | 'other' | string; // Allow string for flexibility
   image_url?: string;
@@ -20,10 +23,13 @@ export interface Post {
   featured_mcp_client_ids?: number[];
   created_at: string;
   updated_at: string;
-  author?: {
+  // Ordered list of authors with names (position-ordered; index 0 is the primary
+  // author). Returned by the supervisor show endpoint (GET /supervisor/posts/:slug)
+  // and is the source of truth for reading post authorship.
+  authors?: Array<{
     id: number;
     name: string;
-  };
+  }>;
 }
 
 export interface PostsResponse {
@@ -39,7 +45,9 @@ export interface CreatePostParams {
   title: string;
   body: string;
   slug: string;
-  author_id: number;
+  // Ordered author ids; index 0 is the primary author. Sent to the API as
+  // post[author_ids][] (Rails permits only the array form).
+  author_ids: number[];
   status?: 'draft' | 'live';
   category?: 'newsletter' | 'other';
   image_url?: string;

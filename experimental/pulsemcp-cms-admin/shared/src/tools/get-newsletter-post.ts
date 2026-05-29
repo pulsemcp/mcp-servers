@@ -17,7 +17,7 @@ export function getNewsletterPost(_server: Server, clientFactory: ClientFactory)
     description: `Retrieve complete details for a specific newsletter post by its unique slug identifier. Returns formatted markdown with all post metadata and content.
 
 The response is formatted as markdown with sections for:
-- Post title and basic metadata (slug, status, category, author, dates)
+- Post title and basic metadata (slug, status, category, author(s), dates)
 - Summary/short description
 - Full HTML content (body field) as raw HTML
 - Complete metadata including all URLs, SEO tags, and featured items
@@ -25,7 +25,7 @@ The response is formatted as markdown with sections for:
 
 All available fields from the post are included:
 - title, slug, status, category
-- author (id and name)
+- authors (ordered list; the primary author is listed first)
 - created_at, updated_at, last_updated
 - short_title, short_description
 - body (raw HTML content)
@@ -62,21 +62,27 @@ Use cases:
       try {
         const post = await client.getPost(validatedArgs.slug);
 
-        // Fetch author details if we have an author_id
-        let authorSlug: string | undefined;
-        let authorName: string | undefined;
+        // The supervisor show endpoint returns the ordered `authors` array (id +
+        // name), which is the source of truth for authorship.
+        const baseAuthors: Array<{ id: number; name: string }> = post.authors ?? [];
 
-        if (post.author_id) {
+        // Enrich each author with its slug (the authors array only carries id +
+        // name). Preserve position order so the primary author renders first.
+        const authorLines: string[] = [];
+        for (const a of baseAuthors) {
+          let slug: string | undefined;
+          let name = a.name;
           try {
-            const author = await client.getAuthorById(post.author_id);
-            if (author) {
-              authorSlug = author.slug;
-              authorName = author.name;
+            const fullAuthor = await client.getAuthorById(a.id);
+            if (fullAuthor) {
+              slug = fullAuthor.slug;
+              if (!name) name = fullAuthor.name;
             }
           } catch (error) {
-            // If we can't fetch author, we'll just skip showing author info
+            // If we can't fetch the author, fall back to whatever name we have.
             console.error('Failed to fetch author details:', error);
           }
+          authorLines.push(slug ? `${name} (${slug}, ID: ${a.id})` : `${name} (ID: ${a.id})`);
         }
 
         // Format the response for MCP
@@ -84,8 +90,9 @@ Use cases:
         content += `**Slug:** ${post.slug}\n`;
         content += `**Status:** ${post.status} | **Category:** ${post.category}\n`;
 
-        if (authorSlug && authorName) {
-          content += `**Author:** ${authorName} (${authorSlug}, ID: ${post.author_id})\n`;
+        if (authorLines.length > 0) {
+          const label = authorLines.length > 1 ? 'Authors' : 'Author';
+          content += `**${label}:** ${authorLines.join(', ')}\n`;
         }
 
         content += `**Created:** ${new Date(post.created_at).toLocaleDateString()}\n`;

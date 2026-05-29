@@ -15,7 +15,11 @@ export async function createPost(
   formData.append('post[title]', params.title);
   formData.append('post[body]', params.body);
   formData.append('post[slug]', params.slug);
-  formData.append('post[author_id]', params.author_id.toString());
+  // Rails permits only post[author_ids][] — send one entry per author id, in
+  // order (index 0 is the primary author).
+  params.author_ids.forEach((id) => {
+    formData.append('post[author_ids][]', id.toString());
+  });
 
   // Optional fields
   if (params.status) formData.append('post[status]', params.status);
