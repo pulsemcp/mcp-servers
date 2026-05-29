@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.5] - 2026-05-29
+
+### Changed
+
+- Updated the `start_session` tool's `agent_runtime` parameter description to reflect the **per-spawn runtime override** semantics shipped Rails-side in pulsemcp/pulsemcp#3894 (Case B). The description previously read `Default: "claude_code"`, which is now stale: when `agent_runtime` is omitted, the session adopts the agent root's `default_runtime`, falling back to `"claude_code"` only for roots that don't declare one; an explicit `agent_runtime` still wins as a per-spawn override. New text: "Per-spawn agent runtime override. When omitted, the session adopts the agent_root's default_runtime, falling back to \"claude_code\". Currently only \"claude_code\" is registered." Description-only change — the tool already accepts and forwards `agent_runtime` end-to-end (Zod schema stays `z.string().optional()`, no hardcoded enum), so there is no behavioral change to the MCP tool handler. The single `PARAM_DESCRIPTIONS.agent_runtime` constant feeds both the Zod schema and the manual JSON tool schema, so both surfaces update in lockstep.
+
 ## [0.8.4] - 2026-05-29
 
 ### Changed
