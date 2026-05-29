@@ -25,7 +25,7 @@ export interface Session {
   slug: string | null;
   title: string;
   status: SessionStatus;
-  agent_type: string;
+  agent_runtime: string;
   prompt: string | null;
   git_root: string | null;
   branch: string | null;
@@ -174,7 +174,7 @@ export interface SendPushNotificationResponse {
 
 // Create session request
 export interface CreateSessionRequest {
-  agent_type?: string;
+  agent_runtime?: string;
   prompt?: string;
   git_root?: string;
   branch?: string;

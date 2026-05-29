@@ -9,7 +9,7 @@ const PARAM_DESCRIPTIONS = {
     'Search query to find sessions. Matches against session title only — this is a simple title search, not a full-text or semantic search. Leave empty to list all sessions.',
   status:
     'Filter results by status. Options: "waiting", "running", "needs_input", "failed", "archived"',
-  agent_type: 'Filter results by agent type.',
+  agent_runtime: 'Filter results by agent runtime.',
   show_archived: 'Include archived sessions in results. Default: false',
   page: 'Page number for pagination. Default: 1',
   per_page: 'Number of results per page (1-100). Default: 25',
@@ -22,7 +22,7 @@ export const QuickSearchSessionsSchema = z.object({
     .enum(['waiting', 'running', 'needs_input', 'failed', 'archived'])
     .optional()
     .describe(PARAM_DESCRIPTIONS.status),
-  agent_type: z.string().optional().describe(PARAM_DESCRIPTIONS.agent_type),
+  agent_runtime: z.string().optional().describe(PARAM_DESCRIPTIONS.agent_runtime),
   show_archived: z.boolean().optional().describe(PARAM_DESCRIPTIONS.show_archived),
   page: z.number().min(1).optional().describe(PARAM_DESCRIPTIONS.page),
   per_page: z.number().min(1).max(100).optional().describe(PARAM_DESCRIPTIONS.per_page),
@@ -55,7 +55,7 @@ function formatSession(session: Session): string {
     `### ${session.title} (ID: ${session.id})`,
     '',
     `- **Status:** ${session.status}`,
-    `- **Agent Type:** ${session.agent_type}`,
+    `- **Agent Runtime:** ${session.agent_runtime}`,
   ];
 
   if (session.slug) lines.push(`- **Slug:** ${session.slug}`);
@@ -101,9 +101,9 @@ export function quickSearchSessionsTool(
           enum: ['waiting', 'running', 'needs_input', 'failed', 'archived'],
           description: PARAM_DESCRIPTIONS.status,
         },
-        agent_type: {
+        agent_runtime: {
           type: 'string',
-          description: PARAM_DESCRIPTIONS.agent_type,
+          description: PARAM_DESCRIPTIONS.agent_runtime,
         },
         show_archived: {
           type: 'boolean',
@@ -149,7 +149,7 @@ export function quickSearchSessionsTool(
           // Use search endpoint (title-only search, no content search)
           const response = await client.searchSessions(validatedArgs.query, {
             status: validatedArgs.status,
-            agent_type: validatedArgs.agent_type,
+            agent_runtime: validatedArgs.agent_runtime,
             show_archived: validatedArgs.show_archived,
             page: validatedArgs.page,
             per_page: validatedArgs.per_page,
@@ -160,7 +160,7 @@ export function quickSearchSessionsTool(
           // Use list endpoint
           const response = await client.listSessions({
             status: validatedArgs.status,
-            agent_type: validatedArgs.agent_type,
+            agent_runtime: validatedArgs.agent_runtime,
             show_archived: validatedArgs.show_archived,
             page: validatedArgs.page,
             per_page: validatedArgs.per_page,

@@ -243,13 +243,13 @@ export function wakeMeUpLaterTool(_server: Server, clientFactory: () => IAgentOr
         // The Rails Trigger model requires agent_root_name, but for per-session
         // wake-up triggers (reuse_session + last_session_id + one-time schedule)
         // the value is never used to spawn a session — the target session is
-        // always reused. Prefer the canonical metadata value. The agent_type
+        // always reused. Prefer the canonical metadata value. The agent_runtime
         // fallback is a best-effort for pre-migration sessions without an
-        // agent_root_key; if agent_type isn't a registered agent root, the
+        // agent_root_key; if agent_runtime isn't a registered agent root, the
         // createTrigger call will fail loudly with a 422 rather than proceed
         // with a bad value — which is what we want.
         const agentRootName =
-          (session.metadata?.agent_root_key as string | undefined) || session.agent_type;
+          (session.metadata?.agent_root_key as string | undefined) || session.agent_runtime;
 
         let trigger;
         try {

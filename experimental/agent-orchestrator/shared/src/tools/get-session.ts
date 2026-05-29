@@ -65,7 +65,7 @@ function formatSessionDetails(session: Session, includeTranscript: boolean): str
     '### Basic Information',
     `- **ID:** ${session.id}`,
     `- **Status:** ${session.status}`,
-    `- **Agent Type:** ${session.agent_type}`,
+    `- **Agent Runtime:** ${session.agent_runtime}`,
   ];
 
   if (session.slug) lines.push(`- **Slug:** ${session.slug}`);

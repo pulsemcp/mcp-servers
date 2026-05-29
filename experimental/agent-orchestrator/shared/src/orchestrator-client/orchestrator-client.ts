@@ -117,7 +117,7 @@ export interface IAgentOrchestratorClient {
   // Sessions
   listSessions(options?: {
     status?: SessionStatus;
-    agent_type?: string;
+    agent_runtime?: string;
     show_archived?: boolean;
     page?: number;
     per_page?: number;
@@ -127,7 +127,7 @@ export interface IAgentOrchestratorClient {
     query: string,
     options?: {
       status?: SessionStatus;
-      agent_type?: string;
+      agent_runtime?: string;
       show_archived?: boolean;
       page?: number;
       per_page?: number;
@@ -478,7 +478,7 @@ export class AgentOrchestratorClient implements IAgentOrchestratorClient {
   // Sessions
   async listSessions(options?: {
     status?: SessionStatus;
-    agent_type?: string;
+    agent_runtime?: string;
     show_archived?: boolean;
     page?: number;
     per_page?: number;
@@ -490,7 +490,7 @@ export class AgentOrchestratorClient implements IAgentOrchestratorClient {
     query: string,
     options?: {
       status?: SessionStatus;
-      agent_type?: string;
+      agent_runtime?: string;
       show_archived?: boolean;
       page?: number;
       per_page?: number;
