@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.6] - 2026-06-01
+
+### Changed
+
+- Clarified the `start_session` tool's runtime/model selection guidance so callers can reliably create non-default-runtime (e.g. OpenAI Codex) sessions. The `agent_runtime` parameter description now enumerates the valid values (`claude_code`, `codex`) and explains pairing with `config.model`; the `config` description now documents using `config.model` to pick the per-session model (e.g. `{"model": "gpt-5.4"}` for codex, `{"model": "sonnet"}` for claude_code) and points to `get_configs` for each root's `default_model`; and the tool-level description gained a **Runtime and model selection** paragraph. Description-only changes — the tool already accepted and forwarded both `agent_runtime` and `config` end-to-end (the single `PARAM_DESCRIPTIONS` constant feeds both the Zod schema and the manual JSON tool schema, so both surfaces update in lockstep).
+
+### Tests
+
+- Added regression tests asserting the request body produced by `createSession` is correct: `orchestrator-client.test.ts` verifies `agent_runtime: "codex"` and `config: { model: "gpt-5.4" }` are forwarded verbatim into the `POST /sessions` body (and that `agent_runtime` is omitted when not supplied, so the agent root default applies); `tools.test.ts` verifies the `start_session` handler passes both through to `createSession`.
+
+### Notes
+
+- A related **Rails-side** defect uncovered during this work has been fixed separately in pulsemcp/pulsemcp#3967 (issue pulsemcp/pulsemcp#3963): `POST /api/v1/sessions` previously clobbered an explicitly-supplied `config.model` with the agent root's `default_model`, dropping a caller-chosen model server-side even though this MCP client sent it correctly. With that fix landed, an explicit `config.model` from this client is honored end-to-end — the agent root's `default_model` applies only when no model is supplied. Related: pulsemcp/pulsemcp#3766, pulsemcp/pulsemcp#3884.
+
 ## [0.8.5] - 2026-05-29
 
 ### Changed

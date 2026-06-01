@@ -6,7 +6,10 @@ import { getConfigsCache, setConfigsCache } from '../cache/configs-cache.js';
 
 const PARAM_DESCRIPTIONS = {
   agent_runtime:
-    'Per-spawn agent runtime override. When omitted, the session adopts the agent_root\'s default_runtime, falling back to "claude_code". Currently only "claude_code" is registered.',
+    'Per-spawn agent runtime override. Valid values are "claude_code" (Claude Code) and "codex" (OpenAI Codex CLI). ' +
+    'When omitted, the session adopts the agent_root\'s default_runtime, falling back to "claude_code". ' +
+    "Call get_configs to see each agent root's default_runtime. Pair with `config.model` to pick a model valid for the chosen runtime " +
+    '(e.g. "opus"/"sonnet"/"haiku" for claude_code, "gpt-5.5"/"gpt-5.4" for codex).',
   prompt:
     'Initial prompt for the agent. If provided, the agent job is automatically queued. Omit for a clone-only session.',
   agent_root:
@@ -27,7 +30,12 @@ const PARAM_DESCRIPTIONS = {
     'List of skill names to enable for this session. Always include the agent root\'s default_skills from get_configs as the starting point — omitting skills means the session gets none. Add extras as needed; removing a default should be rare and intentional. Example: ["discovery-classify", "publish-and-pr"]',
   plugins:
     'List of plugin names to enable for this session. Plugins extend agent capabilities with additional integrations. Example: ["my-plugin"]',
-  config: 'Additional configuration as a JSON object.',
+  config:
+    'Additional configuration as a JSON object. Use `config.model` to choose the agent model for this session ' +
+    '(e.g. {"model": "gpt-5.4"} for a codex runtime, or {"model": "sonnet"} for claude_code). ' +
+    "The model must be valid for the resolved agent_runtime; call get_configs to see each agent root's default_model. " +
+    "When omitted, the session uses the agent root's default_model (or the runtime's default model). " +
+    "An explicit config.model always takes precedence over the agent root's default_model.",
   custom_metadata:
     'User-defined metadata as a JSON object. Useful for tracking tickets, projects, etc.',
   auto_compact_window:
@@ -73,6 +81,8 @@ const TOOL_DESCRIPTION = `Start a new agent session in the Agent Orchestrator.
 
 - **MCP servers:** Start with \`default_mcp_servers\`. Drop servers the task doesn't need (least-privilege). Add extras when the task requires tools beyond the defaults. When \`ALLOWED_AGENT_ROOTS\` is active, you cannot add servers beyond the defaults.
 - **Skills:** Start with \`default_skills\`. You can freely add skills beyond the defaults. Removing a default skill should be rare and intentional — only when you have a specific reason, like replacing a skill with a more capable variant that covers the same ground. Skills are lightweight text files with no blast radius, so keeping all defaults costs nothing.
+
+**Runtime and model selection:** Pass \`agent_runtime\` to override which agent runtime the session uses — \`claude_code\` (Claude Code) or \`codex\` (OpenAI Codex CLI). Pass \`config: { model: "..." }\` to choose the model (e.g. \`opus\`/\`sonnet\`/\`haiku\` for claude_code, \`gpt-5.5\`/\`gpt-5.4\` for codex). Both are optional: when omitted, the session inherits the agent root's \`default_runtime\` and \`default_model\`. Call get_configs to discover each root's defaults and pick a model that is valid for the chosen runtime.
 
 **Use cases:**
 - Start a new agent task on a repository
