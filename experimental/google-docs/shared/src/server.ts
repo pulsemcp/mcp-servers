@@ -7,24 +7,30 @@ import type {
   DocsBatchUpdateResponse,
   DriveFile,
   DrivePermission,
+  DriveCommentList,
 } from './types.js';
 import type { CreatePermissionOptions } from './google-docs-client/lib/drive-permissions.js';
+import type { ListCommentsOptions } from './google-docs-client/lib/drive-comments.js';
 
 /**
  * OAuth scopes required by this server.
  *
  * - `documents`: full read/write of Google Docs content (required for get + batchUpdate).
- * - `drive.file`: read/write only files this app created or the user explicitly opens.
- *   Sufficient for delete (trash), export, share, and create flows on docs the app touched.
+ * - `drive`: full read/write access to the authenticated/impersonated user's Drive files,
+ *   including files created outside this app. Required so the server can export and read
+ *   comments (`comments.list`) on arbitrary existing docs — which the narrower `drive.file`
+ *   scope cannot do for files the app never created or opened — and so create/trash/delete/
+ *   share work across the user's whole Drive rather than only app-created files.
  *
- * Note: `drive.file` will not let the server delete or share a doc that was created
- * outside this app and never opened by the user via this app's OAuth client. If broader
- * Drive access is required (e.g. to delete a doc created in the web UI), users will need
- * to grant the broader `drive` scope - intentionally not requested here for least-privilege.
+ * `drive` is a strict superset of `drive.file`, so `drive.file` is not listed separately.
+ * This is a broad grant: for the service-account (domain-wide delegation) auth mode every
+ * scope listed here must also be authorized in the Google Workspace Admin domain-wide-
+ * delegation panel, otherwise token acquisition fails. Granting the admin-side scope is an
+ * operator responsibility.
  */
 export const GOOGLE_DOCS_SCOPES = [
   'https://www.googleapis.com/auth/documents',
-  'https://www.googleapis.com/auth/drive.file',
+  'https://www.googleapis.com/auth/drive',
 ] as const;
 
 /**
@@ -45,6 +51,7 @@ export interface IGoogleDocsClient {
     mimeType: string
   ): Promise<{ bytes: Uint8Array; mimeType: string }>;
   createPermission(documentId: string, options: CreatePermissionOptions): Promise<DrivePermission>;
+  listComments(documentId: string, options?: ListCommentsOptions): Promise<DriveCommentList>;
 }
 
 export interface ServiceAccountCredentials {
@@ -154,6 +161,12 @@ abstract class BaseGoogleDocsClient implements IGoogleDocsClient {
     const headers = await this.getHeaders();
     const { createPermission } = await import('./google-docs-client/lib/drive-permissions.js');
     return createPermission(headers, documentId, options);
+  }
+
+  async listComments(documentId: string, options?: ListCommentsOptions): Promise<DriveCommentList> {
+    const headers = await this.getHeaders();
+    const { listComments } = await import('./google-docs-client/lib/drive-comments.js');
+    return listComments(headers, documentId, options);
   }
 }
 

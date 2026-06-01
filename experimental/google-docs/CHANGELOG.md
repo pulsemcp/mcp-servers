@@ -2,7 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased]
+## [0.1.3] - 2026-06-01
+
+### Added
+
+- `list_comments` tool (in the `readonly` tool group): lists a document's comments via the Drive `comments.list` API, including threaded replies, resolved/open state, and the anchored quoted text. Supports `include_resolved` and `include_deleted` parameters.
+
+### Changed
+
+- Replaced the `https://www.googleapis.com/auth/drive.file` OAuth scope with the broader `https://www.googleapis.com/auth/drive` scope (a strict superset). The full `drive` scope lets the server export arbitrary existing docs and read their comments — operations the narrower `drive.file` scope could not perform on files the app did not itself create or open. Fixes the `export_document` 403 (`The user has not granted the app … read access to the file`) seen on docs created outside the app. Note this is a broad grant: read and write across all of the impersonated/authenticated user's Drive files.
+
+> **Operator action required:** for service-account (domain-wide delegation) deployments, `drive` must also be authorized in the Google Workspace Admin domain-wide-delegation panel; for OAuth2 deployments, re-run `oauth-setup` to reconsent. Until the scope is granted, the new read capabilities will not take effect at runtime.
 
 ## [0.1.2] - 2026-05-17
 

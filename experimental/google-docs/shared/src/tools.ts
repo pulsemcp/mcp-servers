@@ -10,6 +10,7 @@ import { insertTextTool } from './tools/insert-text.js';
 import { replaceTextTool } from './tools/replace-text.js';
 import { getDocumentOutlineTool } from './tools/get-document-outline.js';
 import { exportDocumentTool } from './tools/export-document.js';
+import { listCommentsTool } from './tools/list-comments.js';
 import { shareDocumentTool } from './tools/share-document.js';
 
 interface Tool {
@@ -31,7 +32,7 @@ type ToolFactory = (server: Server, clientFactory: ClientFactory) => Tool;
 /**
  * Available tool groups for Google Docs MCP server.
  *
- * - readonly: Pure read operations (get, outline, export). Cannot modify or share.
+ * - readonly: Pure read operations (get, outline, export, list comments). Cannot modify or share.
  * - readwrite: Read + edit operations on existing documents owned by the auth principal.
  *   Includes create/delete; trashed docs are recoverable from Drive's trash.
  * - readwrite_external: All readwrite operations + sharing with external users via
@@ -58,6 +59,10 @@ const ALL_TOOLS: ToolDefinition[] = [
   },
   {
     factory: exportDocumentTool,
+    groups: ['readonly', 'readwrite', 'readwrite_external'],
+  },
+  {
+    factory: listCommentsTool,
     groups: ['readonly', 'readwrite', 'readwrite_external'],
   },
   // Write tools (readwrite + readwrite_external)

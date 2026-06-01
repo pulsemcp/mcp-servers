@@ -114,7 +114,7 @@ Use this for Google Workspace organizations where a domain admin can grant domai
 4. Create a service account with domain-wide delegation enabled
 5. In [Google Workspace Admin Console](https://admin.google.com/), grant the service account access to the following scopes:
    - `https://www.googleapis.com/auth/documents` (read and edit documents)
-   - `https://www.googleapis.com/auth/drive.file` (manage Drive files this app creates or is given access to)
+   - `https://www.googleapis.com/auth/drive` (full read/write access to the impersonated user's Drive — required to export, read comments on, and manage arbitrary existing docs, including files this app did not create)
 6. Download the JSON key file
 
 #### Environment Variables (Service Account)
@@ -157,7 +157,7 @@ The server supports three tool groups for permission-based access control:
 
 | Group                | Tools Included                                                                                                             | Risk Level |
 | -------------------- | -------------------------------------------------------------------------------------------------------------------------- | ---------- |
-| `readonly`           | `get_document`, `get_document_outline`, `export_document`                                                                  | Low        |
+| `readonly`           | `get_document`, `get_document_outline`, `export_document`, `list_comments`                                                 | Low        |
 | `readwrite`          | All readonly tools + `create_document`, `update_document`, `delete_document`, `append_text`, `insert_text`, `replace_text` | Medium     |
 | `readwrite_external` | All readwrite tools + `share_document`                                                                                     | High       |
 
@@ -287,6 +287,18 @@ Export a document in a different format.
 - `format` (string, required): One of `markdown`, `html`, `txt`, `pdf`, `docx`, `odt`, `rtf`, `epub`
 
 Text formats (`markdown`, `html`, `txt`) are returned inline. Binary formats (`pdf`, `docx`, `odt`, `rtf`, `epub`) are returned base64-encoded.
+
+### list_comments
+
+List the comments on a document, including threaded replies and resolved state. Reads the Drive `comments.list` API and surfaces each comment's author, timestamps, resolved/open state, the anchored quoted text it refers to, the comment body, and any replies (including replies that resolved or reopened the thread).
+
+**Parameters:**
+
+- `document_id` (string, required): Google Docs ID or URL
+- `include_resolved` (boolean, optional): Include resolved (closed) threads (default: `true`). Set `false` to see only open comments.
+- `include_deleted` (boolean, optional): Include deleted comments (default: `false`)
+
+Reading comments on a document this app did not create requires the `https://www.googleapis.com/auth/drive` scope (the narrower `drive.file` scope alone is insufficient).
 
 ### share_document
 
