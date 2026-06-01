@@ -17,19 +17,58 @@ import type {
   DocsBatchUpdateResponse,
   DriveFile,
   DrivePermission,
+  DriveComment,
+  DriveCommentList,
 } from '../shared/types.js';
 import type { CreatePermissionOptions } from '../shared/google-docs-client/lib/drive-permissions.js';
+import type { ListCommentsOptions } from '../shared/google-docs-client/lib/drive-comments.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const packageJsonPath = join(__dirname, '..', 'package.json');
 const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf-8'));
 const VERSION = packageJson.version;
 
+const SEED_DOC_ID = '1AbCdEfGhIjKlMnOpQrStUvWxYzSeedDocId01234';
+
 class MockGoogleDocsClient implements IGoogleDocsClient {
   private docs: Map<string, GoogleDoc> = new Map();
+  private comments: Map<string, DriveComment[]> = new Map();
   private nextDocCounter = 1;
 
   constructor() {
+    // Seed a couple of comments (one open, one resolved with a resolving reply)
+    // on the canonical document so list_comments tests have something to find.
+    this.comments.set(SEED_DOC_ID, [
+      {
+        id: 'seed-comment-open',
+        author: { displayName: 'Alice', emailAddress: 'alice@example.com' },
+        content: 'Can we clarify this heading?',
+        createdTime: '2026-05-01T10:00:00.000Z',
+        modifiedTime: '2026-05-01T10:00:00.000Z',
+        resolved: false,
+        quotedFileContent: { mimeType: 'text/html', value: 'Heading 1' },
+        replies: [],
+      },
+      {
+        id: 'seed-comment-resolved',
+        author: { displayName: 'Bob', emailAddress: 'bob@example.com' },
+        content: 'Fixed the typo.',
+        createdTime: '2026-05-02T10:00:00.000Z',
+        modifiedTime: '2026-05-02T10:05:00.000Z',
+        resolved: true,
+        quotedFileContent: { mimeType: 'text/html', value: 'Hello world' },
+        replies: [
+          {
+            id: 'seed-reply',
+            author: { displayName: 'Alice', emailAddress: 'alice@example.com' },
+            content: 'Thanks!',
+            createdTime: '2026-05-02T10:05:00.000Z',
+            action: 'resolve',
+          },
+        ],
+      },
+    ]);
+
     // Seed with a single canonical document so get/outline tests have something to find.
     this.docs.set('1AbCdEfGhIjKlMnOpQrStUvWxYzSeedDocId01234', {
       documentId: '1AbCdEfGhIjKlMnOpQrStUvWxYzSeedDocId01234',
@@ -162,6 +201,15 @@ class MockGoogleDocsClient implements IGoogleDocsClient {
       emailAddress: options.emailAddress,
       domain: options.domain,
     };
+  }
+
+  async listComments(documentId: string, options?: ListCommentsOptions): Promise<DriveCommentList> {
+    if (!this.docs.has(documentId)) {
+      throw new Error(`Document not found: ${documentId}`);
+    }
+    const all = this.comments.get(documentId) ?? [];
+    const filtered = options?.includeDeleted ? all : all.filter((c) => !c.deleted);
+    return { comments: filtered };
   }
 }
 

@@ -101,7 +101,7 @@ function validateEnvironment(): void {
     console.error('  2. Create a service account with domain-wide delegation');
     console.error('  3. In Google Workspace Admin, grant Docs and Drive scopes:');
     console.error('       https://www.googleapis.com/auth/documents');
-    console.error('       https://www.googleapis.com/auth/drive.file');
+    console.error('       https://www.googleapis.com/auth/drive');
     console.error('  4. Download the JSON key and extract client_email and private_key');
     console.error('\n======================================================\n');
     process.exit(1);
@@ -131,7 +131,7 @@ function validateEnvironment(): void {
   console.error('  2. Create a service account with domain-wide delegation');
   console.error('  3. In Google Workspace Admin, grant Docs and Drive scopes:');
   console.error('       https://www.googleapis.com/auth/documents');
-  console.error('       https://www.googleapis.com/auth/drive.file');
+  console.error('       https://www.googleapis.com/auth/drive');
   console.error('  4. Download the JSON key file and extract client_email and private_key');
   console.error('\nOptional environment variables:');
   console.error('  GOOGLE_DOCS_ENABLED_TOOLGROUPS: Comma-separated list of tool groups to enable');

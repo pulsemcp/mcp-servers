@@ -1,6 +1,6 @@
 {
   "name": "google-docs-workspace-mcp-server",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "MCP server for Google Docs integration with OAuth2 and service account support",
   "mcpName": "com.pulsemcp/google-docs",
   "main": "build/index.js",

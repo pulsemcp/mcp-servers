@@ -33,8 +33,9 @@ Confirmation of deletion, including whether it was trashed or permanently delete
 **Caveats:**
 - The OAuth/service account that performed the delete must have ownership
   permission on the document.
-- With \`drive.file\` scope (this server's default), the auth principal can
-  only delete docs that were created or explicitly opened via this server.
+- With the \`drive\` scope (this server's default), the auth principal can
+  delete any doc it owns across the user's Drive, not only docs created or
+  opened via this server.
 - Permanent deletion is irreversible — prefer trash unless you have a strong
   reason.`;
 

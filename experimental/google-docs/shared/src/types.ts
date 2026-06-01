@@ -96,3 +96,60 @@ export interface DrivePermission {
   displayName?: string;
   [k: string]: unknown;
 }
+
+/**
+ * Drive `comments` resource author (a `User`).
+ */
+export interface DriveCommentAuthor {
+  displayName?: string;
+  emailAddress?: string;
+  me?: boolean;
+  [k: string]: unknown;
+}
+
+/**
+ * A reply to a Drive comment. The `action` field, when present, is either
+ * `resolve` or `reopen` — replies that toggle the parent comment's resolved state.
+ */
+export interface DriveCommentReply {
+  id?: string;
+  author?: DriveCommentAuthor;
+  content?: string;
+  htmlContent?: string;
+  createdTime?: string;
+  modifiedTime?: string;
+  action?: string;
+  deleted?: boolean;
+  [k: string]: unknown;
+}
+
+/**
+ * A Drive `comments` resource. `quotedFileContent` is the document text the
+ * comment is anchored to; `resolved` indicates a resolved (closed) thread.
+ */
+export interface DriveComment {
+  id?: string;
+  author?: DriveCommentAuthor;
+  content?: string;
+  htmlContent?: string;
+  createdTime?: string;
+  modifiedTime?: string;
+  resolved?: boolean;
+  deleted?: boolean;
+  anchor?: string;
+  quotedFileContent?: {
+    mimeType?: string;
+    value?: string;
+  };
+  replies?: DriveCommentReply[];
+  [k: string]: unknown;
+}
+
+export interface DriveCommentList {
+  comments: DriveComment[];
+  /**
+   * True when the document has more comments than were fetched (the pagination
+   * safety cap was hit). Callers should signal that the list is partial.
+   */
+  truncated?: boolean;
+}
