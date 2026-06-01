@@ -16,6 +16,7 @@ import type {
   Transaction,
   TransactionFilter,
   TransactionRule,
+  TransactionRuleInput,
 } from '../types.js';
 import {
   createGraphQLTransport,
@@ -99,6 +100,9 @@ export interface IMonarchClient {
   getTags(): Promise<Tag[]>;
 
   getTransactionRules(): Promise<TransactionRule[]>;
+  createTransactionRule(input: TransactionRuleInput): Promise<TransactionRule[]>;
+  updateTransactionRule(input: TransactionRuleInput & { id: string }): Promise<TransactionRule[]>;
+  deleteTransactionRule(id: string): Promise<{ deleted: boolean; errors: string[] }>;
 
   getBudgets(startDate?: string, endDate?: string): Promise<Budget[]>;
   setBudgetAmount(input: {
@@ -125,6 +129,50 @@ export interface MonarchClientOptions {
 
 function firstDayOfMonth(d: Date): string {
   return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-01`;
+}
+
+/**
+ * Monarch's rule mutations return their failures as a single nullable
+ * `PayloadError` object (NOT a list), shaped `{ message, code, fieldErrors }`.
+ */
+interface PayloadError {
+  message?: string | null;
+  code?: string | null;
+  fieldErrors?: Array<{
+    field?: string | null;
+    messages?: string[] | null;
+  }> | null;
+}
+
+/**
+ * Build a human-readable message from a rule mutation's `PayloadError`.
+ *
+ * A non-null `PayloadError` always signals failure, but the live API does not
+ * always populate `message`: when an update would drop a rule's last criterion
+ * or last action (which Monarch silently refuses, because every rule must keep
+ * at least one of each), it returns an error object whose `message` and
+ * `fieldErrors` are null. We surface a concrete explanation for that case so
+ * the failure is never mistaken for success.
+ */
+function payloadErrorMessage(err: PayloadError): string {
+  const parts: string[] = [];
+  if (err.message) parts.push(err.message);
+  for (const fe of err.fieldErrors ?? []) {
+    const msgs = (fe.messages ?? []).join(', ');
+    if (msgs) parts.push(fe.field ? `${fe.field}: ${msgs}` : msgs);
+  }
+  if (parts.length === 0) {
+    return (
+      'Monarch rejected the rule without a message. This usually means the ' +
+      'resulting rule would have no criteria or no actions — every rule must ' +
+      'keep at least one criterion (merchantCriteria, amountCriteria, ' +
+      'categoryIds, or accountIds) AND at least one action (setCategoryAction, ' +
+      'setHideFromReportsAction, or addTagsAction). Note that updates fully ' +
+      'replace the rule, so re-supply every criterion and action you want to keep.' +
+      (err.code ? ` (code: ${err.code})` : '')
+    );
+  }
+  return err.code ? `${parts.join('; ')} (code: ${err.code})` : parts.join('; ');
 }
 
 export class MonarchClient implements IMonarchClient {
@@ -670,6 +718,115 @@ export class MonarchClient implements IMonarchClient {
       query: ops.Q_TRANSACTION_RULES,
     });
     return data.transactionRules ?? [];
+  }
+
+  /**
+   * Build the Monarch rule input object, including only the keys the caller
+   * provided. The create and update inputs share this shape; `id` is included
+   * only for updates. Criteria and action fields use different names (e.g. the
+   * `setCategoryAction` action vs the `categoryIds` criteria) — see
+   * `TransactionRuleInput` for the mapping.
+   */
+  private buildRuleInput(input: TransactionRuleInput & { id?: string }): Record<string, unknown> {
+    const out: Record<string, unknown> = {};
+    if (input.id !== undefined) out.id = input.id;
+    if (input.merchantCriteria !== undefined) out.merchantCriteria = input.merchantCriteria;
+    if (input.merchantCriteriaUseOriginalStatement !== undefined)
+      out.merchantCriteriaUseOriginalStatement = input.merchantCriteriaUseOriginalStatement;
+    if (input.amountCriteria !== undefined) out.amountCriteria = input.amountCriteria;
+    if (input.categoryIds !== undefined) out.categoryIds = input.categoryIds;
+    if (input.accountIds !== undefined) out.accountIds = input.accountIds;
+    if (input.setCategoryAction !== undefined) out.setCategoryAction = input.setCategoryAction;
+    if (input.setHideFromReportsAction !== undefined)
+      out.setHideFromReportsAction = input.setHideFromReportsAction;
+    if (input.addTagsAction !== undefined) out.addTagsAction = input.addTagsAction;
+    if (input.applyToExistingTransactions !== undefined)
+      out.applyToExistingTransactions = input.applyToExistingTransactions;
+    return out;
+  }
+
+  /**
+   * Create a transaction rule. Monarch's `createTransactionRuleV2` mutation
+   * returns only an `errors` payload — it does not echo the new rule back, so
+   * after a successful create we re-query `transactionRules` and return the
+   * full refreshed set (the caller can locate the new rule and its id there).
+   *
+   * `errors` is a single nullable `PayloadError` object (not a list); any
+   * non-null value means the create failed.
+   */
+  async createTransactionRule(input: TransactionRuleInput): Promise<TransactionRule[]> {
+    const data = await this.options.transport.request<{
+      createTransactionRuleV2: {
+        errors: PayloadError | null;
+      };
+    }>({
+      query: ops.M_CREATE_TRANSACTION_RULE,
+      variables: { input: this.buildRuleInput(input) },
+    });
+    const errors = data.createTransactionRuleV2?.errors;
+    if (errors) {
+      throw new Error(`createTransactionRule failed: ${payloadErrorMessage(errors)}`);
+    }
+    return this.getTransactionRules();
+  }
+
+  /**
+   * Update an existing transaction rule. The update input reuses the create
+   * field surface plus the required `id`.
+   *
+   * IMPORTANT — this is a FULL REPLACE: the input defines the rule's complete
+   * new state, so any criterion or action not present in `input` is cleared.
+   * Callers must re-supply every criterion and action they want to keep (at
+   * least one of each). Like create, the mutation returns only `errors` (a
+   * single nullable `PayloadError`), so we re-query and return the refreshed
+   * rule set. A non-null `errors` means the update failed — including the
+   * silent-rejection case where the resulting rule would have no criteria or no
+   * actions (Monarch returns an error object with a null `message` there, which
+   * `payloadErrorMessage` translates into an actionable explanation).
+   */
+  async updateTransactionRule(
+    input: TransactionRuleInput & { id: string }
+  ): Promise<TransactionRule[]> {
+    const data = await this.options.transport.request<{
+      updateTransactionRuleV2: {
+        errors: PayloadError | null;
+      };
+    }>({
+      query: ops.M_UPDATE_TRANSACTION_RULE,
+      variables: { input: this.buildRuleInput(input) },
+    });
+    const errors = data.updateTransactionRuleV2?.errors;
+    if (errors) {
+      throw new Error(`updateTransactionRule failed: ${payloadErrorMessage(errors)}`);
+    }
+    return this.getTransactionRules();
+  }
+
+  /**
+   * Delete a transaction rule. `deleteTransactionRule` takes a bare `$id`
+   * argument and returns a `deleted` flag plus `errors`.
+   *
+   * The API's `deleted` flag is unreliable — it comes back `false` even when the
+   * rule is in fact removed. So we don't trust it: when the mutation reports no
+   * `errors`, we re-query `transactionRules` and derive `deleted` from whether
+   * the id has actually disappeared.
+   */
+  async deleteTransactionRule(id: string): Promise<{ deleted: boolean; errors: string[] }> {
+    const data = await this.options.transport.request<{
+      deleteTransactionRule: {
+        deleted: boolean;
+        errors: { message: string }[] | null;
+      };
+    }>({
+      query: ops.M_DELETE_TRANSACTION_RULE,
+      variables: { id },
+    });
+    const errors = (data.deleteTransactionRule.errors ?? []).map((e) => e.message);
+    if (errors.length > 0) {
+      return { deleted: false, errors };
+    }
+    const remaining = await this.getTransactionRules();
+    return { deleted: !remaining.some((r) => r.id === id), errors };
   }
 
   /**

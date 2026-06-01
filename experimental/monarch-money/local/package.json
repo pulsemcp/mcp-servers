@@ -1,6 +1,6 @@
 {
   "name": "monarch-money-mcp-server",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "description": "MCP server for Monarch Money personal finance integration",
   "mcpName": "com.pulsemcp/monarch-money",
   "main": "build/index.js",

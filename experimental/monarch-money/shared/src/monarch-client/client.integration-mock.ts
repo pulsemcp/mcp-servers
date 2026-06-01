@@ -15,6 +15,7 @@ import type {
   Transaction,
   TransactionFilter,
   TransactionRule,
+  TransactionRuleInput,
 } from '../types.js';
 
 /**
@@ -62,6 +63,36 @@ export interface MockData {
     amount: number;
     startDate: string;
     applyToFuture: boolean;
+  };
+}
+
+/**
+ * Project a rule write input into its stored read shape, mirroring the live
+ * API: criteria pass through unchanged, while the `setCategoryAction` /
+ * `addTagsAction` actions are bare ids on write but objects on read.
+ */
+function ruleFromInput(input: TransactionRuleInput): Omit<TransactionRule, 'id' | 'order'> {
+  return {
+    merchantCriteria: input.merchantCriteria ?? null,
+    amountCriteria: input.amountCriteria
+      ? {
+          operator: input.amountCriteria.operator,
+          value: input.amountCriteria.value ?? 0,
+          isExpense: input.amountCriteria.isExpense ?? true,
+        }
+      : null,
+    categoryIds: input.categoryIds ?? null,
+    accountIds: input.accountIds ?? null,
+    setCategoryAction: input.setCategoryAction
+      ? {
+          id: input.setCategoryAction,
+          name: `Category ${input.setCategoryAction}`,
+        }
+      : null,
+    setHideFromReportsAction: input.setHideFromReportsAction ?? false,
+    addTagsAction: input.addTagsAction
+      ? input.addTagsAction.map((id) => ({ id, name: `Tag ${id}` }))
+      : null,
   };
 }
 
@@ -234,6 +265,35 @@ export function createIntegrationMockMonarchClient(
 
     async getTransactionRules() {
       return data.rules ?? [];
+    },
+    // Stateful so create → get → update → delete can be exercised end-to-end.
+    // `ruleFromInput` mirrors the live API's write→read mapping: the
+    // `setCategoryAction` (a category-id string on write) and `addTagsAction`
+    // (tag-id strings) come back as objects, so we project them accordingly.
+    async createTransactionRule(input: TransactionRuleInput) {
+      data.rules = [
+        ...(data.rules ?? []),
+        {
+          id: `rule_${(data.rules?.length ?? 0) + 1}`,
+          order: (data.rules?.length ?? 0) + 1,
+          ...ruleFromInput(input),
+        },
+      ];
+      return data.rules;
+    },
+    // Update is a FULL REPLACE — the input defines the rule's entire new state,
+    // so every criterion/action absent from the input is cleared. We rebuild
+    // the rule from the input (keeping only id/order) rather than merging.
+    async updateTransactionRule(input: TransactionRuleInput & { id: string }) {
+      data.rules = (data.rules ?? []).map((r) =>
+        r.id === input.id ? { id: r.id, order: r.order, ...ruleFromInput(input) } : r
+      );
+      return data.rules;
+    },
+    async deleteTransactionRule(id: string) {
+      const before = data.rules?.length ?? 0;
+      data.rules = (data.rules ?? []).filter((r) => r.id !== id);
+      return { deleted: (data.rules?.length ?? 0) < before, errors: [] };
     },
 
     async getBudgets() {

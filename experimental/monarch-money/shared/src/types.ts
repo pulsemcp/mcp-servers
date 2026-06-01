@@ -161,14 +161,12 @@ export interface SpendingByCategory {
 }
 
 /**
- * Read-only view of a transaction rule.
+ * View of a transaction rule.
  *
  * Monarch's modern schema removes the older flat fields (`setMerchantId`,
  * `setCategoryId`, `setHideFromReports`, `setNeedsReview`, `setTagIds`,
  * `categoryCriteria`) and replaces `merchantCriteria` with an array of
- * structured matchers. We expose the remaining read-only fields and do NOT
- * publish mutations to write rules — the schema for the write side is
- * undocumented and prior probing during refactor work caused data loss.
+ * structured matchers.
  */
 export interface TransactionRule {
   id: string;
@@ -182,8 +180,46 @@ export interface TransactionRule {
   } | null;
   categoryIds?: string[] | null;
   accountIds?: string[] | null;
+  // Action fields. These mirror the write surface so a rule can be read back
+  // and re-supplied on edit (`update_transaction_rule` is a full replace).
+  // On read, the "set category" action resolves to the category object and the
+  // "add tags" action to the tag objects — on write the same fields take a
+  // bare category-id string and an array of tag-id strings respectively.
+  setCategoryAction?: { id: string; name: string } | null;
   setHideFromReportsAction?: boolean;
+  addTagsAction?: Array<{ id: string; name: string }> | null;
   lastAppliedAt?: string | null;
+}
+
+/**
+ * Input for creating or updating a transaction rule.
+ *
+ * Monarch's `CreateTransactionRuleInput` and `UpdateTransactionRuleInput` share
+ * the same field surface; update additionally requires an `id` (see
+ * `TransactionRuleInput & { id: string }` at the call sites). Fields that are
+ * left `undefined` are omitted from the GraphQL input entirely.
+ *
+ * Criteria (what the rule matches on) and actions (what the rule does) use
+ * different field names — notably `setCategoryAction` takes a bare category-id
+ * string, unlike the `categoryIds` *criteria* array.
+ */
+export interface TransactionRuleInput {
+  // Criteria — what the rule matches.
+  merchantCriteria?: Array<{ operator: string; value: string }>;
+  merchantCriteriaUseOriginalStatement?: boolean;
+  amountCriteria?: {
+    operator: string;
+    value?: number;
+    isExpense?: boolean;
+  };
+  categoryIds?: string[];
+  accountIds?: string[];
+  // Actions — what the rule applies to matching transactions.
+  setCategoryAction?: string;
+  setHideFromReportsAction?: boolean;
+  addTagsAction?: string[];
+  // Control flag — retroactively apply the rule to existing transactions.
+  applyToExistingTransactions?: boolean;
 }
 
 /**

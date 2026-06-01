@@ -302,19 +302,20 @@ query GetTags {
   }
 }`;
 
-// Read-only listing of transaction rules. Field selection is restricted to
-// the slice that survives in the current schema:
-// - `merchantCriteria` is now an array of {operator, value} matchers, not a
+// Listing of transaction rules. Field selection is restricted to the slice
+// that survives in the current schema:
+// - `merchantCriteria` is an array of {operator, value} matchers, not a
 //   plain string.
 // - `amountCriteria` is a single {operator, value, isExpense} object.
 // - `setHideFromReportsAction` replaces the older `setHideFromReports`.
+// - `setCategoryAction`/`addTagsAction` are the ACTION fields that mirror the
+//   write surface — `setCategoryAction` resolves to the assigned category
+//   ({id name}) and `addTagsAction` to the added tags ([{id name}]). Selecting
+//   them here is what makes a rule round-trip: `update_transaction_rule` is a
+//   FULL REPLACE (see the mutation notes below), so a caller must be able to
+//   read back a rule's current actions to re-supply them on edit.
 // - `setMerchantId`/`setCategoryId`/`setNeedsReview`/`setTagIds`/
 //   `categoryCriteria` were removed entirely.
-//
-// We intentionally do NOT expose mutations to create/update/delete rules in
-// this server: probing those endpoints during refactor work resulted in data
-// loss, and Monarch's rule-write surface is undocumented enough that we'd
-// rather leave it for users to manage in the Monarch UI.
 export const Q_TRANSACTION_RULES = `
 query GetTransactionRules {
   transactionRules {
@@ -325,8 +326,78 @@ query GetTransactionRules {
     amountCriteria { operator value isExpense }
     categoryIds
     accountIds
+    setCategoryAction { id name }
     setHideFromReportsAction
+    addTagsAction { id name }
     lastAppliedAt
+  }
+}`;
+
+// Rule write mutations. Monarch's modern rule surface lives behind the `V2`
+// resolvers (`createTransactionRuleV2` / `updateTransactionRuleV2`); the legacy
+// non-V2 mutations are gone. These were reverse-engineered against the live API
+// and cross-checked against community Monarch clients. Notes on the shape:
+//
+// - All three take a single typed `$input` variable (inline literals built from
+//   top-level operation variables are rejected, same as the transaction
+//   mutations).
+// - `CreateTransactionRuleInput` and `UpdateTransactionRuleInput` share the same
+//   field surface; update just adds a required `id`.
+// - The criteria fields mirror the read shape: `merchantCriteria` is an array of
+//   {operator, value}, `amountCriteria` is a single {operator, value, isExpense}
+//   object, and `categoryIds`/`accountIds` are string arrays.
+// - The ACTION fields use different names than the criteria: the field that sets
+//   a category on a match is `setCategoryAction` and takes a bare category-id
+//   STRING on WRITE (it reads back as `{ id name }`). `setHideFromReportsAction`
+//   is a boolean, `addTagsAction` is an array of tag-id strings on write (reads
+//   back as `[{ id name }]`).
+// - `applyToExistingTransactions` is a mutation-control flag (retroactively runs
+//   the rule against existing transactions); it is not a stored rule field.
+// - `order` is NOT part of the create/update input — Monarch manages rule
+//   ordering through a separate reorder mutation, so it cannot be set here.
+//
+// FULL-REPLACE SEMANTICS (verified against the live API): `updateTransactionRuleV2`
+// does NOT patch individual fields — the input defines the rule's COMPLETE new
+// state. Any criterion or action absent from the input is CLEARED on the stored
+// rule. Both create and update require at least one criterion AND at least one
+// action; an input that drops the rule's last criterion or last action is
+// silently rejected (the mutation returns a non-null PayloadError whose
+// `message` is null and makes no change). The update only ever touches the one
+// rule named by `id` — it never affects sibling rules.
+//
+// ERROR SHAPE: `errors` is a SINGLE nullable `PayloadError` OBJECT
+// ({ message, code, fieldErrors { field messages } }), NOT a list. A non-null
+// `errors` means the mutation failed (even when `message` is null — see the
+// silent-rejection case above). The client (`MonarchClient`) reads this object,
+// not an array.
+//
+// The create/update payloads only return `errors` — they do NOT echo the rule
+// back (there is no id on the response), so the client re-queries
+// `transactionRules` after a successful mutation to surface the result.
+export const M_CREATE_TRANSACTION_RULE = `
+mutation Common_CreateTransactionRuleMutationV2($input: CreateTransactionRuleInput!) {
+  createTransactionRuleV2(input: $input) {
+    errors { message code fieldErrors { field messages } }
+  }
+}`;
+
+export const M_UPDATE_TRANSACTION_RULE = `
+mutation Common_UpdateTransactionRuleMutationV2($input: UpdateTransactionRuleInput!) {
+  updateTransactionRuleV2(input: $input) {
+    errors { message code fieldErrors { field messages } }
+  }
+}`;
+
+// `deleteTransactionRule` takes a bare `$id: ID!` argument (NOT wrapped in an
+// input object) and returns a `deleted` boolean plus `errors`. The `deleted`
+// flag is unreliable — the live API returns `false` even when the rule is
+// actually removed — so the client confirms deletion by re-querying instead of
+// trusting it (see `MonarchClient.deleteTransactionRule`).
+export const M_DELETE_TRANSACTION_RULE = `
+mutation Common_DeleteTransactionRule($id: ID!) {
+  deleteTransactionRule(id: $id) {
+    deleted
+    errors { message }
   }
 }`;
 
