@@ -18,8 +18,10 @@ const PARAM_DESCRIPTIONS = {
   provider_slug: 'URL slug for provider (auto-generated from name if omitted)',
   provider_url: 'Website URL for provider',
   source_code: 'GitHub repository information',
-  package_registry: 'Package registry: npm, pypi, cargo, etc.',
-  package_name: 'Package name on the registry (e.g., "@modelcontextprotocol/server-filesystem")',
+  package_registry:
+    "Package registry: npm, pypi, cargo, etc. To CLEAR (unlink) the server's registry package, pass an empty string for BOTH `package_registry` and `package_name`. Passing an empty string for only one of the two is rejected with a 422 error.",
+  package_name:
+    'Package name on the registry (e.g., "@modelcontextprotocol/server-filesystem"). To CLEAR (unlink) the server\'s registry package, pass an empty string for BOTH `package_name` and `package_registry`. Passing an empty string for only one of the two is rejected with a 422 error.',
   recommended: 'Mark this server as recommended by PulseMCP',
   verified_no_remote_canonicals:
     'Mark that this server has been verified to have no remote canonical URLs (true = verified no remote canonicals exist, false = reset/canonicals found)',
@@ -190,6 +192,26 @@ To update an existing remote, include its ID:
   ]
 }
 \`\`\`
+
+## Updating / Clearing the Registry Package Link
+Set the link by providing both fields:
+\`\`\`json
+{
+  "implementation_id": 456,
+  "package_registry": "npm",
+  "package_name": "@modelcontextprotocol/server-filesystem"
+}
+\`\`\`
+
+To **clear** (unlink) the registry package, pass an empty string for **both** fields:
+\`\`\`json
+{
+  "implementation_id": 456,
+  "package_registry": "",
+  "package_name": ""
+}
+\`\`\`
+Passing an empty string for only one of the two is rejected with a 422 error ("Package registry and package name must be provided together"); omitting both leaves the link unchanged.
 
 ## Linking/Creating Provider
 Link existing provider by ID:

@@ -63,6 +63,11 @@ const PARAM_DESCRIPTIONS = {
   github_repo: 'GitHub repository name (without owner prefix).',
   github_subfolder:
     'Subfolder path within the repository, for monorepos. Omit for root-level projects.',
+  // Package registry fields (UPDATE only)
+  package_registry:
+    "(UPDATE ONLY, SERVER ONLY) Package registry: npm, pypi, cargo, etc. To CLEAR (unlink) the server's registry package, pass an empty string for BOTH `package_registry` and `package_name`. Passing an empty string for only one of the two is rejected with a 422 error.",
+  package_name:
+    '(UPDATE ONLY, SERVER ONLY) Package name on the registry (e.g., "@modelcontextprotocol/server-filesystem"). To CLEAR (unlink) the server\'s registry package, pass an empty string for BOTH `package_name` and `package_registry`. Passing an empty string for only one of the two is rejected with a 422 error.',
   // Remote endpoints
   remote:
     'Array of remote endpoint configurations for MCP servers. Providing this replaces ALL existing remotes. Omitting leaves them unchanged. Pass an empty array to delete all. Each remote can have: id (existing remote ID or blank for new), url_direct, url_setup, transport (e.g., "sse"), host_platform (e.g., "smithery"), host_infrastructure (e.g., "cloudflare"), authentication_method (e.g., "open"), cost (e.g., "free"), status (defaults to "live"), display_name, and internal_notes.',
@@ -111,6 +116,9 @@ const SaveMCPImplementationSchema = z.object({
   github_owner: z.string().optional().describe(PARAM_DESCRIPTIONS.github_owner),
   github_repo: z.string().optional().describe(PARAM_DESCRIPTIONS.github_repo),
   github_subfolder: z.string().optional().describe(PARAM_DESCRIPTIONS.github_subfolder),
+  // Package registry fields (UPDATE only)
+  package_registry: z.string().optional().describe(PARAM_DESCRIPTIONS.package_registry),
+  package_name: z.string().optional().describe(PARAM_DESCRIPTIONS.package_name),
   // Remote endpoints
   remote: z
     .array(
@@ -234,6 +242,7 @@ Important notes:
   - \`classification\` and \`implementation_language\` only apply to servers
   - \`provider_name\` reuses existing provider if it matches a provider's slug
 - Setting mcp_server_id or mcp_client_id to null will unlink the association (UPDATE only)
+- Registry package (UPDATE only): pass an empty string for BOTH \`package_registry\` and \`package_name\` to CLEAR (unlink) the link; passing only one as empty is rejected with a 422 error; omitting both leaves the link unchanged
 - Remote endpoints are for MCP servers only and configure how they can be accessed
 - Canonical URLs help identify the authoritative source for the implementation
 - After creating/updating, use \`get_mcp_server\` to verify the full state including remotes and canonical URLs`,
@@ -324,6 +333,15 @@ Important notes:
         github_subfolder: {
           type: 'string',
           description: PARAM_DESCRIPTIONS.github_subfolder,
+        },
+        // Package registry fields (UPDATE only)
+        package_registry: {
+          type: 'string',
+          description: PARAM_DESCRIPTIONS.package_registry,
+        },
+        package_name: {
+          type: 'string',
+          description: PARAM_DESCRIPTIONS.package_name,
         },
         // Remote endpoints
         remote: {

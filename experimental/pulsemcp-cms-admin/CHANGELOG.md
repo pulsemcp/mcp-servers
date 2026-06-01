@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [0.10.1] - 2026-06-01
+
+### Added
+
+- `save_mcp_implementation` now accepts `package_registry` and `package_name` parameters (update-only, server-only), exposing the registry-package link that was previously settable only via `update_mcp_server`.
+
+### Changed
+
+- `update_mcp_server` and `save_mcp_implementation` now document how to **clear** (unlink) a server's registry package: pass an empty string for **both** `package_registry` and `package_name`. Passing an empty string for only one of the two is rejected by the Rails admin API with a 422 (`"Package registry and package name must be provided together"`); omitting both leaves the link unchanged. This mirrors the existing empty-string-unlink contract for `github_owner`/`github_repo`. Empty-string values for both fields are forwarded to the API verbatim rather than stripped, so the clear path reaches the backend. Backs [pulsemcp#3978](https://github.com/pulsemcp/pulsemcp/issues/3978).
+
 ## [0.10.0] - 2026-05-29
 
 ### Changed
