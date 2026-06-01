@@ -4,7 +4,7 @@ MCP server for [Monarch Money](https://www.monarchmoney.com/) — a personal fin
 
 ## Highlights
 
-- **19 consolidated tools** across two groups (`readonly`, `manage`) covering accounts, balances, net worth, cashflow, transactions, categories, tags, transaction rules, and budgets
+- **20 consolidated tools** across two groups (`readonly`, `manage`) covering accounts, balances, net worth, cashflow, transactions, categories, tags, transaction rules, and budgets
 - **Encrypted on-disk session** at `~/.monarch-money-mcp/session.enc` — the server never accepts a Monarch password through a tool input
 - **Tool group filtering** via env vars — run the server in a strict read-only mode, or hand-pick the exact tools you want exposed to the agent
 - **Custom thin GraphQL transport** targeting `api.monarch.com/graphql` — no third-party Monarch client dependency
@@ -136,14 +136,15 @@ MONARCH_ENABLED_TOOLS=get_transactions,get_accounts
 | ---------------- | -------------------- | --------------------------------------------------------------------------------------------- |
 | `get_categories` | `readonly`, `manage` | List all categories. Pass `includeGroups: true` to also return the top-level category groups. |
 | `get_tags`       | `readonly`, `manage` | List all tags.                                                                                |
-| `create_tag`     | `manage`             | Create a new tag.                                                                             |
 
 ### Transaction rules (auto-classification)
 
-| Tool                      | Groups               | Description                                                                                  |
-| ------------------------- | -------------------- | -------------------------------------------------------------------------------------------- |
-| `get_transaction_rules`   | `readonly`, `manage` | List configured auto-classify rules.                                                         |
-| `manage_transaction_rule` | `manage`             | Create, update, or delete a transaction rule via `action: "create" \| "update" \| "delete"`. |
+| Tool                      | Groups               | Description                                                                                                                                             |
+| ------------------------- | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `get_transaction_rules`   | `readonly`, `manage` | List configured auto-classify rules, including each rule's criteria and actions.                                                                        |
+| `create_transaction_rule` | `manage`             | Create a rule from one or more criteria (merchant / amount / category / account) plus one or more match actions.                                        |
+| `update_transaction_rule` | `manage`             | Update a rule by `id`. **Full replace** — re-supply the rule's complete criteria and actions (≥1 of each); any field you omit is cleared from the rule. |
+| `delete_transaction_rule` | `manage`             | Permanently delete a rule by `id`.                                                                                                                      |
 
 ### Budgets
 

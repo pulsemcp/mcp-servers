@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.0.8] - 2026-06-01
+
+### Added
+
+- **Transaction rule management.** Three new `manage`-group tools — `create_transaction_rule`, `update_transaction_rule`, and `delete_transaction_rule` — let agents create, edit, and remove Monarch auto-classification rules. Previously the server could only read rules (`get_transaction_rules`). The mutating tools are gated to the write-capable `manage` group and never appear in `readonly` configurations. Each rule takes one or more criteria (merchant / amount / category / account) plus one or more actions (set category, hide from reports, add tags). Reverse-engineered against the live Monarch GraphQL `createTransactionRuleV2` / `updateTransactionRuleV2` / `deleteTransactionRule` resolvers and verified end-to-end against the live API via a self-cleaning create → read-back → update → delete e2e test.
+
+### Changed
+
+- **`get_transaction_rules` now returns each rule's actions.** The read query selects `setCategoryAction { id name }` and `addTagsAction { id name }` in addition to the existing criteria, so a rule's full state round-trips with the write tools.
+
+### Notes
+
+- **`update_transaction_rule` is a full replace, not a patch.** Monarch's update resolver treats the input as the rule's complete new state: any criterion or action you omit is cleared. The tool requires at least one criterion and one action on every call, and its description instructs callers to read the rule first and then send back the complete desired state. This mirrors the live API, which silently rejects an update that would leave a rule with no criteria or no actions.
+
 ## [0.0.7] - 2026-05-17
 
 ### Fixed

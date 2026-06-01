@@ -38,7 +38,10 @@ async function main() {
     obtainedAt: new Date().toISOString(),
   });
 
-  const clientFactory = async () => createIntegrationMockMonarchClient(mockData);
+  // Memoize the mock client so in-memory state (e.g. rules created during a
+  // test) persists across tool calls within a single server process.
+  let mockClient: ReturnType<typeof createIntegrationMockMonarchClient> | null = null;
+  const clientFactory = async () => (mockClient ??= createIntegrationMockMonarchClient(mockData));
 
   const { server, registerHandlers } = createMCPServer({
     version: VERSION,
