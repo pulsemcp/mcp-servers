@@ -30,10 +30,10 @@
   "devDependencies": {
     "@types/jsdom": "^21.1.7",
     "@types/node": "^24.0.0",
-    "@vitest/ui": "^3.2.3",
+    "@vitest/ui": "^4.1.8",
     "dotenv": "^16.6.1",
     "typescript": "^5.8.3",
-    "vitest": "^3.2.4"
+    "vitest": "^4.1.8"
   },
   "optionalDependencies": {
     "@rollup/rollup-darwin-arm64": "^4.9.5",

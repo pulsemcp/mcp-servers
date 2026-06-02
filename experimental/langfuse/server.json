@@ -2,7 +2,7 @@
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-09-29/server.schema.json",
   "name": "com.pulsemcp/langfuse",
   "description": "MCP server for Langfuse LLM observability — trace and observation analysis.",
-  "version": "0.1.2",
+  "version": "0.1.1",
   "repository": {
     "url": "https://github.com/pulsemcp/mcp-servers",
     "source": "github",
@@ -13,7 +13,7 @@
       "registryType": "npm",
       "registryBaseUrl": "https://registry.npmjs.org",
       "identifier": "langfuse-observability-mcp-server",
-      "version": "0.1.2",
+      "version": "0.1.1",
       "runtimeHint": "npx",
       "transport": {
         "type": "stdio"

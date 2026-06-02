@@ -28,8 +28,8 @@
   },
   "devDependencies": {
     "@types/node": "^24.0.0",
-    "@vitest/ui": "^3.2.3",
+    "@vitest/ui": "^4.1.8",
     "dotenv": "^16.4.5",
-    "vitest": "^3.2.3"
+    "vitest": "^4.1.8"
   }
 }
