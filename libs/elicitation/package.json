@@ -23,6 +23,6 @@
   "devDependencies": {
     "@types/node": "^24.10.12",
     "typescript": "^5.7.3",
-    "vitest": "^3.2.3"
+    "vitest": "^4.1.8"
   }
 }
