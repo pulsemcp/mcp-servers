@@ -1171,6 +1171,14 @@ export function createMockPulseMCPAdminClient(mockData: MockData): IPulseMCPAdmi
       };
     },
 
+    async setPopularityDropBypass(enabled) {
+      return {
+        enabled,
+        enabled_at: enabled ? '2026-06-09T00:00:00Z' : null,
+        enabled_by: enabled ? 'mock-admin' : null,
+      };
+    },
+
     // Proctor methods
     async runExamForMirror() {
       return {

@@ -67,6 +67,7 @@ import { discardGoodJob } from './tools/discard-good-job.js';
 import { rescheduleGoodJob } from './tools/reschedule-good-job.js';
 import { forceTriggerGoodJobCron } from './tools/force-trigger-good-job-cron.js';
 import { cleanupGoodJobs } from './tools/cleanup-good-jobs.js';
+import { setPopularityDropBypass } from './tools/set-popularity-drop-bypass.js';
 // Proctor tools
 import { runExamForMirror } from './tools/run-exam-for-mirror.js';
 import { getExamResult } from './tools/get-exam-result.js';
@@ -363,6 +364,10 @@ const ALL_TOOLS: ToolDefinition[] = [
   { factory: rescheduleGoodJob, groups: ['good_jobs'], isWriteOperation: true },
   { factory: forceTriggerGoodJobCron, groups: ['good_jobs'], isWriteOperation: true },
   { factory: cleanupGoodJobs, groups: ['good_jobs'], isWriteOperation: true },
+  // setPopularityDropBypass toggles a one-off bypass of the SYSTEMIC_DROP guardrail in
+  // UpdatePopularityEstimatesFromBigqueryJob. It lives in good_jobs because it controls the
+  // behavior of a background job and is exposed via the same write-enabled good_jobs credential.
+  { factory: setPopularityDropBypass, groups: ['good_jobs'], isWriteOperation: true },
   // Proctor tools
   { factory: runExamForMirror, groups: ['proctor'], isWriteOperation: true },
   { factory: getExamResult, groups: ['proctor'], isWriteOperation: false },

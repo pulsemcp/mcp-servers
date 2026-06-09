@@ -55,6 +55,7 @@ import type {
   GoodJobStatistics,
   GoodJobActionResponse,
   GoodJobCleanupResponse,
+  PopularityDropBypassStatus,
   // Proctor types
   ProctorRunExamParams,
   ProctorRunExamResponse,
@@ -144,6 +145,7 @@ import { retryGoodJob } from './pulsemcp-admin-client/lib/retry-good-job.js';
 import { discardGoodJob } from './pulsemcp-admin-client/lib/discard-good-job.js';
 import { rescheduleGoodJob } from './pulsemcp-admin-client/lib/reschedule-good-job.js';
 import { forceTriggerGoodJobCron } from './pulsemcp-admin-client/lib/force-trigger-good-job-cron.js';
+import { setPopularityDropBypass } from './pulsemcp-admin-client/lib/set-popularity-drop-bypass.js';
 import { cleanupGoodJobs } from './pulsemcp-admin-client/lib/cleanup-good-jobs.js';
 import { runExamForMirror } from './pulsemcp-admin-client/lib/run-exam-for-mirror.js';
 import { saveResultsForMirror } from './pulsemcp-admin-client/lib/save-results-for-mirror.js';
@@ -413,6 +415,8 @@ export interface IPulseMCPAdminClient {
   rescheduleGoodJob(id: string, scheduledAt: string): Promise<GoodJobActionResponse>;
 
   forceTriggerGoodJobCron(cronKey: string): Promise<GoodJobActionResponse>;
+
+  setPopularityDropBypass(enabled: boolean): Promise<PopularityDropBypassStatus>;
 
   cleanupGoodJobs(params?: {
     older_than_days?: number;
@@ -859,6 +863,10 @@ export class PulseMCPAdminClient implements IPulseMCPAdminClient {
 
   async forceTriggerGoodJobCron(cronKey: string): Promise<GoodJobActionResponse> {
     return forceTriggerGoodJobCron(this.apiKey, this.baseUrl, cronKey);
+  }
+
+  async setPopularityDropBypass(enabled: boolean): Promise<PopularityDropBypassStatus> {
+    return setPopularityDropBypass(this.apiKey, this.baseUrl, enabled);
   }
 
   async cleanupGoodJobs(params?: {
