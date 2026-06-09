@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [0.10.2] - 2026-06-09
+
+### Added
+
+- `set_popularity_drop_bypass` tool (in the `good_jobs` group) — enables or disables a deliberate, auditable **one-off bypass** of the SYSTEMIC_DROP guardrail in `UpdatePopularityEstimatesFromBigqueryJob`. Input `{ enabled: boolean }`; calls `POST /api/popularity_drop_bypass` and returns the resulting status (`enabled` / `enabled_at` / `enabled_by`). When enabled, the next job run flushes the legitimate downward popularity corrections currently held by the guardrail (clearing their `popularity_drop_held_since`), then the flag auto-resets to `false` so the bypass never silently stays on. The independent impossible-RISE guardrail is unaffected. Backs [pulsemcp#4087](https://github.com/pulsemcp/pulsemcp/issues/4087); pairs with the web-app admin endpoint that owns the contract.
+
 ## [0.10.1] - 2026-06-01
 
 ### Added

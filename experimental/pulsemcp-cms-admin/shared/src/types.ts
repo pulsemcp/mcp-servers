@@ -1169,6 +1169,14 @@ export interface SetKnownMissingInitToolsListResponse {
   known_missing_init_tools_list_filter_to: string | null;
 }
 
+// Status of the one-off SYSTEMIC_DROP bypass for popularity estimates.
+// Returned by GET/POST /api/popularity_drop_bypass.
+export interface PopularityDropBypassStatus {
+  enabled: boolean;
+  enabled_at: string | null;
+  enabled_by: string | null;
+}
+
 // ============================================================
 // MOZ Types
 // MOZ URL metrics, backlinks, and stored historical data
