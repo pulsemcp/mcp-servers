@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.10] - 2026-06-12
+
+### Fixed
+
+- Startup healthcheck no longer requires the project-level `storage.buckets.list` permission when a `GCS_BUCKET` constraint is active. Previously `performHealthChecks()` unconditionally called `listBuckets()` to validate credentials, which fails for least-privilege, bucket-scoped service accounts that are correctly limited to a single bucket. The constrained path now validates credentials by probing only the constrained bucket via `headBucket` (which needs only bucket-level `storage.buckets.get`); `listBuckets()` is still used in the unconstrained case, which legitimately needs project-level access. Credential validation is extracted into a testable `validateGcsCredentials` helper with functional test coverage.
+
 ## [0.1.9] - 2026-06-12
 
 ### Added
