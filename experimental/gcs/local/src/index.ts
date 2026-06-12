@@ -5,6 +5,7 @@ import { fileURLToPath } from 'url';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { createMCPServer, GoogleCloudStorageClient } from '../shared/index.js';
 import { logServerStart, logError, logWarning, logInfo } from '../shared/logging.js';
+import { validateGcsCredentials } from './healthcheck.js';
 
 // Read version from package.json
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -126,22 +127,10 @@ async function performHealthChecks(): Promise<void> {
       keyFileContents,
     });
 
-    // Try to list buckets to validate credentials
-    await client.listBuckets();
-    logInfo('healthcheck', 'GCS credentials validated successfully');
-
-    // If GCS_BUCKET is set, verify it exists and is accessible
-    if (constrainedBucket) {
-      const bucketExists = await client.headBucket(constrainedBucket);
-      if (!bucketExists) {
-        logError(
-          'healthcheck',
-          `Constrained bucket "${constrainedBucket}" does not exist or is not accessible`
-        );
-        process.exit(1);
-      }
-      logInfo('healthcheck', `Constrained bucket "${constrainedBucket}" verified`);
-    }
+    // Validate credentials. When constrained to a single bucket, this probes
+    // only that bucket and never calls listBuckets(), so a least-privilege,
+    // bucket-scoped service account (without storage.buckets.list) can start.
+    await validateGcsCredentials(client, constrainedBucket);
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     logError('healthcheck', `Failed to validate GCS credentials: ${message}`);
