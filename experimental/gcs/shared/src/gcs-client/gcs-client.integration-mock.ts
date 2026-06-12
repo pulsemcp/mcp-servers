@@ -4,6 +4,7 @@ import type {
   ListObjectsResult,
   ListObjectsOptions,
   GetObjectResult,
+  GetObjectBytesResult,
   PutObjectResult,
   PutObjectOptions,
   CopyObjectResult,
@@ -105,6 +106,20 @@ export function createIntegrationMockGCSClient(mockData: MockGCSData = {}): IGCS
         lastModified: obj.lastModified || new Date(),
         etag: '"mock-etag"',
         metadata: obj.metadata || {},
+      };
+    },
+
+    async getObjectBytes(bucket: string, key: string): Promise<GetObjectBytesResult> {
+      const bucketObjects = objects?.[bucket];
+      if (!bucketObjects || !bucketObjects[key]) {
+        throw new Error(`Object not found: ${bucket}/${key}`);
+      }
+
+      const content = Buffer.from(bucketObjects[key].content);
+      return {
+        content,
+        contentType: bucketObjects[key].contentType || 'text/plain',
+        contentLength: content.length,
       };
     },
 

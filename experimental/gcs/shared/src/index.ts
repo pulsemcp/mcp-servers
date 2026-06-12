@@ -22,6 +22,7 @@ export {
   type ListObjectsOptions,
   type ListObjectsResult,
   type GetObjectResult,
+  type GetObjectBytesResult,
   type PutObjectOptions,
   type PutObjectResult,
   type CopyObjectResult,
