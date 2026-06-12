@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.9] - 2026-06-12
+
+### Added
+
+- `download_prefix` (readonly): recursively download every object under a prefix to a local directory, preserving the key path structure as subdirectories. Paginates through the full listing, writes raw bytes (binary-safe), skips directory-placeholder objects, collects per-object errors without aborting the batch, and returns a manifest (`destinationDir`, `objectCount`, `totalBytes`, capped `files` list, `errors`). Defaults the destination to a unique folder under the OS temp directory. This fills the gap left by `get_object`, which only returns a single object inline as UTF-8 text.
+- `download_object` (readonly): download a single object to a local file path, writing raw bytes (binary-safe) instead of lossy inline UTF-8 text.
+- `getObjectBytes` on the GCS client interface, returning raw object `Buffer` bytes for binary-safe local writes.
+
 ## [0.1.8] - 2026-05-17
 
 ### Fixed

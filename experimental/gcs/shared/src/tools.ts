@@ -4,6 +4,8 @@ import type { GCSClientFactory } from './server.js';
 import { listBucketsTool } from './tools/list-buckets.js';
 import { listObjectsTool } from './tools/list-objects.js';
 import { getObjectTool } from './tools/get-object.js';
+import { downloadPrefixTool } from './tools/download-prefix.js';
+import { downloadObjectTool } from './tools/download-object.js';
 import { putObjectTool } from './tools/put-object.js';
 import { deleteObjectTool } from './tools/delete-object.js';
 import { createBucketTool } from './tools/create-bucket.js';
@@ -129,6 +131,8 @@ const ALL_TOOLS: ToolDefinition[] = [
   { factory: listBucketsTool, groups: ['readonly'], bucketLevelOnly: true },
   { factory: listObjectsTool, groups: ['readonly'], bucketParams: ['bucket'] },
   { factory: getObjectTool, groups: ['readonly'], bucketParams: ['bucket'] },
+  { factory: downloadObjectTool, groups: ['readonly'], bucketParams: ['bucket'] },
+  { factory: downloadPrefixTool, groups: ['readonly'], bucketParams: ['bucket'] },
   { factory: headBucketTool, groups: ['readonly'], bucketLevelOnly: true },
   // Write operations (non-destructive)
   { factory: putObjectTool, groups: ['readwrite'], bucketParams: ['bucket'] },

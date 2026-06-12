@@ -17,17 +17,41 @@ MCP server for Google Cloud Storage operations with fine-grained tool access con
 
 ### Tools
 
-| Tool            | Group     | Description                                         |
-| --------------- | --------- | --------------------------------------------------- |
-| `list_buckets`  | readonly  | List all GCS buckets in the Google Cloud project    |
-| `list_objects`  | readonly  | List objects in a bucket with prefix and pagination |
-| `get_object`    | readonly  | Get object contents as text                         |
-| `head_bucket`   | readonly  | Check if a bucket exists and is accessible          |
-| `put_object`    | readwrite | Upload or update an object                          |
-| `copy_object`   | readwrite | Copy an object within or across buckets             |
-| `create_bucket` | readwrite | Create a new GCS bucket                             |
-| `delete_object` | delete    | Delete an object from a bucket                      |
-| `delete_bucket` | delete    | Delete an empty GCS bucket                          |
+| Tool              | Group     | Description                                                      |
+| ----------------- | --------- | ---------------------------------------------------------------- |
+| `list_buckets`    | readonly  | List all GCS buckets in the Google Cloud project                 |
+| `list_objects`    | readonly  | List objects in a bucket with prefix and pagination              |
+| `get_object`      | readonly  | Get object contents as text                                      |
+| `download_object` | readonly  | Download a single object to a local file (binary-safe)           |
+| `download_prefix` | readonly  | Recursively download a prefix to a local directory (binary-safe) |
+| `head_bucket`     | readonly  | Check if a bucket exists and is accessible                       |
+| `put_object`      | readwrite | Upload or update an object                                       |
+| `copy_object`     | readwrite | Copy an object within or across buckets                          |
+| `create_bucket`   | readwrite | Create a new GCS bucket                                          |
+| `delete_object`   | delete    | Delete an object from a bucket                                   |
+| `delete_bucket`   | delete    | Delete an empty GCS bucket                                       |
+
+### Downloading to Local Disk
+
+`get_object` returns an object's contents inline as UTF-8 text, which is lossy for binary data and impractical for large files or many files at once. For local data-wrangling, use the download tools instead — both stream **raw bytes** to disk and belong to the `readonly` toolgroup:
+
+- **`download_object`** — download a single object to a local file path. Defaults to a unique file under the OS temp directory.
+- **`download_prefix`** — recursively download every object under a prefix to a local directory, preserving the key path structure as subdirectories. Paginates through the full listing, skips directory-placeholder objects (keys ending in `/`), collects per-object errors without aborting the batch, and returns a manifest:
+
+  ```json
+  {
+    "destinationDir": "/tmp/gcs-download-my-bucket-1700000000000",
+    "objectCount": 1234,
+    "totalBytes": 5678901,
+    "files": [
+      { "key": "logs/2024/01/data.json", "localPath": "/tmp/.../01/data.json", "size": 1234 }
+    ],
+    "filesTruncated": true,
+    "errors": []
+  }
+  ```
+
+  The inline `files` list is capped (`maxInlineEntries`, default 100), but `objectCount` and `totalBytes` always reflect the full download. When `destinationDir` is omitted it defaults to a unique folder under the OS temp directory.
 
 ### Resources
 

@@ -42,6 +42,13 @@ export interface GetObjectResult {
   metadata?: Record<string, string>;
 }
 
+export interface GetObjectBytesResult {
+  /** Raw object bytes. Unlike getObject, this is NOT decoded to UTF-8, so it is binary-safe. */
+  content: Buffer;
+  contentType?: string;
+  contentLength?: number;
+}
+
 export interface PutObjectOptions {
   contentType?: string;
   metadata?: Record<string, string>;
@@ -61,6 +68,7 @@ export interface IGCSClient {
   listBuckets(): Promise<ListBucketsResult>;
   listObjects(bucket: string, options?: ListObjectsOptions): Promise<ListObjectsResult>;
   getObject(bucket: string, key: string): Promise<GetObjectResult>;
+  getObjectBytes(bucket: string, key: string): Promise<GetObjectBytesResult>;
   putObject(
     bucket: string,
     key: string,
@@ -156,6 +164,16 @@ export class GoogleCloudStorageClient implements IGCSClient {
       lastModified: metadata.updated ? new Date(metadata.updated as string) : undefined,
       etag: metadata.etag as string | undefined,
       metadata: (metadata.metadata as Record<string, string>) || {},
+    };
+  }
+
+  async getObjectBytes(bucket: string, key: string): Promise<GetObjectBytesResult> {
+    const file = this.storage.bucket(bucket).file(key);
+    const [content] = await file.download();
+
+    return {
+      content,
+      contentLength: content.length,
     };
   }
 
