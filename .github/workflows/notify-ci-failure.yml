@@ -6,6 +6,7 @@ on:
       - 'Lint and Format Check'
       - 'CI Build & Test Checks'
       - 'Publish Updated MCP Servers'
+      - 'Publish to MCP Registry'
       - 'Validate MCP Server Publish Files'
       - 'Verify MCP Server Publication Staged'
       - 'AppSignal MCP Server CI'
