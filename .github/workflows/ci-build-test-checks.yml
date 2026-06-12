@@ -39,7 +39,7 @@ jobs:
             await new Promise(resolve => setTimeout(resolve, 30000));
 
             // Configuration
-            const maxWaitTime = 10 * 60 * 1000; // 10 minutes
+            const maxWaitTime = 25 * 60 * 1000; // 25 minutes
             const checkInterval = 10 * 1000; // 10 seconds
             const startTime = Date.now();
 
