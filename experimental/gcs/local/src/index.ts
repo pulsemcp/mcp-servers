@@ -128,8 +128,10 @@ async function performHealthChecks(): Promise<void> {
     });
 
     // Validate credentials. When constrained to a single bucket, this probes
-    // only that bucket and never calls listBuckets(), so a least-privilege,
-    // bucket-scoped service account (without storage.buckets.list) can start.
+    // only that bucket via an object-scoped list (storage.objects.list) and
+    // never touches project-level (storage.buckets.list) or bucket-metadata
+    // (storage.buckets.get) permissions, so a least-privilege, bucket-scoped
+    // read-only service account can start.
     await validateGcsCredentials(client, constrainedBucket);
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);

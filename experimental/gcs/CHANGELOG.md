@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.11] - 2026-06-12
+
+### Fixed
+
+- Startup healthcheck for a `GCS_BUCKET`-constrained server now validates credentials with an object-scoped list (`storage.objects.list`) instead of a bucket-metadata probe. The previous (`0.1.10`) constrained path used `headBucket`, which calls `storage.buckets.get` — but a correctly least-privilege, single-bucket **read-only** service account can be denied `storage.buckets.get` just as it is denied `storage.buckets.list`, so it still failed startup validation and (via `should_fail_session`) took down the whole session. Verified first-hand against the real `gcs-agent-transcripts` read SA: `storage.objects.list` on the pinned bucket → 200, while both `storage.buckets.list` and `storage.buckets.get` → 403. The constrained path now probes `listObjects(bucket, { maxResults: 1 })`, which is the exact permission the server actually exercises; the unconstrained (multi-bucket) path still uses `listBuckets()`, which legitimately needs project-level access.
+
 ## [0.1.10] - 2026-06-12
 
 ### Fixed
