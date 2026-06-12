@@ -5,16 +5,21 @@ import { logInfo } from '../shared/logging.js';
  */
 export interface HealthCheckClient {
   listBuckets(): Promise<unknown>;
-  headBucket(bucket: string): Promise<boolean>;
+  listObjects(bucket: string, options?: { maxResults?: number }): Promise<unknown>;
 }
 
 /**
  * Thrown when a constrained bucket cannot be reached (does not exist or the
- * service account lacks access to it).
+ * service account lacks object-read access to it).
  */
 export class BucketNotAccessibleError extends Error {
-  constructor(bucket: string) {
-    super(`Constrained bucket "${bucket}" does not exist or is not accessible`);
+  constructor(bucket: string, cause?: unknown) {
+    const causeMessage =
+      cause instanceof Error ? cause.message : cause !== undefined ? String(cause) : undefined;
+    super(
+      `Constrained bucket "${bucket}" does not exist or is not accessible` +
+        (causeMessage ? `: ${causeMessage}` : '')
+    );
     this.name = 'BucketNotAccessibleError';
   }
 }
@@ -23,10 +28,13 @@ export class BucketNotAccessibleError extends Error {
  * Validate GCS credentials and connectivity.
  *
  * - When constrained to a single bucket (`GCS_BUCKET`), probe ONLY that bucket
- *   via `headBucket`, which needs only bucket-level permissions
- *   (`storage.buckets.get`). This path must NOT call `listBuckets()`, because
- *   that requires the project-level `storage.buckets.list` permission, which a
- *   least-privilege, bucket-scoped service account intentionally does not have.
+ *   with an object-scoped list (`storage.objects.list`). This is the exact
+ *   permission the server actually exercises for the constrained bucket, and a
+ *   least-privilege, bucket-scoped service account is granted it. This path must
+ *   NOT call `listBuckets()` (project-level `storage.buckets.list`) NOR a
+ *   bucket-metadata probe like `headBucket`/`getMetadata` (bucket-level
+ *   `storage.buckets.get`): a correctly scoped read-only SA can be denied BOTH
+ *   of those while still being able to read objects in the bucket.
  * - Without a constraint, validate by listing buckets, which legitimately
  *   requires project-level access.
  *
@@ -37,9 +45,13 @@ export async function validateGcsCredentials(
   constrainedBucket?: string
 ): Promise<void> {
   if (constrainedBucket) {
-    const bucketExists = await client.headBucket(constrainedBucket);
-    if (!bucketExists) {
-      throw new BucketNotAccessibleError(constrainedBucket);
+    try {
+      // A single object-list request validates `storage.objects.list` on the
+      // bucket without requiring any project- or bucket-level metadata
+      // permission. maxResults:1 keeps the probe cheap.
+      await client.listObjects(constrainedBucket, { maxResults: 1 });
+    } catch (error) {
+      throw new BucketNotAccessibleError(constrainedBucket, error);
     }
     logInfo('healthcheck', `Constrained bucket "${constrainedBucket}" verified`);
   } else {
