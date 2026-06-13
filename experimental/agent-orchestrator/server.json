@@ -2,7 +2,7 @@
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-09-29/server.schema.json",
   "name": "com.pulsemcp/agent-orchestrator",
   "description": "MCP server for PulseMCP's Agent Orchestrator — manage agent sessions, notifications, and triggers.",
-  "version": "0.8.2",
+  "version": "0.8.7",
   "repository": {
     "url": "https://github.com/pulsemcp/mcp-servers",
     "source": "github",
@@ -13,7 +13,7 @@
       "registryType": "npm",
       "registryBaseUrl": "https://registry.npmjs.org",
       "identifier": "agent-orchestrator-mcp-server",
-      "version": "0.8.2",
+      "version": "0.8.7",
       "runtimeHint": "npx",
       "transport": {
         "type": "stdio"

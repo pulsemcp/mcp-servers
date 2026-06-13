@@ -59,6 +59,7 @@ function formatSession(session: Session): string {
   ];
 
   if (session.slug) lines.push(`- **Slug:** ${session.slug}`);
+  if (session.category) lines.push(`- **Category:** ${session.category.name}`);
   if (session.git_root) lines.push(`- **Repository:** ${session.git_root}`);
   if (session.branch) lines.push(`- **Branch:** ${session.branch}`);
   if (session.prompt) {

@@ -36,6 +36,12 @@ import type {
   EnqueuedMessageResponse,
   EnqueuedMessageInterruptResponse,
   EnqueuedMessageStatus,
+  Category,
+  CategoriesResponse,
+  CategoryResponse,
+  CreateCategoryRequest,
+  UpdateCategoryRequest,
+  SetSessionCategoryResponse,
   Trigger,
   TriggerType,
   TriggerStatus,
@@ -260,6 +266,17 @@ export interface IAgentOrchestratorClient {
     sessionId: string | number,
     messageId: number
   ): Promise<EnqueuedMessageInterruptResponse>;
+
+  // Categories
+  listCategories(): Promise<CategoriesResponse>;
+  createCategory(data: CreateCategoryRequest): Promise<Category>;
+  updateCategory(id: number, data: UpdateCategoryRequest): Promise<Category>;
+  deleteCategory(id: number): Promise<void>;
+  reorderCategories(ids: Array<number | 'uncategorized'>): Promise<CategoriesResponse>;
+  setSessionCategory(
+    sessionId: string | number,
+    categoryId: number | null
+  ): Promise<SetSessionCategoryResponse>;
 
   // Triggers
   // Filter by condition type — values match TriggerConditionType
@@ -832,6 +849,40 @@ export class AgentOrchestratorClient implements IAgentOrchestratorClient {
     return this.request<EnqueuedMessageInterruptResponse>(
       'POST',
       `/sessions/${sessionId}/enqueued_messages/${messageId}/interrupt`
+    );
+  }
+
+  // Categories
+  async listCategories(): Promise<CategoriesResponse> {
+    return this.request<CategoriesResponse>('GET', '/categories');
+  }
+
+  async createCategory(data: CreateCategoryRequest): Promise<Category> {
+    const response = await this.request<CategoryResponse>('POST', '/categories', data);
+    return response.category;
+  }
+
+  async updateCategory(id: number, data: UpdateCategoryRequest): Promise<Category> {
+    const response = await this.request<CategoryResponse>('PATCH', `/categories/${id}`, data);
+    return response.category;
+  }
+
+  async deleteCategory(id: number): Promise<void> {
+    await this.request<void>('DELETE', `/categories/${id}`);
+  }
+
+  async reorderCategories(ids: Array<number | 'uncategorized'>): Promise<CategoriesResponse> {
+    return this.request<CategoriesResponse>('POST', '/categories/reorder', { ids });
+  }
+
+  async setSessionCategory(
+    sessionId: string | number,
+    categoryId: number | null
+  ): Promise<SetSessionCategoryResponse> {
+    return this.request<SetSessionCategoryResponse>(
+      'PATCH',
+      `/sessions/${sessionId}/set_category`,
+      { category_id: categoryId }
     );
   }
 
