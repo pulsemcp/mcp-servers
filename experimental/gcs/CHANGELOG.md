@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.13] - 2026-06-13
+
+### Documentation
+
+- README: add a **Required IAM permissions** section documenting the minimal permission per mode — `storage.objects.list` on the constrained bucket for single-bucket deployments, project-level `storage.buckets.list` for unconstrained — plus a per-tool runtime permission table (including the `put_object_from_path` and `upload_prefix` upload tools). Rewrote the Single Bucket Mode closing note, which previously promised access "without giving broader GCS permissions" without explaining how; it now states the least-privilege guarantee precisely and cross-references the new section.
+
+### Changed
+
+- Reconciled the `server.json` MCP Registry manifest version (both the top-level and the npm package field) with `local/package.json` at `0.1.13`. The manifest had drifted behind `local/package.json` because version bumps update the package file but not the registry manifest; this release realigns them.
+- Added a dedicated GitHub Actions workflow (`.github/workflows/mcp-servers-gcs.yml`) that runs the GCS lint/type-check and functional + integration tests on pull requests and pushes to `main`, matching the per-server CI other servers (zoom, monarch-money, sharepoint) already have. Also added `**/local/shared/` to the eslint `ignorePatterns` so the generated build-output symlink is not linted.
+
 ## [0.1.12] - 2026-06-13
 
 ### Added
