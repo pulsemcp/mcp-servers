@@ -2,7 +2,7 @@
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-09-29/server.schema.json",
   "name": "com.pulsemcp/dynamodb",
   "description": "MCP server for AWS DynamoDB with fine-grained tool control and configurable access levels.",
-  "version": "0.2.5",
+  "version": "0.2.6",
   "repository": {
     "url": "https://github.com/pulsemcp/mcp-servers",
     "source": "github",
@@ -13,7 +13,7 @@
       "registryType": "npm",
       "registryBaseUrl": "https://registry.npmjs.org",
       "identifier": "aws-dynamodb-mcp-server",
-      "version": "0.2.5",
+      "version": "0.2.6",
       "runtimeHint": "npx",
       "transport": {
         "type": "stdio"
