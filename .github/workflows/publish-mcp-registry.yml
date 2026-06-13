@@ -109,6 +109,106 @@ jobs:
             --domain pulsemcp.com \
             --private-key "$MCP_PRIVATE_KEY"
 
+      - name: Validate pinned npm mcpName values
+        if: steps.scan.outputs.count != '0'
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs = require('node:fs');
+          const { execFileSync } = require('node:child_process');
+
+          const scan = JSON.parse(fs.readFileSync('/tmp/scan.json', 'utf8'));
+          const failures = [];
+
+          function oneLine(value) {
+            return String(value).replace(/\s+/g, ' ').trim();
+          }
+
+          function workflowCommandValue(value) {
+            return oneLine(value).replace(/%/g, '%25').replace(/\r/g, '%0D').replace(/\n/g, '%0A');
+          }
+
+          function npmViewMcpName(identifier, version, registryBaseUrl) {
+            const spec = `${identifier}@${version}`;
+            const args = ['view', spec, 'mcpName', '--json'];
+            if (registryBaseUrl) args.push('--registry', registryBaseUrl);
+            try {
+              const output = execFileSync('npm', args, {
+                encoding: 'utf8',
+                stdio: ['ignore', 'pipe', 'pipe'],
+              }).trim();
+
+              if (!output) return null;
+              const parsed = JSON.parse(output);
+              return typeof parsed === 'string' && parsed.length > 0 ? parsed : null;
+            } catch (error) {
+              const stderr = error.stderr ? String(error.stderr).trim() : '';
+              throw new Error(stderr || error.message);
+            }
+          }
+
+          for (const candidate of scan.candidates) {
+            const manifest = JSON.parse(fs.readFileSync(candidate.sjPath, 'utf8'));
+            const expected = manifest.name;
+            const pkg = manifest.packages?.[0];
+            const identifier = pkg?.identifier;
+            const version = pkg?.version;
+            const registryBaseUrl = pkg?.registryBaseUrl;
+            const server = `${candidate.name}@${candidate.version}`;
+
+            if (!identifier || !version) {
+              failures.push({
+                server,
+                packageSpec: identifier && version ? `${identifier}@${version}` : '(missing packages[0].identifier or packages[0].version)',
+                expected,
+                actual: 'missing package metadata in server.json',
+              });
+              continue;
+            }
+
+            let actual;
+            try {
+              actual = npmViewMcpName(identifier, version, registryBaseUrl);
+            } catch (error) {
+              failures.push({
+                server,
+                packageSpec: `${identifier}@${version}`,
+                expected,
+                actual: `npm lookup failed: ${error.message}`,
+              });
+              continue;
+            }
+
+            if (actual !== expected) {
+              failures.push({
+                server,
+                packageSpec: `${identifier}@${version}`,
+                expected,
+                actual: actual ?? 'missing',
+              });
+            } else {
+              console.log(`✓ ${server}: ${identifier}@${version} mcpName matches ${expected}`);
+            }
+          }
+
+          if (failures.length > 0) {
+            console.error('\nPinned npm package mcpName validation failed.');
+            console.error('The MCP Registry validates each server.json name against the exact published npm package version in packages[0].');
+            console.error('Republish the npm package with the corrected mcpName, or bump server.json packages[0].version to a version that already has it.\n');
+
+            for (const failure of failures) {
+              console.error(`Server: ${failure.server}`);
+              console.error(`npm package checked: ${failure.packageSpec}`);
+              console.error(`Expected mcpName: ${failure.expected}`);
+              console.error(`Actual mcpName: ${failure.actual}`);
+              console.error('Remedy: republish this npm package version with the corrected mcpName, or bump server.json to a corrected published version.');
+              console.error('');
+              console.error(`::error title=Invalid npm mcpName for ${workflowCommandValue(failure.server)}::${workflowCommandValue(failure.packageSpec)} has mcpName ${workflowCommandValue(failure.actual)}; expected ${workflowCommandValue(failure.expected)}. Republish the npm package with the corrected mcpName, or bump server.json to a version that already has it.`);
+            }
+            process.exit(1);
+          }
+          NODE
+
       - name: Publish candidates
         id: publish
         if: steps.scan.outputs.count != '0'
