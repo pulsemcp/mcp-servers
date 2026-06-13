@@ -124,7 +124,38 @@ When set:
 - The `bucket` parameter is automatically injected and hidden from tool inputs
 - For `copy_object`, both source and destination are constrained to the specified bucket
 
-This is useful for restricting access to a single bucket without giving broader GCS permissions.
+This lets you grant a least-privilege service account that has only **object-level** access to one bucket, without project-level bucket-listing permission. The startup healthcheck honors this: when `GCS_BUCKET` is set it validates credentials with an object-scoped probe (`storage.objects.list` on that bucket) and never calls the project-level bucket list or a bucket-metadata probe. See [Required IAM permissions](#required-iam-permissions) for the exact permissions per mode.
+
+## Required IAM permissions
+
+The minimal IAM permissions depend on whether the server is constrained to a single bucket (`GCS_BUCKET`) and which tool groups you enable. The startup healthcheck validates credentials within these bounds — it does **not** require any permission beyond what the table below lists for your mode.
+
+### Startup healthcheck
+
+| Mode                                 | Permission the healthcheck needs                 | Notes                                                                                                                                                                                                                  |
+| ------------------------------------ | ------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Single bucket** (`GCS_BUCKET` set) | `storage.objects.list` on the constrained bucket | Probes `list_objects` with `maxResults: 1`. Does **not** require project-level `storage.buckets.list` or bucket-metadata `storage.buckets.get`, so a correctly least-privilege, object-only service account can start. |
+| **Unconstrained** (no `GCS_BUCKET`)  | project-level `storage.buckets.list`             | Validates by listing buckets in the project.                                                                                                                                                                           |
+
+Set `SKIP_HEALTH_CHECKS=true` to bypass startup validation entirely (disables **all** credential checks — not recommended).
+
+### Per-tool permissions
+
+Beyond the healthcheck, each tool needs the corresponding GCS permission at runtime. Grant only what the tool groups you enable require:
+
+| Tool / group                                                                     | Permission                                                                                                                                                                                       |
+| -------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `list_objects` (readonly)                                                        | `storage.objects.list`                                                                                                                                                                           |
+| `get_object`, `download_object` (readonly)                                       | `storage.objects.get`                                                                                                                                                                            |
+| `download_prefix` (readonly)                                                     | `storage.objects.list`, `storage.objects.get`                                                                                                                                                    |
+| `list_buckets` (readonly)                                                        | `storage.buckets.list`                                                                                                                                                                           |
+| `head_bucket` (readonly)                                                         | `storage.buckets.get`                                                                                                                                                                            |
+| `put_object`, `put_object_from_path`, `upload_prefix`, `copy_object` (readwrite) | `storage.objects.create`, `storage.objects.get` (these tools read each object's metadata back after writing to return its `etag`/`generation`; `copy_object` additionally reads the copy source) |
+| `create_bucket` (readwrite)                                                      | `storage.buckets.create`                                                                                                                                                                         |
+| `delete_object` (delete)                                                         | `storage.objects.delete`                                                                                                                                                                         |
+| `delete_bucket` (delete)                                                         | `storage.buckets.delete`                                                                                                                                                                         |
+
+For a read-only, single-bucket service account, the `roles/storage.objectViewer` role on the bucket (or a custom role with `storage.objects.list` + `storage.objects.get`) is sufficient — no project-level or bucket-metadata permissions are needed.
 
 ## Quick Start
 
