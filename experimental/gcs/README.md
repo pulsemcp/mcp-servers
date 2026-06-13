@@ -17,19 +17,21 @@ MCP server for Google Cloud Storage operations with fine-grained tool access con
 
 ### Tools
 
-| Tool              | Group     | Description                                                      |
-| ----------------- | --------- | ---------------------------------------------------------------- |
-| `list_buckets`    | readonly  | List all GCS buckets in the Google Cloud project                 |
-| `list_objects`    | readonly  | List objects in a bucket with prefix and pagination              |
-| `get_object`      | readonly  | Get object contents as text                                      |
-| `download_object` | readonly  | Download a single object to a local file (binary-safe)           |
-| `download_prefix` | readonly  | Recursively download a prefix to a local directory (binary-safe) |
-| `head_bucket`     | readonly  | Check if a bucket exists and is accessible                       |
-| `put_object`      | readwrite | Upload or update an object                                       |
-| `copy_object`     | readwrite | Copy an object within or across buckets                          |
-| `create_bucket`   | readwrite | Create a new GCS bucket                                          |
-| `delete_object`   | delete    | Delete an object from a bucket                                   |
-| `delete_bucket`   | delete    | Delete an empty GCS bucket                                       |
+| Tool                   | Group     | Description                                                                     |
+| ---------------------- | --------- | ------------------------------------------------------------------------------- |
+| `list_buckets`         | readonly  | List all GCS buckets in the Google Cloud project                                |
+| `list_objects`         | readonly  | List objects in a bucket with prefix and pagination                             |
+| `get_object`           | readonly  | Get object contents as text                                                     |
+| `download_object`      | readonly  | Download a single object to a local file (binary-safe)                          |
+| `download_prefix`      | readonly  | Recursively download a prefix to a local directory (binary-safe)                |
+| `head_bucket`          | readonly  | Check if a bucket exists and is accessible                                      |
+| `put_object`           | readwrite | Upload or update an object from inline string content                           |
+| `put_object_from_path` | readwrite | Upload a single local file by streaming from disk (binary-safe, context-free)   |
+| `upload_prefix`        | readwrite | Recursively upload a local directory tree from disk (binary-safe, context-free) |
+| `copy_object`          | readwrite | Copy an object within or across buckets                                         |
+| `create_bucket`        | readwrite | Create a new GCS bucket                                                         |
+| `delete_object`        | delete    | Delete an object from a bucket                                                  |
+| `delete_bucket`        | delete    | Delete an empty GCS bucket                                                      |
 
 ### Downloading to Local Disk
 
@@ -52,6 +54,30 @@ MCP server for Google Cloud Storage operations with fine-grained tool access con
   ```
 
   The inline `files` list is capped (`maxInlineEntries`, default 100), but `objectCount` and `totalBytes` always reflect the full download. When `destinationDir` is omitted it defaults to a unique folder under the OS temp directory.
+
+### Uploading from Local Disk
+
+`put_object` takes the object content inline as a string argument, which routes every byte through the model context and requires base64 for binary data — impractical for large files or bulk uploads. For uploading files or folders **without consuming context**, use the local-path upload tools instead. Both stream **raw bytes** directly from disk to GCS server-side, returning only metadata. They belong to the `readwrite` toolgroup, so read-only deployments never gain them.
+
+- **`put_object_from_path`** — upload a single local file by streaming it from a filesystem path. Content type is auto-detected from the file extension (override with `contentType`). Binary files (images, archives) work without base64. Returns `{ bucket, key, sourcePath, size, etag, generation }`.
+- **`upload_prefix`** — recursively upload every file under a local directory, preserving the directory structure as key paths beneath a destination prefix. Symbolic links to files are followed and uploaded (links to directories are skipped to avoid cycles), per-file failures are collected without aborting the batch, and it returns a manifest:
+
+  ```json
+  {
+    "bucket": "my-bucket",
+    "sourceDir": "/tmp/exports",
+    "destPrefix": "uploads/",
+    "objectCount": 1234,
+    "totalBytes": 5678901,
+    "files": [
+      { "localPath": "/tmp/exports/01/data.json", "key": "uploads/01/data.json", "size": 1234 }
+    ],
+    "filesTruncated": true,
+    "errors": []
+  }
+  ```
+
+  The inline `files` list is capped (`maxInlineEntries`, default 100), but `objectCount` and `totalBytes` always reflect the full upload. When `destPrefix` is omitted, files upload to the bucket root.
 
 ### Resources
 

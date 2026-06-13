@@ -7,6 +7,8 @@ import { getObjectTool } from './tools/get-object.js';
 import { downloadPrefixTool } from './tools/download-prefix.js';
 import { downloadObjectTool } from './tools/download-object.js';
 import { putObjectTool } from './tools/put-object.js';
+import { putObjectFromPathTool } from './tools/put-object-from-path.js';
+import { uploadPrefixTool } from './tools/upload-prefix.js';
 import { deleteObjectTool } from './tools/delete-object.js';
 import { createBucketTool } from './tools/create-bucket.js';
 import { deleteBucketTool } from './tools/delete-bucket.js';
@@ -136,6 +138,8 @@ const ALL_TOOLS: ToolDefinition[] = [
   { factory: headBucketTool, groups: ['readonly'], bucketLevelOnly: true },
   // Write operations (non-destructive)
   { factory: putObjectTool, groups: ['readwrite'], bucketParams: ['bucket'] },
+  { factory: putObjectFromPathTool, groups: ['readwrite'], bucketParams: ['bucket'] },
+  { factory: uploadPrefixTool, groups: ['readwrite'], bucketParams: ['bucket'] },
   { factory: copyObjectTool, groups: ['readwrite'], bucketParams: ['sourceBucket', 'destBucket'] },
   { factory: createBucketTool, groups: ['readwrite'], bucketLevelOnly: true },
   // Delete operations

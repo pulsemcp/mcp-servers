@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.12] - 2026-06-13
+
+### Added
+
+- `put_object_from_path` (readwrite): upload a single local file to GCS by streaming it directly from a filesystem path. Unlike `put_object` (which takes content inline as a string argument — routing every byte through the model context and requiring base64 for binary data), this tool reads from disk server-side, so it is binary-safe and does not consume context. Content type is auto-detected from the file extension. Returns `{ bucket, key, sourcePath, size, etag, generation }`.
+- `upload_prefix` (readwrite): recursively upload every file under a local directory to GCS, preserving the directory structure as key paths beneath a destination prefix. Streams each file from disk (binary-safe, context-free), follows symbolic links to files (skips links to directories to avoid cycles), collects per-file errors without aborting the batch, and returns a manifest (`bucket`, `sourceDir`, `destPrefix`, `objectCount`, `totalBytes`, capped `files` list, `errors`). This is the bulk counterpart to `download_prefix` for the upload direction.
+- `uploadFile` on the GCS client interface, which streams a local file directly to GCS via the SDK's `bucket.upload` (auto-detecting content type) instead of buffering content through the caller.
+
 ## [0.1.11] - 2026-06-12
 
 ### Fixed

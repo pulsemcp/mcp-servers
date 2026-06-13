@@ -9,6 +9,7 @@ import type {
   PutObjectOptions,
   CopyObjectResult,
 } from './gcs-client.js';
+import { readFile } from 'fs/promises';
 
 export interface MockGCSData {
   buckets?: Array<{
@@ -20,7 +21,8 @@ export interface MockGCSData {
     Record<
       string,
       {
-        content: string;
+        // string for inline puts; Buffer for files streamed from disk (binary-safe).
+        content: string | Buffer;
         contentType?: string;
         metadata?: Record<string, string>;
         lastModified?: Date;
@@ -81,7 +83,7 @@ export function createIntegrationMockGCSClient(mockData: MockGCSData = {}): IGCS
       return {
         objects: keys.map((key) => ({
           key,
-          size: bucketObjects[key]?.content?.length || 0,
+          size: bucketObjects[key]?.content ? Buffer.byteLength(bucketObjects[key].content) : 0,
           lastModified: bucketObjects[key]?.lastModified || new Date(),
           storageClass: 'STANDARD',
           etag: '"mock-etag"',
@@ -99,10 +101,11 @@ export function createIntegrationMockGCSClient(mockData: MockGCSData = {}): IGCS
       }
 
       const obj = bucketObjects[key];
+      const contentStr = Buffer.isBuffer(obj.content) ? obj.content.toString('utf-8') : obj.content;
       return {
-        content: obj.content,
+        content: contentStr,
         contentType: obj.contentType || 'text/plain',
-        contentLength: obj.content.length,
+        contentLength: Buffer.byteLength(obj.content),
         lastModified: obj.lastModified || new Date(),
         etag: '"mock-etag"',
         metadata: obj.metadata || {},
@@ -115,7 +118,8 @@ export function createIntegrationMockGCSClient(mockData: MockGCSData = {}): IGCS
         throw new Error(`Object not found: ${bucket}/${key}`);
       }
 
-      const content = Buffer.from(bucketObjects[key].content);
+      const stored = bucketObjects[key].content;
+      const content = Buffer.isBuffer(stored) ? stored : Buffer.from(stored);
       return {
         content,
         contentType: bucketObjects[key].contentType || 'text/plain',
@@ -139,6 +143,34 @@ export function createIntegrationMockGCSClient(mockData: MockGCSData = {}): IGCS
         content,
         contentType: putOptions.contentType,
         metadata: putOptions.metadata,
+        lastModified: new Date(),
+      };
+      return {
+        etag: '"mock-etag"',
+        generation: undefined,
+      };
+    },
+
+    async uploadFile(
+      bucket: string,
+      sourcePath: string,
+      key: string,
+      uploadOptions: PutObjectOptions = {}
+    ): Promise<PutObjectResult> {
+      if (!objects) {
+        throw new Error('Mock data not initialized');
+      }
+      if (!objects[bucket]) {
+        objects[bucket] = {};
+      }
+      // Read the raw bytes from disk so the upload path is exercised end-to-end
+      // and binary content is preserved faithfully (mirrors the real client,
+      // which streams bytes directly from disk without any text decoding).
+      const content = await readFile(sourcePath);
+      objects[bucket][key] = {
+        content,
+        contentType: uploadOptions.contentType,
+        metadata: uploadOptions.metadata,
         lastModified: new Date(),
       };
       return {
