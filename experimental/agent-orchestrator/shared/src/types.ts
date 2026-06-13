@@ -42,6 +42,8 @@ export interface Session {
   job_id: string | null;
   running_job_id: string | null;
   archived_at: string | null;
+  category_id?: number | null;
+  category?: CategorySummary | null;
   created_at: string;
   updated_at: string;
   transcript?: string;
@@ -241,6 +243,54 @@ export interface UpdateSubagentTranscriptRequest {
   duration_ms?: number;
   total_tokens?: number;
   tool_use_count?: number;
+}
+
+// =============================================================================
+// Categories
+// =============================================================================
+
+// Full category object (from GET /api/v1/categories etc.)
+export interface Category {
+  id: number;
+  name: string;
+  description: string | null;
+  position: number;
+  is_frozen: boolean;
+  session_count: number;
+  created_at: string;
+  updated_at: string;
+}
+
+// Embedded category form returned on session objects
+export interface CategorySummary {
+  id: number;
+  name: string;
+  position: number;
+  is_frozen: boolean;
+}
+
+export interface CategoriesResponse {
+  categories: Category[];
+}
+
+export interface CategoryResponse {
+  category: Category;
+}
+
+export interface CreateCategoryRequest {
+  name: string;
+  description?: string;
+}
+
+export interface UpdateCategoryRequest {
+  name?: string;
+  description?: string;
+  is_frozen?: boolean;
+}
+
+export interface SetSessionCategoryResponse {
+  session: Session;
+  message: string;
 }
 
 // =============================================================================

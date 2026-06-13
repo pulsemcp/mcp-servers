@@ -30,6 +30,11 @@ import type {
   EnqueuedMessagesResponse,
   EnqueuedMessageInterruptResponse,
   EnqueuedMessageStatus,
+  Category,
+  CategoriesResponse,
+  CreateCategoryRequest,
+  UpdateCategoryRequest,
+  SetSessionCategoryResponse,
   Trigger,
   TriggerType,
   TriggerStatus,
@@ -59,6 +64,7 @@ interface MockData {
   sessions?: Session[];
   logs?: Log[];
   subagentTranscripts?: SubagentTranscript[];
+  categories?: Category[];
 }
 
 /**
@@ -124,11 +130,24 @@ export function createIntegrationMockOrchestratorClient(
         updated_at: '2025-01-15T14:31:45Z',
       },
     ],
+    categories: initialMockData?.categories || [
+      {
+        id: 1,
+        name: 'Active Work',
+        description: null,
+        position: 0,
+        is_frozen: false,
+        session_count: 1,
+        created_at: '2025-01-15T14:00:00Z',
+        updated_at: '2025-01-15T14:00:00Z',
+      },
+    ],
   };
 
   let sessionIdCounter = mockData.sessions?.length || 1;
   let logIdCounter = mockData.logs?.length || 1;
   let transcriptIdCounter = mockData.subagentTranscripts?.length || 1;
+  let categoryIdCounter = mockData.categories?.length || 1;
 
   return {
     mockData,
@@ -798,6 +817,121 @@ export function createIntegrationMockOrchestratorClient(
       );
       if (!session) throw new Error(`API Error (404): Session not found`);
       return { session, message: 'Message sent as interrupt' };
+    },
+
+    // Categories
+    async listCategories(): Promise<CategoriesResponse> {
+      const categories = [...(mockData.categories || [])].sort((a, b) => a.position - b.position);
+      return { categories };
+    },
+
+    async createCategory(data: CreateCategoryRequest): Promise<Category> {
+      const exists = mockData.categories?.some(
+        (c) => c.name.toLowerCase() === data.name.toLowerCase()
+      );
+      if (exists) {
+        throw new Error(`API Error (422): Name has already been taken`);
+      }
+      categoryIdCounter++;
+      const maxPosition = (mockData.categories || []).reduce(
+        (max, c) => Math.max(max, c.position),
+        -1
+      );
+      const category: Category = {
+        id: categoryIdCounter,
+        name: data.name,
+        description: data.description ? data.description : null,
+        position: maxPosition + 1,
+        is_frozen: false,
+        session_count: 0,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+      mockData.categories?.push(category);
+      return category;
+    },
+
+    async updateCategory(id: number, data: UpdateCategoryRequest): Promise<Category> {
+      const category = mockData.categories?.find((c) => c.id === id);
+      if (!category) {
+        throw new Error(`API Error (404): Category not found`);
+      }
+      if (data.name !== undefined) category.name = data.name;
+      if (data.description !== undefined) {
+        category.description = data.description ? data.description : null;
+      }
+      if (data.is_frozen !== undefined) category.is_frozen = data.is_frozen;
+      category.updated_at = new Date().toISOString();
+      return category;
+    },
+
+    async deleteCategory(id: number): Promise<void> {
+      const index = mockData.categories?.findIndex((c) => c.id === id);
+      if (index === undefined || index === -1) {
+        throw new Error(`API Error (404): Category not found`);
+      }
+      mockData.categories?.splice(index, 1);
+      // Member sessions fall back to Uncategorized
+      mockData.sessions?.forEach((s) => {
+        if (s.category_id === id) {
+          s.category_id = null;
+          s.category = null;
+        }
+      });
+    },
+
+    async reorderCategories(ids: Array<number | 'uncategorized'>): Promise<CategoriesResponse> {
+      // Apply new positions for the numeric ids in the order provided.
+      // The "uncategorized" sentinel positions the Uncategorized section and is
+      // not represented in the returned category list. Categories omitted from
+      // `ids` keep their stored position. This is an approximation of the
+      // server's ordering; real position bookkeeping lives Rails-side.
+      let position = 0;
+      for (const id of ids) {
+        if (id === 'uncategorized') {
+          position++;
+          continue;
+        }
+        const category = mockData.categories?.find((c) => c.id === id);
+        if (category) {
+          category.position = position;
+          category.updated_at = new Date().toISOString();
+        }
+        position++;
+      }
+      const categories = [...(mockData.categories || [])].sort((a, b) => a.position - b.position);
+      return { categories };
+    },
+
+    async setSessionCategory(
+      sessionId: string | number,
+      categoryId: number | null
+    ): Promise<SetSessionCategoryResponse> {
+      const session = mockData.sessions?.find(
+        (s) => s.id === Number(sessionId) || s.slug === String(sessionId)
+      );
+      if (!session) {
+        throw new Error(`API Error (404): Session not found`);
+      }
+      if (categoryId == null) {
+        session.category_id = null;
+        session.category = null;
+        session.updated_at = new Date().toISOString();
+        return { session, message: 'Session moved to Uncategorized' };
+      }
+      const category = mockData.categories?.find((c) => c.id === categoryId);
+      if (!category) {
+        throw new Error(`API Error (404): Category #${categoryId} not found`);
+      }
+      session.category_id = category.id;
+      session.category = {
+        id: category.id,
+        name: category.name,
+        position: category.position,
+        is_frozen: category.is_frozen,
+      };
+      session.updated_at = new Date().toISOString();
+      return { session, message: 'Session assigned to category' };
     },
 
     // Triggers

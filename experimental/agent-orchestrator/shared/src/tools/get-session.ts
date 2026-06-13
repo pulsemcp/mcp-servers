@@ -69,6 +69,7 @@ function formatSessionDetails(session: Session, includeTranscript: boolean): str
   ];
 
   if (session.slug) lines.push(`- **Slug:** ${session.slug}`);
+  if (session.category) lines.push(`- **Category:** ${session.category.name}`);
 
   lines.push('');
   lines.push('### Git Configuration');

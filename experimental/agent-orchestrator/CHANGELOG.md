@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.7] - 2026-06-13
+
+### Added
+
+- **`manage_categories` tool** exposing the Agent Orchestrator REST API v1 category-management surface. Action-dispatch style (mirroring `manage_enqueued_messages`) with six actions: `list` (all categories ordered by position, with session counts), `create` (name required, optional description), `update` (rename / re-describe / freeze via any subset of `name`/`description`/`is_frozen`; omitted fields are left unchanged), `delete` (member sessions fall back to Uncategorized), `reorder` (set top-to-bottom order via an `ids` array, including the `"uncategorized"` sentinel to position the Uncategorized section), and `set_session_category` (assign a session to a category, or omit/null `category_id` to clear to Uncategorized). Registered in the `sessions` tool group as a write operation.
+- **Orchestrator-client methods** backing the tool: `listCategories`, `createCategory`, `updateCategory`, `deleteCategory`, `reorderCategories`, and `setSessionCategory`, each mapping to its REST endpoint (`GET`/`POST`/`PATCH`/`DELETE /categories`, `POST /categories/reorder`, `PATCH /sessions/:id/set_category`).
+- **`category_id` / `category` on session-read output.** The `Session` type now carries `category_id` and a `category` summary (`id`, `name`, `position`, `is_frozen`), and the `get_session` and `quick_search_sessions` tools surface the category name when present.
+
+### Tests
+
+- Added `Categories` client unit tests asserting exact URLs, methods, and request bodies (including the `"uncategorized"` reorder sentinel and the null `set_category` clear body); a `manage_categories` functional describe block covering all six actions plus per-action validation errors; and integration tests exercising `list`, `create`, and `set_session_category` end-to-end through the MCP protocol against the in-memory mock. Functional and integration mock clients extended with in-memory category state.
+
 ## [0.8.6] - 2026-06-01
 
 ### Changed
