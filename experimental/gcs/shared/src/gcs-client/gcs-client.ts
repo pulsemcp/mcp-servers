@@ -1,4 +1,4 @@
-import { Storage } from '@google-cloud/storage';
+import { Storage, type UploadOptions } from '@google-cloud/storage';
 
 export interface GCSClientConfig {
   projectId: string;
@@ -73,6 +73,12 @@ export interface IGCSClient {
     bucket: string,
     key: string,
     content: string,
+    options?: PutObjectOptions
+  ): Promise<PutObjectResult>;
+  uploadFile(
+    bucket: string,
+    sourcePath: string,
+    key: string,
     options?: PutObjectOptions
   ): Promise<PutObjectResult>;
   deleteObject(bucket: string, key: string): Promise<void>;
@@ -190,6 +196,37 @@ export class GoogleCloudStorageClient implements IGCSClient {
       metadata: options.metadata,
     });
 
+    const [metadata] = await file.getMetadata();
+
+    return {
+      etag: metadata.etag as string | undefined,
+      generation: metadata.generation ? String(metadata.generation) : undefined,
+    };
+  }
+
+  async uploadFile(
+    bucket: string,
+    sourcePath: string,
+    key: string,
+    options: PutObjectOptions = {}
+  ): Promise<PutObjectResult> {
+    // bucket.upload streams the file directly from local disk to GCS — the bytes
+    // never pass through the caller, so this is binary-safe and avoids loading
+    // the file into the MCP tool-call payload.
+    const uploadOptions: UploadOptions = { destination: key };
+    const fileMetadata: { contentType?: string; metadata?: Record<string, string> } = {};
+    if (options.contentType) {
+      fileMetadata.contentType = options.contentType;
+    }
+    if (options.metadata) {
+      fileMetadata.metadata = options.metadata;
+    }
+    if (Object.keys(fileMetadata).length > 0) {
+      uploadOptions.metadata = fileMetadata;
+    }
+    // When contentType is omitted, the SDK auto-detects it from the file extension.
+
+    const [file] = await this.storage.bucket(bucket).upload(sourcePath, uploadOptions);
     const [metadata] = await file.getMetadata();
 
     return {
