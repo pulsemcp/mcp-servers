@@ -301,7 +301,7 @@ Update `shared/src/resources.ts` following the existing pattern. The config reso
 
 ### Using External APIs
 
-See `shared/src/example-client/CLAUDE.md` for the complete guide on:
+See `shared/src/example-client/AGENTS.md` for the complete guide on:
 
 - Interface-first design pattern
 - Modular API methods in `lib/` subdirectory
