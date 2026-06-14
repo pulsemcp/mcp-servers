@@ -1,6 +1,6 @@
 {
   "name": "@pulsemcp/pulse-subregistry",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "description": "MCP server for browsing the PulseMCP Sub-Registry",
   "mcpName": "com.pulsemcp/pulse-subregistry",
   "main": "build/index.js",
@@ -31,7 +31,7 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.29.0",
-    "zod": "^3.24.1"
+    "zod": "^3.25.76"
   },
   "devDependencies": {
     "@types/node": "^24.0.0",

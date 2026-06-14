@@ -1,6 +1,6 @@
 {
   "name": "fetchpet-mcp-server",
-  "version": "0.1.7",
+  "version": "0.1.8",
   "description": "MCP server for Fetch Pet insurance claims management with Playwright automation",
   "mcpName": "com.pulsemcp/fetchpet",
   "main": "build/index.js",
@@ -34,7 +34,7 @@
     "playwright": "^1.49.1",
     "playwright-extra": "^4.3.6",
     "puppeteer-extra-plugin-stealth": "^2.11.2",
-    "zod": "^3.24.1"
+    "zod": "^3.25.76"
   },
   "devDependencies": {
     "@types/node": "^22.10.6",

@@ -1,6 +1,6 @@
 {
   "name": "aws-dynamodb-mcp-server",
-  "version": "0.2.6",
+  "version": "0.2.7",
   "description": "MCP server for AWS DynamoDB with fine-grained tool control",
   "mcpName": "com.pulsemcp/dynamodb",
   "main": "build/index.js",
@@ -33,7 +33,7 @@
     "@aws-sdk/client-dynamodb": "^3.1035.0",
     "@aws-sdk/lib-dynamodb": "^3.700.0",
     "@modelcontextprotocol/sdk": "^1.29.0",
-    "zod": "^3.24.1"
+    "zod": "^3.25.76"
   },
   "devDependencies": {
     "@types/node": "^22.10.6",
