@@ -1,6 +1,6 @@
 {
   "name": "langfuse-observability-mcp-server",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "Local implementation of Langfuse MCP server",
   "mcpName": "com.pulsemcp/langfuse",
   "main": "build/index.js",
@@ -31,7 +31,7 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.29.0",
-    "zod": "^3.24.1"
+    "zod": "^3.25.76"
   },
   "devDependencies": {
     "@types/node": "^22.10.6",

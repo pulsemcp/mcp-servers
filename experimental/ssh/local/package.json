@@ -1,6 +1,6 @@
 {
   "name": "ssh-agent-mcp-server",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "MCP server for SSH remote server management with SSH agent authentication support",
   "mcpName": "com.pulsemcp/ssh",
   "main": "build/index.js",
@@ -32,7 +32,7 @@
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.29.0",
     "ssh2": "^1.16.0",
-    "zod": "^3.24.1"
+    "zod": "^3.25.76"
   },
   "devDependencies": {
     "@types/node": "^22.10.6",

@@ -1,6 +1,6 @@
 {
   "name": "remote-filesystem-mcp-server",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "MCP server for remote filesystem operations on cloud storage (GCS, S3, etc.)",
   "mcpName": "com.pulsemcp/remote-filesystem",
   "main": "build/index.js",
@@ -32,7 +32,7 @@
   "dependencies": {
     "@google-cloud/storage": "^7.14.0",
     "@modelcontextprotocol/sdk": "^1.29.0",
-    "zod": "^3.24.1"
+    "zod": "^3.25.76"
   },
   "devDependencies": {
     "@types/node": "^22.10.6",
