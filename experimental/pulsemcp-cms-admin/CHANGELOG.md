@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [0.10.4] - 2026-06-16
+
+### Added
+
+- `set_github_repository_classification` tool (in the `mcp_servers` group) — sets a GitHub repository's `classification` to one of `single_mcp_server`, `single_mcp_client`, `multiple_mcp_servers`, `multiple_mcp_clients`, or `other`. Input `{ id: number, classification: <enum> }`; calls `POST /api/github_repositories/:id/classification` and returns the updated `{ id, classification }`. The `other` classification excludes a repo from the gh_stars popularity-estimate path — the intended remedy for non-MCP-driven platform repos (e.g. `heyputer/puter`) whose large star counts otherwise inflate estimated visitors. Backs [pulsemcp#4372](https://github.com/pulsemcp/pulsemcp/issues/4372); pairs with the web-app admin endpoint that owns the contract.
+
 ## [0.10.3] - 2026-06-14
 
 ### Fixed

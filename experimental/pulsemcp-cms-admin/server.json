@@ -2,7 +2,7 @@
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-09-29/server.schema.json",
   "name": "com.pulsemcp/pulsemcp-cms-admin",
   "description": "MCP server for managing PulseMCP's CMS — newsletter and MCP server directory.",
-  "version": "0.10.3",
+  "version": "0.10.4",
   "repository": {
     "url": "https://github.com/pulsemcp/mcp-servers",
     "source": "github",
@@ -13,7 +13,7 @@
       "registryType": "npm",
       "registryBaseUrl": "https://registry.npmjs.org",
       "identifier": "pulsemcp-cms-admin-mcp-server",
-      "version": "0.10.3",
+      "version": "0.10.4",
       "runtimeHint": "npx",
       "transport": {
         "type": "stdio"

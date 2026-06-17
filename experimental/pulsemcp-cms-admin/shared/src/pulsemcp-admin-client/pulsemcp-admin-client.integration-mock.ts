@@ -14,6 +14,7 @@ import type {
   OfficialMirrorQueueItemDetail,
   OfficialMirrorQueueResponse,
   OfficialMirrorQueueActionResponse,
+  GithubRepositoryClassification,
 } from '../types.js';
 
 interface MockData {
@@ -1354,6 +1355,16 @@ export function createMockPulseMCPAdminClient(mockData: MockData): IPulseMCPAdmi
           knownMissingInitToolsListFilterTo === undefined
             ? null
             : (knownMissingInitToolsListFilterTo ?? null),
+      };
+    },
+
+    async setGithubRepositoryClassification(
+      id: number,
+      classification: GithubRepositoryClassification
+    ) {
+      return {
+        id,
+        classification,
       };
     },
   };

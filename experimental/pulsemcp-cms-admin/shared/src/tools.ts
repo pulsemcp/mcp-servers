@@ -50,6 +50,7 @@ import { listMCPServers } from './tools/list-mcp-servers.js';
 import { getMCPServer } from './tools/get-mcp-server.js';
 import { updateMCPServer } from './tools/update-mcp-server.js';
 import { recacheMCPServer } from './tools/recache-mcp-server.js';
+import { setGithubRepositoryClassification } from './tools/set-github-repository-classification.js';
 // Redirect tools
 import { getRedirects } from './tools/get-redirects.js';
 import { getRedirect } from './tools/get-redirect.js';
@@ -378,6 +379,16 @@ const ALL_TOOLS: ToolDefinition[] = [
   // the mcp_servers / server_directory groups (alongside recacheMCPServer), not proctor.
   {
     factory: setKnownMissingInitToolsList,
+    groups: ['mcp_servers', 'server_directory'],
+    isWriteOperation: true,
+  },
+  // setGithubRepositoryClassification writes the `classification` field on a
+  // `github_repository` record (e.g. tagging a non-MCP-driven platform repo as
+  // `other` so it drops out of the gh_stars popularity path). It lives in the
+  // mcp_servers / server_directory groups alongside the other server-directory
+  // data-correction tools.
+  {
+    factory: setGithubRepositoryClassification,
     groups: ['mcp_servers', 'server_directory'],
     isWriteOperation: true,
   },
