@@ -83,6 +83,8 @@ import type {
   // Cache management types
   RecacheMCPServerResponse,
   SetKnownMissingInitToolsListResponse,
+  GithubRepositoryClassification,
+  SetGithubRepositoryClassificationResponse,
 } from './types.js';
 
 // Static imports for all API client functions (replaces dynamic imports
@@ -159,6 +161,7 @@ import { getMozBacklinks } from './pulsemcp-admin-client/lib/get-moz-backlinks.j
 import { getMozStoredMetrics } from './pulsemcp-admin-client/lib/get-moz-stored-metrics.js';
 import { recacheMCPServer } from './pulsemcp-admin-client/lib/recache-mcp-server.js';
 import { setKnownMissingInitToolsList } from './pulsemcp-admin-client/lib/set-known-missing-init-tools-list.js';
+import { setGithubRepositoryClassification } from './pulsemcp-admin-client/lib/set-github-repository-classification.js';
 import { createTenant } from './pulsemcp-admin-client/lib/create-tenant.js';
 import { createApiKey } from './pulsemcp-admin-client/lib/create-api-key.js';
 import { deleteTenant } from './pulsemcp-admin-client/lib/delete-tenant.js';
@@ -372,6 +375,11 @@ export interface IPulseMCPAdminClient {
     knownMissingInitToolsList: boolean,
     knownMissingInitToolsListFilterTo?: string | null
   ): Promise<SetKnownMissingInitToolsListResponse>;
+
+  setGithubRepositoryClassification(
+    id: number,
+    classification: GithubRepositoryClassification
+  ): Promise<SetGithubRepositoryClassificationResponse>;
 
   // Redirect REST API methods
   getRedirects(params?: {
@@ -792,6 +800,13 @@ export class PulseMCPAdminClient implements IPulseMCPAdminClient {
       knownMissingInitToolsList,
       knownMissingInitToolsListFilterTo
     );
+  }
+
+  async setGithubRepositoryClassification(
+    id: number,
+    classification: GithubRepositoryClassification
+  ): Promise<SetGithubRepositoryClassificationResponse> {
+    return setGithubRepositoryClassification(this.apiKey, this.baseUrl, id, classification);
   }
 
   // Redirect REST API methods

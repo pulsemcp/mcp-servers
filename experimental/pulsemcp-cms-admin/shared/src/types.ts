@@ -1169,6 +1169,28 @@ export interface SetKnownMissingInitToolsListResponse {
   known_missing_init_tools_list_filter_to: string | null;
 }
 
+// ============================================================
+// GitHub Repository Classification Types
+// ============================================================
+
+// The classification values supported by GithubRepository#classification.
+// Mirrors the Rails enum `GithubRepository.classifications.keys`.
+// Note: `other` ("not a single MCP server") drops the repo out of the
+// gh_stars popularity path — int_github_repositories.sql maps it to
+// mcp_server_count = 0, which gates it out of
+// int_mcp_server_downloads_normalized_daily.sql.
+export type GithubRepositoryClassification =
+  | 'single_mcp_server'
+  | 'single_mcp_client'
+  | 'multiple_mcp_servers'
+  | 'multiple_mcp_clients'
+  | 'other';
+
+export interface SetGithubRepositoryClassificationResponse {
+  id: number;
+  classification: GithubRepositoryClassification;
+}
+
 // Status of the one-off SYSTEMIC_DROP bypass for popularity estimates.
 // Returned by GET/POST /api/popularity_drop_bypass.
 export interface PopularityDropBypassStatus {
