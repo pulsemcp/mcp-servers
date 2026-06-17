@@ -30,7 +30,7 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.29.0",
-    "protobufjs": "^7.5.8",
+    "protobufjs": "^8.6.4",
     "zod": "^3.25.76"
   },
   "devDependencies": {
