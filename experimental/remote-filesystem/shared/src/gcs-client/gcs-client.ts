@@ -10,6 +10,7 @@ import type {
   ModifyOptions,
 } from '../types.js';
 import { withRetry, isTransientConnectionError } from './retry.js';
+import { disableHttpKeepAlive } from './http-agent.js';
 import { logWarning } from '../logging.js';
 
 type StorageOptions = ConstructorParameters<typeof Storage>[0];
@@ -101,6 +102,13 @@ export class GCSClient implements IGCSClient {
 
   constructor(config: GCSConfig, deps: GCSClientDeps = {}) {
     this.config = config;
+
+    // Open a fresh socket per request instead of reusing a pooled keep-alive
+    // socket. The GCS SDK's OAuth token exchange (via node-fetch 2.x) fails
+    // deterministically with ERR_STREAM_PREMATURE_CLOSE when an egress middlebox
+    // resets a keep-alive connection — retry cannot recover from it, so the
+    // keep-alive path must be avoided entirely. See ./http-agent.ts.
+    disableHttpKeepAlive();
 
     // Build storage options based on available credentials
     const storageOptions: StorageOptions = {

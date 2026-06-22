@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.5] - 2026-06-22
+
+### Fixed
+
+- Disabled HTTP keep-alive on outbound GCS connections to stop a deterministic `ERR_STREAM_PREMATURE_CLOSE` ("Invalid response body while trying to fetch https://www.googleapis.com/oauth2/v4/token: Premature close") that took down every read and write. Node 19+ defaults the global agent to `keepAlive: true`; the GCS SDK's OAuth token exchange runs through `google-auth-library` → `gtoken` → `gaxios` → `node-fetch` 2.x, which reuses those pooled sockets. When an egress middlebox resets a keep-alive connection, node-fetch surfaces a no-response premature close that is identical on every attempt, so the v0.1.4 retry budget could not self-heal it (each retry rode the same poisoned socket path). `gtoken` builds its own `gaxios` instance with no per-client agent hook, so the fix forces a fresh socket per request via the process-global agent (this server's only outbound traffic is to GCS). The v0.1.4 retry-with-backoff is retained for genuinely transient blips.
+
 ## [0.1.4] - 2026-06-22
 
 ### Fixed
