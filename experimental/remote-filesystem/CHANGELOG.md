@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.4] - 2026-06-22
+
+### Fixed
+
+- Added application-level retry-with-backoff around all GCS operations so a transient connection-level failure on the OAuth token exchange (e.g. `Invalid response body while trying to fetch https://www.googleapis.com/oauth2/v4/token: Premature close`) no longer takes the whole server down on the first request. Connection-reset/DNS-blip signatures (`Premature close`, `ECONNRESET`, `socket hang up`, `EAI_AGAIN`, etc.) are now retried with exponential backoff at both the application layer and the GCS SDK layer (via a broadened `retryableErrorFn`), giving the connection time to self-heal. Permanent failures (e.g. `invalid_grant`, `File not found`, 403) are still surfaced immediately without retry.
+
 ## [0.1.3] - 2026-06-14
 
 ### Fixed

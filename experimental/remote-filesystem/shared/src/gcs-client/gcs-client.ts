@@ -1,4 +1,4 @@
-import { Storage } from '@google-cloud/storage';
+import { Storage, RETRYABLE_ERR_FN_DEFAULT } from '@google-cloud/storage';
 import type {
   GCSConfig,
   FileInfo,
@@ -9,6 +9,20 @@ import type {
   DownloadOptions,
   ModifyOptions,
 } from '../types.js';
+import { withRetry, isTransientConnectionError } from './retry.js';
+import { logWarning } from '../logging.js';
+
+type StorageOptions = ConstructorParameters<typeof Storage>[0];
+
+/**
+ * Injectable dependencies for {@link GCSClient}. The Storage factory is the
+ * external GCS/auth boundary; injecting it lets tests simulate transient
+ * failures (e.g. a "Premature close" during the token exchange) without
+ * reaching the network.
+ */
+export interface GCSClientDeps {
+  createStorage?: (options: StorageOptions) => Storage;
+}
 
 /**
  * Interface for GCS remote filesystem operations
@@ -85,11 +99,26 @@ export class GCSClient implements IGCSClient {
   private storage: Storage;
   private config: GCSConfig;
 
-  constructor(config: GCSConfig) {
+  constructor(config: GCSConfig, deps: GCSClientDeps = {}) {
     this.config = config;
 
     // Build storage options based on available credentials
-    const storageOptions: ConstructorParameters<typeof Storage>[0] = {};
+    const storageOptions: StorageOptions = {
+      // Broaden the SDK's own retry to treat connection-level failures
+      // (premature close, connection reset, transient timeout) on storage API
+      // requests as retryable, on top of its default status-code handling.
+      //
+      // The application-level `retry()` wrapper below is the primary self-heal
+      // mechanism (it also covers the OAuth token exchange, which `retryOptions`
+      // does NOT govern). Keep the SDK's own retry count low so the two layers
+      // don't compound into a multi-minute hang on a persistent storage-endpoint
+      // problem — the outer wrapper provides the longer backoff window.
+      retryOptions: {
+        autoRetry: true,
+        maxRetries: 2,
+        retryableErrorFn: (err) => isTransientConnectionError(err) || RETRYABLE_ERR_FN_DEFAULT(err),
+      },
+    };
 
     if (config.projectId) {
       storageOptions.projectId = config.projectId;
@@ -108,7 +137,26 @@ export class GCSClient implements IGCSClient {
     }
     // Option 3: Application Default Credentials (ADC) - no config needed
 
-    this.storage = new Storage(storageOptions);
+    const createStorage = deps.createStorage ?? ((options: StorageOptions) => new Storage(options));
+    this.storage = createStorage(storageOptions);
+  }
+
+  /**
+   * Run a GCS operation with application-level retry on transient
+   * connection-level failures. This wraps the SDK's own (shorter) retries so a
+   * connection blip on the OAuth token exchange — which otherwise takes the
+   * whole operation down with a "Premature close" — is given time to self-heal.
+   */
+  private retry<T>(operation: string, fn: () => Promise<T>): Promise<T> {
+    return withRetry(fn, {
+      onRetry: (err, attempt, delayMs) => {
+        const message = err instanceof Error ? err.message : String(err);
+        logWarning(
+          'GCSClient',
+          `Transient error on ${operation} (attempt ${attempt}), retrying in ${delayMs}ms: ${message}`
+        );
+      },
+    });
   }
 
   async upload(data: Buffer | string, options?: UploadOptions): Promise<UploadResult> {
@@ -119,33 +167,38 @@ export class GCSClient implements IGCSClient {
     const contentType = options?.contentType || this.inferContentType(filename);
     const makePublic = options?.makePublic ?? this.config.makePublic ?? false;
 
-    const bucket = this.storage.bucket(this.config.bucket);
-    const file = bucket.file(fullPath);
+    // Safe to retry as a whole: `file.save` is a full-object overwrite (not an
+    // append), so re-running the closure after a partial failure re-uploads the
+    // same bytes idempotently rather than corrupting or duplicating the object.
+    return this.retry('upload', async () => {
+      const bucket = this.storage.bucket(this.config.bucket);
+      const file = bucket.file(fullPath);
 
-    await file.save(buffer, {
-      metadata: {
+      await file.save(buffer, {
+        metadata: {
+          contentType,
+          metadata: options?.metadata,
+        },
+        resumable: false,
+      });
+
+      if (makePublic) {
+        await file.makePublic();
+      }
+
+      const url = makePublic
+        ? `https://storage.googleapis.com/${this.config.bucket}/${fullPath}`
+        : await this.getSignedUrl(file);
+
+      return {
+        path: this.getRelativePath(fullPath),
+        size: buffer.length,
         contentType,
-        metadata: options?.metadata,
-      },
-      resumable: false,
+        updatedAt: new Date().toISOString(),
+        isPublic: makePublic,
+        url,
+      };
     });
-
-    if (makePublic) {
-      await file.makePublic();
-    }
-
-    const url = makePublic
-      ? `https://storage.googleapis.com/${this.config.bucket}/${fullPath}`
-      : await this.getSignedUrl(file);
-
-    return {
-      path: this.getRelativePath(fullPath),
-      size: buffer.length,
-      contentType,
-      updatedAt: new Date().toISOString(),
-      isPublic: makePublic,
-      url,
-    };
   }
 
   async uploadFile(filePath: string, options?: UploadOptions): Promise<UploadResult> {
@@ -170,137 +223,145 @@ export class GCSClient implements IGCSClient {
     const fullPath = this.getFullPath(remotePath);
     this.validatePath(fullPath);
 
-    const bucket = this.storage.bucket(this.config.bucket);
-    const file = bucket.file(fullPath);
+    return this.retry('download', async () => {
+      const bucket = this.storage.bucket(this.config.bucket);
+      const file = bucket.file(fullPath);
 
-    const [exists] = await file.exists();
-    if (!exists) {
-      throw new Error(`File not found: ${remotePath}`);
-    }
+      const [exists] = await file.exists();
+      if (!exists) {
+        throw new Error(`File not found: ${remotePath}`);
+      }
 
-    const [buffer] = await file.download();
-    const [metadata] = await file.getMetadata();
+      const [buffer] = await file.download();
+      const [metadata] = await file.getMetadata();
 
-    const content = options?.asBase64 ? buffer.toString('base64') : buffer.toString('utf-8');
+      const content = options?.asBase64 ? buffer.toString('base64') : buffer.toString('utf-8');
 
-    const isPublic = await this.checkIsPublic(file);
-    const url = isPublic
-      ? `https://storage.googleapis.com/${this.config.bucket}/${fullPath}`
-      : await this.getSignedUrl(file);
+      const isPublic = await this.checkIsPublic(file);
+      const url = isPublic
+        ? `https://storage.googleapis.com/${this.config.bucket}/${fullPath}`
+        : await this.getSignedUrl(file);
 
-    return {
-      content,
-      info: {
-        path: this.getRelativePath(fullPath),
-        size: Number(metadata.size) || buffer.length,
-        contentType: metadata.contentType || 'application/octet-stream',
-        updatedAt: metadata.updated || new Date().toISOString(),
-        isPublic,
-        url,
-      },
-    };
+      return {
+        content,
+        info: {
+          path: this.getRelativePath(fullPath),
+          size: Number(metadata.size) || buffer.length,
+          contentType: metadata.contentType || 'application/octet-stream',
+          updatedAt: metadata.updated || new Date().toISOString(),
+          isPublic,
+          url,
+        },
+      };
+    });
   }
 
   async list(options?: ListOptions): Promise<ListResult> {
     const prefix = options?.prefix ? this.getFullPath(options.prefix) : this.config.rootPath || '';
     const normalizedPrefix = prefix && !prefix.endsWith('/') ? `${prefix}/` : prefix;
 
-    const bucket = this.storage.bucket(this.config.bucket);
+    return this.retry('list', async () => {
+      const bucket = this.storage.bucket(this.config.bucket);
 
-    const [files, , apiResponse] = await bucket.getFiles({
-      prefix: normalizedPrefix || undefined,
-      maxResults: options?.maxResults,
-      delimiter: '/',
-      autoPaginate: false,
+      const [files, , apiResponse] = await bucket.getFiles({
+        prefix: normalizedPrefix || undefined,
+        maxResults: options?.maxResults,
+        delimiter: '/',
+        autoPaginate: false,
+      });
+
+      const fileInfos: FileInfo[] = await Promise.all(
+        files.map(async (file) => {
+          const isPublic = await this.checkIsPublic(file);
+          const url = isPublic
+            ? `https://storage.googleapis.com/${this.config.bucket}/${file.name}`
+            : await this.getSignedUrl(file);
+
+          return {
+            path: this.getRelativePath(file.name),
+            size: Number(file.metadata.size) || 0,
+            contentType: file.metadata.contentType || 'application/octet-stream',
+            updatedAt: file.metadata.updated || '',
+            isPublic,
+            url,
+          };
+        })
+      );
+
+      // Get directories (prefixes) from the API response
+      const directories: string[] = ((apiResponse as { prefixes?: string[] })?.prefixes || []).map(
+        (p: string) => this.getRelativePath(p)
+      );
+
+      return {
+        files: fileInfos,
+        directories,
+      };
     });
-
-    const fileInfos: FileInfo[] = await Promise.all(
-      files.map(async (file) => {
-        const isPublic = await this.checkIsPublic(file);
-        const url = isPublic
-          ? `https://storage.googleapis.com/${this.config.bucket}/${file.name}`
-          : await this.getSignedUrl(file);
-
-        return {
-          path: this.getRelativePath(file.name),
-          size: Number(file.metadata.size) || 0,
-          contentType: file.metadata.contentType || 'application/octet-stream',
-          updatedAt: file.metadata.updated || '',
-          isPublic,
-          url,
-        };
-      })
-    );
-
-    // Get directories (prefixes) from the API response
-    const directories: string[] = ((apiResponse as { prefixes?: string[] })?.prefixes || []).map(
-      (p: string) => this.getRelativePath(p)
-    );
-
-    return {
-      files: fileInfos,
-      directories,
-    };
   }
 
   async getInfo(remotePath: string): Promise<FileInfo> {
     const fullPath = this.getFullPath(remotePath);
     this.validatePath(fullPath);
 
-    const bucket = this.storage.bucket(this.config.bucket);
-    const file = bucket.file(fullPath);
+    return this.retry('getInfo', async () => {
+      const bucket = this.storage.bucket(this.config.bucket);
+      const file = bucket.file(fullPath);
 
-    const [exists] = await file.exists();
-    if (!exists) {
-      throw new Error(`File not found: ${remotePath}`);
-    }
+      const [exists] = await file.exists();
+      if (!exists) {
+        throw new Error(`File not found: ${remotePath}`);
+      }
 
-    const [metadata] = await file.getMetadata();
-    const isPublic = await this.checkIsPublic(file);
-    const url = isPublic
-      ? `https://storage.googleapis.com/${this.config.bucket}/${fullPath}`
-      : await this.getSignedUrl(file);
+      const [metadata] = await file.getMetadata();
+      const isPublic = await this.checkIsPublic(file);
+      const url = isPublic
+        ? `https://storage.googleapis.com/${this.config.bucket}/${fullPath}`
+        : await this.getSignedUrl(file);
 
-    return {
-      path: this.getRelativePath(fullPath),
-      size: Number(metadata.size) || 0,
-      contentType: metadata.contentType || 'application/octet-stream',
-      updatedAt: metadata.updated || '',
-      isPublic,
-      url,
-    };
+      return {
+        path: this.getRelativePath(fullPath),
+        size: Number(metadata.size) || 0,
+        contentType: metadata.contentType || 'application/octet-stream',
+        updatedAt: metadata.updated || '',
+        isPublic,
+        url,
+      };
+    });
   }
 
   async modify(remotePath: string, options: ModifyOptions): Promise<FileInfo> {
     const fullPath = this.getFullPath(remotePath);
     this.validatePath(fullPath);
 
-    const bucket = this.storage.bucket(this.config.bucket);
-    const file = bucket.file(fullPath);
+    await this.retry('modify', async () => {
+      const bucket = this.storage.bucket(this.config.bucket);
+      const file = bucket.file(fullPath);
 
-    const [exists] = await file.exists();
-    if (!exists) {
-      throw new Error(`File not found: ${remotePath}`);
-    }
-
-    // Update metadata if provided
-    if (options.contentType || options.metadata) {
-      const metadataUpdate: Record<string, unknown> = {};
-      if (options.contentType) {
-        metadataUpdate.contentType = options.contentType;
+      const [exists] = await file.exists();
+      if (!exists) {
+        throw new Error(`File not found: ${remotePath}`);
       }
-      if (options.metadata) {
-        metadataUpdate.metadata = options.metadata;
-      }
-      await file.setMetadata(metadataUpdate);
-    }
 
-    // Handle public/private changes
-    if (options.makePublic) {
-      await file.makePublic();
-    } else if (options.makePrivate) {
-      await file.makePrivate();
-    }
+      // Update metadata if provided
+      if (options.contentType || options.metadata) {
+        const metadataUpdate: Record<string, unknown> = {};
+        if (options.contentType) {
+          metadataUpdate.contentType = options.contentType;
+        }
+        if (options.metadata) {
+          metadataUpdate.metadata = options.metadata;
+        }
+        await file.setMetadata(metadataUpdate);
+      }
+
+      // Handle public/private changes
+      if (options.makePublic) {
+        await file.makePublic();
+      } else if (options.makePrivate) {
+        await file.makePrivate();
+      }
+    });
 
     return this.getInfo(remotePath);
   }
@@ -309,26 +370,30 @@ export class GCSClient implements IGCSClient {
     const fullPath = this.getFullPath(remotePath);
     this.validatePath(fullPath);
 
-    const bucket = this.storage.bucket(this.config.bucket);
-    const file = bucket.file(fullPath);
+    await this.retry('delete', async () => {
+      const bucket = this.storage.bucket(this.config.bucket);
+      const file = bucket.file(fullPath);
 
-    const [exists] = await file.exists();
-    if (!exists) {
-      throw new Error(`File not found: ${remotePath}`);
-    }
+      const [exists] = await file.exists();
+      if (!exists) {
+        throw new Error(`File not found: ${remotePath}`);
+      }
 
-    await file.delete();
+      await file.delete();
+    });
   }
 
   async exists(remotePath: string): Promise<boolean> {
     const fullPath = this.getFullPath(remotePath);
     this.validatePath(fullPath);
 
-    const bucket = this.storage.bucket(this.config.bucket);
-    const file = bucket.file(fullPath);
+    return this.retry('exists', async () => {
+      const bucket = this.storage.bucket(this.config.bucket);
+      const file = bucket.file(fullPath);
 
-    const [exists] = await file.exists();
-    return exists;
+      const [exists] = await file.exists();
+      return exists;
+    });
   }
 
   getConfig(): GCSConfig {
