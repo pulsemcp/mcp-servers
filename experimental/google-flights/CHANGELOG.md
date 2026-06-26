@@ -4,6 +4,12 @@ All notable changes to the Google Flights MCP Server will be documented in this 
 
 ## [Unreleased]
 
+## [0.2.6] - 2026-06-26
+
+### Fixed
+
+- Stop over-excluding legitimate economy fares when `exclude_basic_economy` is enabled (the default). The filter previously dropped every fare Google ranks in the lowest tier (`fare_brand` "Economy"), but on many international routes Google labels standard, fully-amenitied economy as the lowest tier. For example, the United SFO→CTS nonstop (UA234) is tier 1 yet includes a free checked bag and is surfaced as a normal option on Google's web UI — it was being silently removed, hiding the cheapest itinerary. A fare is now treated as basic economy only when it is the lowest fare tier **and** includes no free checked bag (`extensions.checked_bags_included === 0`). Google's carry-on flag is frequently `null` on these fares, so checked-bag inclusion is the dependable signal that a fare is the bare-bones basic-economy product the filter targets. Truly restrictive basic-economy fares (no free checked bag) are still excluded.
+
 ## [0.2.5] - 2026-06-14
 
 ### Fixed

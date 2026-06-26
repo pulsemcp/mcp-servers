@@ -429,6 +429,27 @@ function filterByStops(
   return offers.filter((o) => o.stops <= maxStopsNum);
 }
 
+// Determine whether an offer is a true basic-economy fare for the purposes of
+// the exclude_basic_economy filter.
+//
+// The fare-tier number (fare_brand "Economy" = tier 1) is NOT a reliable
+// indicator on its own. On many international routes Google ranks standard,
+// fully-amenitied economy fares as the lowest tier — e.g. United's SFO→CTS
+// nonstop is tier 1 yet includes a free checked bag and is surfaced as a normal
+// option on Google's web UI. Excluding every tier-1 fare therefore silently
+// drops legitimate (often the cheapest) itineraries.
+//
+// A genuine basic-economy product is distinguished by stripping amenities. The
+// dependable signal in Google's payload is checked-bag inclusion: the carry-on
+// flag (amenityFlags[0]) is frequently null on international fares, but the
+// checked-bag count is populated. We therefore treat a fare as basic economy
+// only when it is the lowest fare tier AND includes no free checked bag. This
+// keeps amenitied tier-1 fares (like the United example) while still excluding
+// the bare-bones, restriction-heavy fares the filter is meant to remove.
+export function isBasicEconomy(offer: FlightOffer): boolean {
+  return offer.fare_brand === 'Economy' && offer.extensions.checked_bags_included === 0;
+}
+
 // =============================================================================
 // PUBLIC API
 // =============================================================================
@@ -475,9 +496,11 @@ export async function searchFlights(options: SearchFlightsOptions): Promise<Sear
   // Apply client-side stop filter (supplements the protobuf filter)
   allOffers = filterByStops(allOffers, options.max_stops);
 
-  // Filter out basic economy fares (fare_brand "Economy" = tier 1, the lowest/basic tier)
+  // Filter out basic economy fares. A fare is treated as basic economy only when
+  // it is the lowest fare tier AND includes no free checked bag — see isBasicEconomy
+  // for why the tier number alone over-excludes legitimate amenitied economy fares.
   if (options.exclude_basic_economy) {
-    allOffers = allOffers.filter((o) => o.fare_brand !== 'Economy');
+    allOffers = allOffers.filter((o) => !isBasicEconomy(o));
   }
 
   // Sort
