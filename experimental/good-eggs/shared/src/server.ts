@@ -11,6 +11,193 @@ import type {
 
 const BASE_URL = 'https://www.goodeggs.com';
 
+// How long to wait (ms) for a dynamically-rendered control (add button, favorite
+// control) to appear before giving up. Capped against the configured timeout.
+const ELEMENT_WAIT_TIMEOUT_MS = 10_000;
+
+// Good Eggs renders the add control as a <button> whose label varies in casing
+// ("ADD TO BASKET", "Add to Cart", "Add to Basket") and is occasionally a
+// role="button" element rather than a real <button>. Match all of these
+// case-insensitively so a markup/copy tweak doesn't break the add flow.
+const ADD_BUTTON_SELECTOR =
+  'button:has-text("add to basket"), button:has-text("add to cart"), ' +
+  '[role="button"]:has-text("add to basket"), [role="button"]:has-text("add to cart")';
+
+/**
+ * Extract the stable product id (the trailing path segment) from a Good Eggs
+ * product URL. Good Eggs URLs look like
+ * `/<producer>/<product-slug>/<product-id>`, and the id is the only part that
+ * stays constant across producer/slug renames, so it's the reliable join key
+ * when reconciling a requested item against the cart.
+ */
+export function extractProductId(url: string): string {
+  const withoutQueryOrHash = url.split(/[?#]/)[0];
+  // Strip the protocol so the host isn't mistaken for a path segment.
+  const withoutProtocol = withoutQueryOrHash.replace(/^[a-z][a-z0-9+.-]*:\/\//i, '');
+  const segments = withoutProtocol.split('/').filter((segment) => segment.length > 0);
+  // A real product id needs a path beyond the host; the first segment is the
+  // host (e.g. www.goodeggs.com) for absolute URLs.
+  if (segments.length <= 1) return '';
+  return segments[segments.length - 1] || '';
+}
+
+/**
+ * Find the cart item that corresponds to a product URL, matching on the stable
+ * product id (the trailing path segment), which is invariant across
+ * producer/slug renames. The id is a long Mongo-style hex string, so an exact
+ * id-to-id comparison is the reliable join key.
+ */
+export function findCartItemForUrl(
+  cartItems: CartItem[],
+  groceryUrl: string
+): CartItem | undefined {
+  const productId = extractProductId(groceryUrl);
+  if (!productId) return undefined;
+  return cartItems.find((item) => extractProductId(item.url) === productId);
+}
+
+export interface ReconcileAddParams {
+  groceryUrl: string;
+  requestedQuantity: number;
+  itemName: string;
+  /** Quantity of this item already in the cart BEFORE the add was attempted. */
+  priorQuantity: number;
+  /** Cart contents read back AFTER the add was attempted. */
+  cartItems: CartItem[];
+  buttonFound: boolean;
+}
+
+/**
+ * Decide the true outcome of an add-to-cart attempt by reconciling what we tried
+ * to do against the actual cart contents read back afterward.
+ *
+ * This exists because the add button and the server-side cart state can
+ * disagree: Good Eggs frequently adds the item even when the button can't be
+ * located (false negative), and occasionally reports a clicked button when
+ * nothing was added because, e.g., a delivery day still needs to be selected
+ * (false positive). The cart is the source of truth.
+ *
+ * Success is judged by a BEFORE/AFTER delta, not just the after-snapshot: an
+ * item that was already in the cart must not be misreported as a fresh add when
+ * this attempt changed nothing.
+ */
+export function reconcileAddResult(params: ReconcileAddParams): CartResult {
+  const { groceryUrl, requestedQuantity, itemName, priorQuantity, cartItems, buttonFound } = params;
+  const match = findCartItemForUrl(cartItems, groceryUrl);
+  const cartQuantity = match?.quantity ?? 0;
+  const displayName = itemName && itemName !== 'Unknown item' ? itemName : match?.name || itemName;
+  const delta = cartQuantity - priorQuantity;
+
+  // The cart quantity went up: this attempt demonstrably added the item.
+  if (delta > 0) {
+    if (cartQuantity >= requestedQuantity) {
+      return {
+        success: true,
+        message: buttonFound
+          ? `Successfully added ${displayName} to cart (cart now has ${cartQuantity}).`
+          : `The add-to-cart button was not found on the page, but the cart quantity for ` +
+            `${displayName} increased to ${cartQuantity}. The add succeeded.`,
+        itemName: displayName,
+        quantity: cartQuantity,
+      };
+    }
+    return {
+      success: true,
+      message:
+        `Partially added: ${displayName} is now in your cart at quantity ${cartQuantity}, ` +
+        `below the requested ${requestedQuantity}. You may need to adjust the quantity.`,
+      itemName: displayName,
+      quantity: cartQuantity,
+    };
+  }
+
+  // No increase observed. If the item was already in the cart at or above the
+  // requested quantity, the goal is satisfied even though this attempt added
+  // nothing — report that honestly rather than claiming a fresh add happened.
+  if (cartQuantity > 0 && priorQuantity >= requestedQuantity) {
+    return {
+      success: true,
+      message:
+        `${displayName} is already in your cart at quantity ${cartQuantity}, which meets the ` +
+        `requested ${requestedQuantity}; no additional units were added.`,
+      itemName: displayName,
+      quantity: cartQuantity,
+    };
+  }
+
+  // The cart is short of the request and this attempt did not increase it.
+  if (cartQuantity > 0) {
+    return {
+      success: false,
+      message: buttonFound
+        ? `Clicked add for ${displayName}, but the cart quantity did not change (still ` +
+          `${cartQuantity}, below the requested ${requestedQuantity}). The add did not take ` +
+          `effect (a delivery day may need to be selected).`
+        : `The add-to-cart button was not found and the cart quantity for ${displayName} did ` +
+          `not change (still ${cartQuantity}, below the requested ${requestedQuantity}). The ` +
+          `add did not take effect.`,
+      itemName: displayName,
+      quantity: cartQuantity,
+    };
+  }
+
+  return {
+    success: false,
+    message: buttonFound
+      ? `Clicked add for ${displayName}, but it does not appear in your cart afterward. ` +
+        `The add did not take effect (a delivery day may need to be selected, or the item may be unavailable).`
+      : `Could not find the add-to-cart button, and ${displayName} is not in your cart. The add did not succeed.`,
+    itemName: displayName,
+    quantity: 0,
+  };
+}
+
+/**
+ * Run an operation that navigates/reads the page, retrying once if it throws.
+ * Stale-element and "execution context was destroyed" errors happen when Good
+ * Eggs re-renders mid-interaction; a single reload-and-retry clears them.
+ */
+export async function withNavigationRetry<T>(
+  operation: () => Promise<T>,
+  onRetry: () => Promise<void>
+): Promise<T> {
+  try {
+    return await operation();
+  } catch {
+    await onRetry();
+    return await operation();
+  }
+}
+
+/**
+ * Minimal surface of a Playwright Page needed to wait for an element. Declaring
+ * it here keeps the waiting helper unit-testable with a plain fake instead of a
+ * full browser.
+ */
+export interface WaitablePage {
+  waitForSelector(
+    selector: string,
+    options?: { timeout?: number; state?: 'visible' | 'attached' }
+  ): Promise<unknown>;
+}
+
+/**
+ * Wait for an element to become visible, returning its handle or null on
+ * timeout instead of throwing. Replaces synchronous `page.$()` null-checks that
+ * miss controls which render a beat after `domcontentloaded`.
+ */
+export async function waitForElement(
+  page: WaitablePage,
+  selector: string,
+  timeout: number
+): Promise<unknown | null> {
+  try {
+    return (await page.waitForSelector(selector, { timeout, state: 'visible' })) ?? null;
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Good Eggs client interface
  * Defines all methods for interacting with the Good Eggs grocery store
@@ -388,18 +575,39 @@ export class GoodEggsClient implements IGoodEggsClient {
   async addToCart(groceryUrl: string, quantity: number): Promise<CartResult> {
     const page = await this.ensureBrowser();
 
-    // Check if we're already on the product page
-    const currentUrl = page.url();
-    const normalizedGroceryUrl = groceryUrl.replace(BASE_URL, '');
-    const normalizedCurrentUrl = currentUrl.replace(BASE_URL, '');
+    const elementTimeout = Math.min(this.config.timeout, ELEMENT_WAIT_TIMEOUT_MS);
+    const fullUrl = groceryUrl.startsWith('http') ? groceryUrl : `${BASE_URL}${groceryUrl}`;
 
-    if (!normalizedCurrentUrl.includes(normalizedGroceryUrl.split('/').pop() || '')) {
-      // Navigate to the product page
-      // Use domcontentloaded instead of networkidle - Good Eggs has persistent connections
-      const fullUrl = groceryUrl.startsWith('http') ? groceryUrl : `${BASE_URL}${groceryUrl}`;
+    // Snapshot the cart BEFORE attempting the add so we can judge success by a
+    // before/after delta. Without this, an item that is already in the cart at a
+    // sufficient quantity would be misreported as a successful add even when this
+    // attempt changed nothing (e.g. the button was missing or a delivery day
+    // still needs to be selected).
+    let priorCartItems: CartItem[] = [];
+    try {
+      priorCartItems = await this.getCart();
+    } catch {
+      priorCartItems = [];
+    }
+    const priorQuantity = findCartItemForUrl(priorCartItems, groceryUrl)?.quantity ?? 0;
+
+    // Navigate to the product page if we're not already on it. Wrap in a retry
+    // so a stale page / re-render during navigation reloads once instead of
+    // failing the whole add.
+    const navigateIfNeeded = async (): Promise<void> => {
+      const currentUrl = page.url();
+      const normalizedGroceryUrl = groceryUrl.replace(BASE_URL, '');
+      const normalizedCurrentUrl = currentUrl.replace(BASE_URL, '');
+      if (!normalizedCurrentUrl.includes(normalizedGroceryUrl.split('/').pop() || '')) {
+        // Use domcontentloaded instead of networkidle - Good Eggs has persistent connections
+        await page.goto(fullUrl, { waitUntil: 'domcontentloaded' });
+        await page.waitForTimeout(3000);
+      }
+    };
+    await withNavigationRetry(navigateIfNeeded, async () => {
       await page.goto(fullUrl, { waitUntil: 'domcontentloaded' });
       await page.waitForTimeout(3000);
-    }
+    });
 
     // Get the product name for the result
     const itemName = await page.evaluate(() => {
@@ -407,63 +615,71 @@ export class GoodEggsClient implements IGoodEggsClient {
       return nameEl?.textContent?.trim() || 'Unknown item';
     });
 
-    // Set quantity if different from 1
-    let quantitySet = false;
+    // Set quantity if different from 1. This is best-effort: if the quantity
+    // controls can't be found we still attempt the add and let cart
+    // verification report the actual resulting quantity, rather than hard
+    // failing here.
     if (quantity > 1) {
-      // Try to find and use quantity selector
       const quantitySelector = await page.$(
         'select[class*="quantity"], [class*="quantity"] select'
       );
       if (quantitySelector) {
-        await quantitySelector.selectOption(String(quantity));
-        quantitySet = true;
+        await quantitySelector.selectOption(String(quantity)).catch(() => {});
       } else {
-        // Try clicking + button multiple times
         const plusButton = await page.$('button[aria-label*="increase"], button:has-text("+")');
         if (plusButton) {
           for (let i = 1; i < quantity; i++) {
-            await plusButton.click();
+            await plusButton.click().catch(() => {});
             await page.waitForTimeout(200);
           }
-          quantitySet = true;
         }
       }
+    }
 
-      if (!quantitySet) {
-        return {
-          success: false,
-          message: `Could not set quantity to ${quantity} - quantity controls not found. Item may only support single-item adds.`,
-          itemName,
-          quantity: 1,
-        };
+    // Wait for the add control to render (it can appear a beat after
+    // domcontentloaded) rather than synchronously null-checking it.
+    const addButton = (await waitForElement(page, ADD_BUTTON_SELECTOR, elementTimeout)) as
+      | import('playwright').ElementHandle
+      | null;
+    const buttonFound = addButton !== null;
+
+    if (addButton) {
+      // The click itself can fail if the element goes stale; that's not fatal,
+      // because the add may still have registered. Reconciliation against the
+      // cart below determines the true outcome.
+      try {
+        await addButton.click();
+      } catch {
+        // Ignore - verified against cart state below.
+      }
+      // Give the cart a moment to update server-side before we read it back.
+      await page.waitForTimeout(1500);
+    }
+
+    // Read the cart back and reconcile against what we requested. This is what
+    // turns the frequent false negative ("button not found" on an add that
+    // actually succeeded) into an accurate result. Reading the cart navigates
+    // away from the product page, so do it last.
+    let cartItems: CartItem[] = [];
+    try {
+      cartItems = await this.getCart();
+    } catch {
+      // One reload-and-retry for a transient/stale read.
+      try {
+        cartItems = await this.getCart();
+      } catch {
+        cartItems = [];
       }
     }
 
-    // Click the add to cart/basket button
-    const addButton = await page.$(
-      'button:has-text("ADD TO BASKET"), button:has-text("Add to Cart"), button:has-text("Add to Basket")'
-    );
-
-    if (!addButton) {
-      return {
-        success: false,
-        message: 'Could not find add to cart button',
-        itemName,
-        quantity,
-      };
-    }
-
-    await addButton.click();
-
-    // Wait for cart update
-    await page.waitForTimeout(1000);
-
-    return {
-      success: true,
-      message: `Successfully added ${quantity} x ${itemName} to cart`,
+    return reconcileAddResult({
+      groceryUrl,
+      requestedQuantity: quantity,
       itemName,
-      quantity,
-    };
+      priorQuantity,
+      cartItems,
+      buttonFound,
+    });
   }
 
   async searchFreebieGroceries(): Promise<GroceryItem[]> {
@@ -802,8 +1018,13 @@ export class GoodEggsClient implements IGoodEggsClient {
       return nameEl?.textContent?.trim() || 'Unknown item';
     });
 
-    // Look for the favorite control - Good Eggs uses a div, not a button
-    const favoriteControl = await page.$('.product-detail__favorite-control');
+    // Look for the favorite control - Good Eggs uses a div, not a button.
+    // Wait for it to render rather than synchronously null-checking.
+    const favoriteControl = (await waitForElement(
+      page,
+      '.product-detail__favorite-control',
+      Math.min(this.config.timeout, ELEMENT_WAIT_TIMEOUT_MS)
+    )) as import('playwright').ElementHandle | null;
 
     if (!favoriteControl) {
       return {
@@ -815,7 +1036,7 @@ export class GoodEggsClient implements IGoodEggsClient {
 
     // Check if already favorited by looking for 'favorited' class (vs 'not-favorited')
     const isAlreadyFavorited = await page.evaluate((el) => {
-      return el.classList.contains('favorited');
+      return (el as Element).classList.contains('favorited');
     }, favoriteControl);
 
     if (isAlreadyFavorited) {
@@ -857,8 +1078,13 @@ export class GoodEggsClient implements IGoodEggsClient {
       return nameEl?.textContent?.trim() || 'Unknown item';
     });
 
-    // Look for the favorite control - Good Eggs uses a div, not a button
-    const favoriteControl = await page.$('.product-detail__favorite-control');
+    // Look for the favorite control - Good Eggs uses a div, not a button.
+    // Wait for it to render rather than synchronously null-checking.
+    const favoriteControl = (await waitForElement(
+      page,
+      '.product-detail__favorite-control',
+      Math.min(this.config.timeout, ELEMENT_WAIT_TIMEOUT_MS)
+    )) as import('playwright').ElementHandle | null;
 
     if (!favoriteControl) {
       return {
@@ -870,7 +1096,7 @@ export class GoodEggsClient implements IGoodEggsClient {
 
     // Check if favorited by looking for 'favorited' class (vs 'not-favorited')
     const isFavorited = await page.evaluate((el) => {
-      return el.classList.contains('favorited');
+      return (el as Element).classList.contains('favorited');
     }, favoriteControl);
 
     if (!isFavorited) {
@@ -917,6 +1143,7 @@ export class GoodEggsClient implements IGoodEggsClient {
     const cartItems = await page.$$('.js-basket-item');
 
     let itemFound = false;
+    let removalAttempted = false;
     let itemName = 'Unknown item';
 
     for (const cartItem of cartItems) {
@@ -942,33 +1169,25 @@ export class GoodEggsClient implements IGoodEggsClient {
         );
 
         if (removeButton) {
-          await removeButton.click();
-          await page.waitForTimeout(500);
-
-          return {
-            success: true,
-            message: `Successfully removed ${itemName.trim()} from cart`,
-            itemName: itemName.trim(),
-          };
-        }
-
-        // Fallback: use the quantity dropdown with value "0" to remove the item
-        // Good Eggs quantity dropdowns have a "Remove" option with value="0"
-        const quantitySelect = await cartItem.$('.summary-item__quantity select');
-        if (quantitySelect) {
-          try {
-            await quantitySelect.selectOption('0');
-            await page.waitForTimeout(1000);
-
-            return {
-              success: true,
-              message: `Successfully removed ${itemName.trim()} from cart`,
-              itemName: itemName.trim(),
-            };
-          } catch {
-            // If selectOption('0') fails (e.g., no "0" option exists), continue to error path
+          await removeButton.click().catch(() => {});
+          await page.waitForTimeout(1000);
+          removalAttempted = true;
+        } else {
+          // Fallback: use the quantity dropdown with value "0" to remove the item
+          // Good Eggs quantity dropdowns have a "Remove" option with value="0"
+          const quantitySelect = await cartItem.$('.summary-item__quantity select');
+          if (quantitySelect) {
+            try {
+              await quantitySelect.selectOption('0');
+              await page.waitForTimeout(1000);
+              removalAttempted = true;
+            } catch {
+              // If selectOption('0') fails (e.g., no "0" option exists), fall through to verification
+            }
           }
         }
+
+        break;
       }
     }
 
@@ -980,10 +1199,47 @@ export class GoodEggsClient implements IGoodEggsClient {
       };
     }
 
+    const trimmedName = itemName.trim();
+
+    // Verify the removal against the actual cart state rather than trusting the
+    // click. If the item is gone, the remove succeeded - even if we couldn't
+    // confirm a control was clicked.
+    let stillPresent: CartItem | undefined;
+    try {
+      const updatedCart = await this.getCart();
+      stillPresent = findCartItemForUrl(updatedCart, groceryUrl);
+    } catch {
+      // Couldn't re-read the cart. If we did attempt a removal, report
+      // best-effort success rather than a misleading hard failure.
+      if (removalAttempted) {
+        return {
+          success: true,
+          message: `Removed ${trimmedName} from cart (could not re-verify cart state).`,
+          itemName: trimmedName,
+        };
+      }
+      return {
+        success: false,
+        message: `Could not find a way to remove ${trimmedName} from the cart.`,
+        itemName: trimmedName,
+      };
+    }
+
+    if (!stillPresent) {
+      return {
+        success: true,
+        message: `Successfully removed ${trimmedName} from cart`,
+        itemName: trimmedName,
+      };
+    }
+
     return {
       success: false,
-      message: 'Could not find remove button for item in cart',
-      itemName,
+      message: removalAttempted
+        ? `Attempted to remove ${trimmedName}, but it is still in your cart (quantity ${stillPresent.quantity}).`
+        : `Could not find a way to remove ${trimmedName} from the cart; it is still present (quantity ${stillPresent.quantity}).`,
+      itemName: trimmedName,
+      quantity: stillPresent.quantity,
     };
   }
 

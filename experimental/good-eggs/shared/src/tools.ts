@@ -56,7 +56,12 @@ Provide:
 - grocery_url: The Good Eggs URL of the item to add
 - quantity: Number of items to add (default: 1)
 
-Returns confirmation of the item added and quantity.
+Returns confirmation of the item added and the resulting cart quantity. After
+attempting the add, the cart is re-read to verify the item actually landed, so
+the result reflects the true cart state rather than just whether a button was
+clicked. Possible outcomes: a confirmed add, a partial add (cart quantity below
+what was requested), or a genuine failure (e.g. a delivery day still needs to be
+selected).
 
 **Tip:** This tool checks if you're already on the product page to minimize navigation.`;
 
