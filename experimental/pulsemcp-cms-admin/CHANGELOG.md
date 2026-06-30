@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [0.10.6] - 2026-06-30
+
+### Fixed
+
+- Bumped the `vitest` devDependency floor from `^3.2.3` to `^4.1.9` to match `@vitest/ui ^4.1.9`, which peer-requires `vitest@4.x`. Dependabot PR #4388 raised `@vitest/ui` to v4 without bumping `vitest`, leaving this server as the lone outlier whose `npm install` hit a deterministic `ERESOLVE` peer-dependency conflict. That conflict broke the "MCP Servers: Distribute to Public Repo" workflow's `verify-publications` CI check and blocked npm publication of `pulsemcp-cms-admin`. This change aligns the pair (and the regenerated lockfile) with every other server under `mcp-servers/servers/*`. No runtime or source code changed.
+
+## [0.10.5] - 2026-06-30
+
+### Added
+
+- `link_secret_to_mcp_server` tool (in the new write-only `secrets` group) — makes an auth secret available to an MCP server so Proctor can inject it at runtime. Upserts a `Secret` by `slug` that references a 1Password item (`onepassword_item_id`, plus optional `title`/`description`), then writes the `mcp_servers_secrets` join (the row Proctor reads) for the named `mcp_server_slug`, with an optional `onepassword_tag`. The raw credential value never passes through the tool — only the 1Password reference. If a secret with the given slug already exists but references a _different_ 1Password item, the tool errors instead of silently rebinding a possibly-shared secret; relinking an already-linked server is idempotent. If the 1Password item is already registered under a _different_ slug (the backend also enforces `onepassword_item_id` uniqueness), the tool returns actionable guidance pointing the agent at the existing secret rather than surfacing the raw validation error. Backed by new `POST /api/secrets` and `POST /api/secrets/:id/servers` admin-API endpoints.
+
 ## [0.10.4] - 2026-06-16
 
 ### Added

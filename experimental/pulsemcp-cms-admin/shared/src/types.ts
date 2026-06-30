@@ -866,6 +866,54 @@ export interface UpdateRedirectParams {
 }
 
 // ============================================================
+// Secret Types
+// Auth secrets whose values live in 1Password, linked to MCP
+// servers via the mcp_servers_secrets join that Proctor reads
+// to inject the value at runtime.
+// ============================================================
+
+export interface Secret {
+  id: number;
+  slug: string;
+  // 1Password item reference. The raw secret value never touches this API.
+  onepassword_item_id: string;
+  title?: string | null;
+  description?: string | null;
+  mcp_servers_count?: number;
+  mcp_server_slugs?: string[];
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface CreateSecretParams {
+  slug: string;
+  onepassword_item_id: string;
+  title?: string;
+  description?: string;
+}
+
+export interface SecretServerLink {
+  mcp_server_id: number;
+  mcp_server_slug: string;
+  // Tag scoping which field of the 1Password item to inject. Null when unscoped.
+  onepassword_tag?: string | null;
+}
+
+export interface LinkSecretToServerParams {
+  // Secret identifier: numeric id or slug.
+  secret: string | number;
+  // MCP server identifier: exactly one of these is required.
+  mcp_server_id?: number;
+  mcp_server_slug?: string;
+  onepassword_tag?: string;
+}
+
+// Response of the link endpoint: the secret plus the created/updated join row.
+export interface SecretWithLink extends Secret {
+  link: SecretServerLink;
+}
+
+// ============================================================
 // GoodJob Types
 // Background job management via the GoodJob API
 // ============================================================

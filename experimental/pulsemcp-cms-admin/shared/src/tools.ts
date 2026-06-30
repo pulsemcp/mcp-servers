@@ -57,6 +57,8 @@ import { getRedirect } from './tools/get-redirect.js';
 import { createRedirect } from './tools/create-redirect.js';
 import { updateRedirect } from './tools/update-redirect.js';
 import { deleteRedirect } from './tools/delete-redirect.js';
+// Secret tools
+import { linkSecretToMcpServer } from './tools/link-secret-to-mcp-server.js';
 // GoodJob tools
 import { listGoodJobs } from './tools/list-good-jobs.js';
 import { getGoodJob } from './tools/get-good-job.js';
@@ -108,6 +110,7 @@ import { getMozStoredMetrics } from './tools/get-moz-stored-metrics.js';
  * - mcp_jsons / mcp_jsons_readonly: MCP JSON configuration tools
  * - mcp_servers / mcp_servers_readonly: Unified MCP server tools (abstracted interface)
  * - redirects / redirects_readonly: URL redirect management tools
+ * - secrets: Auth-secret tools (link_secret_to_mcp_server). Upserts a Secret referencing a 1Password item and writes the mcp_servers_secrets join Proctor reads to inject the value. Write-only, so there is no _readonly variant.
  * - good_jobs / good_jobs_readonly: GoodJob background job management tools
  * - proctor / proctor_readonly: Proctor exam execution and result storage tools. The readonly variant includes get_exam_result, list_proctor_runs, and get_proctor_metadata for retrieving stored results and metadata without running exams or saving
  * - discovered_urls / discovered_urls_readonly: Discovered URL management tools for processing URLs into MCP implementations
@@ -134,6 +137,7 @@ export type ToolGroup =
   | 'mcp_servers_readonly'
   | 'redirects'
   | 'redirects_readonly'
+  | 'secrets'
   | 'good_jobs'
   | 'good_jobs_readonly'
   | 'proctor'
@@ -156,6 +160,7 @@ type BaseToolGroup =
   | 'mcp_jsons'
   | 'mcp_servers'
   | 'redirects'
+  | 'secrets'
   | 'good_jobs'
   | 'proctor'
   | 'discovered_urls'
@@ -354,6 +359,8 @@ const ALL_TOOLS: ToolDefinition[] = [
   { factory: createRedirect, groups: ['redirects'], isWriteOperation: true },
   { factory: updateRedirect, groups: ['redirects'], isWriteOperation: true },
   { factory: deleteRedirect, groups: ['redirects'], isWriteOperation: true },
+  // Secret tools (write-only: upsert a secret + write the mcp_servers_secrets join Proctor reads)
+  { factory: linkSecretToMcpServer, groups: ['secrets'], isWriteOperation: true },
   // GoodJob tools
   { factory: listGoodJobs, groups: ['good_jobs'], isWriteOperation: false },
   { factory: getGoodJob, groups: ['good_jobs'], isWriteOperation: false },
@@ -429,6 +436,7 @@ const VALID_TOOL_GROUPS: ToolGroup[] = [
   'mcp_servers_readonly',
   'redirects',
   'redirects_readonly',
+  'secrets',
   'good_jobs',
   'good_jobs_readonly',
   'proctor',
@@ -453,6 +461,7 @@ const BASE_TOOL_GROUPS: BaseToolGroup[] = [
   'mcp_jsons',
   'mcp_servers',
   'redirects',
+  'secrets',
   'good_jobs',
   'proctor',
   'discovered_urls',
