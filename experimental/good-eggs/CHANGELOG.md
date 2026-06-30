@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.11] - 2026-06-29
+
+### Fixed
+
+- Made `add_to_cart` resilient to the frequent false negative where the add succeeded server-side but the tool reported "Could not find add to cart button". The button is now waited for (it can render a beat after `domcontentloaded`) with a broader, case-insensitive selector set, and the cart is read both before and after every add attempt and reconciled against the requested item/quantity. Success is judged by the before/after quantity delta, so an item that was already in the cart is never misreported as a fresh add when the attempt changed nothing. The returned result reflects the true cart state: a confirmed add (even when the button couldn't be located), a partial add (quantity increased but still below requested), an already-satisfied result (item already at the requested quantity, nothing added), or a genuine failure (e.g. a delivery day still needs to be selected) — instead of a misleading button-not-found error.
+- `add_to_cart` no longer hard-fails when quantity controls are missing; quantity setting is best-effort and the actual resulting quantity is reported from cart verification.
+- `remove_from_cart` now verifies the removal against the re-read cart state instead of trusting the click, so it reports accurate success/failure (and the remaining quantity when the item is still present).
+- `add_favorite` and `remove_favorite` now wait for the favorite control to render rather than synchronously null-checking it, reducing spurious "Could not find favorite button" errors.
+- Navigation during `add_to_cart` reloads once on a stale-page / re-render error rather than failing the whole add.
+
 ## [0.1.10] - 2026-06-14
 
 ### Fixed
