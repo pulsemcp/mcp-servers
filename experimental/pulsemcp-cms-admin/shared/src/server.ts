@@ -46,6 +46,11 @@ import type {
   RedirectStatus,
   CreateRedirectParams,
   UpdateRedirectParams,
+  // Secret types
+  Secret,
+  CreateSecretParams,
+  LinkSecretToServerParams,
+  SecretWithLink,
   // GoodJob types
   GoodJob,
   GoodJobsResponse,
@@ -138,6 +143,9 @@ import { getRedirect } from './pulsemcp-admin-client/lib/get-redirect.js';
 import { createRedirect } from './pulsemcp-admin-client/lib/create-redirect.js';
 import { updateRedirect } from './pulsemcp-admin-client/lib/update-redirect.js';
 import { deleteRedirect } from './pulsemcp-admin-client/lib/delete-redirect.js';
+import { getSecret } from './pulsemcp-admin-client/lib/get-secret.js';
+import { createSecret } from './pulsemcp-admin-client/lib/create-secret.js';
+import { linkSecretToServer } from './pulsemcp-admin-client/lib/link-secret-to-server.js';
 import { getGoodJobs } from './pulsemcp-admin-client/lib/get-good-jobs.js';
 import { getGoodJob } from './pulsemcp-admin-client/lib/get-good-job.js';
 import { getGoodJobCronSchedules } from './pulsemcp-admin-client/lib/get-good-job-cron-schedules.js';
@@ -396,6 +404,13 @@ export interface IPulseMCPAdminClient {
   updateRedirect(id: number, params: UpdateRedirectParams): Promise<Redirect>;
 
   deleteRedirect(id: number): Promise<{ success: boolean; message: string }>;
+
+  // Secret REST API methods
+  getSecret(idOrSlug: string | number): Promise<Secret | null>;
+
+  createSecret(params: CreateSecretParams): Promise<Secret>;
+
+  linkSecretToServer(params: LinkSecretToServerParams): Promise<SecretWithLink>;
 
   // GoodJob REST API methods
   getGoodJobs(params?: {
@@ -833,6 +848,19 @@ export class PulseMCPAdminClient implements IPulseMCPAdminClient {
 
   async deleteRedirect(id: number): Promise<{ success: boolean; message: string }> {
     return deleteRedirect(this.apiKey, this.baseUrl, id);
+  }
+
+  // Secret REST API methods
+  async getSecret(idOrSlug: string | number): Promise<Secret | null> {
+    return getSecret(this.apiKey, this.baseUrl, idOrSlug);
+  }
+
+  async createSecret(params: CreateSecretParams): Promise<Secret> {
+    return createSecret(this.apiKey, this.baseUrl, params);
+  }
+
+  async linkSecretToServer(params: LinkSecretToServerParams): Promise<SecretWithLink> {
+    return linkSecretToServer(this.apiKey, this.baseUrl, params);
   }
 
   // GoodJob REST API methods
