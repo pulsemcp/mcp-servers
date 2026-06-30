@@ -15,6 +15,8 @@ import type {
   OfficialMirrorQueueResponse,
   OfficialMirrorQueueActionResponse,
   GithubRepositoryClassification,
+  Secret,
+  SecretWithLink,
 } from '../types.js';
 
 interface MockData {
@@ -37,6 +39,10 @@ interface MockData {
   officialMirrorQueueItemsResponse?: OfficialMirrorQueueResponse;
   officialMirrorQueueItemDetail?: OfficialMirrorQueueItemDetail;
   officialMirrorQueueActionResponse?: OfficialMirrorQueueActionResponse;
+  // Secret mock data
+  secretsBySlug?: Record<string, Secret>;
+  createSecretResponse?: Secret;
+  linkSecretToServerResponse?: SecretWithLink;
   errors?: {
     getPosts?: Error;
     getPost?: Error;
@@ -61,6 +67,9 @@ interface MockData {
     rejectOfficialMirrorQueueItem?: Error;
     addOfficialMirrorToRegularQueue?: Error;
     unlinkOfficialMirrorQueueItem?: Error;
+    getSecret?: Error;
+    createSecret?: Error;
+    linkSecretToServer?: Error;
   };
 }
 
@@ -1365,6 +1374,62 @@ export function createMockPulseMCPAdminClient(mockData: MockData): IPulseMCPAdmi
       return {
         id,
         classification,
+      };
+    },
+
+    // Secret REST API methods
+    async getSecret(idOrSlug: string | number): Promise<Secret | null> {
+      if (mockData.errors?.getSecret) {
+        throw mockData.errors.getSecret;
+      }
+      const key = String(idOrSlug);
+      return mockData.secretsBySlug?.[key] ?? null;
+    },
+
+    async createSecret(params): Promise<Secret> {
+      if (mockData.errors?.createSecret) {
+        throw mockData.errors.createSecret;
+      }
+      if (mockData.createSecretResponse) {
+        return mockData.createSecretResponse;
+      }
+      return {
+        id: 1,
+        slug: params.slug,
+        onepassword_item_id: params.onepassword_item_id,
+        title: params.title ?? null,
+        description: params.description ?? null,
+        mcp_servers_count: 0,
+        mcp_server_slugs: [],
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+    },
+
+    async linkSecretToServer(params): Promise<SecretWithLink> {
+      if (mockData.errors?.linkSecretToServer) {
+        throw mockData.errors.linkSecretToServer;
+      }
+      if (mockData.linkSecretToServerResponse) {
+        return mockData.linkSecretToServerResponse;
+      }
+      const slug = typeof params.secret === 'string' ? params.secret : `secret-${params.secret}`;
+      const serverSlug = params.mcp_server_slug ?? 'mock-server';
+      return {
+        id: 1,
+        slug,
+        onepassword_item_id: 'op://Vault/Item/credential',
+        title: null,
+        description: null,
+        mcp_servers_count: 1,
+        mcp_server_slugs: [serverSlug],
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        link: {
+          mcp_server_id: params.mcp_server_id ?? 1,
+          mcp_server_slug: serverSlug,
+          onepassword_tag: params.onepassword_tag ?? null,
+        },
       };
     },
   };
