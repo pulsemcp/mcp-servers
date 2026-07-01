@@ -28,6 +28,7 @@ MCP server for PulseMCP's agent-orchestrator: a Claude Code + MCP-powered agent-
 | `action_session`           | sessions      | write      | Perform actions: follow_up, pause, restart, archive, unarchive, change_mcp_servers, change_model, fork, refresh, refresh_all, update_notes, update_title, toggle_favorite, bulk_archive |
 | `manage_enqueued_messages` | sessions      | write      | Manage session message queue: list, get, create, update, delete, reorder, interrupt                                                                                                     |
 | `manage_categories`        | sessions      | write      | Manage dashboard categories that organize sessions: list, create, update, delete, reorder, set_session_category                                                                         |
+| `respond_to_elicitation`   | sessions      | write      | Accept or decline a pending elicitation by its request_id, with optional structured content on accept                                                                                   |
 | `get_notifications`        | notifications | read       | Get/list notifications and badge count                                                                                                                                                  |
 | `send_push_notification`   | notifications | write      | Send a push notification about a session needing human attention                                                                                                                        |
 | `action_notification`      | notifications | write      | Mark read, mark all read, dismiss, dismiss all read notifications                                                                                                                       |
@@ -54,16 +55,16 @@ This server organizes tools into groups that can be selectively enabled or disab
 
 Control which tools are available via the `TOOL_GROUPS` environment variable:
 
-| Group                    | Description                                                                                                          |
-| ------------------------ | -------------------------------------------------------------------------------------------------------------------- |
-| `sessions`               | All session tools (read + write): search, get, configs, transcript_archive, start, action, enqueued msgs, categories |
-| `sessions_readonly`      | Session tools (read only): quick_search_sessions, get_session, get_configs, get_transcript_archive                   |
-| `notifications`          | All notification tools (read + write): get, send, mark read, dismiss                                                 |
-| `notifications_readonly` | Notification tools (read only): get_notifications                                                                    |
-| `triggers`               | All trigger tools (read + write): search, create, update, delete, toggle                                             |
-| `triggers_readonly`      | Trigger tools (read only): search_triggers                                                                           |
-| `health`                 | All health tools (read + write): health report, CLI status, maintenance                                              |
-| `health_readonly`        | Health tools (read only): get_system_health                                                                          |
+| Group                    | Description                                                                                                                        |
+| ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------- |
+| `sessions`               | All session tools (read + write): search, get, configs, transcript_archive, start, action, enqueued msgs, categories, elicitations |
+| `sessions_readonly`      | Session tools (read only): quick_search_sessions, get_session, get_configs, get_transcript_archive                                 |
+| `notifications`          | All notification tools (read + write): get, send, mark read, dismiss                                                               |
+| `notifications_readonly` | Notification tools (read only): get_notifications                                                                                  |
+| `triggers`               | All trigger tools (read + write): search, create, update, delete, toggle                                                           |
+| `triggers_readonly`      | Trigger tools (read only): search_triggers                                                                                         |
+| `health`                 | All health tools (read + write): health report, CLI status, maintenance                                                            |
+| `health_readonly`        | Health tools (read only): get_system_health                                                                                        |
 
 **Examples:**
 
