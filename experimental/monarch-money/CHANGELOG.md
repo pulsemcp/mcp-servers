@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.0.12] - 2026-07-01
+
+### Fixed
+
+- **`get_account_balance_history` now uses the correct GraphQL query shape — verified against the live Monarch API.** The 0.0.11 fix correctly identified `snapshotsForAccount` as the real field but nested it under `account(id:) { snapshots: snapshotsForAccount(...) }`. `snapshotsForAccount` is a **top-level** query field, not a field on the `Account` type, so Monarch rejected the whole query with a 400 — the tool was still broken. The query is now issued at the top level (`query GetAccountBalanceHistory($accountId: UUID!) { snapshotsForAccount(accountId: $accountId) { date signedBalance } }`) and the client reads `data.snapshotsForAccount`. The client-side date windowing and `signedBalance` → `balance` mapping from 0.0.11 were already correct and are unchanged. **Validated end-to-end against the live api.monarch.com endpoint:** a real account returned 281 daily snapshots (2025-09-24 → 2026-07-01) with the final balance matching the account's current balance, and a narrowed `[2026-06-01, 2026-06-30]` window returned exactly the 30 in-range snapshots. Added an e2e test (`get_account_balance_history returns a real snapshot series`) that catches this regression, plus a functional-test guard asserting the query is not nested under `account(id:)`.
+
 ## [0.0.11] - 2026-07-01
 
 ### Fixed
