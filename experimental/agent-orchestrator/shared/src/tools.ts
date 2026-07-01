@@ -2,7 +2,7 @@ import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { ListToolsRequestSchema, CallToolRequestSchema } from '@modelcontextprotocol/sdk/types.js';
 import { ClientFactory } from './server.js';
 
-// 17 tools across 4 domains + 1 composite group
+// 18 tools across 4 domains + 1 composite group
 import { quickSearchSessionsTool } from './tools/search-sessions.js';
 import { startSessionTool } from './tools/start-session.js';
 import { getSessionTool } from './tools/get-session.js';
@@ -20,6 +20,7 @@ import { wakeMeUpWhenSessionChangesStateTool } from './tools/wake-me-up-when-ses
 import { getSystemHealthTool } from './tools/get-system-health.js';
 import { actionHealthTool } from './tools/action-health.js';
 import { getTranscriptArchiveTool } from './tools/get-transcript-archive.js';
+import { respondToElicitationTool } from './tools/respond-to-elicitation.js';
 
 // =============================================================================
 // TOOL GROUPING SYSTEM
@@ -154,7 +155,7 @@ interface ToolDefinition {
 /**
  * All available tools with their group assignments.
  *
- * 17 tools across 4 domains + 1 composite group:
+ * 18 tools across 4 domains + 1 composite group:
  * - quick_search_sessions: Quick title-based search/list/get sessions by ID (sessions, read)
  * - get_session: Get detailed session info with optional logs/transcripts (sessions, read; self_session)
  * - get_configs: Fetch all static configuration (sessions, read; self_session)
@@ -163,6 +164,7 @@ interface ToolDefinition {
  * - action_session: Perform session actions (sessions, write; self_session: filtered to update_notes, update_title, archive)
  * - manage_enqueued_messages: Manage session message queue (sessions, write)
  * - manage_categories: Manage dashboard categories and session assignment (sessions, write)
+ * - respond_to_elicitation: Accept or decline a pending elicitation by request_id (sessions, write)
  * - get_notifications: Get/list notifications and badge count (notifications, read)
  * - send_push_notification: Send a push notification (notifications, write; self_session)
  * - action_notification: Mark read, dismiss notifications (notifications, write)
@@ -216,6 +218,11 @@ const ALL_TOOLS: ToolDefinition[] = [
   },
   {
     factory: manageCategoriesTool,
+    group: 'sessions',
+    isWriteOperation: true,
+  },
+  {
+    factory: respondToElicitationTool,
     group: 'sessions',
     isWriteOperation: true,
   },

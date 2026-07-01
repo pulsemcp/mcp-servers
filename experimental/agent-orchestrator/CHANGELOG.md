@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.9] - 2026-07-01
+
+### Added
+
+- **`respond_to_elicitation` tool** for programmatically accepting or declining a pending Agent Orchestrator elicitation, unblocking a paused MCP flow without human intervention. Takes `request_id` (the elicitation's public `request_id`, not its DB primary key), `action_type` (`accept` | `decline`), and optional structured `content` (applied only on `accept`). Maps to `PATCH /api/v1/elicitations/:id/respond` and returns the poll-response envelope (`action`, `content`, `_meta`). Registered in the `sessions` tool group as a write operation.
+- **`respondToElicitation` orchestrator-client method** backing the tool, sending `{ action_type, content? }` and returning the `ElicitationResponse` envelope. New `ElicitationActionType` and `ElicitationResponse` types added.
+
+### Tests
+
+- Added functional tests covering accept-with-content, decline-without-content, 404 (unknown `request_id`), 422 (non-pending elicitation), and schema validation of `action_type`/`request_id`; integration tests exercising accept, decline, 404, and 422 end-to-end through the MCP protocol against the in-memory mock. Functional and integration mock clients extended with in-memory elicitation state.
+
 ## [0.8.8] - 2026-06-14
 
 ### Fixed

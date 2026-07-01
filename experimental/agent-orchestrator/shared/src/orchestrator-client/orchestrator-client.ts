@@ -66,6 +66,8 @@ import type {
   BulkArchiveResponse,
   TranscriptResponse,
   TranscriptArchiveStatusResponse,
+  ElicitationActionType,
+  ElicitationResponse,
 } from '../types.js';
 
 /** Raw agent root shape as returned by the Rails API */
@@ -323,6 +325,13 @@ export interface IAgentOrchestratorClient {
   // Transcript Archive
   getTranscriptArchiveStatus(): Promise<TranscriptArchiveStatusResponse>;
   getTranscriptArchiveDownloadUrl(): { url: string; apiKey: string };
+
+  // Elicitations
+  respondToElicitation(
+    requestId: string,
+    actionType: ElicitationActionType,
+    content?: Record<string, unknown>
+  ): Promise<ElicitationResponse>;
 }
 
 /** Default timeout for API requests in milliseconds */
@@ -1016,5 +1025,24 @@ export class AgentOrchestratorClient implements IAgentOrchestratorClient {
       url: `${this.baseUrl}/api/v1/transcript_archive/download`,
       apiKey: this.apiKey,
     };
+  }
+
+  // Elicitations
+  async respondToElicitation(
+    requestId: string,
+    actionType: ElicitationActionType,
+    content?: Record<string, unknown>
+  ): Promise<ElicitationResponse> {
+    const body: { action_type: ElicitationActionType; content?: Record<string, unknown> } = {
+      action_type: actionType,
+    };
+    if (content !== undefined) {
+      body.content = content;
+    }
+    return this.request<ElicitationResponse>(
+      'PATCH',
+      `/elicitations/${encodeURIComponent(requestId)}/respond`,
+      body
+    );
   }
 }

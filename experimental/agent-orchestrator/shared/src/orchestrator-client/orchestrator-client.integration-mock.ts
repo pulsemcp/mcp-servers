@@ -58,13 +58,23 @@ import type {
   BulkArchiveResponse,
   TranscriptResponse,
   TranscriptArchiveStatusResponse,
+  ElicitationActionType,
+  ElicitationResponse,
 } from '../types.js';
+
+/** Minimal elicitation record used to simulate the respond endpoint. */
+export interface MockElicitation {
+  request_id: string;
+  status: 'pending' | 'accept' | 'decline';
+  content?: Record<string, unknown> | null;
+}
 
 interface MockData {
   sessions?: Session[];
   logs?: Log[];
   subagentTranscripts?: SubagentTranscript[];
   categories?: Category[];
+  elicitations?: MockElicitation[];
 }
 
 /**
@@ -142,6 +152,7 @@ export function createIntegrationMockOrchestratorClient(
         updated_at: '2025-01-15T14:00:00Z',
       },
     ],
+    elicitations: initialMockData?.elicitations || [],
   };
 
   let sessionIdCounter = mockData.sessions?.length || 1;
@@ -1163,6 +1174,32 @@ export function createIntegrationMockOrchestratorClient(
       return {
         url: 'http://localhost:3000/api/v1/transcript_archive/download',
         apiKey: 'test-api-key',
+      };
+    },
+
+    // Elicitations
+    async respondToElicitation(
+      requestId: string,
+      actionType: ElicitationActionType,
+      content?: Record<string, unknown>
+    ): Promise<ElicitationResponse> {
+      const elicitation = mockData.elicitations?.find((e) => e.request_id === requestId);
+      if (!elicitation) {
+        throw new Error(`API Error (404): Elicitation not found for request_id: ${requestId}`);
+      }
+      if (elicitation.status !== 'pending') {
+        throw new Error(
+          `API Error (422): Elicitation ${requestId} is not pending (status: ${elicitation.status})`
+        );
+      }
+
+      elicitation.status = actionType;
+      elicitation.content = actionType === 'accept' ? (content ?? null) : null;
+
+      return {
+        action: actionType,
+        content: elicitation.content,
+        _meta: { 'com.pulsemcp/request-id': requestId },
       };
     },
   };

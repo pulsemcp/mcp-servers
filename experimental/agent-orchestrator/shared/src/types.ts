@@ -525,6 +525,27 @@ export interface TranscriptResponse {
 }
 
 // =============================================================================
+// Elicitations
+// =============================================================================
+
+/** Action taken when responding to a pending elicitation. */
+export type ElicitationActionType = 'accept' | 'decline';
+
+/**
+ * Poll-response shape returned by the elicitation endpoints.
+ *
+ * `action` is `"pending"` while the elicitation is still open, or the resolved
+ * status (e.g. `"accept"` / `"decline"`) once a response has been recorded.
+ * `content` carries the structured payload supplied with an accepted response
+ * (null when pending or when no content was provided).
+ */
+export interface ElicitationResponse {
+  action: string;
+  content: Record<string, unknown> | null;
+  _meta?: Record<string, unknown>;
+}
+
+// =============================================================================
 // Transcript Archive
 // =============================================================================
 
