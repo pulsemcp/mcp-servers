@@ -228,9 +228,10 @@ export class MonarchClient implements IMonarchClient {
     endDate: string
   ): Promise<BalanceSnapshot[]> {
     const data = await this.options.transport.request<{
-      account: {
-        snapshots: Array<{ date: string; signedBalance: number }> | null;
-      } | null;
+      snapshotsForAccount: Array<{
+        date: string;
+        signedBalance: number;
+      }> | null;
     }>({
       query: ops.Q_ACCOUNT_BALANCE_HISTORY,
       variables: { accountId },
@@ -238,7 +239,7 @@ export class MonarchClient implements IMonarchClient {
     // `snapshotsForAccount` returns the full series with no server-side date
     // filtering, so window it here. ISO `YYYY-MM-DD` dates compare correctly
     // lexicographically, and the bounds are inclusive on both ends.
-    return (data.account?.snapshots ?? [])
+    return (data.snapshotsForAccount ?? [])
       .filter((s) => s.date >= startDate && s.date <= endDate)
       .map((s) => ({ date: s.date, balance: s.signedBalance }));
   }

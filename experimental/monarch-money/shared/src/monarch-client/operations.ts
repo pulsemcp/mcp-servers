@@ -37,18 +37,17 @@ query GetAccounts {
 }`;
 
 // Monarch exposes per-account balance history via `snapshotsForAccount`, a
-// field on the `Account` type that takes only the account id and returns the
-// full snapshot series (`date` + `signedBalance`). It has no date-range
-// arguments, so callers filter to a window client-side. `signedBalance` is
-// negative for liabilities; we surface it as `balance`.
+// TOP-LEVEL query field (NOT a field on the `Account` type — nesting it under
+// `account(id:){...}` makes the API reject the whole query with a 400). It
+// takes only the account id and returns the full snapshot series (`date` +
+// `signedBalance`) with no date-range arguments, so callers filter to a window
+// client-side. `signedBalance` is negative for liabilities; we surface it as
+// `balance`. Verified against the live api.monarch.com endpoint.
 export const Q_ACCOUNT_BALANCE_HISTORY = `
 query GetAccountBalanceHistory($accountId: UUID!) {
-  account(id: $accountId) {
-    id
-    snapshots: snapshotsForAccount(accountId: $accountId) {
-      date
-      signedBalance
-    }
+  snapshotsForAccount(accountId: $accountId) {
+    date
+    signedBalance
   }
 }`;
 
