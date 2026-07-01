@@ -41,6 +41,53 @@ jobs:
           # Track if any verification fails
           VERIFICATION_FAILED=false
 
+          # Run an npm command, self-healing if it fails due to a corrupt shared
+          # npm cache on the self-hosted runners. Those runners share a
+          # persistent cache at ~/.npm/_cacache; when a content file goes
+          # missing, `npm install` dies with an ENOENT stat'ing
+          # _cacache/content-v2/... (see incident on 2026-07-01, verify run
+          # 28544837977). On that specific signature we garbage-collect broken
+          # entries with `npm cache verify` and retry once; if it still fails we
+          # escalate to a forced `npm cache clean --force` and retry a final
+          # time. Non-cache failures are surfaced unchanged.
+          run_npm_with_cache_heal() {
+            local logfile status
+            logfile=$(mktemp)
+
+            "$@" >"$logfile" 2>&1 && status=0 || status=$?
+            cat "$logfile"
+            if [ "$status" -eq 0 ]; then
+              rm -f "$logfile"
+              return 0
+            fi
+
+            if ! grep -qiE "ENOENT.*_cacache|_cacache.*ENOENT|Invalid response body while trying to fetch" "$logfile"; then
+              # Not a corrupt-cache failure — nothing to heal.
+              rm -f "$logfile"
+              return "$status"
+            fi
+
+            echo "⚠️  Detected corrupt npm cache — running 'npm cache verify' and retrying..."
+            npm cache verify || true
+            "$@" >"$logfile" 2>&1 && status=0 || status=$?
+            cat "$logfile"
+            if [ "$status" -eq 0 ]; then
+              echo "✅ Recovered after 'npm cache verify'"
+              rm -f "$logfile"
+              return 0
+            fi
+
+            echo "⚠️  Still failing — running 'npm cache clean --force' and retrying once more..."
+            npm cache clean --force || true
+            "$@" >"$logfile" 2>&1 && status=0 || status=$?
+            cat "$logfile"
+            if [ "$status" -eq 0 ]; then
+              echo "✅ Recovered after 'npm cache clean --force'"
+            fi
+            rm -f "$logfile"
+            return "$status"
+          }
+
           for file in ${{ steps.changed-files.outputs.all_changed_files }}; do
             echo "Checking $file"
             
@@ -175,12 +222,25 @@ jobs:
             echo "Running tests for $SERVER_NAME..."
             cd "$SERVER_DIR"
             
-            # Install dependencies - use ci:install if available, otherwise npm install
-            if npm run --silent ci:install 2>/dev/null; then
-              echo "✅ Dependencies installed with ci:install"
+            # Install dependencies - use ci:install if available, otherwise npm install.
+            # Route through run_npm_with_cache_heal so a corrupt shared npm cache
+            # on the self-hosted runner is garbage-collected and the install
+            # retried, rather than failing the whole verification run.
+            if node -e "process.exit((require('./package.json').scripts||{})['ci:install']?0:1)" 2>/dev/null; then
+              if run_npm_with_cache_heal npm run ci:install; then
+                echo "✅ Dependencies installed with ci:install"
+              else
+                echo "❌ ERROR: Dependency install failed (ci:install)"
+                VERIFICATION_FAILED=true
+              fi
             else
               echo "ℹ️  No ci:install script found, using npm install"
-              npm install
+              if run_npm_with_cache_heal npm install; then
+                echo "✅ Dependencies installed with npm install"
+              else
+                echo "❌ ERROR: Dependency install failed (npm install)"
+                VERIFICATION_FAILED=true
+              fi
             fi
             
             # Run build
