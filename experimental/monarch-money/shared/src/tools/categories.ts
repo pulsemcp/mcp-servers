@@ -46,8 +46,40 @@ Example response:
 **Use cases:**
 - Discover tag ids for use with \`update_transaction\` (\`tagIds\`)
 - Render a tag picker
+- Look up an existing tag's id before deleting it with \`delete_tag\`, or its \`color\` format before calling \`create_tag\``;
 
-Note: tag creation is not exposed by this server. Create tags in the Monarch UI; they'll appear here automatically.`;
+const CREATE_TAG_DESCRIPTION = `Create a new transaction tag. Returns the created tag ({ id, name, color, order }); Monarch assigns \`order\` server-side.
+
+Both \`name\` and \`color\` are required. \`color\` is a hex string like the ones returned by \`get_tags\` (e.g. \`#19d2a5\`, \`#ff8800\`) — call \`get_tags\` first if you need to match an existing palette.
+
+Example call:
+\`\`\`json
+{ "name": "Reimbursable", "color": "#19d2a5" }
+\`\`\`
+
+Example response:
+\`\`\`json
+{ "id": "tag_new", "name": "Reimbursable", "color": "#19d2a5", "order": 7 }
+\`\`\`
+
+**Use cases:**
+- Add a tag you'll then assign to transactions via \`update_transaction\` (\`tagIds\`)
+- Set up a tagging scheme without leaving the assistant`;
+
+const DELETE_TAG_DESCRIPTION = `Delete a transaction tag by id. Removes the tag from the workspace and unassigns it from any transactions that carried it.
+
+Returns \`{ deleted, errors }\`. \`deleted\` is confirmed by re-reading the tag list after the mutation (Monarch's raw \`deleted\` flag is not trusted).
+
+Example call:
+\`\`\`json
+{ "id": "tag_old" }
+\`\`\`
+
+**Use cases:**
+- Remove a stale or accidentally-created tag
+- Clean up tags left behind by earlier automation
+
+Use \`get_tags\` to look up the tag id first.`;
 
 export function categoryTools(clientFactory: ClientFactory): RegisteredTool[] {
   const CategoriesSchema = z.object({
@@ -104,5 +136,65 @@ export function categoryTools(clientFactory: ClientFactory): RegisteredTool[] {
     },
   };
 
-  return [getCategories, getTags];
+  const hexColor = z
+    .string()
+    .regex(/^#[0-9a-fA-F]{6}$/, 'Color must be a 6-digit hex string like #19d2a5.');
+  const CreateTagSchema = z.object({
+    name: z.string().min(1).describe('Display name for the new tag.'),
+    color: hexColor.describe(
+      'Hex color for the tag (e.g. #19d2a5), matching the format returned by get_tags.'
+    ),
+  });
+  const createTag: RegisteredTool = {
+    name: 'create_tag',
+    description: CREATE_TAG_DESCRIPTION,
+    groups: ['manage'],
+    inputSchema: {
+      type: 'object',
+      properties: {
+        name: { type: 'string', description: 'Display name for the new tag.' },
+        color: {
+          type: 'string',
+          description: 'Hex color like #19d2a5 (6-digit, matches get_tags).',
+        },
+      },
+      required: ['name', 'color'],
+    },
+    handler: async (args): Promise<ToolResult> => {
+      try {
+        const parsed = CreateTagSchema.parse(args ?? {});
+        const client = await clientFactory();
+        return okJSON(await client.createTag({ name: parsed.name, color: parsed.color }));
+      } catch (err) {
+        return errorFromException(err);
+      }
+    },
+  };
+
+  const DeleteTagSchema = z.object({
+    id: z.string().min(1).describe('Tag id to delete.'),
+  });
+  const deleteTag: RegisteredTool = {
+    name: 'delete_tag',
+    description: DELETE_TAG_DESCRIPTION,
+    groups: ['manage'],
+    inputSchema: {
+      type: 'object',
+      properties: {
+        id: { type: 'string', description: 'Tag id to delete.' },
+      },
+      required: ['id'],
+    },
+    handler: async (args): Promise<ToolResult> => {
+      try {
+        const parsed = DeleteTagSchema.parse(args ?? {});
+        const client = await clientFactory();
+        return okJSON(await client.deleteTag(parsed.id));
+      } catch (err) {
+        return errorFromException(err);
+      }
+    },
+  };
+
+  return [getCategories, getTags, createTag, deleteTag];
 }

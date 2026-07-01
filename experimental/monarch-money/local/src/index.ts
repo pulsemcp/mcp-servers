@@ -18,6 +18,21 @@ const packageJsonPath = join(__dirname, '..', 'package.json');
 const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf-8'));
 const VERSION = packageJson.version;
 
+// Surface process-level failures on stderr instead of letting them vanish.
+// Without these handlers an unhandled rejection or uncaught exception can leave
+// the long-lived stdio server in a half-dead state where it stays connected but
+// stops answering requests — the client then sees confusing symptoms like
+// intermittent "No such tool available" with no server-side trace. An uncaught
+// exception leaves the process in an undefined state, so we log and exit to let
+// the supervisor restart cleanly; a stray rejection is logged but non-fatal.
+process.on('unhandledRejection', (reason) => {
+  logError('unhandledRejection', reason);
+});
+process.on('uncaughtException', (error) => {
+  logError('uncaughtException', error);
+  process.exit(1);
+});
+
 async function main() {
   // Resolve a session up front from env vars (token or email+password) or the
   // cached encrypted file. Failures are non-fatal — the server still boots so

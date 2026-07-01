@@ -98,6 +98,8 @@ export interface IMonarchClient {
   getCategories(): Promise<Category[]>;
   getCategoryGroups(): Promise<CategoryGroup[]>;
   getTags(): Promise<Tag[]>;
+  createTag(input: { name: string; color: string }): Promise<Tag>;
+  deleteTag(id: string): Promise<{ deleted: boolean; errors: string[] }>;
 
   getTransactionRules(): Promise<TransactionRule[]>;
   createTransactionRule(input: TransactionRuleInput): Promise<TransactionRule[]>;
@@ -226,12 +228,19 @@ export class MonarchClient implements IMonarchClient {
     endDate: string
   ): Promise<BalanceSnapshot[]> {
     const data = await this.options.transport.request<{
-      accountBalanceHistory: BalanceSnapshot[];
+      account: {
+        snapshots: Array<{ date: string; signedBalance: number }> | null;
+      } | null;
     }>({
       query: ops.Q_ACCOUNT_BALANCE_HISTORY,
-      variables: { accountId, startDate, endDate },
+      variables: { accountId },
     });
-    return data.accountBalanceHistory ?? [];
+    // `snapshotsForAccount` returns the full series with no server-side date
+    // filtering, so window it here. ISO `YYYY-MM-DD` dates compare correctly
+    // lexicographically, and the bounds are inclusive on both ends.
+    return (data.account?.snapshots ?? [])
+      .filter((s) => s.date >= startDate && s.date <= endDate)
+      .map((s) => ({ date: s.date, balance: s.signedBalance }));
   }
 
   async getAccountHoldings(accountId: string): Promise<Holding[]> {
@@ -709,6 +718,62 @@ export class MonarchClient implements IMonarchClient {
       query: ops.Q_TAGS,
     });
     return data.householdTransactionTags ?? [];
+  }
+
+  /**
+   * Create a transaction tag. Monarch's `createTransactionTag` requires both a
+   * `name` and a `color` (a hex string); `order` is assigned server-side. The
+   * mutation echoes the new tag back, so we return it directly.
+   *
+   * `errors` is a single nullable `PayloadError` object (not a list); any
+   * non-null value means the create failed.
+   */
+  async createTag(input: { name: string; color: string }): Promise<Tag> {
+    const data = await this.options.transport.request<{
+      createTransactionTag: {
+        tag: Tag | null;
+        errors: PayloadError | null;
+      };
+    }>({
+      query: ops.M_CREATE_TAG,
+      variables: { input: { name: input.name, color: input.color } },
+    });
+    const errors = data.createTransactionTag?.errors;
+    if (errors) {
+      throw new Error(`createTag failed: ${payloadErrorMessage(errors)}`);
+    }
+    const tag = data.createTransactionTag?.tag;
+    if (!tag) {
+      throw new Error('createTag failed: Monarch returned no tag and no error.');
+    }
+    return tag;
+  }
+
+  /**
+   * Delete a transaction tag. `deleteTransactionTag` takes a bare `$id`
+   * argument and returns a `deleted` flag plus `errors`.
+   *
+   * Mirroring `deleteTransactionRule`, the `deleted` flag is treated as
+   * advisory: when the mutation reports no `errors`, we re-query
+   * `householdTransactionTags` and derive `deleted` from whether the id has
+   * actually disappeared, rather than trusting the flag.
+   */
+  async deleteTag(id: string): Promise<{ deleted: boolean; errors: string[] }> {
+    const data = await this.options.transport.request<{
+      deleteTransactionTag: {
+        deleted: boolean;
+        errors: PayloadError | null;
+      };
+    }>({
+      query: ops.M_DELETE_TAG,
+      variables: { id },
+    });
+    const err = data.deleteTransactionTag?.errors;
+    if (err) {
+      return { deleted: false, errors: [payloadErrorMessage(err)] };
+    }
+    const remaining = await this.getTags();
+    return { deleted: !remaining.some((t) => t.id === id), errors: [] };
   }
 
   async getTransactionRules(): Promise<TransactionRule[]> {

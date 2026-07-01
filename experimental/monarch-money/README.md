@@ -4,7 +4,7 @@ MCP server for [Monarch Money](https://www.monarchmoney.com/) — a personal fin
 
 ## Highlights
 
-- **20 consolidated tools** across two groups (`readonly`, `manage`) covering accounts, balances, net worth, cashflow, transactions, categories, tags, transaction rules, and budgets
+- **22 consolidated tools** across two groups (`readonly`, `manage`) covering accounts, balances, net worth, cashflow, transactions, categories, tags, transaction rules, and budgets
 - **Encrypted on-disk session** at `~/.monarch-money-mcp/session.enc` — the server never accepts a Monarch password through a tool input
 - **Tool group filtering** via env vars — run the server in a strict read-only mode, or hand-pick the exact tools you want exposed to the agent
 - **Custom thin GraphQL transport** targeting `api.monarch.com/graphql` — no third-party Monarch client dependency
@@ -136,6 +136,8 @@ MONARCH_ENABLED_TOOLS=get_transactions,get_accounts
 | ---------------- | -------------------- | --------------------------------------------------------------------------------------------- |
 | `get_categories` | `readonly`, `manage` | List all categories. Pass `includeGroups: true` to also return the top-level category groups. |
 | `get_tags`       | `readonly`, `manage` | List all tags.                                                                                |
+| `create_tag`     | `manage`             | Create a tag. Requires `name` and a hex `color` (e.g. `#19d2a5`); `order` is server-assigned. |
+| `delete_tag`     | `manage`             | Delete a tag by `id`. Returns `{ deleted, errors }`; `deleted` is confirmed by re-reading.    |
 
 ### Transaction rules (auto-classification)
 

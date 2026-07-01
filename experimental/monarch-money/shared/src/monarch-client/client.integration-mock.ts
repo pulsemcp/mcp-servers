@@ -262,6 +262,26 @@ export function createIntegrationMockMonarchClient(
     async getTags() {
       return data.tags ?? [];
     },
+    // Stateful so create → get → delete can be exercised end-to-end, mirroring
+    // the live API: create echoes the new tag with a server-assigned order,
+    // delete confirms by re-reading the list (the raw `deleted` flag is not
+    // trusted).
+    async createTag(input: { name: string; color: string }) {
+      const order = (data.tags?.length ?? 0) + 1;
+      const tag: Tag = {
+        id: `tag_${order}`,
+        name: input.name,
+        color: input.color,
+        order,
+      };
+      data.tags = [...(data.tags ?? []), tag];
+      return tag;
+    },
+    async deleteTag(id: string) {
+      data.tags = (data.tags ?? []).filter((t) => t.id !== id);
+      const stillPresent = (data.tags ?? []).some((t) => t.id === id);
+      return { deleted: !stillPresent, errors: [] };
+    },
 
     async getTransactionRules() {
       return data.rules ?? [];
