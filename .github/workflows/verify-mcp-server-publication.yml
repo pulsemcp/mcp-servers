@@ -230,7 +230,9 @@ jobs:
               if run_npm_with_cache_heal npm run ci:install; then
                 echo "✅ Dependencies installed with ci:install"
               else
-                echo "❌ ERROR: Dependency install failed (ci:install)"
+                # ci:install often also builds workspace deps, so a failure here
+                # is not necessarily an install error — keep the label generic.
+                echo "❌ ERROR: ci:install step failed"
                 VERIFICATION_FAILED=true
               fi
             else
