@@ -36,11 +36,19 @@ query GetAccounts {
   }
 }`;
 
+// Monarch exposes per-account balance history via `snapshotsForAccount`, a
+// field on the `Account` type that takes only the account id and returns the
+// full snapshot series (`date` + `signedBalance`). It has no date-range
+// arguments, so callers filter to a window client-side. `signedBalance` is
+// negative for liabilities; we surface it as `balance`.
 export const Q_ACCOUNT_BALANCE_HISTORY = `
-query GetAccountBalanceHistory($accountId: UUID!, $startDate: Date!, $endDate: Date!) {
-  accountBalanceHistory(accountId: $accountId, startDate: $startDate, endDate: $endDate) {
-    date
-    balance
+query GetAccountBalanceHistory($accountId: UUID!) {
+  account(id: $accountId) {
+    id
+    snapshots: snapshotsForAccount(accountId: $accountId) {
+      date
+      signedBalance
+    }
   }
 }`;
 
@@ -299,6 +307,48 @@ query GetTags {
     name
     color
     order
+  }
+}`;
+
+// Tag write mutations. These live behind the same modern `Common_` resolver
+// family as the rule mutations and were reverse-engineered against Monarch's
+// web GraphQL surface + cross-checked against community Monarch clients. Notes
+// on the shape:
+//
+// - Both take a single typed `$input` / `$id` variable (inline literals built
+//   from top-level operation variables are rejected, same as every other
+//   mutation here).
+// - `CreateTransactionTagInput` requires `name` AND `color` (a hex string,
+//   e.g. `#19d2a5`). `order` is NOT part of the input — Monarch assigns the
+//   display order server-side. `createTransactionTag` echoes the new tag back
+//   (`tag { id name color order }`), so the client returns it directly.
+// - ERROR SHAPE: like the rule mutations, `errors` is a SINGLE nullable
+//   `PayloadError` OBJECT ({ message, code, fieldErrors { field messages } }),
+//   NOT a list. A non-null `errors` means the mutation failed.
+export const M_CREATE_TAG = `
+mutation Common_CreateTransactionTag($input: CreateTransactionTagInput!) {
+  createTransactionTag(input: $input) {
+    tag {
+      id
+      name
+      color
+      order
+    }
+    errors { message code fieldErrors { field messages } }
+  }
+}`;
+
+// `deleteTransactionTag` takes a bare `$id: ID!` argument (NOT wrapped in an
+// input object) and returns a `deleted` boolean plus `errors`. Mirroring the
+// rule-delete pattern, the `deleted` flag is treated as advisory: when the
+// mutation reports no `errors` the client re-queries `householdTransactionTags`
+// and derives `deleted` from whether the id has actually disappeared, rather
+// than trusting the flag.
+export const M_DELETE_TAG = `
+mutation Common_DeleteTransactionTag($id: ID!) {
+  deleteTransactionTag(id: $id) {
+    deleted
+    errors { message code fieldErrors { field messages } }
   }
 }`;
 

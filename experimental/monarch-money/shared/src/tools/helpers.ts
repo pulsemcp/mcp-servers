@@ -9,8 +9,17 @@ export function ok(text: string): ToolResult {
   return { content: [{ type: 'text', text }] };
 }
 
+/**
+ * Serialize a value as the tool's text result.
+ *
+ * Uses compact JSON (no pretty-print indentation). The data is identical to
+ * indented output, but list-heavy responses like `get_transactions` are far
+ * smaller on the wire — a ~222-transaction page dropped from ~134 KB to roughly
+ * half that. Consumers parse the payload rather than reading it raw, so the
+ * whitespace carried no value.
+ */
 export function okJSON(value: unknown): ToolResult {
-  return ok(JSON.stringify(value, null, 2));
+  return ok(JSON.stringify(value));
 }
 
 export function errorResult(message: string): ToolResult {

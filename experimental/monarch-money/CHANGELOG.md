@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.0.11] - 2026-07-01
+
+### Fixed
+
+- **`get_account_balance_history` now queries a real Monarch field.** The tool issued a GraphQL query against a top-level `accountBalanceHistory(accountId, startDate, endDate)` field that does not exist in Monarch's schema, so every call failed at the API. It now queries `account(id:) { snapshots: snapshotsForAccount(accountId:) { date signedBalance } }` — the field Monarch actually exposes for per-account balance series. That field returns the full history with no server-side date filtering, so the client windows the results to the requested `[startDate, endDate]` range (inclusive) and maps `signedBalance` → `balance`, keeping the tool's `{ date, balance }` output contract unchanged. Added client-level regression tests that drive the real client against a stub transport (the interface-level mocks bypass GraphQL and could not have caught this). Note: like the tag mutations, the corrected query is reverse-engineered from the community Monarch client and has not been validated against the live API in this change.
+
+## [0.0.10] - 2026-07-01
+
+### Added
+
+- **Tag management: `create_tag` and `delete_tag`.** Two new `manage`-group tools let agents create and remove Monarch transaction tags without leaving the assistant. Previously the server could only read tags (`get_tags`) — there was no way to create a tag (see the 0.0.6 note below) or to remove a stale/junk tag. `create_tag` requires a `name` and a hex `color` (e.g. `#19d2a5`; `order` is assigned server-side) and echoes the created tag. `delete_tag` takes a tag `id` and returns `{ deleted, errors }`, where `deleted` is confirmed by re-reading the tag list after the mutation rather than trusting the raw API flag (mirroring `delete_transaction_rule`). Both are gated to the write-capable `manage` group and never appear in `readonly` configurations.
+
+### Changed
+
+- **Tool output is now compact JSON.** `okJSON` no longer pretty-prints with 2-space indentation; responses are serialized with `JSON.stringify(value)`. The data is byte-for-byte identical after parsing — only insignificant whitespace is removed — but list-heavy responses shrink substantially: a ~222-transaction `get_transactions` page dropped from ~134 KB to roughly half that. This is a presentation-only change to the text payload; consumers that `JSON.parse` the result (the intended usage) are unaffected.
+
+### Hardening
+
+- **Process-level failure handlers.** The stdio entry point now registers `unhandledRejection` (logged, non-fatal) and `uncaughtException` (logged, then `exit(1)`) handlers. Without them, an unhandled rejection could leave the long-lived server connected but non-responsive — a plausible contributor to intermittent, retry-resolved "No such tool available" symptoms. The underlying transient was not reproduced in this work; these handlers add diagnostic visibility (stderr traces) and fail the process cleanly so a supervisor can restart it, rather than being a confirmed fix.
+
+### Notes
+
+- **The tag mutations are reverse-engineered and were NOT validated against the live Monarch API.** Unlike the 0.0.8 rule-management tools (validated end-to-end with a self-cleaning live e2e test), this change was developed and tested only against the functional mock and the integration harness — the live account was deliberately off-limits for this work. The GraphQL `createTransactionTag` / `deleteTransactionTag` operations and the `name`+`color` input shape mirror the existing `Common_`-prefixed V2 rule/tag mutation family and community `monarchmoney` client usage, but have not been exercised against production. This also directly addresses the 0.0.6 removal rationale ("`createTag` requires `order`, `name`, `color`"): `order` is now left to the server and both `name` and `color` are required inputs. Live e2e validation should be added before relying on these in anger.
+
 ## [0.0.9] - 2026-06-14
 
 ### Fixed

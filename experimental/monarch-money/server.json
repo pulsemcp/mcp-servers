@@ -2,7 +2,7 @@
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-09-29/server.schema.json",
   "name": "com.pulsemcp/monarch-money",
   "description": "MCP server for Monarch Money — account, transaction, and budget management.",
-  "version": "0.0.9",
+  "version": "0.0.11",
   "repository": {
     "url": "https://github.com/pulsemcp/mcp-servers",
     "source": "github",
@@ -13,7 +13,7 @@
       "registryType": "npm",
       "registryBaseUrl": "https://registry.npmjs.org",
       "identifier": "monarch-money-mcp-server",
-      "version": "0.0.9",
+      "version": "0.0.11",
       "runtimeHint": "npx",
       "transport": {
         "type": "stdio"
