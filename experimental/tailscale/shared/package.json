@@ -1,0 +1,25 @@
+{
+  "name": "tailscale-vpn-mcp-server-shared",
+  "version": "0.0.2",
+  "description": "Shared code for Tailscale MCP server implementations",
+  "main": "build/index.js",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "lint": "eslint . --ext .ts,.tsx",
+    "lint:fix": "eslint . --ext .ts,.tsx --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.6",
+    "typescript": "^5.7.3"
+  },
+  "keywords": [],
+  "author": "PulseMCP",
+  "license": "MIT"
+}

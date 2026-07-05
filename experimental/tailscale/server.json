@@ -1,0 +1,66 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-09-29/server.schema.json",
+  "name": "com.pulsemcp/tailscale",
+  "description": "MCP server for administering a Tailscale tailnet: read-only introspection plus autonomous policy-file (ACL), device, and auth-key management.",
+  "version": "0.0.2",
+  "repository": {
+    "url": "https://github.com/pulsemcp/mcp-servers",
+    "source": "github",
+    "subfolder": "experimental/tailscale"
+  },
+  "packages": [
+    {
+      "registryType": "npm",
+      "registryBaseUrl": "https://registry.npmjs.org",
+      "identifier": "tailscale-vpn-mcp-server",
+      "version": "0.0.2",
+      "runtimeHint": "npx",
+      "transport": {
+        "type": "stdio"
+      },
+      "runtimeArguments": [
+        {
+          "type": "positional",
+          "value": "-y"
+        }
+      ],
+      "environmentVariables": [
+        {
+          "name": "TAILSCALE_API_KEY",
+          "description": "Tailscale API access token (Bearer). Required unless using OAuth.",
+          "isRequired": false,
+          "isSecret": true
+        },
+        {
+          "name": "TAILSCALE_OAUTH_CLIENT_ID",
+          "description": "OAuth client ID. Required (with the secret) unless using an API key.",
+          "isRequired": false
+        },
+        {
+          "name": "TAILSCALE_OAUTH_CLIENT_SECRET",
+          "description": "OAuth client secret. Required (with the ID) unless using an API key.",
+          "isRequired": false,
+          "isSecret": true
+        },
+        {
+          "name": "TAILSCALE_TAILNET",
+          "description": "Tailnet to operate on. Use '-' for the default tailnet of the token.",
+          "default": "-",
+          "isRequired": false
+        },
+        {
+          "name": "TAILSCALE_API_URL",
+          "description": "Base URL for the Tailscale API (include the /api/v2 path).",
+          "default": "https://api.tailscale.com/api/v2",
+          "isRequired": false
+        },
+        {
+          "name": "TOOL_GROUPS",
+          "description": "Comma-separated list of enabled tool groups.",
+          "default": "policy,devices,keys",
+          "isRequired": false
+        }
+      ]
+    }
+  ]
+}
