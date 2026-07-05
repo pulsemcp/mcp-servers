@@ -1,0 +1,51 @@
+{
+  "name": "flightaware-mcp-server",
+  "version": "0.0.1",
+  "description": "MCP server for FlightAware AeroAPI — flight status & tracking, plus airport boards & delays",
+  "mcpName": "com.pulsemcp/flightaware",
+  "main": "build/index.js",
+  "type": "module",
+  "bin": {
+    "flightaware-mcp-server": "./build/index.js"
+  },
+  "files": [
+    "build/**/*.js",
+    "build/**/*.d.ts",
+    "shared/**/*.js",
+    "shared/**/*.d.ts",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc && npm run build:integration",
+    "build:integration": "tsc -p tsconfig.integration.json",
+    "start": "node build/index.js",
+    "dev": "tsx src/index.ts",
+    "predev": "cd ../shared && npm run build && cd ../local && node setup-dev.js",
+    "prebuild": "cd ../shared && npm run build && cd ../local && node setup-dev.js",
+    "prepublishOnly": "node prepare-publish.js && node ../scripts/prepare-npm-readme.js",
+    "lint": "eslint . --ext .ts,.tsx",
+    "lint:fix": "eslint . --ext .ts,.tsx --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "stage-publish": "npm version"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.6",
+    "tsx": "^4.22.4",
+    "typescript": "^5.7.3"
+  },
+  "keywords": [
+    "mcp",
+    "flightaware",
+    "aeroapi",
+    "flight-tracking",
+    "flight-status",
+    "model-context-protocol"
+  ],
+  "author": "PulseMCP",
+  "license": "MIT"
+}
