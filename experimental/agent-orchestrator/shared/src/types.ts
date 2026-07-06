@@ -384,6 +384,10 @@ export interface TriggerChannelsResponse {
 }
 
 export interface TriggerConditionAttributes {
+  // Present when updating an existing condition in place. Rails uses
+  // accepts_nested_attributes_for, so omitting the id on an update APPENDS a new
+  // condition instead of modifying the existing one.
+  id?: number;
   condition_type: TriggerConditionType;
   configuration: Record<string, unknown>;
 }
@@ -398,10 +402,10 @@ export interface CreateTriggerRequest {
   mcp_servers?: string[];
   last_session_id?: number;
   trigger_conditions_attributes?: TriggerConditionAttributes[];
-  // Legacy fields below are accepted for compatibility with callers that
-  // pre-date the v1 API's trigger_conditions model. They are not permitted by
-  // the Rails strong params and will be silently ignored — use
-  // trigger_conditions_attributes for new code.
+  // Ergonomic top-level shape accepted for callsite convenience. The client
+  // folds these into a single trigger_conditions_attributes entry before
+  // POSTing, since the Rails v1 strong params only permit the nested shape.
+  // If trigger_conditions_attributes is supplied directly, it takes precedence.
   trigger_type?: TriggerConditionType;
   configuration?: Record<string, unknown>;
 }
@@ -415,7 +419,9 @@ export interface UpdateTriggerRequest {
   reuse_session?: boolean;
   mcp_servers?: string[];
   trigger_conditions_attributes?: TriggerConditionAttributes[];
-  // Legacy fields — see note on CreateTriggerRequest.
+  // Ergonomic top-level shape — see note on CreateTriggerRequest. On update the
+  // client resolves the existing condition's id so the condition is modified in
+  // place rather than duplicated.
   trigger_type?: TriggerConditionType;
   configuration?: Record<string, unknown>;
 }
