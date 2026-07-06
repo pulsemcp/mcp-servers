@@ -44,6 +44,8 @@ export interface Session {
   archived_at: string | null;
   category_id?: number | null;
   category?: CategorySummary | null;
+  heartbeat_enabled?: boolean;
+  heartbeat_interval_seconds?: number;
   created_at: string;
   updated_at: string;
   transcript?: string;
@@ -100,6 +102,12 @@ export interface SessionResponse {
 export interface SessionActionResponse {
   session: Session;
   message?: string;
+}
+
+export interface SetHeartbeatResponse {
+  session: Session;
+  heartbeat_enabled: boolean;
+  heartbeat_interval_seconds: number;
 }
 
 export interface LogsResponse {
