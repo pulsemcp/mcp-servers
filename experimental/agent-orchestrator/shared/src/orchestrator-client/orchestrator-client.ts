@@ -48,6 +48,8 @@ import type {
   TriggersResponse,
   TriggerResponse,
   TriggerChannelsResponse,
+  TriggerConditionAttributes,
+  TriggerConditionType,
   CreateTriggerRequest,
   UpdateTriggerRequest,
   Notification,
@@ -115,6 +117,23 @@ export function mapAgentRoot(raw: RawAgentRoot): AgentRootInfo {
     default_skills: raw.default_skills,
     default_model: raw.default_model,
   };
+}
+
+/**
+ * Folds the ergonomic top-level `trigger_type` + `configuration` shape into the
+ * REST API's nested `trigger_conditions_attributes`. Mirrors the
+ * `trigger_type` → `condition_type` mapping that listTriggers uses for filtering.
+ * Returns undefined when there is no condition to build (no trigger_type), so
+ * callers can leave the field off the request entirely.
+ */
+export function conditionAttributesFromLegacy(
+  trigger_type: TriggerConditionType | undefined,
+  configuration: Record<string, unknown> | undefined
+): TriggerConditionAttributes[] | undefined {
+  if (trigger_type === undefined) {
+    return undefined;
+  }
+  return [{ condition_type: trigger_type, configuration: configuration ?? {} }];
 }
 
 /**
@@ -914,13 +933,84 @@ export class AgentOrchestratorClient implements IAgentOrchestratorClient {
   }
 
   async createTrigger(data: CreateTriggerRequest): Promise<Trigger> {
-    const response = await this.request<TriggerResponse>('POST', '/triggers', data);
+    const { trigger_type, configuration, trigger_conditions_attributes, ...rest } = data;
+    const body: Record<string, unknown> = { ...rest };
+
+    // The Rails v1 /triggers endpoint permits neither a top-level `trigger_type`
+    // nor a top-level `configuration`; the condition must be nested as
+    // `trigger_conditions_attributes: [{ condition_type:, configuration: }]`.
+    // An explicitly-supplied nested array (e.g. from wake_me_up_* tools) wins;
+    // otherwise fold the ergonomic top-level shape into a single condition.
+    const conditions =
+      trigger_conditions_attributes ?? conditionAttributesFromLegacy(trigger_type, configuration);
+    if (conditions !== undefined) {
+      body.trigger_conditions_attributes = conditions;
+    }
+
+    const response = await this.request<TriggerResponse>('POST', '/triggers', body);
     return response.trigger;
   }
 
   async updateTrigger(id: number, data: UpdateTriggerRequest): Promise<Trigger> {
-    const response = await this.request<TriggerResponse>('PATCH', `/triggers/${id}`, data);
+    const { trigger_type, configuration, trigger_conditions_attributes, ...rest } = data;
+    const body: Record<string, unknown> = { ...rest };
+
+    if (trigger_conditions_attributes !== undefined) {
+      // Caller supplied the nested shape directly — forward verbatim.
+      body.trigger_conditions_attributes = trigger_conditions_attributes;
+    } else if (trigger_type !== undefined || configuration !== undefined) {
+      // Ergonomic top-level shape. Resolve the existing condition's id so the
+      // condition is modified in place instead of a duplicate being appended
+      // (Rails uses accepts_nested_attributes_for). Metadata-only updates that
+      // omit both fields skip this entirely and never touch conditions.
+      body.trigger_conditions_attributes = await this.resolveUpdatedTriggerConditions(
+        id,
+        trigger_type,
+        configuration
+      );
+    }
+
+    const response = await this.request<TriggerResponse>('PATCH', `/triggers/${id}`, body);
     return response.trigger;
+  }
+
+  /**
+   * Builds the trigger_conditions_attributes for an update expressed with the
+   * ergonomic top-level `trigger_type` + `configuration` shape. Fetches the
+   * trigger to reuse the matching existing condition's id (so the condition is
+   * updated in place rather than duplicated).
+   */
+  private async resolveUpdatedTriggerConditions(
+    id: number,
+    trigger_type: TriggerConditionType | undefined,
+    configuration: Record<string, unknown> | undefined
+  ): Promise<TriggerConditionAttributes[]> {
+    const { trigger } = await this.getTrigger(id);
+    const existing = trigger.conditions ?? [];
+
+    // Pick the condition to modify: the one matching the requested type, or the
+    // sole existing condition when no type was provided.
+    const target =
+      trigger_type !== undefined
+        ? existing.find((c) => c.condition_type === trigger_type)
+        : existing.length === 1
+          ? existing[0]
+          : undefined;
+
+    const conditionType = trigger_type ?? target?.condition_type;
+    if (conditionType === undefined) {
+      throw new Error(
+        'Cannot update trigger configuration without a trigger_type when the trigger has zero or multiple conditions.'
+      );
+    }
+
+    return [
+      {
+        ...(target?.id !== undefined && { id: target.id }),
+        condition_type: conditionType,
+        configuration: configuration ?? target?.configuration ?? {},
+      },
+    ];
   }
 
   async deleteTrigger(id: number): Promise<void> {

@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.10] - 2026-07-05
+
+### Fixed
+
+- **`action_trigger` create/update now succeeds against the v1 REST API.** The orchestrator client sent the schedule/Slack config as top-level `trigger_type` + `configuration`, which `Api::V1::TriggersController#trigger_params` permits for neither field, so strong params silently dropped them and every create/update failed with an opaque `422 Validation failed` ("Trigger conditions must have at least one condition"). `createTrigger`/`updateTrigger` now fold the ergonomic top-level shape into the API's nested `trigger_conditions_attributes: [{ condition_type, configuration }]` — mirroring the `trigger_type` → `condition_type` mapping `listTriggers` already applies. An explicitly-supplied `trigger_conditions_attributes` array (e.g. from the `wake_me_up_*` tools) is forwarded verbatim. On update, the client resolves the existing condition's `id` so the condition is modified in place rather than a duplicate being appended; metadata-only updates (no `trigger_type`/`configuration`) leave conditions untouched. The `action_trigger` tool's public input schema is unchanged.
+
+### Tests
+
+- Added functional tests asserting the outgoing request body carries `trigger_conditions_attributes` with the right `condition_type` + `configuration` (and no leaked top-level fields) for schedule and Slack creates, verbatim pass-through of an explicit conditions array, metadata-only updates that skip conditions, and in-place condition updates that reuse the existing `id`. Kept the integration mock client in sync via a shared `conditionAttributesFromLegacy` helper.
+
 ## [0.8.9] - 2026-07-01
 
 ### Added

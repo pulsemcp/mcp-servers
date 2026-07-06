@@ -5,6 +5,7 @@
  */
 
 import type { IAgentOrchestratorClient } from './orchestrator-client.js';
+import { conditionAttributesFromLegacy } from './orchestrator-client.js';
 import type {
   Session,
   Log,
@@ -75,6 +76,28 @@ interface MockData {
   subagentTranscripts?: SubagentTranscript[];
   categories?: Category[];
   elicitations?: MockElicitation[];
+}
+
+/**
+ * Builds mock TriggerCondition rows from a create/update request, mirroring the
+ * real client: fold the ergonomic top-level trigger_type + configuration shape
+ * into nested condition attributes when the caller didn't supply them directly.
+ */
+function buildMockTriggerConditions(
+  data: CreateTriggerRequest | UpdateTriggerRequest
+): Trigger['conditions'] {
+  const conditionAttributes =
+    data.trigger_conditions_attributes ??
+    conditionAttributesFromLegacy(data.trigger_type, data.configuration) ??
+    [];
+  return conditionAttributes.map((c, i) => ({
+    id: i + 1,
+    condition_type: c.condition_type,
+    configuration: c.configuration,
+    description: `${c.condition_type} condition`,
+    last_triggered_at: null,
+    last_polled_at: null,
+  }));
 }
 
 /**
@@ -990,14 +1013,7 @@ export function createIntegrationMockOrchestratorClient(
     },
 
     async createTrigger(data: CreateTriggerRequest): Promise<Trigger> {
-      const conditions = (data.trigger_conditions_attributes ?? []).map((c, i) => ({
-        id: i + 1,
-        condition_type: c.condition_type,
-        configuration: c.configuration,
-        description: `${c.condition_type} condition`,
-        last_triggered_at: null,
-        last_polled_at: null,
-      }));
+      const conditions = buildMockTriggerConditions(data);
       return {
         id: 1,
         name: data.name,
@@ -1017,14 +1033,7 @@ export function createIntegrationMockOrchestratorClient(
     },
 
     async updateTrigger(id: number, data: UpdateTriggerRequest): Promise<Trigger> {
-      const conditions = (data.trigger_conditions_attributes ?? []).map((c, i) => ({
-        id: i + 1,
-        condition_type: c.condition_type,
-        configuration: c.configuration,
-        description: `${c.condition_type} condition`,
-        last_triggered_at: null,
-        last_polled_at: null,
-      }));
+      const conditions = buildMockTriggerConditions(data);
       return {
         id,
         name: data.name || 'Updated Trigger',
