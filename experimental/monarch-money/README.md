@@ -4,7 +4,7 @@ MCP server for [Monarch Money](https://www.monarchmoney.com/) — a personal fin
 
 ## Highlights
 
-- **22 consolidated tools** across two groups (`readonly`, `manage`) covering accounts, balances, net worth, cashflow, transactions, categories, tags, transaction rules, and budgets
+- **23 consolidated tools** across two groups (`readonly`, `manage`) covering accounts, balances, net worth, cashflow, transactions, categories, tags, transaction rules, and budgets
 - **Encrypted on-disk session** at `~/.monarch-money-mcp/session.enc` — the server never accepts a Monarch password through a tool input
 - **Tool group filtering** via env vars — run the server in a strict read-only mode, or hand-pick the exact tools you want exposed to the agent
 - **Custom thin GraphQL transport** targeting `api.monarch.com/graphql` — no third-party Monarch client dependency
@@ -102,11 +102,12 @@ MONARCH_ENABLED_TOOLS=get_transactions,get_accounts
 
 ### Accounts
 
-| Tool                          | Groups               | Description                                                                                                                          |
-| ----------------------------- | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
-| `get_accounts`                | `readonly`, `manage` | List every connected account with balances and metadata. Pass `includeHoldings: true` to attach investment holdings to each account. |
-| `get_account_balance_history` | `readonly`, `manage` | Daily balance snapshots for one account over a date range.                                                                           |
-| `refresh_accounts`            | `manage`             | Trigger an upstream institution sync.                                                                                                |
+| Tool                          | Groups               | Description                                                                                                                                                                              |
+| ----------------------------- | -------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `get_accounts`                | `readonly`, `manage` | List every connected account with balances and metadata. Pass `includeHoldings: true` to attach investment holdings to each account.                                                     |
+| `get_account_balance_history` | `readonly`, `manage` | Daily balance snapshots for one account over a date range.                                                                                                                               |
+| `set_account_balance_history` | `manage`             | Set recorded daily balance snapshots for a manual account — range mode (start/end/balance) or explicit `{ date, balance }` list. Per-date upsert via Monarch's balance-history importer. |
+| `refresh_accounts`            | `manage`             | Trigger an upstream institution sync.                                                                                                                                                    |
 
 ### Net worth
 

@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.0.13] - 2026-07-06
+
+### Added
+
+- **`set_account_balance_history` (`manage` group): edit a manual account's recorded daily balance snapshots.** Previously the server could read balance history (`get_account_balance_history`) but had no write counterpart — there was no way to set the recorded balance for a given date. This tool closes that gap. It accepts either **range mode** (`startDate` + `endDate` + `balance`, setting the same balance for every day in the inclusive window) or **explicit mode** (`snapshots: [{ date, balance }]`), and returns `{ accountId, updatedCount, startDate, endDate, status }`. Writes are a **per-date UPSERT**: dates you specify are set/created; dates you don't are left unchanged.
+
+  **Research finding — Monarch has NO GraphQL mutation for dated balances.** The only account-balance write in GraphQL is `updateAccount.displayBalance`, which sets the account's single _current_ balance with no date. Editing historical per-date snapshots is done through Monarch's "Upload Balance History" importer, a hybrid REST+GraphQL, three-step flow that was reverse-engineered from the web app and verified against the live `api.monarch.com` endpoint: (1) a multipart REST POST to `/account-balance-history/upload/` (CSV + `account_files_mapping` + `files_column_mapping`) that returns a staging `session_key`; (2) a `parseBalanceHistory` GraphQL mutation that applies the parsed rows; (3) polling `uploadBalanceHistorySession` until `status` is `completed`. Note: the one-shot POST that the community `monarchmoney` (Python) and `monarchmoney-go` clients issue does **not** actually persist anything — the parse + poll steps are required, a fact those clients get wrong.
+
+  **Validated end-to-end against the live Monarch API** (unlike the 0.0.10/0.0.11 mutations, which shipped un-validated): on a real manual account, setting two dates to a test value returned `status: completed`, a read-back via `get_account_balance_history` confirmed exactly those dates changed (others untouched → upsert), and the test writes were reverted to their original values, leaving no stray data.
+
+  Input validation rejects dates that pass the `YYYY-MM-DD` shape check but are not real calendar dates (e.g. `2026-02-31`, which JS's `Date` would silently roll forward) in both range and explicit modes, and rejects duplicate dates in explicit mode (Monarch's importer refuses a file with two rows for the same date, and a duplicate would make the reported `updatedCount` misleading).
+
 ## [0.0.12] - 2026-07-01
 
 ### Fixed

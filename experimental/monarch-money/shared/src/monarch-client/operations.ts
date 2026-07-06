@@ -51,6 +51,43 @@ query GetAccountBalanceHistory($accountId: UUID!) {
   }
 }`;
 
+// Writing historical per-date balance snapshots is NOT a GraphQL mutation on
+// Monarch's API — there is no field that sets a balance for a given date (the
+// only balance write, `updateAccount.displayBalance`, sets the account's single
+// CURRENT balance with no date). Instead, Monarch reuses its "Upload Balance
+// History" importer, a THREE-step flow (reverse-engineered from the web app and
+// verified against the live api.monarch.com endpoint):
+//
+//   1. REST multipart POST to `/account-balance-history/upload/` with the CSV,
+//      `account_files_mapping` and `files_column_mapping` (see the client's
+//      uploader) → returns a `session_key`.
+//   2. `parseBalanceHistory` mutation (below) with that `sessionKey` — this is
+//      what actually applies the parsed rows. The one-shot POST alone does NOT
+//      persist anything (a fact the community Python/Go clients get wrong).
+//   3. Poll `uploadBalanceHistorySession` (below) until `status` is `completed`
+//      (or `errored`).
+//
+// Semantics: per-date UPSERT. Each date present in the CSV is set/created; dates
+// absent from the CSV are left untouched. `ParseBalanceHistoryInput` accepts
+// `{ sessionKey }` (the account/column mappings were supplied at upload time).
+export const M_PARSE_BALANCE_HISTORY = `
+mutation Web_ParseUploadBalanceHistorySession($input: ParseBalanceHistoryInput!) {
+  parseBalanceHistory(input: $input) {
+    uploadBalanceHistorySession {
+      sessionKey
+      status
+    }
+  }
+}`;
+
+export const Q_UPLOAD_BALANCE_HISTORY_SESSION = `
+query Web_GetUploadBalanceHistorySession($sessionKey: String!) {
+  uploadBalanceHistorySession(sessionKey: $sessionKey) {
+    sessionKey
+    status
+  }
+}`;
+
 export const Q_ACCOUNT_HOLDINGS = `
 query GetAccountHoldings($accountId: UUID!) {
   account(id: $accountId) {
