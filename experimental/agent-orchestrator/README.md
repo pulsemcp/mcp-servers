@@ -18,24 +18,24 @@ MCP server for PulseMCP's agent-orchestrator: a Claude Code + MCP-powered agent-
 
 ### Tools
 
-| Tool                       | Tool Group    | Read/Write | Description                                                                                                                                                                             |
-| -------------------------- | ------------- | ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `quick_search_sessions`    | sessions      | read       | Quick title-based search/list sessions with optional ID lookup, title query, and status filter                                                                                          |
-| `get_session`              | sessions      | read       | Get detailed session info with optional logs, transcripts, and transcript format (text/json)                                                                                            |
-| `get_configs`              | sessions      | read       | Fetch all static configuration (MCP servers, agent roots, goals)                                                                                                                        |
-| `get_transcript_archive`   | sessions      | read       | Get download URL and metadata for the transcript archive zip file                                                                                                                       |
-| `start_session`            | sessions      | write      | Create and start a new agent session                                                                                                                                                    |
-| `action_session`           | sessions      | write      | Perform actions: follow_up, pause, restart, archive, unarchive, change_mcp_servers, change_model, fork, refresh, refresh_all, update_notes, update_title, toggle_favorite, bulk_archive |
-| `manage_enqueued_messages` | sessions      | write      | Manage session message queue: list, get, create, update, delete, reorder, interrupt                                                                                                     |
-| `manage_categories`        | sessions      | write      | Manage dashboard categories that organize sessions: list, create, update, delete, reorder, set_session_category                                                                         |
-| `respond_to_elicitation`   | sessions      | write      | Accept or decline a pending elicitation by its request_id, with optional structured content on accept                                                                                   |
-| `get_notifications`        | notifications | read       | Get/list notifications and badge count                                                                                                                                                  |
-| `send_push_notification`   | notifications | write      | Send a push notification about a session needing human attention                                                                                                                        |
-| `action_notification`      | notifications | write      | Mark read, mark all read, dismiss, dismiss all read notifications                                                                                                                       |
-| `search_triggers`          | triggers      | read       | Search/list automation triggers with optional channel info                                                                                                                              |
-| `action_trigger`           | triggers      | write      | Create, update, delete, toggle automation triggers                                                                                                                                      |
-| `get_system_health`        | health        | read       | Get system health report and optional CLI status                                                                                                                                        |
-| `action_health`            | health        | write      | System maintenance: cleanup_processes, retry_sessions, archive_old, cli_refresh, cli_clear_cache                                                                                        |
+| Tool                       | Tool Group    | Read/Write | Description                                                                                                                                                                                            |
+| -------------------------- | ------------- | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `quick_search_sessions`    | sessions      | read       | Quick title-based search/list sessions with optional ID lookup, title query, and status filter                                                                                                         |
+| `get_session`              | sessions      | read       | Get detailed session info with optional logs, transcripts, and transcript format (text/json)                                                                                                           |
+| `get_configs`              | sessions      | read       | Fetch all static configuration (MCP servers, agent roots, goals)                                                                                                                                       |
+| `get_transcript_archive`   | sessions      | read       | Get download URL and metadata for the transcript archive zip file                                                                                                                                      |
+| `start_session`            | sessions      | write      | Create and start a new agent session                                                                                                                                                                   |
+| `action_session`           | sessions      | write      | Perform actions: follow_up, pause, restart, archive, unarchive, change_mcp_servers, change_model, set_heartbeat, fork, refresh, refresh_all, update_notes, update_title, toggle_favorite, bulk_archive |
+| `manage_enqueued_messages` | sessions      | write      | Manage session message queue: list, get, create, update, delete, reorder, interrupt                                                                                                                    |
+| `manage_categories`        | sessions      | write      | Manage dashboard categories that organize sessions: list, create, update, delete, reorder, set_session_category                                                                                        |
+| `respond_to_elicitation`   | sessions      | write      | Accept or decline a pending elicitation by its request_id, with optional structured content on accept                                                                                                  |
+| `get_notifications`        | notifications | read       | Get/list notifications and badge count                                                                                                                                                                 |
+| `send_push_notification`   | notifications | write      | Send a push notification about a session needing human attention                                                                                                                                       |
+| `action_notification`      | notifications | write      | Mark read, mark all read, dismiss, dismiss all read notifications                                                                                                                                      |
+| `search_triggers`          | triggers      | read       | Search/list automation triggers with optional channel info                                                                                                                                             |
+| `action_trigger`           | triggers      | write      | Create, update, delete, toggle automation triggers                                                                                                                                                     |
+| `get_system_health`        | health        | read       | Get system health report and optional CLI status                                                                                                                                                       |
+| `action_health`            | health        | write      | System maintenance: cleanup_processes, retry_sessions, archive_old, cli_refresh, cli_clear_cache                                                                                                       |
 
 ### Resources
 
@@ -210,6 +210,7 @@ This MCP server provides tools for the following Agent Orchestrator REST API end
 - `POST /api/v1/sessions/:id/refresh` - Refresh session status
 - `POST /api/v1/sessions/refresh_all` - Refresh all active sessions
 - `POST /api/v1/sessions/:id/toggle_favorite` - Toggle favorite
+- `PATCH /api/v1/sessions/:id/heartbeat` - Toggle heartbeat and/or set interval (set_heartbeat)
 - `POST /api/v1/sessions/bulk_archive` - Bulk archive sessions
 
 ### Transcript Archive

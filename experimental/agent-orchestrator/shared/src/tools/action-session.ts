@@ -1,13 +1,52 @@
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { z } from 'zod';
 import type { IAgentOrchestratorClient } from '../orchestrator-client/orchestrator-client.js';
+import type { SetHeartbeatResponse } from '../types.js';
 import { parseAllowedAgentRoots } from '../allowed-agent-roots.js';
+
+// Heartbeat interval bounds enforced by the Rails API (PATCH /sessions/:id/heartbeat).
+const HEARTBEAT_MIN_INTERVAL_SECONDS = 30;
+const HEARTBEAT_MAX_INTERVAL_SECONDS = 86400;
+
+/**
+ * Validates set_heartbeat arguments. Returns an error message string if the
+ * arguments are invalid, or null if they are valid. Mirrors the Rails API's
+ * 422 conditions so callers get a clear error before the request is sent.
+ */
+function validateHeartbeatArgs(
+  enabled: boolean | undefined,
+  interval_seconds: number | undefined
+): string | null {
+  if (enabled === undefined && interval_seconds === undefined) {
+    return 'Error: The "set_heartbeat" action requires at least one of "enabled" or "interval_seconds".';
+  }
+  if (
+    interval_seconds !== undefined &&
+    (interval_seconds < HEARTBEAT_MIN_INTERVAL_SECONDS ||
+      interval_seconds > HEARTBEAT_MAX_INTERVAL_SECONDS)
+  ) {
+    return `Error: "interval_seconds" must be between ${HEARTBEAT_MIN_INTERVAL_SECONDS} and ${HEARTBEAT_MAX_INTERVAL_SECONDS}.`;
+  }
+  return null;
+}
+
+/** Formats a set_heartbeat response into the standard markdown result block. */
+function formatHeartbeatResult(response: SetHeartbeatResponse): string {
+  return [
+    `## Heartbeat Updated`,
+    '',
+    `- **Session ID:** ${response.session.id}`,
+    `- **Title:** ${response.session.title}`,
+    `- **Heartbeat Enabled:** ${response.heartbeat_enabled ? 'Yes' : 'No'}`,
+    `- **Interval:** ${response.heartbeat_interval_seconds} seconds`,
+  ].join('\n');
+}
 
 const PARAM_DESCRIPTIONS = {
   session_id:
     'Session ID (numeric) or slug (string). Required for most actions. Not required for "refresh_all" and "bulk_archive".',
   action:
-    'Action to perform: "follow_up", "pause", "restart", "archive", "unarchive", "change_mcp_servers", "change_model", "fork", "refresh", "refresh_all", "update_notes", "update_title", "toggle_favorite", "bulk_archive"',
+    'Action to perform: "follow_up", "pause", "restart", "archive", "unarchive", "change_mcp_servers", "change_model", "set_heartbeat", "fork", "refresh", "refresh_all", "update_notes", "update_title", "toggle_favorite", "bulk_archive"',
   prompt:
     'Required for "follow_up" action. The prompt to send to the agent. Not used for other actions.',
   force_immediate:
@@ -16,6 +55,10 @@ const PARAM_DESCRIPTIONS = {
     'Required for "change_mcp_servers" action. Array of MCP server names to set for the session.',
   model:
     'Required for "change_model" action. The model identifier to use (e.g., "opus", "sonnet").',
+  enabled:
+    'Optional for "set_heartbeat" action. When true, enables the session heartbeat; when false, disables it. Omit to leave the enabled state unchanged (at least one of "enabled" or "interval_seconds" must be provided).',
+  interval_seconds:
+    'Optional for "set_heartbeat" action. Heartbeat cadence in seconds (30–86400). Omit to leave the interval unchanged (at least one of "enabled" or "interval_seconds" must be provided).',
   message_index: 'Required for "fork" action. The transcript message index to fork from.',
   session_notes: 'Required for "update_notes" action. The notes text to set on the session.',
   session_ids: 'Required for "bulk_archive" action. Array of session IDs to archive.',
@@ -30,6 +73,7 @@ const ACTION_ENUM = [
   'unarchive',
   'change_mcp_servers',
   'change_model',
+  'set_heartbeat',
   'fork',
   'refresh',
   'refresh_all',
@@ -46,6 +90,8 @@ export const ActionSessionSchema = z.object({
   force_immediate: z.boolean().optional().describe(PARAM_DESCRIPTIONS.force_immediate),
   mcp_servers: z.array(z.string()).optional().describe(PARAM_DESCRIPTIONS.mcp_servers),
   model: z.string().optional().describe(PARAM_DESCRIPTIONS.model),
+  enabled: z.boolean().optional().describe(PARAM_DESCRIPTIONS.enabled),
+  interval_seconds: z.number().int().optional().describe(PARAM_DESCRIPTIONS.interval_seconds),
   message_index: z.number().optional().describe(PARAM_DESCRIPTIONS.message_index),
   session_notes: z.string().optional().describe(PARAM_DESCRIPTIONS.session_notes),
   session_ids: z.array(z.number()).optional().describe(PARAM_DESCRIPTIONS.session_ids),
@@ -62,6 +108,7 @@ const TOOL_DESCRIPTION = `Perform an action on an agent session.
 - **unarchive**: Restore an archived session to idle "needs_input" status
 - **change_mcp_servers**: Update the MCP servers for a session (requires "mcp_servers" parameter)
 - **change_model**: Update the model for a session (requires "model" parameter, e.g., "opus", "sonnet")
+- **set_heartbeat**: Toggle a session's heartbeat and/or set its interval (provide "enabled" and/or "interval_seconds"). When enabled and the session sits in needs_input, a recurring nudge prompts it to keep working toward its goal; set "enabled" to false to stop the nudges.
 - **fork**: Fork a session from a specific transcript message (requires "message_index")
 - **refresh**: Refresh a single session's status from the execution provider
 - **refresh_all**: Refresh all active sessions (no session_id needed)
@@ -110,6 +157,14 @@ export function actionSessionTool(_server: Server, clientFactory: () => IAgentOr
           type: 'string',
           description: PARAM_DESCRIPTIONS.model,
         },
+        enabled: {
+          type: 'boolean',
+          description: PARAM_DESCRIPTIONS.enabled,
+        },
+        interval_seconds: {
+          type: 'number',
+          description: PARAM_DESCRIPTIONS.interval_seconds,
+        },
         message_index: {
           type: 'number',
           description: PARAM_DESCRIPTIONS.message_index,
@@ -141,6 +196,8 @@ export function actionSessionTool(_server: Server, clientFactory: () => IAgentOr
           force_immediate,
           mcp_servers,
           model,
+          enabled,
+          interval_seconds,
           message_index,
           session_notes,
           session_ids,
@@ -156,6 +213,7 @@ export function actionSessionTool(_server: Server, clientFactory: () => IAgentOr
           'unarchive',
           'change_mcp_servers',
           'change_model',
+          'set_heartbeat',
           'fork',
           'refresh',
           'update_notes',
@@ -211,6 +269,17 @@ export function actionSessionTool(_server: Server, clientFactory: () => IAgentOr
             ],
             isError: true,
           };
+        }
+
+        // Validate set_heartbeat arguments
+        if (action === 'set_heartbeat') {
+          const heartbeatError = validateHeartbeatArgs(enabled, interval_seconds);
+          if (heartbeatError) {
+            return {
+              content: [{ type: 'text', text: heartbeatError }],
+              isError: true,
+            };
+          }
         }
 
         // Block change_mcp_servers when ALLOWED_AGENT_ROOTS is active
@@ -418,6 +487,15 @@ export function actionSessionTool(_server: Server, clientFactory: () => IAgentOr
             break;
           }
 
+          case 'set_heartbeat': {
+            const response = await client.setHeartbeat(session_id!, {
+              enabled,
+              interval_seconds,
+            });
+            result = formatHeartbeatResult(response);
+            break;
+          }
+
           case 'fork': {
             const response = await client.forkSession(session_id!, message_index!);
             const lines = [
@@ -554,18 +632,25 @@ export function actionSessionTool(_server: Server, clientFactory: () => IAgentOr
 // SELF-SESSION VARIANT
 // =============================================================================
 // Restricted version of action_session for the self_session composite group.
-// Only allows self-management actions: update_notes, update_title, archive.
+// Only allows self-management actions: update_notes, update_title, set_heartbeat, archive.
 // =============================================================================
 
-const SELF_SESSION_ACTION_ENUM = ['update_notes', 'update_title', 'archive'] as const;
+const SELF_SESSION_ACTION_ENUM = [
+  'update_notes',
+  'update_title',
+  'set_heartbeat',
+  'archive',
+] as const;
 
 export const SelfSessionActionSessionSchema = z.object({
   session_id: z.union([z.string(), z.number()]).describe(PARAM_DESCRIPTIONS.session_id),
   action: z
     .enum(SELF_SESSION_ACTION_ENUM)
-    .describe('Action to perform: "update_notes", "update_title", "archive"'),
+    .describe('Action to perform: "update_notes", "update_title", "set_heartbeat", "archive"'),
   session_notes: z.string().optional().describe(PARAM_DESCRIPTIONS.session_notes),
   title: z.string().optional().describe(PARAM_DESCRIPTIONS.title),
+  enabled: z.boolean().optional().describe(PARAM_DESCRIPTIONS.enabled),
+  interval_seconds: z.number().int().optional().describe(PARAM_DESCRIPTIONS.interval_seconds),
 });
 
 const SELF_SESSION_TOOL_DESCRIPTION = `Perform a self-management action on a session.
@@ -573,11 +658,13 @@ const SELF_SESSION_TOOL_DESCRIPTION = `Perform a self-management action on a ses
 **Actions (limited to self-management):**
 - **update_notes**: Update the notes on a session (requires "session_notes")
 - **update_title**: Update the title of a session (requires "title")
+- **set_heartbeat**: Toggle this session's own heartbeat and/or set its interval (provide "enabled" and/or "interval_seconds"). When the heartbeat is enabled and this session sits in needs_input, a recurring nudge prompts it to keep working toward its goal. If you are genuinely blocked or done, set "enabled" to false to stop the nudges.
 - **archive**: Archive a session (marks as completed)
 
 **Use cases:**
 - Update session notes to record progress or context
 - Set a meaningful session title
+- Turn off this session's heartbeat when blocked or finished (set_heartbeat with enabled=false)
 - Archive the session when work is complete
 
 **Archive guidelines:**
@@ -602,7 +689,8 @@ export function selfSessionActionSessionTool(
         action: {
           type: 'string',
           enum: SELF_SESSION_ACTION_ENUM,
-          description: 'Action to perform: "update_notes", "update_title", "archive"',
+          description:
+            'Action to perform: "update_notes", "update_title", "set_heartbeat", "archive"',
         },
         session_notes: {
           type: 'string',
@@ -612,6 +700,14 @@ export function selfSessionActionSessionTool(
           type: 'string',
           description: PARAM_DESCRIPTIONS.title,
         },
+        enabled: {
+          type: 'boolean',
+          description: PARAM_DESCRIPTIONS.enabled,
+        },
+        interval_seconds: {
+          type: 'number',
+          description: PARAM_DESCRIPTIONS.interval_seconds,
+        },
       },
       required: ['session_id', 'action'],
     },
@@ -619,7 +715,8 @@ export function selfSessionActionSessionTool(
       try {
         const validatedArgs = SelfSessionActionSessionSchema.parse(args);
         const client = clientFactory();
-        const { session_id, action, session_notes, title } = validatedArgs;
+        const { session_id, action, session_notes, title, enabled, interval_seconds } =
+          validatedArgs;
 
         // Validate update_notes requires session_notes
         if (action === 'update_notes' && session_notes === undefined) {
@@ -647,6 +744,17 @@ export function selfSessionActionSessionTool(
           };
         }
 
+        // Validate set_heartbeat arguments
+        if (action === 'set_heartbeat') {
+          const heartbeatError = validateHeartbeatArgs(enabled, interval_seconds);
+          if (heartbeatError) {
+            return {
+              content: [{ type: 'text', text: heartbeatError }],
+              isError: true,
+            };
+          }
+        }
+
         let result: string;
 
         switch (action) {
@@ -661,6 +769,15 @@ export function selfSessionActionSessionTool(
               `- **Archived At:** ${session.archived_at}`,
             ];
             result = lines.join('\n');
+            break;
+          }
+
+          case 'set_heartbeat': {
+            const response = await client.setHeartbeat(session_id, {
+              enabled,
+              interval_seconds,
+            });
+            result = formatHeartbeatResult(response);
             break;
           }
 

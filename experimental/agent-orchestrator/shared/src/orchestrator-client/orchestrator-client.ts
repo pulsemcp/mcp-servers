@@ -12,6 +12,7 @@ import type {
   SearchSessionsResponse,
   SessionResponse,
   SessionActionResponse,
+  SetHeartbeatResponse,
   LogsResponse,
   LogResponse,
   SubagentTranscriptsResponse,
@@ -188,6 +189,11 @@ export interface IAgentOrchestratorClient {
   changeMcpServers(id: string | number, mcp_servers: string[]): Promise<Session>;
 
   changeModel(id: string | number, model: string): Promise<Session>;
+
+  setHeartbeat(
+    id: string | number,
+    options: { enabled?: boolean; interval_seconds?: number }
+  ): Promise<SetHeartbeatResponse>;
 
   // Logs
   listLogs(
@@ -623,6 +629,16 @@ export class AgentOrchestratorClient implements IAgentOrchestratorClient {
       model,
     });
     return response.session;
+  }
+
+  async setHeartbeat(
+    id: string | number,
+    options: { enabled?: boolean; interval_seconds?: number }
+  ): Promise<SetHeartbeatResponse> {
+    const body: { enabled?: boolean; interval_seconds?: number } = {};
+    if (options.enabled !== undefined) body.enabled = options.enabled;
+    if (options.interval_seconds !== undefined) body.interval_seconds = options.interval_seconds;
+    return this.request<SetHeartbeatResponse>('PATCH', `/sessions/${id}/heartbeat`, body);
   }
 
   // Logs

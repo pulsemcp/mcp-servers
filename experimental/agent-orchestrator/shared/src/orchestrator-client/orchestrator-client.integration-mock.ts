@@ -13,6 +13,7 @@ import type {
   SessionsResponse,
   SearchSessionsResponse,
   SessionActionResponse,
+  SetHeartbeatResponse,
   LogsResponse,
   SubagentTranscriptsResponse,
   CreateSessionRequest,
@@ -430,6 +431,39 @@ export function createIntegrationMockOrchestratorClient(
       session.config = { ...session.config, model };
       session.updated_at = new Date().toISOString();
       return session;
+    },
+
+    async setHeartbeat(
+      id: string | number,
+      options: { enabled?: boolean; interval_seconds?: number }
+    ): Promise<SetHeartbeatResponse> {
+      const session = mockData.sessions?.find((s) => s.id === Number(id) || s.slug === String(id));
+      if (!session) {
+        throw new Error(`API Error (404): Session not found`);
+      }
+      if (options.enabled === undefined && options.interval_seconds === undefined) {
+        throw new Error(
+          `API Error (422): At least one of "enabled" or "interval_seconds" must be provided`
+        );
+      }
+      if (
+        options.interval_seconds !== undefined &&
+        (options.interval_seconds < 30 || options.interval_seconds > 86400)
+      ) {
+        throw new Error(`API Error (422): interval_seconds must be between 30 and 86400`);
+      }
+      if (options.enabled !== undefined) {
+        session.heartbeat_enabled = options.enabled;
+      }
+      if (options.interval_seconds !== undefined) {
+        session.heartbeat_interval_seconds = options.interval_seconds;
+      }
+      session.updated_at = new Date().toISOString();
+      return {
+        session,
+        heartbeat_enabled: session.heartbeat_enabled ?? false,
+        heartbeat_interval_seconds: session.heartbeat_interval_seconds ?? 300,
+      };
     },
 
     async listLogs(

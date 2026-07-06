@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.11] - 2026-07-06
+
+### Added
+
+- **`set_heartbeat` action on the `action_session` tool** for toggling a session's per-session heartbeat and/or setting its beat interval. Takes optional `enabled` (boolean) and/or `interval_seconds` (integer, 30–86400); at least one must be provided. Maps to `PATCH /api/v1/sessions/:id/heartbeat` and returns the updated heartbeat state. When a session's heartbeat is enabled and it sits in `needs_input`, AO nudges it to keep working toward its goal — this action is what lets an agent (or user) turn that nudging off.
+- **`set_heartbeat` included in the `self_session` composite tool group** so auto-injected self-session servers can toggle their OWN heartbeat (e.g., turning it off when genuinely blocked or finished, as the heartbeat nudge prompt instructs).
+- **`setHeartbeat` orchestrator-client method** backing the action, sending only the provided params (`enabled`/`interval_seconds`) so omitted fields stay unchanged server-side, and returning the new `SetHeartbeatResponse` (`session`, `heartbeat_enabled`, `heartbeat_interval_seconds`). The `Session` type now also exposes `heartbeat_enabled` and `heartbeat_interval_seconds`.
+
+### Tests
+
+- Added functional tests for enabling/disabling the heartbeat, setting the interval, the "at least one param required" and out-of-range interval (30–86400) validations, and the `session_id` requirement — covering both the full `action_session` tool and the restricted `self_session` variant. Added an orchestrator-client test pinning the `PATCH /sessions/:id/heartbeat` endpoint and request body, and an end-to-end integration test through the MCP protocol. Updated `self_session` group tests for the expanded action set (14 → 15 full actions; self-management set now includes `set_heartbeat`).
+
 ## [0.8.10] - 2026-07-05
 
 ### Fixed

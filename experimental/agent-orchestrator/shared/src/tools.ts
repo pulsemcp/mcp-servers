@@ -44,7 +44,7 @@ import { respondToElicitationTool } from './tools/respond-to-elicitation.js';
 //
 // Composite groups (cross-domain, curated tool sets):
 // - self_session: Self-management tools for auto-injected AO servers. Includes get_session,
-//   get_configs (read), action_session (filtered: update_notes, update_title, archive),
+//   get_configs (read), action_session (filtered: update_notes, update_title, set_heartbeat, archive),
 //   send_push_notification, and wake_me_up_later.
 // =============================================================================
 
@@ -161,7 +161,7 @@ interface ToolDefinition {
  * - get_configs: Fetch all static configuration (sessions, read; self_session)
  * - get_transcript_archive: Get transcript archive download URL and metadata (sessions, read)
  * - start_session: Create a new session (sessions, write)
- * - action_session: Perform session actions (sessions, write; self_session: filtered to update_notes, update_title, archive)
+ * - action_session: Perform session actions (sessions, write; self_session: filtered to update_notes, update_title, set_heartbeat, archive)
  * - manage_enqueued_messages: Manage session message queue (sessions, write)
  * - manage_categories: Manage dashboard categories and session assignment (sessions, write)
  * - respond_to_elicitation: Accept or decline a pending elicitation by request_id (sessions, write)
