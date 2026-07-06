@@ -1,0 +1,61 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-09-29/server.schema.json",
+  "name": "com.pulsemcp/x-twitter",
+  "description": "MCP server for X (Twitter): home timeline, user tweet history, bookmarks, recent search, and tweet/user lookups via OAuth 2.0 user context, plus private bookmark add/remove. Never posts, replies, likes, retweets, follows, or performs any public action.",
+  "version": "0.0.1",
+  "repository": {
+    "url": "https://github.com/pulsemcp/mcp-servers",
+    "source": "github",
+    "subfolder": "experimental/x-twitter"
+  },
+  "packages": [
+    {
+      "registryType": "npm",
+      "registryBaseUrl": "https://registry.npmjs.org",
+      "identifier": "x-twitter-mcp-server",
+      "version": "0.0.1",
+      "runtimeHint": "npx",
+      "transport": {
+        "type": "stdio"
+      },
+      "runtimeArguments": [
+        {
+          "type": "positional",
+          "value": "-y"
+        }
+      ],
+      "environmentVariables": [
+        {
+          "name": "X_OAUTH_CLIENT_ID",
+          "description": "OAuth 2.0 client id (confidential client) from the X developer portal. Required for refresh-token mode.",
+          "isRequired": false,
+          "isSecret": true
+        },
+        {
+          "name": "X_OAUTH_CLIENT_SECRET",
+          "description": "OAuth 2.0 client secret. Required for refresh-token mode.",
+          "isRequired": false,
+          "isSecret": true
+        },
+        {
+          "name": "X_OAUTH_REFRESH_TOKEN",
+          "description": "Refresh token minted via the one-time `oauth-setup` consent flow. Required for refresh-token mode. X rotates this on every refresh.",
+          "isRequired": false,
+          "isSecret": true
+        },
+        {
+          "name": "X_OAUTH_ACCESS_TOKEN",
+          "description": "A short-lived OAuth 2.0 user-context access token injected by a central refresher. Use this instead of the refresh-token trio for centrally-managed deployments; the server will not refresh it itself.",
+          "isRequired": false,
+          "isSecret": true
+        },
+        {
+          "name": "X_TWITTER_ENABLED_TOOLGROUPS",
+          "description": "Comma-separated tool groups to expose: 'readonly' (reads only) and/or 'readwrite' (reads plus private bookmark add/remove). Defaults to all groups when unset.",
+          "isRequired": false,
+          "isSecret": false
+        }
+      ]
+    }
+  ]
+}
