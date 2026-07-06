@@ -28,6 +28,21 @@ export interface BalanceSnapshot {
   balance: number;
 }
 
+/**
+ * Result of writing balance snapshots via Monarch's balance-history importer.
+ *
+ * `status` is the terminal status reported by the upload session poll
+ * (`completed` on success). `updatedCount` is the number of dated snapshots the
+ * caller asked to set; `startDate`/`endDate` bound them for confirmation.
+ */
+export interface SetBalanceHistoryResult {
+  accountId: string;
+  updatedCount: number;
+  startDate: string;
+  endDate: string;
+  status: string;
+}
+
 export interface Holding {
   id: string;
   ticker?: string | null;

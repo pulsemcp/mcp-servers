@@ -10,6 +10,7 @@ import type {
   NetWorthSnapshot,
   RecurringTransaction,
   SessionState,
+  SetBalanceHistoryResult,
   SpendingByCategory,
   SplitInput,
   Tag,
@@ -43,6 +44,10 @@ export interface IMonarchClient {
     endDate: string
   ): Promise<BalanceSnapshot[]>;
   getAccountHoldings(accountId: string): Promise<Holding[]>;
+  setAccountBalanceHistory(input: {
+    accountId: string;
+    snapshots: Array<{ date: string; balance: number }>;
+  }): Promise<SetBalanceHistoryResult>;
   refreshAccounts(accountIds?: string[]): Promise<{ success: boolean; errors: string[] }>;
 
   getNetWorth(startDate?: string, endDate?: string): Promise<NetWorthSnapshot[]>;
@@ -121,12 +126,29 @@ export interface IMonarchClient {
   }>;
 }
 
+/**
+ * Uploads a balance-history CSV to Monarch's REST importer endpoint and returns
+ * the staging session key. This is step 1 of `setAccountBalanceHistory` — it is
+ * a multipart REST POST (NOT GraphQL), so it is injected as a separate hook
+ * rather than living on the GraphQL transport. `buildMonarchClient` wires up the
+ * live implementation; tests inject a fake.
+ */
+export type BalanceHistoryUploader = (args: {
+  accountId: string;
+  csv: string;
+}) => Promise<{ sessionKey: string }>;
+
 export interface MonarchClientOptions {
   transport: GraphQLTransport;
   /** Pre-loaded session, if any. Used for `isAuthenticated()`. */
   session: SessionState | null;
   /** Persist session tokens (and clear them) via this hook. */
   onSessionChange?: (state: SessionState | null) => Promise<void>;
+  /**
+   * Uploads a balance-history CSV (step 1 of `setAccountBalanceHistory`).
+   * Required for that method; omitted for read-only or GraphQL-only clients.
+   */
+  uploadBalanceHistoryCsv?: BalanceHistoryUploader;
 }
 
 function firstDayOfMonth(d: Date): string {
@@ -252,6 +274,107 @@ export class MonarchClient implements IMonarchClient {
       variables: { accountId },
     });
     return data.account?.holdings ?? [];
+  }
+
+  /**
+   * Set recorded daily balance snapshots for a (manual) account. Monarch has NO
+   * GraphQL mutation for per-date balances — the mechanism is its "Upload
+   * Balance History" importer, driven here in three steps:
+   *
+   *   1. Upload a `date,balance` CSV via the injected REST uploader → sessionKey.
+   *   2. `parseBalanceHistory({ sessionKey })` — applies the parsed rows.
+   *   3. Poll `uploadBalanceHistorySession(sessionKey)` until the status is
+   *      terminal (`completed` on success, `errored` on failure).
+   *
+   * Semantics are a per-date UPSERT: each date in `snapshots` is set/created;
+   * dates not listed are left unchanged. Passing an empty `snapshots` array is
+   * rejected (nothing to write).
+   */
+  async setAccountBalanceHistory(input: {
+    accountId: string;
+    snapshots: Array<{ date: string; balance: number }>;
+  }): Promise<SetBalanceHistoryResult> {
+    if (!this.options.uploadBalanceHistoryCsv) {
+      throw new Error(
+        'setAccountBalanceHistory is unavailable: this client was built ' +
+          'without a balance-history uploader.'
+      );
+    }
+    if (input.snapshots.length === 0) {
+      throw new Error('setAccountBalanceHistory requires at least one snapshot to write.');
+    }
+
+    // Build the `date,balance` CSV Monarch's `monarch_csv` parser expects (its
+    // required columns are `date` and `balance`, at indexes 0 and 1). Dates are
+    // sorted so the reported start/end bounds are meaningful.
+    const sorted = [...input.snapshots].sort((a, b) =>
+      a.date < b.date ? -1 : a.date > b.date ? 1 : 0
+    );
+    const csv = 'date,balance\n' + sorted.map((s) => `${s.date},${s.balance}`).join('\n') + '\n';
+
+    // Step 1: stage the CSV → session key.
+    const { sessionKey } = await this.options.uploadBalanceHistoryCsv({
+      accountId: input.accountId,
+      csv,
+    });
+
+    // Step 2: apply the staged session.
+    const parsed = await this.options.transport.request<{
+      parseBalanceHistory: {
+        uploadBalanceHistorySession: {
+          sessionKey: string;
+          status: string;
+        } | null;
+      } | null;
+    }>({
+      query: ops.M_PARSE_BALANCE_HISTORY,
+      variables: { input: { sessionKey } },
+    });
+    let status = parsed.parseBalanceHistory?.uploadBalanceHistorySession?.status ?? 'unknown';
+
+    // Step 3: poll until the import reaches a terminal status. The importer
+    // completes within a few seconds; cap the wait so a stuck session surfaces
+    // as an error rather than hanging.
+    const isTerminal = (s: string) => {
+      const l = s.toLowerCase();
+      return l === 'completed' || l === 'errored';
+    };
+    for (let attempt = 0; attempt < 30 && !isTerminal(status); attempt++) {
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      const polled = await this.options.transport.request<{
+        uploadBalanceHistorySession: {
+          sessionKey: string;
+          status: string;
+        } | null;
+      }>({
+        query: ops.Q_UPLOAD_BALANCE_HISTORY_SESSION,
+        variables: { sessionKey },
+      });
+      status = polled.uploadBalanceHistorySession?.status ?? status;
+    }
+
+    if (status.toLowerCase() === 'errored') {
+      throw new Error(
+        `setAccountBalanceHistory failed: Monarch reported the balance-history ` +
+          `import errored (session ${sessionKey}).`
+      );
+    }
+    if (status.toLowerCase() !== 'completed') {
+      throw new Error(
+        `setAccountBalanceHistory did not reach a terminal status: the ` +
+          `balance-history import is still "${status}" after polling (session ` +
+          `${sessionKey}). Monarch may still finish it; re-running is safe ` +
+          `because the writes are idempotent per-date upserts.`
+      );
+    }
+
+    return {
+      accountId: input.accountId,
+      updatedCount: sorted.length,
+      startDate: sorted[0].date,
+      endDate: sorted[sorted.length - 1].date,
+      status,
+    };
   }
 
   async refreshAccounts(accountIds?: string[]): Promise<{ success: boolean; errors: string[] }> {
@@ -994,6 +1117,15 @@ export class MonarchClient implements IMonarchClient {
 }
 
 /**
+ * Derive the REST API base (e.g. `https://api.monarch.com`) from the GraphQL
+ * endpoint (`https://api.monarch.com/graphql`). The balance-history importer is
+ * a REST endpoint hosted on the same origin as GraphQL, one path level up.
+ */
+function restBaseFromGraphqlEndpoint(endpoint: string): string {
+  return endpoint.replace(/\/graphql\/?$/, '');
+}
+
+/**
  * Build a `MonarchClient` against the live API for a given session token.
  */
 export function buildMonarchClient(opts: {
@@ -1002,15 +1134,69 @@ export function buildMonarchClient(opts: {
   fetchImpl?: typeof fetch;
   onSessionChange?: (state: SessionState | null) => Promise<void>;
 }): MonarchClient {
+  const endpoint = opts.endpoint ?? 'https://api.monarch.com/graphql';
+  const fetchImpl = opts.fetchImpl ?? fetch;
   const transport = createGraphQLTransport({
-    endpoint: opts.endpoint,
+    endpoint,
     token: opts.session.token,
-    fetchImpl: opts.fetchImpl,
+    fetchImpl,
     deviceUuid: opts.session.deviceUuid,
   });
+
+  // Live implementation of the balance-history CSV upload (step 1 of
+  // `setAccountBalanceHistory`). Mirrors the multipart form the Monarch web app
+  // posts: the CSV file, an `account_files_mapping` binding the file to the
+  // account id, and a `files_column_mapping` telling the `monarch_csv` parser
+  // which columns are `date`/`balance` (indexes 0/1 in the CSV we build). The
+  // JSON response carries the staging `session_key`.
+  const restBase = restBaseFromGraphqlEndpoint(endpoint);
+  const uploadBalanceHistoryCsv: BalanceHistoryUploader = async ({ accountId, csv }) => {
+    const filename = 'upload.csv';
+    const form = new FormData();
+    form.append('files', new Blob([csv], { type: 'text/csv' }), filename);
+    form.append('account_files_mapping', JSON.stringify({ [filename]: accountId }));
+    form.append('files_column_mapping', JSON.stringify({ [filename]: { date: 0, balance: 1 } }));
+    const headers: Record<string, string> = {
+      Authorization: `Token ${opts.session.token}`,
+      'client-platform': 'web',
+    };
+    if (opts.session.deviceUuid) headers['device-uuid'] = opts.session.deviceUuid;
+
+    const response = await fetchImpl(`${restBase}/account-balance-history/upload/`, {
+      method: 'POST',
+      headers,
+      body: form,
+    });
+    const text = await response.text();
+    if (response.status === 401 || response.status === 403) {
+      throw new MonarchAuthError(
+        `Monarch returned ${response.status} uploading balance history — re-authenticate.`
+      );
+    }
+    if (!response.ok) {
+      throw new Error(
+        `Balance-history upload failed: ${response.status} ${response.statusText}` +
+          (text ? ` - ${text.slice(0, 200)}` : '')
+      );
+    }
+    let parsed: { session_key?: string };
+    try {
+      parsed = JSON.parse(text);
+    } catch {
+      throw new Error(`Balance-history upload returned a non-JSON response: ${text.slice(0, 200)}`);
+    }
+    if (!parsed.session_key) {
+      throw new Error(
+        'Balance-history upload did not return a session_key; cannot apply the change.'
+      );
+    }
+    return { sessionKey: parsed.session_key };
+  };
+
   return new MonarchClient({
     transport,
     session: opts.session,
     onSessionChange: opts.onSessionChange,
+    uploadBalanceHistoryCsv,
   });
 }

@@ -155,6 +155,16 @@ export function createIntegrationMockMonarchClient(
     async getAccountHoldings() {
       return data.holdings ?? [];
     },
+    async setAccountBalanceHistory(input) {
+      const dates = input.snapshots.map((s) => s.date).sort();
+      return {
+        accountId: input.accountId,
+        updatedCount: input.snapshots.length,
+        startDate: dates[0] ?? '',
+        endDate: dates[dates.length - 1] ?? '',
+        status: 'completed',
+      };
+    },
     async refreshAccounts() {
       return { success: true, errors: [] };
     },
