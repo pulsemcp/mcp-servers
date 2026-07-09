@@ -73,15 +73,32 @@ export interface KeyCapabilities {
   };
 }
 
-/** An auth key or API access token, as returned by the keys endpoints. */
+/**
+ * An auth key, OAuth client, or federated identity, as returned by the keys
+ * endpoints. All three credential types live under `/tailnet/{tailnet}/keys` and
+ * are distinguished by `keyType`.
+ */
 export interface Key {
   id: string;
-  /** Only present in the response to a create request. */
+  /**
+   * The secret key material. Only present in the response to a create request.
+   * For an OAuth client this is the `client_secret` (paired with `id` as the
+   * `client_id`).
+   */
   key?: string;
+  /** The credential type: `auth` (device auth key), `client` (OAuth client), or `federated`. */
+  keyType?: string;
   created?: string;
+  updated?: string;
   expires?: string;
   revoked?: string;
   capabilities?: KeyCapabilities;
+  /** OAuth/federated-identity scopes granted to the credential. */
+  scopes?: string[];
+  /** ACL tags associated with the credential. */
+  tags?: string[];
+  /** ID of the user who created the credential (empty for credentials created by other trust credentials). */
+  userId?: string;
   description?: string;
   [key: string]: unknown;
 }
@@ -98,6 +115,30 @@ export interface CreateKeyParams {
   preauthorized?: boolean;
   tags?: string[];
   expirySeconds?: number;
+  description?: string;
+}
+
+/**
+ * Parameters for creating a new OAuth client.
+ *
+ * Unlike a device auth key (which enrolls devices), an OAuth client is a
+ * non-interactive credential (`client_id` + `client_secret`) that can be
+ * exchanged for short-lived access tokens to call the Tailscale API — including
+ * `devices`-write endpoints that auth keys cannot reach.
+ */
+export interface CreateOAuthClientParams {
+  /**
+   * Scopes to grant to the client (e.g. `devices:core`, `devices:core:read`,
+   * `all:read`). At least one scope is required. See
+   * https://tailscale.com/kb/1623/ for the full scope vocabulary.
+   */
+  scopes: string[];
+  /**
+   * ACL tags the client's access tokens may assign to devices. Mandatory when
+   * `scopes` includes `devices:core` or `auth_keys`.
+   */
+  tags?: string[];
+  /** A short human-readable description (alphanumeric, spaces, hyphens; max 50 chars). */
   description?: string;
 }
 

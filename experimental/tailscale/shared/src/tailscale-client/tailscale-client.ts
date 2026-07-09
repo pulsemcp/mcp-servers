@@ -7,6 +7,7 @@ import type {
   Key,
   KeysResponse,
   CreateKeyParams,
+  CreateOAuthClientParams,
   ApiError,
 } from '../types.js';
 
@@ -32,10 +33,11 @@ export interface ITailscaleClient {
   setDeviceRoutes(deviceId: string, routes: string[]): Promise<DeviceRoutes>;
   deleteDevice(deviceId: string): Promise<void>;
 
-  // Auth-key operations
+  // Auth-key and OAuth-client operations
   listKeys(all?: boolean): Promise<KeysResponse>;
   getKey(keyId: string): Promise<Key>;
   createAuthKey(params: CreateKeyParams): Promise<Key>;
+  createOAuthClient(params: CreateOAuthClientParams): Promise<Key>;
   deleteKey(keyId: string): Promise<void>;
 }
 
@@ -364,6 +366,26 @@ export class TailscaleClient implements ITailscaleClient {
     if (typeof params.expirySeconds === 'number') {
       body.expirySeconds = params.expirySeconds;
     }
+    if (params.description) {
+      body.description = params.description;
+    }
+
+    return this.requestJson<Key>(`/tailnet/${this.encodedTailnet()}/keys`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+  }
+
+  async createOAuthClient(params: CreateOAuthClientParams): Promise<Key> {
+    // OAuth clients are created through the unified keys endpoint, distinguished
+    // from device auth keys by `keyType: "client"`. The response `Key` carries
+    // `id` (the client_id) and `key` (the once-only client_secret).
+    const body: Record<string, unknown> = {
+      keyType: 'client',
+      scopes: params.scopes,
+      tags: params.tags ?? [],
+    };
     if (params.description) {
       body.description = params.description;
     }

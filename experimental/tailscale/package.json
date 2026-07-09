@@ -1,6 +1,6 @@
 {
   "name": "tailscale-vpn-mcp-server",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "MCP server for the Tailscale REST API — tailnet policy, devices, and auth keys",
   "author": "PulseMCP",
   "license": "MIT",

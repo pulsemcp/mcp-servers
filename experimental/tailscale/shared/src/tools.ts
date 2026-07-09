@@ -14,6 +14,7 @@ import { deleteDevice } from './tools/delete-device.js';
 import { listKeys } from './tools/list-keys.js';
 import { getKey } from './tools/get-key.js';
 import { createAuthKey } from './tools/create-auth-key.js';
+import { createOAuthClient } from './tools/create-oauth-client.js';
 import { deleteKey } from './tools/delete-key.js';
 
 /**
@@ -26,7 +27,7 @@ import { deleteKey } from './tools/delete-key.js';
  * Groups:
  * - policy / policy_readonly: Tailnet policy file (ACL) tools
  * - devices / devices_readonly: Device (node) management tools
- * - keys / keys_readonly: Auth-key management tools
+ * - keys / keys_readonly: Auth-key and OAuth-client management tools
  */
 export type ToolGroup =
   | 'policy'
@@ -72,10 +73,11 @@ const ALL_TOOLS: ToolDefinition[] = [
   { factory: setDeviceTags, group: 'devices', isWriteOperation: true },
   { factory: setDeviceRoutes, group: 'devices', isWriteOperation: true },
   { factory: deleteDevice, group: 'devices', isWriteOperation: true },
-  // Auth-key tools
+  // Auth-key & OAuth-client tools
   { factory: listKeys, group: 'keys', isWriteOperation: false },
   { factory: getKey, group: 'keys', isWriteOperation: false },
   { factory: createAuthKey, group: 'keys', isWriteOperation: true },
+  { factory: createOAuthClient, group: 'keys', isWriteOperation: true },
   { factory: deleteKey, group: 'keys', isWriteOperation: true },
 ];
 
@@ -162,7 +164,7 @@ function shouldIncludeTool(toolDef: ToolDefinition, enabledGroups: ToolGroup[]):
  * Available tool groups:
  * - policy / policy_readonly: Tailnet policy file (ACL) tools
  * - devices / devices_readonly: Device management tools
- * - keys / keys_readonly: Auth-key management tools
+ * - keys / keys_readonly: Auth-key and OAuth-client management tools
  *
  * @param clientFactory - Factory function that creates client instances
  * @param enabledGroups - Optional comma-separated list of enabled tool groups (overrides env var)

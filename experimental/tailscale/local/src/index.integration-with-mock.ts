@@ -26,6 +26,7 @@ import type {
   Key,
   KeysResponse,
   CreateKeyParams,
+  CreateOAuthClientParams,
 } from '../shared/index.js';
 
 const MOCK_POLICY = `{
@@ -150,6 +151,18 @@ class IntegrationMockTailscaleClient implements ITailscaleClient {
           },
         },
       },
+      description: params.description,
+    };
+  }
+
+  async createOAuthClient(params: CreateOAuthClientParams): Promise<Key> {
+    return {
+      id: 'kMockOAuthClient1',
+      key: 'tskey-client-kMockOAuthClient1-clientsecretvalue',
+      keyType: 'client',
+      created: '2024-06-01T00:00:00Z',
+      scopes: params.scopes,
+      tags: params.tags ?? [],
       description: params.description,
     };
   }

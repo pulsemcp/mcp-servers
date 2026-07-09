@@ -16,5 +16,6 @@ export type {
   Key,
   KeysResponse,
   CreateKeyParams,
+  CreateOAuthClientParams,
   ApiError,
 } from './types.js';

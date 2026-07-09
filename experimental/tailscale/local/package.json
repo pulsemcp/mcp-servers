@@ -1,6 +1,6 @@
 {
   "name": "tailscale-vpn-mcp-server",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Local implementation of Tailscale MCP server",
   "mcpName": "com.pulsemcp/tailscale",
   "main": "build/index.js",
