@@ -7,7 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.0.2] - 2026-07-05
+## [0.0.3] - 2026-07-09
+
+### Added
+
+- **`create_oauth_client` tool** (keys group, write): mints a non-interactive Tailscale OAuth client (`client_id` + `client_secret`) with configurable scopes and ACL tags. Unlike `create_auth_key` — which only enrolls devices — an OAuth client can be exchanged for short-lived access tokens that call `devices`-write API endpoints (e.g. deleting a stale tailnet node on redeploy), closing a real gap in production deploy automation. The `client_secret` is surfaced exactly once, mirroring the `create_auth_key` UX. Implemented against the live Tailscale API's unified credential endpoint (`POST /tailnet/{tailnet}/keys` with `keyType: "client"`), so the existing `list_keys` / `get_key` / `delete_key` tools already list, inspect, and revoke OAuth clients by their client_id.
+- `createOAuthClient` method on the Tailscale client, and `CreateOAuthClientParams` plus `keyType`/`scopes`/`tags`/`userId`/`updated` fields on the `Key` type.
 
 ### Changed
 

@@ -1,6 +1,6 @@
 {
   "name": "tailscale-vpn-mcp-server-shared",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Shared code for Tailscale MCP server implementations",
   "main": "build/index.js",
   "type": "module",

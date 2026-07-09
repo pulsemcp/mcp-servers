@@ -32,7 +32,7 @@ The headline capability is **policy configuration**: an agent can fetch the curr
 
 **Device Management**: List and inspect devices, read and set their advertised/enabled subnet routes, authorize/deauthorize nodes, retag them, and remove them from the tailnet.
 
-**Auth Key Management**: List and inspect auth keys and API access tokens, mint new (reusable, ephemeral, preauthorized, or tagged) auth keys, and revoke keys.
+**Auth Key & OAuth Client Management**: List and inspect auth keys, OAuth clients, and API access tokens; mint new (reusable, ephemeral, preauthorized, or tagged) auth keys; mint scoped, tagged OAuth clients for non-interactive API automation; and revoke any of them.
 
 **Tool Groups**: Enable/disable tool groups via the `TOOL_GROUPS` environment variable. Each group has a base variant (full read + write access) and a `_readonly` variant (read-only access), so you can hand an agent exactly the surface area you're comfortable with.
 
@@ -42,22 +42,23 @@ The headline capability is **policy configuration**: an agent can fetch the curr
 
 This server is built and tested on macOS with Claude Desktop. It should work with other MCP clients as well.
 
-| Tool Name              | Tool Group | Read/Write | Description                                                           |
-| ---------------------- | ---------- | ---------- | --------------------------------------------------------------------- |
-| `get_policy_file`      | policy     | read       | Get the tailnet policy file (ACLs) as HuJSON, with its ETag.          |
-| `validate_policy_file` | policy     | read       | Validate a proposed policy file against the tailnet without applying. |
-| `update_policy_file`   | policy     | write      | Replace the tailnet policy file (ACLs).                               |
-| `list_devices`         | devices    | read       | List devices (nodes) in the tailnet.                                  |
-| `get_device`           | devices    | read       | Get detailed information about a single device.                       |
-| `get_device_routes`    | devices    | read       | Get the advertised and enabled subnet routes for a device.            |
-| `authorize_device`     | devices    | write      | Authorize or deauthorize a device.                                    |
-| `set_device_tags`      | devices    | write      | Set the ACL tags on a device.                                         |
-| `set_device_routes`    | devices    | write      | Set the enabled subnet routes for a device.                           |
-| `delete_device`        | devices    | write      | Remove a device from the tailnet.                                     |
-| `list_keys`            | keys       | read       | List auth keys and API access tokens for the tailnet.                 |
-| `get_key`              | keys       | read       | Get metadata about a single auth key or API access token.             |
-| `create_auth_key`      | keys       | write      | Create a new auth key (returns the secret exactly once).              |
-| `delete_key`           | keys       | write      | Revoke (delete) an auth key or API access token.                      |
+| Tool Name              | Tool Group | Read/Write | Description                                                              |
+| ---------------------- | ---------- | ---------- | ------------------------------------------------------------------------ |
+| `get_policy_file`      | policy     | read       | Get the tailnet policy file (ACLs) as HuJSON, with its ETag.             |
+| `validate_policy_file` | policy     | read       | Validate a proposed policy file against the tailnet without applying.    |
+| `update_policy_file`   | policy     | write      | Replace the tailnet policy file (ACLs).                                  |
+| `list_devices`         | devices    | read       | List devices (nodes) in the tailnet.                                     |
+| `get_device`           | devices    | read       | Get detailed information about a single device.                          |
+| `get_device_routes`    | devices    | read       | Get the advertised and enabled subnet routes for a device.               |
+| `authorize_device`     | devices    | write      | Authorize or deauthorize a device.                                       |
+| `set_device_tags`      | devices    | write      | Set the ACL tags on a device.                                            |
+| `set_device_routes`    | devices    | write      | Set the enabled subnet routes for a device.                              |
+| `delete_device`        | devices    | write      | Remove a device from the tailnet.                                        |
+| `list_keys`            | keys       | read       | List auth keys, OAuth clients, and API access tokens for the tailnet.    |
+| `get_key`              | keys       | read       | Get metadata about a single auth key, OAuth client, or API access token. |
+| `create_auth_key`      | keys       | write      | Create a new auth key (returns the secret exactly once).                 |
+| `create_oauth_client`  | keys       | write      | Create an OAuth client (client_id + client_secret; secret shown once).   |
+| `delete_key`           | keys       | write      | Revoke (delete) an auth key, OAuth client, or API access token.          |
 
 # Tool Groups
 
@@ -68,14 +69,14 @@ This server organizes tools into groups that can be selectively enabled or disab
 
 ## Available Groups
 
-| Group              | Tools | Description                             |
-| ------------------ | ----- | --------------------------------------- |
-| `policy`           | 3     | Full policy-file access (read + write)  |
-| `policy_readonly`  | 2     | Policy read + validate (read only)      |
-| `devices`          | 7     | Full device management (read + write)   |
-| `devices_readonly` | 3     | Device inspection (read only)           |
-| `keys`             | 4     | Full auth-key management (read + write) |
-| `keys_readonly`    | 2     | Auth-key inspection (read only)         |
+| Group              | Tools | Description                                            |
+| ------------------ | ----- | ------------------------------------------------------ |
+| `policy`           | 3     | Full policy-file access (read + write)                 |
+| `policy_readonly`  | 2     | Policy read + validate (read only)                     |
+| `devices`          | 7     | Full device management (read + write)                  |
+| `devices_readonly` | 3     | Device inspection (read only)                          |
+| `keys`             | 5     | Full auth-key & OAuth-client management (read + write) |
+| `keys_readonly`    | 2     | Auth-key & OAuth-client inspection (read only)         |
 
 ### Tools by Group
 
@@ -87,7 +88,12 @@ This server organizes tools into groups that can be selectively enabled or disab
   - Write: `authorize_device`, `set_device_tags`, `set_device_routes`, `delete_device`
 - **keys** / **keys_readonly**:
   - Read-only: `list_keys`, `get_key`
-  - Write: `create_auth_key`, `delete_key`
+  - Write: `create_auth_key`, `create_oauth_client`, `delete_key`
+
+  `list_keys`, `get_key`, and `delete_key` operate on all credential types under
+  the `/keys` endpoint — device auth keys **and** OAuth clients — so an OAuth
+  client created with `create_oauth_client` is listed, inspected, and revoked with
+  those same tools (using its client_id as the key ID).
 
 ## Environment Variables
 
@@ -133,6 +139,7 @@ TOOL_GROUPS=policy_readonly,devices_readonly,keys_readonly
 - Start with `get_policy_file` to fetch the current policy **and its ETag**, edit the HuJSON, run `validate_policy_file` to catch mistakes server-side, then apply with `update_policy_file`. Passing the ETag from the read into the update makes the write fail safely (HTTP 412) if someone else changed the policy in the meantime.
 - The policy file is [HuJSON](https://tailscale.com/kb/1018/acls) (JSON with comments and trailing commas). Preserve comments when editing — they document intent for the humans who share the tailnet.
 - `create_auth_key` returns the key secret **exactly once**. Capture it immediately; it cannot be retrieved again.
+- `create_oauth_client` mints a non-interactive OAuth client (`client_id` + `client_secret`) for API automation. Unlike a device auth key, its access tokens can call `devices`-write endpoints (e.g. deleting a stale node), which is what a CI/CD deploy needs. The `client_secret` is returned **exactly once** — capture it immediately. Grant least-privileged scopes, and supply `tags` when the scopes include `devices:core` or `auth_keys`.
 - Use `TOOL_GROUPS` to scope autonomy: hand an agent `policy` when its job is ACL management, and add `_readonly` device/key groups only for the context it needs to reason about the change.
 - Device IDs (not hostnames) identify devices in write calls. Use `list_devices` to map a hostname to its stable ID.
 
