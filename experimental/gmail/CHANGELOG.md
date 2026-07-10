@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.4.12] - 2026-07-10
+
+### Fixed
+
+- Gmail deep-links emitted by `list_email_conversations`, `search_email_conversations`, `get_email_conversation`, and `send_email` now use the form `https://mail.google.com/mail/?authuser=<account-email>#all/<id>` instead of `https://mail.google.com/mail/u/<account-email>/#inbox/<id>`. Two independent defects made the old links fail to open the target thread: (1) the `/mail/u/<email>/` email-in-path account selector is unreliable in multi-account browser sessions — some browsers fail to resolve it and open the wrong account — whereas the `?authuser=<email>` query parameter reliably selects the intended mailbox; and (2) the `#inbox/<id>` anchor only matches threads currently in the Inbox, so links to Sent, archived, or otherwise non-Inbox threads opened the mailbox but never surfaced the thread, while the `#all/<id>` anchor resolves the thread regardless of which label it lives under.
+
 ## [0.4.11] - 2026-06-14
 
 ### Fixed

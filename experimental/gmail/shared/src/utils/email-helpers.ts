@@ -11,17 +11,23 @@ export function getHeader(email: Email, headerName: string): string | undefined 
 /**
  * Builds an account-scoped Gmail web URL for a given message.
  *
- * Uses the `/mail/u/<account-email>/#inbox/<messageId>` path form so the link
- * opens in the correct mailbox regardless of which accounts the reader is
- * signed into in their browser. The user-INDEX form `/mail/u/0/` would
- * otherwise open whichever account happens to be at index 0 in the reader's
- * browser session, which is rarely the impersonated/OAuth account this
- * server reads from.
+ * The account selector is the `?authuser=<account-email>` query parameter.
+ * When the reader is signed into multiple Google accounts, some browsers fail
+ * to resolve the `/mail/u/<email>/` email-in-path selector and open the wrong
+ * account; the `?authuser=<email>` query parameter reliably selects the
+ * intended mailbox across multi-account browser sessions.
  *
- * Gmail also accepts `?authuser=<email>` as a query-parameter fallback.
+ * The label anchor is `#all/<messageId>`, which resolves the thread regardless
+ * of which label it lives under. An `#inbox/<id>` anchor only matches threads
+ * currently in the Inbox, so links to Sent, archived, or otherwise non-Inbox
+ * threads would open the mailbox but never surface the thread.
+ *
+ * `accountEmail` is interpolated with a literal `@` (Gmail accepts the literal
+ * form in `authuser`), matching the deep-link form confirmed to open Sent and
+ * archived threads across a multi-account browser session.
  */
 export function buildGmailUrl(accountEmail: string, messageId: string): string {
-  return `https://mail.google.com/mail/u/${encodeURIComponent(accountEmail)}/#inbox/${messageId}`;
+  return `https://mail.google.com/mail/?authuser=${accountEmail}#all/${messageId}`;
 }
 
 /**
