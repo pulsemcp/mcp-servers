@@ -44,11 +44,11 @@ function buildCognitoCookies(
  */
 export function buildSearchUrl(params: FlightSearchParams): string {
   const cabins = params.cabins.join(',');
-  const primaryCabin = params.cabins[0] || 'Economy';
+  const cabinFilter = params.cabins.join(',');
 
   const urlParams = new URLSearchParams({
     cabins,
-    cabin: primaryCabin,
+    cabin: cabinFilter,
     banks: DEFAULT_BANKS,
     airlineProgram: DEFAULT_AIRLINE_PROGRAMS,
     tripType: params.tripType,
