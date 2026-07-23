@@ -25,7 +25,7 @@ export interface AlignmentResult {
 }
 
 export interface RawImageData {
-  data: Uint8Array;
+  data: Uint8Array<ArrayBuffer>;
   width: number;
   height: number;
 }

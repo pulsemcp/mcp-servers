@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.4] - 2026-07-23
+
+### Changed
+
+- Bumped `sharp` from `^0.33.5` to `^0.35.3` (dependency update, part of a grouped npm_and_yarn bump). Verified against the existing test suite; no source changes were required.
+
 ## [0.1.3] - 2026-06-14
 
 ### Fixed

@@ -310,7 +310,7 @@ function cropRawImage(
   y: number,
   cropWidth: number,
   cropHeight: number
-): Uint8Array {
+): Uint8Array<ArrayBuffer> {
   if (x + cropWidth > image.width || y + cropHeight > image.height) {
     throw new Error(
       `Crop region (${x},${y},${cropWidth},${cropHeight}) exceeds image bounds (${image.width}x${image.height})`

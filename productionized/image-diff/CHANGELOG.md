@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.4] - 2026-07-23
+
+### Fixed
+
+- Bumped `sharp` from `^0.33.5` to `^0.35.3` (dependency update). Sharp 0.35's updated type declarations narrowed `toBuffer()` to return `Buffer<ArrayBuffer>` instead of the untyped default, which surfaced a latent type-precision gap in the diff engine: `RawImageData.data` and `cropRawImage()`'s return type were declared as bare `Uint8Array` (implicitly `Uint8Array<ArrayBufferLike>`), too wide to round-trip back into the `Uint8Array<ArrayBuffer>`-typed alignment buffers. Tightened both to `Uint8Array<ArrayBuffer>` to match the actual runtime data flow — no behavior change.
+- Fixed a broken `sharp.Sharp` namespace type reference in `heatmap.ts`. Sharp 0.35's ESM type declarations dropped the CJS namespace-merge pattern that made `sharp.Sharp` resolvable as a type; switched to importing `Sharp` as a named type from `sharp`.
+
 ## [0.1.3] - 2026-06-14
 
 ### Fixed
