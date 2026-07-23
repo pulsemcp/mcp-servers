@@ -8,7 +8,7 @@
  *   through orange to red (high diff)
  */
 
-import sharp from 'sharp';
+import sharp, { type Sharp } from 'sharp';
 
 /**
  * Generate a heatmap PNG image from the intensity map.
@@ -85,7 +85,7 @@ export async function generateCompositeHeatmap(
 
   const heatmapPng = await generateHeatmap(intensityMap, width, height);
 
-  let baseImage: sharp.Sharp;
+  let baseImage: Sharp;
   if (typeof source === 'string') {
     baseImage = sharp(source);
   } else {

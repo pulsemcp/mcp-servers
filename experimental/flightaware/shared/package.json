@@ -1,7 +1,7 @@
 {
-  "name": "@pulsemcp/image-diff-mcp-server-shared",
+  "name": "flightaware-mcp-server-shared",
   "version": "0.0.1",
-  "description": "Shared code for image-diff MCP server",
+  "description": "Shared code for FlightAware AeroAPI MCP server",
   "main": "build/index.js",
   "type": "module",
   "scripts": {
@@ -13,15 +13,10 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.29.0",
-    "opencv-wasm": "^4.3.0-10",
-    "sharp": "^0.35.3",
     "zod": "^3.25.76"
   },
   "devDependencies": {
-    "@types/node": "^24.0.0",
-    "typescript": "^5.8.3"
-  },
-  "keywords": [],
-  "author": "PulseMCP",
-  "license": "MIT"
+    "@types/node": "^22.10.6",
+    "typescript": "^5.7.3"
+  }
 }
