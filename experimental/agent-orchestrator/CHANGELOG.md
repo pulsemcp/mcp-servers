@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.12] - 2026-08-11
+
+### Changed
+
+- **`quick_search_sessions` now tells the caller when archived sessions were filtered out.** `show_archived` defaults to `false` server-side, and sessions archive when they finish their work — so a prior-work or duplicate-detection search run with the default silently misses exactly the completed sessions it is looking for, with nothing in the response to signal it. Results filtered this way now read `Found N non-archived session(s) (page X of Y), archived excluded:` followed by a warning block that an empty or thin result is not evidence of absence, plus a footer reminder after the session list. Empty results carry the same warning instead of a bare "No sessions found matching the specified criteria." When `show_archived: true` is passed, the header reads `archived included` and no warning is emitted. The `id` lookup path is unaffected — it fetches a session directly and is not archived-filtered. The warning is qualitative rather than quantitative because the REST API paginates the already-filtered scope and returns no count of the archived rows it dropped (see [#5055](https://github.com/pulsemcp/pulsemcp/issues/5055)).
+- **The `status: "archived"` + default `show_archived` combination is now called out explicitly.** The two filters cancel each other out server-side and always return zero sessions; that combination now produces a dedicated note rather than an unexplained empty result.
+- **`show_archived` and tool descriptions state the consequence, not just the default.** The parameter description explains that sessions archive on completion, that duplicate/alert-spurt/prior-work searches should always pass `true`, and that a null result from a default-filtered search is not evidence of absence. The tool description gains a dedicated "check whether work was already handled" use case flagged with `show_archived: true`.
+
+### Fixed
+
+- **`quick_search_sessions` no longer claims the query matches session titles only.** The API's search matches `title`, `metadata`, and `custom_metadata` (case-insensitive substring); the tool and `query` parameter descriptions said "session title only" and "NOT a full-text search," which understated what a query can hit. Corrected to describe the actual match surface, while keeping the accurate part — the tool does not reach transcript contents.
+
+### Tests
+
+- Added functional coverage for the exclusion notice across the list and search paths: warning present when `show_archived` is omitted or explicitly `false`, absent when `true`, present on empty list and empty search results, absent on the `id` lookup path, the `status: "archived"` cancellation note, and assertions pinning the strengthened parameter/tool descriptions. Added footer-layout coverage (single `---` separator carrying both the pagination hint and the archived reminder mid-pagination, archived reminder only on the last page, no separator when neither applies) — previously the mock only ever returned `total_pages: 1`, so nothing pinned that branch. Extended the `quick_search_sessions` integration test to assert the notice survives the full MCP protocol round trip.
+
 ## [0.8.11] - 2026-07-06
 
 ### Added
