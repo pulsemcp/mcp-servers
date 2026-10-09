@@ -1,6 +1,7 @@
 import type { Email, EmailListItem } from '../../types.js';
 import { handleApiError } from './api-errors.js';
-import { buildMimeMessage, toBase64Url } from './mime-utils.js';
+import { buildMimeMessage, type MimeAttachment } from './mime-utils.js';
+import { requestWithRawMessage } from './raw-message-request.js';
 
 interface Draft {
   id: string;
@@ -35,30 +36,24 @@ export async function createDraft(
     threadId?: string;
     inReplyTo?: string;
     references?: string;
+    attachments?: MimeAttachment[];
   }
 ): Promise<Draft> {
-  const url = `${baseUrl}/drafts`;
-
   const rawMessage = buildMimeMessage(from, options);
-  const encodedMessage = toBase64Url(rawMessage);
 
-  const requestBody: {
-    message: { raw: string; threadId?: string };
-  } = {
-    message: {
-      raw: encodedMessage,
-    },
-  };
-
-  if (options.threadId) {
-    requestBody.message.threadId = options.threadId;
-  }
-
-  const response = await fetch(url, {
-    method: 'POST',
+  const response = await requestWithRawMessage(
+    baseUrl,
+    '/drafts',
+    'POST',
     headers,
-    body: JSON.stringify(requestBody),
-  });
+    rawMessage,
+    (raw) => ({
+      message: {
+        ...(raw !== undefined && { raw }),
+        ...(options.threadId && { threadId: options.threadId }),
+      },
+    })
+  );
 
   if (!response.ok) {
     handleApiError(response.status, 'creating draft');
@@ -153,30 +148,24 @@ export async function updateDraft(
     threadId?: string;
     inReplyTo?: string;
     references?: string;
+    attachments?: MimeAttachment[];
   }
 ): Promise<Draft> {
-  const url = `${baseUrl}/drafts/${draftId}`;
-
   const rawMessage = buildMimeMessage(from, options);
-  const encodedMessage = toBase64Url(rawMessage);
 
-  const requestBody: {
-    message: { raw: string; threadId?: string };
-  } = {
-    message: {
-      raw: encodedMessage,
-    },
-  };
-
-  if (options.threadId) {
-    requestBody.message.threadId = options.threadId;
-  }
-
-  const response = await fetch(url, {
-    method: 'PUT',
+  const response = await requestWithRawMessage(
+    baseUrl,
+    `/drafts/${draftId}`,
+    'PUT',
     headers,
-    body: JSON.stringify(requestBody),
-  });
+    rawMessage,
+    (raw) => ({
+      message: {
+        ...(raw !== undefined && { raw }),
+        ...(options.threadId && { threadId: options.threadId }),
+      },
+    })
+  );
 
   if (!response.ok) {
     handleApiError(response.status, 'updating draft', draftId);

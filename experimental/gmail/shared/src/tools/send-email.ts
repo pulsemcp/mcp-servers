@@ -3,6 +3,13 @@ import { z } from 'zod';
 import type { ClientFactory } from '../server.js';
 import { buildGmailUrl, getHeader } from '../utils/email-helpers.js';
 import {
+  ATTACHMENTS_DESCRIPTION,
+  ATTACHMENTS_JSON_SCHEMA,
+  AttachmentsSchema,
+  resolveAttachments,
+  formatAttachmentList,
+} from '../utils/attachments.js';
+import {
   requestConfirmation,
   createConfirmationSchema,
   readElicitationConfig,
@@ -26,6 +33,7 @@ const PARAM_DESCRIPTIONS = {
   from_draft_id:
     'Draft ID to send. If provided, sends the specified draft instead of composing a new email. ' +
     'When using this, other parameters (to, subject, plaintext_body, etc.) are ignored.',
+  attachments: ATTACHMENTS_DESCRIPTION,
 } as const;
 
 export const SendEmailSchema = z
@@ -39,6 +47,7 @@ export const SendEmailSchema = z
     thread_id: z.string().optional().describe(PARAM_DESCRIPTIONS.thread_id),
     reply_to_email_id: z.string().optional().describe(PARAM_DESCRIPTIONS.reply_to_email_id),
     from_draft_id: z.string().optional().describe(PARAM_DESCRIPTIONS.from_draft_id),
+    attachments: AttachmentsSchema,
   })
   .refine(
     (data) => {
@@ -65,12 +74,16 @@ const TOOL_DESCRIPTION = `Send an email immediately or send a previously created
 - bcc: BCC recipients (optional)
 - thread_id: Thread ID to reply to an existing conversation (optional)
 - reply_to_email_id: Email ID to reply to, sets proper reply headers (optional)
+- attachments: Files to attach, each given as an HTTPS \`url\` or as \`content_base64\` + \`filename\` (optional)
 
 **Option 2: Send a draft**
 - from_draft_id: ID of the draft to send (all other parameters are ignored)
 
 **Body content:**
 At least one of plaintext_body or html_body must be provided. If both are provided, a multipart email is sent with both plain text and HTML versions. Use html_body for rich formatting like hyperlinks, bold text, or lists.
+
+**Attachments:**
+Each attachment provides exactly one of \`url\` (an HTTPS link the server downloads, such as a signed artifact-store URL) or \`content_base64\` (the file bytes, with a required \`filename\`). \`mime_type\` is optional and inferred when omitted. Limits: up to 10 files, 18 MB total.
 
 **Sending a reply:**
 To send a reply to an existing email:
@@ -127,6 +140,7 @@ export function sendEmailTool(server: Server, clientFactory: ClientFactory) {
           type: 'string',
           description: PARAM_DESCRIPTIONS.from_draft_id,
         },
+        attachments: ATTACHMENTS_JSON_SCHEMA,
       },
       required: [],
     },
@@ -134,6 +148,12 @@ export function sendEmailTool(server: Server, clientFactory: ClientFactory) {
       try {
         const parsed = SendEmailSchema.parse(args ?? {});
         const client = clientFactory();
+
+        // Download/decode attachments up front so bad input fails before confirmation.
+        // Ignored when sending a draft, which already carries its own content.
+        const attachments = parsed.from_draft_id
+          ? []
+          : await resolveAttachments(parsed.attachments);
 
         // Build a human-readable summary for the elicitation prompt
         const elicitationConfig = readElicitationConfig();
@@ -148,6 +168,9 @@ export function sendEmailTool(server: Server, clientFactory: ClientFactory) {
               `  Subject: ${parsed.subject}\n` +
               (parsed.cc ? `  CC: ${parsed.cc}\n` : '') +
               (parsed.bcc ? `  BCC: ${parsed.bcc}\n` : '') +
+              (attachments.length > 0
+                ? `  Attachments: ${attachments.map((a) => a.filename).join(', ')}\n`
+                : '') +
               `\nThis action cannot be undone.`;
           }
 
@@ -262,6 +285,7 @@ export function sendEmailTool(server: Server, clientFactory: ClientFactory) {
           threadId: parsed.thread_id,
           inReplyTo,
           references,
+          attachments,
         });
 
         const accountEmail = await client.getAccountEmail();
@@ -285,6 +309,9 @@ export function sendEmailTool(server: Server, clientFactory: ClientFactory) {
         responseText += `\n**Format:** ${format}`;
         if (parsed.cc) {
           responseText += `\n**CC:** ${parsed.cc}`;
+        }
+        if (attachments.length > 0) {
+          responseText += `\n**Attachments:** ${formatAttachmentList(attachments)}`;
         }
 
         return {

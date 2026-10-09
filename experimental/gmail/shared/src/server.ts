@@ -2,6 +2,7 @@ import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { JWT, OAuth2Client } from 'google-auth-library';
 import { createRegisterTools } from './tools.js';
 import type { Email, EmailListItem } from './types.js';
+import type { MimeAttachment } from './gmail-client/lib/mime-utils.js';
 
 /**
  * Gmail API scopes required by this server.
@@ -76,6 +77,7 @@ export interface IGmailClient {
     threadId?: string;
     inReplyTo?: string;
     references?: string;
+    attachments?: MimeAttachment[];
   }): Promise<Draft>;
 
   /**
@@ -93,6 +95,7 @@ export interface IGmailClient {
       threadId?: string;
       inReplyTo?: string;
       references?: string;
+      attachments?: MimeAttachment[];
     }
   ): Promise<Draft>;
 
@@ -128,6 +131,7 @@ export interface IGmailClient {
     threadId?: string;
     inReplyTo?: string;
     references?: string;
+    attachments?: MimeAttachment[];
   }): Promise<Email>;
 
   /**
@@ -274,6 +278,7 @@ abstract class BaseGmailClient implements IGmailClient {
     threadId?: string;
     inReplyTo?: string;
     references?: string;
+    attachments?: MimeAttachment[];
   }): Promise<Draft> {
     const headers = await this.getHeaders();
     const senderEmail = await this.getSenderEmail();
@@ -293,6 +298,7 @@ abstract class BaseGmailClient implements IGmailClient {
       threadId?: string;
       inReplyTo?: string;
       references?: string;
+      attachments?: MimeAttachment[];
     }
   ): Promise<Draft> {
     const headers = await this.getHeaders();
@@ -333,6 +339,7 @@ abstract class BaseGmailClient implements IGmailClient {
     threadId?: string;
     inReplyTo?: string;
     references?: string;
+    attachments?: MimeAttachment[];
   }): Promise<Email> {
     const headers = await this.getHeaders();
     const senderEmail = await this.getSenderEmail();

@@ -287,6 +287,7 @@ Create, update, or delete a draft email. Optionally as a reply to an existing co
 - `bcc` (string, optional): BCC recipients
 - `thread_id` (string, optional): Thread ID for replies
 - `reply_to_email_id` (string, optional): Email ID to reply to (sets References/In-Reply-To headers)
+- `attachments` (array, optional): Files to attach (replaces the draft's attachments on update) — see [Attachments](#attachments)
 
 For create/update: at least one of `plaintext_body` or `html_body` must be provided. If both are provided, a multipart email is sent with both versions.
 
@@ -335,6 +336,7 @@ Send an email directly or from an existing draft.
 - `from_draft_id` (string, optional): Send an existing draft by ID
 - `thread_id` (string, optional): Thread ID for replies
 - `reply_to_email_id` (string, optional): Email ID to reply to
+- `attachments` (array, optional): Files to attach (ignored with `from_draft_id`) — see [Attachments](#attachments)
 
 **Example (plain text email):**
 
@@ -356,6 +358,20 @@ Send an email directly or from an existing draft.
 }
 ```
 
+**Example (with attachments):**
+
+```json
+{
+  "to": "recipient@example.com",
+  "subject": "September statement",
+  "plaintext_body": "Statement attached.",
+  "attachments": [
+    { "url": "https://storage.googleapis.com/bucket/statement.pdf?X-Goog-Signature=..." },
+    { "filename": "notes.txt", "content_base64": "aGVsbG8K" }
+  ]
+}
+```
+
 **Example (send draft):**
 
 ```json
@@ -363,6 +379,20 @@ Send an email directly or from an existing draft.
   "from_draft_id": "r123456789"
 }
 ```
+
+### Attachments
+
+`send_email` and `upsert_draft_email` accept an `attachments` array. The message is then sent as `multipart/mixed`: the body first (plain, HTML, or `multipart/alternative`), followed by one base64-encoded part per file. Each item provides **exactly one** of:
+
+- `url` (string): An HTTPS URL the server downloads — for example a signed artifact-store link. It must be fetchable without extra auth headers. Loopback, private-network and link-local hosts are refused, including as redirect targets.
+- `content_base64` (string): The file bytes as standard base64. Requires `filename`.
+
+Optional fields:
+
+- `filename` (string): Name shown to the recipient. Defaults to the last URL path segment for `url`.
+- `mime_type` (string): e.g. `application/pdf`. Defaults to the URL response `Content-Type`, then a guess from the filename extension, then `application/octet-stream`.
+
+Limits: up to 10 attachments and 18 MB total (decoded), which keeps the encoded message under Gmail's 25 MB limit. URL downloads time out after 30 seconds.
 
 ## Development
 

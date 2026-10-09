@@ -2,6 +2,13 @@ import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { z } from 'zod';
 import type { ClientFactory } from '../server.js';
 import { getHeader } from '../utils/email-helpers.js';
+import {
+  ATTACHMENTS_DESCRIPTION,
+  ATTACHMENTS_JSON_SCHEMA,
+  AttachmentsSchema,
+  formatAttachmentList,
+  resolveAttachments,
+} from '../utils/attachments.js';
 
 const PARAM_DESCRIPTIONS = {
   draft_id:
@@ -25,6 +32,7 @@ const PARAM_DESCRIPTIONS = {
   reply_to_email_id:
     'Email ID to reply to. If provided, the draft will be formatted as a reply ' +
     'with proper In-Reply-To and References headers. Also requires thread_id.',
+  attachments: ATTACHMENTS_DESCRIPTION,
 } as const;
 
 export const UpsertDraftEmailSchema = z
@@ -39,6 +47,7 @@ export const UpsertDraftEmailSchema = z
     bcc: z.string().optional().describe(PARAM_DESCRIPTIONS.bcc),
     thread_id: z.string().optional().describe(PARAM_DESCRIPTIONS.thread_id),
     reply_to_email_id: z.string().optional().describe(PARAM_DESCRIPTIONS.reply_to_email_id),
+    attachments: AttachmentsSchema,
   })
   .superRefine((data, ctx) => {
     if (data.delete) {
@@ -71,9 +80,13 @@ const TOOL_DESCRIPTION = `Create, update, or delete a draft email.
 - bcc: BCC recipients (optional)
 - thread_id: Thread ID to reply to an existing conversation (optional)
 - reply_to_email_id: Email ID to reply to, sets proper reply headers (optional)
+- attachments: Files to attach, each given as an HTTPS \`url\` or as \`content_base64\` + \`filename\` (optional)
 
 **Body content:**
 At least one of plaintext_body or html_body must be provided for create/update. If both are provided, a multipart email is sent with both plain text and HTML versions. Use html_body for rich formatting like hyperlinks, bold text, or lists.
+
+**Attachments:**
+Each attachment provides exactly one of \`url\` (an HTTPS link the server downloads, such as a signed artifact-store URL) or \`content_base64\` (the file bytes, with a required \`filename\`). \`mime_type\` is optional and inferred when omitted. Limits: up to 10 files, 18 MB total. Updating a draft replaces its attachments too — include every attachment the draft should keep.
 
 **Creating a reply:**
 To create a draft reply to an existing email:
@@ -142,6 +155,7 @@ export function upsertDraftEmailTool(server: Server, clientFactory: ClientFactor
           type: 'string',
           description: PARAM_DESCRIPTIONS.reply_to_email_id,
         },
+        attachments: ATTACHMENTS_JSON_SCHEMA,
       },
       required: [],
     },
@@ -162,6 +176,8 @@ export function upsertDraftEmailTool(server: Server, clientFactory: ClientFactor
             ],
           };
         }
+
+        const attachments = await resolveAttachments(parsed.attachments);
 
         let inReplyTo: string | undefined;
         let references: string | undefined;
@@ -193,6 +209,7 @@ export function upsertDraftEmailTool(server: Server, clientFactory: ClientFactor
           threadId: parsed.thread_id,
           inReplyTo,
           references,
+          attachments,
         };
 
         const isUpdate = Boolean(parsed.draft_id);
@@ -222,6 +239,9 @@ export function upsertDraftEmailTool(server: Server, clientFactory: ClientFactor
         }
         if (parsed.bcc) {
           responseText += `\n**BCC:** ${parsed.bcc}`;
+        }
+        if (attachments.length > 0) {
+          responseText += `\n**Attachments:** ${formatAttachmentList(attachments)}`;
         }
 
         responseText +=

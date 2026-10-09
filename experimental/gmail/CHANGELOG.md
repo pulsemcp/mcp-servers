@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.4.13] - 2026-10-09
+
+### Added
+
+- `send_email` and `upsert_draft_email` accept an optional `attachments` array. When it is present, the message is built as `multipart/mixed`: the existing body comes first (plain text, HTML, or a nested `multipart/alternative`), then one base64-encoded part per file, wrapped at 76 characters. Each attachment gives exactly one of `url` or `content_base64`. `url` is an HTTPS link the server downloads, such as a signed artifact-store URL, so a remote agent with no shared filesystem can attach files. `content_base64` is the raw bytes and requires `filename`. An optional `mime_type` falls back to the response `Content-Type`, then a guess from the extension, then `application/octet-stream`. Non-ASCII filenames are sent as folded RFC 2047 encoded-words, and `text/*` attachments are marked `charset=utf-8`. Limits: up to 10 attachments, 18 MB decoded in total (so the encoded message stays under Gmail's 25 MB cap), and a 30 s download timeout. URL downloads must use `https://` and are refused for loopback, private-network, link-local and `.internal` hosts. Redirects are followed by hand (at most 5), and each hop is checked before it is requested. Download errors never echo the URL's query string, so signed credentials do not leak into tool output. Attachments are ignored when `send_email` sends an existing draft via `from_draft_id`. Messages larger than 5 MB are sent through Gmail's `/upload` URI (`uploadType=multipart`, documented up to 35 MB) rather than inline as base64url JSON, and smaller messages keep using the existing inline request unchanged.
+
 ## [0.4.12] - 2026-07-10
 
 ### Fixed

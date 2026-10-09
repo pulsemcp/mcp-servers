@@ -13,6 +13,14 @@ export {
   type CreateMCPServerOptions,
   type Draft,
 } from './server.js';
+export type { MimeAttachment } from './gmail-client/lib/mime-utils.js';
+export {
+  ATTACHMENTS_DESCRIPTION,
+  MAX_ATTACHMENTS,
+  MAX_TOTAL_ATTACHMENT_BYTES,
+  resolveAttachments,
+  type AttachmentInput,
+} from './utils/attachments.js';
 
 // Tools and tool groups
 export {

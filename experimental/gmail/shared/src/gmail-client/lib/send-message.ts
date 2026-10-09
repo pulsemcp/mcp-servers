@@ -1,6 +1,7 @@
 import type { Email } from '../../types.js';
 import { handleApiError } from './api-errors.js';
-import { buildMimeMessage, toBase64Url } from './mime-utils.js';
+import { buildMimeMessage, type MimeAttachment } from './mime-utils.js';
+import { requestWithRawMessage } from './raw-message-request.js';
 
 /**
  * Sends an email directly
@@ -19,26 +20,22 @@ export async function sendMessage(
     threadId?: string;
     inReplyTo?: string;
     references?: string;
+    attachments?: MimeAttachment[];
   }
 ): Promise<Email> {
-  const url = `${baseUrl}/messages/send`;
-
   const rawMessage = buildMimeMessage(from, options);
-  const encodedMessage = toBase64Url(rawMessage);
 
-  const requestBody: { raw: string; threadId?: string } = {
-    raw: encodedMessage,
-  };
-
-  if (options.threadId) {
-    requestBody.threadId = options.threadId;
-  }
-
-  const response = await fetch(url, {
-    method: 'POST',
+  const response = await requestWithRawMessage(
+    baseUrl,
+    '/messages/send',
+    'POST',
     headers,
-    body: JSON.stringify(requestBody),
-  });
+    rawMessage,
+    (raw) => ({
+      ...(raw !== undefined && { raw }),
+      ...(options.threadId && { threadId: options.threadId }),
+    })
+  );
 
   if (!response.ok) {
     handleApiError(response.status, 'sending message');
