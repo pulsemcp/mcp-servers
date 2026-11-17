@@ -14,7 +14,8 @@ on:
 jobs:
   validate-publish-files:
     name: Validate Publish Files
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
 
     steps:
       - name: Checkout repository

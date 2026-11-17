@@ -13,7 +13,8 @@ on:
 jobs:
   ci-build-test-checks:
     name: CI Build & Test Checks Passed
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
     permissions:
       checks: read
       pull-requests: read
