@@ -11,7 +11,7 @@ on:
 jobs:
   verify-publications:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 60
 
     steps:
       - name: Checkout code
@@ -225,8 +225,8 @@ jobs:
             
             # Install dependencies - use ci:install if available, otherwise npm install.
             # Route through run_npm_with_cache_heal so a corrupt npm cache is
-            # garbage-collected and the install
-            # retried, rather than failing the whole verification run.
+            # garbage-collected and the install retried, rather than failing the
+            # whole verification run.
             if node -e "process.exit((require('./package.json').scripts||{})['ci:install']?0:1)" 2>/dev/null; then
               if run_npm_with_cache_heal npm run ci:install; then
                 echo "✅ Dependencies installed with ci:install"

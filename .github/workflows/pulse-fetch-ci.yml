@@ -18,6 +18,14 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
+    # The per-server dirs have no lockfile, so `npm install` resolves fresh from
+    # the registry every run, and current releases trip an npm arborist bug
+    # ("Cannot read properties of null (reading 'edgesOut')") in peer-set
+    # resolution. That happens on any runner, including the old self-hosted
+    # one, and legacy peer-dep resolution avoids it.
+    env:
+      npm_config_legacy_peer_deps: 'true'
+
     defaults:
       run:
         working-directory: productionized/pulse-fetch
@@ -52,6 +60,14 @@ jobs:
     name: Pulse Fetch MCP Server Integration Tests
     runs-on: ubuntu-latest
     timeout-minutes: 15
+
+    # The per-server dirs have no lockfile, so `npm install` resolves fresh from
+    # the registry every run, and current releases trip an npm arborist bug
+    # ("Cannot read properties of null (reading 'edgesOut')") in peer-set
+    # resolution. That happens on any runner, including the old self-hosted
+    # one, and legacy peer-dep resolution avoids it.
+    env:
+      npm_config_legacy_peer_deps: 'true'
 
     defaults:
       run:
