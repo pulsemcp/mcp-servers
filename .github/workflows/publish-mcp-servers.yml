@@ -29,7 +29,8 @@ concurrency:
 jobs:
   detect-and-publish:
     name: Detect & Publish
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
     permissions:
       contents: write
       packages: write

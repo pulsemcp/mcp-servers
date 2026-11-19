@@ -10,7 +10,8 @@ on:
 
 jobs:
   verify-publications:
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
 
     steps:
       - name: Checkout code
@@ -41,10 +42,10 @@ jobs:
           # Track if any verification fails
           VERIFICATION_FAILED=false
 
-          # Run an npm command, self-healing if it fails due to a corrupt shared
-          # npm cache on the self-hosted runners. Those runners share a
-          # persistent cache at ~/.npm/_cacache; when a content file goes
-          # missing, `npm install` dies with an ENOENT stat'ing
+          # Run an npm command, self-healing if it fails due to a corrupt npm
+          # cache. This was written for the old shared self-hosted runners,
+          # which kept a persistent cache at ~/.npm/_cacache; when a content
+          # file went missing, `npm install` died with an ENOENT stat'ing
           # _cacache/content-v2/... (see incident on 2026-07-01, verify run
           # 28544837977). On that specific signature we garbage-collect broken
           # entries with `npm cache verify` and retry once; if it still fails we
@@ -223,9 +224,9 @@ jobs:
             cd "$SERVER_DIR"
             
             # Install dependencies - use ci:install if available, otherwise npm install.
-            # Route through run_npm_with_cache_heal so a corrupt shared npm cache
-            # on the self-hosted runner is garbage-collected and the install
-            # retried, rather than failing the whole verification run.
+            # Route through run_npm_with_cache_heal so a corrupt npm cache is
+            # garbage-collected and the install retried, rather than failing the
+            # whole verification run.
             if node -e "process.exit((require('./package.json').scripts||{})['ci:install']?0:1)" 2>/dev/null; then
               if run_npm_with_cache_heal npm run ci:install; then
                 echo "✅ Dependencies installed with ci:install"
