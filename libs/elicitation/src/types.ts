@@ -72,7 +72,7 @@ export interface ElicitationConfig {
    * When true, prefer HTTP fallback (Tier 3) over native elicitation (Tier 2)
    * when both are available. Default: false.
    *
-   * Useful for headless agent runtimes (e.g., Claude Code under Agent Orchestrator)
+   * Useful for headless agent runtimes (e.g., Claude Code under Zimmer)
    * that advertise the `elicitation` client capability but have no real interactive
    * user — native `elicitInput()` calls auto-cancel without ever surfacing a prompt.
    * Forcing the HTTP fallback routes the request to an external approval UI instead.

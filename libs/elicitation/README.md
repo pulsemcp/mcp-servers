@@ -34,7 +34,7 @@ Tier 4: throw Error('no mechanism available')
 
 ### Tier-order opt-in: `ELICITATION_PREFER_HTTP_FALLBACK`
 
-Some headless agent runtimes (e.g., Claude Code running under Agent Orchestrator) advertise the `elicitation` client capability even though there is no real interactive user. In that situation the native call returns `cancel`/`decline` immediately and the user never sees the prompt.
+Some headless agent runtimes (e.g., Claude Code running under Zimmer) advertise the `elicitation` client capability even though there is no real interactive user. In that situation the native call returns `cancel`/`decline` immediately and the user never sees the prompt.
 
 Setting `ELICITATION_PREFER_HTTP_FALLBACK=true` swaps the order so Tier 3 runs before Tier 2 when both are available. Native elicitation is then never attempted in that environment. The default (`false`) preserves the original tier order for clients that have a real interactive user (Claude Desktop, Cursor, etc.).
 

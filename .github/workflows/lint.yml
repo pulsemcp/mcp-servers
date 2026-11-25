@@ -25,8 +25,7 @@ on:
 jobs:
   lint:
     name: Lint & Type Check
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
+    runs-on: self-hosted
 
     steps:
       - name: Checkout repository
@@ -36,7 +35,13 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version-file: '.nvmrc'
-          cache: 'npm'
+
+      # Redirect npm's cache to the per-job RUNNER_TEMP dir so concurrent
+      # installs on the shared self-hosted runner can't collide in the default
+      # ~/.npm/_cacache (flaky _cacache/tmp EEXIST, errno -17). Set via
+      # GITHUB_ENV so it applies to every later npm step in the job.
+      - name: Isolate npm cache
+        run: echo "npm_config_cache=$RUNNER_TEMP/.npm-cache" >> "$GITHUB_ENV"
 
       - name: Install root dependencies
         run: npm ci

@@ -16,7 +16,6 @@ on:
       - 'Pulse Fetch MCP Server CI'
       - 'Slack MCP Server CI'
       - 'Twist MCP Server CI'
-      - 'Zoom MCP Server CI'
     types: [completed]
     branches:
       - main
@@ -25,19 +24,16 @@ on:
 jobs:
   notify:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
     if: ${{ github.event.workflow_run.conclusion == 'failure' }}
 
     steps:
       - name: Notify Slack of CI failure
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
-          # Passed via env, not interpolated into the script: head_branch is
-          # chosen by whoever opened the PR (a fork can name it `sync/$(...)`).
-          WORKFLOW_NAME: ${{ github.event.workflow_run.name }}
-          RUN_URL: ${{ github.event.workflow_run.html_url }}
-          BRANCH: ${{ github.event.workflow_run.head_branch }}
         run: |
+          WORKFLOW_NAME="${{ github.event.workflow_run.name }}"
+          RUN_URL="${{ github.event.workflow_run.html_url }}"
+          BRANCH="${{ github.event.workflow_run.head_branch }}"
           CHANNEL_ID="C0A62DG97HD"
 
           if [ -n "$SLACK_BOT_TOKEN" ]; then
