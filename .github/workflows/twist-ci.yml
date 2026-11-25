@@ -15,16 +15,8 @@ on:
 jobs:
   functional-tests:
     name: Twist MCP Server Functional Tests
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     timeout-minutes: 15
-
-    # The per-server dirs have no lockfile, so `npm install` resolves fresh from
-    # the registry every run, and current releases trip an npm arborist bug
-    # ("Cannot read properties of null (reading 'edgesOut')") in peer-set
-    # resolution. That happens on any runner, including the old self-hosted
-    # one, and legacy peer-dep resolution avoids it.
-    env:
-      npm_config_legacy_peer_deps: 'true'
 
     defaults:
       run:
@@ -38,7 +30,13 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version-file: '.nvmrc'
-          cache: 'npm'
+
+      # Redirect npm's cache to the per-job RUNNER_TEMP dir so concurrent
+      # installs on the shared self-hosted runner can't collide in the default
+      # ~/.npm/_cacache (flaky _cacache/tmp EEXIST, errno -17). Set via
+      # GITHUB_ENV so it applies to every later npm step in the job.
+      - name: Isolate npm cache
+        run: echo "npm_config_cache=$RUNNER_TEMP/.npm-cache" >> "$GITHUB_ENV"
 
       - name: Install root dependencies
         run: npm ci
@@ -58,16 +56,8 @@ jobs:
 
   integration-tests:
     name: Twist MCP Server Integration Tests
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     timeout-minutes: 15
-
-    # The per-server dirs have no lockfile, so `npm install` resolves fresh from
-    # the registry every run, and current releases trip an npm arborist bug
-    # ("Cannot read properties of null (reading 'edgesOut')") in peer-set
-    # resolution. That happens on any runner, including the old self-hosted
-    # one, and legacy peer-dep resolution avoids it.
-    env:
-      npm_config_legacy_peer_deps: 'true'
 
     defaults:
       run:
@@ -81,7 +71,13 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version-file: '.nvmrc'
-          cache: 'npm'
+
+      # Redirect npm's cache to the per-job RUNNER_TEMP dir so concurrent
+      # installs on the shared self-hosted runner can't collide in the default
+      # ~/.npm/_cacache (flaky _cacache/tmp EEXIST, errno -17). Set via
+      # GITHUB_ENV so it applies to every later npm step in the job.
+      - name: Isolate npm cache
+        run: echo "npm_config_cache=$RUNNER_TEMP/.npm-cache" >> "$GITHUB_ENV"
 
       - name: Install root dependencies
         run: npm ci
